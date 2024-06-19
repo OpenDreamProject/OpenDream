@@ -48,6 +48,10 @@
 		usr << "menus: [json_encode(winget(usr, null, "menus"))]"
 		usr << "macros: [json_encode(winget(usr, null, "macros"))]"
 
+	verb/browse_rsc_test()
+		usr << browse_rsc('icons/mob.dmi', "mobicon.png")
+		usr << browse_rsc('icons/mob.dmi', "mobicon.png")
+		usr << browse("<p><img src=mobicon.png></p>Oh look, it's you!","window=honk")
 
 	verb/rotate()
 		for(var/i in 1 to 8)
@@ -192,6 +196,16 @@
 		spawn(20)
 			src << "showing main window"
 			winset(src,"mainwindow","is-visible=true")
+			
+	verb/winget_text_verb(var/rawtext as command_text)
+		set name = "wingettextverb"
+		world << "recieved: [rawtext]"			
+
+	verb/test_hot_reload()
+		set category = "Test"
+		src << "trying hot reload of interface..."
+		world.ODHotReloadInterface()
+		src << "done hot reload of interface!"
 
 /mob/Stat()
 	if (statpanel("Status"))

@@ -4,7 +4,7 @@
 
 **This project is currently in early stages.** Expect bugs, missing features, and a lack of quality-of-life enhancements. Set your expectations accordingly.
 
-All parts of OpenDream should work fine on Windows and Linux, though the latter is not used as much and therefore isn't as thoroughly tested.
+All parts of OpenDream should work fine on Windows and Linux, though variability in Linux distributions makes it slightly less likely to work out of the box.
 
 For more information or if you'd like to contribute, join our [Discord server](https://discord.gg/UScStz6hnQ).
 

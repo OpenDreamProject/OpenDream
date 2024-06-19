@@ -300,7 +300,27 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.Length, DMOpcodeHandlers.Length},
             {DreamProcOpcode.GetDir, DMOpcodeHandlers.GetDir},
             {DreamProcOpcode.DebuggerBreakpoint, DMOpcodeHandlers.DebuggerBreakpoint},
-            {DreamProcOpcode.Rgb, DMOpcodeHandlers.Rgb}
+            {DreamProcOpcode.Rgb, DMOpcodeHandlers.Rgb},
+            // Peephole optimizer opcode handlers
+            {DreamProcOpcode.PushRefandJumpIfNotNull, DMOpcodeHandlers.PushReferenceAndJumpIfNotNull},
+            {DreamProcOpcode.NullRef, DMOpcodeHandlers.NullRef},
+            {DreamProcOpcode.AssignPop, DMOpcodeHandlers.AssignPop},
+            {DreamProcOpcode.PushRefAndDereferenceField, DMOpcodeHandlers.PushReferenceAndDereferenceField},
+            {DreamProcOpcode.PushNRefs, DMOpcodeHandlers.PushNRefs},
+            {DreamProcOpcode.PushNFloats, DMOpcodeHandlers.PushNFloats},
+            {DreamProcOpcode.PushNStrings, DMOpcodeHandlers.PushNStrings},
+            {DreamProcOpcode.PushNResources, DMOpcodeHandlers.PushNResources},
+            {DreamProcOpcode.PushStringFloat, DMOpcodeHandlers.PushStringFloat},
+            {DreamProcOpcode.SwitchOnFloat, DMOpcodeHandlers.SwitchOnFloat},
+            {DreamProcOpcode.SwitchOnString, DMOpcodeHandlers.SwitchOnString},
+            {DreamProcOpcode.JumpIfReferenceFalse, DMOpcodeHandlers.JumpIfReferenceFalse},
+            {DreamProcOpcode.PushNOfStringFloats, DMOpcodeHandlers.PushNOfStringFloat},
+            {DreamProcOpcode.CreateListNFloats, DMOpcodeHandlers.CreateListNFloats},
+            {DreamProcOpcode.CreateListNStrings, DMOpcodeHandlers.CreateListNStrings},
+            {DreamProcOpcode.CreateListNRefs, DMOpcodeHandlers.CreateListNRefs},
+            {DreamProcOpcode.CreateListNResources, DMOpcodeHandlers.CreateListNResources},
+            {DreamProcOpcode.JumpIfNotNull, DMOpcodeHandlers.JumpIfNotNull},
+            {DreamProcOpcode.IsTypeDirect, DMOpcodeHandlers.IsTypeDirect},
         };
 
         public static readonly unsafe delegate*<DMProcState, ProcStatus>[] OpcodeHandlers;

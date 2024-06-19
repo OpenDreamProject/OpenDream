@@ -31,6 +31,8 @@ namespace OpenDreamRuntime.Procs.Native {
     /// like filter(), matrix(), etc.
     /// </remarks>
     internal static class DreamProcNativeRoot {
+        private static readonly DreamResourceManager _resourceManager = IoCManager.Resolve<DreamResourceManager>();
+
         [DreamProc("alert")]
         [DreamProcParameter("Usr", Type = DreamValueTypeFlag.DreamObject)]
         [DreamProcParameter("Message", Type = DreamValueTypeFlag.String)]
@@ -73,40 +75,130 @@ namespace OpenDreamRuntime.Procs.Native {
             return await connection.Alert(title, message, button1, button2, button3);
         }
 
+        /* vars:
+
+        animate smoothly:
+
+        alpha
+        color
+        glide_size
+        infra_luminosity
+        layer
+        maptext_width, maptext_height, maptext_x, maptext_y
+        luminosity
+        pixel_x, pixel_y, pixel_w, pixel_z
+        transform
+
+        do not animate smoothly:
+
+        dir
+        icon
+        icon_state
+        invisibility
+        maptext
+        suffix
+
+        */
         [DreamProc("animate")]
         [DreamProcParameter("Object", Type = DreamValueTypeFlag.DreamObject)]
         [DreamProcParameter("time", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("loop", Type = DreamValueTypeFlag.Float)]
-        [DreamProcParameter("easing", Type = DreamValueTypeFlag.String)]
+        [DreamProcParameter("easing", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("flags", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("delay", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("pixel_x", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("pixel_y", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("pixel_z", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("maptext", Type = DreamValueTypeFlag.String)]
+        [DreamProcParameter("maptext_width", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("maptext_height", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("maptext_x", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("maptext_y", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("dir", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("alpha", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("transform", Type = DreamValueTypeFlag.DreamObject)]
         [DreamProcParameter("color", Type = DreamValueTypeFlag.String | DreamValueTypeFlag.DreamObject)]
+        [DreamProcParameter("luminosity", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("infra_luminosity", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("layer", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("glide_size", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("icon", Type = DreamValueTypeFlag.String | DreamValueTypeFlag.DreamObject)]
+        [DreamProcParameter("icon_state", Type = DreamValueTypeFlag.String)]
+        [DreamProcParameter("invisibility", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("suffix", Type = DreamValueTypeFlag.String)]
+        //filter args -dups commented out
+        [DreamProcParameter("size", Type = DreamValueTypeFlag.Float)]
+        //[DreamProcParameter("color", Type = DreamValueTypeFlag.String)]
+        [DreamProcParameter("x", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("y", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("offset", Type = DreamValueTypeFlag.Float)]
+        //[DreamProcParameter("flags", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("border", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("render_source", Type = DreamValueTypeFlag.String)]
+        //[DreamProcParameter("icon", Type = DreamValueTypeFlag.DreamObject)]
+        [DreamProcParameter("space", Type = DreamValueTypeFlag.Float)]
+        //[DreamProcParameter("transform", Type = DreamValueTypeFlag.DreamObject)]
+        [DreamProcParameter("blend_mode", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("density", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("threshold", Type = DreamValueTypeFlag.String)]
+        [DreamProcParameter("factor", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("repeat", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("radius", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("falloff", Type = DreamValueTypeFlag.Float)]
+        //[DreamProcParameter("alpha", Type = DreamValueTypeFlag.Float)]
         public static DreamValue NativeProc_animate(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            // TODO: Leaving out the Object var adds a new step to the previous animation
-            if (!bundle.GetArgument(0, "Object").TryGetValueAsDreamObject<DreamObjectAtom>(out var obj))
+            bool chainAnim = false;
+
+            if (!bundle.GetArgument(0, "Object").TryGetValueAsDreamObject<DreamObject>(out var obj)){
+                if(bundle.LastAnimatedObject is null || bundle.LastAnimatedObject.Value.IsNull)
+                    throw new Exception($"animate() called without an object and no previous object to animate");
+                else if(!bundle.LastAnimatedObject.Value.TryGetValueAsDreamObject<DreamObject>(out obj))
+                    return DreamValue.Null;
+                chainAnim = true;
+            }
+            if(obj.IsSubtypeOf(bundle.ObjectTree.Filter)) {//TODO animate filters
                 return DreamValue.Null;
+            }
+            bundle.LastAnimatedObject = new DreamValue(obj);
             // TODO: Is this the correct behavior for invalid time?
             if (!bundle.GetArgument(1, "time").TryGetValueAsFloat(out float time))
                 return DreamValue.Null;
-            if (bundle.GetArgument(2, "loop").TryGetValueAsInteger(out int loop))
-                return DreamValue.Null; // TODO: Looped animations are not implemented
-            if (bundle.GetArgument(3, "easing").TryGetValueAsInteger(out int easing) && easing != 1) // LINEAR_EASING only
-                return DreamValue.Null; // TODO: Non-linear animation easing types are not implemented"
-            if (bundle.GetArgument(4, "flags").TryGetValueAsInteger(out int flags) && flags != 0)
-                return DreamValue.Null; // TODO: Animation flags are not implemented
 
-            var pixelX = bundle.GetArgument(5, "pixel_x");
-            var pixelY = bundle.GetArgument(6, "pixel_y");
-            var dir = bundle.GetArgument(7, "dir");
+            bundle.GetArgument(2, "loop").TryGetValueAsInteger(out int loop);
+            bundle.GetArgument(3, "easing").TryGetValueAsInteger(out int easing);
+            if(!Enum.IsDefined(typeof(AnimationEasing), easing & ~((int)AnimationEasing.EaseIn | (int)AnimationEasing.EaseOut)))
+                throw new ArgumentOutOfRangeException("easing", easing, $"Invalid easing value in animate(): {easing}");
+            bundle.GetArgument(4, "flags").TryGetValueAsInteger(out int flagsInt);
+            var flags = (AnimationFlags)flagsInt;
+            if((flags & (AnimationFlags.AnimationParallel | AnimationFlags.AnimationContinue)) != 0)
+                chainAnim = true;
+            if((flags & AnimationFlags.AnimationEndNow) != 0)
+                chainAnim = false;
+            bundle.GetArgument(5, "delay").TryGetValueAsInteger(out int delay);
 
-            bundle.AtomManager.AnimateAppearance(obj, TimeSpan.FromMilliseconds(time * 100), appearance => {
+            var pixelX = bundle.GetArgument(6, "pixel_x");
+            var pixelY = bundle.GetArgument(7, "pixel_y");
+            var pixelZ = bundle.GetArgument(8, "pixel_z");
+            var maptext = bundle.GetArgument(9, "maptext");
+            var maptextWidth = bundle.GetArgument(10, "maptext_width");
+            var maptextHeight = bundle.GetArgument(11, "maptext_height");
+            var maptextX = bundle.GetArgument(12, "maptext_x");
+            var maptextY = bundle.GetArgument(13, "maptext_y");
+            var dir = bundle.GetArgument(14, "dir");
+            var alpha = bundle.GetArgument(15, "alpha");
+            var transform = bundle.GetArgument(16, "transform");
+            var color = bundle.GetArgument(17, "color");
+            var luminosity = bundle.GetArgument(18, "luminosity");
+            var infraLuminosity = bundle.GetArgument(19, "infra_luminosity");
+            var layer = bundle.GetArgument(20, "layer");
+            var glideSize = bundle.GetArgument(21, "glide_size");
+            var icon = bundle.GetArgument(22, "icon");
+            var iconState = bundle.GetArgument(23, "icon_state");
+            var invisibility = bundle.GetArgument(24, "invisibility");
+            var suffix = bundle.GetArgument(25, "suffix");
+
+            bundle.AtomManager.AnimateAppearance(obj, TimeSpan.FromMilliseconds(time * 100), (AnimationEasing)easing, loop, flags, delay, chainAnim,
+            appearance => {
                 if (!pixelX.IsNull) {
                     obj.SetVariableValue("pixel_x", pixelX);
                     pixelX.TryGetValueAsInteger(out appearance.PixelOffset.X);
@@ -117,13 +209,100 @@ namespace OpenDreamRuntime.Procs.Native {
                     pixelY.TryGetValueAsInteger(out appearance.PixelOffset.Y);
                 }
 
-                if (!dir.IsNull) {
-                    obj.SetVariableValue("dir", dir);
-                    dir.TryGetValueAsInteger(out int dirValue);
-                    appearance.Direction = (AtomDirection)dirValue;
+                /* TODO world.map_format
+                if (!pixelZ.IsNull) {
+                    obj.SetVariableValue("pixel_z", pixelZ);
+                    pixelZ.TryGetValueAsInteger(out appearance.PixelOffset.Z);
+                }
+                */
+
+                /* TODO maptext
+                if (!maptextX.IsNull) {
+                    obj.SetVariableValue("maptext_x", maptextX);
+                    maptextX.TryGetValueAsInteger(out appearance.MapTextOffset.X);
                 }
 
-                // TODO: Rest of the animatable vars
+                if (!maptextY.IsNull) {
+                    obj.SetVariableValue("maptext_y", maptextY);
+                    maptextY.TryGetValueAsInteger(out appearance.MapTextOffset.Y);
+                }
+                */
+
+                if (!dir.IsNull) {
+                    obj.SetVariableValue("dir", dir);
+                    if(dir.TryGetValueAsInteger(out int dirValue))
+                        appearance.Direction = (AtomDirection)dirValue;
+                }
+
+                if (!alpha.IsNull) {
+                    obj.SetVariableValue("alpha", alpha);
+                    if(alpha.TryGetValueAsInteger(out var alphaInt))
+                        appearance.Alpha = (byte) Math.Clamp(alphaInt,0,255);
+                }
+
+                if (!transform.IsNull) {
+                    obj.SetVariableValue("transform", transform);
+                    if(transform.TryGetValueAsDreamObject<DreamObjectMatrix>(out var transformObj))
+                        appearance.Transform = DreamObjectMatrix.MatrixToTransformFloatArray(transformObj);
+                }
+
+                if (!color.IsNull) {
+                    obj.SetVariableValue("color", color);
+                    if(color.TryGetValueAsString(out var colorStr))
+                        Color.TryParse(colorStr, out appearance.Color);
+                    else if (color.TryGetValueAsDreamList(out var colorList)) {
+                        if(DreamProcNativeHelpers.TryParseColorMatrix(colorList, out var colorMatrix))
+                            appearance.ColorMatrix = colorMatrix;
+                    }
+                }
+
+                /* TODO luminosity
+                if (!luminosity.IsNull) {
+                    obj.SetVariableValue("luminosity", luminosity);
+                    luminosity.TryGetValueAsInteger(out appearance.Luminosity);
+                }
+                */
+
+                /* TODO infra_luminosity
+                if (!infraLuminosity.IsNull) {
+                    obj.SetVariableValue("infra_luminosity", infraLuminosity);
+                    infraLuminosity.TryGetValueAsInteger(out appearance.InfraLuminosity);
+                }
+                */
+
+                if (!layer.IsNull) {
+                    obj.SetVariableValue("layer", layer);
+                    layer.TryGetValueAsFloat(out appearance.Layer);
+                }
+
+                if (!glideSize.IsNull) {
+                    obj.SetVariableValue("glide_size", glideSize);
+                    glideSize.TryGetValueAsFloat(out appearance.GlideSize);
+                }
+
+                if (!icon.IsNull) {
+                    obj.SetVariableValue("icon", icon);
+                    if(_resourceManager.TryLoadIcon(icon, out var iconResource))
+                        appearance.Icon = iconResource.Id;
+                }
+
+                if (!iconState.IsNull) {
+                    obj.SetVariableValue("icon_state", iconState);
+                    iconState.TryGetValueAsString(out appearance.IconState);
+                }
+
+                if (!invisibility.IsNull) {
+                    obj.SetVariableValue("invisibility", invisibility);
+                    invisibility.TryGetValueAsInteger(out var invisibilityValue);
+                    appearance.Invisibility = (sbyte)Math.Clamp(invisibilityValue, -127, 127);
+                }
+
+                /* TODO suffix
+                if (!suffix.IsNull) {
+                    obj.SetVariableValue("suffix", suffix);
+                    suffix.TryGetValueAsString(out appearance.Suffix);
+                }
+                */
             });
 
             return DreamValue.Null;
@@ -775,7 +954,8 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Object", Type = DreamValueTypeFlag.DreamObject)]
         [DreamProcParameter("ProcName", Type = DreamValueTypeFlag.String)]
         public static DreamValue NativeProc_hascall(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            if (!bundle.GetArgument(0, "Object").TryGetValueAsDreamObject(out var obj))
+            var arg = bundle.GetArgument(0, "Object");
+            if (arg.IsNull || !arg.TryGetValueAsDreamObject(out var obj))
                 return new DreamValue(0);
             if(!bundle.GetArgument(1, "ProcName").TryGetValueAsString(out var procName))
                 return new DreamValue(0);
@@ -898,15 +1078,10 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Loc1", Type = DreamValueTypeFlag.DreamObject)]
         public static DreamValue NativeProc_isloc(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             foreach (var arg in bundle.Arguments) {
-                if (!arg.TryGetValueAsDreamObject(out var loc))
-                    return DreamValue.False;
-                if (loc is null)
-                    return DreamValue.False;
-
-                bool isLoc = loc is DreamObjectMob or DreamObjectTurf or DreamObjectArea ||
-                             loc.IsSubtypeOf(bundle.ObjectTree.Obj);
-
-                if (!isLoc)
+                // The DM reference says "mobs, objs, turfs, or areas"
+                // You might think this excludes /atom/movable, but it does not
+                // So test for any DreamObjectAtom type
+                if (!arg.TryGetValueAsDreamObject<DreamObjectAtom>(out _))
                     return DreamValue.False;
             }
 
@@ -1598,7 +1773,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_orange(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, usr as DreamObjectAtom, bundle.Arguments);
             if (center is null)
-                return DreamValue.Null; // NOTE: Not sure if parity
+                return new DreamValue(bundle.ObjectTree.CreateList());
             DreamList rangeList = bundle.ObjectTree.CreateList(range.Height * range.Width);
             foreach (var turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
                 rangeList.AddValue(new DreamValue(turf));
@@ -1643,7 +1818,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("oviewers")]
         [DreamProcParameter("Depth", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("Center", Type = DreamValueTypeFlag.DreamObject)]
-        public static DreamValue NativeProc_oviewers(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) { //TODO: View obstruction (dense turfs)
+        public static DreamValue NativeProc_oviewers(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) { //TODO: Change depending on center
             DreamValue depthValue = new DreamValue(5);
             DreamObjectAtom? center = null;
 
@@ -1680,8 +1855,25 @@ namespace OpenDreamRuntime.Procs.Native {
                 if (mob.X == centerPos.X && mob.Y == centerPos.Y)
                     continue;
 
-                if (Math.Abs(centerPos.X - mob.X) <= depth && Math.Abs(centerPos.Y - mob.Y) <= depth) {
-                    view.AddValue(new DreamValue(mob));
+                if (Math.Abs(centerPos.X - mob.X) <= depth && Math.Abs(centerPos.Y - mob.Y) <= depth && centerPos.Z == mob.Z) {
+                    (_, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, mob, bundle.Arguments);
+                    var eyePos = bundle.AtomManager.GetAtomPosition(mob);
+                    var viewData = DreamProcNativeHelpers.CollectViewData(bundle.AtomManager, bundle.MapManager, eyePos, range);
+
+                    ViewAlgorithm.CalculateVisibility(viewData);
+
+                    for (int x = 0; x < viewData.GetLength(0); x++) {
+                        for (int y = 0; y < viewData.GetLength(1); y++) {
+                            var tile = viewData[x, y];
+                            if (tile == null || tile.IsVisible == false)
+                                continue;
+
+                            if (centerPos.X == eyePos.X + tile.DeltaX && eyePos.Y + tile.DeltaY == centerPos.Y) {
+                                view.AddValue(new DreamValue(mob));
+                                break;
+                            }
+                        }
+                    }
                 }
             }
 
@@ -1792,7 +1984,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_range(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, usr as DreamObjectAtom, bundle.Arguments);
             if (center is null)
-                return DreamValue.Null; // NOTE: Not sure if parity
+                return new DreamValue(bundle.ObjectTree.CreateList());
             DreamList rangeList = bundle.ObjectTree.CreateList(range.Height * range.Width);
             //Have to include centre
             rangeList.AddValue(new DreamValue(center));
@@ -1968,7 +2160,7 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("rgb2num")]
-        [DreamProcParameter("color", Type = DreamValueTypeFlag.String)]
+        [DreamProcParameter("color", Type = DreamValueTypeFlag.String, DefaultValue = "#FFFFFF")]
         [DreamProcParameter("space", Type = DreamValueTypeFlag.Float, DefaultValue = 0)] // Same value as COLORSPACE_RGB
         public static DreamValue NativeProc_rgb2num(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             if(!bundle.GetArgument(0, "color").TryGetValueAsString(out var color)) {
@@ -2851,17 +3043,15 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("viewers")]
         [DreamProcParameter("Depth", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("Center", Type = DreamValueTypeFlag.DreamObject)]
-        public static DreamValue NativeProc_viewers(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) { //TODO: View obstruction (dense turfs)
+        public static DreamValue NativeProc_viewers(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) { //TODO: Change depending on center
             DreamValue depthValue = new DreamValue(5);
-            DreamObject? center = null;
+            DreamObjectAtom? center = null;
 
             //Arguments are optional and can be passed in any order
             if (bundle.Arguments.Length > 0) {
                 DreamValue firstArgument = bundle.GetArgument(0, "Depth");
 
-                if (firstArgument.TryGetValueAsDreamObject(out var firstObj)) {
-                    center = firstObj;
-
+                if (firstArgument.TryGetValueAsDreamObject(out center)) {
                     if (bundle.Arguments.Length > 1) {
                         depthValue = bundle.GetArgument(1, "Center");
                     }
@@ -2874,22 +3064,38 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
             }
 
-            center ??= usr;
+            center ??= usr as DreamObjectAtom;
 
             DreamList view = bundle.ObjectTree.CreateList();
             if (center == null)
                 return new(view);
 
-            int centerX = center.GetVariable("x").MustGetValueAsInteger();
-            int centerY = center.GetVariable("y").MustGetValueAsInteger();
+            var centerPos = bundle.AtomManager.GetAtomPosition(center);
             if (!depthValue.TryGetValueAsInteger(out var depth))
                 depth = 5; //TODO: Default to world.view
 
             foreach (var atom in bundle.AtomManager.EnumerateAtoms(bundle.ObjectTree.Mob)) {
                 var mob = (DreamObjectMob)atom;
 
-                if (Math.Abs(centerX - mob.X) <= depth && Math.Abs(centerY - mob.Y) <= depth) {
-                    view.AddValue(new DreamValue(mob));
+                if (Math.Abs(centerPos.X - mob.X) <= depth && Math.Abs(centerPos.Y - mob.Y) <= depth && centerPos.Z == mob.Z) {
+                    (_, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, mob, bundle.Arguments);
+                    var eyePos = bundle.AtomManager.GetAtomPosition(mob);
+                    var viewData = DreamProcNativeHelpers.CollectViewData(bundle.AtomManager, bundle.MapManager, eyePos, range);
+
+                    ViewAlgorithm.CalculateVisibility(viewData);
+
+                    for (int x = 0; x < viewData.GetLength(0); x++) {
+                        for (int y = 0; y < viewData.GetLength(1); y++) {
+                            var tile = viewData[x, y];
+                            if (tile == null || tile.IsVisible == false)
+                                continue;
+
+                            if (centerPos.X == eyePos.X + tile.DeltaX && eyePos.Y + tile.DeltaY == centerPos.Y) {
+                                view.AddValue(new DreamValue(mob));
+                                break;
+                            }
+                        }
+                    }
                 }
             }
 

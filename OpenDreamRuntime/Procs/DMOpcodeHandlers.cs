@@ -2434,6 +2434,11 @@ namespace OpenDreamRuntime.Procs {
         #region Helpers
         [SuppressMessage("ReSharper", "CompareOfFloatsByEqualityOperator")]
         private static bool IsEqual(DreamValue first, DreamValue second) {
+            // null should only ever be equal to null
+            if (first.IsNull) return second.IsNull;
+            if (second.IsNull) return false; // If this were ever true the above condition would have handled it
+
+            // Now we don't have to worry about null for the rest of this method
             switch (first.Type) {
                 case DreamValue.DreamValueType.DreamObject: {
                     DreamObject? firstValue = first.MustGetValueAsDreamObject();
@@ -2612,9 +2617,9 @@ namespace OpenDreamRuntime.Procs {
         }
 
         private static DreamValue ModulusValues(DreamValue first, DreamValue second) {
-            if (first.TryGetValueAsFloat(out var firstFloat) || first.IsNull) {
-                if (second.TryGetValueAsFloat(out var secondFloat)) {
-                    return new DreamValue(firstFloat % secondFloat);
+            if (first.TryGetValueAsInteger(out var firstInt) || first.IsNull) {
+                if (second.TryGetValueAsInteger(out var secondInt)) {
+                    return new DreamValue(firstInt % secondInt);
                 }
             }
 
@@ -2779,5 +2784,248 @@ namespace OpenDreamRuntime.Procs {
             return new DreamValue(iconObj);
         }
         #endregion Helpers
+
+        #region Peephole Optimizations
+
+        public static ProcStatus PushReferenceAndJumpIfNotNull(DMProcState state) {
+            DreamReference reference = state.ReadReference();
+            int jumpTo = state.ReadInt();
+
+            DreamValue value = state.GetReferenceValue(reference);
+
+            if (!value.IsNull) {
+                state.Push(value);
+                state.Jump(jumpTo);
+            } else {
+                state.Push(DreamValue.Null);
+            }
+
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus NullRef(DMProcState state) {
+            state.AssignReference(state.ReadReference(), DreamValue.Null);
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus AssignPop(DMProcState state) {
+            DreamReference reference = state.ReadReference();
+            DreamValue value = state.Pop();
+
+            state.AssignReference(reference, value);
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus PushReferenceAndDereferenceField(DMProcState state) {
+            DreamReference reference = state.ReadReference();
+            string fieldName = state.ReadString();
+
+            DreamValue owner = state.GetReferenceValue(reference);
+            state.Push(state.DereferenceField(owner, fieldName));
+
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus PushNStrings(DMProcState state) {
+            int count = state.ReadInt();
+
+            for (int i = 0; i < count; i++) {
+                string str = state.ReadString();
+
+                state.Push(new DreamValue(str));
+            }
+
+
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus PushNFloats(DMProcState state) {
+            int count = state.ReadInt();
+
+            for (int i = 0; i < count; i++) {
+                float flt = state.ReadFloat();
+
+                state.Push(new DreamValue(flt));
+            }
+
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus PushNRefs(DMProcState state) {
+            int count = state.ReadInt();
+
+            for (int i = 0; i < count; i++) {
+                DreamReference reference = state.ReadReference();
+
+                state.Push(state.GetReferenceValue(reference));
+            }
+
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus PushNResources(DMProcState state) {
+            int count = state.ReadInt();
+
+            for (int i = 0; i < count; i++) {
+                string resourcePath = state.ReadString();
+                state.Push(new DreamValue(state.Proc.DreamResourceManager.LoadResource(resourcePath)));
+            }
+
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus PushStringFloat(DMProcState state) {
+            string str = state.ReadString();
+            float flt = state.ReadFloat();
+
+            state.Push(new DreamValue(str));
+            state.Push(new DreamValue(flt));
+
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus JumpIfReferenceFalse(DMProcState state) {
+            DreamReference reference = state.ReadReference();
+            int jumpTo = state.ReadInt();
+
+            DreamValue value = state.GetReferenceValue(reference);
+
+            if (!value.IsTruthy()) {
+                state.Jump(jumpTo);
+            }
+
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus SwitchOnFloat(DMProcState state) {
+            float testValue = state.ReadFloat();
+            int casePosition = state.ReadInt();
+            var test = state.Pop();
+            if (test.TryGetValueAsFloat(out var value)) {
+                if (testValue == value) {
+                    state.Jump(casePosition);
+                } else {
+                    state.Push(test);
+                }
+            } else {
+                state.Push(test);
+            }
+
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus SwitchOnString(DMProcState state) {
+            string testValue = state.ReadString();
+            int casePosition = state.ReadInt();
+            var test = state.Pop();
+            if (test.TryGetValueAsString(out var value)) {
+                if (testValue.Equals(value)) {
+                    state.Jump(casePosition);
+                } else {
+                    state.Push(test);
+                }
+            } else {
+                state.Push(test);
+            }
+
+            return ProcStatus.Continue;
+        }
+
+
+        public static ProcStatus PushNOfStringFloat(DMProcState state) {
+            int count = state.ReadInt();
+
+            for (int i = 0; i < count; i++) {
+                string str = state.ReadString();
+                float flt = state.ReadFloat();
+
+                state.Push(new DreamValue(str));
+                state.Push(new DreamValue(flt));
+            }
+
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus CreateListNFloats(DMProcState state) {
+            int size = state.ReadInt();
+            var list = state.Proc.ObjectTree.CreateList(size);
+
+            for (int i = 0; i < size; i++) {
+                float flt = state.ReadFloat();
+
+                list.AddValue(new DreamValue(flt));
+            }
+
+            state.Push(new DreamValue(list));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus CreateListNStrings(DMProcState state) {
+            int size = state.ReadInt();
+            var list = state.Proc.ObjectTree.CreateList(size);
+
+            for (int i = 0; i < size; i++) {
+                string str = state.ReadString();
+
+                list.AddValue(new DreamValue(str));
+            }
+
+            state.Push(new DreamValue(list));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus CreateListNRefs(DMProcState state) {
+            int size = state.ReadInt();
+            var list = state.Proc.ObjectTree.CreateList(size);
+
+            for (int i = 0; i < size; i++) {
+                DreamReference reference = state.ReadReference();
+
+                list.AddValue(state.GetReferenceValue(reference));
+            }
+
+            state.Push(new DreamValue(list));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus CreateListNResources(DMProcState state) {
+            int size = state.ReadInt();
+            var list = state.Proc.ObjectTree.CreateList(size);
+
+            for (int i = 0; i < size; i++) {
+                string resourcePath = state.ReadString();
+                list.AddValue(new DreamValue(state.Proc.DreamResourceManager.LoadResource(resourcePath)));
+            }
+
+            state.Push(new DreamValue(list));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus JumpIfNotNull(DMProcState state) {
+            int position = state.ReadInt();
+
+            if (!state.Peek().IsNull) {
+                state.PopDrop();
+                state.Jump(position);
+            }
+
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus IsTypeDirect(DMProcState state) {
+            DreamValue value = state.Pop();
+            int typeId = state.ReadInt();
+            var typeValue = state.Proc.ObjectTree.Types[typeId];
+
+            if (value.TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
+                state.Push(new DreamValue(dreamObject.IsSubtypeOf(typeValue) ? 1 : 0));
+            } else {
+                state.Push(new DreamValue(0));
+            }
+
+            return ProcStatus.Continue;
+        }
+
+        #endregion
     }
 }

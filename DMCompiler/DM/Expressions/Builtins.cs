@@ -128,6 +128,8 @@ internal sealed class LocateInferred(Location location, DreamPath path, DMExpres
 
 // locate(x)
 internal sealed class Locate(Location location, DMExpression path, DMExpression? container) : DMExpression(location) {
+    public override bool PathIsFuzzy => true;
+
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         path.EmitPushValue(dmObject, proc);
 
@@ -206,6 +208,8 @@ internal sealed class Pick(Location location, Pick.PickValue[] values) : DMExpre
             if (values.Length == 1) {
                 DMCompiler.ForcedWarning(Location, "Weighted pick() with one argument");
             }
+
+            DMCompiler.Emit(WarningCode.PickWeightedSyntax, Location, "Use of weighted pick() syntax");
 
             foreach (PickValue pickValue in values) {
                 DMExpression weight = pickValue.Weight ?? DMExpression.Create(dmObject, proc, new DMASTConstantInteger(Location, 100)); //Default of 100

@@ -41,7 +41,7 @@ public sealed class InterfaceMacroSet : InterfaceElement {
         if (descriptor is not MacroDescriptor macroDescriptor)
             throw new ArgumentException($"Attempted to add a {descriptor} to a macro set", nameof(descriptor));
 
-        Macros.Add(macroDescriptor.Id, new InterfaceMacro(_inputContextName, macroDescriptor, _entitySystemManager, _inputManager, _inputContext, _uiManager));
+        Macros.Add(macroDescriptor.Id.AsRaw(), new InterfaceMacro(_inputContextName, macroDescriptor, _entitySystemManager, _inputManager, _inputContext, _uiManager));
     }
 
     public void SetActive() {
@@ -236,7 +236,7 @@ public sealed class InterfaceMacro : InterfaceElement {
         ParsedKeybind parsedKeybind;
 
         try {
-            parsedKeybind = ParsedKeybind.Parse(ElementDescriptor.Name);
+            parsedKeybind = ParsedKeybind.Parse(ElementDescriptor.Name.AsRaw());
         } catch (Exception e) {
             Logger.GetSawmill("opendream.macro").Warning($"Invalid keybind for macro {Id}: {e.Message}");
             return;

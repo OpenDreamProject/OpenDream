@@ -6,5 +6,9 @@
 	// file() does not
 	ASSERT("['data/test.txt']" == "data/test.txt")
 	ASSERT("['data\\test.txt']" == "data/test.txt")
+	ASSERT("['./data/test.txt']" == "data/test.txt")
+	ASSERT("['.\\data\\test.txt']" == "data/test.txt")
 	ASSERT("[file("data/test.txt")]" == "data/test.txt")
+	ASSERT("[file("./data/test.txt")]" == "./data/test.txt")
 	ASSERT("[file("data\\test.txt")]" == "data\\test.txt") // Note the backslash here
+	ASSERT("[file(".\\data\\test.txt")]" == ".\\data\\test.txt") // And here

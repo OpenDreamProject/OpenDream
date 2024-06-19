@@ -278,8 +278,6 @@ namespace DMCompiler.DM.Builders {
                         proc.Attributes &= ~ProcAttributes.HidePopupMenu;
                     else
                         proc.Attributes |= ProcAttributes.HidePopupMenu;
-
-                    DMCompiler.UnimplementedWarning(statementSet.Location, "set popup_menu is not implemented");
                     break;
                 case "instant":
                     if (constant.IsTruthy())
@@ -622,7 +620,7 @@ namespace DMCompiler.DM.Builders {
             if (implicitTypeCheck != null) {
                 if (DMObjectTree.TryGetTypeId(implicitTypeCheck.Value, out var filterTypeId)) {
                     // Create an enumerator that will do the implicit istype() for us
-                    proc.CreateFilteredListEnumerator(filterTypeId);
+                    proc.CreateFilteredListEnumerator(filterTypeId, implicitTypeCheck.Value);
                 } else {
                     DMCompiler.Emit(WarningCode.ItemDoesntExist, outputVar.Location,
                         $"Cannot filter enumeration by type {implicitTypeCheck.Value}, it does not exist");

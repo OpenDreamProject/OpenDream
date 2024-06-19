@@ -185,6 +185,13 @@ namespace OpenDreamRuntime.Procs.Native {
             return DreamValue.Null;
         }
 
+        [DreamProc("ODHotReloadInterface")]
+        public static DreamValue NativeProc_ODHotReloadInterface(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+            var dreamManager = IoCManager.Resolve<DreamManager>();
+            dreamManager.HotReloadInterface();
+            return DreamValue.Null;
+        }
+
         /// <summary>
         /// Determines the specified configuration space and configuration set in a config_set argument
         /// </summary>

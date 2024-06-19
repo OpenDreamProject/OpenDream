@@ -1,6 +1,7 @@
 using System.Linq;
 using OpenDreamShared.Network.Messages;
 using OpenDreamClient.Input;
+using OpenDreamClient.Interface.Controls.UI;
 using OpenDreamClient.Interface.Descriptors;
 using OpenDreamClient.Interface.Html;
 using OpenDreamShared.Dream;
@@ -68,7 +69,7 @@ internal sealed class StatPanel : InfoPanel {
             _nameText.PushTag(new MarkupNode("font", null, null));
             _valueText.PushTag(new MarkupNode("font", null, null));
 
-            if (_owner.InfoDescriptor.AllowHtml) {
+            if (_owner.InfoDescriptor.AllowHtml.Value) {
                 // TODO: Look into using RobustToolbox's markup parser once it's customizable enough
                 HtmlParser.Parse(name, _nameText);
                 HtmlParser.Parse(value, _valueText);
@@ -219,7 +220,7 @@ public sealed class ControlInfo : InterfaceControl {
             }
         };
 
-        if(ControlDescriptor.IsVisible)
+        if(ControlDescriptor.IsVisible.Value)
             OnShowEvent();
         else
             OnHideEvent();
@@ -316,15 +317,15 @@ public sealed class ControlInfo : InterfaceControl {
 
     public void OnShowEvent() {
         ControlDescriptorInfo controlDescriptor = (ControlDescriptorInfo)ControlDescriptor;
-        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnShowCommand)) {
-            _interfaceManager.RunCommand(controlDescriptor.OnShowCommand);
+        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnShowCommand.Value)) {
+            _interfaceManager.RunCommand(controlDescriptor.OnShowCommand.AsRaw());
         }
     }
 
     public void OnHideEvent() {
         ControlDescriptorInfo controlDescriptor = (ControlDescriptorInfo)ControlDescriptor;
-        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnHideCommand)) {
-            _interfaceManager.RunCommand(controlDescriptor.OnHideCommand);
+        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnHideCommand.Value)) {
+            _interfaceManager.RunCommand(controlDescriptor.OnHideCommand.AsRaw());
         }
     }
 }

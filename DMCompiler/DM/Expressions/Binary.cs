@@ -10,6 +10,7 @@ internal abstract class BinaryOp(Location location, DMExpression lhs, DMExpressi
     protected DMExpression RHS { get; } = rhs;
 
     public override DMComplexValueType ValType => LHS.ValType;
+    public override bool PathIsFuzzy => true;
 }
 
 #region Simple

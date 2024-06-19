@@ -83,6 +83,9 @@ namespace OpenDreamRuntime {
                     return (_verbDesc != null) ? new DreamValue(_verbDesc) : DreamValue.Null;
                 case "invisibility":
                     return new DreamValue(Invisibility);
+                case "hidden":
+                    Logger.GetSawmill("opendream.dmproc").Warning("The 'hidden' field on verbs will always return null.");
+                    return DreamValue.Null;
                 default:
                     throw new Exception($"Cannot get field \"{field}\" from {OwningType.ToString()}.{Name}()");
             }
@@ -190,6 +193,11 @@ namespace OpenDreamRuntime {
 
         // The amount of stack frames containing `WaitFor = false`
         private int _syncCount = 0;
+
+        /// <summary>
+        /// Stores the last object that was animated, so that animate() can be called without the object parameter. Does not need to be passed to spawn calls, only current execution context.
+        /// </summary>
+        public DreamValue? LastAnimatedObject = null;
 
         public string Name { get; }
 

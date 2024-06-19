@@ -289,7 +289,7 @@ public sealed class AtomManager {
             case "invisibility":
                 value.TryGetValueAsInteger(out int vis);
                 vis = Math.Clamp(vis, -127, 127); // DM ref says [0, 101]. BYOND compiler says [-127, 127]
-                appearance.Invisibility = vis;
+                appearance.Invisibility = (sbyte)vis;
                 break;
             case "opacity":
                 value.TryGetValueAsInteger(out var opacity);
@@ -488,9 +488,9 @@ public sealed class AtomManager {
         }
     }
 
-    public void AnimateAppearance(DreamObjectAtom atom, TimeSpan duration, Action<IconAppearance> animate) {
+    public void AnimateAppearance(DreamObject atom, TimeSpan duration, AnimationEasing easing, int loop, AnimationFlags flags, int delay, bool chainAnim, Action<IconAppearance> animate) {
         if (atom is not DreamObjectMovable movable)
-            return; //Animating non-movables is unimplemented
+            return; //Animating non-movables is unimplemented TODO: should handle images and maybe filters
 
         IconAppearance appearance = new IconAppearance(movable.SpriteComponent.Appearance);
 
@@ -501,7 +501,7 @@ public sealed class AtomManager {
 
         NetEntity ent = _entityManager.GetNetEntity(movable.Entity);
 
-        AppearanceSystem.Animate(ent, appearance, duration);
+        AppearanceSystem.Animate(ent, appearance, duration, easing, loop, flags, delay, chainAnim);
     }
 
     public bool TryCreateAppearanceFrom(DreamValue value, [NotNullWhen(true)] out IconAppearance? appearance) {

@@ -17,6 +17,7 @@ public static class DreamStylesheet {
         var textureCloseButton = res.GetResource<TextureResource>("/cross.svg.png").Texture;
         var notoSansFont = res.GetResource<FontResource>("/Fonts/NotoSans-Regular.ttf");
         var notoSansBoldFont = res.GetResource<FontResource>("/Fonts/NotoSans-Bold.ttf");
+        var notoSansFont8 = new VectorFont(notoSansFont, 8);
         var notoSansFont10 = new VectorFont(notoSansFont, 10);
         var notoSansFont12 = new VectorFont(notoSansFont, 12);
         var notoSansBoldFont14 = new VectorFont(notoSansBoldFont, 14);
@@ -155,7 +156,7 @@ public static class DreamStylesheet {
             // DMF ControlButton
             Element<Label>().Class(ControlButton.StyleClassDMFButton)
                 .Prop(Label.StylePropertyAlignMode, Label.AlignMode.Center)
-                .Prop(Label.StylePropertyFont, notoSansFont10),
+                .Prop(Label.StylePropertyFont, notoSansFont8),
 
             // CheckBox unchecked
             Element<TextureRect>().Class(CheckBox.StyleClassCheckBox)

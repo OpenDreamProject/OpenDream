@@ -17,7 +17,7 @@ internal sealed class ControlButton(ControlDescriptor controlDescriptor, Control
         };
 
         _button.OnPressed += OnButtonClick;
-        _button.Label.Margin = new Thickness(0, -4, 0, 0);
+        _button.Label.Margin = new Thickness(0, -2, 0, 0);
         _button.Label.AddStyleClass(StyleClassDMFButton);
 
         return _button;

@@ -1,5 +1,4 @@
 using DMCompiler.Bytecode;
-using System;
 using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Compiler;
 using DMCompiler.Compiler.DM.AST;

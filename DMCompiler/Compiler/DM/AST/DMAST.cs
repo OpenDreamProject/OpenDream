@@ -1,4 +1,3 @@
-using System;
 using DMCompiler.DM;
 
 namespace DMCompiler.Compiler.DM.AST;

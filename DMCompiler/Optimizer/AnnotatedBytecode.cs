@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using DMCompiler.Bytecode;
 using DMCompiler.DM;
 
@@ -119,12 +117,12 @@ internal sealed class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
         if (_location != null) return;
         _location = loc.GetLocation();
     }
-    
+
     public void SetLocation(Location loc) {
         if (_location != null) return;
         _location = loc;
     }
-    
+
     public Location GetLocation() {
         return _location ?? Location;
     }

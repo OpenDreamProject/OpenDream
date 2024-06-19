@@ -1044,7 +1044,7 @@ namespace OpenDreamRuntime.Procs {
 
                 state.Push(new(firstFloat / secondFloat));
             } else if (first.TryGetValueAsDreamObject<DreamObject>(out var firstDreamObject)) {
-                ProcStatus result = firstDreamObject!.OperatorMultiply(second, state, out DreamValue maybeOutput);
+                ProcStatus result = firstDreamObject.OperatorMultiply(second, state, out DreamValue maybeOutput);
                 if (result == ProcStatus.Continue) {
                     state.Push(maybeOutput);
                 } else {

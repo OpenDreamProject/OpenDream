@@ -265,8 +265,6 @@ public sealed class DreamMapManager : IDreamMapManager {
                             foreach (var movableToDelete in deleteCell.Movables) {
                                 movableToDelete.Delete();
                             }
-
-
                         } else {
                             existingLevel.Cells[x - 1, y - 1] = oldCells[x - 1, y - 1];
                         }

@@ -409,6 +409,7 @@ namespace OpenDreamRuntime.Objects {
                 if(!AssignRefProcState.Pool.TryPop(out var operatorProcState)){
                     operatorProcState = new AssignRefProcState();
                 }
+
                 operatorProcState.Initialize(state, proc, this, state.Usr, new DreamProcArguments(b), reference);
                 state.Thread.PushProcState(operatorProcState);
                 result = DreamValue.Null;
@@ -417,6 +418,7 @@ namespace OpenDreamRuntime.Objects {
                 if(!AssignRefProcState.Pool.TryPop(out var operatorProcState)){
                     operatorProcState = new AssignRefProcState();
                 }
+
                 operatorProcState.Initialize(state, multiplyProc, this, state.Usr, new DreamProcArguments(b), reference);
                 state.Thread.PushProcState(operatorProcState);
                 result = DreamValue.Null;
@@ -444,6 +446,7 @@ namespace OpenDreamRuntime.Objects {
                 if(!AssignRefProcState.Pool.TryPop(out var operatorProcState)){
                     operatorProcState = new AssignRefProcState();
                 }
+
                 operatorProcState.Initialize(state, proc, this, state.Usr, new DreamProcArguments(b), reference);
                 state.Thread.PushProcState(operatorProcState);
                 result = DreamValue.Null;
@@ -452,6 +455,7 @@ namespace OpenDreamRuntime.Objects {
                 if(!AssignRefProcState.Pool.TryPop(out var operatorProcState)){
                     operatorProcState = new AssignRefProcState();
                 }
+
                 operatorProcState.Initialize(state, divideProc, this, state.Usr, new DreamProcArguments(b), reference);
                 state.Thread.PushProcState(operatorProcState);
                 result = DreamValue.Null;

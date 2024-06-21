@@ -2,8 +2,10 @@ using System.Text;
 using OpenDreamRuntime.Objects;
 
 namespace OpenDreamRuntime.Procs;
+
 internal sealed class AssignRefProcState : ProcState {
     public static readonly Stack<AssignRefProcState> Pool = new();
+
     private enum Stage {
         // Call the associated proc
         Call,
@@ -36,7 +38,6 @@ internal sealed class AssignRefProcState : ProcState {
         _stage = Stage.Call;
         _assignRef = assignRef;
     }
-
 
     public override void AppendStackFrame(StringBuilder builder) {
         builder.AppendLine($"Operator overload: {_overloadProc}");

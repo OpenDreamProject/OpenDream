@@ -215,7 +215,7 @@ internal sealed class DreamViewOverlay : Overlay {
             if ((icon.Appearance.AppearanceFlags & AppearanceFlags.ResetTransform) != 0 || keepTogether) //RESET_TRANSFORM
                 current.TransformToApply = iconAppearanceTransformMatrix;
             else
-                current.TransformToApply = parentIcon.TransformToApply;
+                current.TransformToApply = iconAppearanceTransformMatrix * parentIcon.TransformToApply;
 
             if ((icon.Appearance.Plane < -10000)) //FLOAT_PLANE - Note: yes, this really is how it works. Yes it's dumb as shit.
                 current.Plane = parentIcon.Plane + (icon.Appearance.Plane + 32767);
@@ -267,6 +267,7 @@ internal sealed class DreamViewOverlay : Overlay {
                 renderTargetPlaceholder.AlphaToApply = current.AlphaToApply;
                 renderTargetPlaceholder.BlendMode = current.BlendMode;
             }
+
             renderTargetPlaceholder.AppearanceFlags = current.AppearanceFlags;
             current.AppearanceFlags &= ~AppearanceFlags.PlaneMaster; //only the placeholder should be marked as master
             result.Add(renderTargetPlaceholder);

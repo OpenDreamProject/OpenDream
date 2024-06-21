@@ -74,10 +74,29 @@ internal sealed class PeepholeOptimizer {
         OptimizationTreeEntry? currentOpt = null;
         int optSize = 0;
 
+        int AttemptCurrentOpt(int i) {
+            if (currentOpt == null)
+                return 0;
+
+            int offset;
+
+            if (currentOpt.Optimization?.CheckPreconditions(input, i - optSize) is true) {
+                currentOpt.Optimization.Apply(input, i - optSize);
+                offset = (optSize + 1); // Run over the new opcodes for potential further optimization
+            } else {
+                // This chain of opcodes did not lead to a valid optimization.
+                // Start again from the opcode after the first.
+                offset = optSize;
+            }
+
+            currentOpt = null;
+            return offset;
+        }
+
         for (int i = 0; i < input.Count; i++) {
             var bytecode = input[i];
             if (bytecode is not AnnotatedBytecodeInstruction instruction) {
-                currentOpt = null;
+                i -= AttemptCurrentOpt(i);
                 continue;
             }
 
@@ -95,16 +114,9 @@ internal sealed class PeepholeOptimizer {
                 continue;
             }
 
-            if (currentOpt.Optimization?.CheckPreconditions(input, i - optSize) is true) {
-                currentOpt.Optimization.Apply(input, i - optSize);
-                i -= (optSize + 1); // Run over the new opcodes for potential further optimization
-            } else {
-                // This chain of opcodes did not lead to a valid optimization.
-                // Start again from the opcode after the first.
-                i -= optSize;
-            }
-
-            currentOpt = null;
+            i -= AttemptCurrentOpt(i);
         }
+
+        AttemptCurrentOpt(input.Count);
     }
 }

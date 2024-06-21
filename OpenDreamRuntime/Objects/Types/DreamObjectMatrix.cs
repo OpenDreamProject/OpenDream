@@ -182,6 +182,7 @@ public sealed class DreamObjectMatrix : DreamObject {
                 throw new ArgumentException("Matrix does not have a valid inversion for Invert()");
             return OperatorMultiply(new(rightCopy), state, out result); //returns ProcStatus.Continue, so the assignref can be handled in the opcode
         }
+
         return base.OperatorDivide(b, state, out result);
     }
 

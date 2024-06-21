@@ -53,7 +53,8 @@ public sealed class DreamObjectMatrix : DreamObject {
     }
 
     #region Operators
-    public override DreamValue OperatorAdd(DreamValue b) {
+
+    public override ProcStatus OperatorAdd(DreamValue b, DMProcState state, out DreamValue result) {
         GetVariable("a").TryGetValueAsFloat(out float lA);
         GetVariable("b").TryGetValueAsFloat(out float lB);
         GetVariable("c").TryGetValueAsFloat(out float lC);
@@ -78,13 +79,14 @@ public sealed class DreamObjectMatrix : DreamObject {
                 lF + rF  // f
             );
 
-            return new DreamValue(output);
+            result = new DreamValue(output);
+            return ProcStatus.Continue;
         }
 
-        return base.OperatorAdd(b);
+        return base.OperatorAdd(b, state, out result);
     }
 
-    public override DreamValue OperatorSubtract(DreamValue b) {
+    public override ProcStatus OperatorSubtract(DreamValue b, DMProcState state, out DreamValue result) {
         GetVariable("a").TryGetValueAsFloat(out float lA);
         GetVariable("b").TryGetValueAsFloat(out float lB);
         GetVariable("c").TryGetValueAsFloat(out float lC);
@@ -109,13 +111,14 @@ public sealed class DreamObjectMatrix : DreamObject {
                 lF - rF  // f
             );
 
-            return new DreamValue(output);
+            result = new DreamValue(output);
+            return ProcStatus.Continue;
         }
 
-        return base.OperatorSubtract(b);
+        return base.OperatorSubtract(b, state, out result);
     }
 
-    public override DreamValue OperatorMultiply(DreamValue b) {
+    public override ProcStatus OperatorMultiply(DreamValue b, DMProcState state, out DreamValue result) {
         GetVariable("a").TryGetValueAsFloat(out float lA);
         GetVariable("b").TryGetValueAsFloat(out float lB);
         GetVariable("c").TryGetValueAsFloat(out float lC);
@@ -128,7 +131,8 @@ public sealed class DreamObjectMatrix : DreamObject {
                     lA * bFloat,lB * bFloat,lC * bFloat,
                     lD * bFloat,lE * bFloat,lF * bFloat
                 );
-            return new(output);
+            result = new DreamValue(output);
+            return ProcStatus.Continue;
         } else if (b.TryGetValueAsDreamObject<DreamObjectMatrix>(out var right)) {
             right.GetVariable("a").TryGetValueAsFloat(out float rA);
             right.GetVariable("b").TryGetValueAsFloat(out float rB);
@@ -146,10 +150,11 @@ public sealed class DreamObjectMatrix : DreamObject {
                 rC * lD + rF * lE + lF // f
             );
 
-            return new(output);
+            result = new DreamValue(output);
+            return ProcStatus.Continue;
         }
 
-        return base.OperatorMultiply(b);
+        return base.OperatorMultiply(b, state, out result);
     }
 
     public override DreamValue OperatorEquivalent(DreamValue b) {

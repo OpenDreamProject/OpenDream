@@ -95,6 +95,7 @@ namespace OpenDreamClient.Resources {
                 DreamResource resource;
                 if(_resourceCache.ContainsKey(message.ResourceId)){
                     _resourceCache[message.ResourceId].UpdateData(message.ResourceData); //we update instead of replacing so we don't have to replace the handle in everything that uses it
+                    _resourceCache[message.ResourceId].onUpdateCallbacks.ForEach(cb => cb.Invoke());
                     resource = _resourceCache[message.ResourceId];
                 } else {
                     resource = LoadResourceFromData(

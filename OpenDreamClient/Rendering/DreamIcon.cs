@@ -62,6 +62,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
     public void Dispose() {
         _ping?.Dispose();
         _pong?.Dispose();
+        DMI?.onUpdateCallbacks.Remove(DirtyTexture);
     }
 
     public Texture? GetTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData, Texture? textureOverride = null) {
@@ -408,7 +409,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
         } else {
             IoCManager.Resolve<IDreamResourceManager>().LoadResourceAsync<DMIResource>(Appearance.Icon.Value, dmi => {
                 if (dmi.Id != Appearance.Icon) return; //Icon changed while resource was loading
-
+                dmi.onUpdateCallbacks.Add(DirtyTexture);
                 DMI = dmi;
                 _animationFrame = 0;
                 _animationFrameTime = gameTiming.CurTime;

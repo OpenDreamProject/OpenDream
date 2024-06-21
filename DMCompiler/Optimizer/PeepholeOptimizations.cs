@@ -90,6 +90,27 @@ internal sealed class PushField : IPeepholeOptimization {
 }
 
 // PushReferenceValue [ref]
+// Return
+// -> ReturnReferenceValue [ref]
+internal class ReturnReferenceValue : IPeepholeOptimization {
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.PushReferenceValue,
+            DreamProcOpcode.Return
+        ];
+    }
+
+    public void Apply(List<IAnnotatedBytecode> input, int index) {
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
+        AnnotatedBytecodeReference? pushVal = (firstInstruction.GetArgs()[0] as AnnotatedBytecodeReference);
+        input.RemoveRange(index, 2);
+        input.Insert(index,
+            new AnnotatedBytecodeInstruction(DreamProcOpcode.ReturnReferenceValue,
+                new List<IAnnotatedBytecode> { pushVal }));
+    }
+}
+
+// PushReferenceValue [ref]
 // JumpIfFalse [label]
 // -> JumpIfReferenceFalse [ref] [label]
 internal sealed class JumpIfReferenceFalse : IPeepholeOptimization {

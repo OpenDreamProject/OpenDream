@@ -157,6 +157,34 @@ public sealed class DreamObjectMatrix : DreamObject {
         return base.OperatorMultiply(b, state, out result);
     }
 
+    public override ProcStatus OperatorMultiplyRef(DreamValue b, DMProcState state, out DreamValue result, in DreamReference reference) {
+        return OperatorMultiply(b, state, out result); //returns ProcStatus.Continue, so the assignref can be handled in the opcode
+    }
+
+    public override ProcStatus OperatorDivide(DreamValue b, DMProcState state, out DreamValue result) {
+        GetVariable("a").TryGetValueAsFloat(out float lA);
+        GetVariable("b").TryGetValueAsFloat(out float lB);
+        GetVariable("c").TryGetValueAsFloat(out float lC);
+        GetVariable("d").TryGetValueAsFloat(out float lD);
+        GetVariable("e").TryGetValueAsFloat(out float lE);
+        GetVariable("f").TryGetValueAsFloat(out float lF);
+
+        if (b.TryGetValueAsFloat(out float bFloat)) {
+            DreamObjectMatrix output = MakeMatrix(ObjectTree,
+                    lA / bFloat,lB / bFloat,lC / bFloat,
+                    lD / bFloat,lE / bFloat,lF / bFloat
+                );
+            result = new DreamValue(output);
+            return ProcStatus.Continue;
+        } //matrix divided by matrix isn't a thing
+
+        return base.OperatorDivide(b, state, out result);
+    }
+
+    public override ProcStatus OperatorDivideRef(DreamValue b, DMProcState state, out DreamValue result, in DreamReference reference) {
+        return OperatorDivide(b, state, out result); //returns ProcStatus.Continue, so the assignref can be handled in the opcode
+    }
+
     public override DreamValue OperatorEquivalent(DreamValue b) {
         if (!b.TryGetValueAsDreamObject<DreamObjectMatrix>(out var right))
             return DreamValue.False;

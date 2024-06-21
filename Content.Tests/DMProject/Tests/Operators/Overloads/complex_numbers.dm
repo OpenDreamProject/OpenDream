@@ -28,6 +28,12 @@
 			return new /datum/complex(a*C, b*C)
 		else
 			return new /datum/complex((src.a * C.a) - (src.b * C.b), (src.a * C.b) + (src.b * C.a))
+
+	proc/operator/=(datum/complex/C)
+		if(isnum(C))
+			return new /datum/complex(a/C, b/C)
+		else
+			return new /datum/complex((src.a * C.a) - (src.b * C.b), (src.a * C.b) + (src.b * C.a))
 	
 	proc/operator|(datum/complex/C)
 		//nonsense, used for testing
@@ -79,4 +85,10 @@
 	ASSERT(result.a == 10 && result.b == -2)
 	//|
 	result = A | B
+	ASSERT(result.a == 3 && result.b == -1)
+
+	result *= 2
+	ASSERT(result.a == 6 && result.b == -2)
+
+	result /= 2
 	ASSERT(result.a == 3 && result.b == -1)

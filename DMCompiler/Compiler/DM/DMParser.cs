@@ -148,7 +148,9 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_Plus,
             TokenType.DM_Minus,
             TokenType.DM_Star,
+            TokenType.DM_StarEquals,
             TokenType.DM_Slash,
+            TokenType.DM_SlashEquals,
             TokenType.DM_Bar,
         ];
 

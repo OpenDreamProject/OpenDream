@@ -176,8 +176,12 @@ public sealed class DreamObjectMatrix : DreamObject {
                 );
             result = new DreamValue(output);
             return ProcStatus.Continue;
-        } //matrix divided by matrix isn't a thing
-
+        } else if(b.TryGetValueAsDreamObject<DreamObjectMatrix>(out var right)) { //matrix divided by matrix isn't a thing, but in BYOND it's apparently multiplication by the inverse, because of course it is
+            DreamObjectMatrix rightCopy = MatrixClone(ObjectTree, right);
+            if (!TryInvert(rightCopy))
+                throw new ArgumentException("Matrix does not have a valid inversion for Invert()");
+            return OperatorMultiply(new(rightCopy), state, out result); //returns ProcStatus.Continue, so the assignref can be handled in the opcode
+        }
         return base.OperatorDivide(b, state, out result);
     }
 

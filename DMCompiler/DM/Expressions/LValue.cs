@@ -11,6 +11,11 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            if (TryAsConstant(out var constant)) { // BYOND also seems to push consts instead of references when possible
+                constant.EmitPushValue(dmObject, proc);
+                return;
+            }
+
             string endLabel = proc.NewLabelName();
 
             DMReference reference = EmitReference(dmObject, proc, endLabel);

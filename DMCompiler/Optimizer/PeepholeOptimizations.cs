@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using DMCompiler.Bytecode;
 
 namespace DMCompiler.Optimizer;
@@ -491,7 +490,6 @@ internal sealed class CreateListNStrings : IPeepholeOptimization {
         input.RemoveRange(index, 2);
         input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.CreateListNStrings, 1, args));
     }
-
 }
 
 // PushNResources [count] [resource] ... [resource]
@@ -626,3 +624,119 @@ internal sealed class IsTypeDirect : IPeepholeOptimization {
             new List<IAnnotatedBytecode> { pushVal }));
     }
 }
+
+#region Constant Folding
+
+// PushFloat [constant]
+// PushFloat [constant]
+// Multiply
+// -> PushFloat [result]
+internal sealed class ConstFoldMultiply : IPeepholeOptimization {
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.PushFloat,
+            DreamProcOpcode.PushFloat,
+            DreamProcOpcode.Multiply,
+        ];
+    }
+
+    public void Apply(List<IAnnotatedBytecode> input, int index) {
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
+        var pushVal1 = ((firstInstruction.GetArgs()[0] as AnnotatedBytecodeFloat)!).Value;
+
+        AnnotatedBytecodeInstruction secondInstruction = (AnnotatedBytecodeInstruction)(input[index + 1]);
+        var pushVal2 = ((secondInstruction.GetArgs()[0] as AnnotatedBytecodeFloat)!).Value;
+
+        var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(pushVal1 * pushVal2, firstInstruction.Location)};
+
+        input.RemoveRange(index, 3);
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.PushFloat, 1, args));
+    }
+}
+
+// PushFloat [constant]
+// PushFloat [constant]
+// Divide
+// -> PushFloat [result]
+internal sealed class ConstFoldDivide : IPeepholeOptimization {
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.PushFloat,
+            DreamProcOpcode.PushFloat,
+            DreamProcOpcode.Divide,
+        ];
+    }
+
+    public void Apply(List<IAnnotatedBytecode> input, int index) {
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
+        var pushVal1 = ((firstInstruction.GetArgs()[0] as AnnotatedBytecodeFloat)!).Value;
+
+        AnnotatedBytecodeInstruction secondInstruction = (AnnotatedBytecodeInstruction)(input[index + 1]);
+        var pushVal2 = ((secondInstruction.GetArgs()[0] as AnnotatedBytecodeFloat)!).Value;
+
+        // At runtime, given "A / B" we pop B then A
+        // In the peephole optimizer, index is "A", index+1 is "B"
+        var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(pushVal1 / pushVal2, firstInstruction.Location)};
+
+        input.RemoveRange(index, 3);
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.PushFloat, 1, args));
+    }
+}
+
+// PushFloat [constant]
+// PushFloat [constant]
+// Add
+// -> PushFloat [result]
+internal sealed class ConstFoldAdd : IPeepholeOptimization {
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.PushFloat,
+            DreamProcOpcode.PushFloat,
+            DreamProcOpcode.Add,
+        ];
+    }
+
+    public void Apply(List<IAnnotatedBytecode> input, int index) {
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
+        var pushVal1 = ((firstInstruction.GetArgs()[0] as AnnotatedBytecodeFloat)!).Value;
+
+        AnnotatedBytecodeInstruction secondInstruction = (AnnotatedBytecodeInstruction)(input[index + 1]);
+        var pushVal2 = ((secondInstruction.GetArgs()[0] as AnnotatedBytecodeFloat)!).Value;
+
+        var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(pushVal1 + pushVal2, firstInstruction.Location)};
+
+        input.RemoveRange(index, 3);
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.PushFloat, 1, args));
+    }
+}
+
+// PushFloat [constant]
+// PushFloat [constant]
+// Subtract
+// -> PushFloat [result]
+internal sealed class ConstFoldSubtract : IPeepholeOptimization {
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.PushFloat,
+            DreamProcOpcode.PushFloat,
+            DreamProcOpcode.Subtract,
+        ];
+    }
+
+    public void Apply(List<IAnnotatedBytecode> input, int index) {
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
+        var pushVal1 = ((firstInstruction.GetArgs()[0] as AnnotatedBytecodeFloat)!).Value;
+
+        AnnotatedBytecodeInstruction secondInstruction = (AnnotatedBytecodeInstruction)(input[index + 1]);
+        var pushVal2 = ((secondInstruction.GetArgs()[0] as AnnotatedBytecodeFloat)!).Value;
+
+        // At runtime, given "A - B" we pop B then A
+        // In the peephole optimizer, index is "A", index+1 is "B"
+        var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(pushVal1 - pushVal2, firstInstruction.Location)};
+
+        input.RemoveRange(index, 3);
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.PushFloat, 1, args));
+    }
+}
+
+#endregion

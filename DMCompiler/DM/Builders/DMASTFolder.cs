@@ -262,13 +262,6 @@ public class DMASTFolder {
 
                 break;
             }
-            case DMASTModulus modulus: {
-                if (modulus is { LHS: DMASTConstantInteger lhsInt, RHS: DMASTConstantInteger rhsInt }) {
-                    return new DMASTConstantInteger(expression.Location, lhsInt.Value % rhsInt.Value);
-                }
-
-                break;
-            }
             case DMASTPower power: {
                 if (power is { LHS: DMASTConstantInteger lhsInt, RHS: DMASTConstantInteger rhsInt }) {
                     return new DMASTConstantInteger(expression.Location, (int)Math.Pow(lhsInt.Value, rhsInt.Value));
@@ -276,7 +269,7 @@ public class DMASTFolder {
 
                 break;
             }
-            
+
             #endregion Math
 
             default:

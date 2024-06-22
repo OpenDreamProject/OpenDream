@@ -12,6 +12,19 @@ internal interface IPeepholeOptimization {
     public bool CheckPreconditions(List<IAnnotatedBytecode> input, int index) {
         return true;
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static AnnotatedBytecodeInstruction GetInstructionAndValue(IAnnotatedBytecode input, out float value, int argIndex = 0) {
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input);
+        value = ((firstInstruction.GetArgs()[argIndex] as AnnotatedBytecodeFloat)!).Value;
+        return firstInstruction;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void ReplaceInstructions(List<IAnnotatedBytecode> input, int index, int replacedOpcodes, AnnotatedBytecodeInstruction replacement) {
+        input.RemoveRange(index, replacedOpcodes);
+        input.Insert(index, replacement);
+    }
 }
 
 internal sealed class PeepholeOptimizer {

@@ -183,6 +183,7 @@ public class DMASTFolder {
                 break;
 
             #region Math
+
             case DMASTNegate negate:
                 switch (negate.Value) {
                     case DMASTConstantInteger exprInteger: negate.Value = new DMASTConstantInteger(expression.Location, -exprInteger.Value); break;
@@ -275,7 +276,9 @@ public class DMASTFolder {
 
                 break;
             }
+            
             #endregion Math
+
             default:
                 break;
         }

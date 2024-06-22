@@ -207,6 +207,16 @@
 		world.ODHotReloadInterface()
 		src << "done hot reload of interface!"
 
+	verb/manipulate_world_size()
+		var/x = input("New World X?", "World Size", 0) as num|null
+		var/y = input("New World Y?", "World Size", 0) as num|null
+
+		if(!x || !y)
+			return
+
+		world.maxx = x
+		world.maxy = y
+
 /mob/Stat()
 	if (statpanel("Status"))
 		stat("tick_usage", world.tick_usage)

@@ -633,13 +633,13 @@ namespace OpenDreamRuntime {
     }
 
     [TypeSerializer]
-    public sealed class DreamValueMatrix3Serializer : ITypeReader<Matrix3, DreamValueDataNode> {
-        public Matrix3 Read(ISerializationManager serializationManager,
+    public sealed class DreamValueMatrix3Serializer : ITypeReader<Matrix3x2, DreamValueDataNode> {
+        public Matrix3x2 Read(ISerializationManager serializationManager,
             DreamValueDataNode node,
             IDependencyCollection dependencies,
             SerializationHookContext hookCtx,
             ISerializationContext? context = null,
-            ISerializationManager.InstantiationDelegate<Matrix3>? instanceProvider = null) {
+            ISerializationManager.InstantiationDelegate<Matrix3x2>? instanceProvider = null) {
             if (!node.Value.TryGetValueAsDreamObject<DreamObjectMatrix>(out var matrixObject))
                 throw new Exception($"Value {node.Value} was not a matrix");
 
@@ -650,7 +650,7 @@ namespace OpenDreamRuntime {
             matrixObject.GetVariable("d").TryGetValueAsFloat(out var d);
             matrixObject.GetVariable("e").TryGetValueAsFloat(out var e);
             matrixObject.GetVariable("f").TryGetValueAsFloat(out var f);
-            return new Matrix3(a, d, 0f, b, e, 0f, c, f, 1f);
+            return new Matrix3x2(a, d, b, e, c, f);
         }
 
         public ValidationNode Validate(ISerializationManager serializationManager,

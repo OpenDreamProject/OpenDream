@@ -262,13 +262,6 @@ public class DMASTFolder {
 
                 break;
             }
-            case DMASTPower power: {
-                if (power is { LHS: DMASTConstantInteger lhsInt, RHS: DMASTConstantInteger rhsInt }) {
-                    return new DMASTConstantInteger(expression.Location, (int)Math.Pow(lhsInt.Value, rhsInt.Value));
-                }
-
-                break;
-            }
 
             #endregion Math
 

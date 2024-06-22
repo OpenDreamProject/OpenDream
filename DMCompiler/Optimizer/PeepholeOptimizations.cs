@@ -753,7 +753,6 @@ internal sealed class ConstFoldModulus : IPeepholeOptimization {
     }
 
     public void Apply(List<IAnnotatedBytecode> input, int index) {
-        DMCompiler.ForcedWarning("yolo");
         AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
         var pushVal1 = ((firstInstruction.GetArgs()[0] as AnnotatedBytecodeFloat)!).Value;
 
@@ -763,6 +762,35 @@ internal sealed class ConstFoldModulus : IPeepholeOptimization {
         // At runtime, given "A % B" we pop B then A
         // In the peephole optimizer, index is "A", index+1 is "B"
         var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(pushVal1 % pushVal2, firstInstruction.Location)};
+
+        input.RemoveRange(index, 3);
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.PushFloat, 1, args));
+    }
+}
+
+// PushFloat [constant]
+// PushFloat [constant]
+// Power
+// -> PushFloat [result]
+internal sealed class ConstFoldPower : IPeepholeOptimization {
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.PushFloat,
+            DreamProcOpcode.PushFloat,
+            DreamProcOpcode.Power,
+        ];
+    }
+
+    public void Apply(List<IAnnotatedBytecode> input, int index) {
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
+        var pushVal1 = ((firstInstruction.GetArgs()[0] as AnnotatedBytecodeFloat)!).Value;
+
+        AnnotatedBytecodeInstruction secondInstruction = (AnnotatedBytecodeInstruction)(input[index + 1]);
+        var pushVal2 = ((secondInstruction.GetArgs()[0] as AnnotatedBytecodeFloat)!).Value;
+
+        // At runtime, given "A ** B" we pop B then A
+        // In the peephole optimizer, index is "A", index+1 is "B"
+        var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(MathF.Pow(pushVal1, pushVal2), firstInstruction.Location)};
 
         input.RemoveRange(index, 3);
         input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.PushFloat, 1, args));

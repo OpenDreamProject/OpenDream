@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using OpenDreamClient.Interface.Controls.UI;
 using OpenDreamClient.Interface.Descriptors;
 using OpenDreamClient.Interface.DMF;
 using Robust.Client.Graphics;
@@ -60,7 +59,7 @@ public abstract class InterfaceControl : InterfaceElement {
                 break;
         }
 
-        Color? textColor = (ControlDescriptor.TextColor.Value != Color.Black)
+        Color? textColor = (ControlDescriptor.TextColor.Value != Color.Transparent)
             ? ControlDescriptor.TextColor.Value
             : null;
 
@@ -89,6 +88,5 @@ public abstract class InterfaceControl : InterfaceElement {
     }
 
     public virtual void Output(string value, string? data) {
-
     }
 }

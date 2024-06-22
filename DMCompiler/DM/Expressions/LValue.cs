@@ -16,6 +16,10 @@ namespace DMCompiler.DM.Expressions {
                 return;
             }
 
+            EmitPushValueNoConstant(dmObject, proc);
+        }
+
+        public void EmitPushValueNoConstant(DMObject dmObject, DMProc proc) {
             string endLabel = proc.NewLabelName();
 
             DMReference reference = EmitReference(dmObject, proc, endLabel);

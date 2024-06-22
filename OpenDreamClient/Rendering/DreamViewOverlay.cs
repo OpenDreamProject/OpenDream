@@ -14,6 +14,7 @@ using Robust.Shared.Map.Components;
 using Robust.Shared.Profiling;
 using Vector3 = Robust.Shared.Maths.Vector3;
 using Dependency = Robust.Shared.IoC.DependencyAttribute;
+using Matrix3x2 = System.Numerics.Matrix3x2;
 
 namespace OpenDreamClient.Rendering;
 
@@ -69,8 +70,8 @@ internal sealed class DreamViewOverlay : Overlay {
     private readonly Stack<RendererMetaData> _rendererMetaDataRental = new();
     private readonly Stack<RendererMetaData> _rendererMetaDataToReturn = new();
 
-    private static readonly Matrix3 FlipMatrix = Matrix3.Identity with {
-        R1C1 = -1
+    private static readonly Matrix3x2 FlipMatrix = Matrix3x2.Identity with {
+        M22 = -1
     };
 
     // Defined here so it isn't recreated every frame
@@ -191,10 +192,11 @@ internal sealed class DreamViewOverlay : Overlay {
         current.BlendMode = icon.Appearance.BlendMode;
         current.MouseOpacity = icon.Appearance.MouseOpacity;
 
-        Matrix3 iconAppearanceTransformMatrix = new( //reverse rotation transforms because of 180 flip from RenderTarget->world transform
-            icon.Appearance.Transform[0], -icon.Appearance.Transform[1], icon.Appearance.Transform[4],
-            -icon.Appearance.Transform[2], icon.Appearance.Transform[3], icon.Appearance.Transform[5],
-            0, 0, 1
+        //reverse rotation transforms because of 180 flip from RenderTarget->world transform
+        Matrix3x2 iconAppearanceTransformMatrix = new Matrix3x2(
+            icon.Appearance.Transform[0], -icon.Appearance.Transform[2],
+            -icon.Appearance.Transform[1], icon.Appearance.Transform[3],
+            icon.Appearance.Transform[4], icon.Appearance.Transform[5]
         );
 
         if (parentIcon != null) {
@@ -215,7 +217,7 @@ internal sealed class DreamViewOverlay : Overlay {
             if ((icon.Appearance.AppearanceFlags & AppearanceFlags.ResetTransform) != 0 || keepTogether) //RESET_TRANSFORM
                 current.TransformToApply = iconAppearanceTransformMatrix;
             else
-                current.TransformToApply = parentIcon.TransformToApply;
+                current.TransformToApply = iconAppearanceTransformMatrix * parentIcon.TransformToApply;
 
             if ((icon.Appearance.Plane < -10000)) //FLOAT_PLANE - Note: yes, this really is how it works. Yes it's dumb as shit.
                 current.Plane = parentIcon.Plane + (icon.Appearance.Plane + 32767);
@@ -267,6 +269,7 @@ internal sealed class DreamViewOverlay : Overlay {
                 renderTargetPlaceholder.AlphaToApply = current.AlphaToApply;
                 renderTargetPlaceholder.BlendMode = current.BlendMode;
             }
+
             renderTargetPlaceholder.AppearanceFlags = current.AppearanceFlags;
             current.AppearanceFlags &= ~AppearanceFlags.PlaneMaster; //only the placeholder should be marked as master
             result.Add(renderTargetPlaceholder);
@@ -436,19 +439,19 @@ internal sealed class DreamViewOverlay : Overlay {
         //extract scale component of transform
         var transform = iconMetaData.TransformToApply;
         Vector2 scaleFactors = new Vector2(
-            MathF.Sqrt(MathF.Pow(transform.R0C0,2) + MathF.Pow(transform.R0C1,2)),
-            MathF.Sqrt(MathF.Pow(transform.R1C0,2) + MathF.Pow(transform.R1C1,2))
+            MathF.Sqrt(MathF.Pow(transform.M11,2) + MathF.Pow(transform.M12,2)),
+            MathF.Sqrt(MathF.Pow(transform.M21,2) + MathF.Pow(transform.M22,2))
         );
-        transform.R0C0 /= scaleFactors.X;
-        transform.R0C1 /= scaleFactors.X;
-        transform.R1C0 /= scaleFactors.Y;
-        transform.R1C1 /= scaleFactors.Y;
+        transform.M11 /= scaleFactors.X;
+        transform.M12 /= scaleFactors.X;
+        transform.M21 /= scaleFactors.Y;
+        transform.M22 /= scaleFactors.Y;
 
         handle.SetTransform(
-            Matrix3.CreateTranslation(-frame.Size/2)  //translate to origin
+            Matrix3x2.CreateTranslation(-frame.Size/2)  //translate to origin
             * transform                                       //rotate and translate
-            * Matrix3.CreateTranslation(frame.Size/2)       //translate back to original position
-            * Matrix3.CreateScale(scaleFactors)               //scale
+            * Matrix3x2.CreateTranslation(frame.Size/2)       //translate back to original position
+            * Matrix3x2.CreateScale(scaleFactors)               //scale
             * CreateRenderTargetFlipMatrix(renderTargetSize, pixelPosition-((scaleFactors-Vector2.One)*frame.Size/2))); //flip and apply scale-corrected translation
         handle.DrawTextureRect(frame, Box2.FromDimensions(Vector2.Zero, frame.Size));
     }
@@ -747,12 +750,12 @@ internal sealed class DreamViewOverlay : Overlay {
     /// </summary>
     private Texture ProcessKeepTogether(DrawingHandleWorld handle, RendererMetaData iconMetaData, Vector2i size) {
         //store the parent's transform, color, blend, and alpha - then clear them for drawing to the render target
-        Matrix3 ktParentTransform = iconMetaData.TransformToApply;
+        Matrix3x2 ktParentTransform = iconMetaData.TransformToApply;
         Color ktParentColor = iconMetaData.ColorToApply;
         float ktParentAlpha = iconMetaData.AlphaToApply;
         BlendMode ktParentBlendMode = iconMetaData.BlendMode;
 
-        iconMetaData.TransformToApply = Matrix3.Identity;
+        iconMetaData.TransformToApply = Matrix3x2.Identity;
         iconMetaData.ColorToApply = Color.White;
         iconMetaData.AlphaToApply = 1f;
         iconMetaData.BlendMode = BlendMode.Default;
@@ -801,10 +804,10 @@ internal sealed class DreamViewOverlay : Overlay {
     /// <param name="renderTargetSize">Size of the render target</param>
     /// <param name="renderPosition">The translation to draw the icon at</param>
     /// <remarks>Due to RT applying transformations out of order, render the icon at Vector2.Zero</remarks>
-    public static Matrix3 CreateRenderTargetFlipMatrix(Vector2i renderTargetSize, Vector2 renderPosition) {
+    public static Matrix3x2 CreateRenderTargetFlipMatrix(Vector2i renderTargetSize, Vector2 renderPosition) {
         // RT flips the texture when doing a RenderInRenderTarget(), so we use _flipMatrix to reverse it
         // We must also handle translations here, since RT applies its own transform in an unexpected order
-        return FlipMatrix * Matrix3.CreateTranslation(renderPosition.X, renderTargetSize.Y - renderPosition.Y);
+        return FlipMatrix * Matrix3x2.CreateTranslation(renderPosition.X, renderTargetSize.Y - renderPosition.Y);
     }
 }
 
@@ -820,7 +823,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public Color ColorToApply;
     public ColorMatrix ColorMatrixToApply;
     public float AlphaToApply;
-    public Matrix3 TransformToApply;
+    public Matrix3x2 TransformToApply;
     public string? RenderSource;
     public string? RenderTarget;
     public List<RendererMetaData>? KeepTogetherGroup;
@@ -849,7 +852,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         ColorToApply = Color.White;
         ColorMatrixToApply = ColorMatrix.Identity;
         AlphaToApply = 1.0f;
-        TransformToApply = Matrix3.Identity;
+        TransformToApply = Matrix3x2.Identity;
         RenderSource = "";
         RenderTarget = "";
         KeepTogetherGroup = null; //don't actually need to allocate this 90% of the time

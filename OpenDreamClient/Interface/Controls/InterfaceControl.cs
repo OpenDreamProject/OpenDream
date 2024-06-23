@@ -42,17 +42,31 @@ public abstract class InterfaceControl : InterfaceElement {
 
         _window?.UpdateAnchors();
 
-        if (ControlDescriptor.BackgroundColor.Value != Color.Transparent) { //transparent is default because it's white with 0 alpha, and DMF color can't have none-255 alpha
-            var styleBox = new StyleBoxFlat {BackgroundColor = ControlDescriptor.BackgroundColor.Value};
+        //transparent is default because it's white with 0 alpha, and DMF color can't have none-255 alpha
+        StyleBox? styleBox = (ControlDescriptor.BackgroundColor.Value != Color.Transparent)
+            ? new StyleBoxFlat {BackgroundColor = ControlDescriptor.BackgroundColor.Value}
+            : null;
 
-            switch (UIElement) {
-                case PanelContainer panel:
-                    panel.PanelOverride = styleBox;
-                    break;
-                case LineEdit lineEdit:
-                    lineEdit.StyleBoxOverride = styleBox;
-                    break;
-            }
+        switch (UIElement) {
+            case PanelContainer panel:
+                panel.PanelOverride = styleBox;
+                break;
+            case LineEdit lineEdit:
+                lineEdit.StyleBoxOverride = styleBox;
+                break;
+            case Button button:
+                button.StyleBoxOverride = styleBox;
+                break;
+        }
+
+        Color? textColor = (ControlDescriptor.TextColor.Value != Color.Transparent)
+            ? ControlDescriptor.TextColor.Value
+            : null;
+
+        switch (UIElement) {
+            case Button button:
+                button.Label.FontColorOverride = textColor;
+                break;
         }
 
         UIElement.Visible = ControlDescriptor.IsVisible.Value;
@@ -74,6 +88,5 @@ public abstract class InterfaceControl : InterfaceElement {
     }
 
     public virtual void Output(string value, string? data) {
-
     }
 }

@@ -1008,6 +1008,10 @@ namespace OpenDreamRuntime.Procs {
                     if (proc == null)
                         throw new Exception("Cannot use named arguments here");
 
+                    // new /mutable_appearance(...) always uses /image/New()'s arguments, despite any overrides
+                    if (proc.OwningType == Proc.ObjectTree.MutableAppearance && proc.Name == "New")
+                        proc = Proc.DreamManager.ImageConstructor;
+
                     var argumentCount = argumentStackSize / 2;
                     var arguments = new DreamValue[Math.Max(argumentCount, proc.ArgumentNames.Count)];
                     var skippingArg = false;
@@ -1046,6 +1050,10 @@ namespace OpenDreamRuntime.Procs {
                         throw new Exception("Cannot use an arglist here");
                     if (!values[0].TryGetValueAsDreamList(out var argList))
                         return new DreamProcArguments(); // Using a non-list gives you no arguments
+
+                    // new /mutable_appearance(...) always uses /image/New()'s arguments, despite any overrides
+                    if (proc.OwningType == Proc.ObjectTree.MutableAppearance && proc.Name == "New")
+                        proc = Proc.DreamManager.ImageConstructor;
 
                     var listValues = argList.GetValues();
                     var arguments = new DreamValue[Math.Max(listValues.Count, proc.ArgumentNames.Count)];

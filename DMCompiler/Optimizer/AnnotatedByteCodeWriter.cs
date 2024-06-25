@@ -16,7 +16,7 @@ internal class AnnotatedByteCodeWriter {
 
     private readonly List<(long Position, string LabelName)> _unresolvedLabelsInAnnotatedBytecode = new();
     private int _currentStackSize;
-    private Location _location = new();
+    private Location _location;
     private int _maxStackSize;
     private bool _negativeStackSizeError;
     private Stack<OpcodeArgType> _requiredArgs = new();
@@ -27,7 +27,6 @@ internal class AnnotatedByteCodeWriter {
     public List<IAnnotatedBytecode> GetAnnotatedBytecode() {
         return _annotatedBytecode;
     }
-
 
     /// <summary>
     /// Writes an opcode to the stream
@@ -117,7 +116,6 @@ internal class AnnotatedByteCodeWriter {
         _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeType(type, location));
     }
 
-
     /// <summary>
     /// Writes a string to the stream and stores it in the string table
     /// </summary>
@@ -187,7 +185,6 @@ internal class AnnotatedByteCodeWriter {
         _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeLabel(s, location));
         _unresolvedLabelsInAnnotatedBytecode.Add((_annotatedBytecode.Count - 1, s));
     }
-
 
     public void ResolveCodeLabelReferences(Stack<DMProc.CodeLabelReference> pendingLabelReferences) {
         while (pendingLabelReferences.Count > 0) {
@@ -316,6 +313,7 @@ internal class AnnotatedByteCodeWriter {
         _requiredArgs.Pop();
         _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeConcatCount(count, location));
     }
+
     public void WriteReference(DMReference reference, Location location, bool affectStack = true) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Pop() != OpcodeArgType.Reference) {
@@ -359,11 +357,13 @@ internal class AnnotatedByteCodeWriter {
             case DMReference.Type.Self:
             case DMReference.Type.Args:
             case DMReference.Type.Usr:
+            case DMReference.Type.Invalid:
                 _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeReference(reference.RefType, location));
                 break;
 
             default:
-                throw new CompileAbortException(location, $"Invalid reference type {reference.RefType}");
+                DMCompiler.ForcedError(_location, $"Encountered unknown reference type {reference.RefType}");
+                break;
         }
     }
 

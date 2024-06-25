@@ -16,7 +16,7 @@ internal sealed class AssignRefProcState : ProcState {
 
     private DreamObject _dreamObject;
     private DreamObject? _usr;
-    private readonly DreamValue[] _arguments = new DreamValue[256];
+    private readonly DreamValue[] _arguments = new DreamValue[3]; // 3 is the maximum number of arguments an operator overload can take
     private int _argumentCount;
     private Stage _stage = Stage.Call;
     public override DreamProc? Proc => null;

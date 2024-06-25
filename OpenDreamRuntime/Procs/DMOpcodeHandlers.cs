@@ -847,7 +847,9 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            if (first.TryGetValueAsDreamObject<DreamObject>(out var firstDreamObject)) {              // Object | y
+            if (first.IsNull) {
+                state.Push(second);
+            } else if (first.TryGetValueAsDreamObject<DreamObject>(out var firstDreamObject)) {              // Object | y
                 if (!first.IsNull) {
                     ProcStatus result = firstDreamObject.OperatorOr(second, state, out DreamValue maybeOutput);
                     if (result == ProcStatus.Continue) {

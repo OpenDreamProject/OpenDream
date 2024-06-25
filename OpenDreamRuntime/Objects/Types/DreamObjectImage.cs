@@ -98,7 +98,6 @@ public sealed class DreamObjectImage : DreamObject {
         }
     }
 
-
     protected override void SetVar(string varName, DreamValue value) {
         switch (varName) {
             case "appearance": // Appearance var is mutable, don't use AtomManager.SetAppearanceVar()
@@ -113,6 +112,7 @@ public sealed class DreamObjectImage : DreamObject {
                     DMISpriteComponent sprite = EntityManager.GetComponent<DMISpriteComponent>(_entity);
                     sprite.SetAppearance(Appearance!);
                 }
+
                 break;
             case "loc":
                 value.TryGetValueAsDreamObject(out _loc);
@@ -211,6 +211,7 @@ public sealed class DreamObjectImage : DreamObject {
                         DMISpriteComponent sprite = EntityManager.GetComponent<DMISpriteComponent>(_entity);
                         sprite.SetAppearance(Appearance!);
                     }
+
                     break;
                 }
 
@@ -233,6 +234,7 @@ public sealed class DreamObjectImage : DreamObject {
             DMISpriteComponent sprite = EntityManager.AddComponent<DMISpriteComponent>(_entity);
             sprite.SetAppearance(Appearance!);
         }
+
         return _entity;
     }
 

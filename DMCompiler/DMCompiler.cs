@@ -3,8 +3,6 @@ using DMCompiler.Compiler.DM;
 using DMCompiler.Compiler.DMM;
 using DMCompiler.Compiler.DMPreprocessor;
 using DMCompiler.DM;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;

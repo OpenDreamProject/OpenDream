@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace DMCompiler.Compiler;
+﻿namespace DMCompiler.Compiler;
 
 /// <remarks>
 /// All values should be unique.

@@ -1,6 +1,4 @@
 ﻿using DMCompiler.Compiler.DM;
-using System;
-using System.Collections.Generic;
 using System.IO;
 
 namespace DMCompiler.Compiler.DMPreprocessor;

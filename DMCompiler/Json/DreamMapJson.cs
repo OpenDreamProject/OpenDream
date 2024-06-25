@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace DMCompiler.Json;
+﻿namespace DMCompiler.Json;
 
 public sealed class DreamMapJson {
     public int MaxX { get; set; }

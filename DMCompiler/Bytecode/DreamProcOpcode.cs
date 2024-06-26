@@ -223,7 +223,7 @@ public enum DreamProcOpcode : byte {
     TryNoValue = 0x70,
     [OpcodeMetadata]
     EndTry = 0x71,
-    [OpcodeMetadata(0, Bytecode.OpcodeArgType.EnumeratorId, OpcodeArgType.Label)]
+    [OpcodeMetadata(0, OpcodeArgType.EnumeratorId, OpcodeArgType.Label)]
     EnumerateNoAssign = 0x72,
     [OpcodeMetadata(0, OpcodeArgType.ArgType, OpcodeArgType.StackDelta)]
     Gradient = 0x73,

@@ -124,9 +124,22 @@ public sealed class DreamObjectSavefile : DreamObject {
         Savefiles.Add(this);
     }
 
-    protected override void HandleDeletion() {
+    protected override void HandleDeletion(bool possiblyThreaded) {
+        // SAFETY: Close() is not threadsafe and doesn't have reason to be.
+        if (possiblyThreaded) {
+            EnterIntoDelQueue();
+            return;
+        }
+
+        if (Deleted)
+            return;
+
+        if (Resource is null)
+            return; // Seemingly a long-standing issue, I don't know how to fix this, and it only now appears due to the fact objects always Del() now.
+                    // Why we can get here? who knows lol
+
         Close();
-        base.HandleDeletion();
+        base.HandleDeletion(possiblyThreaded);
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {

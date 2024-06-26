@@ -85,8 +85,14 @@ public sealed class DreamObjectWorld : DreamObject {
             new DreamValue(ObjectTree.CreateList());
     }
 
-    protected override void HandleDeletion() {
-        base.HandleDeletion();
+    protected override void HandleDeletion(bool possiblyThreaded) {
+        // SAFETY: Server shutdown is, spoiler, not threadsafe.
+        if (possiblyThreaded) {
+            EnterIntoDelQueue();
+            return;
+        }
+
+        base.HandleDeletion(possiblyThreaded);
 
         _server.Shutdown("world was deleted");
     }

@@ -127,6 +127,8 @@ public sealed class DreamObjectTree {
             IEnumerator<TreeEntry> typeChildren = GetAllDescendants(type).GetEnumerator();
 
             while (typeChildren.MoveNext()) yield return typeChildren.Current;
+
+            typeChildren.Dispose();
         }
     }
 

@@ -60,7 +60,7 @@ public enum DreamProcOpcode : byte {
     Modulus = 0x19,
     [OpcodeMetadata(0, OpcodeArgType.Reference)]
     Append = 0x1A,
-    [OpcodeMetadata(-3)]
+    [OpcodeMetadata(-3, OpcodeArgType.EnumeratorId)]
     CreateRangeEnumerator = 0x1B,
     [OpcodeMetadata(0, OpcodeArgType.Reference, OpcodeArgType.Reference)]
     Input = 0x1C,
@@ -119,11 +119,11 @@ public enum DreamProcOpcode : byte {
     PushFloat = 0x38,
     [OpcodeMetadata(0, OpcodeArgType.Reference)]
     ModulusReference = 0x39,
-    [OpcodeMetadata(-1)]
+    [OpcodeMetadata(-1, OpcodeArgType.EnumeratorId)]
     CreateListEnumerator = 0x3A,
-    [OpcodeMetadata(0, OpcodeArgType.Reference, OpcodeArgType.Label)]
+    [OpcodeMetadata(0, Bytecode.OpcodeArgType.EnumeratorId, OpcodeArgType.Reference, OpcodeArgType.Label)]
     Enumerate = 0x3B,
-    [OpcodeMetadata]
+    [OpcodeMetadata(0, OpcodeArgType.EnumeratorId)]
     DestroyEnumerator = 0x3C,
     [OpcodeMetadata(-3)]
     Browse = 0x3D,
@@ -133,7 +133,7 @@ public enum DreamProcOpcode : byte {
     OutputControl = 0x3F,
     [OpcodeMetadata(-1)]
     BitShiftRight = 0x40,
-    [OpcodeMetadata(-1, OpcodeArgType.FilterId)]
+    [OpcodeMetadata(-1, OpcodeArgType.EnumeratorId, OpcodeArgType.FilterId)]
     CreateFilteredListEnumerator = 0x41,
     [OpcodeMetadata(-1)]
     Power = 0x42,
@@ -185,7 +185,7 @@ public enum DreamProcOpcode : byte {
     IsInRange = 0x5B,
     [OpcodeMetadata(0, OpcodeArgType.ConcatCount)]
     MassConcatenation = 0x5C,
-    [OpcodeMetadata(-1)]
+    [OpcodeMetadata(-1, OpcodeArgType.EnumeratorId)]
     CreateTypeEnumerator = 0x5D,
     //0x5E
     [OpcodeMetadata(1)]
@@ -223,7 +223,7 @@ public enum DreamProcOpcode : byte {
     TryNoValue = 0x70,
     [OpcodeMetadata]
     EndTry = 0x71,
-    [OpcodeMetadata(0, OpcodeArgType.Label)]
+    [OpcodeMetadata(0, Bytecode.OpcodeArgType.EnumeratorId, OpcodeArgType.Label)]
     EnumerateNoAssign = 0x72,
     [OpcodeMetadata(0, OpcodeArgType.ArgType, OpcodeArgType.StackDelta)]
     Gradient = 0x73,
@@ -567,6 +567,7 @@ public enum OpcodeArgType {
     Resource,
     TypeId,
     ProcId,
+    EnumeratorId,
     FilterId,
     ListSize,
     Int,

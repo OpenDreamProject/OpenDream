@@ -119,6 +119,9 @@ internal class AnnotatedBytecodeSerializer {
                 case AnnotatedBytecodeProcId annotatedBytecodeProcId:
                     _bytecodeWriter.Write(annotatedBytecodeProcId.ProcId);
                     break;
+                case AnnotatedBytecodeEnumeratorId annotatedBytecodeEnumeratorId:
+                    _bytecodeWriter.Write(annotatedBytecodeEnumeratorId.EnumeratorId);
+                    break;
                 case AnnotatedBytecodeReference annotatedBytecodeReference:
                     WriteReference(annotatedBytecodeReference);
                     break;

@@ -119,12 +119,12 @@ internal sealed class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
         if (_location != null) return;
         _location = loc.GetLocation();
     }
-    
+
     public void SetLocation(Location loc) {
         if (_location != null) return;
         _location = loc;
     }
-    
+
     public Location GetLocation() {
         return _location ?? Location;
     }
@@ -321,14 +321,30 @@ internal sealed class AnnotatedBytecodeTypeId : IAnnotatedBytecode {
     }
 }
 
-internal sealed class AnnotatedBytecodeProcId : IAnnotatedBytecode {
-    public Location Location;
-    public int ProcId;
+internal sealed class AnnotatedBytecodeProcId(int procId, Location location) : IAnnotatedBytecode {
+    public Location Location = location;
+    public int ProcId = procId;
 
-    public AnnotatedBytecodeProcId(int procId, Location location) {
-        ProcId = procId;
-        Location = location;
+    public void AddArg(IAnnotatedBytecode arg) {
+        DMCompiler.ForcedError(Location, "Cannot add args to a type");
     }
+
+    public void SetLocation(IAnnotatedBytecode loc) {
+        Location = loc.GetLocation();
+    }
+
+    public void SetLocation(Location loc) {
+        Location = loc;
+    }
+
+    public Location GetLocation() {
+        return Location;
+    }
+}
+
+internal sealed class AnnotatedBytecodeEnumeratorId(int enumeratorId, Location location) : IAnnotatedBytecode {
+    public Location Location = location;
+    public int EnumeratorId = enumeratorId;
 
     public void AddArg(IAnnotatedBytecode arg) {
         DMCompiler.ForcedError(Location, "Cannot add args to a type");

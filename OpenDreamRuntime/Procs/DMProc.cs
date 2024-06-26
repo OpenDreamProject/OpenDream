@@ -338,8 +338,7 @@ namespace OpenDreamRuntime.Procs {
         private readonly Stack<int> _catchPosition = new();
         private readonly Stack<int> _catchVarIndex = new();
         public const int NoTryCatchVar = -1;
-        private Stack<IDreamValueEnumerator>? _enumeratorStack;
-        public Stack<IDreamValueEnumerator> EnumeratorStack => _enumeratorStack ??= new(1);
+        public IDreamValueEnumerator?[] Enumerators = new IDreamValueEnumerator?[16];
 
         private int _pc = 0;
         public int ProgramCounter => _pc;
@@ -532,7 +531,7 @@ namespace OpenDreamRuntime.Procs {
             Instance = null;
             Usr = null;
             ArgumentCount = 0;
-            _enumeratorStack = null;
+            Array.Clear(Enumerators);
             _pc = 0;
             _proc = null;
 

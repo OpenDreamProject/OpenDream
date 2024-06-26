@@ -121,7 +121,7 @@ public enum DreamProcOpcode : byte {
     ModulusReference = 0x39,
     [OpcodeMetadata(-1, OpcodeArgType.EnumeratorId)]
     CreateListEnumerator = 0x3A,
-    [OpcodeMetadata(0, Bytecode.OpcodeArgType.EnumeratorId, OpcodeArgType.Reference, OpcodeArgType.Label)]
+    [OpcodeMetadata(0, OpcodeArgType.EnumeratorId, OpcodeArgType.Reference, OpcodeArgType.Label)]
     Enumerate = 0x3B,
     [OpcodeMetadata(0, OpcodeArgType.EnumeratorId)]
     DestroyEnumerator = 0x3C,

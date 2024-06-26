@@ -427,7 +427,24 @@ namespace DMCompiler.DM.Builders {
         }
 
         public void ProcessStatementIf(DMASTProcStatementIf statement) {
-            DMExpression.Emit(dmObject, proc, statement.Condition);
+            var expr = DMExpression.Create(dmObject, proc, statement.Condition);
+
+            // Const-fold the statement if possible
+            if (expr.TryAsConstant(out var constant)) {
+                if (constant.IsTruthy()) {
+                    proc.StartScope();
+                    ProcessBlockInner(statement.Body);
+                    proc.EndScope();
+                } else if (statement.ElseBody != null) {
+                    proc.StartScope();
+                    ProcessBlockInner(statement.ElseBody);
+                    proc.EndScope();
+                }
+
+                return;
+            }
+
+            expr.EmitPushValue(dmObject, proc);
 
             if (statement.ElseBody == null) {
                 string endLabel = proc.NewLabelName();
@@ -753,6 +770,8 @@ namespace DMCompiler.DM.Builders {
         }
 
         public void ProcessStatementWhile(DMASTProcStatementWhile statementWhile) {
+            // Don't bother trying to const-fold this, it's constant 0 times in goon/paradise/TG
+
             string loopLabel = proc.NewLabelName();
 
             proc.LoopStart(loopLabel);
@@ -772,6 +791,16 @@ namespace DMCompiler.DM.Builders {
         }
 
         public void ProcessStatementDoWhile(DMASTProcStatementDoWhile statementDoWhile) {
+            var expr = DMExpression.Create(dmObject, proc, statementDoWhile.Conditional);
+
+            // Const-fold the common pattern of "do {} while(0)" in preprocessor macros
+            if (expr.TryAsConstant(out var constant) && !constant.IsTruthy()) {
+                proc.StartScope();
+                ProcessBlockInner(statementDoWhile.Body);
+                proc.EndScope();
+                return;
+            }
+
             string loopLabel = proc.NewLabelName();
             string loopEndLabel = proc.NewLabelName();
 
@@ -780,7 +809,7 @@ namespace DMCompiler.DM.Builders {
                 ProcessBlockInner(statementDoWhile.Body);
 
                 proc.MarkLoopContinue(loopLabel);
-                DMExpression.Emit(dmObject, proc, statementDoWhile.Conditional);
+                expr.EmitPushValue(dmObject, proc);
                 proc.JumpIfFalse(loopEndLabel);
                 proc.LoopJumpToStart(loopLabel);
 

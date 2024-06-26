@@ -102,44 +102,48 @@ namespace OpenDreamRuntime.Procs {
                     ? new DreamValueArrayEnumerator(values)
                     : new FilteredDreamValueArrayEnumerator(values, filterType);
             }
+
             // BYOND ignores all floats, strings, types, etc. here and just doesn't run the loop.
             return new DreamValueArrayEnumerator(Array.Empty<DreamValue>());
         }
 
         public static ProcStatus CreateListEnumerator(DMProcState state) {
+            var enumeratorId = state.ReadInt();
             var enumerator = GetContentsEnumerator(state.Proc.ObjectTree, state.Proc.AtomManager, state.Pop(), null);
 
-            state.EnumeratorStack.Push(enumerator);
+            state.Enumerators[enumeratorId] = enumerator;
             return ProcStatus.Continue;
         }
 
         public static ProcStatus CreateFilteredListEnumerator(DMProcState state) {
+            var enumeratorId = state.ReadInt();
             var filterTypeId = state.ReadInt();
             var filterType = state.Proc.ObjectTree.GetTreeEntry(filterTypeId);
             var enumerator = GetContentsEnumerator(state.Proc.ObjectTree, state.Proc.AtomManager, state.Pop(), filterType);
 
-            state.EnumeratorStack.Push(enumerator);
+            state.Enumerators[enumeratorId] = enumerator;
             return ProcStatus.Continue;
         }
 
         public static ProcStatus CreateTypeEnumerator(DMProcState state) {
-            DreamValue typeValue = state.Pop();
+            var enumeratorId = state.ReadInt();
+            var typeValue = state.Pop();
             if (!typeValue.TryGetValueAsType(out var type)) {
                 throw new Exception($"Cannot create a type enumerator with type {typeValue}");
             }
 
             if (type == state.Proc.ObjectTree.Client) {
-                state.EnumeratorStack.Push(new DreamObjectEnumerator(state.DreamManager.Clients));
+                state.Enumerators[enumeratorId] = new DreamObjectEnumerator(state.DreamManager.Clients);
                 return ProcStatus.Continue;
             }
 
             if (type.ObjectDefinition.IsSubtypeOf(state.Proc.ObjectTree.Atom)) {
-                state.EnumeratorStack.Push(new WorldContentsEnumerator(state.Proc.AtomManager, type));
+                state.Enumerators[enumeratorId] = new WorldContentsEnumerator(state.Proc.AtomManager, type);
                 return ProcStatus.Continue;
             }
 
             if (type.ObjectDefinition.IsSubtypeOf(state.Proc.ObjectTree.Datum)) {
-                state.EnumeratorStack.Push(new DreamObjectEnumerator(state.DreamManager.Datums, type));
+                state.Enumerators[enumeratorId] = new DreamObjectEnumerator(state.DreamManager.Datums, type);
                 return ProcStatus.Continue;
             }
 
@@ -147,6 +151,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus CreateRangeEnumerator(DMProcState state) {
+            var enumeratorId = state.ReadInt();
             DreamValue step = state.Pop();
             DreamValue rangeEnd = state.Pop();
             DreamValue rangeStart = state.Pop();
@@ -158,7 +163,7 @@ namespace OpenDreamRuntime.Procs {
             if (!rangeStart.TryGetValueAsFloat(out var rangeStartValue))
                 throw new Exception($"Invalid start {rangeStart}, must be a number");
 
-            state.EnumeratorStack.Push(new DreamValueRangeEnumerator(rangeStartValue, rangeEndValue, stepValue));
+            state.Enumerators[enumeratorId] = new DreamValueRangeEnumerator(rangeStartValue, rangeEndValue, stepValue);
             return ProcStatus.Continue;
         }
 
@@ -232,26 +237,30 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus DestroyEnumerator(DMProcState state) {
-            state.EnumeratorStack.Pop();
+            var enumeratorId = state.ReadInt();
+
+            state.Enumerators[enumeratorId] = null;
             return ProcStatus.Continue;
         }
 
         public static ProcStatus Enumerate(DMProcState state) {
-            IDreamValueEnumerator enumerator = state.EnumeratorStack.Peek();
-            DreamReference outputRef = state.ReadReference();
-            int jumpToIfFailure = state.ReadInt();
+            var enumeratorId = state.ReadInt();
+            var outputRef = state.ReadReference();
+            var jumpToIfFailure = state.ReadInt();
 
-            if (!enumerator.Enumerate(state, outputRef))
+            var enumerator = state.Enumerators[enumeratorId];
+            if (enumerator == null || !enumerator.Enumerate(state, outputRef))
                 state.Jump(jumpToIfFailure);
 
             return ProcStatus.Continue;
         }
 
         public static ProcStatus EnumerateNoAssign(DMProcState state) {
-            IDreamValueEnumerator enumerator = state.EnumeratorStack.Peek();
-            int jumpToIfFailure = state.ReadInt();
+            var enumeratorId = state.ReadInt();
+            var enumerator = state.Enumerators[enumeratorId];
+            var jumpToIfFailure = state.ReadInt();
 
-            if (!enumerator.Enumerate(state, null))
+            if (enumerator == null || !enumerator.Enumerate(state, null))
                 state.Jump(jumpToIfFailure);
 
             return ProcStatus.Continue;

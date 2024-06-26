@@ -157,11 +157,12 @@ public class DreamObjectAtom : DreamObject {
             case "filters": {
                 Filters.Cut();
 
-                if (value.TryGetValueAsDreamList(out var valueList)) {
-                    // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue filterValue in valueList.GetValues()) {
-                        Filters.AddValue(filterValue);
-                    }
+                if (value.TryGetValueAsDreamList(out var valueList)) { // filters = list("type"=...)
+                    var filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, valueList);
+                    if (filterObject == null) // list() with invalid properties is ignored
+                        break;
+
+                    Filters.AddValue(new(filterObject));
                 } else if (!value.IsNull) {
                     Filters.AddValue(value);
                 }

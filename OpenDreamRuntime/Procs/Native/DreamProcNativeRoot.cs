@@ -1,4 +1,5 @@
-﻿using OpenDreamRuntime.Objects;
+﻿using System.Buffers;
+using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Shared.Utility;
@@ -21,8 +22,6 @@ using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
 using Robust.Server;
 using Robust.Shared.Asynchronous;
-using Robust.Shared.Serialization.Manager;
-using Robust.Shared.Serialization.Markdown.Mapping;
 using Vector4 = Robust.Shared.Maths.Vector4;
 
 namespace OpenDreamRuntime.Procs.Native {
@@ -682,32 +681,27 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("falloff", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("alpha", Type = DreamValueTypeFlag.Float)]
         public static DreamValue NativeProc_filter(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            if (!bundle.GetArgument(0, "type").TryGetValueAsString(out var filterTypeName))
-                return DreamValue.Null;
+            var propertyValues = ArrayPool<DreamValue>.Shared.Rent(bundle.Arguments.Length);
 
-            Type? filterType = DreamFilter.GetType(filterTypeName);
-            if (filterType == null)
-                return DreamValue.Null;
+            // ReadOnlySpan shenanigans making things difficult..
+            bundle.Arguments.CopyTo(propertyValues);
 
-            var serializationManager = IoCManager.Resolve<ISerializationManager>();
+            static IEnumerable<(string, DreamValue)> EnumerateProperties(List<string> argumentNames, DreamValue[] values) {
+                for (int i = 0; i < argumentNames.Count; i++) { // Every argument is a filter property
+                    var propertyName = argumentNames[i];
+                    var property = values[i];
+                    if (property.IsNull)
+                        continue;
 
-            MappingDataNode attributes = new();
-            for (int i = 0; i < bundle.Proc.ArgumentNames.Count; i++) { // Every argument is a filter property
-                var propertyName = bundle.Proc.ArgumentNames[i];
-                var property = bundle.Arguments[i];
-                if (property.IsNull)
-                    continue;
-
-                attributes.Add(propertyName, new DreamValueDataNode(property));
+                    yield return (propertyName, property);
+                }
             }
 
-            DreamFilter? filter = serializationManager.Read(filterType, attributes) as DreamFilter;
-            if (filter is null)
-                throw new Exception($"Failed to create filter of type {filterType}");
+            var propertyEnumerator = EnumerateProperties(bundle.Proc.ArgumentNames!, propertyValues);
+            var filter = DreamObjectFilter.TryCreateFilter(bundle.ObjectTree, propertyEnumerator);
 
-            var filterObject = bundle.ObjectTree.CreateObject<DreamObjectFilter>(bundle.ObjectTree.Filter);
-            filterObject.Filter = filter;
-            return new DreamValue(filterObject);
+            ArrayPool<DreamValue>.Shared.Return(propertyValues, clearArray: true);
+            return new(filter);
         }
 
         [DreamProc("findtext")]

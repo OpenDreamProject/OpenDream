@@ -189,11 +189,12 @@ public sealed class DreamObjectImage : DreamObject {
 
                 _filters.Cut();
 
-                if (valueList != null) {
-                    // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue filterValue in valueList.GetValues()) {
-                        _filters.AddValue(filterValue);
-                    }
+                if (valueList != null) { // filters = list("type"=...)
+                    var filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, valueList);
+                    if (filterObject == null) // list() with invalid properties is ignored
+                        break;
+
+                    _filters.AddValue(new(filterObject));
                 } else if (!value.IsNull) {
                     _filters.AddValue(value);
                 }

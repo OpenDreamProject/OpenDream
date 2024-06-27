@@ -432,6 +432,17 @@ namespace DMCompiler.DM {
             StartScope();
         }
 
+        /// <summary>
+        /// For loops that have been const-folded, such as "do {} while(0)"
+        /// </summary>
+        /// <param name="loopLabel">Name of the label without positional postfix</param>
+        public void FoldedLoopStart(string loopLabel) {
+            // TODO: Don't create a loop stack just for supporting "break" in a const-folded do-while(0) loop
+            _loopStack ??= new Stack<string>(2); // start and end
+            _loopStack.Push(loopLabel);
+            StartScope();
+        }
+
         public void MarkLoopContinue(string loopLabel) {
             AddLabel($"{loopLabel}_continue");
         }

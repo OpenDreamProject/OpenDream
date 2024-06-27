@@ -795,9 +795,13 @@ namespace DMCompiler.DM.Builders {
 
             // Const-fold the common pattern of "do {} while(0)" in preprocessor macros
             if (expr.TryAsConstant(out var constant) && !constant.IsTruthy()) {
+                // We still need to handle "break" statements
+                proc.FoldedLoopStart(proc.NewLabelName()); // Allocates the loop stack
+
                 proc.StartScope();
                 ProcessBlockInner(statementDoWhile.Body);
-                proc.EndScope();
+
+                proc.LoopEnd(); // Appends the end label
                 return;
             }
 

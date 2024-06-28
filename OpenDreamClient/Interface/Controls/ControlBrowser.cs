@@ -4,7 +4,9 @@ using System.Web;
 using OpenDreamClient.Interface.Descriptors;
 using OpenDreamClient.Resources;
 using OpenDreamShared.Network.Messages;
+using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
+using Robust.Client.UserInterface.Controls;
 using Robust.Client.WebView;
 using Robust.Shared.Console;
 using Robust.Shared.ContentPack;
@@ -34,6 +36,7 @@ internal sealed class ControlBrowser : InterfaceControl {
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.browser");
 
+    private PanelContainer _panel;
     private WebViewControl _webView;
 
     public ControlBrowser(ControlDescriptor controlDescriptor, ControlWindow window)
@@ -42,7 +45,11 @@ internal sealed class ControlBrowser : InterfaceControl {
     }
 
     protected override Control CreateUIElement() {
-        _webView = new WebViewControl();
+        _panel = new PanelContainer {
+            Children = {
+                (_webView = new WebViewControl())
+            }
+        };
 
         _webView.AddResourceRequestHandler(RequestHandler);
         _webView.AddBeforeBrowseHandler(BeforeBrowseHandler);
@@ -54,12 +61,18 @@ internal sealed class ControlBrowser : InterfaceControl {
             }
         };
 
-        if(ControlDescriptor.IsVisible)
+        if(ControlDescriptor.IsVisible.Value)
             OnShowEvent();
         else
             OnHideEvent();
 
-        return _webView;
+        return _panel;
+    }
+
+    protected override void UpdateElementDescriptor() {
+        base.UpdateElementDescriptor();
+
+        _panel.PanelOverride = new StyleBoxFlat(Color.White); // Always white background
     }
 
     public override void Output(string value, string? jsFunction) {
@@ -113,16 +126,21 @@ internal sealed class ControlBrowser : InterfaceControl {
             Stream stream;
             HttpStatusCode status;
             var path = new ResPath(newUri.AbsolutePath);
-            try {
-                stream = _resourceManager.UserData.OpenRead(_dreamResource.GetCacheFilePath(newUri.AbsolutePath));
-                status = HttpStatusCode.OK;
-            } catch (FileNotFoundException) {
+            if(!_dreamResource.EnsureCacheFile(newUri.AbsolutePath)) {
                 stream = Stream.Null;
                 status = HttpStatusCode.NotFound;
-            } catch (Exception e) {
-                _sawmill.Error($"Exception while loading file from {newUri}:\n{e}");
-                stream = Stream.Null;
-                status = HttpStatusCode.InternalServerError;
+            } else {
+                try {
+                    stream = _resourceManager.UserData.OpenRead(_dreamResource.GetCacheFilePath(newUri.AbsolutePath));
+                    status = HttpStatusCode.OK;
+                } catch (FileNotFoundException) {
+                    stream = Stream.Null;
+                    status = HttpStatusCode.NotFound;
+                } catch (Exception e) {
+                    _sawmill.Error($"Exception while loading file from {newUri}:\n{e}");
+                    stream = Stream.Null;
+                    status = HttpStatusCode.InternalServerError;
+                }
             }
 
             if (!FileExtensionMimeTypes.TryGetValue(path.Extension, out var mimeType))
@@ -165,15 +183,15 @@ internal sealed class ControlBrowser : InterfaceControl {
 
     private void OnShowEvent() {
         ControlDescriptorBrowser controlDescriptor = (ControlDescriptorBrowser)ControlDescriptor;
-        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnShowCommand)) {
-            _interfaceManager.RunCommand(controlDescriptor.OnShowCommand);
+        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnShowCommand.Value)) {
+            _interfaceManager.RunCommand(controlDescriptor.OnShowCommand.AsRaw());
         }
     }
 
     private void OnHideEvent() {
         ControlDescriptorBrowser controlDescriptor = (ControlDescriptorBrowser)ControlDescriptor;
-        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnHideCommand)) {
-            _interfaceManager.RunCommand(controlDescriptor.OnHideCommand);
+        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnHideCommand.Value)) {
+            _interfaceManager.RunCommand(controlDescriptor.OnHideCommand.AsRaw());
         }
     }
 }

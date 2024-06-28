@@ -1,4 +1,5 @@
 ﻿using JetBrains.Annotations;
+using OpenDreamClient.Interface.DMF;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
 
@@ -9,8 +10,8 @@ public sealed partial class MenuDescriptor : ElementDescriptor {
     public IReadOnlyList<MenuElementDescriptor> Elements => _elements;
 
     public MenuDescriptor(string id) {
-        Type = "MENU";
-        Id = id;
+        Type = new DMFPropertyString("MENU");
+        Id = new DMFPropertyString(id);
     }
 
     [UsedImplicitly]
@@ -28,38 +29,35 @@ public sealed partial class MenuDescriptor : ElementDescriptor {
     public override ElementDescriptor CreateCopy(ISerializationManager serializationManager, string id) {
         var copy = serializationManager.CreateCopy(this, notNullableOverride: true);
 
-        copy._id = id;
+        copy._id = new DMFPropertyString(id);
         return copy;
     }
 }
 
 public sealed partial class MenuElementDescriptor : ElementDescriptor {
-    private string? _category;
+
 
     [DataField("command")]
-    public string Command { get; private set; }
+    public DMFPropertyString Command { get; private set; }
 
     [DataField("category")]
-    public string? Category {
-        get => _category;
-        private set { _category = value; }
-    }
+    public DMFPropertyString Category { get; private set; }
 
     [DataField("can-check")]
-    public bool CanCheck { get; private set; }
+    public DMFPropertyBool CanCheck { get; private set; }
 
     [DataField("is-checked")]
-    public bool IsChecked { get; set; }
+    public DMFPropertyBool IsChecked { get; set; }
 
     [DataField("group")]
-    public string? Group { get; private set; }
+    public DMFPropertyString Group { get; private set; }
     [DataField("index")]
-    public int Index { get; private set; }
+    public DMFPropertyNum Index { get; private set; }
 
-    public MenuElementDescriptor WithCategory(ISerializationManager serialization, string category) {
+    public MenuElementDescriptor WithCategory(ISerializationManager serialization, DMFPropertyString category) {
         var copy = serialization.CreateCopy(this, notNullableOverride: true);
 
-        copy._category = category;
+        copy.Category = category;
         return copy;
     }
 

@@ -111,7 +111,6 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
             case DreamProcOpcode.Call:
                 return (opcode, ReadReference(), (DMCallArgumentsType)ReadByte(), ReadInt());
 
-            case DreamProcOpcode.EnumerateNoAssign:
             case DreamProcOpcode.CreateList:
             case DreamProcOpcode.CreateAssociativeList:
             case DreamProcOpcode.CreateFilteredListEnumerator:
@@ -130,15 +129,24 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
             case DreamProcOpcode.JumpIfNull:
             case DreamProcOpcode.JumpIfNullNoPop:
             case DreamProcOpcode.TryNoValue:
+            case DreamProcOpcode.CreateListEnumerator:
+            case DreamProcOpcode.CreateRangeEnumerator:
+            case DreamProcOpcode.CreateTypeEnumerator:
+            case DreamProcOpcode.DestroyEnumerator:
                 return (opcode, ReadInt());
 
             case DreamProcOpcode.JumpIfTrueReference:
             case DreamProcOpcode.JumpIfFalseReference:
-            case DreamProcOpcode.Enumerate:
                 return (opcode, ReadReference(), ReadInt());
 
             case DreamProcOpcode.Try:
                 return (opcode, ReadInt(), ReadReference());
+
+            case DreamProcOpcode.Enumerate:
+                return (opcode, ReadInt(), ReadReference(), ReadInt());
+
+            case DreamProcOpcode.EnumerateNoAssign:
+                return (opcode, ReadInt(), ReadInt());
 
             default:
                 return ValueTuple.Create(opcode);

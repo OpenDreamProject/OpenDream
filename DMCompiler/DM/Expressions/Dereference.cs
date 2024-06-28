@@ -181,7 +181,12 @@ namespace DMCompiler.DM.Expressions {
         public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
             string endLabel = proc.NewLabelName();
 
-            Expression.EmitPushValue(dmObject, proc);
+            if (Expression is LValue exprLValue) {
+                // We don't want this instead pushing the constant value if it's const
+                exprLValue.EmitPushValueNoConstant(dmObject, proc);
+            } else {
+                Expression.EmitPushValue(dmObject, proc);
+            }
 
             // Perform all except for our last operation
             for (int i = 0; i < _operations.Length - 1; i++) {
@@ -222,7 +227,12 @@ namespace DMCompiler.DM.Expressions {
         public void EmitPushIsSaved(DMObject dmObject, DMProc proc) {
             string endLabel = proc.NewLabelName();
 
-            Expression.EmitPushValue(dmObject, proc);
+            if (Expression is LValue exprLValue) {
+                // We don't want this instead pushing the constant value if it's const
+                exprLValue.EmitPushValueNoConstant(dmObject, proc);
+            } else {
+                Expression.EmitPushValue(dmObject, proc);
+            }
 
             // Perform all except for our last operation
             for (int i = 0; i < _operations.Length - 1; i++) {

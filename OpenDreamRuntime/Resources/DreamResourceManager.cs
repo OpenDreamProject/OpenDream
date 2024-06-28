@@ -53,14 +53,11 @@ namespace OpenDreamRuntime.Resources {
             return File.Exists(resourcePath);
         }
 
-        public DreamResource LoadResource(string resourcePath) {
+        public DreamResource LoadResource(string resourcePath, bool forceReload = false) {
             DreamResource resource;
+            int resourceId;
 
-            if (_resourcePathToId.TryGetValue(resourcePath, out int resourceId)) {
-                resource = _resourceCache[resourceId];
-            } else {
-                resourceId = _resourceCache.Count;
-
+            DreamResource GetResource() {
                 // Create a new type of resource based on its extension
                 switch (Path.GetExtension(resourcePath)) {
                     case ".dmi":
@@ -79,8 +76,20 @@ namespace OpenDreamRuntime.Resources {
                         break;
                 }
 
+                return resource;
+            }
+
+            if (!forceReload && _resourcePathToId.TryGetValue(resourcePath, out resourceId)) {
+                resource = _resourceCache[resourceId];
+            } else if(!forceReload) {
+                resourceId = _resourceCache.Count;
+                resource = GetResource();
                 _resourceCache.Add(resource);
                 _resourcePathToId.Add(resourcePath, resourceId);
+            } else {
+                resourceId = _resourcePathToId[resourcePath];
+                resource = GetResource();
+                _resourceCache[resourceId] = resource;
             }
 
             return resource;

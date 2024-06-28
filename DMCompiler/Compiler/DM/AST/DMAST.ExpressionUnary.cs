@@ -17,6 +17,8 @@ public sealed class DMASTPreIncrement(Location location, DMASTExpression express
 public sealed class DMASTPreDecrement(Location location, DMASTExpression expression) : DMASTUnary(location, expression);
 public sealed class DMASTPostIncrement(Location location, DMASTExpression expression) : DMASTUnary(location, expression);
 public sealed class DMASTPostDecrement(Location location, DMASTExpression expression) : DMASTUnary(location, expression);
+public sealed class DMASTPointerRef(Location location, DMASTExpression expression) : DMASTUnary(location, expression);
+public sealed class DMASTPointerDeref(Location location, DMASTExpression expression) : DMASTUnary(location, expression);
 public sealed class DMASTSin(Location location, DMASTExpression expression) : DMASTUnary(location, expression);
 public sealed class DMASTCos(Location location, DMASTExpression expression) : DMASTUnary(location, expression);
 public sealed class DMASTTan(Location location, DMASTExpression expression) : DMASTUnary(location, expression);

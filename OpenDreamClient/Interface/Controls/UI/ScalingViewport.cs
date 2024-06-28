@@ -7,9 +7,7 @@ using Robust.Shared.Map;
 using Robust.Shared.Utility;
 using SixLabors.ImageSharp.PixelFormats;
 
-#nullable enable
-
-namespace OpenDreamClient.Interface.Controls;
+namespace OpenDreamClient.Interface.Controls.UI;
 
 /// <summary>
 ///     Viewport control that has a fixed viewport size and scales it appropriately.
@@ -219,9 +217,10 @@ public sealed class ScalingViewport : Control, IViewportControl {
 
         EnsureViewportCreated();
 
-        var matrix = Matrix3.Invert(LocalToScreenMatrix());
+        Matrix3x2.Invert(LocalToScreenMatrix(), out var matrix);
+        coords = Vector2.Transform(coords, matrix);
 
-        return _viewport!.LocalToWorld(matrix.Transform(coords));
+        return _viewport!.LocalToWorld(coords);
     }
 
     public MapCoordinates PixelToMap(Vector2 coords) {
@@ -230,8 +229,8 @@ public sealed class ScalingViewport : Control, IViewportControl {
 
         EnsureViewportCreated();
 
-        var matrix = Matrix3.Invert(GetLocalToScreenMatrix());
-        coords = matrix.Transform(coords);
+        Matrix3x2.Invert(GetLocalToScreenMatrix(), out var matrix);
+        coords = Vector2.Transform(coords, matrix);
 
         var ev = new PixelToMapEvent(coords, this, _viewport!);
         _entityManager.EventBus.RaiseEvent(EventSource.Local, ref ev);
@@ -249,10 +248,10 @@ public sealed class ScalingViewport : Control, IViewportControl {
 
         var matrix = LocalToScreenMatrix();
 
-        return matrix.Transform(vpLocal);
+        return Vector2.Transform(vpLocal, matrix);
     }
 
-    private Matrix3 LocalToScreenMatrix() {
+    private Matrix3x2 LocalToScreenMatrix() {
         DebugTools.AssertNotNull(_viewport);
 
         var drawBox = GetDrawBox();
@@ -260,10 +259,10 @@ public sealed class ScalingViewport : Control, IViewportControl {
 
         if (scaleFactor == Vector2.Zero)
             // Basically a nonsense scenario, at least make sure to return something that can be inverted.
-            return Matrix3.Identity;
+            return Matrix3x2.Identity;
 
-        var scale = Matrix3.CreateScale(scaleFactor);
-        var translate = Matrix3.CreateTranslation(GlobalPixelPosition + drawBox.TopLeft);
+        var scale = Matrix3x2.CreateScale(scaleFactor);
+        var translate = Matrix3x2.CreateTranslation(GlobalPixelPosition + drawBox.TopLeft);
 
         return scale * translate;
     }
@@ -276,12 +275,12 @@ public sealed class ScalingViewport : Control, IViewportControl {
         DebugTools.AssertNotNull(_viewport);
     }
 
-    public Matrix3 GetWorldToScreenMatrix() {
+    public Matrix3x2 GetWorldToScreenMatrix() {
         EnsureViewportCreated();
         return _viewport!.GetWorldToLocalMatrix() * GetLocalToScreenMatrix();
     }
 
-    public Matrix3 GetLocalToScreenMatrix() {
+    public Matrix3x2 GetLocalToScreenMatrix() {
         EnsureViewportCreated();
 
         var drawBox = GetDrawBox();
@@ -289,9 +288,9 @@ public sealed class ScalingViewport : Control, IViewportControl {
 
         if (scaleFactor.X == 0 || scaleFactor.Y == 0)
             // Basically a nonsense scenario, at least make sure to return something that can be inverted.
-            return Matrix3.Identity;
+            return Matrix3x2.Identity;
 
-        return Matrix3.CreateTransform(GlobalPixelPosition + drawBox.TopLeft, 0, scaleFactor);
+        return Matrix3Helpers.CreateTransform(GlobalPixelPosition + drawBox.TopLeft, 0, scaleFactor);
     }
 }
 

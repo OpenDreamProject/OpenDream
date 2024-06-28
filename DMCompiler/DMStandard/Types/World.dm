@@ -113,3 +113,5 @@
 	proc/PayCredits(player, credits, note)
 		set opendream_unimplemented = TRUE
 		return 0
+
+	proc/ODHotReloadInterface()

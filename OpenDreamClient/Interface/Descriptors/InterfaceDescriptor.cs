@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using OpenDreamClient.Interface.DMF;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
 
@@ -17,29 +18,29 @@ public sealed class InterfaceDescriptor {
 
     public ElementDescriptor? GetElementDescriptor(string name) {
         return WindowDescriptors.Concat<ElementDescriptor>(MacroSetDescriptors)
-            .Concat(MenuDescriptors).FirstOrDefault(descriptor => descriptor.Name == name);
+            .Concat(MenuDescriptors).FirstOrDefault(descriptor => descriptor.Name.Value == name);
     }
 }
 
 [Virtual, ImplicitDataDefinitionForInheritors]
 public partial class ElementDescriptor {
     [DataField("type")]
-    public string _type;
+    public DMFPropertyString _type;
 
     [DataField("id")]
-    protected string _id;
+    protected DMFPropertyString _id;
 
     [DataField("name")]
-    protected string? _name;
+    protected DMFPropertyString _name;
 
-    public string Id {
-        get => string.IsNullOrEmpty(_id) ? _id = Guid.NewGuid().ToString() : _id; //ensure unique ID for all elements. Empty ID elements aren't addressible anyway.
+    public DMFPropertyString Id {
+        get => string.IsNullOrEmpty(_id.Value) ? _id = new DMFPropertyString(Guid.NewGuid().ToString()) : _id; //ensure unique ID for all elements. Empty ID elements aren't addressible anyway.
         init => _id = value;
     }
 
-    public string Name => _name ?? Id;
+    public DMFPropertyString Name => new(_name.Value ?? Id.AsRaw());
 
-    public string Type {
+    public DMFPropertyString Type {
         get => _type;
         protected init => _type = value;
     }

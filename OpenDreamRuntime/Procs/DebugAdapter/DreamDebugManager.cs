@@ -21,11 +21,11 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
     // Setup
     private DebugAdapter? _adapter;
     private string RootPath => _resourceManager.RootPath ?? throw new Exception("No RootPath yet!");
-    private bool _stopOnEntry = false;
+    private bool _stopOnEntry;
 
     // State
-    private bool _stopped = false;
-    private bool _terminated = false;
+    private bool _stopped;
+    private bool _terminated;
 
     public enum StepMode {
         StepOver,  // aka "next"
@@ -43,15 +43,11 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
     private const string ExceptionFilterRuntimes = "runtimes";
     private bool _breakOnRuntimes = true;
 
-    private sealed class FileBreakpointSlot {
+    private sealed class FileBreakpointSlot(DMProc proc) {
         public IReadOnlyList<ActiveBreakpoint> Breakpoints => _breakpoints;
-        public readonly DMProc Proc;
+        public readonly DMProc Proc = proc;
 
         private readonly List<ActiveBreakpoint> _breakpoints = new();
-
-        public FileBreakpointSlot(DMProc proc) {
-            Proc = proc;
-        }
 
         public void ClearBreakpoints() {
             // Set all the opcodes back to their original
@@ -96,8 +92,9 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
 
     private readonly Dictionary<int, WeakReference<ProcState>> _stackFramesById = new();
 
-    private int _variablesIdCounter = 0;
+    private int _variablesIdCounter;
     private readonly Dictionary<int, Func<RequestVariables, IEnumerable<Variable>>> _variableReferences = new();
+
     private int AllocVariableRef(Func<RequestVariables, IEnumerable<Variable>> func) {
         int id = ++_variablesIdCounter;
         _variableReferences[id] = func;
@@ -110,7 +107,6 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
         _adapter = new DebugAdapter();
 
         _adapter.OnClientConnected += OnClientConnected;
-        //_adapter.StartListening();
         _adapter.ConnectOut(port: port);
     }
 
@@ -542,9 +538,11 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
         foreach (var thread in InspectThreads().Distinct()) {
             threads.Add(new Thread(thread.Id, thread.Name));
         }
+
         if (!threads.Any()) {
             threads.Add(new Thread(0, "Nothing"));
         }
+
         reqThreads.Respond(client, threads);
     }
 
@@ -636,6 +634,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
             output.Add(outputFrame);
             _stackFramesById[frame.Id] = new WeakReference<ProcState>(frame);
         }
+
         reqStackTrace.Respond(client, output, output.Count);
     }
 
@@ -673,6 +672,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
                 PresentationHint = Scope.PresentationHintRegisters,
             });
         }
+
         scopes.Add(new Scope {
             Name = "Arguments",
             PresentationHint = Scope.PresentationHintArguments,
@@ -695,7 +695,9 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
         if (dmFrame.Proc.OwningType != _objectTree.Root) {
             yield return DescribeValue("src", new(dmFrame.Instance));
         }
+
         yield return DescribeValue("usr", new(dmFrame.Usr));
+
         foreach (var (name, value) in dmFrame.DebugArguments()) {
             yield return DescribeValue(name, value);
         }
@@ -721,6 +723,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
 
     private Variable DescribeValue(string name, DreamValue value) {
         var varDesc = new Variable { Name = name, Value = value.ToString() };
+
         if (value.TryGetValueAsDreamList(out var list)) {
             if (list.GetLength() > 0) {
                 varDesc.VariablesReference = AllocVariableRef(req => ExpandList(req, list));
@@ -730,9 +733,9 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
             varDesc.VariablesReference = AllocVariableRef(req => ExpandObject(req, obj));
             varDesc.NamedVariables = obj.ObjectDefinition?.Variables.Count;
         }
+
         return varDesc;
     }
-
 
     private IEnumerable<Variable> ExpandList(RequestVariables req, DreamList list) {
         if (list.IsAssociative) {
@@ -752,6 +755,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
     private IEnumerable<Variable> ExpandObject(RequestVariables req, DreamObject obj) {
         foreach (var name in obj.GetVariableNames().OrderBy(k => k)) {
             Variable described;
+
             try {
                 described = DescribeValue(name, obj.GetVariable(name));
             } catch (Exception ex) {
@@ -762,6 +766,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
                     Value = $"<error: {ex.Message}>",
                 };
             }
+
             yield return described;
         }
     }
@@ -786,6 +791,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
             } else {
                 requestDisassemble.Respond(client, Enumerable.Repeat(LowInstruction, requestDisassemble.Arguments.InstructionCount));
             }
+
             return;
         }
 
@@ -841,7 +847,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
         // Otherwise it will think they're all the same and never refetch.
         int procId = proc.GetHashCode();
         _disassemblyProcs[procId] = proc;
-        ulong ip = ((ulong)(uint)procId << 32) | (ulong)(uint)pc;
+        ulong ip = ((ulong)(uint)procId << 32) | (uint)pc;
         return "0x" + ip.ToString("x");
     }
 

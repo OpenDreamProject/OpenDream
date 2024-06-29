@@ -800,9 +800,9 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
         DisassembledInstruction? previousInstruction = null;
         int previousOffset = 0;
         foreach (var (offset, instruction) in new ProcDecoder(_objectTree.Strings, proc.Bytecode).Disassemble()) {
-            if (previousInstruction != null) {
+            /*if (previousInstruction != null) {
                 previousInstruction.InstructionBytes = BitConverter.ToString(proc.Bytecode, previousOffset, offset - previousOffset).Replace("-", " ").ToLowerInvariant();
-            }
+            }*/
 
             previousOffset = offset;
             previousInstruction = new DisassembledInstruction {
@@ -817,9 +817,9 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
             output.Add(previousInstruction);
         }
 
-        if (previousInstruction != null) {
+        /*if (previousInstruction != null) {
             previousInstruction.InstructionBytes = BitConverter.ToString(proc.Bytecode, previousOffset).Replace("-", " ").ToLowerInvariant();
-        }
+        }*/
 
         // ... and THEN strip everything outside the requested range.
         int requestedPoint = output.FindIndex(di => di.Address == requestDisassemble.Arguments.MemoryReference);

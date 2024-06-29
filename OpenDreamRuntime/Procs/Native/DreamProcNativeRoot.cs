@@ -230,25 +230,19 @@ namespace OpenDreamRuntime.Procs.Native {
                     ColorMatrix cMatrix;
                     if(color.TryGetValueAsString(out var colorStr) && Color.TryParse(colorStr, out var colorObj)){
                         cMatrix = new ColorMatrix(colorObj);
-                    } else if (color.TryGetValueAsDreamList(out var colorList) && DreamProcNativeHelpers.TryParseColorMatrix(colorList, out cMatrix)){
-                        //parsed as colormatrix
-                    } else {
+                    } else if (!color.TryGetValueAsDreamList(out var colorList) || !DreamProcNativeHelpers.TryParseColorMatrix(colorList, out cMatrix)){
                         cMatrix = ColorMatrix.Identity; //fallback to identity if invalid
                     }
                     ColorMatrix objCMatrix;
                     DreamValue objColor = obj.GetVariable("color");
                     if(objColor.TryGetValueAsString(out var objColorStr) && Color.TryParse(objColorStr, out var objColorObj)){
                         objCMatrix = new ColorMatrix(objColorObj);
-                    } else if (objColor.TryGetValueAsDreamList(out var objColorList) && DreamProcNativeHelpers.TryParseColorMatrix(objColorList, out objCMatrix)){
-                        //parsed as colormatrix
-                    } else {
+                    } else if (!objColor.TryGetValueAsDreamList(out var objColorList) || !DreamProcNativeHelpers.TryParseColorMatrix(objColorList, out objCMatrix)){
                         objCMatrix = ColorMatrix.Identity; //fallback to identity if invalid
                     }
                     ColorMatrix.Multiply(ref objCMatrix, ref cMatrix, out var resultMatrix);
                     color = new DreamValue(new DreamList(bundle.ObjectTree.List.ObjectDefinition, resultMatrix.GetValues().Select(x => new DreamValue(x)).ToList(), null));
                 }
-
-
             }
 
             bundle.AtomManager.AnimateAppearance(obj, TimeSpan.FromMilliseconds(time * 100), (AnimationEasing)easing, loop, flags, delay, chainAnim,

@@ -198,30 +198,34 @@ namespace OpenDreamRuntime.Procs.Native {
             var suffix = bundle.GetArgument(25, "suffix");
 
             if((flags & AnimationFlags.AnimationRelative) != 0){
+                if(!bundle.AtomManager.TryGetAppearance(obj, out var appearance))
+                    return DreamValue.Null; //can't do anything animating an object with no appearance
                 // This works for maptext_x/y/width/height, pixel_x/y/w/z, luminosity, layer, alpha, transform, and color. For transform and color, the current value is multiplied by the new one. Vars not in this list are simply changed as if this flag is not present.
                 if(!pixelX.IsNull)
-                    pixelX = new(pixelX.UnsafeGetValueAsFloat() + obj.GetVariable("pixel_x").UnsafeGetValueAsFloat());
+                    pixelX = new(pixelX.UnsafeGetValueAsFloat() + appearance.PixelOffset.X);
                 if(!pixelY.IsNull)
-                    pixelY = new(pixelY.UnsafeGetValueAsFloat() + obj.GetVariable("pixel_y").UnsafeGetValueAsFloat());
+                    pixelY = new(pixelY.UnsafeGetValueAsFloat() + appearance.PixelOffset.Y);
+                /* TODO these are not yet implemented
                 if(!pixelZ.IsNull)
-                    pixelZ = new(pixelZ.UnsafeGetValueAsFloat() + obj.GetVariable("pixel_z").UnsafeGetValueAsFloat());
+                    pixelZ = new(pixelZ.UnsafeGetValueAsFloat() + obj.GetVariable("pixel_z").UnsafeGetValueAsFloat()); //TODO change to appearance when pixel_z is implemented
                 if(!maptextWidth.IsNull)
-                    maptextWidth = new(maptextWidth.UnsafeGetValueAsFloat() + obj.GetVariable("maptext_width").UnsafeGetValueAsFloat());
+                    maptextWidth = new(maptextWidth.UnsafeGetValueAsFloat() + obj.GetVariable("maptext_width").UnsafeGetValueAsFloat()); //TODO change to appearance when maptext_width is implemented
                 if(!maptextHeight.IsNull)
-                    maptextHeight = new(maptextHeight.UnsafeGetValueAsFloat() + obj.GetVariable("maptext_height").UnsafeGetValueAsFloat());
+                    maptextHeight = new(maptextHeight.UnsafeGetValueAsFloat() + obj.GetVariable("maptext_height").UnsafeGetValueAsFloat()); //TODO change to appearance when maptext_height is implemented
                 if(!maptextX.IsNull)
-                    maptextX = new(maptextX.UnsafeGetValueAsFloat() + obj.GetVariable("maptext_x").UnsafeGetValueAsFloat());
+                    maptextX = new(maptextX.UnsafeGetValueAsFloat() + obj.GetVariable("maptext_x").UnsafeGetValueAsFloat()); //TODO change to appearance when maptext_x is implemented
                 if(!maptextY.IsNull)
-                    maptextY = new(maptextY.UnsafeGetValueAsFloat() + obj.GetVariable("maptext_y").UnsafeGetValueAsFloat());
+                    maptextY = new(maptextY.UnsafeGetValueAsFloat() + obj.GetVariable("maptext_y").UnsafeGetValueAsFloat()); //TODO change to appearance when maptext_y is implemented
                 if(!luminosity.IsNull)
-                    luminosity = new(luminosity.UnsafeGetValueAsFloat() + obj.GetVariable("luminosity").UnsafeGetValueAsFloat());
+                    luminosity = new(luminosity.UnsafeGetValueAsFloat() + obj.GetVariable("luminosity").UnsafeGetValueAsFloat()); //TODO change to appearance when luminosity is implemented
+                */
                 if(!layer.IsNull)
-                    layer = new(layer.UnsafeGetValueAsFloat() + obj.GetVariable("layer").UnsafeGetValueAsFloat());
+                    layer = new(layer.UnsafeGetValueAsFloat() + appearance.Layer);
                 if(!alpha.IsNull)
-                    alpha = new(alpha.UnsafeGetValueAsFloat() + obj.GetVariable("alpha").UnsafeGetValueAsFloat());
+                    alpha = new(alpha.UnsafeGetValueAsFloat() + appearance.Alpha);
                 if(!transform.IsNull) {
-                    if(transform.TryGetValueAsDreamObject<DreamObjectMatrix>(out var multTransform) && obj.GetVariable("transform").TryGetValueAsDreamObject<DreamObjectMatrix>(out var objTransform)){
-                        DreamObjectMatrix objTransformClone = DreamObjectMatrix.MatrixClone(bundle.ObjectTree, objTransform);
+                    if(transform.TryGetValueAsDreamObject<DreamObjectMatrix>(out var multTransform)){
+                        DreamObjectMatrix objTransformClone = DreamObjectMatrix.MakeMatrix(bundle.ObjectTree, appearance.Transform);
                         DreamObjectMatrix.MultiplyMatrix(objTransformClone, multTransform);
                         transform = new(objTransformClone);
                     }

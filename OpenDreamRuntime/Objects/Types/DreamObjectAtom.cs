@@ -159,7 +159,7 @@ public class DreamObjectAtom : DreamObject {
 
                 if (value.TryGetValueAsDreamList(out var valueList)) { // filters = list("type"=...)
                     var filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, valueList);
-                    if (filterObject == null) // list() with invalid properties is ignored
+                    if (filterObject == null) // list() with invalid "type" is ignored
                         break;
 
                     Filters.AddValue(new(filterObject));

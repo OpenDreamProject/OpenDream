@@ -191,7 +191,7 @@ public sealed class DreamObjectImage : DreamObject {
 
                 if (valueList != null) { // filters = list("type"=...)
                     var filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, valueList);
-                    if (filterObject == null) // list() with invalid properties is ignored
+                    if (filterObject == null) // list() with invalid "type" is ignored
                         break;
 
                     _filters.AddValue(new(filterObject));

@@ -130,7 +130,7 @@ namespace OpenDreamRuntime {
             return MustGetValueAsString();
         }
 
-        public bool TryGetValueAsString([NotNullWhen(true)] out string? value) {
+        public readonly bool TryGetValueAsString([NotNullWhen(true)] out string? value) {
             if (Type == DreamValueType.String) {
                 value = Unsafe.As<string>(_refValue)!;
                 return true;

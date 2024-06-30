@@ -272,6 +272,9 @@ public struct DMFPropertySize : IDMFProperty {
     public bool Equals(string comparison) {
         return _value.Equals(comparison);
     }
+
+    public static bool operator ==(DMFPropertySize a, DMFPropertySize b) => a.X == b.X && a.Y == b.Y;
+    public static bool operator !=(DMFPropertySize a, DMFPropertySize b) => a.X != b.X || a.Y != b.Y;
 }
 
 public struct DMFPropertyPos : IDMFProperty {

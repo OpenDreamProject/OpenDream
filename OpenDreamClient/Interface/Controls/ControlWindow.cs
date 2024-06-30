@@ -100,6 +100,7 @@ public sealed class ControlWindow : InterfaceControl {
             _myWindow.osWindow.Close();
             UIElement.Orphan();
         }
+
         _myWindow = (null, window);
         UpdateWindowAttributes(_myWindow);
     }
@@ -151,8 +152,9 @@ public sealed class ControlWindow : InterfaceControl {
             }
 
             if (control.Anchor1.HasValue) {
-                var offset1X = elementPos.X - (windowSize.X * control.Anchor1.Value.X / 100f);
-                var offset1Y = elementPos.Y - (windowSize.Y * control.Anchor1.Value.Y / 100f);
+                var anchoredToSize = control.AnchoredToSize ?? _canvas.Size;
+                var offset1X = elementPos.X - (anchoredToSize.X * control.Anchor1.Value.X / 100f);
+                var offset1Y = elementPos.Y - (anchoredToSize.Y * control.Anchor1.Value.Y / 100f);
                 var left = (_canvas.Width * control.Anchor1.Value.X / 100) + offset1X;
                 var top = (_canvas.Height * control.Anchor1.Value.Y / 100) + offset1Y;
                 LayoutContainer.SetMarginLeft(element, Math.Max(left, 0));
@@ -164,9 +166,9 @@ public sealed class ControlWindow : InterfaceControl {
                         _sawmill.Warning($"Invalid anchor2 value in DMF for element {control.Id}. Ignoring.");
                     else {
                         var offset2X = (elementPos.X + elementSize.X) -
-                                       (windowSize.X * control.Anchor2.Value.X / 100);
+                                       (anchoredToSize.X * control.Anchor2.Value.X / 100);
                         var offset2Y = (elementPos.Y + elementSize.Y) -
-                                       (windowSize.Y * control.Anchor2.Value.Y / 100);
+                                       (anchoredToSize.Y * control.Anchor2.Value.Y / 100);
                         var width = (_canvas.Width * control.Anchor2.Value.X / 100) + offset2X - left;
                         var height = (_canvas.Height * control.Anchor2.Value.Y / 100) + offset2Y - top;
                         element.SetWidth = Math.Max(width, 0);
@@ -215,7 +217,6 @@ public sealed class ControlWindow : InterfaceControl {
         } else if (clydeWindow != null) {
             clydeWindow.IsVisible = WindowDescriptor.IsVisible.Value;
         }
-
     }
 
     public void CreateChildControls() {

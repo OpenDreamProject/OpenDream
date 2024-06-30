@@ -520,10 +520,12 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 innerControlId = (string.IsNullOrEmpty(innerControlId) ? "" : innerControlId+".")+string.Join(".", elementSplit[..^1]);
                 inner = elementSplit[^1];
             }
+
             string innerResult = WinGet(innerControlId, inner);
             result = result.Substring(0, startPos) + innerResult + result.Substring(endPos+2);
             startPos = result.IndexOf("[[", StringComparison.Ordinal);
         }
+
         return result;
     }
 
@@ -641,14 +643,14 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         }
     }
 
-    public string WinGet(string controlId, string queryValue) {
+    public string WinGet(string controlId, string queryValue, bool forceJson = false) {
         bool ParseAndTryGet(InterfaceElement element, string query, out string result) {
             //parse "as blah" from query if it's there
             string[] querySplit = query.Split(" as ");
             IDMFProperty propResult;
             if(querySplit.Length != 2) //must be "thing as blah" or "thing". Anything else is invalid.
                 if(element.TryGetProperty(query, out propResult!)){
-                    result = propResult.AsRaw();
+                    result = forceJson ? propResult.AsJson() : propResult.AsRaw();
                     return true;
                 } else {
                     result = "";
@@ -658,6 +660,11 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 if(!element.TryGetProperty(querySplit[0], out propResult!)) {
                     result = "";
                     return false;
+                }
+
+                if (forceJson) {
+                    result = propResult.AsJson();
+                    return true;
                 }
 
                 switch(querySplit[1]){
@@ -687,9 +694,11 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                         result = "";
                         return false;
                 }
+
                 return true;
             }
         }
+
         string GetProperty(string elementId) {
             var element = FindElementWithId(elementId);
             if (element == null) {
@@ -705,6 +714,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                         _sawmill.Error($"Could not winget property {query} on {element.Id}");
                     result += query+"="+queryResult + ";";
                 }
+
                 return result.TrimEnd(';');
             } else if (ParseAndTryGet(element, queryValue, out var value))
                 return value;
@@ -800,16 +810,16 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             window.CloseChildWindow();
             window.UIElement.RemoveAllChildren();
         }
-        
+
         Windows.Clear();
         Menus.Clear();
         MacroSets.Clear();
-        
+
         //close popups if they're open
         foreach (var popup in _popupWindows.Values) {
             popup.Close();
         }
-        
+
         _popupWindows.Clear();
         _inputManager.ResetAllBindings();
     }
@@ -873,6 +883,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 if (window.IsDefault) {
                     DefaultWindow = window;
                 }
+
                 break;
         }
     }
@@ -905,9 +916,10 @@ public interface IDreamInterfaceManager {
     void LoadInterfaceFromSource(string source);
 
     public void OpenAlert(string title, string message, string button1, string? button2, string? button3, Action<DreamValueType, object?>? onClose);
-    void Prompt(DreamValueType types, string title, string message, string defaultValue, Action<DreamValueType, object?>? onClose);
-    void RunCommand(string fullCommand);
-    void StartRepeatingCommand(string command);
-    void StopRepeatingCommand(string command);
-    void WinSet(string? controlId, string winsetParams);
+    public void Prompt(DreamValueType types, string title, string message, string defaultValue, Action<DreamValueType, object?>? onClose);
+    public void RunCommand(string fullCommand);
+    public void StartRepeatingCommand(string command);
+    public void StopRepeatingCommand(string command);
+    public void WinSet(string? controlId, string winsetParams);
+    public string WinGet(string controlId, string queryValue, bool forceJson = false);
 }

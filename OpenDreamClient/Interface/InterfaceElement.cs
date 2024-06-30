@@ -41,7 +41,16 @@ public class InterfaceElement {
             }
 
             MappingDataNode newNode = original.Merge(node);
-            ElementDescriptor = (ElementDescriptor)serializationManager.Read(ElementDescriptor.GetType(), newNode);
+            var newDescriptor = (ElementDescriptor)serializationManager.Read(ElementDescriptor.GetType(), newNode);
+
+            // A little hacky. Updates the control's AnchoredToSize if its size has been updated, so the anchors stay
+            //      relative to the window's size.
+            if (this is InterfaceControl control && newDescriptor is ControlDescriptor newControlDescriptor &&
+                control.Size != newControlDescriptor.Size) {
+                control.UpdateAnchoredToSize();
+            }
+
+            ElementDescriptor = newDescriptor;
             UpdateElementDescriptor();
         } catch (Exception e) {
             Logger.GetSawmill("opendream.interface").Error($"Error while populating values of \"{Id}\": {e}");

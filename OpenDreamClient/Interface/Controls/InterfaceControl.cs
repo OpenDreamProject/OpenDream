@@ -15,17 +15,24 @@ public abstract class InterfaceControl : InterfaceElement {
     public DMFPropertyPos? Anchor1 => ControlDescriptor.Anchor1;
     public DMFPropertyPos? Anchor2 => ControlDescriptor.Anchor2;
 
+    /// <summary>
+    /// The size that anchor1 and anchor2 anchor themselves to.
+    /// Updates when this control's size is winset, to keep them relative to the window's size.
+    /// </summary>
+    public Vector2i? AnchoredToSize;
+
     protected ControlDescriptor ControlDescriptor => (ControlDescriptor) ElementDescriptor;
 
-    private readonly ControlWindow _window;
+    private readonly ControlWindow? _window;
 
     [SuppressMessage("ReSharper", "VirtualMemberCallInConstructor")]
-    protected InterfaceControl(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor) {
+    protected InterfaceControl(ControlDescriptor controlDescriptor, ControlWindow? window) : base(controlDescriptor) {
         IoCManager.InjectDependencies(this);
 
         _window = window;
         UIElement = CreateUIElement();
 
+        UpdateAnchoredToSize();
         UpdateElementDescriptor();
     }
 
@@ -77,7 +84,8 @@ public abstract class InterfaceControl : InterfaceElement {
     public override bool TryGetProperty(string property, [NotNullWhen(true)] out IDMFProperty? value) {
         switch (property) {
             case "size":
-                value = new DMFPropertySize(UIElement.Size);
+                // SetSize because Size won't update if the element isn't visible
+                value = new DMFPropertySize(UIElement.SetSize);
                 return true;
             case "pos":
                 value = new DMFPropertyPos(UIElement.Position);
@@ -88,5 +96,9 @@ public abstract class InterfaceControl : InterfaceElement {
     }
 
     public virtual void Output(string value, string? data) {
+    }
+
+    public void UpdateAnchoredToSize() {
+        AnchoredToSize = (_window != null) ? (Vector2i)_window.UIElement.Size : null;
     }
 }

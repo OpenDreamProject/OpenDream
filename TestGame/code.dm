@@ -23,6 +23,11 @@
 /turf/blue
 	icon_state = "turf_blue"
 
+/area/withicon
+	icon = 'icons/objects.dmi'
+	icon_state = "overlay"
+
+
 /mob
 	icon = 'icons/mob.dmi'
 	icon_state = "mob"

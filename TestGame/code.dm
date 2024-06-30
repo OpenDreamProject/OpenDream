@@ -27,6 +27,16 @@
 	icon = 'icons/objects.dmi'
 	icon_state = "overlay"
 
+	New()
+		toggleBlink()
+
+	proc/toggleBlink()
+		if (icon == 'icons/objects.dmi')
+			icon = null
+		else
+			icon = 'icons/objects.dmi'
+		spawn(20)	
+			toggleBlink()
 
 /mob
 	icon = 'icons/mob.dmi'

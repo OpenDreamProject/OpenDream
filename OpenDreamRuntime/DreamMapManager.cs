@@ -159,8 +159,11 @@ public sealed class DreamMapManager : IDreamMapManager {
             throw new ArgumentException("Invalid coordinates");
 
         Cell cell = _levels[z - 1].Cells[pos.X - 1, pos.Y - 1];
-        if(area is not null)
+        if(area is not null) {
+            cell.Area.Contents.RemoveValue(new(cell.Turf));
             cell.Area = area;
+            cell.Area.Contents.AddValue(new(cell.Turf));
+        }
         if (cell.Turf != null) {
             cell.Turf.SetTurfType(type);
         } else {
@@ -182,8 +185,10 @@ public sealed class DreamMapManager : IDreamMapManager {
 
     public void SetTurfAppearance(DreamObjectTurf turf, IconAppearance appearance) {
         if(turf.Cell.Area.AppearanceId != 0)
-            if(!appearance.Overlays.Contains(turf.Cell.Area.AppearanceId))
+            if(!appearance.Overlays.Contains(turf.Cell.Area.AppearanceId)) {
+                appearance = new(appearance);
                 appearance.Overlays.Add(turf.Cell.Area.AppearanceId);
+            }
 
         int appearanceId = _appearanceSystem.AddAppearance(appearance);
 
@@ -194,17 +199,19 @@ public sealed class DreamMapManager : IDreamMapManager {
     }
 
     public void SetAreaAppearance(DreamObjectArea area, IconAppearance appearance) {
+        int oldAppearance = area.AppearanceId;
+        area.AppearanceId  = _appearanceSystem.AddAppearance(appearance);
         foreach (var turf in area.Contents.GetValues()) {
             if(turf.TryGetValueAsDreamObject<DreamObjectTurf>(out var turfObj)) {
                 var turfAppearance = _atomManager.MustGetAppearance(turfObj);
 
                 if(turfAppearance is null) continue;
 
-                turfAppearance.Overlays.Remove(area.AppearanceId);
+                turfAppearance.Overlays.Remove(oldAppearance);
                 SetTurfAppearance(turfObj, turfAppearance);
             }
         }
-        area.AppearanceId  = _appearanceSystem.AddAppearance(appearance);
+
     }
 
     public bool TryGetCellAt(Vector2i pos, int z, [NotNullWhen(true)] out Cell? cell) {

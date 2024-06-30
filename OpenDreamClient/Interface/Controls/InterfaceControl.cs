@@ -30,9 +30,9 @@ public abstract class InterfaceControl : InterfaceElement {
         IoCManager.InjectDependencies(this);
 
         _window = window;
+        AnchoredToSize = (_window != null) ? new Vector2i(_window.Size.X, _window.Size.Y) : null;
         UIElement = CreateUIElement();
 
-        UpdateAnchoredToSize();
         UpdateElementDescriptor();
     }
 

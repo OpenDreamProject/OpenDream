@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.IO;
+﻿using System.IO;
 using System.Net;
 using System.Web;
 using OpenDreamClient.Interface.Descriptors;
@@ -12,7 +11,6 @@ using Robust.Client.WebView;
 using Robust.Shared.Console;
 using Robust.Shared.ContentPack;
 using Robust.Shared.Network;
-using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 
 namespace OpenDreamClient.Interface.Controls;
@@ -196,35 +194,32 @@ internal sealed class ControlBrowser : InterfaceControl {
     // Example: byond://winget?id=browseroutput&property=size&callback=JSFunction
     // (Not in the XML comment because '&' breaks that apparently)
     private void HandleEmbeddedWinget(string query) {
-        // Run this later to ensure any pending UI measurements have occured
-        IoCManager.Resolve<ITimerManager>().AddTimer(new Timer(200, false, () => {
-            // Strip the question mark out before parsing
-            var queryParams = HttpUtility.ParseQueryString(query.Substring(1));
+        // Strip the question mark out before parsing
+        var queryParams = HttpUtility.ParseQueryString(query.Substring(1));
 
-            var elementId = queryParams.Get("id");
-            var property = queryParams.Get("property");
-            var callback = queryParams.Get("callback");
-            if (elementId == null || property == null || callback == null) {
-                _sawmill.Error($"Required arg 'id', 'property', or 'callback' not provided in embedded winget ({query})");
-                return;
-            }
+        var elementId = queryParams.Get("id");
+        var property = queryParams.Get("property");
+        var callback = queryParams.Get("callback");
+        if (elementId == null || property == null || callback == null) {
+            _sawmill.Error($"Required arg 'id', 'property', or 'callback' not provided in embedded winget ({query})");
+            return;
+        }
 
-            // TG uses property=* but really just wants size
-            // TODO: Actual winget * support
-            bool forceJson = true;
-            if (property == "*") {
-                property = "size";
-                forceJson = false; // property=* does not return "as json" values (why?!)
-            }
+        // TG uses property=* but really just wants size
+        // TODO: Actual winget * support
+        bool forceJson = true;
+        if (property == "*") {
+            property = "size";
+            forceJson = false; // property=* does not return "as json" values (why?!)
+        }
 
-            var result = _interfaceManager.WinGet(elementId, property, forceJson: forceJson);
+        var result = _interfaceManager.WinGet(elementId, property, forceJson: forceJson);
 
-            // Execute the callback
-            var propertyEncoded = HttpUtility.JavaScriptStringEncode(property);
-            var resultEncoded = HttpUtility.JavaScriptStringEncode(result);
-            var jsonArgument = $"{{ \"{propertyEncoded}\": \"{resultEncoded}\" }}";
-            _webView.ExecuteJavaScript($"{callback}({jsonArgument})");
-        }));
+        // Execute the callback
+        var propertyEncoded = HttpUtility.JavaScriptStringEncode(property);
+        var resultEncoded = HttpUtility.JavaScriptStringEncode(result);
+        var jsonArgument = $"{{ \"{propertyEncoded}\": \"{resultEncoded}\" }}";
+        _webView.ExecuteJavaScript($"{callback}({jsonArgument})");
     }
 
     private void OnShowEvent() {

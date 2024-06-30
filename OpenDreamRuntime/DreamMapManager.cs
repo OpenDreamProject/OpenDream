@@ -211,7 +211,6 @@ public sealed class DreamMapManager : IDreamMapManager {
                 SetTurfAppearance(turfObj, turfAppearance);
             }
         }
-
     }
 
     public bool TryGetCellAt(Vector2i pos, int z, [NotNullWhen(true)] out Cell? cell) {

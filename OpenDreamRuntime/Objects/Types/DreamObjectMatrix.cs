@@ -322,8 +322,8 @@ public sealed class DreamObjectMatrix : DreamObject {
     /// <seealso cref="MakeMatrix(DreamObjectTree,float,float,float,float,float,float)"/>
     public static DreamObjectMatrix MakeMatrix(DreamObjectTree objectTree, float[] matrixValues) {
         return MakeMatrix(objectTree,
-                          matrixValues[0], matrixValues[1], matrixValues[2],
-                          matrixValues[3], matrixValues[4], matrixValues[5]);
+                          matrixValues[0], matrixValues[2], matrixValues[4], //order on these matches the output of MatrixToTransformFloatArray
+                          matrixValues[1], matrixValues[3], matrixValues[5]);
     }
 
     public static float Determinant(DreamObjectMatrix matrix) {

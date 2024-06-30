@@ -199,6 +199,8 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
     private IconAppearance? CalculateAnimatedAppearance() {
         if (_appearanceAnimations == null || _appearance == null)
             return _appearance;
+
+        _textureDirty = true; //if we have animations, we need to recalculate the texture
         IconAppearance appearance = new IconAppearance(_appearance);
         List<AppearanceAnimation>? toRemove = null;
         for(int i = 0; i < _appearanceAnimations.Count; i++) {

@@ -302,6 +302,9 @@ public sealed class ControlWindow : InterfaceControl {
 
     public override bool TryGetProperty(string property, [NotNullWhen(true)] out IDMFProperty? value) {
         switch (property) {
+            case "size": // ControlWindow has its own getter for this because it doesn't use SetSize
+                value = new DMFPropertySize(UIElement.Size);
+                return true;
             case "inner-size":
                 value = new DMFPropertySize((int)_canvas.Width, (int)_canvas.Height);
                 return true;

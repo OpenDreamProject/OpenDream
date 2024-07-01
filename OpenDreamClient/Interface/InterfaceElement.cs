@@ -41,16 +41,8 @@ public class InterfaceElement {
             }
 
             MappingDataNode newNode = original.Merge(node);
-            var newDescriptor = (ElementDescriptor)serializationManager.Read(ElementDescriptor.GetType(), newNode);
 
-            // A little hacky. Updates the control's AnchoredToSize if its size has been updated, so the anchors stay
-            //      relative to the window's size.
-            if (this is InterfaceControl control && newDescriptor is ControlDescriptor newControlDescriptor &&
-                control.Size != newControlDescriptor.Size) {
-                control.UpdateAnchoredToSize();
-            }
-
-            ElementDescriptor = newDescriptor;
+            ElementDescriptor = (ElementDescriptor)serializationManager.Read(ElementDescriptor.GetType(), newNode);
             UpdateElementDescriptor();
         } catch (Exception e) {
             Logger.GetSawmill("opendream.interface").Error($"Error while populating values of \"{Id}\": {e}");
@@ -73,8 +65,16 @@ public class InterfaceElement {
         return false;
     }
 
-    protected virtual void UpdateElementDescriptor() {
+    // TODO: Replace PopulateElementDescriptor with this
+    public virtual void SetProperty(string property, string value, bool manualWinset = false) {
+        MappingDataNode node = new() {
+            {property, value}
+        };
 
+        PopulateElementDescriptor(node, _serializationManager);
+    }
+
+    protected virtual void UpdateElementDescriptor() {
     }
 
     public virtual void AddChild(ElementDescriptor descriptor) {
@@ -82,6 +82,5 @@ public class InterfaceElement {
     }
 
     public virtual void Shutdown() {
-
     }
 }

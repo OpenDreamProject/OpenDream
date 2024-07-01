@@ -579,10 +579,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                                     string? statementElementId = statement.Element ?? elementId;
                                     InterfaceElement? statementElement = FindElementWithId(statementElementId);
                                     if(statementElement is not null) {
-                                        MappingDataNode node = new() {
-                                            {statement.Attribute, HandleEmbeddedWinget(statementElementId, statement.Value)}
-                                        };
-                                        statementElement.PopulateElementDescriptor(node, _serializationManager);
+                                        statementElement.SetProperty(statement.Attribute, HandleEmbeddedWinget(statementElementId, statement.Value), manualWinset: true);
                                     } else {
                                         _sawmill.Error($"Invalid element on ternary \"{statementElementId}\"");
                                     }
@@ -592,10 +589,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                                     string? statementElementId = statement.Element ?? elementId;
                                     InterfaceElement? statementElement = FindElementWithId(statementElementId);
                                     if(statementElement is not null) {
-                                        MappingDataNode node = new() {
-                                            {statement.Attribute, HandleEmbeddedWinget(statementElementId, statement.Value)}
-                                        };
-                                        statementElement.PopulateElementDescriptor(node, _serializationManager);
+                                        statementElement.SetProperty(statement.Attribute, HandleEmbeddedWinget(statementElementId, statement.Value), manualWinset: true);
                                     } else {
                                         _sawmill.Error($"Invalid element on ternary \"{statementElementId}\"");
                                     }
@@ -603,12 +597,9 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                             }
                     } else {
                         InterfaceElement? element = FindElementWithId(elementId);
-                        MappingDataNode node = new() {
-                            {winSet.Attribute, HandleEmbeddedWinget(elementId, winSet.Value)}
-                        };
 
                         if (element != null) {
-                            element.PopulateElementDescriptor(node, _serializationManager);
+                            element.SetProperty(winSet.Attribute, HandleEmbeddedWinget(elementId, winSet.Value), manualWinset: true);
                         } else {
                             _sawmill.Error($"Invalid element \"{elementId}\"");
                         }
@@ -617,26 +608,28 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             }
         } else {
             InterfaceElement? element = FindElementWithId(controlId);
-            MappingDataNode node = parser.Attributes();
+            var attributes = parser.AttributesValues();
 
             if (CheckParserErrors())
                 return;
 
-            if (element == null && node.TryGet("parent", out ValueDataNode? parentNode)) {
-                var parent = FindElementWithId(parentNode.Value);
+            if (element == null && attributes.TryGetValue("parent", out var parentId)) {
+                var parent = FindElementWithId(parentId);
                 if (parent == null) {
-                    _sawmill.Error($"Attempted to create an element with nonexistent parent \"{parentNode.Value}\" ({winsetParams})");
+                    _sawmill.Error($"Attempted to create an element with nonexistent parent \"{parentId}\" ({winsetParams})");
                     return;
                 }
 
-                node.Add("id", controlId);
-                var childDescriptor = parent.ElementDescriptor.CreateChildDescriptor(_serializationManager, node);
+                attributes["id"] = controlId;
+                var childDescriptor = parent.ElementDescriptor.CreateChildDescriptor(_serializationManager, attributes);
                 if (childDescriptor == null)
                     return;
 
                 parent.AddChild(childDescriptor);
             } else if (element != null) {
-                element.PopulateElementDescriptor(node, _serializationManager);
+                foreach (var attribute in attributes) {
+                    element.SetProperty(attribute.Key, attribute.Value, manualWinset: true);
+                }
             } else {
                 _sawmill.Error($"Invalid element \"{controlId}\"");
             }

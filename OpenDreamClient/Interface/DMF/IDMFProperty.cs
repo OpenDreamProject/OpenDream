@@ -145,6 +145,8 @@ public struct DMFPropertyVec2 : IDMFProperty {
     public int Y;
     public char Delim = ',';
 
+    public Vector2i Vector => new(X, Y);
+
     public DMFPropertyVec2(int x, int y) {
         X = x;
         Y = y;
@@ -215,6 +217,7 @@ public struct DMFPropertySize : IDMFProperty {
     private DMFPropertyVec2 _value;
     public int X {get => _value.X; set => _value.X = value;}
     public int Y {get => _value.Y; set => _value.Y = value;}
+    public Vector2i Vector => _value.Vector;
     private const char Delim = 'x';
 
     public DMFPropertySize(int x, int y) {
@@ -273,14 +276,15 @@ public struct DMFPropertySize : IDMFProperty {
         return _value.Equals(comparison);
     }
 
-    public static bool operator ==(DMFPropertySize a, DMFPropertySize b) => a.X == b.X && a.Y == b.Y;
-    public static bool operator !=(DMFPropertySize a, DMFPropertySize b) => a.X != b.X || a.Y != b.Y;
+    public static bool operator ==(DMFPropertySize a, DMFPropertySize b) => a.Vector == b.Vector;
+    public static bool operator !=(DMFPropertySize a, DMFPropertySize b) => a.Vector != b.Vector;
 }
 
 public struct DMFPropertyPos : IDMFProperty {
     private DMFPropertyVec2 _value;
-    public int X {get => _value.X; set => _value.X = value;}
-    public int Y {get => _value.Y; set => _value.Y = value;}
+    public int X => _value.X;
+    public int Y => _value.Y;
+    public Vector2i Vector => _value.Vector;
     private const char Delim = ',';
 
     public DMFPropertyPos(int x, int y) {
@@ -338,6 +342,9 @@ public struct DMFPropertyPos : IDMFProperty {
     public bool Equals(string comparison) {
         return _value.Equals(comparison);
     }
+
+    public static bool operator ==(DMFPropertyPos a, DMFPropertyPos b) => a.Vector == b.Vector;
+    public static bool operator !=(DMFPropertyPos a, DMFPropertyPos b) => a.Vector != b.Vector;
 }
 
 public struct DMFPropertyColor : IDMFProperty {

@@ -16,8 +16,9 @@ public abstract class InterfaceControl : InterfaceElement {
     public DMFPropertyPos? Anchor2 => ControlDescriptor.Anchor2;
 
     /// <summary>
-    /// The size that anchor1 and anchor2 anchor themselves to.
-    /// Updates when this control's size is winset, to keep them relative to the window's size.
+    /// The position that anchor1 and anchor2 anchor themselves to.
+    /// Updates when this control's size/pos is winset,
+    /// or when this control's size is 0 and a sibling control's size/pos is winset
     /// </summary>
     public Vector2i? AnchoredToSize;
 
@@ -30,8 +31,10 @@ public abstract class InterfaceControl : InterfaceElement {
         IoCManager.InjectDependencies(this);
 
         _window = window;
-        AnchoredToSize = (_window != null) ? new Vector2i(_window.Size.X, _window.Size.Y) : null;
         UIElement = CreateUIElement();
+
+        SetProperty("size", ControlDescriptor.Size.AsRaw());
+        SetProperty("pos", ControlDescriptor.Pos.AsRaw());
 
         UpdateElementDescriptor();
     }
@@ -40,14 +43,6 @@ public abstract class InterfaceControl : InterfaceElement {
 
     protected override void UpdateElementDescriptor() {
         UIElement.Name = ControlDescriptor.Name.Value;
-
-        var pos = ControlDescriptor.Pos;
-        LayoutContainer.SetMarginLeft(UIElement, pos.X);
-        LayoutContainer.SetMarginTop(UIElement, pos.Y);
-
-        UIElement.SetSize = new Vector2(ControlDescriptor.Size.X, ControlDescriptor.Size.Y);
-
-        _window?.UpdateAnchors();
 
         //transparent is default because it's white with 0 alpha, and DMF color can't have none-255 alpha
         StyleBox? styleBox = (ControlDescriptor.BackgroundColor.Value != Color.Transparent)
@@ -95,10 +90,38 @@ public abstract class InterfaceControl : InterfaceElement {
         }
     }
 
-    public virtual void Output(string value, string? data) {
+    public override void SetProperty(string property, string value, bool manualWinset = false) {
+        Logger.Debug($"Winset {property} on {Id.Value} to {value}");
+        switch (property) {
+            case "size":
+                var size = new DMFPropertySize(value);
+
+                // A size of 0 takes up the remaining space of the window as defined by the DMF
+                if (size.X == 0 && _window != null)
+                    size.X = _window.Size.X - ControlDescriptor.Pos.X;
+                if (size.Y == 0 && _window != null)
+                    size.Y = _window.Size.Y - ControlDescriptor.Pos.Y;
+
+                value = size.AsRaw(); // May have been modified by the above
+                UIElement.SetSize = size.Vector;
+
+                if (manualWinset)
+                    _window?.UpdateAnchorSize(this);
+                break;
+            case "pos":
+                var pos = new DMFPropertyPos(value);
+
+                LayoutContainer.SetMarginLeft(UIElement, pos.X);
+                LayoutContainer.SetMarginTop(UIElement, pos.Y);
+
+                if (manualWinset)
+                    _window?.UpdateAnchorSize(this);
+                break;
+        }
+
+        base.SetProperty(property, value, manualWinset);
     }
 
-    public void UpdateAnchoredToSize() {
-        AnchoredToSize = (_window != null) ? (Vector2i)_window.UIElement.Size : null;
+    public virtual void Output(string value, string? data) {
     }
 }

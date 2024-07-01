@@ -1,4 +1,5 @@
-﻿using OpenDreamRuntime.Objects;
+﻿using System.Buffers;
+using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Shared.Utility;
@@ -21,8 +22,6 @@ using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
 using Robust.Server;
 using Robust.Shared.Asynchronous;
-using Robust.Shared.Serialization.Manager;
-using Robust.Shared.Serialization.Markdown.Mapping;
 using Vector4 = Robust.Shared.Maths.Vector4;
 
 namespace OpenDreamRuntime.Procs.Native {
@@ -196,6 +195,61 @@ namespace OpenDreamRuntime.Procs.Native {
             var iconState = bundle.GetArgument(23, "icon_state");
             var invisibility = bundle.GetArgument(24, "invisibility");
             var suffix = bundle.GetArgument(25, "suffix");
+
+            if((flags & AnimationFlags.AnimationRelative) != 0){
+                if(!bundle.AtomManager.TryGetAppearance(obj, out var appearance))
+                    return DreamValue.Null; //can't do anything animating an object with no appearance
+                // This works for maptext_x/y/width/height, pixel_x/y/w/z, luminosity, layer, alpha, transform, and color. For transform and color, the current value is multiplied by the new one. Vars not in this list are simply changed as if this flag is not present.
+                if(!pixelX.IsNull)
+                    pixelX = new(pixelX.UnsafeGetValueAsFloat() + appearance.PixelOffset.X);
+                if(!pixelY.IsNull)
+                    pixelY = new(pixelY.UnsafeGetValueAsFloat() + appearance.PixelOffset.Y);
+                /* TODO these are not yet implemented
+                if(!pixelZ.IsNull)
+                    pixelZ = new(pixelZ.UnsafeGetValueAsFloat() + obj.GetVariable("pixel_z").UnsafeGetValueAsFloat()); //TODO change to appearance when pixel_z is implemented
+                if(!maptextWidth.IsNull)
+                    maptextWidth = new(maptextWidth.UnsafeGetValueAsFloat() + obj.GetVariable("maptext_width").UnsafeGetValueAsFloat()); //TODO change to appearance when maptext_width is implemented
+                if(!maptextHeight.IsNull)
+                    maptextHeight = new(maptextHeight.UnsafeGetValueAsFloat() + obj.GetVariable("maptext_height").UnsafeGetValueAsFloat()); //TODO change to appearance when maptext_height is implemented
+                if(!maptextX.IsNull)
+                    maptextX = new(maptextX.UnsafeGetValueAsFloat() + obj.GetVariable("maptext_x").UnsafeGetValueAsFloat()); //TODO change to appearance when maptext_x is implemented
+                if(!maptextY.IsNull)
+                    maptextY = new(maptextY.UnsafeGetValueAsFloat() + obj.GetVariable("maptext_y").UnsafeGetValueAsFloat()); //TODO change to appearance when maptext_y is implemented
+                if(!luminosity.IsNull)
+                    luminosity = new(luminosity.UnsafeGetValueAsFloat() + obj.GetVariable("luminosity").UnsafeGetValueAsFloat()); //TODO change to appearance when luminosity is implemented
+                */
+                if(!layer.IsNull)
+                    layer = new(layer.UnsafeGetValueAsFloat() + appearance.Layer);
+                if(!alpha.IsNull)
+                    alpha = new(alpha.UnsafeGetValueAsFloat() + appearance.Alpha);
+                if(!transform.IsNull) {
+                    if(transform.TryGetValueAsDreamObject<DreamObjectMatrix>(out var multTransform)){
+                        DreamObjectMatrix objTransformClone = DreamObjectMatrix.MakeMatrix(bundle.ObjectTree, appearance.Transform);
+                        DreamObjectMatrix.MultiplyMatrix(objTransformClone, multTransform);
+                        transform = new(objTransformClone);
+                    }
+                }
+
+                if(!color.IsNull) {
+                    ColorMatrix cMatrix;
+                    if(color.TryGetValueAsString(out var colorStr) && Color.TryParse(colorStr, out var colorObj)){
+                        cMatrix = new ColorMatrix(colorObj);
+                    } else if (!color.TryGetValueAsDreamList(out var colorList) || !DreamProcNativeHelpers.TryParseColorMatrix(colorList, out cMatrix)){
+                        cMatrix = ColorMatrix.Identity; //fallback to identity if invalid
+                    }
+
+                    ColorMatrix objCMatrix;
+                    DreamValue objColor = obj.GetVariable("color");
+                    if(objColor.TryGetValueAsString(out var objColorStr) && Color.TryParse(objColorStr, out var objColorObj)){
+                        objCMatrix = new ColorMatrix(objColorObj);
+                    } else if (!objColor.TryGetValueAsDreamList(out var objColorList) || !DreamProcNativeHelpers.TryParseColorMatrix(objColorList, out objCMatrix)){
+                        objCMatrix = ColorMatrix.Identity; //fallback to identity if invalid
+                    }
+
+                    ColorMatrix.Multiply(ref objCMatrix, ref cMatrix, out var resultMatrix);
+                    color = new DreamValue(new DreamList(bundle.ObjectTree.List.ObjectDefinition, resultMatrix.GetValues().Select(x => new DreamValue(x)).ToList(), null));
+                }
+            }
 
             bundle.AtomManager.AnimateAppearance(obj, TimeSpan.FromMilliseconds(time * 100), (AnimationEasing)easing, loop, flags, delay, chainAnim,
             appearance => {
@@ -682,32 +736,27 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("falloff", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("alpha", Type = DreamValueTypeFlag.Float)]
         public static DreamValue NativeProc_filter(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            if (!bundle.GetArgument(0, "type").TryGetValueAsString(out var filterTypeName))
-                return DreamValue.Null;
+            var propertyValues = ArrayPool<DreamValue>.Shared.Rent(bundle.Arguments.Length);
 
-            Type? filterType = DreamFilter.GetType(filterTypeName);
-            if (filterType == null)
-                return DreamValue.Null;
+            // ReadOnlySpan shenanigans making things difficult..
+            bundle.Arguments.CopyTo(propertyValues);
 
-            var serializationManager = IoCManager.Resolve<ISerializationManager>();
+            static IEnumerable<(string, DreamValue)> EnumerateProperties(List<string> argumentNames, DreamValue[] values) {
+                for (int i = 0; i < argumentNames.Count; i++) { // Every argument is a filter property
+                    var propertyName = argumentNames[i];
+                    var property = values[i];
+                    if (property.IsNull)
+                        continue;
 
-            MappingDataNode attributes = new();
-            for (int i = 0; i < bundle.Proc.ArgumentNames.Count; i++) { // Every argument is a filter property
-                var propertyName = bundle.Proc.ArgumentNames[i];
-                var property = bundle.Arguments[i];
-                if (property.IsNull)
-                    continue;
-
-                attributes.Add(propertyName, new DreamValueDataNode(property));
+                    yield return (propertyName, property);
+                }
             }
 
-            DreamFilter? filter = serializationManager.Read(filterType, attributes) as DreamFilter;
-            if (filter is null)
-                throw new Exception($"Failed to create filter of type {filterType}");
+            var propertyEnumerator = EnumerateProperties(bundle.Proc.ArgumentNames!, propertyValues);
+            var filter = DreamObjectFilter.TryCreateFilter(bundle.ObjectTree, propertyEnumerator);
 
-            var filterObject = bundle.ObjectTree.CreateObject<DreamObjectFilter>(bundle.ObjectTree.Filter);
-            filterObject.Filter = filter;
-            return new DreamValue(filterObject);
+            ArrayPool<DreamValue>.Shared.Return(propertyValues, clearArray: true);
+            return new(filter);
         }
 
         [DreamProc("findtext")]

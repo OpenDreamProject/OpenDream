@@ -66,6 +66,11 @@ public sealed class Splitter : Container {
         }
     }
 
+    public StyleBox? DragStyleBoxOverride {
+        get => _drag.StyleBoxOverride;
+        set => _drag.StyleBoxOverride = value;
+    }
+
     private readonly DragControl _drag = new();
 
     private float _splitterWidth = 5f;
@@ -163,7 +168,7 @@ public sealed class Splitter : Container {
     }
 
     private sealed class DragControl : Control {
-        private static readonly StyleBox DragControlStyleBox = new StyleBoxFlat(Color.DarkGray) {
+        private static readonly StyleBox DragControlStyleBoxDefault = new StyleBoxFlat(Color.DarkGray) {
             BorderColor = Color.Gray,
             BorderThickness = new(1)
         };
@@ -171,6 +176,8 @@ public sealed class Splitter : Container {
         public event Action<GUIBoundKeyEventArgs>? OnMouseDown;
         public event Action<GUIBoundKeyEventArgs>? OnMouseUp;
         public event Action<GUIMouseMoveEventArgs>? OnMouseMove;
+
+        public StyleBox? StyleBoxOverride;
 
         public DragControl() {
             MouseFilter = MouseFilterMode.Stop;
@@ -194,7 +201,9 @@ public sealed class Splitter : Container {
         }
 
         protected override void Draw(DrawingHandleScreen handle) {
-            DragControlStyleBox.Draw(handle, UIBox2.FromDimensions(Vector2.Zero, PixelSize), UIScale);
+            var styleBox = StyleBoxOverride ?? DragControlStyleBoxDefault;
+
+            styleBox.Draw(handle, UIBox2.FromDimensions(Vector2.Zero, PixelSize), UIScale);
         }
     }
 }

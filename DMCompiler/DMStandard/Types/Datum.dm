@@ -1,8 +1,8 @@
 ﻿/datum
-	var/const/type
+	var/tmp/type as opendream_compiletimereadonly
 	var/tmp/parent_type
 
-	var/const/list/vars
+	var/tmp/list/vars as opendream_compiletimereadonly
 
 	var/tag
 

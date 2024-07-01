@@ -201,11 +201,27 @@
 		set name = "wingettextverb"
 		world << "recieved: [rawtext]"			
 
-	verb/test_hot_reload()
+	verb/test_hot_reload_interface()
 		set category = "Test"
 		src << "trying hot reload of interface..."
 		world.ODHotReloadInterface()
 		src << "done hot reload of interface!"
+
+	verb/test_hot_reload_icon()
+		set category = "Test"
+		src << "trying hot reload of icon..."
+		world.ODHotReloadResource("icons/turf.dmi")
+		src << "done hot reload of icon!"
+
+	verb/manipulate_world_size()
+		var/x = input("New World X?", "World Size", 0) as num|null
+		var/y = input("New World Y?", "World Size", 0) as num|null
+
+		if(!x || !y)
+			return
+
+		world.maxx = x
+		world.maxy = y
 
 /mob/Stat()
 	if (statpanel("Status"))

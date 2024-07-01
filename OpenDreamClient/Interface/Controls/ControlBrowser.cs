@@ -4,7 +4,9 @@ using System.Web;
 using OpenDreamClient.Interface.Descriptors;
 using OpenDreamClient.Resources;
 using OpenDreamShared.Network.Messages;
+using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
+using Robust.Client.UserInterface.Controls;
 using Robust.Client.WebView;
 using Robust.Shared.Console;
 using Robust.Shared.ContentPack;
@@ -34,6 +36,7 @@ internal sealed class ControlBrowser : InterfaceControl {
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.browser");
 
+    private PanelContainer _panel;
     private WebViewControl _webView;
 
     public ControlBrowser(ControlDescriptor controlDescriptor, ControlWindow window)
@@ -42,7 +45,11 @@ internal sealed class ControlBrowser : InterfaceControl {
     }
 
     protected override Control CreateUIElement() {
-        _webView = new WebViewControl();
+        _panel = new PanelContainer {
+            Children = {
+                (_webView = new WebViewControl())
+            }
+        };
 
         _webView.AddResourceRequestHandler(RequestHandler);
         _webView.AddBeforeBrowseHandler(BeforeBrowseHandler);
@@ -59,7 +66,13 @@ internal sealed class ControlBrowser : InterfaceControl {
         else
             OnHideEvent();
 
-        return _webView;
+        return _panel;
+    }
+
+    protected override void UpdateElementDescriptor() {
+        base.UpdateElementDescriptor();
+
+        _panel.PanelOverride = new StyleBoxFlat(Color.White); // Always white background
     }
 
     public override void Output(string value, string? jsFunction) {

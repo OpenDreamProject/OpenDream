@@ -53,7 +53,8 @@ public sealed class DreamObjectMatrix : DreamObject {
     }
 
     #region Operators
-    public override DreamValue OperatorAdd(DreamValue b) {
+
+    public override ProcStatus OperatorAdd(DreamValue b, DMProcState state, out DreamValue result) {
         GetVariable("a").TryGetValueAsFloat(out float lA);
         GetVariable("b").TryGetValueAsFloat(out float lB);
         GetVariable("c").TryGetValueAsFloat(out float lC);
@@ -78,13 +79,14 @@ public sealed class DreamObjectMatrix : DreamObject {
                 lF + rF  // f
             );
 
-            return new DreamValue(output);
+            result = new DreamValue(output);
+            return ProcStatus.Continue;
         }
 
-        return base.OperatorAdd(b);
+        return base.OperatorAdd(b, state, out result);
     }
 
-    public override DreamValue OperatorSubtract(DreamValue b) {
+    public override ProcStatus OperatorSubtract(DreamValue b, DMProcState state, out DreamValue result) {
         GetVariable("a").TryGetValueAsFloat(out float lA);
         GetVariable("b").TryGetValueAsFloat(out float lB);
         GetVariable("c").TryGetValueAsFloat(out float lC);
@@ -109,13 +111,14 @@ public sealed class DreamObjectMatrix : DreamObject {
                 lF - rF  // f
             );
 
-            return new DreamValue(output);
+            result = new DreamValue(output);
+            return ProcStatus.Continue;
         }
 
-        return base.OperatorSubtract(b);
+        return base.OperatorSubtract(b, state, out result);
     }
 
-    public override DreamValue OperatorMultiply(DreamValue b) {
+    public override ProcStatus OperatorMultiply(DreamValue b, DMProcState state, out DreamValue result) {
         GetVariable("a").TryGetValueAsFloat(out float lA);
         GetVariable("b").TryGetValueAsFloat(out float lB);
         GetVariable("c").TryGetValueAsFloat(out float lC);
@@ -128,7 +131,8 @@ public sealed class DreamObjectMatrix : DreamObject {
                     lA * bFloat,lB * bFloat,lC * bFloat,
                     lD * bFloat,lE * bFloat,lF * bFloat
                 );
-            return new(output);
+            result = new DreamValue(output);
+            return ProcStatus.Continue;
         } else if (b.TryGetValueAsDreamObject<DreamObjectMatrix>(out var right)) {
             right.GetVariable("a").TryGetValueAsFloat(out float rA);
             right.GetVariable("b").TryGetValueAsFloat(out float rB);
@@ -146,10 +150,44 @@ public sealed class DreamObjectMatrix : DreamObject {
                 rC * lD + rF * lE + lF // f
             );
 
-            return new(output);
+            result = new DreamValue(output);
+            return ProcStatus.Continue;
         }
 
-        return base.OperatorMultiply(b);
+        return base.OperatorMultiply(b, state, out result);
+    }
+
+    public override ProcStatus OperatorMultiplyRef(DreamValue b, DMProcState state, out DreamValue result, in DreamReference reference) {
+        return OperatorMultiply(b, state, out result); //returns ProcStatus.Continue, so the assignref can be handled in the opcode
+    }
+
+    public override ProcStatus OperatorDivide(DreamValue b, DMProcState state, out DreamValue result) {
+        GetVariable("a").TryGetValueAsFloat(out float lA);
+        GetVariable("b").TryGetValueAsFloat(out float lB);
+        GetVariable("c").TryGetValueAsFloat(out float lC);
+        GetVariable("d").TryGetValueAsFloat(out float lD);
+        GetVariable("e").TryGetValueAsFloat(out float lE);
+        GetVariable("f").TryGetValueAsFloat(out float lF);
+
+        if (b.TryGetValueAsFloat(out float bFloat)) {
+            DreamObjectMatrix output = MakeMatrix(ObjectTree,
+                    lA / bFloat,lB / bFloat,lC / bFloat,
+                    lD / bFloat,lE / bFloat,lF / bFloat
+                );
+            result = new DreamValue(output);
+            return ProcStatus.Continue;
+        } else if(b.TryGetValueAsDreamObject<DreamObjectMatrix>(out var right)) { //matrix divided by matrix isn't a thing, but in BYOND it's apparently multiplication by the inverse, because of course it is
+            DreamObjectMatrix rightCopy = MatrixClone(ObjectTree, right);
+            if (!TryInvert(rightCopy))
+                throw new ArgumentException("Matrix does not have a valid inversion for Invert()");
+            return OperatorMultiply(new(rightCopy), state, out result); //returns ProcStatus.Continue, so the assignref can be handled in the opcode
+        }
+
+        return base.OperatorDivide(b, state, out result);
+    }
+
+    public override ProcStatus OperatorDivideRef(DreamValue b, DMProcState state, out DreamValue result, in DreamReference reference) {
+        return OperatorDivide(b, state, out result); //returns ProcStatus.Continue, so the assignref can be handled in the opcode
     }
 
     public override DreamValue OperatorEquivalent(DreamValue b) {
@@ -284,8 +322,8 @@ public sealed class DreamObjectMatrix : DreamObject {
     /// <seealso cref="MakeMatrix(DreamObjectTree,float,float,float,float,float,float)"/>
     public static DreamObjectMatrix MakeMatrix(DreamObjectTree objectTree, float[] matrixValues) {
         return MakeMatrix(objectTree,
-                          matrixValues[0], matrixValues[1], matrixValues[2],
-                          matrixValues[3], matrixValues[4], matrixValues[5]);
+                          matrixValues[0], matrixValues[2], matrixValues[4], //order on these matches the output of MatrixToTransformFloatArray
+                          matrixValues[1], matrixValues[3], matrixValues[5]);
     }
 
     public static float Determinant(DreamObjectMatrix matrix) {

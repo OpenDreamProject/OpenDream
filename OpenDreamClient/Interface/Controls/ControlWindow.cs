@@ -24,11 +24,10 @@ public sealed class ControlWindow : InterfaceControl {
 
     private WindowDescriptor WindowDescriptor => (WindowDescriptor)ElementDescriptor;
 
-    private Control _menuContainer = default!;
+    private PanelContainer _menuContainer = default!;
     private LayoutContainer _canvas = default!;
 
     private (OSWindow? osWindow, IClydeWindow? clydeWindow) _myWindow;
-
 
     public ControlWindow(WindowDescriptor windowDescriptor) : base(windowDescriptor, null) {
         IoCManager.InjectDependencies(this);
@@ -206,7 +205,9 @@ public sealed class ControlWindow : InterfaceControl {
             root = _uiMgr.GetWindowRoot(clydeWindow);
 
         if (root != null) {
-            root.BackgroundColor = WindowDescriptor.BackgroundColor.Value;
+            root.BackgroundColor = (WindowDescriptor.BackgroundColor.Value != Color.Transparent)
+                ? WindowDescriptor.BackgroundColor.Value
+                : null;
         }
 
         if (osWindow != null && osWindow.ClydeWindow != null) {
@@ -278,7 +279,10 @@ public sealed class ControlWindow : InterfaceControl {
             RectClipContent = true,
             Orientation = BoxContainer.LayoutOrientation.Vertical,
             Children = {
-                (_menuContainer = new Control { Margin = new Thickness(4, 0)}),
+                (_menuContainer = new PanelContainer {
+                    PanelOverride = new StyleBoxFlat(Color.White),
+                    HorizontalExpand = true
+                }),
                 (_canvas = new LayoutContainer {
                     InheritChildMeasure = false,
                     VerticalExpand = true
@@ -298,17 +302,17 @@ public sealed class ControlWindow : InterfaceControl {
     public override bool TryGetProperty(string property, [NotNullWhen(true)] out IDMFProperty? value) {
         switch (property) {
             case "inner-size":
-                value = new DMFPropertyVec2((int)_canvas.Width, (int)_canvas.Height);
+                value = new DMFPropertySize((int)_canvas.Width, (int)_canvas.Height);
                 return true;
             case "outer-size":
                 if (_myWindow.osWindow is not null) {
-                    value = new DMFPropertyVec2((int)_myWindow.osWindow.Width, (int)_myWindow.osWindow.Height);
+                    value = new DMFPropertySize((int)_myWindow.osWindow.Width, (int)_myWindow.osWindow.Height);
                     return true;
                 } else if (_myWindow.clydeWindow is not null) {
-                    value = new DMFPropertyVec2(_myWindow.clydeWindow.Size);
+                    value = new DMFPropertySize(_myWindow.clydeWindow.Size);
                     return true;
                 } else {
-                    value = new DMFPropertyVec2(UIElement.Size);
+                    value = new DMFPropertySize(UIElement.Size);
                     return true;
                 }
             case "is-minimized":

@@ -10,10 +10,10 @@ namespace OpenDreamClient.Interface.Controls;
 public abstract class InterfaceControl : InterfaceElement {
     public readonly Control UIElement;
     public bool IsDefault => ControlDescriptor.IsDefault.Value;
-    public DMFPropertyVec2 Size => ControlDescriptor.Size;
-    public DMFPropertyVec2 Pos => ControlDescriptor.Pos;
-    public DMFPropertyVec2? Anchor1 => ControlDescriptor.Anchor1;
-    public DMFPropertyVec2? Anchor2 => ControlDescriptor.Anchor2;
+    public DMFPropertySize Size => ControlDescriptor.Size;
+    public DMFPropertyPos Pos => ControlDescriptor.Pos;
+    public DMFPropertyPos? Anchor1 => ControlDescriptor.Anchor1;
+    public DMFPropertyPos? Anchor2 => ControlDescriptor.Anchor2;
 
     protected ControlDescriptor ControlDescriptor => (ControlDescriptor) ElementDescriptor;
 
@@ -42,17 +42,31 @@ public abstract class InterfaceControl : InterfaceElement {
 
         _window?.UpdateAnchors();
 
-        if (ControlDescriptor.BackgroundColor.Value != Color.Transparent) { //transparent is default because it's white with 0 alpha, and DMF color can't have none-255 alpha
-            var styleBox = new StyleBoxFlat {BackgroundColor = ControlDescriptor.BackgroundColor.Value};
+        //transparent is default because it's white with 0 alpha, and DMF color can't have none-255 alpha
+        StyleBox? styleBox = (ControlDescriptor.BackgroundColor.Value != Color.Transparent)
+            ? new StyleBoxFlat {BackgroundColor = ControlDescriptor.BackgroundColor.Value}
+            : null;
 
-            switch (UIElement) {
-                case PanelContainer panel:
-                    panel.PanelOverride = styleBox;
-                    break;
-                case LineEdit lineEdit:
-                    lineEdit.StyleBoxOverride = styleBox;
-                    break;
-            }
+        switch (UIElement) {
+            case PanelContainer panel:
+                panel.PanelOverride = styleBox;
+                break;
+            case LineEdit lineEdit:
+                lineEdit.StyleBoxOverride = styleBox;
+                break;
+            case Button button:
+                button.StyleBoxOverride = styleBox;
+                break;
+        }
+
+        Color? textColor = (ControlDescriptor.TextColor.Value != Color.Transparent)
+            ? ControlDescriptor.TextColor.Value
+            : null;
+
+        switch (UIElement) {
+            case Button button:
+                button.Label.FontColorOverride = textColor;
+                break;
         }
 
         UIElement.Visible = ControlDescriptor.IsVisible.Value;
@@ -63,10 +77,10 @@ public abstract class InterfaceControl : InterfaceElement {
     public override bool TryGetProperty(string property, [NotNullWhen(true)] out IDMFProperty? value) {
         switch (property) {
             case "size":
-                value = new DMFPropertyVec2(UIElement.Size);
+                value = new DMFPropertySize(UIElement.Size);
                 return true;
             case "pos":
-                value = new DMFPropertyVec2(UIElement.Position);
+                value = new DMFPropertyPos(UIElement.Position);
                 return true;
             default:
                 return base.TryGetProperty(property, out value);
@@ -74,6 +88,5 @@ public abstract class InterfaceControl : InterfaceElement {
     }
 
     public virtual void Output(string value, string? data) {
-
     }
 }

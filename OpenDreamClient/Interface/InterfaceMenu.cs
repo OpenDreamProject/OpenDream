@@ -12,7 +12,9 @@ public sealed class InterfaceMenu : InterfaceElement {
     private readonly bool _pauseMenuCreation;
 
     public InterfaceMenu(MenuDescriptor descriptor) : base(descriptor) {
-        MenuBar = new MenuBar();
+        MenuBar = new MenuBar {
+            Margin = new(4, 0)
+        };
 
         _pauseMenuCreation = true;
         foreach (MenuElementDescriptor menuElement in descriptor.Elements) {

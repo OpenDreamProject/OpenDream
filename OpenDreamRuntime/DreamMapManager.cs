@@ -221,27 +221,54 @@ public sealed class DreamMapManager : IDreamMapManager {
     }
 
     public void SetWorldSize(Vector2i size) {
-        if (size.X < Size.X || size.Y < Size.Y) {
-            return;
-        }
-
-        DreamObjectArea defaultArea = GetOrCreateArea(_defaultArea);
         Vector2i oldSize = Size;
 
-        Size = size;
-        foreach (Level existingLevel in _levels) {
-            var oldCells = existingLevel.Cells;
+        var newX = Math.Max(oldSize.X, size.X);
+        var newY = Math.Max(oldSize.Y, size.Y);
 
-            existingLevel.Cells = new Cell[size.X, size.Y];
-            for (int x = 1; x <= size.X; x++) {
-                for (int y = 1; y <= size.Y; y++) {
-                    if (x <= oldSize.X && y <= oldSize.Y) {
-                        existingLevel.Cells[x - 1, y - 1] = oldCells[x - 1, y - 1];
-                        continue;
+        DreamObjectArea defaultArea = GetOrCreateArea(_defaultArea);
+
+        Size = (newX, newY);
+
+        if(Size.X > oldSize.X || Size.Y > oldSize.Y) {
+            foreach (Level existingLevel in _levels) {
+                var oldCells = existingLevel.Cells;
+
+                existingLevel.Cells = new Cell[Size.X, Size.Y];
+                for (var x = 1; x <= Size.X; x++) {
+                    for (var y = 1; y <= Size.Y; y++) {
+                        if (x <= oldSize.X && y <= oldSize.Y) {
+                            existingLevel.Cells[x - 1, y - 1] = oldCells[x - 1, y - 1];
+                            continue;
+                        }
+
+                        existingLevel.Cells[x - 1, y - 1] = new Cell(defaultArea);
+                        SetTurf(new Vector2i(x, y), existingLevel.Z, _defaultTurf.ObjectDefinition, new());
                     }
+                }
+            }
+        }
 
-                    existingLevel.Cells[x - 1, y - 1] = new Cell(defaultArea);
-                    SetTurf(new Vector2i(x, y), existingLevel.Z, _defaultTurf.ObjectDefinition, new());
+        if (Size.X > size.X || Size.Y > size.Y) {
+            Size = size;
+
+            foreach (Level existingLevel in _levels) {
+                var oldCells = existingLevel.Cells;
+
+                existingLevel.Cells = new Cell[size.X, size.Y];
+                for (var x = 1; x <= oldSize.X; x++) {
+                    for (var y = 1; y <= oldSize.Y; y++) {
+                        if (x > size.X || y > size.Y) {
+                            var deleteCell = oldCells[x - 1, y - 1];
+                            deleteCell.Turf?.Delete();
+                            _mapSystem.SetTile(existingLevel.Grid, new Vector2i(x, y), Tile.Empty);
+                            foreach (var movableToDelete in deleteCell.Movables) {
+                                movableToDelete.Delete();
+                            }
+                        } else {
+                            existingLevel.Cells[x - 1, y - 1] = oldCells[x - 1, y - 1];
+                        }
+                    }
                 }
             }
         }

@@ -20,7 +20,7 @@ public abstract class InterfaceControl : InterfaceElement {
     /// Updates when this control's size/pos is winset,
     /// or when this control's size is 0 and a sibling control's size/pos is winset
     /// </summary>
-    public Vector2i? AnchoredToSize;
+    public Vector2i AnchorPosition = Vector2i.Zero;
 
     protected ControlDescriptor ControlDescriptor => (ControlDescriptor) ElementDescriptor;
 

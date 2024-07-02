@@ -13,12 +13,16 @@ public sealed class MsgUpdateClientInfo : NetMessage {
 
     public ViewRange View;
 
+    public bool ShowPopupMenus;
+
     public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {
         View = new(buffer.ReadInt32(), buffer.ReadInt32());
+        ShowPopupMenus = buffer.ReadBoolean();
     }
 
     public override void WriteToBuffer(NetOutgoingMessage buffer, IRobustSerializer serializer) {
         buffer.Write(View.Width);
         buffer.Write(View.Height);
+        buffer.Write(ShowPopupMenus);
     }
 }

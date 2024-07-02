@@ -12,6 +12,7 @@ public sealed class DreamObjectClient : DreamObject {
     public readonly ClientImagesList Images;
     public readonly ClientVerbsList ClientVerbs;
     public ViewRange View { get; private set; }
+    public bool ShowPopupMenus { get; private set; } = true;
 
     public DreamObjectClient(DreamObjectDefinition objectDefinition, DreamConnection connection, ServerScreenOverlaySystem? screenOverlaySystem, ServerClientImagesSystem? clientImagesSystem) : base(objectDefinition) {
         Connection = connection;
@@ -88,6 +89,9 @@ public sealed class DreamObjectClient : DreamObject {
             case "verbs":
                 value = new(ClientVerbs);
                 return true;
+            case "show_popup_menus":
+                value = new(ShowPopupMenus ? 1 : 0);
+                return true;
             case "images":
                 value = new(Images);
                 return true;
@@ -123,6 +127,17 @@ public sealed class DreamObjectClient : DreamObject {
                     View = new(viewStr);
                 } else {
                     View = DreamManager.WorldInstance.DefaultView;
+                }
+
+                Connection.SendClientInfoUpdate();
+                break;
+            }
+            case "show_popup_menus": {
+                // TODO: See what BYOND does with non-integer values. Per the ref only 0 should disable, but this needs to be verified.
+                if (value.TryGetValueAsInteger(out var viewInt) && viewInt == 0) {
+                    ShowPopupMenus = false;
+                } else {
+                    ShowPopupMenus = true;
                 }
 
                 Connection.SendClientInfoUpdate();

@@ -20,7 +20,7 @@
 	var/pixel_y = 0 as opendream_unimplemented
 	var/pixel_z = 0 as opendream_unimplemented
 	var/pixel_w = 0 as opendream_unimplemented
-	var/show_popup_menus = 1 as opendream_unimplemented
+	var/show_popup_menus = 1
 	var/show_verb_panel = 1 as opendream_unimplemented
 
 	var/byond_version = DM_VERSION

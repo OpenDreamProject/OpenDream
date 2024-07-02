@@ -1,6 +1,5 @@
 ﻿using OpenDreamClient.Input.ContextMenu;
 using OpenDreamClient.Interface;
-using OpenDreamClient.Interface.Controls;
 using OpenDreamClient.Interface.Controls.UI;
 using OpenDreamClient.Rendering;
 using OpenDreamShared.Dream;
@@ -26,6 +25,7 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly MapSystem _mapSystem = default!;
     [Dependency] private readonly IConfigurationManager _configurationManager = default!;
+    [Dependency] private readonly IDreamInterfaceManager _dreamInterfaceManager = default!;
 
     private DreamViewOverlay? _dreamViewOverlay;
     private ContextMenuPopup _contextMenu = default!;
@@ -117,7 +117,7 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
     }
 
     private bool OnPress(ScalingViewport viewport, GUIBoundKeyEventArgs args) {
-        if (args.Function == EngineKeyFunctions.UIRightClick) { //either turf or atom was clicked, and it was a right-click
+        if (args.Function == EngineKeyFunctions.UIRightClick && _dreamInterfaceManager.ShowPopupMenus) { //either turf or atom was clicked, and it was a right-click, and the popup menu is enabled
             var mapCoords = viewport.ScreenToMap(args.PointerLocation.Position);
             var entities = _lookupSystem.GetEntitiesInRange(mapCoords, 0.01f, LookupFlags.Uncontained | LookupFlags.Approximate);
 

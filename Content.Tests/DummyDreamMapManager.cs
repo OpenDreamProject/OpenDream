@@ -26,6 +26,8 @@ namespace Content.Tests {
 
         public void SetTurfAppearance(DreamObjectTurf turf, IconAppearance appearance) { }
 
+        public void SetAreaAppearance(DreamObjectArea area, IconAppearance appearance) { }
+
         public void SetArea(DreamObjectTurf turf, DreamObjectArea area) { }
 
         public bool TryGetCellFromTransform(TransformComponent transform, [NotNullWhen(true)] out IDreamMapManager.Cell? cell) {

@@ -23,6 +23,21 @@
 /turf/blue
 	icon_state = "turf_blue"
 
+/area/withicon
+	icon = 'icons/objects.dmi'
+	icon_state = "overlay"
+
+	New()
+		toggleBlink()
+
+	proc/toggleBlink()
+		if (icon == 'icons/objects.dmi')
+			icon = null
+		else
+			icon = 'icons/objects.dmi'
+		spawn(20)	
+			toggleBlink()
+
 /mob
 	icon = 'icons/mob.dmi'
 	icon_state = "mob"

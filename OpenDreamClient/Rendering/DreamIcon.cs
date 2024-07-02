@@ -51,6 +51,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
     private int _animationFrame;
     private TimeSpan _animationFrameTime = gameTiming.CurTime;
     private List<AppearanceAnimation>? _appearanceAnimations;
+    private int _appearanceAnimationsLoops;
     private Box2? _cachedAABB;
     private IRenderTexture? _ping, _pong;
     private bool _textureDirty = true;
@@ -135,7 +136,19 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
                     start = _appearanceAnimations[^1].Start + _appearanceAnimations[^1].Duration; //if it's not parallel, it's chained
 
         _appearanceAnimations ??= new List<AppearanceAnimation>();
-        _appearanceAnimations.Add(new AppearanceAnimation(start, duration, endingAppearance, easing, loops, flags, delay));
+        if(_appearanceAnimations.Count == 0) {//only valid on the first animation
+            _appearanceAnimationsLoops = loops;
+        }
+
+        for(int i=_appearanceAnimations.Count-1; i>=0; i--) //there can be only one last-in-sequence, and it might not be the last element of the list because it could be added to mid-loop
+            if(_appearanceAnimations[i].LastInSequence) {
+                var lastAnim =  _appearanceAnimations[i];
+                lastAnim.LastInSequence = false;
+                _appearanceAnimations[i] = lastAnim;
+                break;
+            }
+            
+        _appearanceAnimations.Add(new AppearanceAnimation(start, duration, endingAppearance, easing, flags, delay, true));
     }
 
     /// <summary>
@@ -179,6 +192,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
     private void UpdateAnimation() {
         if(DMI == null || Appearance == null)
             return;
+
         DMIParser.ParsedDMIState? dmiState = DMI.Description.GetStateOrDefault(Appearance.IconState);
         if(dmiState == null)
             return;
@@ -205,10 +219,11 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
         _textureDirty = true; //if we have animations, we need to recalculate the texture
         IconAppearance appearance = new IconAppearance(_appearance);
         List<AppearanceAnimation>? toRemove = null;
+        List<AppearanceAnimation>? toReAdd = null;
         for(int i = 0; i < _appearanceAnimations.Count; i++) {
             AppearanceAnimation animation = _appearanceAnimations[i];
             //if it's not the first one, and it's not parallel, break
-            if((animation.flags & AnimationFlags.AnimationParallel) == 0 && i != 0)
+            if((animation.Flags & AnimationFlags.AnimationParallel) == 0 && i != 0)
                 break;
 
             float timeFactor = Math.Clamp((float)(DateTime.Now - animation.Start).Ticks / animation.Duration.Ticks, 0.0f, 1.0f);
@@ -381,21 +396,34 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
             }
 
             if (timeFactor >= 1f) {
-                if (animation.loops > 0) {
-                    var tempAnimation = _appearanceAnimations[i];
-                    tempAnimation.loops--;
-                    _appearanceAnimations[i] = tempAnimation;
+                toRemove ??= new();
+                toRemove.Add(animation);
+                if (_appearanceAnimationsLoops != 0) { //add it back to the list with the times updated
+                    if(_appearanceAnimationsLoops != -1 && animation.LastInSequence)
+                        _appearanceAnimationsLoops -= 1;
+                    toReAdd ??= new();
+                    DateTime start;
+                    if((animation.Flags & AnimationFlags.AnimationParallel) != 0)
+                        start = _appearanceAnimations[^1].Start; //either that's also a parallel, or its one that this should be parallel with
+                    else
+                        start = _appearanceAnimations[^1].Start + _appearanceAnimations[^1].Duration; //if it's not parallel, it's chained
+                    AppearanceAnimation repeatAnimation = new AppearanceAnimation(start, animation.Duration, animation.EndAppearance, animation.Easing, animation.Flags, animation.Delay, animation.LastInSequence);
+                    toReAdd.Add(repeatAnimation);
                 }
-                if (animation.loops == 0) {
-                    toRemove ??= new();
-                    toRemove.Add(animation);
-                }
+
             }
         }
+
         if(toRemove != null)
-            foreach (AppearanceAnimation animation in toRemove!) {
+            foreach (AppearanceAnimation animation in toRemove) {
                 EndAppearanceAnimation(animation);
             }
+
+        if(toReAdd != null)
+            foreach (AppearanceAnimation animation in toReAdd) {
+                _appearanceAnimations.Add(animation);
+            }
+
         return appearance;
     }
 
@@ -501,13 +529,13 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
         CachedTexture = null;
     }
 
-    private struct AppearanceAnimation(DateTime start, TimeSpan duration, IconAppearance endAppearance, AnimationEasing easing, int loops, AnimationFlags flags, int delay) {
+    private struct AppearanceAnimation(DateTime start, TimeSpan duration, IconAppearance endAppearance, AnimationEasing easing, AnimationFlags flags, int delay, bool lastInSequence) {
         public readonly DateTime Start = start;
         public readonly TimeSpan Duration = duration;
         public readonly IconAppearance EndAppearance = endAppearance;
         public readonly AnimationEasing Easing = easing;
-        public int loops = loops;
-        public readonly AnimationFlags flags = flags;
-        public int delay = delay;
+        public readonly AnimationFlags Flags = flags;
+        public readonly int Delay = delay;
+        public bool LastInSequence = lastInSequence;
     }
 }

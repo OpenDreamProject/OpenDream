@@ -108,7 +108,7 @@ public sealed class DebugAdapterClient {
         int contentLength = -1;
 
         string? headerLine;
-        while ((headerLine = _netReader.ReadLine()) != String.Empty && headerLine != null) {
+        while ((headerLine = _netReader.ReadLine()) != string.Empty && headerLine != null) {
             string[] split = headerLine.Split(": ");
             string field = split[0];
             string value = split[1];
@@ -144,7 +144,7 @@ public sealed class DebugAdapterClient {
             return null;
         }
 
-        string content = new String(buffer);
+        string content = new string(buffer);
         _sawmill.Log(LogLevel.Verbose, $"Received {contentLength} {content}");
 
         return content;

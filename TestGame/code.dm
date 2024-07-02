@@ -223,6 +223,10 @@
 		world.maxx = x
 		world.maxy = y
 
+	verb/toggle_show_popups()
+		client.show_popup_menus = !client.show_popup_menus
+		src << "Popups are now [client.show_popup_menus ? "enabled" : "disabled"]"
+
 /mob/Stat()
 	if (statpanel("Status"))
 		stat("tick_usage", world.tick_usage)

@@ -187,7 +187,7 @@ public sealed class DreamMapManager : IDreamMapManager {
     /// Caches the turf/area appearance pair instead of recreating and re-registering it for every turf in the game.
     /// This is cleared out when an area appearance changes
     /// </summary>
-    private  Dictionary<ValueTuple<IconAppearance, int>, IconAppearance> _turfAreaLookup = new();
+    private readonly Dictionary<ValueTuple<IconAppearance, int>, IconAppearance> _turfAreaLookup = new();
 
     public void SetTurfAppearance(DreamObjectTurf turf, IconAppearance appearance) {
         if(turf.Cell.Area.AppearanceId != 0)
@@ -197,6 +197,7 @@ public sealed class DreamMapManager : IDreamMapManager {
                     newAppearance.Overlays.Add(turf.Cell.Area.AppearanceId);
                     _turfAreaLookup.Add((appearance, turf.Cell.Area.AppearanceId), newAppearance);
                 }
+
                 appearance = newAppearance;
             }
 

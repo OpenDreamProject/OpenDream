@@ -1,0 +1,9 @@
+[workspace]
+members = [
+    "trampoline",
+    "byondapitest"
+]
+resolver = "2"
+
+#[profile.dev]
+#panic = "abort"

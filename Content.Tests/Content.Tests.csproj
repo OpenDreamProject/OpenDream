@@ -30,7 +30,7 @@
 
   <ItemGroup>
     <!-- Copy DMProject to output directory. -->
-    <None Include="$(ProjectDir)\DMProject\**" CopyToOutputDirectory="PreserveNewest" LinkBase="DMProject\" />
+    <Content Include="$(ProjectDir)\DMProject\**" CopyToOutputDirectory="PreserveNewest" LinkBase="DMProject\" />
     <!-- Copy DMStandard to output directory. -->
     <DMStandard Include="..\DMCompiler\DMStandard\**" />
   </ItemGroup>

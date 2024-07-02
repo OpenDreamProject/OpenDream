@@ -91,7 +91,6 @@ public abstract class InterfaceControl : InterfaceElement {
     }
 
     public override void SetProperty(string property, string value, bool manualWinset = false) {
-        Logger.Debug($"Winset {property} on {Id.Value} to {value}");
         switch (property) {
             case "size":
                 var size = new DMFPropertySize(value);

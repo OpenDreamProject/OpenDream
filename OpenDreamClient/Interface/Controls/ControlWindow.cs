@@ -157,8 +157,8 @@ public sealed class ControlWindow : InterfaceControl {
     /// Updates the control's anchoring position to the window's current size.
     /// Also updates other controls' anchoring position if they have a size of 0.
     /// </summary>
-    /// <param name="control"></param>
-    public void UpdateAnchorSize(InterfaceControl control) {
+    /// <param name="control">The control triggering the anchor update</param>
+    public void UpdateAnchorPosition(InterfaceControl control) {
         control.AnchorPosition = _canvas.PixelSize;
 
         // Also update the anchor position for anything with a size of 0

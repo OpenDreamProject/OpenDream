@@ -105,7 +105,7 @@ public abstract class InterfaceControl : InterfaceElement {
                 UIElement.SetSize = size.Vector;
 
                 if (manualWinset)
-                    _window?.UpdateAnchorSize(this);
+                    _window?.UpdateAnchorPosition(this);
                 break;
             case "pos":
                 var pos = new DMFPropertyPos(value);
@@ -114,7 +114,7 @@ public abstract class InterfaceControl : InterfaceElement {
                 LayoutContainer.SetMarginTop(UIElement, pos.Y);
 
                 if (manualWinset)
-                    _window?.UpdateAnchorSize(this);
+                    _window?.UpdateAnchorPosition(this);
                 break;
         }
 

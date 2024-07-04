@@ -134,19 +134,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     }
 
     private void RxOutput(MsgOutput pOutput) {
-        InterfaceControl? interfaceElement;
-        string? data = null;
-
-        if (pOutput.Control != null) {
-            string[] split = pOutput.Control.Split(":");
-
-            interfaceElement = (InterfaceControl?)FindElementWithId(split[0]);
-            if (split.Length > 1) data = split[1];
-        } else {
-            interfaceElement = DefaultOutput;
-        }
-
-        interfaceElement?.Output(pOutput.Value, data);
+        Output(pOutput.Control, pOutput.Value);
     }
 
     private void RxAlert(MsgAlert message) {
@@ -406,20 +394,20 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
     public void RunCommand(string fullCommand) {
         switch (fullCommand) {
-            case string x when x.StartsWith(".quit"):
+            case not null when fullCommand.StartsWith(".quit"):
                 IoCManager.Resolve<IClientNetManager>().ClientDisconnect(".quit used");
                 break;
 
-            case string x when x.StartsWith(".screenshot"):
+            case not null when fullCommand.StartsWith(".screenshot"):
                 string[] split = fullCommand.Split(" ");
                 SaveScreenshot(split.Length == 1 || split[1] != "auto");
                 break;
 
-            case string x when x.StartsWith(".configure"):
+            case not null when fullCommand.StartsWith(".configure"):
                 _sawmill.Warning(".configure command is not implemented");
                 break;
 
-            case string x when x.StartsWith(".winset"):
+            case not null when fullCommand.StartsWith(".winset"):
                 // Everything after .winset, excluding the space and quotes
                 string winsetParams = fullCommand.Substring(7); //clip .winset
                 winsetParams = winsetParams.Trim(); //clip space
@@ -427,6 +415,17 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
                 WinSet(null, winsetParams);
                 break;
+
+            case not null when fullCommand.StartsWith(".output"): {
+                string[] args = fullCommand.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (args.Length != 3) {
+                    _sawmill.Error($".output command was executed with {args.Length - 1} args instead of 2");
+                    break;
+                }
+
+                Output(args[1], args[2]);
+                break;
+            }
 
             default: {
                 string[] argsRaw = fullCommand.Split(' ', 2, StringSplitOptions.TrimEntries);
@@ -758,6 +757,22 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         }
 
         return result.ToString();
+    }
+
+    public void Output(string? control, string value) {
+        InterfaceControl? interfaceElement;
+        string? data = null;
+
+        if (control != null) {
+            string[] split = control.Split(":");
+
+            interfaceElement = (InterfaceControl?)FindElementWithId(split[0]);
+            if (split.Length > 1) data = split[1];
+        } else {
+            interfaceElement = DefaultOutput;
+        }
+
+        interfaceElement?.Output(value, data);
     }
 
     public void WinClone(string controlId, string cloneId) {

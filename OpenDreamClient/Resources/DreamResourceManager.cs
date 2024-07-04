@@ -57,7 +57,7 @@ namespace OpenDreamClient.Resources {
         private void EnsureCacheDirectory() {
             if(_cacheDirectory != default)
                 return;
-            _cacheDirectory = new ResPath($"/OpenDream/Cache/{INSERT ROBUST HASH HERE}");
+            _cacheDirectory = new ResPath($"/OpenDream/Cache/{_netManager.ServerChannel.RemoteEndPoint}");
             _resourceManager.UserData.CreateDir(_cacheDirectory);
             if (!_resourceManager.UserData.Exists(_cacheDirectory))
                 throw new Exception($"Could not create cache directory at {_cacheDirectory}");

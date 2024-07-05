@@ -465,7 +465,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                     }
 
                     if(currentArg.ToString() is { } arg && !string.IsNullOrEmpty(arg))
-                        args.Add(HandleEmbeddedWinget(null ,arg));
+                        args.Add(HandleEmbeddedWinget(null, arg));
 
                     if (args.Count != verbInfo.Arguments.Length) {
                         _sawmill.Error(

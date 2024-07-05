@@ -441,27 +441,31 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                     verbSystem.ExecuteVerb(verbSrc, verbId);
                 } else { // Attempt to parse the given arguments
                     List<string> args = new List<string>();
-                    string currentArg = "";
+                    StringBuilder currentArg = new();
                     bool stringCapture = false;
-                    for(int i = 0; i < argsRaw[1].Length; i++){
-                        if(argsRaw[1][i] == '\"'){
-                            currentArg += "\"";
-                            if(stringCapture){
-                                args.Add(HandleEmbeddedWinget(null ,currentArg));
-                                currentArg = "";
+                    for (int i = 0; i < argsRaw[1].Length; i++) {
+                        if (argsRaw[1][i] == '"') {
+                            currentArg.Append('"');
+                            if (stringCapture) {
+                                args.Add(HandleEmbeddedWinget(null, currentArg.ToString()));
+                                currentArg.Clear();
                             }
+
                             stringCapture = !stringCapture;
                             continue;
                         }
-                        if(argsRaw[1][i]==' ' && !stringCapture) {
-                            args.Add(HandleEmbeddedWinget(null ,currentArg));
-                            currentArg = "";
+
+                        if (argsRaw[1][i] == ' ' && !stringCapture) {
+                            args.Add(HandleEmbeddedWinget(null, currentArg.ToString()));
+                            currentArg.Clear();
                             continue;
                         }
-                        currentArg += argsRaw[1][i];
+
+                        currentArg.Append(argsRaw[1][i]);
                     }
-                    if(!string.IsNullOrEmpty(currentArg))
-                        args.Add(HandleEmbeddedWinget(null ,currentArg));
+
+                    if(currentArg.ToString() is { } arg && !string.IsNullOrEmpty(arg))
+                        args.Add(HandleEmbeddedWinget(null ,arg));
 
                     if (args.Count != verbInfo.Arguments.Length) {
                         _sawmill.Error(

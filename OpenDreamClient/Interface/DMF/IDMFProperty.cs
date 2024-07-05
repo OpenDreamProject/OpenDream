@@ -176,11 +176,11 @@ public struct DMFPropertyVec2 : IDMFProperty {
     }
 
     public string AsArg() {
-        return X.ToString() + " " + Y.ToString();
+        return X + " " + Y;
     }
 
     public string AsEscaped() {
-        return X.ToString() + Delim + Y.ToString();
+        return X + char.ToString(Delim) + Y;
     }
 
     public string AsString() {
@@ -192,11 +192,11 @@ public struct DMFPropertyVec2 : IDMFProperty {
     }
 
     public string AsJson() {
-        return "{\"x\":" + X.ToString() + ", \"y\":" + Y.ToString() + "}";
+        return $"{{\"x\":{X}, \"y\":{Y}}}";
     }
 
     public string AsJsonDM() {
-        return "{\\\"x\\\":" + X.ToString() + ", \\\"y\\\":" + Y.ToString() + "}";
+        return $"{{\\\"x\\\":{X}, \\\"y\\\":{Y}}}";
     }
 
     public string AsRaw() {

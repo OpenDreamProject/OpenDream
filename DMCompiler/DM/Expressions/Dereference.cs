@@ -114,6 +114,10 @@ namespace DMCompiler.DM.Expressions {
                     break;
 
                 case IndexOperation indexOperation:
+                    if (NestedPath is not null && NestedPath.Value.IsDescendantOf(DreamPath.Datum)) {
+                        DMCompiler.Emit(WarningCode.InvalidIndexOperation, Location, "Invalid index operation. datum[] index operations are not valid starting in BYOND 515.1641");
+                    }
+
                     indexOperation.Index.EmitPushValue(dmObject, proc);
                     proc.DereferenceIndex();
                     break;

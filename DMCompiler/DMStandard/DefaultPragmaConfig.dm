@@ -25,6 +25,7 @@
 #pragma InvalidRange error
 #pragma InvalidSetStatement error
 #pragma InvalidOverride warning
+#pragma InvalidIndexOperation warning
 #pragma DanglingVarType warning
 #pragma MissingInterpolatedExpression warning
 #pragma AmbiguousResourcePath warning

@@ -1251,6 +1251,10 @@ public sealed class AreaContentsList : DreamList {
 
         return length;
     }
+
+    public IEnumerable<DreamObjectTurf> GetTurfs() {
+        return _turfs;
+    }
 }
 
 // proc args list

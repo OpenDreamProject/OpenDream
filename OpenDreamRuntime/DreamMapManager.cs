@@ -159,13 +159,13 @@ public sealed class DreamMapManager : IDreamMapManager {
             throw new ArgumentException("Invalid coordinates");
 
         Cell cell = _levels[z - 1].Cells[pos.X - 1, pos.Y - 1];
-        
+
         if(area is not null) {
             cell.Area.Contents.RemoveValue(new(cell.Turf));
             cell.Area = area;
             cell.Area.Contents.AddValue(new(cell.Turf));
         }
-        
+
         if (cell.Turf != null) {
             cell.Turf.SetTurfType(type);
         } else {
@@ -216,15 +216,13 @@ public sealed class DreamMapManager : IDreamMapManager {
         _turfAreaLookup.Clear();
         int oldAppearance = area.AppearanceId;
         area.AppearanceId  = _appearanceSystem.AddAppearance(appearance);
-        foreach (var turf in area.Contents.GetValues()) {
-            if(turf.TryGetValueAsDreamObject<DreamObjectTurf>(out var turfObj)) {
-                var turfAppearance = _atomManager.MustGetAppearance(turfObj);
+        foreach (var turf in area.Contents.GetTurfs()) {
+            var turfAppearance = _atomManager.MustGetAppearance(turf);
 
-                if(turfAppearance is null) continue;
+            if(turfAppearance is null) continue;
 
-                turfAppearance.Overlays.Remove(oldAppearance);
-                SetTurfAppearance(turfObj, turfAppearance);
-            }
+            turfAppearance.Overlays.Remove(oldAppearance);
+            SetTurfAppearance(turf, turfAppearance);
         }
     }
 

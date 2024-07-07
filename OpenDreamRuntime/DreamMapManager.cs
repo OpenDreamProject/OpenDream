@@ -159,11 +159,13 @@ public sealed class DreamMapManager : IDreamMapManager {
             throw new ArgumentException("Invalid coordinates");
 
         Cell cell = _levels[z - 1].Cells[pos.X - 1, pos.Y - 1];
+        
         if(area is not null) {
             cell.Area.Contents.RemoveValue(new(cell.Turf));
             cell.Area = area;
             cell.Area.Contents.AddValue(new(cell.Turf));
         }
+        
         if (cell.Turf != null) {
             cell.Turf.SetTurfType(type);
         } else {

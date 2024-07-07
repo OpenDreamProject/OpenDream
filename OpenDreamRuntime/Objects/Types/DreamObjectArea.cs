@@ -7,7 +7,7 @@ public sealed class DreamObjectArea : DreamObjectAtom {
 
     public DreamObjectArea(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
         Contents = new(ObjectTree.List.ObjectDefinition, this);
-        AtomManager.SetAtomAppearance(this, new(AtomManager.GetAppearanceFromDefinition(ObjectDefinition)));
+        AtomManager.SetAtomAppearance(this, AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {

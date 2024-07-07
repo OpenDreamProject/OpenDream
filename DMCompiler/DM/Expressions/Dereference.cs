@@ -166,12 +166,21 @@ namespace DMCompiler.DM.Expressions {
                     if (fieldOperation.Safe) {
                         ShortCircuitHandler(proc, endLabel, shortCircuitMode);
                     }
+
                     return DMReference.CreateField(fieldOperation.Identifier);
 
                 case IndexOperation indexOperation:
+                    if (NestedPath is not null) {
+                        var obj = DMObjectTree.GetDMObject(NestedPath.Value, false);
+                        if (obj is not null && obj.IsSubtypeOf(DreamPath.Datum) && !obj.HasProc("operator[]=")) {
+                            DMCompiler.Emit(WarningCode.InvalidIndexOperation, Location, "Invalid index operation. datum[] index operations are not valid starting in BYOND 515.1641");
+                        }
+                    }
+
                     if (indexOperation.Safe) {
                         ShortCircuitHandler(proc, endLabel, shortCircuitMode);
                     }
+
                     indexOperation.Index.EmitPushValue(dmObject, proc);
                     return DMReference.ListIndex;
 

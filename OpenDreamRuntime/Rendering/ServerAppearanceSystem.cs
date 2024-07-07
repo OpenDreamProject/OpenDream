@@ -9,7 +9,6 @@ using Robust.Shared.Player;
 namespace OpenDreamRuntime.Rendering;
 
 public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
-
     public readonly IconAppearance EmptyAppearance = new();
     private readonly Dictionary<IconAppearance, int> _appearanceToId = new();
     private readonly Dictionary<int, IconAppearance> _idToAppearance = new();

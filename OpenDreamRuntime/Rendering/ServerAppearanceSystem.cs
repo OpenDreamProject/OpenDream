@@ -9,7 +9,6 @@ using Robust.Shared.Player;
 namespace OpenDreamRuntime.Rendering;
 
 public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
-    public readonly IconAppearance EmptyAppearance = new();
     private readonly Dictionary<IconAppearance, int> _appearanceToId = new();
     private readonly Dictionary<int, IconAppearance> _idToAppearance = new();
     private int _appearanceIdCounter;
@@ -21,11 +20,10 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
 
     [Dependency] private readonly IPlayerManager _playerManager = default!;
 
-
     public override void Initialize() {
         //register empty appearance as ID 0
-        _appearanceToId.Add(EmptyAppearance, 0);
-        _idToAppearance.Add(0, EmptyAppearance);
+        _appearanceToId.Add(IconAppearance.Default, 0);
+        _idToAppearance.Add(0, IconAppearance.Default);
         _appearanceIdCounter = 1;
         _playerManager.PlayerStatusChanged += OnPlayerStatusChanged;
     }

@@ -154,11 +154,18 @@ public sealed class DreamMapManager : IDreamMapManager {
         }
     }
 
-    private DreamObject SetTurf(Vector2i pos, int z, DreamObjectDefinition type, DreamProcArguments creationArguments) {
+    private DreamObject SetTurf(Vector2i pos, int z, DreamObjectDefinition type, DreamProcArguments creationArguments, DreamObjectArea? area = null) {
         if (IsInvalidCoordinate(pos, z))
             throw new ArgumentException("Invalid coordinates");
 
         Cell cell = _levels[z - 1].Cells[pos.X - 1, pos.Y - 1];
+
+        if(area is not null) {
+            cell.Area.Contents.RemoveValue(new(cell.Turf));
+            cell.Area = area;
+            cell.Area.Contents.AddValue(new(cell.Turf));
+        }
+
         if (cell.Turf != null) {
             cell.Turf.SetTurfType(type);
         } else {
@@ -178,13 +185,45 @@ public sealed class DreamMapManager : IDreamMapManager {
         SetTurf((turf.X, turf.Y), turf.Z, type, creationArguments);
     }
 
+    /// <summary>
+    /// Caches the turf/area appearance pair instead of recreating and re-registering it for every turf in the game.
+    /// This is cleared out when an area appearance changes
+    /// </summary>
+    private readonly Dictionary<ValueTuple<IconAppearance, int>, IconAppearance> _turfAreaLookup = new();
+
     public void SetTurfAppearance(DreamObjectTurf turf, IconAppearance appearance) {
+        if(turf.Cell.Area.AppearanceId != 0)
+            if(!appearance.Overlays.Contains(turf.Cell.Area.AppearanceId)) {
+                if(!_turfAreaLookup.TryGetValue((appearance, turf.Cell.Area.AppearanceId), out var newAppearance)) {
+                    newAppearance = new(appearance);
+                    newAppearance.Overlays.Add(turf.Cell.Area.AppearanceId);
+                    _turfAreaLookup.Add((appearance, turf.Cell.Area.AppearanceId), newAppearance);
+                }
+
+                appearance = newAppearance;
+            }
+
         int appearanceId = _appearanceSystem.AddAppearance(appearance);
 
         var level = _levels[turf.Z - 1];
         int turfId = (appearanceId + 1); // +1 because 0 is used for empty turfs
         level.QueuedTileUpdates[(turf.X, turf.Y)] = new Tile(turfId);
         turf.AppearanceId = appearanceId;
+    }
+
+    public void SetAreaAppearance(DreamObjectArea area, IconAppearance appearance) {
+        //if an area changes appearance, invalidate the lookup
+        _turfAreaLookup.Clear();
+        int oldAppearance = area.AppearanceId;
+        area.AppearanceId  = _appearanceSystem.AddAppearance(appearance);
+        foreach (var turf in area.Contents.GetTurfs()) {
+            var turfAppearance = _atomManager.MustGetAppearance(turf);
+
+            if(turfAppearance is null) continue;
+
+            turfAppearance.Overlays.Remove(oldAppearance);
+            SetTurfAppearance(turf, turfAppearance);
+        }
     }
 
     public bool TryGetCellAt(Vector2i pos, int z, [NotNullWhen(true)] out Cell? cell) {
@@ -323,7 +362,7 @@ public sealed class DreamMapManager : IDreamMapManager {
             Vector2i pos = (block.X + blockX - 1, block.Y + block.Height - blockY);
             Level level = _levels[block.Z - 1];
 
-            var turf = SetTurf(pos, block.Z, CreateMapObjectDefinition(cellDefinition.Turf), new());
+            var turf = SetTurf(pos, block.Z, CreateMapObjectDefinition(cellDefinition.Turf), new(), area);
             // The following calls level.SetArea via an event on the area's `contents` var.
             if (level.Cells[pos.X - 1, pos.Y - 1].Area != area) {
                 area.Contents.AddValue(new(turf));
@@ -431,6 +470,7 @@ public interface IDreamMapManager {
 
     public void SetTurf(DreamObjectTurf turf, DreamObjectDefinition type, DreamProcArguments creationArguments);
     public void SetTurfAppearance(DreamObjectTurf turf, IconAppearance appearance);
+    public void SetAreaAppearance(DreamObjectArea area, IconAppearance appearance);
     public bool TryGetCellAt(Vector2i pos, int z, [NotNullWhen(true)] out Cell? cell);
     public bool TryGetTurfAt(Vector2i pos, int z, [NotNullWhen(true)] out DreamObjectTurf? turf);
     public void SetZLevels(int levels);

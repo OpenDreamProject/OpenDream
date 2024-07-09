@@ -69,6 +69,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
     }
 
     public void Dispose() {
+        CachedTexture = null;
         DMI = null; //triggers the removal of the onUpdateCallback
     }
 

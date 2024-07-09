@@ -54,6 +54,7 @@ public enum WarningCode {
     InvalidRange = 2301,
     InvalidSetStatement = 2302,
     InvalidOverride = 2303,
+    InvalidIndexOperation = 2304,
     DanglingVarType = 2401, // For types inferred by a particular var definition and nowhere else, that ends up not existing (not forced-fatal because BYOND doesn't always error)
     MissingInterpolatedExpression = 2500, // A text macro is missing a required interpolated expression
     AmbiguousResourcePath = 2600,

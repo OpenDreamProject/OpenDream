@@ -456,7 +456,7 @@ public sealed class AtomManager {
         return atom switch {
             DreamObjectTurf turf => AppearanceSystem?.MustGetAppearance(turf.AppearanceId),
             DreamObjectMovable movable => movable.SpriteComponent.Appearance,
-            DreamObjectArea => new IconAppearance(),
+            DreamObjectArea area => AppearanceSystem.MustGetAppearance(area.AppearanceId),
             DreamObjectImage image => image.Appearance,
             _ => throw new Exception($"Cannot get appearance of {atom}")
         };
@@ -472,6 +472,8 @@ public sealed class AtomManager {
             appearance = movable.SpriteComponent.Appearance;
         else if (atom is DreamObjectImage image)
             appearance = image.Appearance;
+        else if (atom is DreamObjectArea area)
+            appearance = AppearanceSystem.MustGetAppearance(area.AppearanceId);
         else
             appearance = null;
 
@@ -492,6 +494,8 @@ public sealed class AtomManager {
             DMISpriteSystem.SetSpriteAppearance(new(movable.Entity, movable.SpriteComponent), appearance);
         } else if (atom is DreamObjectImage image) {
             image.Appearance = appearance;
+        } else if (atom is DreamObjectArea area) {
+            _dreamMapManager.SetAreaAppearance(area, appearance);
         }
     }
 

@@ -20,11 +20,15 @@ public sealed class DreamObjectIcon : DreamObject {
         DreamValue moving = args.GetArgument(4);
 
         if (!icon.IsNull) {
-            // TODO: Could maybe have an alternative path for /icon values so the DMI doesn't have to be generated
-            if (!DreamResourceManager.TryLoadIcon(icon, out var iconRsc))
-                throw new Exception($"Cannot create an icon from {icon}");
+            if (icon.TryGetValueAsDreamObject<DreamObjectIcon>(out var iconObj)) {
+                // Copy the DreamIcon rather than create the entire DMI from it
+                Icon.CopyFrom(iconObj.Icon);
+            } else {
+                if (!DreamResourceManager.TryLoadIcon(icon, out var iconRsc))
+                    throw new Exception($"Cannot create an icon from {icon}");
 
-            Icon.InsertStates(iconRsc, state, dir, frame, isConstructor: true);
+                Icon.InsertStates(iconRsc, state, dir, frame, isConstructor: true);
+            }
         }
     }
 

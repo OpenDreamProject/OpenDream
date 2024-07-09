@@ -143,6 +143,9 @@ public struct DMFPropertyNum(float value) : IDMFProperty {
 public struct DMFPropertyVec2 : IDMFProperty {
     public int X;
     public int Y;
+    public char Delim = ',';
+
+    public Vector2i Vector => new(X, Y);
 
     public DMFPropertyVec2(int x, int y) {
         X = x;
@@ -173,11 +176,11 @@ public struct DMFPropertyVec2 : IDMFProperty {
     }
 
     public string AsArg() {
-        return X.ToString() + " " + Y.ToString();
+        return X + " " + Y;
     }
 
     public string AsEscaped() {
-        return X.ToString() + "," + Y.ToString();
+        return X + char.ToString(Delim) + Y;
     }
 
     public string AsString() {
@@ -189,15 +192,15 @@ public struct DMFPropertyVec2 : IDMFProperty {
     }
 
     public string AsJson() {
-        return "{\"x\":" + X.ToString() + ", \"y\":" + Y.ToString() + "}";
+        return $"{{\"x\":{X}, \"y\":{Y}}}";
     }
 
     public string AsJsonDM() {
-        return "{\\\"x\\\":" + X.ToString() + ", \\\"y\\\":" + Y.ToString() + "}";
+        return $"{{\\\"x\\\":{X}, \\\"y\\\":{Y}}}";
     }
 
     public string AsRaw() {
-        return AsArg();
+        return AsEscaped();
     }
 
     public override string ToString() {
@@ -208,6 +211,140 @@ public struct DMFPropertyVec2 : IDMFProperty {
         DMFPropertyVec2 comparisonVec = new(comparison);
         return comparisonVec.X == X && comparisonVec.Y == Y;
     }
+}
+
+public struct DMFPropertySize : IDMFProperty {
+    private DMFPropertyVec2 _value;
+    public int X {get => _value.X; set => _value.X = value;}
+    public int Y {get => _value.Y; set => _value.Y = value;}
+    public Vector2i Vector => _value.Vector;
+    private const char Delim = 'x';
+
+    public DMFPropertySize(int x, int y) {
+        _value = new(x, y) {
+            Delim = Delim
+        };
+    }
+
+    public DMFPropertySize(string value) {
+        _value = new(value) {
+            Delim = Delim
+        };
+    }
+
+    public DMFPropertySize(Vector2 value) {
+        _value = new(value) {
+            Delim = Delim
+        };
+    }
+
+    public DMFPropertySize(Vector2i value) {
+        _value = new(value) {
+            Delim = Delim
+        };
+    }
+
+    public string AsArg() {
+        return _value.AsArg();
+    }
+
+    public string AsEscaped() {
+        return _value.AsEscaped();
+    }
+
+    public string AsJson() {
+        return _value.AsJson();
+    }
+
+    public string AsJsonDM() {
+        return _value.AsJsonDM();
+    }
+
+    public string AsParams() {
+        return _value.AsParams();
+    }
+
+    public string AsRaw() {
+        return _value.AsRaw();
+    }
+
+    public string AsString() {
+        return _value.AsString();
+    }
+
+    public bool Equals(string comparison) {
+        return _value.Equals(comparison);
+    }
+
+    public static bool operator ==(DMFPropertySize a, DMFPropertySize b) => a.Vector == b.Vector;
+    public static bool operator !=(DMFPropertySize a, DMFPropertySize b) => a.Vector != b.Vector;
+}
+
+public struct DMFPropertyPos : IDMFProperty {
+    private DMFPropertyVec2 _value;
+    public int X => _value.X;
+    public int Y => _value.Y;
+    public Vector2i Vector => _value.Vector;
+    private const char Delim = ',';
+
+    public DMFPropertyPos(int x, int y) {
+        _value = new(x, y) {
+            Delim = Delim
+        };
+    }
+
+    public DMFPropertyPos(string value) {
+        _value = new(value) {
+            Delim = Delim
+        };
+    }
+
+    public DMFPropertyPos(Vector2 value) {
+        _value = new(value) {
+            Delim = Delim
+        };
+    }
+
+    public DMFPropertyPos(Vector2i value) {
+        _value = new(value) {
+            Delim = Delim
+        };
+    }
+
+    public string AsArg() {
+        return _value.AsArg();
+    }
+
+    public string AsEscaped() {
+        return _value.AsEscaped();
+    }
+
+    public string AsJson() {
+        return _value.AsJson();
+    }
+
+    public string AsJsonDM() {
+        return _value.AsJsonDM();
+    }
+
+    public string AsParams() {
+        return _value.AsParams();
+    }
+
+    public string AsRaw() {
+        return _value.AsRaw();
+    }
+
+    public string AsString() {
+        return _value.AsString();
+    }
+
+    public bool Equals(string comparison) {
+        return _value.Equals(comparison);
+    }
+
+    public static bool operator ==(DMFPropertyPos a, DMFPropertyPos b) => a.Vector == b.Vector;
+    public static bool operator !=(DMFPropertyPos a, DMFPropertyPos b) => a.Vector != b.Vector;
 }
 
 public struct DMFPropertyColor : IDMFProperty {
@@ -423,7 +560,74 @@ public sealed class DMFPropertyVec2Serializer : ITypeSerializer<DMFPropertyVec2,
         IDependencyCollection dependencies, SerializationHookContext hookCtx, ISerializationContext? context = null) {
         return new(source.AsRaw());
     }
+}
 
+[TypeSerializer]
+public sealed class DMFPropertySizeSerializer : ITypeSerializer<DMFPropertySize, ValueDataNode>, ITypeCopyCreator<DMFPropertySize> {
+    public DMFPropertySize Read(ISerializationManager serializationManager, ValueDataNode node,
+        IDependencyCollection dependencies,
+        SerializationHookContext hookCtx,
+        ISerializationContext? context = null,
+        ISerializationManager.InstantiationDelegate<DMFPropertySize>? instanceProvider = null) {
+        return new(node.Value);
+    }
+
+    public ValidationNode Validate(ISerializationManager serializationManager, ValueDataNode node,
+        IDependencyCollection dependencies,
+        ISerializationContext? context = null) {
+        try {
+            _ = new DMFPropertySize(node.Value);
+            return new ValidatedValueNode(node);
+        } catch (Exception e) {
+            return new ErrorNode(node, e.Message);
+        }
+    }
+
+    public DataNode Write(ISerializationManager serializationManager, DMFPropertySize value,
+        IDependencyCollection dependencies, bool alwaysWrite = false,
+        ISerializationContext? context = null) {
+        return new ValueDataNode(value.AsRaw());
+    }
+
+    [MustUseReturnValue]
+    public DMFPropertySize CreateCopy(ISerializationManager serializationManager, DMFPropertySize source,
+        IDependencyCollection dependencies, SerializationHookContext hookCtx, ISerializationContext? context = null) {
+        return new(source.AsRaw());
+    }
+}
+
+[TypeSerializer]
+public sealed class DMFPropertyPosSerializer : ITypeSerializer<DMFPropertyPos, ValueDataNode>, ITypeCopyCreator<DMFPropertyPos> {
+    public DMFPropertyPos Read(ISerializationManager serializationManager, ValueDataNode node,
+        IDependencyCollection dependencies,
+        SerializationHookContext hookCtx,
+        ISerializationContext? context = null,
+        ISerializationManager.InstantiationDelegate<DMFPropertyPos>? instanceProvider = null) {
+        return new(node.Value);
+    }
+
+    public ValidationNode Validate(ISerializationManager serializationManager, ValueDataNode node,
+        IDependencyCollection dependencies,
+        ISerializationContext? context = null) {
+        try {
+            _ = new DMFPropertyPos(node.Value);
+            return new ValidatedValueNode(node);
+        } catch (Exception e) {
+            return new ErrorNode(node, e.Message);
+        }
+    }
+
+    public DataNode Write(ISerializationManager serializationManager, DMFPropertyPos value,
+        IDependencyCollection dependencies, bool alwaysWrite = false,
+        ISerializationContext? context = null) {
+        return new ValueDataNode(value.AsRaw());
+    }
+
+    [MustUseReturnValue]
+    public DMFPropertyPos CreateCopy(ISerializationManager serializationManager, DMFPropertyPos source,
+        IDependencyCollection dependencies, SerializationHookContext hookCtx, ISerializationContext? context = null) {
+        return new(source.AsRaw());
+    }
 }
 
 [TypeSerializer]

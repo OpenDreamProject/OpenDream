@@ -37,6 +37,8 @@
 "K" = (/obj/complex_overlay_test,/turf,/area)
 "L" = (/obj/float_layer_test,/turf,/area)
 "O" = (/obj/plaque/animation_test,/turf,/area)
+"R" = (/turf/blue,/area/withicon)
+"X" = (/turf,/area/withicon)
 "Z" = (/obj/button/animation_test,/turf,/area)
 
 (1,1,1) = {"
@@ -58,8 +60,8 @@ baaaaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab
-baaaaaaaaaaaaaaaaaaaab
-baaaaaaaaaaaaaaaaaaaab
+bXaaaaaaaaaaaaaaaaaaab
+Raaaaaaaaaaaaaaaaaaaab
 bCJKLaaaaaaaaaaaaaaaab
 bbbbbbbbbbbbbbbbbbbbbb
 "}

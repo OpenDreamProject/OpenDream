@@ -23,6 +23,10 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     [Dependency] private readonly IPlayerManager _playerManager = default!;
 
     public override void Initialize() {
+        //register empty appearance as ID 0
+        _appearanceToId.Add(IconAppearance.Default, 0);
+        _idToAppearance.Add(0, IconAppearance.Default);
+        _appearanceIdCounter = 1;
         _playerManager.PlayerStatusChanged += OnPlayerStatusChanged;
     }
 

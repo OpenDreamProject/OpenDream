@@ -117,13 +117,16 @@ public sealed class DMFLexer(string source) {
             default: {
                 if (!char.IsAscii(c)) {
                     Advance();
-                    return new(TokenType.Error, $"Invalid character: {c.ToString()}");
+                    return new(TokenType.Error, $"Invalid character: {char.ToString(c)}");
                 }
 
-                string text = c.ToString();
+                var textBuilder = new StringBuilder();
+                textBuilder.Append(c);
 
                 while (!char.IsWhiteSpace(Advance()) && GetCurrent() is not ';' and not '=' and not '.' and not '?' and not ':' && !AtEndOfSource)
-                    text += GetCurrent();
+                    textBuilder.Append(GetCurrent());
+
+                var text = textBuilder.ToString();
 
                 TokenType tokenType;
                 if (_parsingAttributeName) {

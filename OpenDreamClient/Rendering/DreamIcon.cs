@@ -17,6 +17,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
     public DMIResource? DMI {
         get => _dmi;
         private set {
+            _dmi?.OnUpdateCallbacks.Remove(DirtyTexture);
             _dmi = value;
             CheckSizeChange();
         }
@@ -63,6 +64,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
     public void Dispose() {
         _ping?.Dispose();
         _pong?.Dispose();
+        DMI = null; //triggers the removal of the onUpdateCallback
     }
 
     public Texture? GetTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData, Texture? textureOverride = null) {
@@ -213,6 +215,8 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
     private IconAppearance? CalculateAnimatedAppearance() {
         if (_appearanceAnimations == null || _appearance == null)
             return _appearance;
+
+        _textureDirty = true; //if we have animations, we need to recalculate the texture
         IconAppearance appearance = new IconAppearance(_appearance);
         List<AppearanceAnimation>? toRemove = null;
         List<AppearanceAnimation>? toReAdd = null;
@@ -436,7 +440,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
         } else {
             IoCManager.Resolve<IDreamResourceManager>().LoadResourceAsync<DMIResource>(Appearance.Icon.Value, dmi => {
                 if (dmi.Id != Appearance.Icon) return; //Icon changed while resource was loading
-
+                dmi.OnUpdateCallbacks.Add(DirtyTexture);
                 DMI = dmi;
                 _animationFrame = 0;
                 _animationFrameTime = gameTiming.CurTime;

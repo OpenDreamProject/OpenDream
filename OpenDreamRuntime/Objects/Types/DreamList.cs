@@ -25,7 +25,7 @@ public class DreamList : DreamObject {
     /// <summary>
     /// Create a new DreamList using an existing list of values (does not copy them)
     /// </summary>
-    private DreamList(DreamObjectDefinition listDef, List<DreamValue> values, Dictionary<DreamValue, DreamValue>? associativeValues) : base(listDef) {
+    public DreamList(DreamObjectDefinition listDef, List<DreamValue> values, Dictionary<DreamValue, DreamValue>? associativeValues) : base(listDef) {
         _values = values;
         _associativeValues = associativeValues;
     }
@@ -1250,6 +1250,10 @@ public sealed class AreaContentsList : DreamList {
             length += turf.Contents.GetLength();
 
         return length;
+    }
+
+    public IEnumerable<DreamObjectTurf> GetTurfs() {
+        return _turfs;
     }
 }
 

@@ -192,6 +192,16 @@ namespace OpenDreamRuntime.Procs.Native {
             return DreamValue.Null;
         }
 
+        [DreamProc("ODHotReloadResource")]
+        [DreamProcParameter("file_name", Type = DreamValue.DreamValueTypeFlag.String)]
+        public static DreamValue NativeProc_ODHotReloadResource(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+            if(!bundle.GetArgument(0, "file_name").TryGetValueAsString(out var fileName))
+                throw new ArgumentException("file_name must be a string");
+            var dreamManager = IoCManager.Resolve<DreamManager>();
+            dreamManager.HotReloadResource(fileName);
+            return DreamValue.Null;
+        }
+
         /// <summary>
         /// Determines the specified configuration space and configuration set in a config_set argument
         /// </summary>

@@ -41,6 +41,7 @@ public class InterfaceElement {
             }
 
             MappingDataNode newNode = original.Merge(node);
+
             ElementDescriptor = (ElementDescriptor)serializationManager.Read(ElementDescriptor.GetType(), newNode);
             UpdateElementDescriptor();
         } catch (Exception e) {
@@ -64,8 +65,16 @@ public class InterfaceElement {
         return false;
     }
 
-    protected virtual void UpdateElementDescriptor() {
+    // TODO: Replace PopulateElementDescriptor with this
+    public virtual void SetProperty(string property, string value, bool manualWinset = false) {
+        MappingDataNode node = new() {
+            {property, value}
+        };
 
+        PopulateElementDescriptor(node, _serializationManager);
+    }
+
+    protected virtual void UpdateElementDescriptor() {
     }
 
     public virtual void AddChild(ElementDescriptor descriptor) {
@@ -73,6 +82,5 @@ public class InterfaceElement {
     }
 
     public virtual void Shutdown() {
-
     }
 }

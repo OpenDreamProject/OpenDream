@@ -26,6 +26,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         //register empty appearance as ID 0
         _appearanceToId.Add(IconAppearance.Default, 0);
         _idToAppearance.Add(0, IconAppearance.Default);
+        _appearanceRefCounts.Add(IconAppearance.Default, 1);
         _appearanceIdCounter = 1;
         _playerManager.PlayerStatusChanged += OnPlayerStatusChanged;
     }
@@ -83,6 +84,8 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
                 }
 
                 if(_appearanceToId.TryGetValue(appearance, out int id)) {
+                    if(id==0) //don't ever remove the default appearance
+                        return;
                     _idToAppearance.Remove(id);
                     RaiseNetworkEvent(new RemoveAppearanceEvent(id));
                 }

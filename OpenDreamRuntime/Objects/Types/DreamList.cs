@@ -829,7 +829,7 @@ public sealed class DreamVisContentsList : DreamList {
             entity = EntityUid.Invalid; // TODO: Support turfs in vis_contents
         } else if (value == DreamValue.Null) {
             return; // vis_contents cannot contain nulls
-        }else {
+        } else {
             throw new Exception($"Cannot add {value} to a vis_contents list");
         }
 

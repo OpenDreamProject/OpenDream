@@ -827,7 +827,9 @@ public sealed class DreamVisContentsList : DreamList {
                 return; // vis_contents cannot contain duplicates
             _visContents.Add(turf);
             entity = EntityUid.Invalid; // TODO: Support turfs in vis_contents
-        } else {
+        } else if (value == DreamValue.Null) {
+            return; // vis_contents cannot contain nulls
+        }else {
             throw new Exception($"Cannot add {value} to a vis_contents list");
         }
 

@@ -300,7 +300,28 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.Length, DMOpcodeHandlers.Length},
             {DreamProcOpcode.GetDir, DMOpcodeHandlers.GetDir},
             {DreamProcOpcode.DebuggerBreakpoint, DMOpcodeHandlers.DebuggerBreakpoint},
-            {DreamProcOpcode.Rgb, DMOpcodeHandlers.Rgb}
+            {DreamProcOpcode.Rgb, DMOpcodeHandlers.Rgb},
+            // Peephole optimizer opcode handlers
+            {DreamProcOpcode.PushRefandJumpIfNotNull, DMOpcodeHandlers.PushReferenceAndJumpIfNotNull},
+            {DreamProcOpcode.NullRef, DMOpcodeHandlers.NullRef},
+            {DreamProcOpcode.AssignPop, DMOpcodeHandlers.AssignPop},
+            {DreamProcOpcode.PushRefAndDereferenceField, DMOpcodeHandlers.PushReferenceAndDereferenceField},
+            {DreamProcOpcode.PushNRefs, DMOpcodeHandlers.PushNRefs},
+            {DreamProcOpcode.PushNFloats, DMOpcodeHandlers.PushNFloats},
+            {DreamProcOpcode.PushNStrings, DMOpcodeHandlers.PushNStrings},
+            {DreamProcOpcode.PushNResources, DMOpcodeHandlers.PushNResources},
+            {DreamProcOpcode.PushStringFloat, DMOpcodeHandlers.PushStringFloat},
+            {DreamProcOpcode.SwitchOnFloat, DMOpcodeHandlers.SwitchOnFloat},
+            {DreamProcOpcode.SwitchOnString, DMOpcodeHandlers.SwitchOnString},
+            {DreamProcOpcode.JumpIfReferenceFalse, DMOpcodeHandlers.JumpIfReferenceFalse},
+            {DreamProcOpcode.PushNOfStringFloats, DMOpcodeHandlers.PushNOfStringFloat},
+            {DreamProcOpcode.CreateListNFloats, DMOpcodeHandlers.CreateListNFloats},
+            {DreamProcOpcode.CreateListNStrings, DMOpcodeHandlers.CreateListNStrings},
+            {DreamProcOpcode.CreateListNRefs, DMOpcodeHandlers.CreateListNRefs},
+            {DreamProcOpcode.CreateListNResources, DMOpcodeHandlers.CreateListNResources},
+            {DreamProcOpcode.JumpIfNotNull, DMOpcodeHandlers.JumpIfNotNull},
+            {DreamProcOpcode.IsTypeDirect, DMOpcodeHandlers.IsTypeDirect},
+            {DreamProcOpcode.ReturnReferenceValue, DMOpcodeHandlers.ReturnReferenceValue}
         };
 
         public static readonly unsafe delegate*<DMProcState, ProcStatus>[] OpcodeHandlers;
@@ -317,8 +338,7 @@ namespace OpenDreamRuntime.Procs {
         private readonly Stack<int> _catchPosition = new();
         private readonly Stack<int> _catchVarIndex = new();
         public const int NoTryCatchVar = -1;
-        private Stack<IDreamValueEnumerator>? _enumeratorStack;
-        public Stack<IDreamValueEnumerator> EnumeratorStack => _enumeratorStack ??= new(1);
+        public IDreamValueEnumerator?[] Enumerators = new IDreamValueEnumerator?[16];
 
         private int _pc = 0;
         public int ProgramCounter => _pc;
@@ -511,7 +531,7 @@ namespace OpenDreamRuntime.Procs {
             Instance = null;
             Usr = null;
             ArgumentCount = 0;
-            _enumeratorStack = null;
+            Array.Clear(Enumerators);
             _pc = 0;
             _proc = null;
 
@@ -987,6 +1007,10 @@ namespace OpenDreamRuntime.Procs {
                     if (proc == null)
                         throw new Exception("Cannot use named arguments here");
 
+                    // new /mutable_appearance(...) always uses /image/New()'s arguments, despite any overrides
+                    if (proc.OwningType == Proc.ObjectTree.MutableAppearance && proc.Name == "New")
+                        proc = Proc.DreamManager.ImageConstructor;
+
                     var argumentCount = argumentStackSize / 2;
                     var arguments = new DreamValue[Math.Max(argumentCount, proc.ArgumentNames.Count)];
                     var skippingArg = false;
@@ -1025,6 +1049,10 @@ namespace OpenDreamRuntime.Procs {
                         throw new Exception("Cannot use an arglist here");
                     if (!values[0].TryGetValueAsDreamList(out var argList))
                         return new DreamProcArguments(); // Using a non-list gives you no arguments
+
+                    // new /mutable_appearance(...) always uses /image/New()'s arguments, despite any overrides
+                    if (proc.OwningType == Proc.ObjectTree.MutableAppearance && proc.Name == "New")
+                        proc = Proc.DreamManager.ImageConstructor;
 
                     var listValues = argList.GetValues();
                     var arguments = new DreamValue[Math.Max(listValues.Count, proc.ArgumentNames.Count)];

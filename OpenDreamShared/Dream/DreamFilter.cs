@@ -1,6 +1,7 @@
 using Robust.Shared.Serialization;
 using Robust.Shared.ViewVariables;
 using System;
+using System.Numerics;
 using Robust.Shared.Maths;
 using Robust.Shared.Serialization.Manager.Attributes;
 
@@ -102,7 +103,7 @@ public sealed partial record DreamFilterLayer : DreamFilter {
     [ViewVariables, DataField("render_source")] public string RenderSource = ""; // String that will require special processing
     [ViewVariables, DataField("flags")] public float Flags; // Default is FILTER_OVERLAY = 0
     [ViewVariables, DataField("color")] public Color Color = Color.Black.WithAlpha(128); // Shit needs to be string or color matrix, because of course one has to be special
-    [ViewVariables, DataField("transform")] public Matrix3 Transform = Matrix3.Identity;
+    [ViewVariables, DataField("transform")] public Matrix3x2 Transform = Matrix3x2.Identity;
     [ViewVariables, DataField("blend_mode")] public float BlendMode;
 }
 

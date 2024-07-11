@@ -114,6 +114,13 @@ namespace DMCompiler.DM.Expressions {
                     break;
 
                 case IndexOperation indexOperation:
+                    if (NestedPath is not null) {
+                        var obj = DMObjectTree.GetDMObject(NestedPath.Value, false);
+                        if (obj is not null && obj.IsSubtypeOf(DreamPath.Datum) && !obj.HasProc("operator[]")) {
+                            DMCompiler.Emit(WarningCode.InvalidIndexOperation, Location, "Invalid index operation. datum[] index operations are not valid starting in BYOND 515.1641");
+                        }
+                    }
+
                     indexOperation.Index.EmitPushValue(dmObject, proc);
                     proc.DereferenceIndex();
                     break;
@@ -159,12 +166,21 @@ namespace DMCompiler.DM.Expressions {
                     if (fieldOperation.Safe) {
                         ShortCircuitHandler(proc, endLabel, shortCircuitMode);
                     }
+
                     return DMReference.CreateField(fieldOperation.Identifier);
 
                 case IndexOperation indexOperation:
+                    if (NestedPath is not null) {
+                        var obj = DMObjectTree.GetDMObject(NestedPath.Value, false);
+                        if (obj is not null && obj.IsSubtypeOf(DreamPath.Datum) && !obj.HasProc("operator[]=")) {
+                            DMCompiler.Emit(WarningCode.InvalidIndexOperation, Location, "Invalid index operation. datum[] index operations are not valid starting in BYOND 515.1641");
+                        }
+                    }
+
                     if (indexOperation.Safe) {
                         ShortCircuitHandler(proc, endLabel, shortCircuitMode);
                     }
+
                     indexOperation.Index.EmitPushValue(dmObject, proc);
                     return DMReference.ListIndex;
 
@@ -181,7 +197,12 @@ namespace DMCompiler.DM.Expressions {
         public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
             string endLabel = proc.NewLabelName();
 
-            Expression.EmitPushValue(dmObject, proc);
+            if (Expression is LValue exprLValue) {
+                // We don't want this instead pushing the constant value if it's const
+                exprLValue.EmitPushValueNoConstant(dmObject, proc);
+            } else {
+                Expression.EmitPushValue(dmObject, proc);
+            }
 
             // Perform all except for our last operation
             for (int i = 0; i < _operations.Length - 1; i++) {
@@ -222,7 +243,12 @@ namespace DMCompiler.DM.Expressions {
         public void EmitPushIsSaved(DMObject dmObject, DMProc proc) {
             string endLabel = proc.NewLabelName();
 
-            Expression.EmitPushValue(dmObject, proc);
+            if (Expression is LValue exprLValue) {
+                // We don't want this instead pushing the constant value if it's const
+                exprLValue.EmitPushValueNoConstant(dmObject, proc);
+            } else {
+                Expression.EmitPushValue(dmObject, proc);
+            }
 
             // Perform all except for our last operation
             for (int i = 0; i < _operations.Length - 1; i++) {

@@ -55,6 +55,7 @@ public enum WarningCode {
     InvalidRange = 2301,
     InvalidSetStatement = 2302,
     InvalidOverride = 2303,
+    InvalidIndexOperation = 2304,
     DanglingVarType = 2401, // For types inferred by a particular var definition and nowhere else, that ends up not existing (not forced-fatal because BYOND doesn't always error)
     MissingInterpolatedExpression = 2500, // A text macro is missing a required interpolated expression
     AmbiguousResourcePath = 2600,
@@ -70,6 +71,7 @@ public enum WarningCode {
     UnsafeClientAccess = 3200,
     SuspiciousSwitchCase = 3201, // "else if" cases are actually valid DM, they just spontaneously end the switch context and begin an if-else ladder within the else case of the switch
     AssignmentInConditional = 3202,
+    PickWeightedSyntax = 3203,
 
     // 4000 - 4999 are reserved for runtime configuration. (TODO: Runtime doesn't know about configs yet!)
 }

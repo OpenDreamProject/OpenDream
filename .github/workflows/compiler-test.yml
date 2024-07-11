@@ -31,9 +31,9 @@ jobs:
     - name: Install dependencies
       run: dotnet restore main/DMCompiler/DMCompiler.csproj
     - name: Build
-      run: dotnet build main/DMCompiler/DMCompiler.csproj --configuration Release --no-restore /m
+      run: dotnet build main/DMCompiler/DMCompiler.csproj --property WarningLevel=0 --configuration Release --no-restore /m
     - name: Compile TestGame
-      run: main\bin\DMCompiler\DMCompiler.exe main\TestGame\environment.dme
+      run: main\bin\DMCompiler\DMCompiler.exe main\TestGame\environment.dme --suppress-unimplemented
     - name: Checkout /tg/station Master
       uses: actions/checkout@v2
       with:
@@ -41,7 +41,7 @@ jobs:
         ref: master
         path: tg
     - name: Compile /tg/station Master
-      run: main\bin\DMCompiler\DMCompiler.exe tg\tgstation.dme
+      run: main\bin\DMCompiler\DMCompiler.exe tg\tgstation.dme --suppress-unimplemented
     - name: Checkout Goonstation Master
       uses: actions/checkout@v2
       with:
@@ -51,7 +51,7 @@ jobs:
     - name: Compile Goonstation Master
       run: |
         New-Item goon\+secret\__secret.dme -type file
-        main\bin\DMCompiler\DMCompiler.exe goon\goonstation.dme
+        main\bin\DMCompiler\DMCompiler.exe goon\goonstation.dme --suppress-unimplemented
     - name: Checkout Paradise Master
       uses: actions/checkout@v2
       with:
@@ -59,7 +59,7 @@ jobs:
         ref: master
         path: para
     - name: Compile Paradise Master
-      run: main\bin\DMCompiler\DMCompiler.exe para\paradise.dme
+      run: main\bin\DMCompiler\DMCompiler.exe para\paradise.dme --suppress-unimplemented
     - name: Checkout Nebula Dev
       uses: actions/checkout@v2
       with:
@@ -67,4 +67,4 @@ jobs:
         ref: dev
         path: nebula
     - name: Compile Nebula Dev
-      run: main\bin\DMCompiler\DMCompiler.exe nebula\nebula.dme
+      run: main\bin\DMCompiler\DMCompiler.exe nebula\nebula.dme --suppress-unimplemented

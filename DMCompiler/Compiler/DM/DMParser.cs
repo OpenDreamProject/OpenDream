@@ -143,6 +143,17 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_ConstantString
         ];
 
+        // TEMPORARY - REMOVE WHEN IT MATCHES THE ABOVE
+        private static readonly TokenType[] ImplementedOperatorOverloadTypes = [
+            TokenType.DM_Plus,
+            TokenType.DM_Minus,
+            TokenType.DM_Star,
+            TokenType.DM_StarEquals,
+            TokenType.DM_Slash,
+            TokenType.DM_SlashEquals,
+            TokenType.DM_Bar,
+        ];
+
         public DMASTFile File() {
             var loc = Current().Location;
             List<DMASTStatement> statements = new();
@@ -244,9 +255,6 @@ namespace DMCompiler.Compiler.DM {
                 }
 
                 if (path.IsOperator) {
-                    DMCompiler.UnimplementedWarning(procBlock.Location,
-                        "Operator overloads are not implemented. They will be defined but never called.");
-
                     List<DMASTProcStatement> procStatements = procBlock.Statements.ToList();
                     Location tokenLoc = procBlock.Location;
                     //add ". = src" as the first expression in the operator
@@ -374,6 +382,11 @@ namespace DMCompiler.Compiler.DM {
                                 if (operatorToken is { Type: TokenType.DM_ConstantString, Value: not "" }) {
                                     DMCompiler.Emit(WarningCode.BadToken, operatorToken.Location,
                                         "The quotes in a stringify overload must be empty");
+                                }
+
+                                if (!ImplementedOperatorOverloadTypes.Contains(operatorToken.Type)) {
+                                    DMCompiler.UnimplementedWarning(operatorToken.Location,
+                                        $"operator{operatorToken.PrintableText} overloads are not implemented. They will be defined but never called.");
                                 }
 
                                 operatorFlag = true;
@@ -2060,7 +2073,9 @@ namespace DMCompiler.Compiler.DM {
                     TokenType.DM_Exclamation,
                     TokenType.DM_Tilde,
                     TokenType.DM_PlusPlus,
-                    TokenType.DM_MinusMinus
+                    TokenType.DM_MinusMinus,
+                    TokenType.DM_And,
+                    TokenType.DM_Star
                 }, out var unaryToken)) {
                 Whitespace();
                 DMASTExpression? expression = ExpressionUnary(isTernaryB);
@@ -2071,6 +2086,8 @@ namespace DMCompiler.Compiler.DM {
                     case TokenType.DM_Tilde: return new DMASTBinaryNot(loc, expression);
                     case TokenType.DM_PlusPlus: return new DMASTPreIncrement(loc, expression);
                     case TokenType.DM_MinusMinus: return new DMASTPreDecrement(loc, expression);
+                    case TokenType.DM_And: return new DMASTPointerRef(loc, expression);
+                    case TokenType.DM_Star: return new DMASTPointerDeref(loc, expression);
                 }
 
                 Emit(WarningCode.BadToken, loc, $"Problem while handling unary '{unaryToken.PrintableText}'");

@@ -33,7 +33,7 @@ internal static class DMExpressionBuilder {
             case DMASTStringFormat stringFormat: return BuildStringFormat(stringFormat, dmObject, proc, inferredPath);
             case DMASTIdentifier identifier: return BuildIdentifier(identifier, dmObject, proc, inferredPath);
             case DMASTScopeIdentifier globalIdentifier: return BuildScopeIdentifier(globalIdentifier, dmObject, proc, inferredPath);
-            case DMASTCallableSelf: return new ProcSelf(expression.Location, inferredPath, proc);
+            case DMASTCallableSelf: return new ProcSelf(expression.Location, null, proc);
             case DMASTCallableSuper: return new ProcSuper(expression.Location, dmObject, proc);
             case DMASTCallableProcIdentifier procIdentifier: return BuildCallableProcIdentifier(procIdentifier, dmObject);
             case DMASTProcCall procCall: return BuildProcCall(procCall, dmObject, proc, inferredPath);
@@ -227,6 +227,10 @@ internal static class DMExpressionBuilder {
                 return new PreDecrement(preDecrement.Location, BuildExpression(preDecrement.Value, dmObject, proc, inferredPath));
             case DMASTPostDecrement postDecrement:
                 return new PostDecrement(postDecrement.Location, BuildExpression(postDecrement.Value, dmObject, proc, inferredPath));
+            case DMASTPointerRef pointerRef:
+                return new PointerRef(pointerRef.Location, BuildExpression(pointerRef.Value, dmObject, proc, inferredPath));
+            case DMASTPointerDeref pointerDeref:
+                return new PointerDeref(pointerDeref.Location, BuildExpression(pointerDeref.Value, dmObject, proc, inferredPath));
             case DMASTGradient gradient:
                 return new Gradient(gradient.Location,
                     new ArgumentList(gradient.Location, dmObject, proc, gradient.Parameters));
@@ -750,8 +754,9 @@ internal static class DMExpressionBuilder {
 
                 case DMASTDereference.IndexOperation indexOperation:
                     operation = new Dereference.IndexOperation {
-                        // Passing the path here is cursed, but one of the tests seems to suggest we want that?
-                        Index = DMExpression.Create(dmObject, proc, indexOperation.Index, prevPath),
+                        // var/type1/result = new /type2()[new()] changes the inferred new to "new /type1()"
+                        // L[new()] = new() uses the type of L however
+                        Index = DMExpression.Create(dmObject, proc, indexOperation.Index, inferredPath ?? prevPath),
                         Safe = indexOperation.Safe,
                         Path = prevPath
                     };

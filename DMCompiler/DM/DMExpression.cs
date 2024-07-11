@@ -109,7 +109,14 @@ sealed class ArgumentList {
                     break;
                 case Expressions.Number keyNum:
                     //Replaces an ordered argument
-                    argIndex = (int)keyNum.Value;
+                    var newIdx = (int)keyNum.Value - 1;
+
+                    if (newIdx == argIndex) {
+                        DMCompiler.Emit(WarningCode.PointlessPositionalArgument, key.Location,
+                            $"The argument at index {argIndex + 1} is a positional argument with a redundant index (\"{argIndex + 1} = value\" at argument {argIndex + 1}). This does not function like a named argument and is likely a mistake.");
+                    }
+
+                    argIndex = newIdx;
                     break;
                 case Expressions.Resource _:
                 case Expressions.ConstantPath _:

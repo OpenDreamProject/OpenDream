@@ -113,7 +113,7 @@ sealed class ArgumentList {
 
                     if (newIdx == argIndex) {
                         DMCompiler.Emit(WarningCode.PointlessPositionalArgument, key.Location,
-                            $"The argument at index {argIndex + 1} is a positional argument with a redundant index (`{argIndex + 1} = value` at argument {argIndex + 1}). This does not function like a named argument and is likely a mistake.");
+                            $"The argument at index {argIndex + 1} is a positional argument with a redundant index (\"{argIndex + 1} = value\" at argument {argIndex + 1}). This does not function like a named argument and is likely a mistake.");
                     }
 
                     argIndex = newIdx;
@@ -136,7 +136,6 @@ sealed class ArgumentList {
                 _isKeyed = true;
 
             Expressions[argIndex] = (name, value);
-
         }
     }
 
@@ -203,8 +202,7 @@ sealed class ArgumentList {
 
         DMComplexValueType paramType = param.ExplicitValueType ?? DMValueType.Anything;
 
-
-        if ((!expr.ValType.IsAnything && !paramType.MatchesType(expr.ValType))) {
+        if (!expr.ValType.IsAnything && !paramType.MatchesType(expr.ValType)) {
             DMCompiler.Emit(WarningCode.InvalidVarType, expr.Location,
                 $"{targetProc.Name}(...) argument \"{param.Name}\": Invalid var value type {expr.ValType}, expected {paramType}");
         }

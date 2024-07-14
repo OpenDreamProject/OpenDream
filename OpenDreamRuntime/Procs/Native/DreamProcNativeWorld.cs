@@ -70,6 +70,19 @@ internal static class DreamProcNativeWorld {
         return new DreamValue(list);
     }
 
+    [DreamProc("Error")]
+    [DreamProcParameter("exception", Type = DreamValue.DreamValueTypeFlag.DreamObject)]
+    public static DreamValue NativeProc_Error(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        var exceptionArg = bundle.GetArgument(0, "exception");
+        if (!exceptionArg.TryGetValueAsDreamObject<DreamObjectException>(out var exception)) // Ignore anything not an /exception
+            return DreamValue.Null;
+        if (!exception.Desc.TryGetValueAsString(out var exceptionDesc))
+            return DreamValue.Null;
+
+        bundle.DreamManager.WriteWorldLog(exceptionDesc, LogLevel.Error);
+        return DreamValue.Null;
+    }
+
     [DreamProc("GetConfig")]
     [DreamProcParameter("config_set", Type = DreamValue.DreamValueTypeFlag.String)]
     [DreamProcParameter("param", Type = DreamValue.DreamValueTypeFlag.String)]

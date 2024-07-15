@@ -573,27 +573,39 @@ namespace OpenDreamRuntime.Procs {
                 throw new Exception("Invalid var for initial() call: " + key);
             }
 
-            if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject)) {
-                // Calling initial() on a null value just returns null
-                if (dreamObject == null) {
-                    state.Push(DreamValue.Null);
-                    return ProcStatus.Continue;
-                }
-
-                state.Push(dreamObject.Initial(property));
-                return ProcStatus.Continue;
-            }
-
             DreamObjectDefinition objectDefinition;
-            if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject2)) {
-                objectDefinition = dreamObject2.ObjectDefinition;
+            if (owner.TryGetValueAsDreamObject(out var dreamObject)) {
+                switch (dreamObject) {
+                    // Calling initial() on a null value just returns null
+                    case null:
+                        state.Push(DreamValue.Null);
+                        return ProcStatus.Continue;
+                    // initial(object.vars.foo) should act like initial(object.foo)
+                    case DreamListVars varsList:
+                        objectDefinition = varsList.DreamObject.ObjectDefinition;
+                        break;
+                    default:
+                        objectDefinition = dreamObject.ObjectDefinition;
+                        break;
+                }
             } else if (owner.TryGetValueAsType(out var ownerType)) {
                 objectDefinition = ownerType.ObjectDefinition;
             } else {
                 throw new Exception($"Invalid owner for initial() call {owner}");
             }
 
-            state.Push(objectDefinition.Variables[property]);
+            var result = property switch {
+                // parent_type and type aren't actual vars and need special treatment
+                "parent_type" =>
+                    (objectDefinition.Parent?.TreeEntry == null ||
+                     objectDefinition.Parent.TreeEntry == state.Proc.ObjectTree.Root)
+                        ? DreamValue.Null
+                        : new DreamValue(objectDefinition.Parent.TreeEntry),
+                "type" => new DreamValue(objectDefinition.TreeEntry),
+                _ => objectDefinition.Variables[property]
+            };
+
+            state.Push(result);
             return ProcStatus.Continue;
         }
 

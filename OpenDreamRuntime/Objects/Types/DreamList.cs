@@ -382,22 +382,18 @@ public class DreamList : DreamObject {
 }
 
 // /datum.vars list
-sealed class DreamListVars : DreamList {
-    private readonly DreamObject _dreamObject;
+internal sealed class DreamListVars(DreamObjectDefinition listDef, DreamObject dreamObject) : DreamList(listDef, 0) {
+    public readonly DreamObject DreamObject = dreamObject;
 
     public override bool IsAssociative =>
         true; // We don't use the associative array but, yes, we behave like an associative list
 
-    public DreamListVars(DreamObjectDefinition listDef, DreamObject dreamObject) : base(listDef, 0) {
-        _dreamObject = dreamObject;
-    }
-
     public override int GetLength() {
-        return _dreamObject.GetVariableNames().Concat(_dreamObject.ObjectDefinition.GlobalVariables.Keys).Count();
+        return DreamObject.GetVariableNames().Concat(DreamObject.ObjectDefinition.GlobalVariables.Keys).Count();
     }
 
     public override List<DreamValue> GetValues() {
-        return _dreamObject.GetVariableNames().Concat(_dreamObject.ObjectDefinition.GlobalVariables.Keys).Select(name => new DreamValue(name)).ToList();
+        return DreamObject.GetVariableNames().Concat(DreamObject.ObjectDefinition.GlobalVariables.Keys).Select(name => new DreamValue(name)).ToList();
     }
 
     public override bool ContainsKey(DreamValue value) {
@@ -405,7 +401,7 @@ sealed class DreamListVars : DreamList {
             return false;
         }
 
-        return _dreamObject.HasVariable(varName);
+        return DreamObject.HasVariable(varName);
     }
 
     public override bool ContainsValue(DreamValue value) {
@@ -417,9 +413,9 @@ sealed class DreamListVars : DreamList {
             throw new Exception($"Invalid var index {key}");
         }
 
-        if (!_dreamObject.TryGetVariable(varName, out var objectVar)) {
+        if (!DreamObject.TryGetVariable(varName, out var objectVar)) {
             throw new Exception(
-                $"Cannot get value of undefined var \"{key}\" on type {_dreamObject.ObjectDefinition.Type}");
+                $"Cannot get value of undefined var \"{key}\" on type {DreamObject.ObjectDefinition.Type}");
         }
 
         return objectVar;
@@ -427,23 +423,19 @@ sealed class DreamListVars : DreamList {
 
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
         if (key.TryGetValueAsString(out var varName)) {
-            if (!_dreamObject.HasVariable(varName)) {
+            if (!DreamObject.HasVariable(varName)) {
                 throw new Exception(
-                    $"Cannot set value of undefined var \"{varName}\" on type {_dreamObject.ObjectDefinition.Type}");
+                    $"Cannot set value of undefined var \"{varName}\" on type {DreamObject.ObjectDefinition.Type}");
             }
 
-            _dreamObject.SetVariable(varName, value);
+            DreamObject.SetVariable(varName, value);
         } else {
             throw new Exception($"Invalid var index {key}");
         }
     }
 
-    public override DreamValue Initial(string name) {
-        return _dreamObject.Initial(name);
-    }
-
     public override bool IsSaved(string name) {
-        return _dreamObject.IsSaved(name);
+        return DreamObject.IsSaved(name);
     }
 }
 
@@ -835,6 +827,8 @@ public sealed class DreamVisContentsList : DreamList {
                 return; // vis_contents cannot contain duplicates
             _visContents.Add(turf);
             entity = EntityUid.Invalid; // TODO: Support turfs in vis_contents
+        } else if (value == DreamValue.Null) {
+            return; // vis_contents cannot contain nulls
         } else {
             throw new Exception($"Cannot add {value} to a vis_contents list");
         }

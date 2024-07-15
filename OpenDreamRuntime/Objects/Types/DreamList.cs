@@ -239,6 +239,7 @@ public class DreamList : DreamObject {
     }
 
     #region Operators
+
     public override ProcStatus OperatorIndex(DreamValue index, DMProcState state, out DreamValue result) {
         result = GetValue(index);
         return ProcStatus.Continue;

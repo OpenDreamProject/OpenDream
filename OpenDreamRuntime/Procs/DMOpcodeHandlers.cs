@@ -566,8 +566,10 @@ namespace OpenDreamRuntime.Procs {
             // number indices always perform a normal list access here
             if (key.TryGetValueAsInteger(out _)) {
                 ProcStatus subState = state.GetIndex(owner, key, state, out DreamValue indexResult);
-                if(subState == ProcStatus.Continue)
+                if(subState == ProcStatus.Continue) {
                     state.Push(indexResult);
+                    return subState;
+                }
                 else
                     return subState;
             }

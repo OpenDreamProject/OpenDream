@@ -49,7 +49,6 @@
 				throw EXCEPTION("Invalid index on complex number")
 
 	proc/operator[]=(index,value) 
-		//throw EXCEPTION("op\[\]= [json_encode(index)] = [json_encode(value)]")
 		switch(index)
 			if(1)
 				src.a = value
@@ -110,5 +109,8 @@
 	ASSERT(result[2] == -1)
 	ASSERT(result[1] == 3)
 	ASSERT(result[2] == -1)
+	var/test = result[1]
+	test *= result[2]
+	ASSERT(test == -3)
 
 	ASSERT(result.a == 3 && result.b == -1)

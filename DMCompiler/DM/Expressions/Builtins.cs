@@ -154,6 +154,7 @@ namespace DMCompiler.DM.Expressions {
     sealed class Locate : DMExpression {
         private readonly DMExpression _path;
         private readonly DMExpression? _container;
+        public override bool PathIsFuzzy => true;
 
         public Locate(Location location, DMExpression path, DMExpression? container) : base(location) {
             _path = path;
@@ -261,6 +262,8 @@ namespace DMCompiler.DM.Expressions {
                 if (_values.Length == 1) {
                     DMCompiler.ForcedWarning(Location, "Weighted pick() with one argument");
                 }
+
+                DMCompiler.Emit(WarningCode.PickWeightedSyntax, Location, "Use of weighted pick() syntax");
 
                 foreach (PickValue pickValue in _values) {
                     DMExpression weight = pickValue.Weight ?? DMExpression.Create(dmObject, proc, new DMASTConstantInteger(Location, 100)); //Default of 100

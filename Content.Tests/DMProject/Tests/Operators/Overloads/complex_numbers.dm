@@ -18,14 +18,26 @@
 		else if(isnum(C)) 
 			a += C
 
-	proc/operator-()
-		return new /datum/complex(a*-1, b*-1)
+	proc/operator-(datum/complex/C)
+		if(isnull(C)) return new /datum/complex(a*-1, b*-1)
+		if(istype(C)) return new /datum/complex(a-C.a, b-C.b)
+		if(isnum(C)) return new /datum/complex(a-C, b)
 		 
 	proc/operator*(datum/complex/C) 
 		if(isnum(C))
 			return new /datum/complex(a*C, b*C)
 		else
 			return new /datum/complex((src.a * C.a) - (src.b * C.b), (src.a * C.b) + (src.b * C.a))
+
+	proc/operator/=(datum/complex/C)
+		if(isnum(C))
+			return new /datum/complex(a/C, b/C)
+		else
+			return new /datum/complex((src.a * C.a) - (src.b * C.b), (src.a * C.b) + (src.b * C.a))
+	
+	proc/operator|(datum/complex/C)
+		//nonsense, used for testing
+		src.a = C.a
 
 	proc/operator[](index) 
 		switch(index)
@@ -51,4 +63,32 @@
 /proc/RunTest()
 	var/datum/complex/A = new /datum/complex(5,-1)
 	var/datum/complex/B = new /datum/complex(3,-9.5)
-	//Just compile for now
+	//test implemented
+	//+
+	var/datum/complex/result = A + B
+	ASSERT(result.a == 8 && result.b == -10.5)
+	result = A + 5
+	ASSERT(result.a == 10 && result.b == -1)
+	//-
+	result = A - B
+	ASSERT(result.a == 2 && result.b == 8.5)
+	result = A - 5
+	ASSERT(result.a == 0 && result.b == -1)
+
+	//Unary operators need their own proc, it's not just subtract(null)
+	//result = -A
+	//ASSERT(result.a == -5 && result.b == 1)
+	//*
+	result = A * B
+	ASSERT(result.a == 5.5 && result.b == -50.5)
+	result = A * 2
+	ASSERT(result.a == 10 && result.b == -2)
+	//|
+	result = A | B
+	ASSERT(result.a == 3 && result.b == -1)
+
+	result *= 2
+	ASSERT(result.a == 6 && result.b == -2)
+
+	result /= 2
+	ASSERT(result.a == 3 && result.b == -1)

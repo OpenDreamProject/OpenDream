@@ -115,6 +115,15 @@ public struct DreamPath {
     public void SetFromString(string rawPath) {
         char pathTypeChar = rawPath[0];
         string[] tempElements = rawPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+       // operator/ and operator/= need special handling
+        if(rawPath.EndsWith("operator/"))
+            tempElements[^1] = "operator/";
+        // operator/ and operator/= need special handling
+        if(rawPath.EndsWith("operator/=")) {
+            tempElements[^2] = "operator/=";
+            tempElements = tempElements[..^1]; //clip the last element (=)
+        }
+
         bool skipFirstChar = false;
 
         switch (pathTypeChar) {

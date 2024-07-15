@@ -6,6 +6,7 @@ using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
+using Robust.Server.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Utility;
@@ -23,6 +24,7 @@ public sealed class DreamMapManager : IDreamMapManager {
 
     // Set in Initialize
     private ServerAppearanceSystem _appearanceSystem = default!;
+    private SharedMapSystem _mapSystem = default!;
 
     public Vector2i Size { get; private set; }
     public int Levels => _levels.Count;
@@ -38,6 +40,7 @@ public sealed class DreamMapManager : IDreamMapManager {
 
     public void Initialize() {
         _appearanceSystem = _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
+        _mapSystem = _entitySystemManager.GetEntitySystem<MapSystem>();
 
         DreamObjectDefinition worldDefinition = _objectTree.World.ObjectDefinition;
 
@@ -78,7 +81,7 @@ public sealed class DreamMapManager : IDreamMapManager {
                 tiles.Add( (tileUpdate.Key, tileUpdate.Value) );
             }
 
-            level.Grid.SetTiles(tiles);
+            _mapSystem.SetTiles(level.Grid, tiles);
             level.QueuedTileUpdates.Clear();
         }
     }
@@ -151,11 +154,18 @@ public sealed class DreamMapManager : IDreamMapManager {
         }
     }
 
-    private DreamObject SetTurf(Vector2i pos, int z, DreamObjectDefinition type, DreamProcArguments creationArguments) {
+    private DreamObject SetTurf(Vector2i pos, int z, DreamObjectDefinition type, DreamProcArguments creationArguments, DreamObjectArea? area = null) {
         if (IsInvalidCoordinate(pos, z))
             throw new ArgumentException("Invalid coordinates");
 
         Cell cell = _levels[z - 1].Cells[pos.X - 1, pos.Y - 1];
+
+        if(area is not null) {
+            cell.Area.Contents.RemoveValue(new(cell.Turf));
+            cell.Area = area;
+            cell.Area.Contents.AddValue(new(cell.Turf));
+        }
+
         if (cell.Turf != null) {
             cell.Turf.SetTurfType(type);
         } else {
@@ -175,13 +185,45 @@ public sealed class DreamMapManager : IDreamMapManager {
         SetTurf((turf.X, turf.Y), turf.Z, type, creationArguments);
     }
 
+    /// <summary>
+    /// Caches the turf/area appearance pair instead of recreating and re-registering it for every turf in the game.
+    /// This is cleared out when an area appearance changes
+    /// </summary>
+    private readonly Dictionary<ValueTuple<IconAppearance, int>, IconAppearance> _turfAreaLookup = new();
+
     public void SetTurfAppearance(DreamObjectTurf turf, IconAppearance appearance) {
+        if(turf.Cell.Area.AppearanceId != 0)
+            if(!appearance.Overlays.Contains(turf.Cell.Area.AppearanceId)) {
+                if(!_turfAreaLookup.TryGetValue((appearance, turf.Cell.Area.AppearanceId), out var newAppearance)) {
+                    newAppearance = new(appearance);
+                    newAppearance.Overlays.Add(turf.Cell.Area.AppearanceId);
+                    _turfAreaLookup.Add((appearance, turf.Cell.Area.AppearanceId), newAppearance);
+                }
+
+                appearance = newAppearance;
+            }
+
         int appearanceId = _appearanceSystem.AddAppearance(appearance);
 
         var level = _levels[turf.Z - 1];
         int turfId = (appearanceId + 1); // +1 because 0 is used for empty turfs
         level.QueuedTileUpdates[(turf.X, turf.Y)] = new Tile(turfId);
         turf.AppearanceId = appearanceId;
+    }
+
+    public void SetAreaAppearance(DreamObjectArea area, IconAppearance appearance) {
+        //if an area changes appearance, invalidate the lookup
+        _turfAreaLookup.Clear();
+        int oldAppearance = area.AppearanceId;
+        area.AppearanceId  = _appearanceSystem.AddAppearance(appearance);
+        foreach (var turf in area.Contents.GetTurfs()) {
+            var turfAppearance = _atomManager.MustGetAppearance(turf);
+
+            if(turfAppearance is null) continue;
+
+            turfAppearance.Overlays.Remove(oldAppearance);
+            SetTurfAppearance(turf, turfAppearance);
+        }
     }
 
     public bool TryGetCellAt(Vector2i pos, int z, [NotNullWhen(true)] out Cell? cell) {
@@ -218,27 +260,54 @@ public sealed class DreamMapManager : IDreamMapManager {
     }
 
     public void SetWorldSize(Vector2i size) {
-        if (size.X < Size.X || size.Y < Size.Y) {
-            return;
-        }
-
-        DreamObjectArea defaultArea = GetOrCreateArea(_defaultArea);
         Vector2i oldSize = Size;
 
-        Size = size;
-        foreach (Level existingLevel in _levels) {
-            var oldCells = existingLevel.Cells;
+        var newX = Math.Max(oldSize.X, size.X);
+        var newY = Math.Max(oldSize.Y, size.Y);
 
-            existingLevel.Cells = new Cell[size.X, size.Y];
-            for (int x = 1; x <= size.X; x++) {
-                for (int y = 1; y <= size.Y; y++) {
-                    if (x <= oldSize.X && y <= oldSize.Y) {
-                        existingLevel.Cells[x - 1, y - 1] = oldCells[x - 1, y - 1];
-                        continue;
+        DreamObjectArea defaultArea = GetOrCreateArea(_defaultArea);
+
+        Size = (newX, newY);
+
+        if(Size.X > oldSize.X || Size.Y > oldSize.Y) {
+            foreach (Level existingLevel in _levels) {
+                var oldCells = existingLevel.Cells;
+
+                existingLevel.Cells = new Cell[Size.X, Size.Y];
+                for (var x = 1; x <= Size.X; x++) {
+                    for (var y = 1; y <= Size.Y; y++) {
+                        if (x <= oldSize.X && y <= oldSize.Y) {
+                            existingLevel.Cells[x - 1, y - 1] = oldCells[x - 1, y - 1];
+                            continue;
+                        }
+
+                        existingLevel.Cells[x - 1, y - 1] = new Cell(defaultArea);
+                        SetTurf(new Vector2i(x, y), existingLevel.Z, _defaultTurf.ObjectDefinition, new());
                     }
+                }
+            }
+        }
 
-                    existingLevel.Cells[x - 1, y - 1] = new Cell(defaultArea);
-                    SetTurf(new Vector2i(x, y), existingLevel.Z, _defaultTurf.ObjectDefinition, new());
+        if (Size.X > size.X || Size.Y > size.Y) {
+            Size = size;
+
+            foreach (Level existingLevel in _levels) {
+                var oldCells = existingLevel.Cells;
+
+                existingLevel.Cells = new Cell[size.X, size.Y];
+                for (var x = 1; x <= oldSize.X; x++) {
+                    for (var y = 1; y <= oldSize.Y; y++) {
+                        if (x > size.X || y > size.Y) {
+                            var deleteCell = oldCells[x - 1, y - 1];
+                            deleteCell.Turf?.Delete();
+                            _mapSystem.SetTile(existingLevel.Grid, new Vector2i(x, y), Tile.Empty);
+                            foreach (var movableToDelete in deleteCell.Movables) {
+                                movableToDelete.Delete();
+                            }
+                        } else {
+                            existingLevel.Cells[x - 1, y - 1] = oldCells[x - 1, y - 1];
+                        }
+                    }
                 }
             }
         }
@@ -251,9 +320,9 @@ public sealed class DreamMapManager : IDreamMapManager {
 
             for (int z = Levels + 1; z <= levels; z++) {
                 MapId mapId = new(z);
-                _mapManager.CreateMap(mapId);
+                _mapSystem.CreateMap(mapId);
 
-                MapGridComponent grid = _mapManager.CreateGrid(mapId);
+                var grid = _mapManager.CreateGridEntity(mapId);
                 Level level = new Level(z, grid, defaultArea, Size);
                 _levels.Add(level);
 
@@ -293,7 +362,7 @@ public sealed class DreamMapManager : IDreamMapManager {
             Vector2i pos = (block.X + blockX - 1, block.Y + block.Height - blockY);
             Level level = _levels[block.Z - 1];
 
-            var turf = SetTurf(pos, block.Z, CreateMapObjectDefinition(cellDefinition.Turf), new());
+            var turf = SetTurf(pos, block.Z, CreateMapObjectDefinition(cellDefinition.Turf), new(), area);
             // The following calls level.SetArea via an event on the area's `contents` var.
             if (level.Cells[pos.X - 1, pos.Y - 1].Area != area) {
                 area.Contents.AddValue(new(turf));
@@ -364,11 +433,11 @@ public sealed class DreamMapManager : IDreamMapManager {
 public interface IDreamMapManager {
     public sealed class Level {
         public readonly int Z;
-        public readonly MapGridComponent Grid;
+        public readonly Entity<MapGridComponent> Grid;
         public Cell[,] Cells;
         public readonly Dictionary<Vector2i, Tile> QueuedTileUpdates = new();
 
-        public Level(int z, MapGridComponent grid, DreamObjectArea area, Vector2i size) {
+        public Level(int z, Entity<MapGridComponent> grid, DreamObjectArea area, Vector2i size) {
             Z = z;
             Grid = grid;
 
@@ -401,6 +470,7 @@ public interface IDreamMapManager {
 
     public void SetTurf(DreamObjectTurf turf, DreamObjectDefinition type, DreamProcArguments creationArguments);
     public void SetTurfAppearance(DreamObjectTurf turf, IconAppearance appearance);
+    public void SetAreaAppearance(DreamObjectArea area, IconAppearance appearance);
     public bool TryGetCellAt(Vector2i pos, int z, [NotNullWhen(true)] out Cell? cell);
     public bool TryGetTurfAt(Vector2i pos, int z, [NotNullWhen(true)] out DreamObjectTurf? turf);
     public void SetZLevels(int levels);

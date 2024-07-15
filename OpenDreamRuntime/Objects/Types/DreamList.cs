@@ -25,7 +25,7 @@ public class DreamList : DreamObject {
     /// <summary>
     /// Create a new DreamList using an existing list of values (does not copy them)
     /// </summary>
-    private DreamList(DreamObjectDefinition listDef, List<DreamValue> values, Dictionary<DreamValue, DreamValue>? associativeValues) : base(listDef) {
+    public DreamList(DreamObjectDefinition listDef, List<DreamValue> values, Dictionary<DreamValue, DreamValue>? associativeValues) : base(listDef) {
         _values = values;
         _associativeValues = associativeValues;
     }
@@ -247,7 +247,7 @@ public class DreamList : DreamObject {
         SetValue(index, value);
     }
 
-    public override DreamValue OperatorAdd(DreamValue b) {
+    public override ProcStatus OperatorAdd(DreamValue b, DMProcState state, out DreamValue result) {
         DreamList listCopy = CreateCopy();
 
         if (b.TryGetValueAsDreamList(out var bList)) {
@@ -262,10 +262,11 @@ public class DreamList : DreamObject {
             listCopy.AddValue(b);
         }
 
-        return new(listCopy);
+        result = new DreamValue(listCopy);
+        return ProcStatus.Continue;
     }
 
-    public override DreamValue OperatorSubtract(DreamValue b) {
+    public override ProcStatus OperatorSubtract(DreamValue b, DMProcState state, out DreamValue result) {
         DreamList listCopy = CreateCopy();
 
         if (b.TryGetValueAsDreamList(out var bList)) {
@@ -276,10 +277,11 @@ public class DreamList : DreamObject {
             listCopy.RemoveValue(b);
         }
 
-        return new(listCopy);
+        result = new DreamValue(listCopy);
+        return ProcStatus.Continue;
     }
 
-    public override DreamValue OperatorOr(DreamValue b) {
+    public override ProcStatus OperatorOr(DreamValue b, DMProcState state, out DreamValue result) {
         DreamList list;
 
         if (b.TryGetValueAsDreamList(out var bList)) {  // List | List
@@ -289,7 +291,8 @@ public class DreamList : DreamObject {
             list.AddValue(b);
         }
 
-        return new(list);
+        result = new DreamValue(list);
+        return ProcStatus.Continue;
     }
 
     public override DreamValue OperatorAppend(DreamValue b) {
@@ -379,22 +382,18 @@ public class DreamList : DreamObject {
 }
 
 // /datum.vars list
-sealed class DreamListVars : DreamList {
-    private readonly DreamObject _dreamObject;
+internal sealed class DreamListVars(DreamObjectDefinition listDef, DreamObject dreamObject) : DreamList(listDef, 0) {
+    public readonly DreamObject DreamObject = dreamObject;
 
     public override bool IsAssociative =>
         true; // We don't use the associative array but, yes, we behave like an associative list
 
-    public DreamListVars(DreamObjectDefinition listDef, DreamObject dreamObject) : base(listDef, 0) {
-        _dreamObject = dreamObject;
-    }
-
     public override int GetLength() {
-        return _dreamObject.GetVariableNames().Concat(_dreamObject.ObjectDefinition.GlobalVariables.Keys).Count();
+        return DreamObject.GetVariableNames().Concat(DreamObject.ObjectDefinition.GlobalVariables.Keys).Count();
     }
 
     public override List<DreamValue> GetValues() {
-        return _dreamObject.GetVariableNames().Concat(_dreamObject.ObjectDefinition.GlobalVariables.Keys).Select(name => new DreamValue(name)).ToList();
+        return DreamObject.GetVariableNames().Concat(DreamObject.ObjectDefinition.GlobalVariables.Keys).Select(name => new DreamValue(name)).ToList();
     }
 
     public override bool ContainsKey(DreamValue value) {
@@ -402,7 +401,7 @@ sealed class DreamListVars : DreamList {
             return false;
         }
 
-        return _dreamObject.HasVariable(varName);
+        return DreamObject.HasVariable(varName);
     }
 
     public override bool ContainsValue(DreamValue value) {
@@ -414,9 +413,9 @@ sealed class DreamListVars : DreamList {
             throw new Exception($"Invalid var index {key}");
         }
 
-        if (!_dreamObject.TryGetVariable(varName, out var objectVar)) {
+        if (!DreamObject.TryGetVariable(varName, out var objectVar)) {
             throw new Exception(
-                $"Cannot get value of undefined var \"{key}\" on type {_dreamObject.ObjectDefinition.Type}");
+                $"Cannot get value of undefined var \"{key}\" on type {DreamObject.ObjectDefinition.Type}");
         }
 
         return objectVar;
@@ -424,23 +423,19 @@ sealed class DreamListVars : DreamList {
 
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
         if (key.TryGetValueAsString(out var varName)) {
-            if (!_dreamObject.HasVariable(varName)) {
+            if (!DreamObject.HasVariable(varName)) {
                 throw new Exception(
-                    $"Cannot set value of undefined var \"{varName}\" on type {_dreamObject.ObjectDefinition.Type}");
+                    $"Cannot set value of undefined var \"{varName}\" on type {DreamObject.ObjectDefinition.Type}");
             }
 
-            _dreamObject.SetVariable(varName, value);
+            DreamObject.SetVariable(varName, value);
         } else {
             throw new Exception($"Invalid var index {key}");
         }
     }
 
-    public override DreamValue Initial(string name) {
-        return _dreamObject.Initial(name);
-    }
-
     public override bool IsSaved(string name) {
-        return _dreamObject.IsSaved(name);
+        return DreamObject.IsSaved(name);
     }
 }
 
@@ -647,24 +642,24 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
 }
 
 // atom.overlays or atom.underlays list
-// Operates on an atom's appearance
+// Operates on an object's appearance
 public sealed class DreamOverlaysList : DreamList {
     [Dependency] private readonly AtomManager _atomManager = default!;
     private readonly ServerAppearanceSystem? _appearanceSystem;
 
-    private readonly DreamObject _atom;
+    private readonly DreamObject _owner;
     private readonly bool _isUnderlays;
 
-    public DreamOverlaysList(DreamObjectDefinition listDef, DreamObject atom, ServerAppearanceSystem? appearanceSystem, bool isUnderlays) : base(listDef, 0) {
+    public DreamOverlaysList(DreamObjectDefinition listDef, DreamObject owner, ServerAppearanceSystem? appearanceSystem, bool isUnderlays) : base(listDef, 0) {
         IoCManager.InjectDependencies(this);
 
-        _atom = atom;
+        _owner = owner;
         _appearanceSystem = appearanceSystem;
         _isUnderlays = isUnderlays;
     }
 
     public override List<DreamValue> GetValues() {
-        var appearance = _atomManager.MustGetAppearance(_atom);
+        var appearance = _atomManager.MustGetAppearance(_owner);
         if (appearance == null || _appearanceSystem == null)
             return new List<DreamValue>();
 
@@ -681,7 +676,7 @@ public sealed class DreamOverlaysList : DreamList {
     }
 
     public override void Cut(int start = 1, int end = 0) {
-        _atomManager.UpdateAppearance(_atom, appearance => {
+        _atomManager.UpdateAppearance(_owner, appearance => {
             List<int> overlaysList = GetOverlaysList(appearance);
             int count = overlaysList.Count + 1;
             if (end == 0 || end > count) end = count;
@@ -715,7 +710,7 @@ public sealed class DreamOverlaysList : DreamList {
         if (_appearanceSystem == null)
             return;
 
-        _atomManager.UpdateAppearance(_atom, appearance => {
+        _atomManager.UpdateAppearance(_owner, appearance => {
             IconAppearance? overlayAppearance = CreateOverlayAppearance(_atomManager, value, appearance.Icon);
             overlayAppearance ??= new IconAppearance();
 
@@ -727,7 +722,7 @@ public sealed class DreamOverlaysList : DreamList {
         if (_appearanceSystem == null)
             return;
 
-        _atomManager.UpdateAppearance(_atom, appearance => {
+        _atomManager.UpdateAppearance(_owner, appearance => {
             IconAppearance? overlayAppearance = CreateOverlayAppearance(_atomManager, value, appearance.Icon);
             if (overlayAppearance == null || !_appearanceSystem.TryGetAppearanceId(overlayAppearance, out var id))
                 return;
@@ -745,7 +740,7 @@ public sealed class DreamOverlaysList : DreamList {
         _isUnderlays ? appearance.Underlays : appearance.Overlays;
 
     private IconAppearance GetAppearance() {
-        IconAppearance? appearance = _atomManager.MustGetAppearance(_atom);
+        IconAppearance? appearance = _atomManager.MustGetAppearance(_owner);
         if (appearance == null)
             throw new Exception("Atom has no appearance");
 
@@ -823,11 +818,17 @@ public sealed class DreamVisContentsList : DreamList {
     public override void AddValue(DreamValue value) {
         EntityUid entity;
         if (value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable)) {
+            if(_visContents.Contains(movable))
+                return; // vis_contents cannot contain duplicates
             _visContents.Add(movable);
             entity = movable.Entity;
         } else if (value.TryGetValueAsDreamObject<DreamObjectTurf>(out var turf)) {
+            if(_visContents.Contains(turf))
+                return; // vis_contents cannot contain duplicates
             _visContents.Add(turf);
             entity = EntityUid.Invalid; // TODO: Support turfs in vis_contents
+        } else if (value == DreamValue.Null) {
+            return; // vis_contents cannot contain nulls
         } else {
             throw new Exception($"Cannot add {value} to a vis_contents list");
         }
@@ -858,20 +859,20 @@ public sealed class DreamVisContentsList : DreamList {
 }
 
 // atom.filters list
-// Operates on an atom's appearance
+// Operates on an object's appearance
 public sealed class DreamFilterList : DreamList {
     [Dependency] private readonly AtomManager _atomManager = default!;
     [Dependency] private readonly ISerializationManager _serializationManager = default!;
 
-    private readonly DreamObjectAtom _atom;
+    private readonly DreamObject _owner;
 
-    public DreamFilterList(DreamObjectDefinition listDef, DreamObjectAtom atom) : base(listDef, 0) {
+    public DreamFilterList(DreamObjectDefinition listDef, DreamObject owner) : base(listDef, 0) {
         IoCManager.InjectDependencies(this);
-        _atom = atom;
+        _owner = owner;
     }
 
     public override void Cut(int start = 1, int end = 0) {
-        _atomManager.UpdateAppearance(_atom, appearance => {
+        _atomManager.UpdateAppearance(_owner, appearance => {
             int filterCount = appearance.Filters.Count + 1;
             if (end == 0 || end > filterCount) end = filterCount;
 
@@ -885,16 +886,21 @@ public sealed class DreamFilterList : DreamList {
         return appearance.Filters.IndexOf(filter) + 1;
     }
 
-    public void SetFilter(int index, DreamFilter filter) {
-        _atomManager.UpdateAppearance(_atom, appearance => {
+    public void SetFilter(int index, DreamFilter? filter) {
+        _atomManager.UpdateAppearance(_owner, appearance => {
             if (index < 1 || index > appearance.Filters.Count)
                 throw new Exception($"Cannot index {index} on filter list");
 
             DreamFilter oldFilter = appearance.Filters[index - 1];
 
             DreamObjectFilter.FilterAttachedTo.Remove(oldFilter);
-            appearance.Filters[index - 1] = filter;
-            DreamObjectFilter.FilterAttachedTo[filter] = this;
+
+            if (filter == null) { // Setting an index to null is the same as removing it ("filters[1] = null")
+                appearance.Filters.RemoveAt(index - 1);
+            } else {
+                appearance.Filters[index - 1] = filter;
+                DreamObjectFilter.FilterAttachedTo[filter] = this;
+            }
         });
     }
 
@@ -913,15 +919,17 @@ public sealed class DreamFilterList : DreamList {
     }
 
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
-        if (!value.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject))
+        if (!value.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject) &&!value.IsNull)
             throw new Exception($"Cannot set value of filter list to {value}");
         if (!key.TryGetValueAsInteger(out var filterIndex) || filterIndex < 1)
             throw new Exception($"Invalid index into filter list: {key}");
 
-        SetFilter(filterIndex, filterObject.Filter);
+        SetFilter(filterIndex, filterObject?.Filter);
     }
 
     public override void AddValue(DreamValue value) {
+        if (value.IsNull) // "filters += null" is just ignored
+            return;
         if (!value.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject))
             throw new Exception($"Cannot add {value} to filter list");
 
@@ -931,7 +939,7 @@ public sealed class DreamFilterList : DreamList {
         DreamFilter copy = _serializationManager.CreateCopy(filter, notNullableOverride: true); // Adding a filter creates a copy
 
         DreamObjectFilter.FilterAttachedTo[copy] = this;
-        _atomManager.UpdateAppearance(_atom, appearance => {
+        _atomManager.UpdateAppearance(_owner, appearance => {
             appearance.Filters.Add(copy);
         });
     }
@@ -941,7 +949,7 @@ public sealed class DreamFilterList : DreamList {
     }
 
     private IconAppearance GetAppearance() {
-        IconAppearance? appearance = _atomManager.MustGetAppearance(_atom);
+        IconAppearance? appearance = _atomManager.MustGetAppearance(_owner);
         if (appearance == null)
             throw new Exception("Atom has no appearance");
 
@@ -1236,6 +1244,10 @@ public sealed class AreaContentsList : DreamList {
             length += turf.Contents.GetLength();
 
         return length;
+    }
+
+    public IEnumerable<DreamObjectTurf> GetTurfs() {
+        return _turfs;
     }
 }
 

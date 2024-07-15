@@ -11,6 +11,7 @@ public sealed class DreamObjectImage : DreamObject {
     private DreamObject? _loc;
     private DreamList _overlays;
     private DreamList _underlays;
+    private readonly DreamList _filters;
     private EntityUid _entity = EntityUid.Invalid;
 
     /// <summary>
@@ -29,9 +30,11 @@ public sealed class DreamObjectImage : DreamObject {
             // /mutable_appearance.overlays and /mutable_appearance.underlays are normal lists
             _overlays = ObjectTree.CreateList();
             _underlays = ObjectTree.CreateList();
+            _filters = ObjectTree.CreateList();
         } else {
             _overlays = new DreamOverlaysList(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
             _underlays = new DreamOverlaysList(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
+            _filters = new DreamFilterList(ObjectTree.List.ObjectDefinition, this);
         }
     }
 
@@ -81,6 +84,9 @@ public sealed class DreamObjectImage : DreamObject {
             case "underlays":
                 value = new(_underlays);
                 return true;
+            case "filters":
+                value = new(_filters);
+                return true;
             default: {
                 if (AtomManager.IsValidAppearanceVar(varName)) {
                     value = AtomManager.GetAppearanceVar(Appearance!, varName);
@@ -91,7 +97,6 @@ public sealed class DreamObjectImage : DreamObject {
             }
         }
     }
-
 
     protected override void SetVar(string varName, DreamValue value) {
         switch (varName) {
@@ -107,6 +112,7 @@ public sealed class DreamObjectImage : DreamObject {
                     DMISpriteComponent sprite = EntityManager.GetComponent<DMISpriteComponent>(_entity);
                     sprite.SetAppearance(Appearance!);
                 }
+
                 break;
             case "loc":
                 value.TryGetValueAsDreamObject(out _loc);
@@ -178,6 +184,23 @@ public sealed class DreamObjectImage : DreamObject {
 
                 break;
             }
+            case "filters": {
+                value.TryGetValueAsDreamList(out var valueList);
+
+                _filters.Cut();
+
+                if (valueList != null) { // filters = list("type"=...)
+                    var filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, valueList);
+                    if (filterObject == null) // list() with invalid "type" is ignored
+                        break;
+
+                    _filters.AddValue(new(filterObject));
+                } else if (!value.IsNull) {
+                    _filters.AddValue(value);
+                }
+
+                break;
+            }
             case "override": {
                 Appearance!.Override = value.IsTruthy();
                 break;
@@ -189,6 +212,7 @@ public sealed class DreamObjectImage : DreamObject {
                         DMISpriteComponent sprite = EntityManager.GetComponent<DMISpriteComponent>(_entity);
                         sprite.SetAppearance(Appearance!);
                     }
+
                     break;
                 }
 
@@ -211,6 +235,7 @@ public sealed class DreamObjectImage : DreamObject {
             DMISpriteComponent sprite = EntityManager.AddComponent<DMISpriteComponent>(_entity);
             sprite.SetAppearance(Appearance!);
         }
+
         return _entity;
     }
 

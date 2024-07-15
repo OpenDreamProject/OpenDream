@@ -289,7 +289,7 @@ public sealed class AtomManager {
             case "invisibility":
                 value.TryGetValueAsInteger(out int vis);
                 vis = Math.Clamp(vis, -127, 127); // DM ref says [0, 101]. BYOND compiler says [-127, 127]
-                appearance.Invisibility = vis;
+                appearance.Invisibility = (sbyte)vis;
                 break;
             case "opacity":
                 value.TryGetValueAsInteger(out var opacity);
@@ -448,7 +448,7 @@ public sealed class AtomManager {
         return atom switch {
             DreamObjectTurf turf => AppearanceSystem.MustGetAppearance(turf.AppearanceId),
             DreamObjectMovable movable => movable.SpriteComponent.Appearance,
-            DreamObjectArea => new IconAppearance(),
+            DreamObjectArea area => AppearanceSystem.MustGetAppearance(area.AppearanceId),
             DreamObjectImage image => image.Appearance,
             _ => throw new Exception($"Cannot get appearance of {atom}")
         };
@@ -464,6 +464,8 @@ public sealed class AtomManager {
             appearance = movable.SpriteComponent.Appearance;
         else if (atom is DreamObjectImage image)
             appearance = image.Appearance;
+        else if (atom is DreamObjectArea area)
+            appearance = AppearanceSystem.MustGetAppearance(area.AppearanceId);
         else
             appearance = null;
 
@@ -485,6 +487,8 @@ public sealed class AtomManager {
             movable.SpriteComponent.SetAppearance(appearance);
         } else if (atom is DreamObjectImage image) {
             image.Appearance = appearance;
+        } else if (atom is DreamObjectArea area) {
+            _dreamMapManager.SetAreaAppearance(area, appearance);
         }
     }
 

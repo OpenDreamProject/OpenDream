@@ -1,6 +1,6 @@
 using Robust.Client.UserInterface.Controls;
 
-namespace OpenDreamClient.Interface.Controls;
+namespace OpenDreamClient.Interface.Controls.UI;
 
 /// <summary>
 /// The control responsible for sizing & layout of verb panels in INFO controls

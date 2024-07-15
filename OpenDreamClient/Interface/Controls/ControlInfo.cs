@@ -1,9 +1,11 @@
 using System.Linq;
 using OpenDreamShared.Network.Messages;
 using OpenDreamClient.Input;
+using OpenDreamClient.Interface.Controls.UI;
 using OpenDreamClient.Interface.Descriptors;
 using OpenDreamClient.Interface.Html;
 using OpenDreamShared.Dream;
+using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Input;
@@ -20,6 +22,9 @@ internal class InfoPanel : Control {
         PanelName = name;
         TabContainer.SetTabTitle(this, name);
     }
+
+    public virtual void UpdateElementDescriptor(ControlDescriptorInfo descriptor) {
+    }
 }
 
 internal sealed class StatPanel : InfoPanel {
@@ -31,7 +36,10 @@ internal sealed class StatPanel : InfoPanel {
         private readonly IEntitySystemManager _entitySystemManager;
         private readonly FormattedMessage _nameText = new();
         private readonly FormattedMessage _valueText = new();
+        private string _name = string.Empty;
+        private string _value = string.Empty;
         private string? _atomRef;
+        private Color _textColor = Color.Black;
 
         public StatEntry(ControlInfo owner, IEntitySystemManager entitySystemManager) {
             _owner = owner;
@@ -52,29 +60,41 @@ internal sealed class StatPanel : InfoPanel {
             ValueLabel.SetMessage(_valueText);
         }
 
-        public void UpdateLabels(string name, string value, string? atomRef) {
+        public void SetTextColor(Color textColor) {
+            if (_textColor == textColor)
+                return;
+
+            _textColor = textColor;
+            UpdateLabels();
+        }
+
+        public void SetLabels(string name, string value, string? atomRef) {
             // TODO: Tabs should align with each other.
             //       Probably should be done by RT, but it just ignores them currently.
-            name = name.Replace("\t", "    ");
-            value = value.Replace("\t", "    ");
+            _name = name.Replace("\t", "    ");
+            _value = value.Replace("\t", "    ");
             _atomRef = atomRef;
 
+            UpdateLabels();
+        }
+
+        private void UpdateLabels() {
             _nameText.Clear();
             _valueText.Clear();
 
             // Use the default color and font
-            _nameText.PushColor(Color.Black);
-            _valueText.PushColor(Color.Black);
+            _nameText.PushColor(_textColor);
+            _valueText.PushColor(_textColor);
             _nameText.PushTag(new MarkupNode("font", null, null));
             _valueText.PushTag(new MarkupNode("font", null, null));
 
-            if (_owner.InfoDescriptor.AllowHtml) {
+            if (_owner.InfoDescriptor.AllowHtml.Value) {
                 // TODO: Look into using RobustToolbox's markup parser once it's customizable enough
-                HtmlParser.Parse(name, _nameText);
-                HtmlParser.Parse(value, _valueText);
+                HtmlParser.Parse(_name, _nameText);
+                HtmlParser.Parse(_value, _valueText);
             } else {
-                _nameText.AddText(name);
-                _valueText.AddText(value);
+                _nameText.AddText(_name);
+                _valueText.AddText(_value);
             }
 
             NameLabel.SetMessage(_nameText);
@@ -111,7 +131,18 @@ internal sealed class StatPanel : InfoPanel {
             HScrollEnabled = false,
             Children = { _grid }
         };
+
         AddChild(scrollViewer);
+    }
+
+    public override void UpdateElementDescriptor(ControlDescriptorInfo descriptor) {
+        base.UpdateElementDescriptor(descriptor);
+
+        var textColor = (descriptor.TextColor.Value != Color.Transparent) ? descriptor.TextColor.Value : Color.Black;
+
+        foreach (var entry in _entries) {
+            entry.SetTextColor(textColor);
+        }
     }
 
     public void UpdateLines(List<(string Name, string Value, string? AtomRef)> lines) {
@@ -121,7 +152,7 @@ internal sealed class StatPanel : InfoPanel {
             if (i < lines.Count) {
                 var line = lines[i];
 
-                entry.UpdateLabels(line.Name, line.Value, line.AtomRef);
+                entry.SetLabels(line.Name, line.Value, line.AtomRef);
             } else {
                 entry.Clear();
             }
@@ -152,6 +183,9 @@ internal sealed class VerbPanel : InfoPanel {
 
     private readonly VerbPanelGrid _grid;
 
+    private Color _highlightColor;
+    private Color _textColor;
+
     public VerbPanel(string name) : base(name) {
         IoCManager.InjectDependencies(this);
         _entitySystemManager.TryGetEntitySystem(out _verbSystem);
@@ -168,6 +202,20 @@ internal sealed class VerbPanel : InfoPanel {
         AddChild(scrollContainer);
     }
 
+    public override void UpdateElementDescriptor(ControlDescriptorInfo descriptor) {
+        base.UpdateElementDescriptor(descriptor);
+
+        _highlightColor = descriptor.HighlightColor.Value;
+        _textColor = (descriptor.TextColor.Value != Color.Transparent) ? descriptor.TextColor.Value : Color.Black;
+
+        foreach (var child in _grid.Children) {
+            if (child is not Button button)
+                continue;
+
+            button.Label.FontColorOverride = _textColor;
+        }
+    }
+
     public void RefreshVerbs(IEnumerable<(int, ClientObjectReference, VerbSystem.VerbInfo)> verbs) {
         _grid.Children.Clear();
 
@@ -182,8 +230,19 @@ internal sealed class VerbPanel : InfoPanel {
             };
 
             verbButton.Label.Margin = new Thickness(6, 0, 6, 2);
+            verbButton.Label.FontColorOverride = _textColor;
+            verbButton.StyleBoxOverride = new StyleBoxEmpty();
+
             verbButton.OnPressed += _ => {
                 _verbSystem?.ExecuteVerb(src, verbId);
+            };
+
+            verbButton.OnMouseEntered += _ => {
+                verbButton.Label.FontColorOverride = _highlightColor;
+            };
+
+            verbButton.OnMouseExited += _ => {
+                verbButton.Label.FontColorOverride = _textColor;
             };
 
             _grid.Children.Add(verbButton);
@@ -192,11 +251,14 @@ internal sealed class VerbPanel : InfoPanel {
 }
 
 public sealed class ControlInfo : InterfaceControl {
+    public static readonly string StyleClassDMFInfo = "DMFInfo";
+
     public ControlDescriptorInfo InfoDescriptor => (ControlDescriptorInfo)ControlDescriptor;
 
     [Dependency] private readonly IClientNetManager _netManager = default!;
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
 
+    private PanelContainer _container;
     private TabContainer _tabControl;
     private readonly Dictionary<string, StatPanel> _statPanels = new();
     private readonly SortedDictionary<string, VerbPanel> _verbPanels = new();
@@ -208,7 +270,13 @@ public sealed class ControlInfo : InterfaceControl {
     }
 
     protected override Control CreateUIElement() {
-        _tabControl = new TabContainer();
+        _container = new PanelContainer {
+            Children = {
+                (_tabControl = new TabContainer())
+            },
+            StyleClasses = { StyleClassDMFInfo }
+        };
+
         _tabControl.OnTabChanged += OnSelectionChanged;
 
         _tabControl.OnVisibilityChanged += args => {
@@ -219,12 +287,34 @@ public sealed class ControlInfo : InterfaceControl {
             }
         };
 
-        if(ControlDescriptor.IsVisible)
+        if(ControlDescriptor.IsVisible.Value)
             OnShowEvent();
         else
             OnHideEvent();
 
-        return _tabControl;
+        return _container;
+    }
+
+    protected override void UpdateElementDescriptor() {
+        base.UpdateElementDescriptor();
+
+        _container.PanelOverride = (InfoDescriptor.TabBackgroundColor.Value != Color.Transparent)
+            ? new StyleBoxFlat(InfoDescriptor.TabBackgroundColor.Value)
+            : null;
+        _tabControl.PanelStyleBoxOverride = new StyleBoxInfoPanel((InfoDescriptor.BackgroundColor.Value != Color.Transparent)
+            ? InfoDescriptor.BackgroundColor.Value
+            : Color.White);
+        _tabControl.TabFontColorOverride = (InfoDescriptor.TabTextColor.Value != Color.Transparent)
+            ? InfoDescriptor.TabTextColor.Value
+            : null;
+        _tabControl.TabFontColorInactiveOverride = (InfoDescriptor.TabTextColor.Value != Color.Transparent)
+            ? InfoDescriptor.TabTextColor.Value
+            : null;
+
+        foreach (var panel in _statPanels.Values)
+            panel.UpdateElementDescriptor(InfoDescriptor);
+        foreach (var panel in _verbPanels.Values)
+            panel.UpdateElementDescriptor(InfoDescriptor);
     }
 
     public void RefreshVerbs(ClientVerbSystem verbSystem) {
@@ -282,6 +372,7 @@ public sealed class ControlInfo : InterfaceControl {
 
     public void CreateVerbPanel(string name) {
         var panel = new VerbPanel(name);
+        panel.UpdateElementDescriptor(InfoDescriptor);
         _verbPanels.Add(name, panel);
         SortPanels();
     }
@@ -289,6 +380,7 @@ public sealed class ControlInfo : InterfaceControl {
     private StatPanel CreateStatPanel(string name) {
         var panel = new StatPanel(this, _entitySystemManager, name);
         panel.Margin = new Thickness(20, 2);
+        panel.UpdateElementDescriptor(InfoDescriptor);
         _statPanels.Add(name, panel);
         SortPanels();
         return panel;
@@ -316,15 +408,15 @@ public sealed class ControlInfo : InterfaceControl {
 
     public void OnShowEvent() {
         ControlDescriptorInfo controlDescriptor = (ControlDescriptorInfo)ControlDescriptor;
-        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnShowCommand)) {
-            _interfaceManager.RunCommand(controlDescriptor.OnShowCommand);
+        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnShowCommand.Value)) {
+            _interfaceManager.RunCommand(controlDescriptor.OnShowCommand.AsRaw());
         }
     }
 
     public void OnHideEvent() {
         ControlDescriptorInfo controlDescriptor = (ControlDescriptorInfo)ControlDescriptor;
-        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnHideCommand)) {
-            _interfaceManager.RunCommand(controlDescriptor.OnHideCommand);
+        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnHideCommand.Value)) {
+            _interfaceManager.RunCommand(controlDescriptor.OnHideCommand.AsRaw());
         }
     }
 }

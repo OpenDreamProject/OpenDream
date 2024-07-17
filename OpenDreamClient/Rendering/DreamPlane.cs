@@ -92,7 +92,7 @@ internal sealed class DreamPlane(IRenderTexture mainRenderTarget) : IDisposable 
             Color targetColor = new Color(colorR, colorG, colorB); //TODO - this could result in mis-clicks due to hash-collision since we ditch a whole byte.
             overlay.MouseMapLookup[targetColor] = sprite;
 
-            handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(renderTargetSize, pos));
+            handle.SetTransform(DreamViewOverlay.CalculateDrawingMatrix(sprite.TransformToApply, pos, texture.Size, renderTargetSize));
             handle.DrawTextureRect(texture, new Box2(Vector2.Zero, texture.Size), targetColor);
         }
     }

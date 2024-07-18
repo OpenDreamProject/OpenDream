@@ -9,6 +9,7 @@
 	var/frequency = 0
 	var/pitch = 0 as opendream_unimplemented
 	var/pan = 0 as opendream_unimplemented
+	var/params = null as opendream_unimplemented
 	var/falloff = 1 as opendream_unimplemented
 	var/x as opendream_unimplemented
 	var/y as opendream_unimplemented

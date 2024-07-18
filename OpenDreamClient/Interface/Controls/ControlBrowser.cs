@@ -106,13 +106,19 @@ internal sealed class ControlBrowser : InterfaceControl {
             if (newUri.Scheme == "byond" || (newUri.AbsolutePath == oldUri.AbsolutePath && newUri.Query != string.Empty)) {
                 context.DoCancel();
 
-                if (newUri.Host == "winset") {
-                    HandleEmbeddedWinset(newUri.Query);
-                    return;
+                switch (newUri.Host) {
+                    case "winset":
+                        HandleEmbeddedWinset(newUri.Query);
+                        return;
+                    case "winget":
+                        HandleEmbeddedWinget(newUri.Query);
+                        return;
+                    default: {
+                        var msg = new MsgTopic { Query = newUri.Query };
+                        _netManager.ClientSendMessage(msg);
+                        break;
+                    }
                 }
-
-                var msg = new MsgTopic() { Query = newUri.Query };
-                _netManager.ClientSendMessage(msg);
             }
         } catch (Exception e) {
             _sawmill.Error($"Exception in BeforeBrowseHandler: {e}");
@@ -179,6 +185,41 @@ internal sealed class ControlBrowser : InterfaceControl {
 
         // We can finally call winset
         _interfaceManager.WinSet(element, modifiedQuery);
+    }
+
+    /// <summary>
+    /// Handles an embedded winget
+    /// </summary>
+    /// <param name="query">The query portion of the embedded winget</param>
+    // Example: byond://winget?id=browseroutput&property=size&callback=JSFunction
+    // (Not in the XML comment because '&' breaks that apparently)
+    private void HandleEmbeddedWinget(string query) {
+        // Strip the question mark out before parsing
+        var queryParams = HttpUtility.ParseQueryString(query.Substring(1));
+
+        var elementId = queryParams.Get("id");
+        var property = queryParams.Get("property");
+        var callback = queryParams.Get("callback");
+        if (elementId == null || property == null || callback == null) {
+            _sawmill.Error($"Required arg 'id', 'property', or 'callback' not provided in embedded winget ({query})");
+            return;
+        }
+
+        // TG uses property=* but really just wants size
+        // TODO: Actual winget * support
+        bool forceJson = true;
+        if (property == "*") {
+            property = "size";
+            forceJson = false; // property=* does not return "as json" values (why?!)
+        }
+
+        var result = _interfaceManager.WinGet(elementId, property, forceJson: forceJson);
+
+        // Execute the callback
+        var propertyEncoded = HttpUtility.JavaScriptStringEncode(property);
+        var resultEncoded = HttpUtility.JavaScriptStringEncode(result);
+        var jsonArgument = $"{{ \"{propertyEncoded}\": \"{resultEncoded}\" }}";
+        _webView.ExecuteJavaScript($"{callback}({jsonArgument})");
     }
 
     private void OnShowEvent() {

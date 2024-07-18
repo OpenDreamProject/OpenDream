@@ -511,12 +511,12 @@ public struct DMReference {
             case Type.Global:
             case Type.Argument:
             case Type.GlobalProc:
-                return $"{RefType} {Index}";
+                return $"{RefType}({Index})";
 
             case Type.SrcField:
             case Type.Field:
             case Type.SrcProc:
-                return $"{RefType} \"{Name}\"";
+                return $"{RefType}(\"{Name}\")";
 
             default: return RefType.ToString();
         }

@@ -100,6 +100,7 @@ public sealed class ControlWindow : InterfaceControl {
             _myWindow.osWindow.Close();
             UIElement.Orphan();
         }
+
         _myWindow = (null, window);
         UpdateWindowAttributes(_myWindow);
     }
@@ -111,48 +112,23 @@ public sealed class ControlWindow : InterfaceControl {
         if (windowSize.Y == 0)
             windowSize.Y = _canvas.PixelHeight;
 
-        ChildControls.Sort((a, b) => { //need a resort if size and pos have changed
-            if(a.Pos.X <= b.Pos.X || a.Pos.Y <= b.Pos.Y)
-                return 1;
-            else
-                return -1;
-        });
-
         for (int i = 0; i < ChildControls.Count; i++) {
             InterfaceControl control = ChildControls[i];
             var element = control.UIElement;
             var elementPos = control.Pos;
             var elementSize = control.Size;
 
-            if (control.Size.Y == 0) {
-                elementSize.Y = (windowSize.Y - elementPos.Y);
-                if (ChildControls.Count - 1 > i) {
-                    if (ChildControls[i + 1].UIElement.Visible) {
-                        var nextElementPos = ChildControls[i + 1].Pos;
-                        elementSize.Y = nextElementPos.Y - elementPos.Y;
-                    }
-                }
-
-                element.SetHeight = ((float)elementSize.Y / windowSize.Y) * _canvas.Height;
-            }
-
-            if (control.Size.X == 0) {
-                elementSize.X = (windowSize.X - elementPos.X);
-                if (ChildControls.Count - 1 > i) {
-                    if (ChildControls[i + 1].UIElement.Visible) {
-                        var nextElementPos = ChildControls[i + 1].Pos;
-                        if (nextElementPos.X < (elementSize.X + elementPos.X) &&
-                            nextElementPos.Y < (elementSize.Y + elementPos.Y))
-                            elementSize.X = nextElementPos.X - elementPos.X;
-                    }
-                }
-
-                element.SetWidth = ((float)elementSize.X / windowSize.X) * _canvas.Width;
-            }
-
             if (control.Anchor1.HasValue) {
-                var offset1X = elementPos.X - (windowSize.X * control.Anchor1.Value.X / 100f);
-                var offset1Y = elementPos.Y - (windowSize.Y * control.Anchor1.Value.Y / 100f);
+                var anchorTo = control.AnchorPosition;
+
+                // Defaults to anchoring relative to the DMF-defined size
+                if (anchorTo.X == 0)
+                    anchorTo.X = Size.X;
+                if (anchorTo.Y == 0)
+                    anchorTo.Y = Size.Y;
+
+                var offset1X = elementPos.X - (anchorTo.X * control.Anchor1.Value.X / 100f);
+                var offset1Y = elementPos.Y - (anchorTo.Y * control.Anchor1.Value.Y / 100f);
                 var left = (_canvas.Width * control.Anchor1.Value.X / 100) + offset1X;
                 var top = (_canvas.Height * control.Anchor1.Value.Y / 100) + offset1Y;
                 LayoutContainer.SetMarginLeft(element, Math.Max(left, 0));
@@ -160,13 +136,13 @@ public sealed class ControlWindow : InterfaceControl {
 
                 if (control.Anchor2.HasValue) {
                     if (control.Anchor2.Value.X < control.Anchor1.Value.X ||
-                        control.Anchor2.Value.Y < control.Anchor1.Value.Y)
+                        control.Anchor2.Value.Y < control.Anchor1.Value.Y) {
                         _sawmill.Warning($"Invalid anchor2 value in DMF for element {control.Id}. Ignoring.");
-                    else {
+                    } else {
                         var offset2X = (elementPos.X + elementSize.X) -
-                                       (windowSize.X * control.Anchor2.Value.X / 100);
+                                       (anchorTo.X * control.Anchor2.Value.X / 100);
                         var offset2Y = (elementPos.Y + elementSize.Y) -
-                                       (windowSize.Y * control.Anchor2.Value.Y / 100);
+                                       (anchorTo.Y * control.Anchor2.Value.Y / 100);
                         var width = (_canvas.Width * control.Anchor2.Value.X / 100) + offset2X - left;
                         var height = (_canvas.Height * control.Anchor2.Value.Y / 100) + offset2Y - top;
                         element.SetWidth = Math.Max(width, 0);
@@ -175,6 +151,25 @@ public sealed class ControlWindow : InterfaceControl {
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Updates the control's anchoring position to the window's current size.
+    /// Also updates other controls' anchoring position if they have a size of 0.
+    /// </summary>
+    /// <param name="control">The control triggering the anchor update</param>
+    public void UpdateAnchorPosition(InterfaceControl control) {
+        control.AnchorPosition = _canvas.PixelSize;
+
+        // Also update the anchor position for anything with a size of 0
+        foreach (var child in ChildControls) {
+            if (child.UIElement.SetWidth == 0)
+                child.AnchorPosition = child.AnchorPosition with {X = _canvas.PixelWidth + child.Size.X};
+            if (child.UIElement.SetHeight == 0)
+                child.AnchorPosition = child.AnchorPosition with {Y = _canvas.PixelHeight + child.Size.Y};
+        }
+
+        UpdateAnchors();
     }
 
     private void UpdateWindowAttributes((OSWindow? osWindow, IClydeWindow? clydeWindow) windowRoot) {
@@ -207,7 +202,7 @@ public sealed class ControlWindow : InterfaceControl {
         if (root != null) {
             root.BackgroundColor = (WindowDescriptor.BackgroundColor.Value != Color.Transparent)
                 ? WindowDescriptor.BackgroundColor.Value
-                : null;
+                : DreamStylesheet.DefaultBackgroundColor;
         }
 
         if (osWindow != null && osWindow.ClydeWindow != null) {
@@ -215,7 +210,6 @@ public sealed class ControlWindow : InterfaceControl {
         } else if (clydeWindow != null) {
             clydeWindow.IsVisible = WindowDescriptor.IsVisible.Value;
         }
-
     }
 
     public void CreateChildControls() {
@@ -301,6 +295,9 @@ public sealed class ControlWindow : InterfaceControl {
 
     public override bool TryGetProperty(string property, [NotNullWhen(true)] out IDMFProperty? value) {
         switch (property) {
+            case "size": // ControlWindow has its own getter for this because it doesn't use SetSize
+                value = new DMFPropertySize(UIElement.Size);
+                return true;
             case "inner-size":
                 value = new DMFPropertySize((int)_canvas.Width, (int)_canvas.Height);
                 return true;
@@ -340,5 +337,12 @@ public sealed class ControlWindow : InterfaceControl {
             default:
                 return base.TryGetProperty(property, out value);
         }
+    }
+
+    public override void SetProperty(string property, string value, bool manualWinset = false) {
+        if (property is "size" or "pos")
+            return; // TODO: RT offers no ability to resize or position windows
+
+        base.SetProperty(property, value, manualWinset);
     }
 }

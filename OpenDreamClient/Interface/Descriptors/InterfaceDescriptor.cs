@@ -49,6 +49,16 @@ public partial class ElementDescriptor {
         throw new InvalidOperationException($"{this} cannot create a child descriptor");
     }
 
+    public ElementDescriptor? CreateChildDescriptor(ISerializationManager serializationManager, Dictionary<string, string> attributes) {
+        var node = new MappingDataNode();
+
+        foreach (var pair in attributes) {
+            node.Add(pair.Key, pair.Value);
+        }
+
+        return CreateChildDescriptor(serializationManager, node);
+    }
+
     public virtual ElementDescriptor CreateCopy(ISerializationManager serializationManager, string id) {
         throw new InvalidOperationException($"{this} cannot create a copy of itself");
     }

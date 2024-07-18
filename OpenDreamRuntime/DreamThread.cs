@@ -393,9 +393,6 @@ namespace OpenDreamRuntime {
 
             var msg = builder.ToString();
 
-            // TODO: Defining world.Error() causes byond to no longer print exceptions to the log unless ..() is called
-            dreamMan.WriteWorldLog(msg, LogLevel.Error);
-
             // Instantiate an /exception and invoke world.Error()
             string file = string.Empty;
             int line = 0;
@@ -404,8 +401,8 @@ namespace OpenDreamRuntime {
                 file = source.Item1;
                 line = source.Item2;
             }
-            dreamMan.HandleException(exception, msg, file, line);
 
+            dreamMan.HandleException(exception, msg, file, line);
             IoCManager.Resolve<IDreamDebugManager>().HandleException(this, exception);
         }
 
@@ -413,6 +410,7 @@ namespace OpenDreamRuntime {
             if (_current is not null) {
                 yield return _current;
             }
+
             foreach (var entry in _stack) {
                 yield return entry;
             }

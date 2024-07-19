@@ -82,8 +82,8 @@ internal sealed class DreamPlane(IRenderTexture mainRenderTarget) : IDisposable 
                 continue;
 
             var pos = (sprite.Position - worldAABB.BottomLeft) * EyeManager.PixelsPerMeter;
-            if (sprite.TextureOverride != null)
-                pos -= sprite.TextureOverride.Size / 2 - new Vector2(EyeManager.PixelsPerMeter, EyeManager.PixelsPerMeter) / 2;
+            if (sprite.MainIcon != null)
+                pos += sprite.MainIcon.TextureRenderOffset;
 
             int hash = sprite.GetHashCode();
             var colorR = (byte)(hash & 0xFF);

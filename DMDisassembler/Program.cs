@@ -19,7 +19,7 @@ internal class Program {
     static void Main(string[] args) {
         if (args.Length == 0 || Path.GetExtension(args[0]) != ".json") {
             Console.WriteLine("The json output of DMCompiler must be provided as an argument");
-
+            Environment.Exit(1);
             return;
         }
 
@@ -31,10 +31,18 @@ internal class Program {
         LoadAllTypes();
 
         bool acceptingCommands = true;
+
+        // Commands passed as CLI arguments
+        if (args.Length > 1) {
+            ParseCommand(args[1..], out acceptingCommands);
+        }
+
+        // Commands passed while the program is running
         while (acceptingCommands) {
             if (_selectedType != null) {
                 Console.Write(_selectedType.Path);
             }
+
             Console.Write("> ");
 
             string input = Console.ReadLine();
@@ -42,20 +50,31 @@ internal class Program {
                 // EOF
                 break;
             }
-            string[] split = input.Split(" ");
-            string command = split[0].ToLower();
 
-            switch (command) {
-                case "q": acceptingCommands = false; break;
-                case "search": Search(split); break;
-                case "sel":
-                case "select": Select(split); break;
-                case "list": List(split); break;
-                case "d":
-                case "decompile": Decompile(split); break;
-                case "test-all": TestAll(); break;
-                default: Console.WriteLine("Invalid command \"" + command + "\""); break;
-            }
+            string[] split = input.Split(" ");
+            ParseCommand(split, out acceptingCommands);
+        }
+
+        Environment.Exit(0);
+    }
+
+    private static void ParseCommand(string[] split, out bool acceptingCommands) {
+        acceptingCommands = true;
+        string command = split[0].ToLower();
+
+        switch (command) {
+            case "exit":
+            case "quit":
+            case "q": acceptingCommands = false; break;
+            case "search": Search(split); break;
+            case "sel":
+            case "select": Select(split); break;
+            case "list": List(split); break;
+            case "d":
+            case "decompile": Decompile(split); break;
+            case "test-all": TestAll(); break;
+            case "crash-on-error": acceptingCommands = false; CrashOnError(); break;
+            default: Console.WriteLine("Invalid command \"" + command + "\""); break;
         }
     }
 
@@ -198,7 +217,18 @@ internal class Program {
         }
     }
 
-    private static void TestAll() {
+    private static void CrashOnError() {
+        int errors = TestAll();
+        if (errors > 0) {
+            Console.WriteLine($"Detected {errors} errors. Exiting.");
+            Environment.Exit(1);
+        } else {
+            Console.WriteLine("No errors detected. Exiting cleanly.");
+            Environment.Exit(0);
+        }
+    }
+
+    private static int TestAll() {
         int errored = 0, all = 0;
         foreach (DMProc proc in Procs) {
             string value = proc.Decompile();
@@ -207,8 +237,12 @@ internal class Program {
                 Console.WriteLine(value);
                 ++errored;
             }
+
             ++all;
         }
+
         Console.WriteLine($"Errors in {errored}/{all} procs");
+
+        return errored;
     }
 }

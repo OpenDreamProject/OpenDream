@@ -405,23 +405,7 @@ internal sealed class DreamViewOverlay : Overlay {
 
         handle.UseShader(GetBlendAndColorShader(iconMetaData, ignoreColor: true));
 
-        //extract scale component of transform
-        var transform = iconMetaData.TransformToApply;
-        Vector2 scaleFactors = new Vector2(
-            MathF.Sqrt(MathF.Pow(transform.M11,2) + MathF.Pow(transform.M12,2)),
-            MathF.Sqrt(MathF.Pow(transform.M21,2) + MathF.Pow(transform.M22,2))
-        );
-        transform.M11 /= scaleFactors.X;
-        transform.M12 /= scaleFactors.X;
-        transform.M21 /= scaleFactors.Y;
-        transform.M22 /= scaleFactors.Y;
-
-        handle.SetTransform(
-            Matrix3x2.CreateTranslation(-frame.Size/2)  //translate to origin
-            * transform                                       //rotate and translate
-            * Matrix3x2.CreateTranslation(frame.Size/2)       //translate back to original position
-            * Matrix3x2.CreateScale(scaleFactors)               //scale
-            * CreateRenderTargetFlipMatrix(renderTargetSize, pixelPosition-((scaleFactors-Vector2.One)*frame.Size/2))); //flip and apply scale-corrected translation
+        handle.SetTransform(CalculateDrawingMatrix(iconMetaData.TransformToApply, pixelPosition, frame.Size, renderTargetSize));
         handle.DrawTextureRect(frame, Box2.FromDimensions(Vector2.Zero, frame.Size));
     }
 
@@ -777,6 +761,26 @@ internal sealed class DreamViewOverlay : Overlay {
         // RT flips the texture when doing a RenderInRenderTarget(), so we use _flipMatrix to reverse it
         // We must also handle translations here, since RT applies its own transform in an unexpected order
         return FlipMatrix * Matrix3x2.CreateTranslation(renderPosition.X, renderTargetSize.Y - renderPosition.Y);
+    }
+
+    public static Matrix3x2 CalculateDrawingMatrix(Matrix3x2 transform, Vector2 pixelPosition, Vector2i frameSize, Vector2i renderTargetSize) {
+        //extract scale component of transform
+        Vector2 scaleFactors = new Vector2(
+            MathF.Sqrt(MathF.Pow(transform.M11,2) + MathF.Pow(transform.M12,2)),
+            MathF.Sqrt(MathF.Pow(transform.M21,2) + MathF.Pow(transform.M22,2))
+        );
+        transform.M11 /= scaleFactors.X;
+        transform.M12 /= scaleFactors.X;
+        transform.M21 /= scaleFactors.Y;
+        transform.M22 /= scaleFactors.Y;
+
+        return
+            Matrix3x2.CreateTranslation(-frameSize/2)  //translate to origin
+            * transform                                       //rotate and translate
+            * Matrix3x2.CreateTranslation(frameSize/2)       //translate back to original position
+            * Matrix3x2.CreateScale(scaleFactors)               //scale
+            * CreateRenderTargetFlipMatrix(renderTargetSize, pixelPosition-((scaleFactors-Vector2.One)*frameSize/2)); //flip and apply scale-corrected translation
+
     }
 }
 

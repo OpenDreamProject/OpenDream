@@ -4,6 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Configurations>Debug;Release;Tools</Configurations>
     <Platforms>AnyCPU</Platforms>
+    <OutputPath>..\bin\DMDisassembler\</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>

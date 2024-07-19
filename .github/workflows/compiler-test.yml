@@ -28,14 +28,14 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 8.0.100
-    - name: Install dependencies
-      run: |
-        dotnet restore main/DMCompiler/DMCompiler.csproj
-        dotnet restore main/DMDisassembler/DMDisassembler.csproj
-    - name: Build
-      run: |
-        dotnet build main/DMCompiler/DMCompiler.csproj --property WarningLevel=0 --configuration Release --no-restore /m
-        dotnet build main/DMDisassembler/DMDisassembler.csproj --property WarningLevel=0 --configuration Release --no-restore /m
+    - name: Install compiler dependencies
+      run: dotnet restore main/DMCompiler/DMCompiler.csproj
+    - name: Install disassembler dependencies
+      run: dotnet restore main/DMDisassembler/DMDisassembler.csproj
+    - name: Build compiler
+      run: dotnet build main/DMCompiler/DMCompiler.csproj --property WarningLevel=0 --configuration Release --no-restore /m
+    - name: Build disassembler
+      run: dotnet build main/DMDisassembler/DMDisassembler.csproj --property WarningLevel=0 --configuration Release --no-restore /m
     - name: Compile TestGame
       run: main\bin\DMCompiler\DMCompiler.exe main\TestGame\environment.dme --suppress-unimplemented
     - name: Checkout /tg/station Master

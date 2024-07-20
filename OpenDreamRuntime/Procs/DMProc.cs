@@ -497,7 +497,7 @@ namespace OpenDreamRuntime.Procs {
 
         public void StartTryBlock(int catchPosition, int catchVarIndex = NoTryCatchVar) {
             _catchPosition.Push(catchPosition);
-            _catchVarIndex.Push(catchVarIndex);
+            _catchVarIndex.Push(ArgumentCount + catchVarIndex);
         }
 
         public void EndTryBlock() {

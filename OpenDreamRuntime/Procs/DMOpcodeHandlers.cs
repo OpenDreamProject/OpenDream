@@ -1641,7 +1641,12 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus Try(DMProcState state) {
-            state.StartTryBlock(state.ReadInt(), state.ReadReference().Value);
+            var exceptionVarRef = state.ReadReference();
+            if (exceptionVarRef.Type != DMReference.Type.Local)
+                throw new Exception(
+                    $"The reference to place a caught exception into must be a local. {exceptionVarRef} is not valid.");
+
+            state.StartTryBlock(state.ReadInt(), exceptionVarRef.Value);
             return ProcStatus.Continue;
         }
 

@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Byond.TopicSender;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
-using Robust.Server;
 
 namespace OpenDreamRuntime.Procs.Native;
 
@@ -164,9 +163,7 @@ internal static class DreamProcNativeWorld {
     [DreamProc("Reboot")]
     [DreamProcParameter("reason", Type = DreamValue.DreamValueTypeFlag.Float)]
     public static DreamValue NativeProc_Reboot(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-        var server = IoCManager.Resolve<IBaseServer>();
-
-        server.Shutdown("/world.Reboot() was called but restarting is very broken");
+        bundle.DreamManager.QueueShutdown("/world.Reboot() was called but restarting is very broken");
         return DreamValue.Null;
     }
 

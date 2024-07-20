@@ -1,6 +1,8 @@
 ﻿using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
+
 using DMCompiler.Bytecode;
 using DMCompiler.Json;
 using OpenDreamRuntime.Objects;
@@ -33,6 +35,7 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
         [Dependency] private readonly IStatusHost _statusHost = default!;
         [Dependency] private readonly IDependencyCollection _dependencyCollection = default!;
+        [Dependency] private readonly IBaseServer _server = default!;
 
         private ServerAppearanceSystem? _appearanceSystem;
 
@@ -58,6 +61,8 @@ namespace OpenDreamRuntime {
         public GameTick InitializedTick { get; private set; }
 
         private ISawmill _sawmill = default!;
+
+        private string? _queuedShutdownReason;
 
         //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
         public void PreInitialize(string? jsonPath) {
@@ -99,6 +104,12 @@ namespace OpenDreamRuntime {
                 return;
 
             _procScheduler.Process();
+            var shutdownReason = Interlocked.Exchange(ref _queuedShutdownReason, null);
+            if (shutdownReason != null) {
+                _server.Shutdown(shutdownReason);
+                return;
+            }
+
             UpdateStat();
             _dreamMapManager.UpdateTiles();
             DreamObjectSavefile.FlushAllUpdates();
@@ -339,6 +350,10 @@ namespace OpenDreamRuntime {
             obj.File = new DreamValue(file);
 
             WorldInstance.SpawnProc("Error", usr: null, new DreamValue(obj));
+        }
+
+        public void QueueShutdown(string reason) {
+            _queuedShutdownReason = reason;
         }
     }
 

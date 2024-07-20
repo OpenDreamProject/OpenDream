@@ -710,7 +710,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     private IEnumerable<Variable> ExpandGlobals(RequestVariables req) {
-        foreach (var (name, value) in _dreamManager.GlobalNames.Order().Zip(_dreamManager.Globals)) {
+        foreach ((string name, DreamValue value) in _dreamManager.GlobalNames.Zip(_dreamManager.Globals).OrderBy(kv => kv.First)) {
             yield return DescribeValue(name, value);
         }
     }

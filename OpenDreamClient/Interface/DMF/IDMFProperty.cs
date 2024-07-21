@@ -18,6 +18,7 @@ public interface IDMFProperty {
     public string AsJson();
     public string AsJsonDM();
     public string AsRaw();
+    public string AsSnowflake();
 }
 
 /*
@@ -80,6 +81,9 @@ public struct DMFPropertyString(string value) : IDMFProperty {
         return Value ?? "";
     }
 
+    public string AsSnowflake() {
+        return AsRaw();
+    }
     public override string ToString() {
         return AsRaw();
     }
@@ -130,6 +134,9 @@ public struct DMFPropertyNum(float value) : IDMFProperty {
         return Value.ToString(CultureInfo.InvariantCulture);
     }
 
+    public string AsSnowflake() {
+        return AsRaw();
+    }
     public override string ToString() {
         return AsRaw();
     }
@@ -203,6 +210,10 @@ public struct DMFPropertyVec2 : IDMFProperty {
         return AsEscaped();
     }
 
+    public string AsSnowflake() {
+        return AsEscaped();
+    }
+
     public override string ToString() {
         return AsRaw();
     }
@@ -272,6 +283,10 @@ public struct DMFPropertySize : IDMFProperty {
         return _value.AsString();
     }
 
+    public string AsSnowflake() {
+        return _value.AsSnowflake();
+    }
+
     public bool Equals(string comparison) {
         return _value.Equals(comparison);
     }
@@ -339,6 +354,10 @@ public struct DMFPropertyPos : IDMFProperty {
         return _value.AsString();
     }
 
+    public string AsSnowflake() {
+        return _value.AsSnowflake();
+    }
+
     public bool Equals(string comparison) {
         return _value.Equals(comparison);
     }
@@ -403,6 +422,12 @@ public struct DMFPropertyColor : IDMFProperty {
         return Value.ToHexNoAlpha();
     }
 
+    public string AsSnowflake() {
+        if(Value == Color.Transparent)
+            return "none";
+        return Value.ToHexNoAlpha();
+    }
+
     public override string ToString() {
         return AsRaw();
     }
@@ -447,6 +472,9 @@ public struct DMFPropertyBool(bool value) : IDMFProperty {
         return Value ? "1" : "0";
     }
 
+    public string AsSnowflake() {
+        return Value ? "true" : "false";
+    }
     public override string ToString() {
         return AsRaw();
     }

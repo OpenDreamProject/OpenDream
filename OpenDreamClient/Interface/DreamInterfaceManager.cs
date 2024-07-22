@@ -70,6 +70,8 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         }
     }
 
+    public bool ShowPopupMenus { get; private set; } = true;
+
     private readonly Dictionary<string, BrowsePopup> _popupWindows = new();
     private ViewRange _view = new(5);
 
@@ -287,6 +289,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
     private void RxUpdateClientInfo(MsgUpdateClientInfo msg) {
         View = msg.View;
+        ShowPopupMenus = msg.ShowPopupMenus;
     }
 
     private void ShowPrompt(PromptWindow prompt) {
@@ -919,6 +922,7 @@ public interface IDreamInterfaceManager {
     public ControlInfo? DefaultInfo { get; }
     public ControlMap? DefaultMap { get; }
     public ViewRange View { get; }
+    public bool ShowPopupMenus { get; }
 
     void Initialize();
     void FrameUpdate(FrameEventArgs frameEventArgs);

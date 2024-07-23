@@ -18,6 +18,7 @@ public interface IDMFProperty {
     public string AsJson();
     public string AsJsonDM();
     public string AsRaw();
+    
     /// winget() calls do not act the same as embedded winget calls, and the default behaviour is some whacky combination of AsEscaped() and AsRaw(). This proc handles that. Fucking BYOND.
     public string AsSnowflake();
 }

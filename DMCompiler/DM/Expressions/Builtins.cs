@@ -75,7 +75,8 @@ internal sealed class NewPath(Location location, ConstantPath targetPath, Argume
             case ConstantPath.PathType.TypeReference:
                 var newProc = DMObjectTree.GetNewProc(pathInfo.Value.Id);
 
-                (argumentsType, stackSize) = arguments.EmitArguments(dmObject, proc, newProc);proc.PushType(pathInfo.Value.Id);
+                (argumentsType, stackSize) = arguments.EmitArguments(dmObject, proc, newProc);
+                proc.PushType(pathInfo.Value.Id);
                 break;
             case ConstantPath.PathType.ProcReference: // "new /proc/new_verb(Destination)" is a thing
                 (argumentsType, stackSize) = arguments.EmitArguments(dmObject, proc, DMObjectTree.AllProcs[pathInfo.Value.Id]);

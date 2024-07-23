@@ -18,6 +18,7 @@ public interface IDMFProperty {
     public string AsJson();
     public string AsJsonDM();
     public string AsRaw();
+    /// winget() calls do not act the same as embedded winget calls, and the default behaviour is some whacky combination of AsEscaped() and AsRaw(). This proc handles that. Fucking BYOND.
     public string AsSnowflake();
 }
 
@@ -84,6 +85,7 @@ public struct DMFPropertyString(string value) : IDMFProperty {
     public string AsSnowflake() {
         return AsRaw();
     }
+    
     public override string ToString() {
         return AsRaw();
     }
@@ -137,6 +139,7 @@ public struct DMFPropertyNum(float value) : IDMFProperty {
     public string AsSnowflake() {
         return AsRaw();
     }
+    
     public override string ToString() {
         return AsRaw();
     }
@@ -475,6 +478,7 @@ public struct DMFPropertyBool(bool value) : IDMFProperty {
     public string AsSnowflake() {
         return Value ? "true" : "false";
     }
+    
     public override string ToString() {
         return AsRaw();
     }

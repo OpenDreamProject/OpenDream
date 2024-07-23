@@ -38,7 +38,7 @@ public sealed class DummyDreamInterfaceManager : IDreamInterfaceManager {
     public void WinSet(string? controlId, string winsetParams) {
     }
 
-    public string WinGet(string controlId, string queryValue, bool forceJson = false) {
+    public string WinGet(string controlId, string queryValue, bool forceJson = false, bool forceSnowflake = false) {
         return string.Empty;
     }
 

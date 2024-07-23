@@ -243,7 +243,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             MsgPromptResponse response = new() {
                 PromptId = message.PromptId,
                 Type = DreamValueType.Text,
-                Value = WinGet(message.ControlId, message.QueryValue)
+                Value = WinGet(message.ControlId, message.QueryValue, forceSnowflake:true)
             };
 
             _netManager.ClientSendMessage(response);
@@ -642,14 +642,14 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         }
     }
 
-    public string WinGet(string controlId, string queryValue, bool forceJson = false) {
+    public string WinGet(string controlId, string queryValue, bool forceJson = false, bool forceSnowflake = false) {
         bool ParseAndTryGet(InterfaceElement element, string query, out string result) {
             //parse "as blah" from query if it's there
             string[] querySplit = query.Split(" as ");
             IDMFProperty propResult;
             if(querySplit.Length != 2) //must be "thing as blah" or "thing". Anything else is invalid.
                 if(element.TryGetProperty(query, out propResult!)){
-                    result = forceJson ? propResult.AsJson() : propResult.AsRaw();
+                    result = forceJson ? propResult.AsJson() : forceSnowflake ? propResult.AsSnowflake() : propResult.AsRaw();
                     return true;
                 } else {
                     result = "";
@@ -663,6 +663,9 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
                 if (forceJson) {
                     result = propResult.AsJson();
+                    return true;
+                } else if (forceSnowflake) {
+                    result = propResult.AsSnowflake();
                     return true;
                 }
 
@@ -936,5 +939,5 @@ public interface IDreamInterfaceManager {
     public void StartRepeatingCommand(string command);
     public void StopRepeatingCommand(string command);
     public void WinSet(string? controlId, string winsetParams);
-    public string WinGet(string controlId, string queryValue, bool forceJson = false);
+    public string WinGet(string controlId, string queryValue, bool forceJson = false, bool forceSnowflake = false);
 }

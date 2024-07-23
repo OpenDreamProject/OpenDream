@@ -1390,21 +1390,28 @@ namespace OpenDreamRuntime.Procs {
 
             if (typeValue.TryGetValueAsDreamObject(out var typeObject)) {
                 if (typeObject == null) {
-                    state.Push(new DreamValue(0));
+                    state.Push(DreamValue.False);
                     return ProcStatus.Continue;
                 }
 
                 type = typeObject.ObjectDefinition.TreeEntry;
-            } else {
-                if(!typeValue.TryGetValueAsType(out type)) {
-                    throw new Exception($"istype() attempted to check non-path {typeValue}");
-                }
+            } else if (typeValue.TryGetValueAsAppearance(out _)) {
+                // /image matches an appearance
+                state.Push(value.TryGetValueAsDreamObject<DreamObjectImage>(out _)
+                    ? DreamValue.True
+                    : DreamValue.False);
+
+                return ProcStatus.Continue;
+            } else if (!typeValue.TryGetValueAsType(out type)) {
+                state.Push(DreamValue.False);
+
+                return ProcStatus.Continue;
             }
 
             if (value.TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
                 state.Push(new DreamValue(dreamObject.IsSubtypeOf(type) ? 1 : 0));
             } else {
-                state.Push(new DreamValue(0));
+                state.Push(DreamValue.False);
             }
 
             return ProcStatus.Continue;

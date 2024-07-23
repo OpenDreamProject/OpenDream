@@ -19,7 +19,6 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
         }
 
         SetupCommand(command, args.Values[1..]);
-
     }
 
     protected override void HandleDeletion() {
@@ -37,7 +36,6 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
         _command = new SqliteCommand(ParseCommandText(command));
 
         for (var i = 0; i < values.Length; i++) {
-
             var arg = values[i];
 
             var type = arg.Type;
@@ -46,11 +44,13 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
                     if (arg.TryGetValueAsString(out var stringValue)) {
                         _command.Parameters.AddWithValue($"@{i}", stringValue);
                     }
+                    
                     break;
                 case DreamValue.DreamValueType.Float:
                     if (arg.TryGetValueAsFloat(out var floatValue)) {
                         _command.Parameters.AddWithValue($"@{i}", floatValue);
                     }
+                    
                     break;
 
                 case DreamValue.DreamValueType.DreamResource:
@@ -62,7 +62,6 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
                     // TODO: support saving BLOBS for icons, if we really want to
                     break;
             }
-
         }
     }
 
@@ -81,7 +80,6 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
         }
 
         return names;
-
     }
 
     /// <summary>
@@ -103,7 +101,6 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
         }
 
         return DreamValue.Null;
-
     }
 
     public void ClearCommand() {
@@ -144,6 +141,7 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
             _errorMessage = exception.Message;
             database.SetError(exception.SqliteErrorCode, exception.Message);
         }
+        
         ClearCommand();
     }
 
@@ -224,14 +222,12 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
     /// <param name="text">The raw command text</param>
     /// <returns>A <see cref="string"/> with the characters converted</returns>
     private static string ParseCommandText(string text) {
-
         var newString = new StringBuilder();
 
         var paramsId = 0;
         var inQuotes = false;
         foreach (var character in text) {
-            switch (character)
-            {
+            switch (character) {
                 case '\'':
                 case '"':
                     inQuotes = !inQuotes;

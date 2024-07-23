@@ -5,7 +5,6 @@ using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
 namespace OpenDreamRuntime.Procs.Native;
 
 internal static class DreamProcNativeDatabase {
-
     [DreamProc("Close")]
     public static DreamValue NativeProc_Close(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
         var database = (DreamObjectDatabase)src!;

@@ -30,7 +30,6 @@ public sealed class DreamObjectDatabase(DreamObjectDefinition objectDefinition) 
     /// </summary>
     /// <param name="filename">The path to the SQLite file</param>
     public void Open(string filename) {
-
         if (_connection?.State == ConnectionState.Open) {
             Close();
         }
@@ -78,5 +77,4 @@ public sealed class DreamObjectDatabase(DreamObjectDefinition objectDefinition) 
     public void Close() {
         _connection?.Close();
     }
-
 }

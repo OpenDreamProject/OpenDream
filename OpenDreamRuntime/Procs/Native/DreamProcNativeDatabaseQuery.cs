@@ -5,7 +5,6 @@ using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
 namespace OpenDreamRuntime.Procs.Native;
 
 internal static class DreamProcNativeDatabaseQuery {
-
     [DreamProc("Add")]
     [DreamProcParameter("text", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("item1")]
@@ -57,7 +56,6 @@ internal static class DreamProcNativeDatabaseQuery {
         }
 
         return new DreamValue(list);
-
     }
 
     [DreamProc("Error")]
@@ -76,7 +74,6 @@ internal static class DreamProcNativeDatabaseQuery {
 
         return message == null ? DreamValue.Null : new DreamValue(message);
     }
-
 
     [DreamProc("Execute")]
     [DreamProcParameter("database", Type = DreamValueTypeFlag.DreamObject)]
@@ -139,7 +136,5 @@ internal static class DreamProcNativeDatabaseQuery {
         }
 
         return new DreamValue(list);
-
     }
-
 }

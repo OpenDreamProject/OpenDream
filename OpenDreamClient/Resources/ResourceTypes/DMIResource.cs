@@ -8,7 +8,7 @@ using SixLabors.ImageSharp.PixelFormats;
 namespace OpenDreamClient.Resources.ResourceTypes;
 
 public sealed class DMIResource : DreamResource {
-    private readonly byte[] _pngHeader = { 0x89, 0x50, 0x4E, 0x47, 0xD, 0xA, 0x1A, 0xA };
+    private static readonly byte[] PngHeader = [0x89, 0x50, 0x4E, 0x47, 0xD, 0xA, 0x1A, 0xA];
 
     public Texture Texture;
     public Vector2i IconSize;
@@ -17,9 +17,19 @@ public sealed class DMIResource : DreamResource {
     private readonly Dictionary<string, State> _states;
 
     public DMIResource(int id, byte[] data) : base(id, data) {
+        _states = new Dictionary<string, State>();
+        ProcessDMIData();
+    }
+
+    public override void UpdateData(byte[] data) {
+        base.UpdateData(data);
+        ProcessDMIData();
+    }
+
+    private void ProcessDMIData() {
         if (!IsValidPNG()) throw new Exception("Attempted to create a DMI using an invalid PNG");
 
-        using Stream dmiStream = new MemoryStream(data);
+        using Stream dmiStream = new MemoryStream(Data);
         DMIParser.ParsedDMIDescription description = DMIParser.ParseDMI(dmiStream);
 
         dmiStream.Seek(0, SeekOrigin.Begin);
@@ -29,7 +39,7 @@ public sealed class DMIResource : DreamResource {
         IconSize = new Vector2i(description.Width, description.Height);
         Description = description;
 
-        _states = new Dictionary<string, State>();
+        _states.Clear();
         foreach (DMIParser.ParsedDMIState parsedState in description.States.Values) {
             State state = new State(Texture, parsedState, description.Width, description.Height);
 
@@ -45,10 +55,10 @@ public sealed class DMIResource : DreamResource {
     }
 
     private bool IsValidPNG() {
-        if (Data.Length < _pngHeader.Length) return false;
+        if (Data.Length < PngHeader.Length) return false;
 
-        for (int i=0; i<_pngHeader.Length; i++) {
-            if (Data[i] != _pngHeader[i]) return false;
+        for (int i=0; i<PngHeader.Length; i++) {
+            if (Data[i] != PngHeader[i]) return false;
         }
 
         return true;

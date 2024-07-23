@@ -84,6 +84,7 @@ namespace DMCompiler.DM {
         private readonly Stack<DMProcScope> _scopes = new();
         private readonly Dictionary<string, LocalVariable> _parameters = new();
         private int _labelIdCounter;
+        private int _enumeratorIdCounter;
 
         private readonly List<string> _localVariableNames = new();
         private int _localVariableIdCounter;
@@ -99,7 +100,6 @@ namespace DMCompiler.DM {
         public AnnotatedByteCodeWriter AnnotatedBytecode = new();
 
         private Location _writerLocation;
-
 
         public DMProc(int id, DMObject dmObject, DMASTProcDefinition? astDefinition) {
             Id = id;
@@ -363,24 +363,29 @@ namespace DMCompiler.DM {
 
         public void CreateListEnumerator() {
             WriteOpcode(DreamProcOpcode.CreateListEnumerator);
+            WriteEnumeratorId(_enumeratorIdCounter++);
         }
 
         public void CreateFilteredListEnumerator(int filterTypeId, DreamPath filterType) {
             WriteOpcode(DreamProcOpcode.CreateFilteredListEnumerator);
+            WriteEnumeratorId(_enumeratorIdCounter++);
             WriteFilterID(filterTypeId, filterType);
         }
 
         public void CreateTypeEnumerator() {
             WriteOpcode(DreamProcOpcode.CreateTypeEnumerator);
+            WriteEnumeratorId(_enumeratorIdCounter++);
         }
 
         public void CreateRangeEnumerator() {
             WriteOpcode(DreamProcOpcode.CreateRangeEnumerator);
+            WriteEnumeratorId(_enumeratorIdCounter++);
         }
 
         public void Enumerate(DMReference reference) {
             if (_loopStack?.TryPeek(out var peek) ?? false) {
                 WriteOpcode(DreamProcOpcode.Enumerate);
+                WriteEnumeratorId(_enumeratorIdCounter - 1);
                 WriteReference(reference);
                 WriteLabel($"{peek}_end");
             } else {
@@ -391,6 +396,7 @@ namespace DMCompiler.DM {
         public void EnumerateNoAssign() {
             if (_loopStack?.TryPeek(out var peek) ?? false) {
                 WriteOpcode(DreamProcOpcode.EnumerateNoAssign);
+                WriteEnumeratorId(_enumeratorIdCounter - 1);
                 WriteLabel($"{peek}_end");
             } else {
                 DMCompiler.ForcedError(Location, "Cannot peek empty loop stack");
@@ -399,6 +405,7 @@ namespace DMCompiler.DM {
 
         public void DestroyEnumerator() {
             WriteOpcode(DreamProcOpcode.DestroyEnumerator);
+            WriteEnumeratorId(--_enumeratorIdCounter);
         }
 
         public void CreateList(int size) {
@@ -455,6 +462,7 @@ namespace DMCompiler.DM {
             } else {
                 DMCompiler.ForcedError(Location, "Cannot pop empty loop stack");
             }
+
             EndScope();
         }
 
@@ -510,6 +518,7 @@ namespace DMCompiler.DM {
                 if (!LabelExists(codeLabel)) {
                     DMCompiler.Emit(WarningCode.ItemDoesntExist, label.Location, $"Unknown label {label.Identifier}");
                 }
+
                 Jump(codeLabel + "_end");
             } else if (_loopStack?.TryPeek(out var peek) ?? false) {
                 Jump(peek + "_end");
@@ -686,6 +695,7 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Assign);
             WriteReference(reference);
         }
+
         public void AssignInto(DMReference reference) {
             WriteOpcode(DreamProcOpcode.AssignInto);
             WriteReference(reference);
@@ -1075,6 +1085,10 @@ namespace DMCompiler.DM {
 
         private void WriteProcId(int procId) {
             AnnotatedBytecode.WriteProcId(procId, _writerLocation);
+        }
+
+        private void WriteEnumeratorId(int enumeratorId) {
+            AnnotatedBytecode.WriteEnumeratorId(enumeratorId, _writerLocation);
         }
 
         private void WriteFloat(float value) {

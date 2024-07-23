@@ -2,6 +2,7 @@
 using OpenDreamClient.Interface.Controls.UI;
 using OpenDreamClient.Interface.Descriptors;
 using OpenDreamClient.Interface.DMF;
+using Robust.Client.ResourceManagement;
 using Robust.Client.UserInterface;
 
 namespace OpenDreamClient.Interface.Controls;
@@ -31,6 +32,16 @@ internal sealed class ControlChild(ControlDescriptor controlDescriptor, ControlW
         _splitter.Right = newRightElement;
         _splitter.Vertical = ChildDescriptor.IsVert.Value;
         _splitter.SplitterPercentage = ChildDescriptor.Splitter.Value / 100f;
+        _splitter.DragStyleBoxOverride = new StyleBoxColoredTexture {
+            BackgroundColor = (ChildDescriptor.BackgroundColor.Value != Color.Transparent)
+                ? ChildDescriptor.BackgroundColor.Value
+                : DreamStylesheet.DefaultBackgroundColor,
+            Texture = IoCManager.Resolve<IResourceCache>().GetResource<TextureResource>("/Textures/Interface/SplitterBorder.png"),
+            PatchMarginTop = 1,
+            PatchMarginLeft = 1,
+            PatchMarginRight = 1,
+            PatchMarginBottom = 1
+        };
     }
 
     public override void Shutdown() {

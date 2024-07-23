@@ -208,8 +208,7 @@ internal class AnnotatedByteCodeWriter {
             }
 
             // Found it.
-            _labels.Add(reference.Placeholder, label.AnnotatedByteOffset);
-            AddLabel(reference.Placeholder);
+            AddLabel(reference.Placeholder, (int)label.AnnotatedByteOffset);
 
             // I was thinking about going through to replace all the placeholders
             // with the actual label.LabelName, but it means I need to modify
@@ -282,6 +281,16 @@ internal class AnnotatedByteCodeWriter {
 
         _requiredArgs.Pop();
         _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeProcId(procId, location));
+    }
+
+    public void WriteEnumeratorId(int enumeratorId, Location location) {
+        _location = location;
+        if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.EnumeratorId) {
+            DMCompiler.ForcedError(location, "Expected EnumeratorID argument");
+        }
+
+        _requiredArgs.Pop();
+        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeEnumeratorId(enumeratorId, location));
     }
 
     public void WriteFormatCount(int formatCount, Location location) {
@@ -372,8 +381,13 @@ internal class AnnotatedByteCodeWriter {
     }
 
     public void AddLabel(string name) {
-        _labels.TryAdd(name, _annotatedBytecode.Count);
+        _labels.Add(name, _annotatedBytecode.Count);
         _annotatedBytecode.Add(new AnnotatedBytecodeLabel(name, _location));
+    }
+
+    public void AddLabel(string name, int position) {
+        _labels.Add(name, position);
+        _annotatedBytecode.Insert(position, new AnnotatedBytecodeLabel(name, _location));
     }
 
     public bool LabelExists(string name) {

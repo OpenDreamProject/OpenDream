@@ -94,6 +94,7 @@ public sealed class DMPreprocessor(bool enableDirectives) : IEnumerable<Token> {
                     HandleUndefineDirective(token);
                     break;
                 case TokenType.DM_Preproc_If:
+                    _bufferedWhitespace.Clear();
                     HandleIfDirective(token);
                     break;
                 case TokenType.DM_Preproc_Ifdef:

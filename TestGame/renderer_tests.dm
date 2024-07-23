@@ -334,8 +334,21 @@
 			animate(transform = matrix(), time = 5, easing=SINE_EASING)
 			animate(transform = matrix()*2, time = 5, easing=CIRCULAR_EASING)
 			animate(transform = matrix(), time = 5, easing=JUMP_EASING)
-		i++
-		if(i>5)
+		if(i==6)
+			usr << "relative color"
+			animate(usr, color="#ff0000", time=5, flags=ANIMATION_RELATIVE)
+			animate(color="#00ff00", time=5, flags=ANIMATION_RELATIVE)
+			animate(color="#0000ff", time=5, flags=ANIMATION_RELATIVE)
+		if(i==7)
+			usr << "relative transform"
+			animate(usr, transform = matrix()*2, time = 5, flags=ANIMATION_RELATIVE)
+			animate(transform = matrix()*0.5, time = 5, flags=ANIMATION_RELATIVE)
+		if(i==8)
+			usr << "more relative tests"
+			animate(usr, alpha=-125, pixel_x=16, time = 5, flags=ANIMATION_RELATIVE)
+			animate(alpha=125, pixel_x=-16, time = 5, flags=ANIMATION_RELATIVE)
+		i++;
+		if(i>8)
 			i = 0
 /obj/plaque/animation_test 
 	data = "<h3>Animation Test</h3><p>Click the button to apply a series of animations to your mob</p>"

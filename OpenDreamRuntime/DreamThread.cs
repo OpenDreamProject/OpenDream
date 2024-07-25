@@ -209,6 +209,11 @@ namespace OpenDreamRuntime {
 
         public static DreamValue Run(DreamProc proc, DreamObject src, DreamObject? usr, params DreamValue[] arguments) {
             var context = new DreamThread(proc.ToString());
+
+            if (proc is NativeProc nativeProc) {
+                return nativeProc.Call(context, src, usr, new(arguments));
+            }
+
             var state = proc.CreateState(context, src, usr, new DreamProcArguments(arguments));
             context.PushProcState(state);
             return context.Resume();

@@ -1386,7 +1386,7 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus IsType(DMProcState state) {
             DreamValue typeValue = state.Pop();
             DreamValue value = state.Pop();
-            TreeEntry type;
+            TreeEntry? type;
 
             if (typeValue.TryGetValueAsDreamObject(out var typeObject)) {
                 if (typeObject == null) {

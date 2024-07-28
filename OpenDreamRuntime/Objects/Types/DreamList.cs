@@ -754,13 +754,13 @@ public sealed class DreamOverlaysList : DreamList {
             overlay = new IconAppearance() {
                 IconState = iconState
             };
+            overlay.Icon ??= defaultIcon;
         } else if (atomManager.TryCreateAppearanceFrom(value, out var overlayAppearance)) {
             overlay = overlayAppearance;
         } else {
             return null; // Not a valid overlay
         }
 
-        overlay.Icon ??= defaultIcon;
         return overlay;
     }
 }

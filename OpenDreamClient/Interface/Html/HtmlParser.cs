@@ -88,6 +88,7 @@ public static class HtmlParser {
                         // browsers usually allow for some fallibility here
                         break;
                     }
+                    
                     string insideEntity = text.Substring(i + 1, end - (i + 1));
                     i = end;
 
@@ -114,6 +115,7 @@ public static class HtmlParser {
                                 break;
                         }
                     }
+                    
                     break;
                 default:
                     currentText.Append(c);

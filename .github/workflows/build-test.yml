@@ -54,9 +54,9 @@ jobs:
     - name: Gzip releases
       if: github.event_name == 'push'
       run: |
-        tar -czvf output_release/DMCompiler_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}.tar.gz -C output DMCompiler_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}
-        tar -czvf output_release/OpenDreamServer_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}.tar.gz -C output OpenDreamServer_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}
-        tar -czvf output_tools/OpenDreamServer_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}.tar.gz -C output OpenDreamServer_TOOLS_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}
+        tar -czvf output_release/DMCompiler_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}.tar.gz -C output_release DMCompiler_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}
+        tar -czvf output_release/OpenDreamServer_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}.tar.gz -C output_release OpenDreamServer_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}
+        tar -czvf output_tools/OpenDreamServer_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}.tar.gz -C output_tools OpenDreamServer_TOOLS_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}
     - name: Upload artifact
       if: github.event_name == 'push'
       uses: actions/upload-artifact@v3

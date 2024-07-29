@@ -200,9 +200,6 @@ public static class Program {
                         }
 
                         break;
-                    case "--tools":
-                        tgsOptions.BuildConfiguration = "Debug";
-                        break;
                     default:
                         Console.Error.WriteLine($"Invalid argument '{arg}'");
                         return false;

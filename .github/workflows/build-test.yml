@@ -62,7 +62,9 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: build-${{ matrix.os }}
-        path: output_*/*.tar.gz
+        path: |
+          output_release/*.tar.gz
+          output_tools/*.tar.gz
         retention-days: 1
 
   release:

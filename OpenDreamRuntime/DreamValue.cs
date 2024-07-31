@@ -387,6 +387,8 @@ namespace OpenDreamRuntime {
                 }
                 case DreamValueType.Appearance:
                     return string.Empty;
+                case 0:
+                    return "<Uninitialized DreamValue>";
                 default:
                     throw new NotImplementedException("Cannot stringify " + this);
             }

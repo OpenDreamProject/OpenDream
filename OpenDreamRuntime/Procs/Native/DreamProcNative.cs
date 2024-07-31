@@ -163,7 +163,7 @@ internal static class DreamProcNative {
 
         var proc = objectTree.World.ObjectDefinition.GetProc(nativeProc.Name);
         if (proc.SuperProc == null) { // This proc was never overriden so just replace it
-            type.ObjectDefinition.SetProcDefinition(proc.Name, proc.Id);
+            type.ObjectDefinition.SetProcDefinition(proc.Name, nativeProc.Id, replace: true);
             return;
         }
 

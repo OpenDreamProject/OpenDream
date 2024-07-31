@@ -70,6 +70,8 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         }
     }
 
+    public bool ShowPopupMenus { get; private set; } = true;
+
     private readonly Dictionary<string, BrowsePopup> _popupWindows = new();
     private ViewRange _view = new(5);
 
@@ -241,7 +243,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             MsgPromptResponse response = new() {
                 PromptId = message.PromptId,
                 Type = DreamValueType.Text,
-                Value = WinGet(message.ControlId, message.QueryValue)
+                Value = WinGet(message.ControlId, message.QueryValue, forceSnowflake:true)
             };
 
             _netManager.ClientSendMessage(response);
@@ -287,6 +289,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
     private void RxUpdateClientInfo(MsgUpdateClientInfo msg) {
         View = msg.View;
+        ShowPopupMenus = msg.ShowPopupMenus;
     }
 
     private void ShowPrompt(PromptWindow prompt) {
@@ -639,14 +642,14 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         }
     }
 
-    public string WinGet(string controlId, string queryValue, bool forceJson = false) {
+    public string WinGet(string controlId, string queryValue, bool forceJson = false, bool forceSnowflake = false) {
         bool ParseAndTryGet(InterfaceElement element, string query, out string result) {
             //parse "as blah" from query if it's there
             string[] querySplit = query.Split(" as ");
             IDMFProperty propResult;
             if(querySplit.Length != 2) //must be "thing as blah" or "thing". Anything else is invalid.
                 if(element.TryGetProperty(query, out propResult!)){
-                    result = forceJson ? propResult.AsJson() : propResult.AsRaw();
+                    result = forceJson ? propResult.AsJson() : forceSnowflake ? propResult.AsSnowflake() : propResult.AsRaw();
                     return true;
                 } else {
                     result = "";
@@ -660,6 +663,9 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
                 if (forceJson) {
                     result = propResult.AsJson();
+                    return true;
+                } else if (forceSnowflake) {
+                    result = propResult.AsSnowflake();
                     return true;
                 }
 
@@ -919,6 +925,7 @@ public interface IDreamInterfaceManager {
     public ControlInfo? DefaultInfo { get; }
     public ControlMap? DefaultMap { get; }
     public ViewRange View { get; }
+    public bool ShowPopupMenus { get; }
 
     void Initialize();
     void FrameUpdate(FrameEventArgs frameEventArgs);
@@ -932,5 +939,5 @@ public interface IDreamInterfaceManager {
     public void StartRepeatingCommand(string command);
     public void StopRepeatingCommand(string command);
     public void WinSet(string? controlId, string winsetParams);
-    public string WinGet(string controlId, string queryValue, bool forceJson = false);
+    public string WinGet(string controlId, string queryValue, bool forceJson = false, bool forceSnowflake = false);
 }

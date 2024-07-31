@@ -496,6 +496,9 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public void StartTryBlock(int catchPosition, int catchVarIndex = NoTryCatchVar) {
+            if (catchVarIndex != NoTryCatchVar)
+                catchVarIndex += ArgumentCount; // We're given a local var index so we need to account for our arguments
+
             _catchPosition.Push(catchPosition);
             _catchVarIndex.Push(catchVarIndex);
         }

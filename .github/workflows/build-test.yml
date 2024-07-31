@@ -84,5 +84,5 @@ jobs:
         prerelease: true
         title: "Development Build"
         files: |
-          artifacts/*/*.tar.gz
+          artifacts/*/*/*.tar.gz
 

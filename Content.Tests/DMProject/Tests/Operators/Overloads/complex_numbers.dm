@@ -48,7 +48,7 @@
 			else
 				throw EXCEPTION("Invalid index on complex number")
 
-	proc/operator[]=(index,value) 
+	proc/operator[]=(index, value) 
 		switch(index)
 			if(1)
 				src.a = value

@@ -64,7 +64,7 @@ public sealed class WalkManager {
         CancellationTokenSource cancelSource = new();
         _walkTasks[movable] = cancelSource;
 
-        DreamThread.Run($"walk_rand", async state => {
+        DreamThread.Run("walk_rand", async state => {
             var moveProc = movable.GetProc("Move");
 
             while (true) {

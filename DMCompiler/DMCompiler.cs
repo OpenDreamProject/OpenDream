@@ -233,7 +233,7 @@ public static class DMCompiler {
         if (Settings.SuppressUnimplementedWarnings)
             return;
 
-        ForcedWarning(loc, message);
+        Emit(WarningCode.UnimplementedAccess, loc, message);
     }
 
     public static void VerbosePrint(string message) {

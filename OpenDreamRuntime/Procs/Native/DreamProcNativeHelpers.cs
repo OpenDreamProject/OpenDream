@@ -438,8 +438,15 @@ internal static partial class DreamProcNativeHelpers {
     /// <summary>
     /// Gets the turf 1 step away from an atom in the given direction
     /// </summary>
-    public static DreamObjectTurf? GetStep(AtomManager atomManager, IDreamMapManager mapManager, DreamObjectAtom loc, AtomDirection dir) {
-        var dirInt = (int)dir;
+    public static DreamObjectTurf? GetStep(AtomManager atomManager, IDreamMapManager mapManager, DreamObjectAtom loc,
+        AtomDirection dir) {
+        return GetStep(atomManager, mapManager, loc, (int)dir);
+    }
+
+    /// <summary>
+    /// Gets the turf 1 step away from an atom in the given direction
+    /// </summary>
+    public static DreamObjectTurf? GetStep(AtomManager atomManager, IDreamMapManager mapManager, DreamObjectAtom loc, int dirInt) {
         var locPos = atomManager.GetAtomPosition(loc);
 
         if ((dirInt & (int) AtomDirection.North) != 0)
@@ -463,4 +470,18 @@ internal static partial class DreamProcNativeHelpers {
 
     [GeneratedRegex("[\\^]|[^a-z0-9@]")]
     private static partial Regex CkeyRegex();
+
+    /// <summary>
+    /// Returns one of NORTH, SOUTH, EAST, WEST, NORTHEAST, NORTHWEST, SOUTHEAST, or SOUTHWEST
+    /// </summary>
+    public static AtomDirection GetRandomDirection(DreamManager dreamManager) {
+        AtomDirection[] dirs = [
+            AtomDirection.North, AtomDirection.South, AtomDirection.East, AtomDirection.West, AtomDirection.Northeast,
+            AtomDirection.Northwest, AtomDirection.Southeast, AtomDirection.Southwest
+        ];
+
+        var index = dreamManager.Random.Next(0, 8); // [0, 8). There's 8 options but arrays start at 0.
+
+        return dirs[index];
+    }
 }

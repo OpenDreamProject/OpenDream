@@ -136,8 +136,8 @@ public sealed class DreamObjectDefinition {
         Variables[variableName] = value;
     }
 
-    public void SetProcDefinition(string procName, int procId) {
-        if (HasProc(procName)) {
+    public void SetProcDefinition(string procName, int procId, bool replace = false) {
+        if (HasProc(procName) && !replace) {
             var proc = ObjectTree.Procs[procId];
             proc.SuperProc = GetProc(procName);
             OverridingProcs[procName] = procId;

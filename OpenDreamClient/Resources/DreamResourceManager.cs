@@ -42,7 +42,6 @@ namespace OpenDreamClient.Resources {
 
         public void Initialize() {
             _sawmill = Logger.GetSawmill("opendream.res");
-            InitCacheDirectory();
 
             _netManager.RegisterNetMessage<MsgBrowseResource>(RxBrowseResource);
             _netManager.RegisterNetMessage<MsgBrowseResourceResponse>(RxBrowseResourceResponse);
@@ -55,20 +54,22 @@ namespace OpenDreamClient.Resources {
             _resourceManager.UserData.Delete(_cacheDirectory);
         }
 
-        private void InitCacheDirectory() {
-            var random = new Random();
-            while (true) {
-                _cacheDirectory = new ResPath($"/OpenDream/Cache/{random.Next()}");
-                if (!_resourceManager.UserData.Exists(_cacheDirectory))
-                    break;
-            }
+        private void EnsureCacheDirectory() {
+            if(_cacheDirectory != default)
+                return;
+            if(_netManager.ServerChannel is null)
+                throw new Exception("Server doesn't appear to be connected, can't use cache right now!");
+            _cacheDirectory = new ResPath($"/OpenDream/Cache/{_netManager.ServerChannel.RemoteEndPoint}");
+            _resourceManager.UserData.CreateDir(_cacheDirectory);
+            if (!_resourceManager.UserData.Exists(_cacheDirectory))
+                throw new Exception($"Could not create cache directory at {_cacheDirectory}");
 
             _sawmill.Debug($"Cache directory is {_cacheDirectory}");
-            _resourceManager.UserData.CreateDir(_cacheDirectory);
         }
 
         private void RxBrowseResource(MsgBrowseResource message) {
             _sawmill.Debug($"Received cache check for {message.Filename}");
+            EnsureCacheDirectory();
             if(_resourceManager.UserData.Exists(GetCacheFilePath(message.Filename))){ //TODO CHECK HASH
                 _sawmill.Debug($"Cache hit for {message.Filename}");
             } else {
@@ -83,6 +84,7 @@ namespace OpenDreamClient.Resources {
         private void RxBrowseResourceResponse(MsgBrowseResourceResponse message) {
             if(_activeBrowseRscRequests.Contains(message.Filename)) {
                 _activeBrowseRscRequests.Remove(message.Filename);
+                EnsureCacheDirectory();
                 CreateCacheFile(message.Filename, message.Data);
             } else {
                 _sawmill.Error($"Recieved a browse_rsc response for a file we didn't ask for: {message.Filename}");

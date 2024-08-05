@@ -441,7 +441,8 @@ namespace DMCompiler.DM {
 
             if ((Attributes & ProcAttributes.Background) == ProcAttributes.Background) {
                 if (!DMObjectTree.TryGetGlobalProc("sleep", out var sleepProc)) {
-                    throw new CompileErrorException(Location, "Cannot do a background sleep without a sleep proc");
+                    DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, "Cannot do a background sleep without a sleep proc");
+                    return;
                 }
 
                 PushFloat(-1); // argument given to sleep()

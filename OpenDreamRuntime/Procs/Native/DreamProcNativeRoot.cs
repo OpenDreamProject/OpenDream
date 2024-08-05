@@ -3192,18 +3192,6 @@ namespace OpenDreamRuntime.Procs.Native {
             return DreamValue.Null;
         }
 
-        [DreamProc("walk_to")]
-        [DreamProcParameter("Ref", Type = DreamValueTypeFlag.DreamObject)]
-        [DreamProcParameter("Trg", Type = DreamValueTypeFlag.DreamObject)]
-        [DreamProcParameter("Min", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
-        [DreamProcParameter("Lag", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
-        [DreamProcParameter("Speed", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
-        public static DreamValue NativeProc_walk_to(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            //TODO: Implement walk_to()
-
-            return DreamValue.Null;
-        }
-
         [DreamProc("walk_towards")]
         [DreamProcParameter("Ref", Type = DreamValueTypeFlag.DreamObject)]
         [DreamProcParameter("Trg", Type = DreamValueTypeFlag.DreamObject)]

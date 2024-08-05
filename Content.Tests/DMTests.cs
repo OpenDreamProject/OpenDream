@@ -26,9 +26,10 @@ public sealed class DMTests : ContentUnitTest {
         NoError = 0,        // Should run without errors
         Ignore = 1,         // Ignore entirely
         CompileError = 2,   // Should fail to compile
-        RuntimeError = 4,   // Should throw an exception at runtime
-        ReturnTrue = 8,     // Should return TRUE
-        NoReturn = 16,      // Shouldn't return (aka stopped by a stack-overflow or runtimes)
+        CompileWarning = 4, // Should throw a warning during compile
+        RuntimeError = 8,   // Should throw an exception at runtime
+        ReturnTrue = 16,     // Should return TRUE
+        NoReturn = 32,      // Shouldn't return (aka stopped by a stack-overflow or runtimes)
     }
 
     private void OnException(object? sender, Exception exception) => TestContext.WriteLine(exception);
@@ -68,6 +69,16 @@ public sealed class DMTests : ContentUnitTest {
                 Cleanup(compiledFile);
                 TestContext.WriteLine($"--- PASS {sourceFile}");
                 return;
+            }
+
+            #if DEBUG
+            const int minWarnings = 1;
+            #else
+            const int minWarnings = 0;
+            #endif
+
+            if (testFlags.HasFlag(DMTestFlags.CompileWarning)) {
+                Assert.That(DMCompiler.DMCompiler.WarningCount, Is.GreaterThan(minWarnings), "Expected a warning during DM compilation");
             }
 
             Assert.That(compiledFile is not null && File.Exists(compiledFile), "Failed to compile DM source file");
@@ -165,6 +176,8 @@ public sealed class DMTests : ContentUnitTest {
                 testFlags |= DMTestFlags.Ignore;
             if (firstLine.Contains("COMPILE ERROR", StringComparison.InvariantCulture))
                 testFlags |= DMTestFlags.CompileError;
+            if (firstLine.Contains("COMPILE WARNING", StringComparison.InvariantCulture))
+                testFlags |= DMTestFlags.CompileWarning;
             if (firstLine.Contains("RUNTIME ERROR", StringComparison.InvariantCulture))
                 testFlags |= DMTestFlags.RuntimeError;
             if (firstLine.Contains("RETURN TRUE", StringComparison.InvariantCulture))

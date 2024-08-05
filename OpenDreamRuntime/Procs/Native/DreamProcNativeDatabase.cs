@@ -36,9 +36,9 @@ internal static class DreamProcNativeDatabase {
 
         DreamValue fileValue = bundle.GetArgument(0, "filename");
 
-        if (fileValue.TryGetValueAsString(out var filename)) {
-            database.Open(filename);
-        }
+        if (!fileValue.TryGetValueAsString(out var filename)) return DreamValue.Null;
+
+        if (!database.Open(filename)) throw new DMCrashRuntime("Could not open database.");
 
         return DreamValue.Null;
     }

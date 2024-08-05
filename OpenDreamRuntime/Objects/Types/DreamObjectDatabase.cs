@@ -1,4 +1,5 @@
 using System.Data;
+using System.IO;
 using Microsoft.Data.Sqlite;
 using OpenDreamRuntime.Procs;
 
@@ -17,7 +18,9 @@ public sealed class DreamObjectDatabase(DreamObjectDefinition objectDefinition) 
             return;
         }
 
-        Open(filename);
+        if(Open(filename)) return;
+
+        throw new DMCrashRuntime("Unable to open database.");
     }
 
     protected override void HandleDeletion() {
@@ -29,18 +32,30 @@ public sealed class DreamObjectDatabase(DreamObjectDefinition objectDefinition) 
     /// Establish the connection to our SQLite database
     /// </summary>
     /// <param name="filename">The path to the SQLite file</param>
-    public void Open(string filename) {
+    public bool Open(string filename) {
         if (_connection?.State == ConnectionState.Open) {
             Close();
         }
+
+        filename = SanitizeFilename(filename);
 
         _connection = new SqliteConnection($"Data Source={filename};Mode=ReadWriteCreate");
 
         try {
             _connection.Open();
+            return true;
         } catch (SqliteException exception) {
             Logger.GetSawmill("opendream.db").Error($"Failed to open database {filename} - {exception}");
+            return false;
         }
+    }
+
+    private static string SanitizeFilename(string filename) {
+        foreach (var character in Path.GetInvalidFileNameChars()) {
+            filename = filename.Replace(character.ToString(), "");
+        }
+
+        return filename.Replace("=", "").Replace(";", "");
     }
 
     /// <summary>

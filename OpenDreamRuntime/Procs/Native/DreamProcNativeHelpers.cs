@@ -18,6 +18,11 @@ internal static partial class DreamProcNativeHelpers {
         'w', 'x', 'y', 'z'
     ];
 
+    private static readonly AtomDirection[] AtomDirs = [
+        AtomDirection.North, AtomDirection.South, AtomDirection.East, AtomDirection.West, AtomDirection.Northeast,
+        AtomDirection.Northwest, AtomDirection.Southeast, AtomDirection.Southwest
+    ];
+
     /// <summary>
     /// This is a helper proc for oview, view, orange, and range to do their strange iteration with.<br/>
     /// BYOND has a very strange, kinda-spiralling iteration pattern for the above procs, <br/>
@@ -475,13 +480,7 @@ internal static partial class DreamProcNativeHelpers {
     /// Returns one of NORTH, SOUTH, EAST, WEST, NORTHEAST, NORTHWEST, SOUTHEAST, or SOUTHWEST
     /// </summary>
     public static AtomDirection GetRandomDirection(DreamManager dreamManager) {
-        AtomDirection[] dirs = [
-            AtomDirection.North, AtomDirection.South, AtomDirection.East, AtomDirection.West, AtomDirection.Northeast,
-            AtomDirection.Northwest, AtomDirection.Southeast, AtomDirection.Southwest
-        ];
-
         var index = dreamManager.Random.Next(0, 8); // [0, 8). There's 8 options but arrays start at 0.
-
-        return dirs[index];
+        return AtomDirs[index];
     }
 }

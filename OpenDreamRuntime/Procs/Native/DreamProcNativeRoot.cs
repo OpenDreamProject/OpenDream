@@ -3184,8 +3184,8 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!bundle.GetArgument(0, "Ref").TryGetValueAsDreamObject<DreamObjectMovable>(out var refAtom))
                 return DreamValue.Null;
 
-            bundle.GetArgument(2, "Lag").TryGetValueAsInteger(out var lag);
-            bundle.GetArgument(3, "Speed").TryGetValueAsInteger(out var speed);
+            bundle.GetArgument(1, "Lag").TryGetValueAsInteger(out var lag);
+            bundle.GetArgument(2, "Speed").TryGetValueAsInteger(out var speed);
 
             bundle.WalkManager.StartWalkRand(refAtom, lag, speed);
 

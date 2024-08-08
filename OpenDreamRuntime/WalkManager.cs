@@ -45,7 +45,7 @@ public sealed class WalkManager {
                 if (cancelSource.IsCancellationRequested)
                     break;
 
-                DreamObjectTurf? newLoc = DreamProcNativeHelpers.GetStep(_atomManager, _dreamMapManager, movable, dir);
+                DreamObjectTurf? newLoc = DreamProcNativeHelpers.GetStep(_atomManager, _dreamMapManager, movable, (AtomDirection)dir);
                 await state.Call(moveProc, movable, null, new(newLoc), new(dir));
             }
 
@@ -71,9 +71,9 @@ public sealed class WalkManager {
                 await _scheduler.CreateDelayTicks(lag);
                 if (cancelSource.IsCancellationRequested)
                     break;
-                var dir = (int)DreamProcNativeHelpers.GetRandomDirection(_dreamManager);
+                var dir = DreamProcNativeHelpers.GetRandomDirection(_dreamManager);
                 DreamObjectTurf? newLoc = DreamProcNativeHelpers.GetStep(_atomManager, _dreamMapManager, movable, dir);
-                await state.Call(moveProc, movable, null, new(newLoc), new(dir));
+                await state.Call(moveProc, movable, null, new(newLoc), new((int)dir));
             }
 
             return DreamValue.Null;

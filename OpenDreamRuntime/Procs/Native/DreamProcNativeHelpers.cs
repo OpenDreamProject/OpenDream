@@ -445,13 +445,7 @@ internal static partial class DreamProcNativeHelpers {
     /// </summary>
     public static DreamObjectTurf? GetStep(AtomManager atomManager, IDreamMapManager mapManager, DreamObjectAtom loc,
         AtomDirection dir) {
-        return GetStep(atomManager, mapManager, loc, (int)dir);
-    }
-
-    /// <summary>
-    /// Gets the turf 1 step away from an atom in the given direction
-    /// </summary>
-    public static DreamObjectTurf? GetStep(AtomManager atomManager, IDreamMapManager mapManager, DreamObjectAtom loc, int dirInt) {
+        var dirInt = (int)dir;
         var locPos = atomManager.GetAtomPosition(loc);
 
         if ((dirInt & (int) AtomDirection.North) != 0)

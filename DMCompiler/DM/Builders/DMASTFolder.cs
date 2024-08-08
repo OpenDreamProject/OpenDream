@@ -51,27 +51,11 @@ public class DMASTFolder {
 
                 FoldAst(procDef.Body);
                 break;
-            case DMASTProcStatementIf statementIf:
-                statementIf.Condition = FoldExpression(statementIf.Condition);
-                FoldAst(statementIf.Body);
-                FoldAst(statementIf.ElseBody);
-
-                break;
             case DMASTProcStatementFor statementFor:
                 statementFor.Expression1 = FoldExpression(statementFor.Expression1);
                 statementFor.Expression2 = FoldExpression(statementFor.Expression2);
                 statementFor.Expression3 = FoldExpression(statementFor.Expression3);
                 FoldAst(statementFor.Body);
-
-                break;
-            case DMASTProcStatementWhile statementWhile:
-                statementWhile.Conditional = FoldExpression(statementWhile.Conditional);
-                FoldAst(statementWhile.Body);
-
-                break;
-            case DMASTProcStatementDoWhile statementDoWhile:
-                statementDoWhile.Conditional = FoldExpression(statementDoWhile.Conditional);
-                FoldAst(statementDoWhile.Body);
 
                 break;
             case DMASTProcStatementInfLoop statementInfLoop:

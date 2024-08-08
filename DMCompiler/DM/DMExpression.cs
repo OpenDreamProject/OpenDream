@@ -22,7 +22,7 @@ internal abstract class DMExpression(Location location) {
         expr.EmitPushValue(dmObject, proc);
     }
 
-    public static bool TryConstant(DMObject dmObject, DMProc proc, DMASTExpression expression, out Expressions.Constant? constant) {
+    public static bool TryConstant(DMObject dmObject, DMProc proc, DMASTExpression expression, [NotNullWhen(true)] out Expressions.Constant? constant) {
         var expr = Create(dmObject, proc, expression);
         return expr.TryAsConstant(out constant);
     }

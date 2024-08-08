@@ -176,7 +176,7 @@ internal sealed class DreamViewOverlay : Overlay {
         result.EnsureCapacity(result.Count + icon.Underlays.Count + icon.Overlays.Count + 1);
         RendererMetaData current = RentRendererMetaData();
         current.MainIcon = icon;
-        current.Position = position + (icon.Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter);
+        current.Position = position + (icon.Appearance.TotalPixelOffset / (float)EyeManager.PixelsPerMeter);
         current.Uid = uid;
         current.ClickUid = uid;
         current.IsScreen = isScreen;

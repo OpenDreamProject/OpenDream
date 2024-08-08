@@ -166,7 +166,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
     public void GetWorldAABB(Vector2 worldPos, ref Box2? aabb) {
         if (DMI != null && Appearance != null) {
             Vector2 size = DMI.IconSize / (float)EyeManager.PixelsPerMeter;
-            Vector2 pixelOffset = Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter;
+            Vector2 pixelOffset = Appearance.TotalPixelOffset / (float)EyeManager.PixelsPerMeter;
 
             worldPos += pixelOffset;
 
@@ -376,6 +376,13 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
                 Vector2 newPixelOffset = Vector2.Lerp(startingOffset, endAppearance.PixelOffset, 1.0f-factor);
 
                 appearance.PixelOffset = (Vector2i)newPixelOffset;
+            }
+
+            if (endAppearance.PixelOffset2 != _appearance.PixelOffset2) {
+                Vector2 startingOffset = appearance.PixelOffset2;
+                Vector2 newPixelOffset = Vector2.Lerp(startingOffset, endAppearance.PixelOffset2, 1.0f-factor);
+
+                appearance.PixelOffset2 = (Vector2i)newPixelOffset;
             }
 
             if (!endAppearance.Transform.SequenceEqual(_appearance.Transform)) {

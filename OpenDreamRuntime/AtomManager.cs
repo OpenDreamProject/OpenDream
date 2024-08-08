@@ -213,6 +213,8 @@ public sealed class AtomManager {
             case "dir":
             case "pixel_x":
             case "pixel_y":
+            case "pixel_w":
+            case "pixel_z":
             case "color":
             case "layer":
             case "invisibility":
@@ -268,6 +270,12 @@ public sealed class AtomManager {
                 break;
             case "pixel_y":
                 value.TryGetValueAsInteger(out appearance.PixelOffset.Y);
+                break;
+            case "pixel_w":
+                value.TryGetValueAsInteger(out appearance.PixelOffset2.X);
+                break;
+            case "pixel_z":
+                value.TryGetValueAsInteger(out appearance.PixelOffset2.Y);
                 break;
             case "color":
                 if(value.TryGetValueAsDreamList(out var list)) {
@@ -384,6 +392,10 @@ public sealed class AtomManager {
                 return new(appearance.PixelOffset.X);
             case "pixel_y":
                 return new(appearance.PixelOffset.Y);
+            case "pixel_w":
+                return new(appearance.PixelOffset2.X);
+            case "pixel_z":
+                return new(appearance.PixelOffset2.Y);
             case "color":
                 if(!appearance.ColorMatrix.Equals(ColorMatrix.Identity)) {
                     var matrixList = _objectTree.CreateList(20);

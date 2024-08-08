@@ -103,9 +103,9 @@
 		walk(src, NORTH)
 		
 	verb/start_walk_rand()
-    	set name = "Walk Randomly"
-    	usr << "Walking randomly. Use the 'Walk Stop' verb to cease."
-    	walk_rand(src)
+		set name = "Walk Randomly"
+		usr << "Walking randomly. Use the 'Walk Stop' verb to cease."
+		walk_rand(src)
 	
 	verb/stop_walk()
 		set name = "Walk Stop"

@@ -24,6 +24,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
 
     public override void Initialize() {
         SubscribeNetworkEvent<NewAppearanceEvent>(OnNewAppearance);
+        SubscribeNetworkEvent<RemoveAppearanceEvent>(e => _appearances.Remove(e.AppearanceId));
         SubscribeNetworkEvent<AnimationEvent>(OnAnimation);
         SubscribeLocalEvent<DMISpriteComponent, WorldAABBEvent>(OnWorldAABB);
     }

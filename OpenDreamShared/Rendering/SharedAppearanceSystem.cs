@@ -13,6 +13,11 @@ public abstract class SharedAppearanceSystem : EntitySystem {
     }
 
     [Serializable, NetSerializable]
+    public sealed class RemoveAppearanceEvent(int appearanceId) : EntityEventArgs {
+        public int AppearanceId { get; } = appearanceId;
+    }
+
+    [Serializable, NetSerializable]
     public sealed class AnimationEvent(NetEntity entity, int targetAppearanceId, TimeSpan duration, AnimationEasing easing, int loop, AnimationFlags flags, int delay, bool chainAnim)
         : EntityEventArgs {
         public NetEntity Entity = entity;

@@ -6,7 +6,8 @@ using Robust.Shared.Map;
 namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectImage : DreamObject {
-    public IconAppearance? Appearance;
+    private IconAppearance? _appearance;
+    public IconAppearance? Appearance { get => _appearance; set => SetAppearance(value); }
 
     private DreamObject? _loc;
     private DreamList _overlays;
@@ -42,7 +43,8 @@ public sealed class DreamObjectImage : DreamObject {
         base.Initialize(args);
 
         DreamValue icon = args.GetArgument(0);
-        if (icon.IsNull || !AtomManager.TryCreateAppearanceFrom(icon, out Appearance)) {
+        IconAppearance? iconAppearance = null;
+        if (icon.IsNull || !AtomManager.TryCreateAppearanceFrom(icon, out iconAppearance)) {
             // Use a default appearance, but log a warning about it if icon wasn't null
             Appearance = new(AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
             if (!icon.IsNull)
@@ -50,24 +52,35 @@ public sealed class DreamObjectImage : DreamObject {
                     .Warning($"Attempted to create an /image from {icon}. This is invalid and a default image was created instead.");
         }
 
+        if(iconAppearance is not null)
+            Appearance = iconAppearance;
+
+
         int argIndex = 1;
         DreamValue loc = args.GetArgument(1);
         if (loc.TryGetValueAsDreamObject(out _loc)) { // If it's not a DreamObject, it's actually icon_state and not loc
             argIndex = 2;
         }
 
+        iconAppearance = null; //mutate the appearance and then set it at the end to handle ref counts and client update
         foreach (string argName in IconCreationArgs) {
             var arg = args.GetArgument(argIndex++);
             if (arg.IsNull)
                 continue;
+            iconAppearance ??= new(Appearance!);
 
-            AtomManager.SetAppearanceVar(Appearance, argName, arg);
+            AtomManager.SetAppearanceVar(iconAppearance, argName, arg);
             if (argName == "dir") {
                 // If a dir is explicitly given in the constructor then overlays using this won't use their owner's dir
                 // Setting dir after construction does not affect this
                 // This is undocumented and I hate it
-                Appearance.InheritsDirection = false;
+                iconAppearance.InheritsDirection = false;
             }
+        }
+
+        if (iconAppearance is not null) {
+            AppearanceSystem!.AddAppearance(iconAppearance); // this is a no-op if the appearance is already in the system
+            Appearance = iconAppearance;
         }
     }
 
@@ -110,7 +123,7 @@ public sealed class DreamObjectImage : DreamObject {
                 Appearance = newAppearance;
                 if(_entity != EntityUid.Invalid) {
                     DMISpriteComponent sprite = EntityManager.GetComponent<DMISpriteComponent>(_entity);
-                    sprite.SetAppearance(Appearance!);
+                    AtomManager.SetSpriteAppearance(new(_entity, sprite), Appearance);
                 }
 
                 break;
@@ -207,10 +220,12 @@ public sealed class DreamObjectImage : DreamObject {
             }
             default:
                 if (AtomManager.IsValidAppearanceVar(varName)) {
-                    AtomManager.SetAppearanceVar(Appearance!, varName, value);
+                    IconAppearance iconAppearance = new(Appearance!);
+                    AtomManager.SetAppearanceVar(iconAppearance, varName, value);
+                    Appearance = iconAppearance;
                     if(_entity != EntityUid.Invalid) {
                         DMISpriteComponent sprite = EntityManager.GetComponent<DMISpriteComponent>(_entity);
-                        sprite.SetAppearance(Appearance!);
+                        AtomManager.SetSpriteAppearance(new(_entity, sprite), Appearance!);
                     }
 
                     break;
@@ -233,13 +248,24 @@ public sealed class DreamObjectImage : DreamObject {
         if(_entity == EntityUid.Invalid) {
             _entity = EntityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace));
             DMISpriteComponent sprite = EntityManager.AddComponent<DMISpriteComponent>(_entity);
-            sprite.SetAppearance(Appearance!);
+            if(Appearance is not null)
+                AtomManager.SetSpriteAppearance(new(_entity, sprite), Appearance);
         }
 
         return _entity;
     }
 
+    public void SetAppearance(IconAppearance? appearance) {
+        if(appearance is not null)
+            AppearanceSystem!.IncreaseAppearanceRefCount(appearance);
+        if(_appearance is not null)
+            AppearanceSystem!.DecreaseAppearanceRefCount(_appearance);
+        _appearance = appearance;
+    }
+
     protected override void HandleDeletion() {
+        if(_appearance is not null)
+            AppearanceSystem!.DecreaseAppearanceRefCount(_appearance);
         if(_entity != EntityUid.Invalid) {
             EntityManager.DeleteEntity(_entity);
         }

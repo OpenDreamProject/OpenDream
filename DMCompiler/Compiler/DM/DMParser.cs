@@ -635,8 +635,7 @@ namespace DMCompiler.Compiler.DM {
             } while (Delimiter() || statement is DMASTProcStatementLabel);
             Whitespace();
 
-            if (procStatements.Count == 0) return (null,null);
-            return (procStatements, setStatements);
+            return (procStatements.Count > 0 ? procStatements : null, setStatements.Count > 0 ? setStatements : null);
         }
 
         private DMASTProcStatement? ProcStatement() {

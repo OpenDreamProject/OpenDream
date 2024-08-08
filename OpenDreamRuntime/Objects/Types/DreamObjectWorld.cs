@@ -4,7 +4,6 @@ using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared;
 using OpenDreamShared.Dream;
-using Robust.Server;
 using Robust.Shared;
 using Robust.Shared.Configuration;
 using Robust.Shared.Network;
@@ -15,7 +14,6 @@ namespace OpenDreamRuntime.Objects.Types;
 public sealed class DreamObjectWorld : DreamObject {
     public override bool ShouldCallNew => false; // Gets called manually later
 
-    [Dependency] private readonly IBaseServer _server = default!;
     [Dependency] private readonly IGameTiming _gameTiming = default!;
     [Dependency] private readonly INetManager _netManager = default!;
     [Dependency] private readonly IConfigurationManager _cfg = default!;
@@ -88,7 +86,7 @@ public sealed class DreamObjectWorld : DreamObject {
     protected override void HandleDeletion() {
         base.HandleDeletion();
 
-        _server.Shutdown("world was deleted");
+        DreamManager.QueueShutdown("world was deleted");
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {

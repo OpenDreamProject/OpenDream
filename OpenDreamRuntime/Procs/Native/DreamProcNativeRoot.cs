@@ -3159,19 +3159,35 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Lag", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
         [DreamProcParameter("Speed", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
         public static DreamValue NativeProc_walk(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            //TODO: Implement walk()
+            if (!bundle.GetArgument(0, "Ref").TryGetValueAsDreamObject<DreamObjectMovable>(out var refAtom))
+                return DreamValue.Null;
+
+            // Per the ref, calling walk(Ref, 0) halts walking
+            if (bundle.GetArgument(1, "Dir").TryGetValueAsInteger(out var dir) && dir == 0) {
+                bundle.WalkManager.StopWalks(refAtom);
+                return DreamValue.Null;
+            }
+
+            bundle.GetArgument(2, "Lag").TryGetValueAsInteger(out var lag);
+            bundle.GetArgument(3, "Speed").TryGetValueAsInteger(out var speed);
+
+            bundle.WalkManager.StartWalk(refAtom, dir, lag, speed);
 
             return DreamValue.Null;
         }
 
-        [DreamProc("walk_to")]
+        [DreamProc("walk_rand")]
         [DreamProcParameter("Ref", Type = DreamValueTypeFlag.DreamObject)]
-        [DreamProcParameter("Trg", Type = DreamValueTypeFlag.DreamObject)]
-        [DreamProcParameter("Min", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
         [DreamProcParameter("Lag", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
         [DreamProcParameter("Speed", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
-        public static DreamValue NativeProc_walk_to(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            //TODO: Implement walk_to()
+        public static DreamValue NativeProc_walk_rand(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+            if (!bundle.GetArgument(0, "Ref").TryGetValueAsDreamObject<DreamObjectMovable>(out var refAtom))
+                return DreamValue.Null;
+
+            bundle.GetArgument(1, "Lag").TryGetValueAsInteger(out var lag);
+            bundle.GetArgument(2, "Speed").TryGetValueAsInteger(out var speed);
+
+            bundle.WalkManager.StartWalkRand(refAtom, lag, speed);
 
             return DreamValue.Null;
         }
@@ -3191,9 +3207,9 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             bundle.GetArgument(2, "Lag").TryGetValueAsInteger(out var lag);
-            bundle.GetArgument(3, "Speed").TryGetValueAsInteger(out var speed); // TODO: Use this. Speed=0 uses Ref.step_size
+            bundle.GetArgument(3, "Speed").TryGetValueAsInteger(out var speed);
 
-            bundle.WalkManager.StartWalkTowards(refAtom, trgAtom, lag);
+            bundle.WalkManager.StartWalkTowards(refAtom, trgAtom, lag, speed);
             return DreamValue.Null;
         }
 

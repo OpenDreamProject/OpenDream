@@ -162,6 +162,7 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
                 return (opcode, ReadInt(), ReadReference(), ReadInt());
 
             case DreamProcOpcode.CreateFilteredListEnumerator:
+            case DreamProcOpcode.CreateFilteredBaseTypesListEnumerator:
             case DreamProcOpcode.EnumerateNoAssign:
                 return (opcode, ReadInt(), ReadInt());
 
@@ -287,6 +288,12 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
                 text.Append(enumeratorId);
                 text.Append(' ');
                 text.Append(getTypePath(type));
+                break;
+
+            case (DreamProcOpcode.CreateFilteredBaseTypesListEnumerator, int enumeratorId, int type):
+                text.Append(enumeratorId);
+                text.Append(' ');
+                text.Append(getTypePath(type)); // TODO: maybe make sure this works / leave as thing for reviewer to talk abt
                 break;
 
             case (DreamProcOpcode.CreateListNRefs

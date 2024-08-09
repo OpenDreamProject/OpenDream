@@ -612,8 +612,9 @@ namespace DMCompiler.DM.Builders {
                 implicitTypeCheck = dmTypes.Value.TypePath;
             } else if (!dmTypes.Value.IsAnything) {
                 // "as anything" performs no check. Other values are unimplemented.
-                DMCompiler.UnimplementedWarning(outputVar.Location,
-                    $"As type {dmTypes} in for loops is unimplemented. No type check will be performed.");
+                proc.CreateFilteredBaseTypesListEnumerator(dmTypes.Value.Type);
+                //DMCompiler.UnimplementedWarning(outputVar.Location,
+                //    $"As type {dmTypes} in for loops is unimplemented. No type check will be performed.");
             }
 
             list.EmitPushValue(dmObject, proc);

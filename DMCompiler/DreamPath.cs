@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text.Json.Serialization;
 using DMCompiler.DM;
@@ -225,6 +226,7 @@ public struct DreamPath {
 
     public override bool Equals(object? obj) => obj is DreamPath other && Equals(other);
 
+    [Pure]
     public bool Equals(DreamPath other) {
         if (other.Elements.Length != Elements.Length) return false;
 

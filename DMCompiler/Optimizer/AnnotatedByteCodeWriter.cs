@@ -156,10 +156,11 @@ internal class AnnotatedByteCodeWriter {
     /// Write a filter. Filters are stored as reference IDs in the raw bytecode, which refer
     /// to a string in the string table containing the datum path of the filter.
     /// </summary>
-    /// <param name="filterPaths">The datum paths of the filter</param>
+    /// <param name="filterTypeId">The type ID of the filter</param>
+    /// /// <param name="filterTypes">The base types of the filter</param>
     /// <param name="location">The location of the filter in the source code</param>
     ///
-    public void WriteFilterTypeId(byte filterTypeId, DMValueType filterPaths, Location location) {
+    public void WriteFilterTypeId(byte filterTypeId, DMValueType filterTypes, Location location) {
         _location = location;
 
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.FilterId) {
@@ -168,7 +169,7 @@ internal class AnnotatedByteCodeWriter {
 
         _requiredArgs.Pop();
 
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeTypeFilter(filterTypeId, filterPaths, location));
+        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeTypeFilter(filterTypeId, filterTypes, location));
     }
 
     /// <summary>

@@ -293,7 +293,7 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
             case (DreamProcOpcode.CreateFilteredBaseTypesListEnumerator, int enumeratorId, int type):
                 text.Append(enumeratorId);
                 text.Append(' ');
-                text.Append(getTypePath(type)); // TODO: maybe make sure this works / leave as thing for reviewer to talk abt
+                text.Append(getTypePath(type));
                 break;
 
             case (DreamProcOpcode.CreateListNRefs

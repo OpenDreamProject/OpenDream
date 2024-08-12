@@ -125,10 +125,10 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
-        public static ProcStatus CreateFilteredBaseTypesListEnumerator(DMProcState state) { // this is also plagarized from the above. make sure thats ok? and remove this comment
+        public static ProcStatus CreateFilteredBaseTypesListEnumerator(DMProcState state) {
             var enumeratorId = state.ReadInt();
             var filterTypeId = state.ReadInt();
-            var filterType = state.Proc.ObjectTree.GetTreeEntry(filterTypeId); // this REALLY probably has to change. seems to be a path rn
+            var filterType = state.Proc.ObjectTree.GetTreeEntry(filterTypeId);
             var enumerator = GetContentsEnumerator(state.Proc.ObjectTree, state.Proc.AtomManager, state.Pop(), filterType);
 
             state.Enumerators[enumeratorId] = enumerator;

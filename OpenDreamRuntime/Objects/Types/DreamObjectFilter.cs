@@ -11,10 +11,6 @@ public sealed class DreamObjectFilter(DreamObjectDefinition objectDefinition) : 
 
     public DreamFilter Filter;
 
-    public DreamObjectFilter(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
-
-    }
-
     protected override void HandleDeletion(bool possiblyThreaded) {
         // SAFETY: Attachment dictionary is not threadsafe, no reason to change this.
         if (possiblyThreaded) {

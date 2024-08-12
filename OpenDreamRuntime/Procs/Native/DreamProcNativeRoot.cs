@@ -1014,6 +1014,68 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(obj.ObjectDefinition.HasProc(procName) ? 1 : 0);
         }
 
+        [DreamProc("hearers")]
+        [DreamProcParameter("Depth", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("Center", Type = DreamValueTypeFlag.DreamObject)]
+        public static DreamValue NativeProc_hearers(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) { //TODO: Change depending on center
+            DreamValue depthValue = new DreamValue(5);
+            DreamObjectAtom? center = null;
+
+            //Arguments are optional and can be passed in any order
+            if (bundle.Arguments.Length > 0) {
+                DreamValue firstArgument = bundle.GetArgument(0, "Depth");
+
+                if (firstArgument.TryGetValueAsDreamObject(out center)) {
+                    if (bundle.Arguments.Length > 1) {
+                        depthValue = bundle.GetArgument(1, "Center");
+                    }
+                } else {
+                    depthValue = firstArgument;
+
+                    if (bundle.Arguments.Length > 1) {
+                        bundle.GetArgument(1, "Center").TryGetValueAsDreamObject(out center);
+                    }
+                }
+            }
+
+            center ??= usr as DreamObjectAtom;
+
+            DreamList hear = bundle.ObjectTree.CreateList();
+            if (center == null)
+                return new(hear);
+
+            var centerPos = bundle.AtomManager.GetAtomPosition(center);
+            if (!depthValue.TryGetValueAsInteger(out var depth))
+                depth = 5;
+
+            foreach (var atom in bundle.AtomManager.EnumerateAtoms(bundle.ObjectTree.Mob)) {
+                var mob = (DreamObjectMob)atom;
+
+                if (centerPos.Z == mob.Z && Math.Abs(centerPos.X - mob.X) <= depth && Math.Abs(centerPos.Y - mob.Y) <= depth) {
+                    (_, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, mob, bundle.Arguments);
+                    var earPos = bundle.AtomManager.GetAtomPosition(mob);
+                    var viewData = DreamProcNativeHelpers.CollectViewData(bundle.AtomManager, bundle.MapManager, earPos, range);
+
+                    ViewAlgorithm.CalculateAudibility(viewData);
+
+                    for (int x = 0; x < viewData.GetLength(0); x++) {
+                        for (int y = 0; y < viewData.GetLength(1); y++) {
+                            var tile = viewData[x, y];
+                            if (tile == null || tile.IsAudible == false)
+                                continue;
+
+                            if (centerPos.X == earPos.X + tile.DeltaX && earPos.Y + tile.DeltaY == centerPos.Y) {
+                                hear.AddValue(new DreamValue(mob));
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return new DreamValue(hear);
+        }
+
         [DreamProc("html_decode")]
         [DreamProcParameter("HtmlText", Type = DreamValueTypeFlag.String)]
         public static DreamValue NativeProc_html_decode(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
@@ -1816,6 +1878,71 @@ namespace OpenDreamRuntime.Procs.Native {
 
             // Maybe an exception is better?
             return new DreamValue("0");
+        }
+
+        [DreamProc("ohearers")]
+        [DreamProcParameter("Depth", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("Center", Type = DreamValueTypeFlag.DreamObject)]
+        public static DreamValue NativeProc_ohearers(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) { //TODO: Change depending on center
+            DreamValue depthValue = new DreamValue(5);
+            DreamObjectAtom? center = null;
+
+            //Arguments are optional and can be passed in any order
+            if (bundle.Arguments.Length > 0) {
+                DreamValue firstArgument = bundle.GetArgument(0, "Depth");
+
+                if (firstArgument.TryGetValueAsDreamObject(out center)) {
+                    if (bundle.Arguments.Length > 1) {
+                        depthValue = bundle.GetArgument(1, "Center");
+                    }
+                } else {
+                    depthValue = firstArgument;
+
+                    if (bundle.Arguments.Length > 1) {
+                        bundle.GetArgument(1, "Center").TryGetValueAsDreamObject(out center);
+                    }
+                }
+            }
+
+            center ??= usr as DreamObjectAtom;
+
+            DreamList hear = bundle.ObjectTree.CreateList();
+            if (center == null)
+                return new(hear);
+
+            var centerPos = bundle.AtomManager.GetAtomPosition(center);
+            if (!depthValue.TryGetValueAsInteger(out var depth))
+                depth = 5; //TODO: Default to world.view
+
+            foreach (var atom in bundle.AtomManager.EnumerateAtoms(bundle.ObjectTree.Mob)) {
+                var mob = (DreamObjectMob)atom;
+
+                if (mob.X == centerPos.X && mob.Y == centerPos.Y)
+                    continue;
+
+                if (centerPos.Z == mob.Z && Math.Abs(centerPos.X - mob.X) <= depth && Math.Abs(centerPos.Y - mob.Y) <= depth) {
+                    (_, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, mob, bundle.Arguments);
+                    var earPos = bundle.AtomManager.GetAtomPosition(mob);
+                    var viewData = DreamProcNativeHelpers.CollectViewData(bundle.AtomManager, bundle.MapManager, earPos, range);
+
+                    ViewAlgorithm.CalculateAudibility(viewData);
+
+                    for (int x = 0; x < viewData.GetLength(0); x++) {
+                        for (int y = 0; y < viewData.GetLength(1); y++) {
+                            var tile = viewData[x, y];
+                            if (tile == null || tile.IsAudible == false)
+                                continue;
+
+                            if (centerPos.X == earPos.X + tile.DeltaX && earPos.Y + tile.DeltaY == centerPos.Y) {
+                                hear.AddValue(new DreamValue(mob));
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return new DreamValue(hear);
         }
 
         [DreamProc("orange")]

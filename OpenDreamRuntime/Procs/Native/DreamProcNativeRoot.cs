@@ -2615,6 +2615,10 @@ namespace OpenDreamRuntime.Procs.Native {
             if(bundle.GetArgument(4, "include_delimiters").TryGetValueAsInteger(out var includeDelimitersInt))
                 includeDelimiters = includeDelimitersInt != 0; //idk why BYOND doesn't just use truthiness, but it doesn't, so...
 
+            // save the start/end beforehand to staple back on at the end
+            string startText = text[0..Math.Max(start,0)];
+            string endText = text[Math.Min(end, text.Length)..];
+
             if(start > 0 || end < text.Length)
                 text = text[Math.Max(start,0)..Math.Min(end, text.Length)];
 
@@ -2622,7 +2626,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             if (delim.TryGetValueAsDreamObject<DreamObjectRegex>(out var regexObject)) {
                 if(includeDelimiters) {
-                    var values = new List<string>();
+                    var values = new List<string> {startText};
                     int pos = 0;
                     foreach (Match m in regexObject.Regex.Matches(text)) {
                         values.Add(text.Substring(pos, m.Index - pos));
@@ -2630,15 +2634,19 @@ namespace OpenDreamRuntime.Procs.Native {
                         pos = m.Index + m.Length;
                     }
                     values.Add(text.Substring(pos));
+                    values.Add(endText);
                     return new DreamValue(bundle.ObjectTree.CreateList(values.ToArray()));
                 } else {
-                    return new DreamValue(bundle.ObjectTree.CreateList(regexObject.Regex.Split(text)));
+                    List<string> values = new List<string> {startText};
+                    values.AddRange(regexObject.Regex.Split(text));
+                    values.Add(endText);
+                    return new DreamValue(bundle.ObjectTree.CreateList(values.ToArray()));
                 }
             } else if (delim.TryGetValueAsString(out var delimiter)) {
                 string[] splitText;
                 if(includeDelimiters) {
-                    //basically split on delimeter, and then add the delimiter back in after each split (except the last one)
-                    splitText= text.Split(delimiter);
+                    //basically split on delimiter, and then add the delimiter back in after each split (except the last one)
+                    splitText = text.Split(delimiter);
                     string[] longerSplitText = new string[splitText.Length * 2 - 1];
                     for(int i = 0; i < splitText.Length; i++) {
                         longerSplitText[i * 2] = splitText[i];
@@ -2649,7 +2657,10 @@ namespace OpenDreamRuntime.Procs.Native {
                 } else {
                     splitText = text.Split(delimiter);
                 }
-                return new DreamValue(bundle.ObjectTree.CreateList(splitText));
+                List<string> finalList = new List<string> {startText};
+                finalList.AddRange(splitText);
+                finalList.Add(endText);
+                return new DreamValue(bundle.ObjectTree.CreateList(finalList.ToArray()));
             } else {
                 return new DreamValue(bundle.ObjectTree.CreateList());
             }

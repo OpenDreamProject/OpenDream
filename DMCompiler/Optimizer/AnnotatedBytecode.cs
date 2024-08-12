@@ -574,6 +574,35 @@ internal sealed class AnnotatedBytecodeFilter : IAnnotatedBytecode {
     }
 }
 
+internal sealed class AnnotatedBytecodeTypeFilter : IAnnotatedBytecode {
+    public DMValueType FilterPath;
+
+    public int FilterTypeId;
+    public Location Location;
+
+    public AnnotatedBytecodeTypeFilter(int filterTypeId, DMValueType filterPath, Location location) {
+        FilterTypeId = filterTypeId;
+        FilterPath = filterPath;
+        Location = location;
+    }
+
+    public void AddArg(IAnnotatedBytecode arg) {
+        DMCompiler.ForcedError(Location, "Cannot add args to a filter");
+    }
+
+    public void SetLocation(IAnnotatedBytecode loc) {
+        Location = loc.GetLocation();
+    }
+
+    public void SetLocation(Location loc) {
+        Location = loc;
+    }
+
+    public Location GetLocation() {
+        return Location;
+    }
+}
+
 internal sealed class AnnotatedBytecodeReference : IAnnotatedBytecode {
     public int Index;
     public Location Location;

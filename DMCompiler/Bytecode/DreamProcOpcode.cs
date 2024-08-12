@@ -137,7 +137,8 @@ public enum DreamProcOpcode : byte {
     CreateFilteredListEnumerator = 0x41,
     [OpcodeMetadata(-1)]
     Power = 0x42,
-    //0x43,
+    [OpcodeMetadata(-1, OpcodeArgType.EnumeratorId, OpcodeArgType.FilterId)]
+    CreateFilteredBaseTypesListEnumerator = 0x43,
     //0x44
     [OpcodeMetadata(-3, OpcodeArgType.TypeId)]
     Prompt = 0x45,

@@ -372,6 +372,12 @@ namespace DMCompiler.DM {
             WriteFilterID(filterTypeId, filterType);
         }
 
+        public void CreateFilteredBaseTypesListEnumerator(byte filterTypeId, DMValueType filterType) {
+            WriteOpcode(DreamProcOpcode.CreateFilteredBaseTypesListEnumerator);
+            WriteEnumeratorId(_enumeratorIdCounter++);
+            WriteFilterTypeID(filterTypeId, filterType);
+        }
+
         public void CreateTypeEnumerator() {
             WriteOpcode(DreamProcOpcode.CreateTypeEnumerator);
             WriteEnumeratorId(_enumeratorIdCounter++);
@@ -1113,6 +1119,10 @@ namespace DMCompiler.DM {
 
         private void WriteFilterID(int filterId, DreamPath filter) {
             AnnotatedBytecode.WriteFilterId(filterId, filter, _writerLocation);
+        }
+
+        private void WriteFilterTypeID(byte filterId, DMValueType filter) {
+            AnnotatedBytecode.WriteFilterTypeId(filterId, filter, _writerLocation);
         }
 
         private void WriteStackDelta(int delta) {

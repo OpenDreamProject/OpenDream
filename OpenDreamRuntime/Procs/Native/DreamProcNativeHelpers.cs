@@ -3,6 +3,7 @@ using OpenDreamShared.Dream;
 using System.Text.RegularExpressions;
 using OpenDreamRuntime.Objects.Types;
 using System.Text;
+using FastAccessors;
 
 namespace OpenDreamRuntime.Procs.Native;
 
@@ -180,6 +181,7 @@ internal static partial class DreamProcNativeHelpers {
                 var appearance = atomManager.MustGetAppearance(cell.Turf!)!;
                 var tile = new ViewAlgorithm.Tile() {
                     Opaque = appearance.Opacity,
+                    Dense = cell.Turf!.GetVariable("density").IsTruthy(),
                     Luminosity = 0,
                     DeltaX = deltaX,
                     DeltaY = deltaY
@@ -189,6 +191,7 @@ internal static partial class DreamProcNativeHelpers {
                     appearance = atomManager.MustGetAppearance(movable)!;
 
                     tile.Opaque |= appearance.Opacity;
+                    tile.Dense |= movable.GetVariable("density").IsTruthy();
                 }
 
                 tiles[viewX, viewY] = tile;

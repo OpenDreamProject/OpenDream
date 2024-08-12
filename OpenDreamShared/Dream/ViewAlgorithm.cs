@@ -8,11 +8,13 @@ public static class ViewAlgorithm {
     public enum VisibilityFlags {
         LineOfSight = 1,
         Normal = 2,
-        Infrared = 4
+        Infrared = 4,
+        Audible = 8,
     }
 
     public sealed class Tile {
         public bool Opaque;
+        public bool Dense;
         public int Luminosity;
         public int InfraredLuminosity;
 
@@ -35,7 +37,7 @@ public static class ViewAlgorithm {
         public bool IsVisible => ((Visibility & VisibilityFlags.Normal) != 0);
 
         public VisibilityFlags Audibility;
-        public bool IsAudible => ((Audibility & VisibilityFlags.Normal) != 0);
+        public bool IsAudible => ((Audibility & VisibilityFlags.Audible) != 0);
     }
 
     private static readonly List<Tile> BoundaryTiles = new();
@@ -44,7 +46,7 @@ public static class ViewAlgorithm {
     public static void CalculateAudibility(Tile?[,] tiles) {
         var width = tiles.GetLength(0);
         var height = tiles.GetLength(1);
-        Tile? eye = null;
+        Tile? ear = null;
 
         // Step 2
         var highestMaxDelta = 0;
@@ -56,15 +58,15 @@ public static class ViewAlgorithm {
             highestMaxDelta = Math.Max(highestMaxDelta, tile.MaxDelta);
             highestSumDelta = Math.Max(highestSumDelta, tile.SumDelta);
 
-            tile.Vis = 0;
+            tile.Vis = 0; // half wanted to rename these but there's no point really.
             tile.Vis2 = 0;
-            tile.Visibility = 0;
+            tile.Audibility = 0;
 
             if (tile.DeltaX == 0 && tile.DeltaY == 0)
-                eye = tile;
+                ear = tile;
         }
 
-        // TODO: Lummox mentions an optimization in step 3 and 4. Probably worthwhile.
+        // TODO: Lummox mentions an optimization for viewers() in step 3 and 4. Probably worthwhile.
 
         // Step 3, Diagonal shadow loop
         for (int d = 0; d < highestMaxDelta; d++) {
@@ -75,7 +77,7 @@ public static class ViewAlgorithm {
                         continue;
 
                     if (tile.MaxDelta == d + 1 && CheckNeighborsVis(tiles, true, x, y, d)) {
-                        tile.Vis2 = (tile.Opaque) ? -1 : d + 1;
+                        tile.Vis2 = (tile.Dense) ? -1 : d + 1;
                     }
                 }
             }
@@ -90,7 +92,7 @@ public static class ViewAlgorithm {
                         continue;
 
                     if (tile.SumDelta == d + 1 && CheckNeighborsVis(tiles, false, x, y, d)) {
-                        if (tile.Opaque) {
+                        if (tile.Dense) {
                             tile.Vis = -1;
                         } else if (tile.Vis2 != 0) {
                             // Lummox says "set vis=d" but I think this is a typo?
@@ -102,12 +104,10 @@ public static class ViewAlgorithm {
         }
 
         // Step 5
-        if (eye != null)
-            eye.Vis = 1;
+        if (ear != null)
+            ear.Vis = 1;
 
-        // TODO: Step 6, Light loop
-
-        // TODO: Step 7, Infrared sight
+        // we skip steps 6 and 7 because hearing works in the dark
 
         // Step 8
         foreach (var tile in tiles) {
@@ -116,7 +116,6 @@ public static class ViewAlgorithm {
 
             tile.Vis2 = tile.Vis;
 
-            // TODO: Luminosity & lit area check
         }
 
         // Step 9
@@ -125,10 +124,10 @@ public static class ViewAlgorithm {
                 var tile = tiles[x, y];
                 if (tile == null)
                     continue;
-                if (!tile.Opaque || tile.Vis != 0)
+                if (!tile.Dense || tile.Vis != 0)
                     continue;
 
-                // Can't have both east and west visible if you're on the east or west border
+                // Can't have both east and west audible if you're on the east or west border
                 if (x != 0 && x != width - 1) {
                     var east = tiles[x - 1, y];
                     var west = tiles[x + 1, y];
@@ -143,7 +142,7 @@ public static class ViewAlgorithm {
                     }
                 }
 
-                // Can't have both north and south visible if you're on the north or south border
+                // Can't have both north and south audible if you're on the north or south border
                 if (y != 0 && y != height - 1) {
                     var north = tiles[x, y - 1];
                     var south = tiles[x, y + 1];
@@ -167,7 +166,7 @@ public static class ViewAlgorithm {
             }
         }
 
-        // Make all wall/corner tiles visible
+        // Make all wall/corner tiles audible
         foreach (var boundary in BoundaryTiles) {
             boundary.Vis = -1;
         }
@@ -179,12 +178,8 @@ public static class ViewAlgorithm {
             if (tile == null)
                 continue;
 
-            if (tile.Vis != 0)
-                tile.Visibility |= VisibilityFlags.Normal;
-            if (tile.Vis2 != 0)
-                tile.Visibility |= VisibilityFlags.LineOfSight;
-            if (tile.InfraredLuminosity != 0)
-                tile.Visibility |= VisibilityFlags.Infrared;
+            if (tile.Vis2 != 0) // using the equivalent of LOS_VIS.
+                tile.Audibility |= VisibilityFlags.Audible;
         }
     }
 

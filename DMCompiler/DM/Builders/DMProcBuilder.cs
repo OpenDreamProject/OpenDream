@@ -614,7 +614,6 @@ namespace DMCompiler.DM.Builders {
                 implicitTypeCheck = dmTypes.Value.TypePath;
             } else if (!dmTypes.Value.IsAnything) {
                 // "as anything" performs no check. Other than that, all that's left are type assignments like `as mob|obj|area`.
-
                 proc.CreateFilteredBaseTypesListEnumerator((byte) dmTypes.Value.Type, dmTypes.Value.Type);
                 alreadyCreatedEnumerator = true;
                 DMCompiler.VerbosePrint($"Created CreateFilteredBaseTypesListEnumerator");

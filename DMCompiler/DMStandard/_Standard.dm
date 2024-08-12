@@ -135,8 +135,7 @@ proc/winset(player, control_id, params)
 #include "UnsortedAdditions.dm"
 
 proc/replacetextEx_char(Haystack as text, Needle, Replacement, Start = 1, End = 0) as text
-	set opendream_unimplemented = TRUE
-	return Haystack
+	return jointext(splittext(Haystack, Needle, Start, End), Replacement)
 
 /proc/step(atom/movable/Ref as /atom/movable, var/Dir, var/Speed=0) as num
 	//TODO: Speed = step_size if Speed is 0

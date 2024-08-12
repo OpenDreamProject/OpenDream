@@ -127,7 +127,7 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus CreateFilteredBaseTypesListEnumerator(DMProcState state) {
             var enumeratorId = state.ReadInt();
-            var filterTypeId = state.ReadInt();
+            var filterTypeId = state.ReadByte();
             var filterType = state.Proc.ObjectTree.GetTreeEntry(filterTypeId);
             var enumerator = GetContentsEnumerator(state.Proc.ObjectTree, state.Proc.AtomManager, state.Pop(), filterType);
 

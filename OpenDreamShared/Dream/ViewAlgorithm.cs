@@ -8,8 +8,7 @@ public static class ViewAlgorithm {
     public enum VisibilityFlags {
         LineOfSight = 1,
         Normal = 2,
-        Infrared = 4,
-        Audible = 8,
+        Infrared = 4
     }
 
     public sealed class Tile {
@@ -36,8 +35,7 @@ public static class ViewAlgorithm {
         public VisibilityFlags Visibility;
         public bool IsVisible => ((Visibility & VisibilityFlags.Normal) != 0);
 
-        public VisibilityFlags Audibility;
-        public bool IsAudible => ((Audibility & VisibilityFlags.Audible) != 0);
+        public bool IsAudible = false;
     }
 
     private static readonly List<Tile> BoundaryTiles = new();
@@ -60,7 +58,7 @@ public static class ViewAlgorithm {
 
             tile.Vis = 0; // half wanted to rename these but there's no point really.
             tile.Vis2 = 0;
-            tile.Audibility = 0;
+            tile.IsAudible = false;
 
             if (tile.DeltaX == 0 && tile.DeltaY == 0)
                 ear = tile;
@@ -179,7 +177,7 @@ public static class ViewAlgorithm {
                 continue;
 
             if (tile.Vis2 != 0) // using the equivalent of LOS_VIS.
-                tile.Audibility |= VisibilityFlags.Audible;
+                tile.IsAudible = true;
         }
     }
 

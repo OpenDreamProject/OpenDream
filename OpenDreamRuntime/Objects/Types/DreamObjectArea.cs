@@ -3,9 +3,11 @@
 public sealed class DreamObjectArea : DreamObjectAtom {
     public int X, Y, Z;
     public readonly AreaContentsList Contents;
+    public int AppearanceId;
 
     public DreamObjectArea(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
         Contents = new(ObjectTree.List.ObjectDefinition, this);
+        AtomManager.SetAtomAppearance(this, AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {

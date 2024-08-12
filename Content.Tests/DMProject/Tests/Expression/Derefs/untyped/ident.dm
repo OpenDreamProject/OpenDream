@@ -4,5 +4,5 @@
     var/ele = 2
 
 /proc/RunTest()
-    var/o = new
+    var/o = new /obj
     ASSERT(o.ele == 2)

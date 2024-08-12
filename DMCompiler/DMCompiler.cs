@@ -101,17 +101,25 @@ public static class DMCompiler {
             // NB: IncludeFile pushes newly seen files to a stack, so push
             // them in reverse order to process them in forward order.
             for (var i = files.Count - 1; i >= 0; i--) {
+                if (!File.Exists(files[i])) {
+                    Console.WriteLine($"'{files[i]}' does not exist");
+                    return null;
+                }
+
                 string includeDir = Path.GetDirectoryName(files[i]);
                 string fileName = Path.GetFileName(files[i]);
 
                 preproc.IncludeFile(includeDir, fileName);
             }
+
             string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
             string dmStandardDirectory = Path.Join(compilerDirectory, "DMStandard");
+
             // Push DMStandard to the top of the stack, prioritizing it.
             if (!Settings.NoStandard) {
                 preproc.IncludeFile(dmStandardDirectory, "_Standard.dm");
             }
+
             // Push the pragma config file to the tippy-top of the stack, super-duper prioritizing it, since it governs some compiler behaviour.
             string pragmaName;
             string pragmaDirectory;
@@ -122,10 +130,12 @@ public static class DMCompiler {
                 pragmaDirectory = dmStandardDirectory;
                 pragmaName = "DefaultPragmaConfig.dm";
             }
+
             if(!File.Exists(Path.Join(pragmaDirectory,pragmaName))) {
                 ForcedError($"Configuration file '{pragmaName}' not found.");
                 return null;
             }
+
             preproc.IncludeFile(pragmaDirectory,pragmaName);
             return preproc;
         }
@@ -223,7 +233,7 @@ public static class DMCompiler {
         if (Settings.SuppressUnimplementedWarnings)
             return;
 
-        ForcedWarning(loc, message);
+        Emit(WarningCode.UnimplementedAccess, loc, message);
     }
 
     public static void VerbosePrint(string message) {
@@ -261,12 +271,15 @@ public static class DMCompiler {
             Strings = DMObjectTree.StringTable,
             Resources = DMObjectTree.Resources.ToArray(),
             Maps = maps,
-            Interface = string.IsNullOrEmpty(interfaceFile) ? "" : Path.GetRelativePath(Path.GetDirectoryName(Path.GetFullPath(outputFile)), interfaceFile),
+            Interface = string.IsNullOrEmpty(interfaceFile)
+                ? ""
+                : Path.GetRelativePath(Path.GetDirectoryName(Path.GetFullPath(outputFile)), interfaceFile),
             Types = jsonRep.Item1,
             Procs = jsonRep.Item2
         };
 
-        if (DMObjectTree.GlobalInitProc.Bytecode.Length > 0) compiledDream.GlobalInitProc = DMObjectTree.GlobalInitProc.GetJsonRepresentation();
+        if (DMObjectTree.GlobalInitProc.AnnotatedBytecode.GetLength() > 0)
+            compiledDream.GlobalInitProc = DMObjectTree.GlobalInitProc.GetJsonRepresentation();
 
         if (DMObjectTree.Globals.Count > 0) {
             GlobalListJson globalListJson = new GlobalListJson();

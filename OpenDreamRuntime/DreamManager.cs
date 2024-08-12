@@ -199,12 +199,14 @@ namespace OpenDreamRuntime {
                         // i dont believe this will **ever** be called, but just to be sure, funky errors /might/ appear in the future if someone does a fucky wucky and calls this on a deleted object.
                         throw new Exception("Cannot create reference ID for an object that is deleted");
                     }
+
                     switch(refObject){
                         case DreamObjectTurf: refType = RefType.DreamObjectTurf; break;
                         case DreamObjectMob: refType = RefType.DreamObjectMob; break;
                         case DreamObjectArea: refType = RefType.DreamObjectArea; break;
                         case DreamObjectClient: refType = RefType.DreamObjectArea; break;
                         case DreamObjectImage: refType = RefType.DreamObjectImage; break;
+                        case DreamObjectFilter: refType = RefType.DreamObjectFilter; break;
                         default: {
                             refType = RefType.DreamObjectDatum;
                             if(refObject.IsSubtypeOf(_objectTree.Obj))
@@ -298,6 +300,7 @@ namespace OpenDreamRuntime {
                     case RefType.DreamObjectClient:
                     case RefType.DreamObjectDatum:
                     case RefType.DreamObjectImage:
+                    case RefType.DreamObjectFilter:
                     case RefType.DreamObjectList:
                     case RefType.DreamObjectMob:
                     case RefType.DreamObjectTurf:
@@ -386,6 +389,7 @@ namespace OpenDreamRuntime {
         DreamObjectMob = 0x3000000,
         DreamObjectArea = 0x4000000,
         DreamObjectClient = 0x5000000,
+        DreamObjectFilter = 0x5300000,
         DreamObjectImage = 0xD000000,
         DreamObjectList = 0xF000000,
         DreamObjectDatum = 0x21000000,

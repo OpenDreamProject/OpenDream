@@ -94,6 +94,7 @@ public sealed class DMPreprocessor(bool enableDirectives) : IEnumerable<Token> {
                     HandleUndefineDirective(token);
                     break;
                 case TokenType.DM_Preproc_If:
+                    _bufferedWhitespace.Clear();
                     HandleIfDirective(token);
                     break;
                 case TokenType.DM_Preproc_Ifdef:
@@ -430,7 +431,7 @@ public sealed class DMPreprocessor(bool enableDirectives) : IEnumerable<Token> {
                 case TokenType.DM_Preproc_LineSplice:
                     continue;
                 case TokenType.DM_Preproc_Identifier:
-                    if(token.Text == "defined") // need to be careful here to prevent macros in defined() expressions from being clobbered
+                    if(token.Text == "defined" || token.Text == "fexists") // need to be careful here to prevent macros in defined() or fexists() expressions from being clobbered
                         tryIdentifiersAsMacros = false;
                     else if (tryIdentifiersAsMacros && TryMacro(token)) // feeding any novel macro tokens back into the pipeline here
                         continue;

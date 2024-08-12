@@ -59,7 +59,7 @@ internal sealed partial class ContextMenuPopup : Popup {
             _uiManager.ModalRoot.RemoveChild(_currentVerbMenu);
         }
 
-        _currentVerbMenu = new VerbMenuPopup(_verbSystem, GetSeeInvisible(), item.Target, item.EntityMetaData, item.EntitySprite);
+        _currentVerbMenu = new VerbMenuPopup(_verbSystem, GetSeeInvisible(), item.Target);
 
         _currentVerbMenu.OnVerbSelected += Close;
 

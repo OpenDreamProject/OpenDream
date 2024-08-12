@@ -1,4 +1,6 @@
-﻿using OpenDreamClient.Interface.Descriptors;
+﻿using System.Diagnostics.CodeAnalysis;
+using OpenDreamClient.Interface.Descriptors;
+using OpenDreamClient.Interface.DMF;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
@@ -17,16 +19,15 @@ public sealed class ControlWindow : InterfaceControl {
 
     public readonly List<InterfaceControl> ChildControls = new();
 
-    public string Title => WindowDescriptor.Title ?? (WindowDescriptor.IsDefault ? "OpenDream World" : WindowDescriptor.Id);
-    public InterfaceMacroSet Macro => _interfaceManager.MacroSets[WindowDescriptor.Macro];
+    public string Title => WindowDescriptor.Title.Value ?? (WindowDescriptor.IsDefault.Value ? "OpenDream World" : WindowDescriptor.Id.AsRaw());
+    public InterfaceMacroSet Macro => _interfaceManager.MacroSets[WindowDescriptor.Macro.AsRaw()];
 
     private WindowDescriptor WindowDescriptor => (WindowDescriptor)ElementDescriptor;
 
-    private Control _menuContainer = default!;
+    private PanelContainer _menuContainer = default!;
     private LayoutContainer _canvas = default!;
 
     private (OSWindow? osWindow, IClydeWindow? clydeWindow) _myWindow;
-
 
     public ControlWindow(WindowDescriptor windowDescriptor) : base(windowDescriptor, null) {
         IoCManager.InjectDependencies(this);
@@ -36,19 +37,27 @@ public sealed class ControlWindow : InterfaceControl {
         // Don't call base.UpdateElementDescriptor();
 
         _menuContainer.RemoveAllChildren();
-        if (WindowDescriptor.Menu != null && _interfaceManager.Menus.TryGetValue(WindowDescriptor.Menu, out var menu)) {
+        if (WindowDescriptor.Menu.Value != null && _interfaceManager.Menus.TryGetValue(WindowDescriptor.Menu.Value, out var menu)) {
             _menuContainer.AddChild(menu.MenuBar);
             _menuContainer.Visible = true;
         } else {
             _menuContainer.Visible = false;
         }
 
-        if(!WindowDescriptor.IsPane)
+        if(!WindowDescriptor.IsPane.Value)
             UpdateWindowAttributes(_myWindow);
 
-        if (WindowDescriptor.IsDefault) {
+        if (WindowDescriptor.IsDefault.Value) {
             Macro.SetActive();
         }
+    }
+
+    /// <summary>
+    /// Closes the window if it is a child window. No effect if it is either a default window or a pane
+    /// </summary>
+    public void CloseChildWindow() {
+        if(_myWindow.osWindow is not null)
+            _myWindow.osWindow.Close();
     }
 
     public OSWindow CreateWindow() {
@@ -59,16 +68,20 @@ public sealed class ControlWindow : InterfaceControl {
         if(UIElement.Parent is not null)
             UIElement.Orphan();
         window.Children.Add(UIElement);
-        window.SetWidth = ControlDescriptor.Size?.X ?? 640;
-        window.SetHeight = ControlDescriptor.Size?.Y ?? 440;
-        if (ControlDescriptor.Size?.X == 0)
+
+        if (ControlDescriptor.Size.X == 0)
             window.SetWidth = window.MaxWidth;
-        if (ControlDescriptor.Size?.Y == 0)
+        else
+            window.SetWidth = ControlDescriptor.Size.X;
+        if (ControlDescriptor.Size.Y == 0)
             window.SetHeight = window.MaxHeight;
+        else
+            window.SetHeight = ControlDescriptor.Size.Y;
+
         window.Closing += _ => {
             // A window can have a command set to be run when it's closed
-            if (!string.IsNullOrWhiteSpace(WindowDescriptor.OnClose)) {
-                _interfaceManager.RunCommand(WindowDescriptor.OnClose);
+            if (!string.IsNullOrWhiteSpace(WindowDescriptor.OnClose.Value)) {
+                _interfaceManager.RunCommand(WindowDescriptor.OnClose.Value);
             }
 
             _myWindow = (null, _myWindow.clydeWindow);
@@ -87,6 +100,7 @@ public sealed class ControlWindow : InterfaceControl {
             _myWindow.osWindow.Close();
             UIElement.Orphan();
         }
+
         _myWindow = (null, window);
         UpdateWindowAttributes(_myWindow);
     }
@@ -98,48 +112,23 @@ public sealed class ControlWindow : InterfaceControl {
         if (windowSize.Y == 0)
             windowSize.Y = _canvas.PixelHeight;
 
-        ChildControls.Sort((a, b) => { //need a resort if size and pos have changed
-            if(a.Pos.X <= b.Pos.X || a.Pos.Y <= b.Pos.Y)
-                return 1;
-            else
-                return -1;
-        });
-
         for (int i = 0; i < ChildControls.Count; i++) {
             InterfaceControl control = ChildControls[i];
             var element = control.UIElement;
             var elementPos = control.Pos;
             var elementSize = control.Size;
 
-            if (control.Size.Y == 0) {
-                elementSize.Y = (windowSize.Y - elementPos.Y);
-                if (ChildControls.Count - 1 > i) {
-                    if (ChildControls[i + 1].UIElement.Visible) {
-                        var nextElementPos = ChildControls[i + 1].Pos;
-                        elementSize.Y = nextElementPos.Y - elementPos.Y;
-                    }
-                }
-
-                element.SetHeight = ((float)elementSize.Y / windowSize.Y) * _canvas.Height;
-            }
-
-            if (control.Size.X == 0) {
-                elementSize.X = (windowSize.X - elementPos.X);
-                if (ChildControls.Count - 1 > i) {
-                    if (ChildControls[i + 1].UIElement.Visible) {
-                        var nextElementPos = ChildControls[i + 1].Pos;
-                        if (nextElementPos.X < (elementSize.X + elementPos.X) &&
-                            nextElementPos.Y < (elementSize.Y + elementPos.Y))
-                            elementSize.X = nextElementPos.X - elementPos.X;
-                    }
-                }
-
-                element.SetWidth = ((float)elementSize.X / windowSize.X) * _canvas.Width;
-            }
-
             if (control.Anchor1.HasValue) {
-                var offset1X = elementPos.X - (windowSize.X * control.Anchor1.Value.X / 100f);
-                var offset1Y = elementPos.Y - (windowSize.Y * control.Anchor1.Value.Y / 100f);
+                var anchorTo = control.AnchorPosition;
+
+                // Defaults to anchoring relative to the DMF-defined size
+                if (anchorTo.X == 0)
+                    anchorTo.X = Size.X;
+                if (anchorTo.Y == 0)
+                    anchorTo.Y = Size.Y;
+
+                var offset1X = elementPos.X - (anchorTo.X * control.Anchor1.Value.X / 100f);
+                var offset1Y = elementPos.Y - (anchorTo.Y * control.Anchor1.Value.Y / 100f);
                 var left = (_canvas.Width * control.Anchor1.Value.X / 100) + offset1X;
                 var top = (_canvas.Height * control.Anchor1.Value.Y / 100) + offset1Y;
                 LayoutContainer.SetMarginLeft(element, Math.Max(left, 0));
@@ -147,13 +136,13 @@ public sealed class ControlWindow : InterfaceControl {
 
                 if (control.Anchor2.HasValue) {
                     if (control.Anchor2.Value.X < control.Anchor1.Value.X ||
-                        control.Anchor2.Value.Y < control.Anchor1.Value.Y)
+                        control.Anchor2.Value.Y < control.Anchor1.Value.Y) {
                         _sawmill.Warning($"Invalid anchor2 value in DMF for element {control.Id}. Ignoring.");
-                    else {
+                    } else {
                         var offset2X = (elementPos.X + elementSize.X) -
-                                       (windowSize.X * control.Anchor2.Value.X / 100);
+                                       (anchorTo.X * control.Anchor2.Value.X / 100);
                         var offset2Y = (elementPos.Y + elementSize.Y) -
-                                       (windowSize.Y * control.Anchor2.Value.Y / 100);
+                                       (anchorTo.Y * control.Anchor2.Value.Y / 100);
                         var width = (_canvas.Width * control.Anchor2.Value.X / 100) + offset2X - left;
                         var height = (_canvas.Height * control.Anchor2.Value.Y / 100) + offset2Y - top;
                         element.SetWidth = Math.Max(width, 0);
@@ -164,20 +153,39 @@ public sealed class ControlWindow : InterfaceControl {
         }
     }
 
+    /// <summary>
+    /// Updates the control's anchoring position to the window's current size.
+    /// Also updates other controls' anchoring position if they have a size of 0.
+    /// </summary>
+    /// <param name="control">The control triggering the anchor update</param>
+    public void UpdateAnchorPosition(InterfaceControl control) {
+        control.AnchorPosition = _canvas.PixelSize;
+
+        // Also update the anchor position for anything with a size of 0
+        foreach (var child in ChildControls) {
+            if (child.UIElement.SetWidth == 0)
+                child.AnchorPosition = child.AnchorPosition with {X = _canvas.PixelWidth + child.Size.X};
+            if (child.UIElement.SetHeight == 0)
+                child.AnchorPosition = child.AnchorPosition with {Y = _canvas.PixelHeight + child.Size.Y};
+        }
+
+        UpdateAnchors();
+    }
+
     private void UpdateWindowAttributes((OSWindow? osWindow, IClydeWindow? clydeWindow) windowRoot) {
         // TODO: this would probably be cleaner if an OSWindow for MainWindow was available.
         var (osWindow, clydeWindow) = windowRoot;
 
         //if our window is null or closed, and we are visible, we need to create a new one. Otherwise we need to update the existing one.
         if(osWindow == null && clydeWindow == null) {
-            if (WindowDescriptor.IsVisible) {
+            if (WindowDescriptor.IsVisible.Value) {
                 CreateWindow();
                 return; //we return because CreateWindow() calls UpdateWindowAttributes() again.
             }
         }
 
         if(osWindow != null && !osWindow.IsOpen) {
-            if (WindowDescriptor.IsVisible) {
+            if (WindowDescriptor.IsVisible.Value) {
                 osWindow.Show();
             }
         }
@@ -192,15 +200,16 @@ public sealed class ControlWindow : InterfaceControl {
             root = _uiMgr.GetWindowRoot(clydeWindow);
 
         if (root != null) {
-            root.BackgroundColor = WindowDescriptor.BackgroundColor;
+            root.BackgroundColor = (WindowDescriptor.BackgroundColor.Value != Color.Transparent)
+                ? WindowDescriptor.BackgroundColor.Value
+                : DreamStylesheet.DefaultBackgroundColor;
         }
 
         if (osWindow != null && osWindow.ClydeWindow != null) {
-            osWindow.ClydeWindow.IsVisible = WindowDescriptor.IsVisible;
+            osWindow.ClydeWindow.IsVisible = WindowDescriptor.IsVisible.Value;
         } else if (clydeWindow != null) {
-            clydeWindow.IsVisible = WindowDescriptor.IsVisible;
+            clydeWindow.IsVisible = WindowDescriptor.IsVisible.Value;
         }
-
     }
 
     public void CreateChildControls() {
@@ -264,7 +273,10 @@ public sealed class ControlWindow : InterfaceControl {
             RectClipContent = true,
             Orientation = BoxContainer.LayoutOrientation.Vertical,
             Children = {
-                (_menuContainer = new Control { Margin = new Thickness(4, 0)}),
+                (_menuContainer = new PanelContainer {
+                    PanelOverride = new StyleBoxFlat(Color.White),
+                    HorizontalExpand = true
+                }),
                 (_canvas = new LayoutContainer {
                     InheritChildMeasure = false,
                     VerticalExpand = true
@@ -281,46 +293,56 @@ public sealed class ControlWindow : InterfaceControl {
         UpdateAnchors();
     }
 
-    public override bool TryGetProperty(string property, out string value) {
+    public override bool TryGetProperty(string property, [NotNullWhen(true)] out IDMFProperty? value) {
         switch (property) {
+            case "size": // ControlWindow has its own getter for this because it doesn't use SetSize
+                value = new DMFPropertySize(UIElement.Size);
+                return true;
             case "inner-size":
-                value = $"{_canvas.Width}x{_canvas.Height}";
+                value = new DMFPropertySize((int)_canvas.Width, (int)_canvas.Height);
                 return true;
             case "outer-size":
-                if(_myWindow.osWindow is not null){
-                    value = $"{_myWindow.osWindow.Width}x{_myWindow.osWindow.Height}";
+                if (_myWindow.osWindow is not null) {
+                    value = new DMFPropertySize((int)_myWindow.osWindow.Width, (int)_myWindow.osWindow.Height);
                     return true;
-                } else if(_myWindow.clydeWindow is not null){
-                    value = $"{_myWindow.clydeWindow.Size.X}x{_myWindow.clydeWindow.Size.Y}";
+                } else if (_myWindow.clydeWindow is not null) {
+                    value = new DMFPropertySize(_myWindow.clydeWindow.Size);
                     return true;
                 } else {
-                    value = $"{UIElement.Size.X}x{UIElement.Size.Y}";
+                    value = new DMFPropertySize(UIElement.Size);
                     return true;
                 }
             case "is-minimized":
-                if(_myWindow.osWindow?.ClydeWindow != null){
-                    value = _myWindow.osWindow.ClydeWindow.IsMinimized ? "true" : "false";
+                if (_myWindow.osWindow?.ClydeWindow != null) {
+                    value = new DMFPropertyBool(_myWindow.osWindow.ClydeWindow.IsMinimized);
                     return true;
-                } else if(_myWindow.clydeWindow is not null){
-                    value = _myWindow.clydeWindow.IsMinimized ? "true" : "false";
+                } else if (_myWindow.clydeWindow is not null) {
+                    value = new DMFPropertyBool(_myWindow.clydeWindow.IsMinimized);
                     return true;
                 } else {
-                    value = "false";
+                    value = new DMFPropertyBool(false);
                     return true;
                 }
             case "is-maximized": //TODO this is currently "not isMinimised" because RT doesn't expose a maximised check
-                if(_myWindow.osWindow?.ClydeWindow != null){
-                    value = !_myWindow.osWindow.ClydeWindow.IsMinimized ? "true" : "false";
+                if (_myWindow.osWindow?.ClydeWindow != null) {
+                    value = new DMFPropertyBool(!_myWindow.osWindow.ClydeWindow.IsMinimized);
                     return true;
-                } else if(_myWindow.clydeWindow is not null){
-                    value = !_myWindow.clydeWindow.IsMinimized ? "true" : "false";
+                } else if (_myWindow.clydeWindow is not null) {
+                    value = new DMFPropertyBool(!_myWindow.clydeWindow.IsMinimized);
                     return true;
                 } else {
-                    value = "false";
+                    value = new DMFPropertyBool(false);
                     return true;
                 }
             default:
                 return base.TryGetProperty(property, out value);
         }
+    }
+
+    public override void SetProperty(string property, string value, bool manualWinset = false) {
+        if (property is "size" or "pos")
+            return; // TODO: RT offers no ability to resize or position windows
+
+        base.SetProperty(property, value, manualWinset);
     }
 }

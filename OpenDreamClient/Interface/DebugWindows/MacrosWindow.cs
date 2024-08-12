@@ -22,10 +22,10 @@ public sealed class MacrosWindow : OSWindow {
             var isCurrent = (macroSet == _interfaceManager.DefaultWindow?.Macro);
             var tabName = macroSet.Id;
             if (isCurrent)
-                tabName += " (Current)";
+                tabName.Value += " (Current)";
 
             var macroTable = CreateMacroTable(macroSet);
-            TabContainer.SetTabTitle(macroTable, tabName);
+            TabContainer.SetTabTitle(macroTable, tabName.AsRaw());
             tabs.AddChild(macroTable);
 
             if (isCurrent)
@@ -43,10 +43,10 @@ public sealed class MacrosWindow : OSWindow {
 
         foreach (var macro in macroSet.Macros.Values) {
             var idText = macro.Id;
-            if (macro.ElementDescriptor.Name != idText)
-                idText += $" ({macro.ElementDescriptor.Name})";
+            if (macro.ElementDescriptor.Name.Value != idText.Value)
+                idText.Value += $" ({macro.ElementDescriptor.Name.AsRaw()})";
 
-            var idLabel = new Label { Text = idText };
+            var idLabel = new Label { Text = idText.AsRaw() };
             var commandLabel = new Label { Text = macro.Command };
             var executeButton = new Button { Text = "Execute" };
 

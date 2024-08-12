@@ -28,12 +28,16 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 8.0.100
-    - name: Install dependencies
+    - name: Install compiler dependencies
       run: dotnet restore main/DMCompiler/DMCompiler.csproj
-    - name: Build
-      run: dotnet build main/DMCompiler/DMCompiler.csproj --configuration Release --no-restore /m
+    - name: Install disassembler dependencies
+      run: dotnet restore main/DMDisassembler/DMDisassembler.csproj
+    - name: Build compiler
+      run: dotnet build main/DMCompiler/DMCompiler.csproj --property WarningLevel=0 --configuration Release --no-restore /m
+    - name: Build disassembler
+      run: dotnet build main/DMDisassembler/DMDisassembler.csproj --property WarningLevel=0 --configuration Release --no-restore /m
     - name: Compile TestGame
-      run: main\bin\DMCompiler\DMCompiler.exe main\TestGame\environment.dme
+      run: main\bin\DMCompiler\DMCompiler.exe main\TestGame\environment.dme --suppress-unimplemented
     - name: Checkout /tg/station Master
       uses: actions/checkout@v2
       with:
@@ -41,7 +45,9 @@ jobs:
         ref: master
         path: tg
     - name: Compile /tg/station Master
-      run: main\bin\DMCompiler\DMCompiler.exe tg\tgstation.dme
+      run: main\bin\DMCompiler\DMCompiler.exe tg\tgstation.dme --suppress-unimplemented
+    - name: Disassemble /tg/station Master
+      run: main\bin\DMDisassembler\DMDisassembler.exe tg\tgstation.json crash-on-error
     - name: Checkout Goonstation Master
       uses: actions/checkout@v2
       with:
@@ -51,7 +57,7 @@ jobs:
     - name: Compile Goonstation Master
       run: |
         New-Item goon\+secret\__secret.dme -type file
-        main\bin\DMCompiler\DMCompiler.exe goon\goonstation.dme
+        main\bin\DMCompiler\DMCompiler.exe goon\goonstation.dme --suppress-unimplemented
     - name: Checkout Paradise Master
       uses: actions/checkout@v2
       with:
@@ -59,7 +65,7 @@ jobs:
         ref: master
         path: para
     - name: Compile Paradise Master
-      run: main\bin\DMCompiler\DMCompiler.exe para\paradise.dme
+      run: main\bin\DMCompiler\DMCompiler.exe para\paradise.dme --suppress-unimplemented
     - name: Checkout Nebula Dev
       uses: actions/checkout@v2
       with:
@@ -67,4 +73,4 @@ jobs:
         ref: dev
         path: nebula
     - name: Compile Nebula Dev
-      run: main\bin\DMCompiler\DMCompiler.exe nebula\nebula.dme
+      run: main\bin\DMCompiler\DMCompiler.exe nebula\nebula.dme --suppress-unimplemented

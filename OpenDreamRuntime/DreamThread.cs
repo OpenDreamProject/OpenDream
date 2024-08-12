@@ -83,6 +83,9 @@ namespace OpenDreamRuntime {
                     return (_verbDesc != null) ? new DreamValue(_verbDesc) : DreamValue.Null;
                 case "invisibility":
                     return new DreamValue(Invisibility);
+                case "hidden":
+                    Logger.GetSawmill("opendream.dmproc").Warning("The 'hidden' field on verbs will always return null.");
+                    return DreamValue.Null;
                 default:
                     throw new Exception($"Cannot get field \"{field}\" from {OwningType.ToString()}.{Name}()");
             }
@@ -206,6 +209,11 @@ namespace OpenDreamRuntime {
 
         public static DreamValue Run(DreamProc proc, DreamObject src, DreamObject? usr, params DreamValue[] arguments) {
             var context = new DreamThread(proc.ToString());
+
+            if (proc is NativeProc nativeProc) {
+                return nativeProc.Call(context, src, usr, new(arguments));
+            }
+
             var state = proc.CreateState(context, src, usr, new DreamProcArguments(arguments));
             context.PushProcState(state);
             return context.Resume();
@@ -390,9 +398,6 @@ namespace OpenDreamRuntime {
 
             var msg = builder.ToString();
 
-            // TODO: Defining world.Error() causes byond to no longer print exceptions to the log unless ..() is called
-            dreamMan.WriteWorldLog(msg, LogLevel.Error);
-
             // Instantiate an /exception and invoke world.Error()
             string file = string.Empty;
             int line = 0;
@@ -401,8 +406,8 @@ namespace OpenDreamRuntime {
                 file = source.Item1;
                 line = source.Item2;
             }
-            dreamMan.HandleException(exception, msg, file, line);
 
+            dreamMan.HandleException(exception, msg, file, line);
             IoCManager.Resolve<IDreamDebugManager>().HandleException(this, exception);
         }
 
@@ -410,6 +415,7 @@ namespace OpenDreamRuntime {
             if (_current is not null) {
                 yield return _current;
             }
+
             foreach (var entry in _stack) {
                 yield return entry;
             }

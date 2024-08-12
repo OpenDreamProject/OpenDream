@@ -10,13 +10,19 @@ namespace OpenDreamRuntime.Procs.Native;
 /// A container of procs that act as helpers for a few native procs.
 /// </summary>
 internal static partial class DreamProcNativeHelpers {
-    private static readonly char[] radixArray = new char[36] {
+    private static readonly char[] RadixArray = [
         '0', '1', '2', '3', '4', '5', '6', '7',
         '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
         'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
         'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
         'w', 'x', 'y', 'z'
-    };
+    ];
+
+    private static readonly AtomDirection[] AtomDirs = [
+        AtomDirection.North, AtomDirection.South, AtomDirection.East, AtomDirection.West, AtomDirection.Northeast,
+        AtomDirection.Northwest, AtomDirection.Southeast, AtomDirection.Southwest
+    ];
+
     /// <summary>
     /// This is a helper proc for oview, view, orange, and range to do their strange iteration with.<br/>
     /// BYOND has a very strange, kinda-spiralling iteration pattern for the above procs, <br/>
@@ -386,7 +392,7 @@ internal static partial class DreamProcNativeHelpers {
         }
 
         while (value > 0) {
-            resString.Insert(0, radixArray[value % radix]);
+            resString.Insert(0, RadixArray[value % radix]);
             value /= radix;
         }
 
@@ -437,7 +443,8 @@ internal static partial class DreamProcNativeHelpers {
     /// <summary>
     /// Gets the turf 1 step away from an atom in the given direction
     /// </summary>
-    public static DreamObjectTurf? GetStep(AtomManager atomManager, IDreamMapManager mapManager, DreamObjectAtom loc, AtomDirection dir) {
+    public static DreamObjectTurf? GetStep(AtomManager atomManager, IDreamMapManager mapManager, DreamObjectAtom loc,
+        AtomDirection dir) {
         var dirInt = (int)dir;
         var locPos = atomManager.GetAtomPosition(loc);
 
@@ -462,4 +469,12 @@ internal static partial class DreamProcNativeHelpers {
 
     [GeneratedRegex("[\\^]|[^a-z0-9@]")]
     private static partial Regex CkeyRegex();
+
+    /// <summary>
+    /// Returns one of NORTH, SOUTH, EAST, WEST, NORTHEAST, NORTHWEST, SOUTHEAST, or SOUTHWEST
+    /// </summary>
+    public static AtomDirection GetRandomDirection(DreamManager dreamManager) {
+        var index = dreamManager.Random.Next(0, 8); // [0, 8). There's 8 options but arrays start at 0.
+        return AtomDirs[index];
+    }
 }

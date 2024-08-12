@@ -140,6 +140,9 @@ internal class AnnotatedBytecodeSerializer {
                 case AnnotatedBytecodeTypeId annotatedBytecodeTypeId:
                     _bytecodeWriter.Write(annotatedBytecodeTypeId.TypeId);
                     break;
+                case AnnotatedBytecodeTypeFilter annotatedBytecodeTypeFilter:
+                    _bytecodeWriter.Write(annotatedBytecodeTypeFilter.FilterTypeId);
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }

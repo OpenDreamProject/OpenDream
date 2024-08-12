@@ -107,6 +107,36 @@ namespace OpenDreamRuntime.Procs {
             return new DreamValueArrayEnumerator(Array.Empty<DreamValue>());
         }
 
+        private static IDreamValueEnumerator GetContentsEnumeratorAeiou(DreamObjectTree objectTree, AtomManager atomManager, DreamValue value, byte? filterType) {
+            if (!value.TryGetValueAsDreamList(out var list)) {
+                if (value.TryGetValueAsDreamObject(out var dreamObject)) {
+                    if (dreamObject == null)
+                        return new DreamValueArrayEnumerator(Array.Empty<DreamValue>());
+
+                    if (dreamObject is DreamObjectAtom) {
+                        list = dreamObject.GetVariable("contents").MustGetValueAsDreamList();
+                    } else if (dreamObject is DreamObjectWorld) {
+                        return new WorldContentsEnumerator(atomManager, filterType);
+                    }
+                }
+            }
+
+            if (list != null) {
+                // world.contents has its own special enumerator to prevent the huge copy
+                if (list is WorldContentsList)
+                    return new WorldContentsEnumerator(atomManager, filterType);
+
+                var values = list.GetValues().ToArray();
+
+                return filterType == null
+                    ? new DreamValueArrayEnumerator(values)
+                    : new FilteredDreamValueArrayEnumeratorAeiou(values, (byte) filterType);
+            }
+
+            // BYOND ignores all floats, strings, types, etc. here and just doesn't run the loop.
+            return new DreamValueArrayEnumerator(Array.Empty<DreamValue>());
+        }
+
         public static ProcStatus CreateListEnumerator(DMProcState state) {
             var enumeratorId = state.ReadInt();
             var enumerator = GetContentsEnumerator(state.Proc.ObjectTree, state.Proc.AtomManager, state.Pop(), null);
@@ -129,7 +159,7 @@ namespace OpenDreamRuntime.Procs {
             var enumeratorId = state.ReadInt();
             var filterTypeId = state.ReadByte();
             var filterType = state.Proc.ObjectTree.GetTreeEntry(filterTypeId);
-            var enumerator = GetContentsEnumerator(state.Proc.ObjectTree, state.Proc.AtomManager, state.Pop(), filterType);
+            var enumerator = GetContentsEnumeratorAeiou(state.Proc.ObjectTree, state.Proc.AtomManager, state.Pop(), filterType);
 
             state.Enumerators[enumeratorId] = enumerator;
             return ProcStatus.Continue;

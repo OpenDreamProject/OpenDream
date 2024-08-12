@@ -516,6 +516,11 @@ public sealed class TreeEntry {
         return (TreeIndex - ancestor.TreeIndex) <= ancestor.ChildCount;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool IsSubtypeOf(byte ancestors) {
+        return true;
+    }
+
     public override string ToString() {
         return Path;
     }

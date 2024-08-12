@@ -197,4 +197,9 @@ public sealed class DreamObjectDefinition {
     public bool IsSubtypeOf(TreeEntry ancestor) {
         return TreeEntry.IsSubtypeOf(ancestor);
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool IsSubtypeOf(byte ancestors) {
+        return TreeEntry.IsSubtypeOf(ancestors);
+    }
 }

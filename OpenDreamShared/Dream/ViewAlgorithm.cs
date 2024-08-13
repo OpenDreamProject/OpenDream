@@ -35,7 +35,7 @@ public static class ViewAlgorithm {
         public VisibilityFlags Visibility;
         public bool IsVisible => ((Visibility & VisibilityFlags.Normal) != 0);
 
-        public bool IsAudible = false;
+        public bool IsAudible;
     }
 
     private static readonly List<Tile> BoundaryTiles = new();
@@ -113,7 +113,6 @@ public static class ViewAlgorithm {
                 continue;
 
             tile.Vis2 = tile.Vis;
-
         }
 
         // Step 9

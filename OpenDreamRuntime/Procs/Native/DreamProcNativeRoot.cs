@@ -2618,6 +2618,7 @@ namespace OpenDreamRuntime.Procs.Native {
             // save the start/end beforehand to staple back on at the end
             string startText = text[0..Math.Max(start,0)];
             string endText = text[Math.Min(end, text.Length)..];
+            // figure out if we should be adding the start/end in the first place
 
             if(start > 0 || end < text.Length)
                 text = text[Math.Max(start,0)..Math.Min(end, text.Length)];
@@ -2626,7 +2627,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             if (delim.TryGetValueAsDreamObject<DreamObjectRegex>(out var regexObject)) {
                 if(includeDelimiters) {
-                    var values = new List<string> {startText};
+                    var values = new List<string>();
                     int pos = 0;
                     foreach (Match m in regexObject.Regex.Matches(text)) {
                         values.Add(text.Substring(pos, m.Index - pos));
@@ -2634,13 +2635,15 @@ namespace OpenDreamRuntime.Procs.Native {
                         pos = m.Index + m.Length;
                     }
                     values.Add(text.Substring(pos));
-                    values.Add(endText);
-                    return new DreamValue(bundle.ObjectTree.CreateList(values.ToArray()));
+                    string[] arrayValues = values.ToArray();
+                    arrayValues[0] = startText + arrayValues[0];
+                    arrayValues[arrayValues.Length-1] = arrayValues[arrayValues.Length-1] + endText;
+                    return new DreamValue(bundle.ObjectTree.CreateList(arrayValues));
                 } else {
-                    List<string> values = new List<string> {startText};
-                    values.AddRange(regexObject.Regex.Split(text));
-                    values.Add(endText);
-                    return new DreamValue(bundle.ObjectTree.CreateList(values.ToArray()));
+                    string[] values = regexObject.Regex.Split(text);
+                    values[0] = startText + values[0];
+                    values[values.Length-1] = values[values.Length-1] + endText;
+                    return new DreamValue(bundle.ObjectTree.CreateList(values));
                 }
             } else if (delim.TryGetValueAsString(out var delimiter)) {
                 string[] splitText;
@@ -2657,10 +2660,9 @@ namespace OpenDreamRuntime.Procs.Native {
                 } else {
                     splitText = text.Split(delimiter);
                 }
-                List<string> finalList = new List<string> {startText};
-                finalList.AddRange(splitText);
-                finalList.Add(endText);
-                return new DreamValue(bundle.ObjectTree.CreateList(finalList.ToArray()));
+                splitText[0] = startText + splitText[0];
+                splitText[splitText.Length-1] = splitText[splitText.Length-1] + endText;
+                return new DreamValue(bundle.ObjectTree.CreateList(splitText));
             } else {
                 return new DreamValue(bundle.ObjectTree.CreateList());
             }

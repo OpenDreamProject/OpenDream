@@ -3,7 +3,6 @@ using OpenDreamShared.Dream;
 using System.Text.RegularExpressions;
 using OpenDreamRuntime.Objects.Types;
 using System.Text;
-using FastAccessors;
 
 namespace OpenDreamRuntime.Procs.Native;
 

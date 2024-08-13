@@ -96,7 +96,14 @@
 	verb/say_loud()
 		var/msg = input("Please put the message you want to say loudly.", "Say Loud", "Hello!")
 		world << "[ckey] says loudly: \"[msg]\""
-	
+
+	verb/show_ohearers()
+		var/list/ohearers = ohearers()
+
+		usr << "All hearers: "
+		for (var/mob/hearer in ohearers)
+			usr << hearer
+
 	verb/start_walk()
 		set name = "Walk North"
 		usr << "Walking north. Use the 'Walk Stop' verb to cease."

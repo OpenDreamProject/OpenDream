@@ -96,6 +96,21 @@
 	verb/say_loud()
 		var/msg = input("Please put the message you want to say loudly.", "Say Loud", "Hello!")
 		world << "[ckey] says loudly: \"[msg]\""
+	
+	verb/start_walk()
+		set name = "Walk North"
+		usr << "Walking north. Use the 'Walk Stop' verb to cease."
+		walk(src, NORTH)
+		
+	verb/start_walk_rand()
+		set name = "Walk Randomly"
+		usr << "Walking randomly. Use the 'Walk Stop' verb to cease."
+		walk_rand(src)
+	
+	verb/stop_walk()
+		set name = "Walk Stop"
+		usr << "Walking stopped."
+		walk(src, 0)
 
 	verb/move_up()
 		step(src, UP)

@@ -1906,7 +1906,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 if (mob.X == centerPos.X && mob.Y == centerPos.Y)
                     continue;
 
-                if (Math.Abs(centerPos.X - mob.X) <= depth && Math.Abs(centerPos.Y - mob.Y) <= depth && centerPos.Z == mob.Z) {
+                if (centerPos.Z == mob.Z && Math.Abs(centerPos.X - mob.X) <= depth && Math.Abs(centerPos.Y - mob.Y) <= depth) {
                     (_, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, mob, bundle.Arguments);
                     var eyePos = bundle.AtomManager.GetAtomPosition(mob);
                     var viewData = DreamProcNativeHelpers.CollectViewData(bundle.AtomManager, bundle.MapManager, eyePos, range);
@@ -3128,7 +3128,7 @@ namespace OpenDreamRuntime.Procs.Native {
             foreach (var atom in bundle.AtomManager.EnumerateAtoms(bundle.ObjectTree.Mob)) {
                 var mob = (DreamObjectMob)atom;
 
-                if (Math.Abs(centerPos.X - mob.X) <= depth && Math.Abs(centerPos.Y - mob.Y) <= depth && centerPos.Z == mob.Z) {
+                if (centerPos.Z == mob.Z && Math.Abs(centerPos.X - mob.X) <= depth && Math.Abs(centerPos.Y - mob.Y) <= depth) {
                     (_, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, mob, bundle.Arguments);
                     var eyePos = bundle.AtomManager.GetAtomPosition(mob);
                     var viewData = DreamProcNativeHelpers.CollectViewData(bundle.AtomManager, bundle.MapManager, eyePos, range);

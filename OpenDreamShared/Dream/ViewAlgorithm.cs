@@ -60,7 +60,7 @@ public static class ViewAlgorithm {
             tile.Vis2 = 0;
             tile.IsAudible = false;
 
-            if (tile.DeltaX == 0 && tile.DeltaY == 0)
+            if (tile is {DeltaX: 0, DeltaY: 0})
                 ear = tile;
         }
 
@@ -201,7 +201,7 @@ public static class ViewAlgorithm {
             tile.Vis2 = 0;
             tile.Visibility = 0;
 
-            if (tile.DeltaX == 0 && tile.DeltaY == 0)
+            if (tile is {DeltaX: 0, DeltaY: 0})
                 eye = tile;
         }
 

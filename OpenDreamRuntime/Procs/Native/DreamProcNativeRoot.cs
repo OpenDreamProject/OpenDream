@@ -2598,19 +2598,50 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
         [DreamProcParameter("include_delimiters", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
         public static DreamValue NativeProc_splittext(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+            // Handle args first
             if (!bundle.GetArgument(0, "Text").TryGetValueAsString(out var text)) {
                 return new DreamValue(bundle.ObjectTree.CreateList());
             }
 
+            var delim = bundle.GetArgument(1, "Delimiter"); //can either be a regex or string
+
+            // Handle checking for empty string delimiters for non-regex, and setting up delimiterString/regexPattern
+            bool isEmptyString = false;
+            bool isRegex = false; // This exists specifically so that we can mimic DM and add some "" at the end if its not cut off beforehand (god, why)
+            delim.TryGetValueAsString(out var delimiterString);
+            if (delim.TryGetValueAsDreamObject<DreamObjectRegex>(out var regexObject)) {
+                isRegex = true;
+                string regexPattern = regexObject.Regex.ToString();
+                isEmptyString = string.IsNullOrEmpty(regexPattern);
+            }
+            else if (delimiterString is string) {
+                isEmptyString = string.IsNullOrEmpty(delimiterString);
+            }
+            else {
+                return new DreamValue(bundle.ObjectTree.CreateList()); // No Delimiter arg = Empty list
+            }
+
             int start = 0;
             int end = 0;
-            if(bundle.GetArgument(2, "Start").TryGetValueAsInteger(out start))
+            bool gotStart = bundle.GetArgument(2, "Start").TryGetValueAsInteger(out start);
+            bool gotEnd = bundle.GetArgument(3, "End").TryGetValueAsInteger(out end);
+            if (gotStart) {
+                if (gotEnd && (start == end)) {
+                    return new DreamValue(bundle.ObjectTree.CreateList([text]));
+                }
+                else if (start == 0) {
+                    return new DreamValue(bundle.ObjectTree.CreateList());
+                }
                 start -= 1; //1-indexed
-            if(bundle.GetArgument(3, "End").TryGetValueAsInteger(out end))
+            }
+
+            if(gotEnd) {
                 if(end == 0)
                     end = text.Length;
                 else
                     end -= 1; //1-indexed
+            }
+
             bool includeDelimiters = false;
             if(bundle.GetArgument(4, "include_delimiters").TryGetValueAsInteger(out var includeDelimitersInt))
                 includeDelimiters = includeDelimitersInt != 0; //idk why BYOND doesn't just use truthiness, but it doesn't, so...
@@ -2620,51 +2651,92 @@ namespace OpenDreamRuntime.Procs.Native {
             string endText = text[Math.Min(end, text.Length)..];
             // figure out if we should be adding the start/end in the first place
 
+            string cutText;
             if(start > 0 || end < text.Length)
-                text = text[Math.Max(start,0)..Math.Min(end, text.Length)];
+                cutText = text[Math.Max(start,0)..Math.Min(end, text.Length)];
+            else
+                cutText = text;
 
-            var delim = bundle.GetArgument(1, "Delimiter"); //can either be a regex or string
+            // Actual special handling for empty str Delimiters
+            if (isEmptyString && !isRegex) {
+                if (includeDelimiters) {
+                    var values = new List<string>();
+                    bool excludeLastDelimiter = end >= text.Length;
+                    for (var i = 0; i < cutText.Length; i++) {
+                        values.Add(cutText[i].ToString());
+                        values.Add("");
+                    }
+                    if (!excludeLastDelimiter) {
+                        values.Add(endText);
+                    }
+                    else {
+                        values.Pop();
+                    }
+                    string[] finalValues = values.ToArray();
+                    finalValues[0] = startText + finalValues[0];
+                    if (excludeLastDelimiter)
+                        finalValues[finalValues.Length-1] = finalValues[finalValues.Length-1] + endText;
+                    return new DreamValue(bundle.ObjectTree.CreateList(finalValues.ToArray()));
+                }
+                else {
+                    // 'Easy' solution if we don't need the delimiters.
+                    // Weird because of the way the start text is prepended to the 1st and end text is appened as a new element in DM
+                    IEnumerable<string> values = cutText.Select(x => new string(x, 1));
+                    if (end < text.Length)
+                        values.Append("");
+                    values.Append(endText);
+                    string[] finalValues = values.ToArray();
+                    finalValues[0] = startText + finalValues[0];
+                    return new DreamValue(bundle.ObjectTree.CreateList(finalValues));
+                }
+            }
 
-            if (delim.TryGetValueAsDreamObject<DreamObjectRegex>(out var regexObject)) {
+            // Delimiter is regex/not empty, handle accordingly
+            if (regexObject is DreamObjectRegex) {
                 if(includeDelimiters) {
                     var values = new List<string>();
                     int pos = 0;
-                    foreach (Match m in regexObject.Regex.Matches(text)) {
-                        values.Add(text.Substring(pos, m.Index - pos));
-                        values.Add(m.Value);
+                    foreach (Match m in regexObject.Regex.Matches(cutText)) {
+                        string subStr = cutText.Substring(pos, m.Index - pos);
+                        // First pair of subStr/m.Value must not be included if both are empty
+                        if (!string.IsNullOrEmpty(subStr))
+                            values.Add(subStr);
+                            values.Add(m.Value);
                         pos = m.Index + m.Length;
                     }
-                    values.Add(text.Substring(pos));
-                    string[] arrayValues = values.ToArray();
-                    arrayValues[0] = startText + arrayValues[0];
-                    arrayValues[arrayValues.Length-1] = arrayValues[arrayValues.Length-1] + endText;
-                    return new DreamValue(bundle.ObjectTree.CreateList(arrayValues));
+                    if (string.IsNullOrEmpty(values.First()))
+                        values.RemoveAt(0);
+                    if (string.IsNullOrEmpty(values.Last()))
+                        values.Pop();
+                    string[] finalValues = values.ToArray();
+                    return new DreamValue(bundle.ObjectTree.CreateList(finalValues));
                 } else {
-                    string[] values = regexObject.Regex.Split(text);
+                    string[] values = regexObject.Regex.Split(cutText);
+                    // Weird DM behavior: Zero-width splits dont include matches for the leftmost side
+                    if (isEmptyString)
+                        values = values[1..];
                     values[0] = startText + values[0];
                     values[values.Length-1] = values[values.Length-1] + endText;
                     return new DreamValue(bundle.ObjectTree.CreateList(values));
                 }
-            } else if (delim.TryGetValueAsString(out var delimiter)) {
+            } else {
                 string[] splitText;
                 if(includeDelimiters) {
                     //basically split on delimiter, and then add the delimiter back in after each split (except the last one)
-                    splitText = text.Split(delimiter);
+                    splitText = cutText.Split(delimiterString);
                     string[] longerSplitText = new string[splitText.Length * 2 - 1];
                     for(int i = 0; i < splitText.Length; i++) {
                         longerSplitText[i * 2] = splitText[i];
                         if(i < splitText.Length - 1)
-                            longerSplitText[i * 2 + 1] = delimiter;
+                            longerSplitText[i * 2 + 1] = delimiterString;
                     }
                     splitText = longerSplitText;
                 } else {
-                    splitText = text.Split(delimiter);
+                    splitText = cutText.Split(delimiterString);
                 }
                 splitText[0] = startText + splitText[0];
                 splitText[splitText.Length-1] = splitText[splitText.Length-1] + endText;
                 return new DreamValue(bundle.ObjectTree.CreateList(splitText));
-            } else {
-                return new DreamValue(bundle.ObjectTree.CreateList());
             }
         }
 

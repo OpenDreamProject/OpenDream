@@ -2704,10 +2704,14 @@ namespace OpenDreamRuntime.Procs.Native {
                             values.Add(m.Value);
                         pos = m.Index + m.Length;
                     }
+                    // Trim zero-width matches at start/end because BYOND
                     if (string.IsNullOrEmpty(values.First()))
                         values.RemoveAt(0);
                     if (string.IsNullOrEmpty(values.Last()))
                         values.Pop();
+                    // Glue back together afterwards (Order is important)
+                    values.Insert(0, startText);
+                    values.Add(endText);
                     string[] finalValues = values.ToArray();
                     return new DreamValue(bundle.ObjectTree.CreateList(finalValues));
                 } else {

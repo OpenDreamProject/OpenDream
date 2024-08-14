@@ -1445,7 +1445,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("list2params")]
         [DreamProcParameter("List")]
         public static DreamValue NativeProc_list2params(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            if (!bundle.GetArgument(0, "List").TryGetValueAsDreamList(out DreamList list))
+            if (!bundle.GetArgument(0, "List").TryGetValueAsDreamList(out DreamList? list))
                 return new DreamValue(string.Empty);
             return new DreamValue(list2params(list));
         }
@@ -1687,7 +1687,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             byte[] bytes;
 
-            if (arg.TryGetValueAsDreamResource(out DreamResource resource)) {
+            if (arg.TryGetValueAsDreamResource(out DreamResource? resource)) {
                 byte[]? filebytes = resource.ResourceData;
 
                 if (filebytes == null) {
@@ -2224,7 +2224,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 return DreamValue.Null;
             }
 
-            if (!ColorHelpers.TryParseColor(color, out var c, defaultAlpha: null)) {
+            if (!ColorHelpers.TryParseColor(color, out var c, defaultAlpha: null!)) {
                 Rgb2NumBadColor();
                 return DreamValue.Null;
             }
@@ -3298,7 +3298,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_winset(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamValue player = bundle.GetArgument(0, "player");
             DreamValue controlId = bundle.GetArgument(1, "control_id");
-            string winsetControlId = (!controlId.IsNull) ? controlId.GetValueAsString() : null;
+            string winsetControlId = (!controlId.IsNull) ? controlId.GetValueAsString() : null!;
             string winsetParams = bundle.GetArgument(2, "params").GetValueAsString();
 
             DreamConnection? connection = null;

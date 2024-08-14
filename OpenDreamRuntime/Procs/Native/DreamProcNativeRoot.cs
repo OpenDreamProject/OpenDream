@@ -1294,7 +1294,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     return new DreamValue(list);
                 }
                 case JsonValueKind.String:
-                    return new DreamValue(jsonElement.GetString());
+                    return new DreamValue(jsonElement.GetString() ?? ""); // it shouldn't be null but it was throwing a warning
                 case JsonValueKind.Number:
                     if (!jsonElement.TryGetSingle(out float floatValue)) {
                         throw new Exception("Invalid number " + jsonElement);
@@ -2399,7 +2399,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
 
                 return new DreamValue(1);
-            } else if (!bundle.GetArgument(1, "T2").TryGetValueAsString(out t2)) {
+            } else if (!bundle.GetArgument(1, "T2").TryGetValueAsString(out t2!)) {
                 return new DreamValue(-1);
             }
 
@@ -2419,7 +2419,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
 
                 return new DreamValue(1);
-            } else if (!bundle.GetArgument(1, "T2").TryGetValueAsString(out t2)) {
+            } else if (!bundle.GetArgument(1, "T2").TryGetValueAsString(out t2!)) {
                 return new DreamValue(-1);
             }
 
@@ -2532,7 +2532,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 else
                     return new DreamValue(insertText);
             else if(text == "")
-                return new DreamValue(insertText);
+                return new DreamValue(insertText!);
 
             //runtime if start = 0 runtime error: bad text or out of bounds
 
@@ -2546,7 +2546,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if(start == 0 || start > text.Length || start > end)
                 throw new Exception("bad text or out of bounds");
 
-            string result = text.Remove(start - 1, (end-start)).Insert(start - 1, insertText);
+            string result = text.Remove(start - 1, (end-start)).Insert(start - 1, insertText!);
 
             return new DreamValue(result);
         }
@@ -2568,7 +2568,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 else
                     return new DreamValue(insertText);
             else if(text == "")
-                return new DreamValue(insertText);
+                return new DreamValue(insertText!);
 
             //runtime if start = 0 runtime error: bad text or out of bounds
             StringInfo textElements = new StringInfo(text);
@@ -3288,7 +3288,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new("true");
             }
 
-            return await connection.WinGet(controlId, paramsValue);
+            return await connection.WinGet(controlId!, paramsValue);
         }
 
         [DreamProc("winset")]

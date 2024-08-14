@@ -651,13 +651,13 @@ namespace OpenDreamRuntime.Procs.Native {
 
             string filePath;
             if (file.TryGetValueAsDreamResource(out var resource)) {
-                filePath = resource.ResourcePath;
-            } else if(!file.TryGetValueAsString(out filePath)) {
+                filePath = resource.ResourcePath!;
+            } else if(!file.TryGetValueAsString(out filePath!)) {
                 throw new Exception($"{file} is not a valid file");
             }
 
             bool successful;
-            if (filePath.EndsWith("/")) {
+            if (filePath!.EndsWith("/")) {
                 successful = bundle.ResourceManager.DeleteDirectory(filePath);
             } else {
                 successful = bundle.ResourceManager.DeleteFile(filePath);
@@ -673,12 +673,12 @@ namespace OpenDreamRuntime.Procs.Native {
 
             string filePath;
             if (file.TryGetValueAsDreamResource(out var rsc)) {
-                filePath = rsc.ResourcePath;
-            } else if (!file.TryGetValueAsString(out filePath)) {
+                filePath = rsc.ResourcePath!;
+            } else if (!file.TryGetValueAsString(out filePath!)) {
                 return DreamValue.Null;
             }
 
-            return new DreamValue(bundle.ResourceManager.DoesFileExist(filePath) ? 1 : 0);
+            return new DreamValue(bundle.ResourceManager.DoesFileExist(filePath!) ? 1 : 0);
         }
 
         [DreamProc("file")]
@@ -708,7 +708,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             if (file.TryGetValueAsString(out var rscPath)) {
                 resource = bundle.ResourceManager.LoadResource(rscPath);
-            } else if (!file.TryGetValueAsDreamResource(out resource)) {
+            } else if (!file.TryGetValueAsDreamResource(out resource!)) {
                 return DreamValue.Null;
             }
 
@@ -788,7 +788,7 @@ namespace OpenDreamRuntime.Procs.Native {
             int start = bundle.GetArgument(2, "Start").MustGetValueAsInteger(); //1-indexed
             int end = bundle.GetArgument(3, "End").MustGetValueAsInteger(); //1-indexed
 
-            if (start > text.Length || start == 0) return new DreamValue(0);
+            if (start > text!.Length || start == 0) return new DreamValue(0);
 
             if (start < 0) {
                 start = text.Length + start + 1; //1-indexed
@@ -808,7 +808,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 return match.Success ? new DreamValue(match.Index + 1) : new DreamValue(0);
             }
 
-            int needleIndex = text.IndexOf(needle, start - 1, end - start, StringComparison.OrdinalIgnoreCase);
+            int needleIndex = text.IndexOf(needle!, start - 1, end - start, StringComparison.OrdinalIgnoreCase);
             return new DreamValue(needleIndex + 1); //1-indexed
         }
 
@@ -839,7 +839,7 @@ namespace OpenDreamRuntime.Procs.Native {
             int start = bundle.GetArgument(2, "Start").MustGetValueAsInteger(); //1-indexed
             int end = bundle.GetArgument(3, "End").MustGetValueAsInteger(); //1-indexed
 
-            if (start <= 0 || start > text.Length || end < 0) return new DreamValue(0);
+            if (start <= 0 || start > text!.Length || end < 0) return new DreamValue(0);
 
             if (end == 0 || end > text.Length + 1) {
                 end = text.Length + 1;
@@ -851,7 +851,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 return match.Success ? new DreamValue(match.Index + 1) : new DreamValue(0);
             }
 
-            int needleIndex = text.IndexOf(needle, start - 1, end - start, StringComparison.InvariantCulture);
+            int needleIndex = text.IndexOf(needle!, start - 1, end - start, StringComparison.InvariantCulture);
             if (needleIndex != -1) {
                 return new DreamValue(needleIndex + 1); //1-indexed
             } else {
@@ -885,9 +885,9 @@ namespace OpenDreamRuntime.Procs.Native {
             if(start > 0)
                 actualstart = start-1;
             else
-                actualstart = (text.Length-1) + start;
-            actualstart += needle.Length-1;
-            actualstart = Math.Max(Math.Min(text.Length, actualstart),0);
+                actualstart = (text!.Length-1) + start;
+            actualstart += needle!.Length-1;
+            actualstart = Math.Max(Math.Min(text!.Length, actualstart),0);
 
             if(end > 0)
                 actualcount = actualstart - (end-1);
@@ -925,9 +925,9 @@ namespace OpenDreamRuntime.Procs.Native {
             if(start > 0)
                 actualstart = start-1;
             else
-                actualstart = (text.Length-1) + start;
-            actualstart += needle.Length-1;
-            actualstart = Math.Max(Math.Min(text.Length, actualstart),0);
+                actualstart = (text!.Length-1) + start;
+            actualstart += needle!.Length-1;
+            actualstart = Math.Max(Math.Min(text!.Length, actualstart),0);
 
             if(end > 0)
                 actualcount = actualstart - (end-1);
@@ -1011,7 +1011,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if(!bundle.GetArgument(1, "ProcName").TryGetValueAsString(out var procName))
                 return new DreamValue(0);
 
-            return new DreamValue(obj.ObjectDefinition.HasProc(procName) ? 1 : 0);
+            return new DreamValue(obj!.ObjectDefinition.HasProc(procName) ? 1 : 0);
         }
 
         [DreamProc("html_decode")]
@@ -2047,7 +2047,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if(center is not DreamObjectTurf) { // If it's not a /turf, we have to include its loc and the loc's contents
                 if(center.TryGetVariable("loc",out DreamValue centerLoc) && centerLoc.TryGetValueAsDreamObject(out var centerLocObject)) {
                     rangeList.AddValue(centerLoc);
-                    if(centerLocObject.GetVariable("contents").TryGetValueAsDreamList(out var locContentsList)) {
+                    if(centerLocObject!.GetVariable("contents").TryGetValueAsDreamList(out var locContentsList)) {
                         foreach (DreamValue content in locContentsList.GetValues()) {
                             rangeList.AddValue(content);
                         }

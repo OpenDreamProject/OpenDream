@@ -656,13 +656,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 throw new Exception($"{file} is not a valid file");
             }
 
-            bool successful;
-            if (filePath!.EndsWith("/")) {
-                successful = bundle.ResourceManager.DeleteDirectory(filePath);
-            } else {
-                successful = bundle.ResourceManager.DeleteFile(filePath);
-            }
-
+            bool successful = filePath.EndsWith("/") ? bundle.ResourceManager.DeleteDirectory(filePath) : bundle.ResourceManager.DeleteFile(filePath);
             return new DreamValue(successful ? 1 : 0);
         }
 
@@ -678,7 +672,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 return DreamValue.Null;
             }
 
-            return new DreamValue(bundle.ResourceManager.DoesFileExist(filePath!) ? 1 : 0);
+            return new DreamValue(bundle.ResourceManager.DoesFileExist(filePath) ? 1 : 0);
         }
 
         [DreamProc("file")]

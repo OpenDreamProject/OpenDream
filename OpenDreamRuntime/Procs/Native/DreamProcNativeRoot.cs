@@ -652,7 +652,7 @@ namespace OpenDreamRuntime.Procs.Native {
             string? filePath;
             if (file.TryGetValueAsDreamResource(out var resource)) {
                 filePath = resource.ResourcePath;
-            } else if(file.TryGetValueAsString(out filePath)) {
+            } else if(!file.TryGetValueAsString(out filePath)) {
                 throw new Exception($"{file} is not a valid file");
             }
 

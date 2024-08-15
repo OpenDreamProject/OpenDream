@@ -775,7 +775,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
             }
 
-            if (failCount > 0 || String.IsNullOrEmpty(text) || String.IsNullOrEmpty(needle)) { // the second condition is to ensure the compiler knows text isn't null
+            if (failCount > 0 || String.IsNullOrEmpty(text) || String.IsNullOrEmpty(needle)) {
                 return new DreamValue(failCount == 2 ? 1 : 0);
             }
 
@@ -2039,7 +2039,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
             }
             if(center is not DreamObjectTurf) { // If it's not a /turf, we have to include its loc and the loc's contents
-                if(center.TryGetVariable("loc",out DreamValue centerLoc) && centerLoc.TryGetValueAsDreamObject(out var centerLocObject)) {
+                if(center.TryGetVariable("loc",out DreamValue centerLoc) && centerLoc.TryGetValueAsDreamObject<DreamObjectAtom>(out var centerLocObject)) {
                     rangeList.AddValue(centerLoc);
                     if(centerLocObject.GetVariable("contents").TryGetValueAsDreamList(out var locContentsList)) {
                         foreach (DreamValue content in locContentsList.GetValues()) {
@@ -3291,8 +3291,8 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("params", Type = DreamValueTypeFlag.String)]
         public static DreamValue NativeProc_winset(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamValue player = bundle.GetArgument(0, "player");
-            DreamValue? controlId = bundle.GetArgument(1, "control_id");
-            string winsetControlId = (!controlId.IsNull) ? controlId.GetValueAsString() : null;
+            DreamValue controlId = bundle.GetArgument(1, "control_id");
+            string? winsetControlId = (!controlId.IsNull) ? controlId.GetValueAsString() : null;
             string winsetParams = bundle.GetArgument(2, "params").GetValueAsString();
 
             DreamConnection? connection = null;

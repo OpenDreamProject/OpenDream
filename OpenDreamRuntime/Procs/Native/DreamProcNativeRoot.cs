@@ -775,7 +775,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
             }
 
-            if (failCount > 0 || String.IsNullOrEmpty(text) || String.IsNullOrEmpty(needle)) {
+            if (failCount > 0 || string.IsNullOrEmpty(text) || string.IsNullOrEmpty(needle)) {
                 return new DreamValue(failCount == 2 ? 1 : 0);
             }
 
@@ -826,7 +826,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
             }
 
-            if (failCount > 0 || String.IsNullOrEmpty(text) || String.IsNullOrEmpty(needle)) {
+            if (failCount > 0 || string.IsNullOrEmpty(text) || string.IsNullOrEmpty(needle)) {
                 return new DreamValue(failCount == 2 ? 1 : 0);
             }
 
@@ -867,7 +867,8 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!bundle.GetArgument(1, "Needle").TryGetValueAsString(out var needle)) {
                 failCount++;
             }
-            if (failCount > 0 || String.IsNullOrEmpty(text) || String.IsNullOrEmpty(needle)) {
+
+            if (failCount > 0 || string.IsNullOrEmpty(text) || string.IsNullOrEmpty(needle)) {
                 return new DreamValue(failCount == 2 ? 1 : 0);
             }
 
@@ -881,7 +882,7 @@ namespace OpenDreamRuntime.Procs.Native {
             else
                 actualstart = (text.Length-1) + start;
             actualstart += needle.Length-1;
-            actualstart = Math.Max(Math.Min(text!.Length, actualstart),0);
+            actualstart = Math.Max(Math.Min(text.Length, actualstart),0);
 
             if(end > 0)
                 actualcount = actualstart - (end-1);
@@ -907,7 +908,8 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!bundle.GetArgument(1, "Needle").TryGetValueAsString(out var needle)) {
                 failCount++;
             }
-            if (failCount > 0 || String.IsNullOrEmpty(text) || String.IsNullOrEmpty(needle)) {
+
+            if (failCount > 0 || string.IsNullOrEmpty(text) || string.IsNullOrEmpty(needle)) {
                 return new DreamValue(failCount == 2 ? 1 : 0);
             }
 
@@ -921,7 +923,7 @@ namespace OpenDreamRuntime.Procs.Native {
             else
                 actualstart = (text.Length-1) + start;
             actualstart += needle.Length-1;
-            actualstart = Math.Max(Math.Min(text!.Length, actualstart),0);
+            actualstart = Math.Max(Math.Min(text.Length, actualstart),0);
 
             if(end > 0)
                 actualcount = actualstart - (end-1);

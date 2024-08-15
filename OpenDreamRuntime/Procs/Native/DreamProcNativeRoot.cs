@@ -649,14 +649,14 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_fdel(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamValue file = bundle.GetArgument(0, "File");
 
-            string filePath;
+            string? filePath;
             if (file.TryGetValueAsDreamResource(out var resource)) {
-                filePath = resource.ResourcePath!;
-            } else if(!file.TryGetValueAsString(out filePath!)) {
+                filePath = resource.ResourcePath;
+            } else if(file.TryGetValueAsString(out filePath)) {
                 throw new Exception($"{file} is not a valid file");
             }
 
-            bool successful = filePath.EndsWith("/") ? bundle.ResourceManager.DeleteDirectory(filePath) : bundle.ResourceManager.DeleteFile(filePath);
+            bool successful = filePath!.EndsWith("/") ? bundle.ResourceManager.DeleteDirectory(filePath) : bundle.ResourceManager.DeleteFile(filePath);
             return new DreamValue(successful ? 1 : 0);
         }
 
@@ -775,14 +775,14 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
             }
 
-            if (failCount > 0) {
+            if (failCount > 0 || String.IsNullOrEmpty(text) || String.IsNullOrEmpty(needle)) { // the second condition is to ensure the compiler knows text isn't null
                 return new DreamValue(failCount == 2 ? 1 : 0);
             }
 
             int start = bundle.GetArgument(2, "Start").MustGetValueAsInteger(); //1-indexed
             int end = bundle.GetArgument(3, "End").MustGetValueAsInteger(); //1-indexed
 
-            if (start > text!.Length || start == 0) return new DreamValue(0);
+            if (start > text.Length || start == 0) return new DreamValue(0);
 
             if (start < 0) {
                 start = text.Length + start + 1; //1-indexed
@@ -802,7 +802,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 return match.Success ? new DreamValue(match.Index + 1) : new DreamValue(0);
             }
 
-            int needleIndex = text.IndexOf(needle!, start - 1, end - start, StringComparison.OrdinalIgnoreCase);
+            int needleIndex = text.IndexOf(needle, start - 1, end - start, StringComparison.OrdinalIgnoreCase);
             return new DreamValue(needleIndex + 1); //1-indexed
         }
 
@@ -826,14 +826,14 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
             }
 
-            if (failCount > 0) {
+            if (failCount > 0 || String.IsNullOrEmpty(text) || String.IsNullOrEmpty(needle)) {
                 return new DreamValue(failCount == 2 ? 1 : 0);
             }
 
             int start = bundle.GetArgument(2, "Start").MustGetValueAsInteger(); //1-indexed
             int end = bundle.GetArgument(3, "End").MustGetValueAsInteger(); //1-indexed
 
-            if (start <= 0 || start > text!.Length || end < 0) return new DreamValue(0);
+            if (start <= 0 || start > text.Length || end < 0) return new DreamValue(0);
 
             if (end == 0 || end > text.Length + 1) {
                 end = text.Length + 1;
@@ -845,7 +845,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 return match.Success ? new DreamValue(match.Index + 1) : new DreamValue(0);
             }
 
-            int needleIndex = text.IndexOf(needle!, start - 1, end - start, StringComparison.InvariantCulture);
+            int needleIndex = text.IndexOf(needle, start - 1, end - start, StringComparison.InvariantCulture);
             if (needleIndex != -1) {
                 return new DreamValue(needleIndex + 1); //1-indexed
             } else {
@@ -867,7 +867,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!bundle.GetArgument(1, "Needle").TryGetValueAsString(out var needle)) {
                 failCount++;
             }
-            if (failCount > 0) {
+            if (failCount > 0 || String.IsNullOrEmpty(text) || String.IsNullOrEmpty(needle)) {
                 return new DreamValue(failCount == 2 ? 1 : 0);
             }
 
@@ -879,8 +879,8 @@ namespace OpenDreamRuntime.Procs.Native {
             if(start > 0)
                 actualstart = start-1;
             else
-                actualstart = (text!.Length-1) + start;
-            actualstart += needle!.Length-1;
+                actualstart = (text.Length-1) + start;
+            actualstart += needle.Length-1;
             actualstart = Math.Max(Math.Min(text!.Length, actualstart),0);
 
             if(end > 0)
@@ -907,7 +907,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!bundle.GetArgument(1, "Needle").TryGetValueAsString(out var needle)) {
                 failCount++;
             }
-            if (failCount > 0) {
+            if (failCount > 0 || String.IsNullOrEmpty(text) || String.IsNullOrEmpty(needle)) {
                 return new DreamValue(failCount == 2 ? 1 : 0);
             }
 
@@ -919,8 +919,8 @@ namespace OpenDreamRuntime.Procs.Native {
             if(start > 0)
                 actualstart = start-1;
             else
-                actualstart = (text!.Length-1) + start;
-            actualstart += needle!.Length-1;
+                actualstart = (text.Length-1) + start;
+            actualstart += needle.Length-1;
             actualstart = Math.Max(Math.Min(text!.Length, actualstart),0);
 
             if(end > 0)
@@ -1000,12 +1000,12 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("ProcName", Type = DreamValueTypeFlag.String)]
         public static DreamValue NativeProc_hascall(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             var arg = bundle.GetArgument(0, "Object");
-            if (arg.IsNull || !arg.TryGetValueAsDreamObject(out var obj))
+            if (!arg.TryGetValueAsDreamObject<DreamObject>(out var obj))
                 return new DreamValue(0);
             if(!bundle.GetArgument(1, "ProcName").TryGetValueAsString(out var procName))
                 return new DreamValue(0);
 
-            return new DreamValue(obj!.ObjectDefinition.HasProc(procName) ? 1 : 0);
+            return new DreamValue(obj.ObjectDefinition.HasProc(procName) ? 1 : 0);
         }
 
         [DreamProc("html_decode")]
@@ -2041,7 +2041,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if(center is not DreamObjectTurf) { // If it's not a /turf, we have to include its loc and the loc's contents
                 if(center.TryGetVariable("loc",out DreamValue centerLoc) && centerLoc.TryGetValueAsDreamObject(out var centerLocObject)) {
                     rangeList.AddValue(centerLoc);
-                    if(centerLocObject!.GetVariable("contents").TryGetValueAsDreamList(out var locContentsList)) {
+                    if(centerLocObject.GetVariable("contents").TryGetValueAsDreamList(out var locContentsList)) {
                         foreach (DreamValue content in locContentsList.GetValues()) {
                             rangeList.AddValue(content);
                         }
@@ -2218,7 +2218,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 return DreamValue.Null;
             }
 
-            if (!ColorHelpers.TryParseColor(color, out var c, defaultAlpha: null!)) {
+            if (!ColorHelpers.TryParseColor(color, out var c, defaultAlpha: null)) {
                 Rgb2NumBadColor();
                 return DreamValue.Null;
             }

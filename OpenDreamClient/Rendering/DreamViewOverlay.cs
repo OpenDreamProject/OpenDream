@@ -219,7 +219,8 @@ internal sealed class DreamViewOverlay : Overlay {
             else
                 current.Plane = icon.Appearance.Plane;
 
-            current.Layer = (icon.Appearance.Layer < 0) ? parentIcon.Layer : icon.Appearance.Layer; //FLOAT_LAYER
+            //FLOAT_LAYER - if this icon's layer is negative, it's a float layer so set it's layer equal to the parent object and sort through the float_layer shit later
+            current.Layer = (icon.Appearance.Layer < 0) ? parentIcon.Layer : icon.Appearance.Layer;
 
             if (current.BlendMode == BlendMode.Default)
                 current.BlendMode = parentIcon.BlendMode;
@@ -882,7 +883,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         }
 
         //despite assurances to the contrary by the DM Ref, position is in fact used for draw order in topdown mode
-        val = Position.X.CompareTo(other.Position.X);
+        val = -Position.X.CompareTo(other.Position.X);
         if (val != 0) {
             return val;
         }

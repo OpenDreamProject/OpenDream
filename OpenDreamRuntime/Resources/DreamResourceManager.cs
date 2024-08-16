@@ -57,6 +57,7 @@ namespace OpenDreamRuntime.Resources {
         public DreamResource LoadResource(string resourcePath, bool forceReload = false) {
             DreamResource resource;
             int resourceId;
+            resourcePath = Path.GetRelativePath(RootPath, resourcePath); //ensure all paths are relative for consistency
 
             DreamResource GetResource() {
                 // Create a new type of resource based on its extension

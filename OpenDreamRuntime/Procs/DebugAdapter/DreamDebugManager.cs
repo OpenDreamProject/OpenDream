@@ -347,6 +347,12 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
             case RequestDisassemble requestDisassemble:
                 HandleRequestDisassemble(client, requestDisassemble);
                 break;
+            case RequestHotReloadInterface requestHotReloadInterface:
+                HandleRequestHotReloadInterface(client, requestHotReloadInterface);
+                break;
+            case RequestHotReloadResource requestHotReloadResource:
+                HandleRequestHotReloadResource(client, requestHotReloadResource);
+                break;
             default:
                 req.RespondError(client, $"Unknown request \"{req.Command}\"");
                 break;
@@ -824,6 +830,26 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
         // ... and THEN strip everything outside the requested range.
         int requestedPoint = output.FindIndex(di => di.Address == requestDisassemble.Arguments.MemoryReference);
         requestDisassemble.Respond(client, DisassemblySkipTake(output, requestedPoint, requestDisassemble.Arguments.InstructionOffset ?? 0, requestDisassemble.Arguments.InstructionCount));
+    }
+
+    private void HandleRequestHotReloadInterface(DebugAdapterClient client, RequestHotReloadInterface requestHotReloadInterface) {
+        _sawmill.Debug("Debug adapter triggered interface hot reload");
+        try {
+            _dreamManager.HotReloadInterface();
+            requestHotReloadInterface.Respond(client);
+        } catch (Exception e) {
+            requestHotReloadInterface.RespondError(client, e.Message);
+        }
+    }
+
+    private void HandleRequestHotReloadResource(DebugAdapterClient client, RequestHotReloadResource requestHotReloadResource) {
+        _sawmill.Debug("Debug adapter triggered resource hot reload for "+requestHotReloadResource.Arguments.filePath!);
+        try {
+            _dreamManager.HotReloadResource(requestHotReloadResource.Arguments.filePath!);
+            requestHotReloadResource.Respond(client);
+        } catch (Exception e) {
+            requestHotReloadResource.RespondError(client, e.Message);
+        }
     }
 
     private IEnumerable<DisassembledInstruction> DisassemblySkipTake(List<DisassembledInstruction> list, int midpoint, int offset, int count) {

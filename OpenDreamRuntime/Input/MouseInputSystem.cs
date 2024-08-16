@@ -84,8 +84,7 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
         // Handles setting left=1, right=1, or middle=1 mouse param
         if (clickParams.Right) {
             paramsBuilder.Add("right", "1");
-        } else if (clickParams.Middle)
-        {
+        } else if (clickParams.Middle) {
              paramsBuilder.Add("middle", "1");
         } else {
             paramsBuilder.Add("left", "1");

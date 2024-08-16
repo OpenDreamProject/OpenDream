@@ -80,6 +80,7 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
 
     private string ConstructClickParams(ClickParams clickParams) {
         NameValueCollection paramsBuilder = HttpUtility.ParseQueryString(string.Empty);
+        if (clickParams.Right) paramsBuilder.Add("right", "1");
         if (clickParams.Middle) paramsBuilder.Add("middle", "1");
         if (clickParams.Shift) paramsBuilder.Add("shift", "1");
         if (clickParams.Ctrl) paramsBuilder.Add("ctrl", "1");

@@ -9,7 +9,7 @@ public sealed class RequestHotReloadResource : Request {
 
     [UsedImplicitly]
     public sealed class RequestHotReloadResourceArguments {
-        [JsonPropertyName("file")] public string? filePath { get; set; }
+        [JsonPropertyName("file")] public string? FilePath { get; set; }
     }
 
     public void Respond(DebugAdapterClient client) {

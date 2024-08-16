@@ -843,9 +843,9 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     private void HandleRequestHotReloadResource(DebugAdapterClient client, RequestHotReloadResource requestHotReloadResource) {
-        _sawmill.Debug("Debug adapter triggered resource hot reload for "+requestHotReloadResource.Arguments.filePath!);
+        _sawmill.Debug("Debug adapter triggered resource hot reload for "+requestHotReloadResource.Arguments.FilePath!);
         try {
-            _dreamManager.HotReloadResource(requestHotReloadResource.Arguments.filePath!);
+            _dreamManager.HotReloadResource(requestHotReloadResource.Arguments.FilePath!);
             requestHotReloadResource.Respond(client);
         } catch (Exception e) {
             requestHotReloadResource.RespondError(client, e.Message);

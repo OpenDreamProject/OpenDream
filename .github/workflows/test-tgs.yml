@@ -67,7 +67,7 @@ jobs:
       shell: bash
       run: |
         cd ../tgstation-server
-        echo "fake" > ${{ env.TGS_TELEMETRY_KEY_FILE }}
+        echo "fake" > src/Tgstation.Server.Host/${{ env.TGS_TELEMETRY_KEY_FILE }}
         dotnet build -c ReleaseNoWindows -p:TGS_HOST_NO_WEBPANEL=true tests/Tgstation.Server.Tests/Tgstation.Server.Tests.csproj
 
     - name: Run TGS OpenDream Tests

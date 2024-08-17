@@ -68,11 +68,14 @@ jobs:
 
     - name: Run TGS OpenDream Tests
       shell: bash
+      env:
+        TGS_TEST_OD_EXCLUSIVE: 'true'
+        TGS_TEST_OD_ENGINE_VERSION: ${{ github.sha }}
+        TGS_TEST_OD_GIT_DIRECTORY: ../../../../../../${{ github.event.repository.name }}
+        TGS_TEST_DATABASE_TYPE: Sqlite
+        TGS_TEST_CONNECTION_STRING: Data Source=TGS.sqlite3;Mode=ReadWriteCreate
+        TGS_TEST_TELEMETRY_KEY_FILE: "fake.txt"
       run: |
         cd ../tgstation-server/tests/Tgstation.Server.Tests
-        export TGS_TEST_OD_EXCLUSIVE=true
-        export TGS_TEST_OD_ENGINE_VERSION=$GITHUB_SHA
-        export TGS_TEST_OD_GIT_DIRECTORY="../../../../../../${{ github.event.repository.name }}"
-        export TGS_TEST_DATABASE_TYPE=Sqlite
-        export TGS_TEST_CONNECTION_STRING="Data Source=TGS.sqlite3;Mode=ReadWriteCreate"
+        echo "fake" > ${{ env.TGS_TEST_TELEMETRY_KEY_FILE }}
         dotnet test -c ReleaseNoWindows --no-build --filter Name=TestOpenDreamExclusiveTgsOperation --logger "GitHubActions;summary.includePassedTests=true;summary.includeSkippedTests=true" --settings ../../build/ci.runsettings --results-directory ../../TestResults

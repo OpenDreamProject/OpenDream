@@ -17,6 +17,7 @@ using OpenDreamRuntime.Procs.Native;
 using Robust.Shared.Utility;
 
 namespace OpenDreamRuntime;
+
 [JsonConverter(typeof(DreamValueJsonConverter))]
 public struct DreamValue : IEquatable<DreamValue> {
     public enum DreamValueType {

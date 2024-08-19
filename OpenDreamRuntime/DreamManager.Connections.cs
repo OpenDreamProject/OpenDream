@@ -1,3 +1,4 @@
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -298,7 +299,8 @@ namespace OpenDreamRuntime {
         }
 
         public void HotReloadResource(string fileName){
-            var resource = _dreamResourceManager.LoadResource(fileName, forceReload:true);
+            //ensure all paths are relative for consistency
+            var resource = _dreamResourceManager.LoadResource(Path.GetRelativePath(_dreamResourceManager.RootPath, fileName), forceReload:true);
             var msgBrowseResource = new MsgNotifyResourceUpdate() { //send a message that this resource id has been updated, let the clients handle re-requesting it
                 ResourceId = resource.Id
             };

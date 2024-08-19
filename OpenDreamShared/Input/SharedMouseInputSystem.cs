@@ -13,8 +13,9 @@ public class SharedMouseInputSystem : EntitySystem {
     }
 
     [Serializable, NetSerializable]
-    public struct ClickParams(ScreenLocation screenLoc, bool middle, bool shift, bool ctrl, bool alt, int iconX, int iconY) {
+    public struct ClickParams(ScreenLocation screenLoc, bool right, bool middle, bool shift, bool ctrl, bool alt, int iconX, int iconY) {
         public ScreenLocation ScreenLoc { get; } = screenLoc;
+        public bool Right { get; } = right;
         public bool Middle { get; } = middle;
         public bool Shift { get; } = shift;
         public bool Ctrl { get; } = ctrl;
@@ -37,12 +38,12 @@ public class SharedMouseInputSystem : EntitySystem {
     }
 
     [Serializable, NetSerializable]
-    public sealed class StatClickedEvent(string atomRef, bool middle, bool shift, bool ctrl, bool alt)
+    public sealed class StatClickedEvent(string atomRef, bool right, bool middle, bool shift, bool ctrl, bool alt)
         : EntityEventArgs, IAtomMouseEvent {
         public string AtomRef = atomRef; // TODO: Use ClientObjectReference
 
         // TODO: icon-x and icon-y
         // TODO: ScreenLoc doesn't appear at all in the click params
-        public ClickParams Params { get; } = new(new(0, 0, 32), middle, shift, ctrl, alt, 0, 0);
+        public ClickParams Params { get; } = new(new(0, 0, 32), right, middle, shift, ctrl, alt, 0, 0);
     }
 }

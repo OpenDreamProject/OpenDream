@@ -473,10 +473,10 @@
 
 	New()
 		var/image/zero = image(icon = 'icons/hanoi.dmi', icon_state="0", layer=FLOAT_LAYER)
-		var/image/one = image(icon = 'icons/hanoi.dmi', icon_state="1", layer=FLOAT_LAYER, pixel_y=-16)
-		var/image/two = image(icon = 'icons/hanoi.dmi', icon_state="2", layer=FLOAT_LAYER, pixel_y=-16)
-		var/image/three = image(icon = 'icons/hanoi.dmi', icon_state="3", layer=FLOAT_LAYER, pixel_y=-16)
-		var/image/four = image(icon = 'icons/hanoi.dmi', icon_state="4", layer=FLOAT_LAYER, pixel_y=-16)
+		var/image/one = image(icon = 'icons/hanoi.dmi', icon_state="1", layer=FLOAT_LAYER)
+		var/image/two = image(icon = 'icons/hanoi.dmi', icon_state="2", layer=FLOAT_LAYER)
+		var/image/three = image(icon = 'icons/hanoi.dmi', icon_state="3", layer=FLOAT_LAYER)
+		var/image/four = image(icon = 'icons/hanoi.dmi', icon_state="4", layer=FLOAT_LAYER)
 		var/image/six = image(icon = 'icons/hanoi.dmi', icon_state="6", layer=FLOAT_LAYER)
 		var/image/seven = image(icon = 'icons/hanoi.dmi', icon_state="7", layer=FLOAT_LAYER)
 		var/image/eight = image(icon = 'icons/hanoi.dmi', icon_state="8", layer=FLOAT_LAYER)
@@ -484,9 +484,10 @@
 
 		one.underlays += zero
 		one.overlays += two
-		src.underlays += one
-		src.underlays += three
 		src.underlays += four
+		src.underlays += three
+		src.underlays += one
+
 
 		eight.overlays += nine
 		seven.overlays += eight

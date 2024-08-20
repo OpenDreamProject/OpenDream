@@ -693,11 +693,11 @@ internal static class DreamProcNativeRoot {
         throw new Exception("Invalid path argument");
     }
 
-        [DreamProc("file2text")]
-        [DreamProcParameter("File", Type = DreamValueTypeFlag.String | DreamValueTypeFlag.DreamResource)]
-        public static DreamValue NativeProc_file2text(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            DreamValue file = bundle.GetArgument(0, "File");
-            DreamResource? resource;
+    [DreamProc("file2text")]
+    [DreamProcParameter("File", Type = DreamValueTypeFlag.String | DreamValueTypeFlag.DreamResource)]
+    public static DreamValue NativeProc_file2text(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        DreamValue file = bundle.GetArgument(0, "File");
+        DreamResource? resource;
 
 
         if (file.TryGetValueAsString(out var rscPath)) {

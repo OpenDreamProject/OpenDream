@@ -656,7 +656,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 throw new Exception($"{file} is not a valid file");
             }
 
-            bool successful = filePath!.EndsWith("/") ? bundle.ResourceManager.DeleteDirectory(filePath) : bundle.ResourceManager.DeleteFile(filePath);
+            bool successful = filePath.EndsWith("/") ? bundle.ResourceManager.DeleteDirectory(filePath) : bundle.ResourceManager.DeleteFile(filePath);
             return new DreamValue(successful ? 1 : 0);
         }
 
@@ -665,10 +665,10 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_fexists(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamValue file = bundle.GetArgument(0, "File");
 
-            string filePath;
+            string? filePath;
             if (file.TryGetValueAsDreamResource(out var rsc)) {
                 filePath = rsc.ResourcePath!;
-            } else if (!file.TryGetValueAsString(out filePath!)) {
+            } else if (!file.TryGetValueAsString(out filePath)) {
                 return DreamValue.Null;
             }
 
@@ -697,12 +697,12 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("File", Type = DreamValueTypeFlag.String | DreamValueTypeFlag.DreamResource)]
         public static DreamValue NativeProc_file2text(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamValue file = bundle.GetArgument(0, "File");
-            DreamResource resource;
+            DreamResource? resource;
 
 
             if (file.TryGetValueAsString(out var rscPath)) {
                 resource = bundle.ResourceManager.LoadResource(rscPath);
-            } else if (!file.TryGetValueAsDreamResource(out resource!)) {
+            } else if (!file.TryGetValueAsDreamResource(out resource)) {
                 return DreamValue.Null;
             }
 
@@ -2542,7 +2542,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if(start == 0 || start > text.Length || start > end)
                 throw new Exception("bad text or out of bounds");
 
-            string result = text.Remove(start - 1, (end-start)).Insert(start - 1, insertText!);
+            string result = text.Remove(start - 1, (end-start)).Insert(start - 1, insertText);
 
             return new DreamValue(result);
         }

@@ -111,7 +111,7 @@ internal sealed class StatPanel : InfoPanel {
                 return;
 
             e.Handle();
-            mouseInputSystem.HandleStatClick(_atomRef, e.Function == OpenDreamKeyFunctions.MouseMiddle);
+            mouseInputSystem.HandleStatClick(_atomRef, e.Function == EngineKeyFunctions.UIRightClick, e.Function == OpenDreamKeyFunctions.MouseMiddle);
         }
     }
 

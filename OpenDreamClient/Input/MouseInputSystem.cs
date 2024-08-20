@@ -69,12 +69,12 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
             return OnRelease(viewport, args);
     }
 
-    public void HandleStatClick(string atomRef, bool isMiddle) {
+    public void HandleStatClick(string atomRef, bool isRight, bool isMiddle) {
         bool shift = _inputManager.IsKeyDown(Keyboard.Key.Shift);
         bool ctrl = _inputManager.IsKeyDown(Keyboard.Key.Control);
         bool alt = _inputManager.IsKeyDown(Keyboard.Key.Alt);
 
-        RaiseNetworkEvent(new StatClickedEvent(atomRef, isMiddle, shift, ctrl, alt));
+        RaiseNetworkEvent(new StatClickedEvent(atomRef, isRight, isMiddle, shift, ctrl, alt));
     }
 
     private (ClientObjectReference Atom, Vector2i IconPosition)? GetAtomUnderMouse(ScalingViewport viewport, GUIBoundKeyEventArgs args) {
@@ -143,7 +143,7 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
             return false;
 
         var atom = underMouse.Value.Atom;
-        var clickParams = CreateClickParams(viewport, args, underMouse.Value.IconPosition);
+        var clickParams = CreateClickParams(viewport, args, underMouse.Value.IconPosition); // If client.show_popup_menu is disabled, this will handle sending right clicks
 
         _selectedEntity = new(atom, args.PointerLocation, clickParams);
         return true;
@@ -166,6 +166,7 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
     }
 
     private ClickParams CreateClickParams(ScalingViewport viewport, GUIBoundKeyEventArgs args, Vector2i iconPos) {
+        bool right = args.Function == EngineKeyFunctions.UIRightClick;
         bool middle = args.Function == OpenDreamKeyFunctions.MouseMiddle;
         bool shift = _inputManager.IsKeyDown(Keyboard.Key.Shift);
         bool ctrl = _inputManager.IsKeyDown(Keyboard.Key.Control);
@@ -176,6 +177,6 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
         ScreenLocation screenLoc = new ScreenLocation((int) screenLocPos.X, (int) screenLocY, 32); // TODO: icon_size other than 32
 
         // TODO: Take icon transformations into account for iconPos
-        return new(screenLoc, middle, shift, ctrl, alt, iconPos.X, iconPos.Y);
+        return new(screenLoc, right, middle, shift, ctrl, alt, iconPos.X, iconPos.Y);
     }
 }

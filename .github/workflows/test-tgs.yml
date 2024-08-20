@@ -62,8 +62,12 @@ jobs:
         git clone https://github.com/tgstation/tgstation-server --depth 1 --branch ${{ env.TGS_REFERENCE }}
 
     - name: Build TGS Integration Tests
+      env:
+        TGS_TELEMETRY_KEY_FILE: fake.txt
+      shell: bash
       run: |
         cd ../tgstation-server
+        echo "fake" > src/Tgstation.Server.Host/${{ env.TGS_TELEMETRY_KEY_FILE }}
         dotnet build -c ReleaseNoWindows -p:TGS_HOST_NO_WEBPANEL=true tests/Tgstation.Server.Tests/Tgstation.Server.Tests.csproj
 
     - name: Run TGS OpenDream Tests

@@ -59,7 +59,11 @@ namespace OpenDreamClient.Resources {
                 return;
             if(_netManager.ServerChannel is null)
                 throw new Exception("Server doesn't appear to be connected, can't use cache right now!");
-            _cacheDirectory = new ResPath($"/OpenDream/Cache/{_netManager.ServerChannel.RemoteEndPoint}");
+
+            var address = _netManager.ServerChannel.RemoteEndPoint.ToString();
+            address = address.Replace(':', '.'); // colons aren't legal on Windows
+
+            _cacheDirectory = new ResPath($"/OpenDream/Cache/{address}");
             _resourceManager.UserData.CreateDir(_cacheDirectory);
             if (!_resourceManager.UserData.Exists(_cacheDirectory))
                 throw new Exception($"Could not create cache directory at {_cacheDirectory}");

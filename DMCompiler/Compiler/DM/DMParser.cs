@@ -2199,7 +2199,27 @@ namespace DMCompiler.Compiler.DM {
                 if (Check(TokenType.DM_LeftCurlyBracket)) {
                     DMCompiler.UnimplementedWarning(path.Location, "Modified types are currently not supported and modified values will be ignored.");
 
-                    while (Current().Type != TokenType.DM_RightCurlyBracket && !Check(TokenType.EndOfFile)) Advance();
+                    BracketWhitespace();
+                    Check(TokenType.DM_Indent); // The body could be indented. We ignore that. TODO: Better braced block parsing
+                    DMASTIdentifier? overriding = Identifier();
+
+                    while (overriding != null) {
+                        BracketWhitespace();
+                        Consume(TokenType.DM_Equals, "Expected '='");
+                        BracketWhitespace();
+
+                        Expression(); // TODO: Use this (one day...)
+
+                        if (Check(TokenType.DM_Semicolon)) {
+                            BracketWhitespace();
+                            overriding = Identifier();
+                        } else {
+                            overriding = null;
+                        }
+                    }
+
+                    Check(TokenType.DM_Dedent); // We ignore indents/dedents in the body
+                    BracketWhitespace();
                     Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
                     //The lexer tosses in a newline after '}', but we avoid Newline() because we only want to remove the extra newline, not all of them
                     Check(TokenType.Newline);

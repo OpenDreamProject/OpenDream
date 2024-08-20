@@ -835,8 +835,14 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         TextureOverride = null;
     }
 
-    public Texture? GetTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle) =>
-        MainIcon?.GetTexture(viewOverlay, handle, this, TextureOverride);
+    public Texture? GetTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle) {
+        if (MainIcon == null)
+            return null;
+
+        var texture = MainIcon.GetTexture(viewOverlay, handle, this, TextureOverride);
+        MainIcon.LastRenderedTexture = texture;
+        return texture;
+    }
 
     public int CompareTo(RendererMetaData? other) {
         if (other == null)

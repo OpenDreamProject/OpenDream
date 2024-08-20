@@ -667,7 +667,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             string? filePath;
             if (file.TryGetValueAsDreamResource(out var rsc)) {
-                filePath = rsc.ResourcePath!;
+                filePath = rsc.ResourcePath;
             } else if (!file.TryGetValueAsString(out filePath)) {
                 return DreamValue.Null;
             }

@@ -1,5 +1,8 @@
 ﻿// ReSharper disable InconsistentNaming
 
+using System;
+using System.Runtime.CompilerServices;
+
 namespace DMCompiler.Compiler;
 
 // Must be : byte for ReadOnlySpan<TokenType> x = new TokenType[] { } to be intrinsic'd by the compiler.
@@ -151,11 +154,36 @@ public enum TokenType : byte {
 public struct Token(TokenType type, string text, Location location, object? value) {
     public readonly TokenType Type = type;
     public Location Location = location;
-    /// <remarks> Use <see cref="PrintableText"/> if you intend to show this to the user.</remarks>
-    public readonly string Text = text;
     public readonly object? Value = value;
 
+    /// <remarks> Use <see cref="PrintableText"/> if you intend to show this to the user.</remarks>
+    public readonly string Text = text;
+
     public string PrintableText => Text.Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t");
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public int ValueAsInt() {
+        if (Value is not int intValue)
+            throw new Exception("Token value was not an int");
+
+        return intValue;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public float ValueAsFloat() {
+        if (Value is not float floatValue)
+            throw new Exception("Token value was not a float");
+
+        return floatValue;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public string ValueAsString() {
+        if (Value is not string strValue)
+            throw new Exception("Token value was not a string");
+
+        return strValue;
+    }
 
     public override string ToString() {
         return $"{Type}({Location.ToString()}, {PrintableText})";

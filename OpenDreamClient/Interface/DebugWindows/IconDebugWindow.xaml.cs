@@ -67,6 +67,17 @@ internal sealed partial class IconDebugWindow : OSWindow {
         foreach (var underlay in _icon.Underlays) {
             AddDreamIconButton(UnderlaysGrid, underlay);
         }
+
+        var entityManager = IoCManager.Resolve<IEntityManager>();
+        foreach (var visContentNetEntity in appearance.VisContents) {
+            var visContentEntity = entityManager.GetEntity(visContentNetEntity);
+
+            if (entityManager.TryGetComponent(visContentEntity, out DMISpriteComponent? spriteComponent)) {
+                AddDreamIconButton(VisContentsGrid, spriteComponent.Icon);
+            } else {
+                VisContentsGrid.AddChild(new Label { Text = $"Failed to get sprite component for {visContentEntity}" });
+            }
+        }
     }
 
     private void AddPropertyIfNotDefault(string propertyName, object? value, object? defaultValue) {

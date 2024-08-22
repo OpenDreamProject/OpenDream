@@ -18,6 +18,12 @@
                     <GridContainer Name="UnderlaysGrid" Columns="3" />
                 </BoxContainer>
             </ScrollContainer>
+            <ScrollContainer TabContainer.TabTitle="Vis Contents" HorizontalExpand="True" VerticalExpand="True">
+                <BoxContainer Orientation="Vertical" HorizontalAlignment="Center">
+                    <Label Text="Click to open" HorizontalAlignment="Center" />
+                    <GridContainer Name="VisContentsGrid" Columns="3" />
+                </BoxContainer>
+            </ScrollContainer>
         </TabContainer>
     </BoxContainer>
 </OSWindow>

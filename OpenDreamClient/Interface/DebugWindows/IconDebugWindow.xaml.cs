@@ -109,7 +109,7 @@ internal sealed partial class IconDebugWindow : OSWindow {
         };
 
         panel.AddChild(overlayButton);
-        OverlaysGrid.AddChild(panel);
+        parent.AddChild(panel);
     }
 
     private void OnRefreshPressed(BaseButton.ButtonEventArgs e) {

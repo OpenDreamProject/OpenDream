@@ -4,17 +4,17 @@ using DMCompiler.DM;
 namespace DMCompiler.Json;
 
 public sealed class ProcDefinitionJson {
-    public required int OwningTypeId { get; set; }
+    public int OwningTypeId { get; set; }
     public required string Name { get; set; }
-    public required ProcAttributes Attributes { get; set; }
+    public ProcAttributes Attributes { get; set; }
 
-    public required int MaxStackSize { get; set; }
-    public required List<ProcArgumentJson>? Arguments { get; set; }
-    public required List<LocalVariableJson>? Locals { get; set; }
+    public int MaxStackSize { get; set; }
+    public List<ProcArgumentJson>? Arguments { get; set; }
+    public List<LocalVariableJson>? Locals { get; set; }
     public required List<SourceInfoJson> SourceInfo { get; set; }
-    public required byte[]? Bytecode { get; set; }
+    public byte[]? Bytecode { get; set; }
 
-    public required bool IsVerb { get; set; }
+    public bool IsVerb { get; set; }
     public VerbSrc? VerbSrc { get; set; }
     public string? VerbName { get; set; }
     public string? VerbCategory { get; set; }
@@ -24,11 +24,11 @@ public sealed class ProcDefinitionJson {
 
 public sealed class ProcArgumentJson {
     public required string Name { get; set; }
-    public required DMValueType Type { get; set; }
+    public DMValueType Type { get; set; }
 }
 
 public sealed class LocalVariableJson {
-    public required int Offset { get; set; }
+    public int Offset { get; set; }
     public int? Remove { get; set; }
     public string? Add { get; set; }
 }

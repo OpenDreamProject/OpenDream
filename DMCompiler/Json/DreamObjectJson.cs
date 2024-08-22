@@ -13,7 +13,7 @@ public enum JsonVariableType {
 
 public sealed class DreamTypeJson {
     public required string Path { get; set; }
-    public required int? Parent { get; set; }
+    public int? Parent { get; set; }
     public int? InitProc { get; set; }
     public List<List<int>>? Procs { get; set; }
     public List<int>? Verbs { get; set; }

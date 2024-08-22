@@ -2262,11 +2262,11 @@ namespace DMCompiler.Compiler.DM {
             Token constantToken = Current();
 
             switch (constantToken.Type) {
-                case TokenType.DM_Integer: Advance(); return new DMASTConstantInteger(constantToken.Location, (int)constantToken.Value);
-                case TokenType.DM_Float: Advance(); return new DMASTConstantFloat(constantToken.Location, (float)constantToken.Value);
-                case TokenType.DM_Resource: Advance(); return new DMASTConstantResource(constantToken.Location, (string)constantToken.Value);
+                case TokenType.DM_Integer: Advance(); return new DMASTConstantInteger(constantToken.Location, constantToken.ValueAsInt());
+                case TokenType.DM_Float: Advance(); return new DMASTConstantFloat(constantToken.Location, constantToken.ValueAsFloat());
+                case TokenType.DM_Resource: Advance(); return new DMASTConstantResource(constantToken.Location, constantToken.ValueAsString());
                 case TokenType.DM_Null: Advance(); return new DMASTConstantNull(constantToken.Location);
-                case TokenType.DM_RawString: Advance(); return new DMASTConstantString(constantToken.Location, (string)constantToken.Value);
+                case TokenType.DM_RawString: Advance(); return new DMASTConstantString(constantToken.Location, constantToken.ValueAsString());
                 case TokenType.DM_ConstantString:
                 case TokenType.DM_StringBegin:
                     // Don't advance, ExpressionFromString() will handle it

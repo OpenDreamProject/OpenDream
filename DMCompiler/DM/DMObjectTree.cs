@@ -21,7 +21,7 @@ internal static class DMObjectTree {
     /// </summary>
     public static readonly HashSet<string> SeenGlobalProcDefinition = new();
     public static readonly List<string> StringTable = new();
-    public static DMProc GlobalInitProc;
+    public static DMProc GlobalInitProc = default!; // Initialized by Reset() (called in the static initializer)
     public static readonly HashSet<string> Resources = new();
 
     public static DMObject Root => GetDMObject(DreamPath.Root)!;

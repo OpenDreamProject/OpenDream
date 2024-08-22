@@ -266,7 +266,7 @@ public static class DMCompiler {
 
     private static string SaveJson(List<DreamMapJson> maps, string interfaceFile, string outputFile) {
         var jsonRep = DMObjectTree.CreateJsonRepresentation();
-        DreamCompiledJson compiledDream = new DreamCompiledJson {
+        var compiledDream = new DreamCompiledJson {
             Metadata = new DreamCompiledJsonMetadata { Version = OpcodeVerifier.GetOpcodesHash() },
             Strings = DMObjectTree.StringTable,
             Resources = DMObjectTree.Resources.ToArray(),
@@ -300,6 +300,7 @@ public static class DMCompiler {
                     globalListJson.Globals.Add(i, globalJson);
                 }
             }
+            
             compiledDream.Globals = globalListJson;
         }
 

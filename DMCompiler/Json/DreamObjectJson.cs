@@ -12,13 +12,13 @@ public enum JsonVariableType {
 }
 
 public sealed class DreamTypeJson {
-    public string Path { get; set; }
-    public int? Parent { get; set; }
+    public required string Path { get; set; }
+    public required int? Parent { get; set; }
     public int? InitProc { get; set; }
-    public List<List<int>> Procs { get; set; }
-    public List<int> Verbs { get; set; }
-    public Dictionary<string, object> Variables { get; set; }
-    public Dictionary<string, int> GlobalVariables { get; set; }
+    public List<List<int>>? Procs { get; set; }
+    public List<int>? Verbs { get; set; }
+    public Dictionary<string, object>? Variables { get; set; }
+    public Dictionary<string, int>? GlobalVariables { get; set; }
     public HashSet<string>? ConstVariables { get; set; }
     public HashSet<string>? TmpVariables { get; set; }
 }

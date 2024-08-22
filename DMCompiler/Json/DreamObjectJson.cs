@@ -25,6 +25,6 @@ public sealed class DreamTypeJson {
 
 public sealed class GlobalListJson {
     public int GlobalCount { get; set; }
-    public List<string> Names { get; set; }
-    public Dictionary<int, object> Globals { get; set; }
+    public required List<string> Names { get; set; }
+    public required Dictionary<int, object> Globals { get; set; }
 }

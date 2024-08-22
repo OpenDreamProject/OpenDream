@@ -1,4 +1,5 @@
 ﻿using System.Collections.Specialized;
+using System.Text;
 using System.Web;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamShared.Input;
@@ -79,29 +80,36 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
     }
 
     private string ConstructClickParams(ClickParams clickParams) {
-        NameValueCollection paramsBuilder = HttpUtility.ParseQueryString(string.Empty);
+        StringBuilder paramsBuilder = new StringBuilder(96); // Click param strings are typically ~86 chars with all modifiers held. 96 is 64*1.5
+
+        // All of these parameters have been ordered with BYOND parity
+
+        paramsBuilder.Append($"icon-x={clickParams.IconX.ToString()};");
+        paramsBuilder.Append($"icon-y={clickParams.IconY.ToString()};");
+
+        string button;
 
         // Handles setting left=1, right=1, or middle=1 mouse param
         if (clickParams.Right) {
-            paramsBuilder.Add("right", "1");
-            paramsBuilder.Add("button", "right");
+            paramsBuilder.Append("right=1;");
+            button = "right";
         } else if (clickParams.Middle) {
-             paramsBuilder.Add("middle", "1");
-             paramsBuilder.Add("button", "middle");
+             paramsBuilder.Append("middle=1;");
+             button = "middle";
         } else {
-            paramsBuilder.Add("left", "1");
-            paramsBuilder.Add("button", "left");
+            paramsBuilder.Append("left=1;");
+            button = "left";
         }
 
         // Modifier keys
-        if (clickParams.Shift) paramsBuilder.Add("shift", "1");
-        if (clickParams.Ctrl) paramsBuilder.Add("ctrl", "1");
-        if (clickParams.Alt) paramsBuilder.Add("alt", "1");
+        if (clickParams.Ctrl) paramsBuilder.Append("ctrl=1;");
+        if (clickParams.Shift) paramsBuilder.Append("shift=1;");
+        if (clickParams.Alt) paramsBuilder.Append("alt=1;");
 
-        // Other params
-        paramsBuilder.Add("screen-loc", clickParams.ScreenLoc.ToString());
-        paramsBuilder.Add("icon-x", clickParams.IconX.ToString());
-        paramsBuilder.Add("icon-y", clickParams.IconY.ToString());
+        paramsBuilder.Append($"button={button};");
+
+        // Screen loc
+        paramsBuilder.Append($"screen-loc={clickParams.ScreenLoc.ToCoordinates()}");
 
         return paramsBuilder.ToString();
     }

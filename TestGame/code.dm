@@ -1,3 +1,13 @@
+#ifndef OPENDREAM
+/world/proc/ODHotReloadInterface()
+	world.log << "OpenDream-specific procs don't exist in BYOND."
+	return
+
+/world/proc/ODHotReloadResource()
+	world.log << "OpenDream-specific procs don't exist in BYOND."
+	return
+#endif
+
 #define TURF_PLANE -10
 
 /obj/plane_master

@@ -219,7 +219,8 @@ internal sealed class DreamViewOverlay : Overlay {
             else
                 current.Plane = icon.Appearance.Plane;
 
-            current.Layer = (icon.Appearance.Layer < 0) ? parentIcon.Layer : icon.Appearance.Layer; //FLOAT_LAYER
+            //FLOAT_LAYER - if this icon's layer is negative, it's a float layer so set it's layer equal to the parent object and sort through the float_layer shit later
+            current.Layer = (icon.Appearance.Layer < 0) ? parentIcon.Layer : icon.Appearance.Layer;
 
             if (current.BlendMode == BlendMode.Default)
                 current.BlendMode = parentIcon.BlendMode;
@@ -271,7 +272,9 @@ internal sealed class DreamViewOverlay : Overlay {
         }
 
         //underlays - colour, alpha, and transform are inherited, but filters aren't
-        foreach (DreamIcon underlay in icon.Underlays) {
+        //underlays are sorted in reverse order to overlays
+        for(int underlayIndex = icon.Underlays.Count-1; underlayIndex >= 0; underlayIndex--) {
+            DreamIcon underlay = icon.Underlays[underlayIndex];
             if (underlay.Appearance == null)
                 continue;
 
@@ -881,17 +884,6 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
             return val;
         }
 
-        //despite assurances to the contrary by the DM Ref, position is in fact used for draw order in topdown mode
-        val = Position.X.CompareTo(other.Position.X);
-        if (val != 0) {
-            return val;
-        }
-
-        val = Position.Y.CompareTo(other.Position.Y);
-        if (val != 0) {
-            return -val;
-        }
-
         //Finally, tie-breaker - in BYOND, this is order of creation of the sprites
         //for us, we use EntityUID, with a tie-breaker (for underlays/overlays)
         val = Uid.CompareTo(other.Uid);
@@ -901,7 +893,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
 
         //FLOAT_LAYER must be sorted local to the thing they're floating on, and since all overlays/underlays share their parent's UID, we
         //can do that here.
-        if (MainIcon?.Appearance?.Layer < 0 && other.MainIcon?.Appearance?.Layer < 0) { //if these are FLOAT_LAYER, sort amongst them
+        if (MainIcon?.Appearance?.Layer < -1 && other.MainIcon?.Appearance?.Layer < -1) { //if these are FLOAT_LAYER, sort amongst them
             val = MainIcon.Appearance.Layer.CompareTo(other.MainIcon.Appearance.Layer);
             if (val != 0) {
                 return val;

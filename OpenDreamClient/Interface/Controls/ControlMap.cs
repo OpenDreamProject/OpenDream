@@ -76,7 +76,7 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
             e.Function == EngineKeyFunctions.UIRightClick || e.Function == OpenDreamKeyFunctions.MouseMiddle) {
             _entitySystemManager.Resolve(ref _mouseInput);
 
-            if (_mouseInput.HandleViewportEvent(Viewport, e)) {
+            if (_mouseInput.HandleViewportEvent(Viewport, e, ControlDescriptor)) {
                 e.Handle();
             }
         }

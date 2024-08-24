@@ -1,6 +1,7 @@
 ﻿using OpenDreamClient.Input.ContextMenu;
 using OpenDreamClient.Interface;
 using OpenDreamClient.Interface.Controls.UI;
+using OpenDreamClient.Interface.Descriptors;
 using OpenDreamClient.Rendering;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Input;
@@ -62,9 +63,9 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
         CommandBinds.Unregister<MouseInputSystem>();
     }
 
-    public bool HandleViewportEvent(ScalingViewport viewport, GUIBoundKeyEventArgs args) {
+    public bool HandleViewportEvent(ScalingViewport viewport, GUIBoundKeyEventArgs args, ControlDescriptor descriptor) {
         if (args.State == BoundKeyState.Down)
-            return OnPress(viewport, args);
+            return OnPress(viewport, args, descriptor);
         else
             return OnRelease(viewport, args);
     }
@@ -116,8 +117,9 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
         }
     }
 
-    private bool OnPress(ScalingViewport viewport, GUIBoundKeyEventArgs args) {
-        if (args.Function == EngineKeyFunctions.UIRightClick && _dreamInterfaceManager.ShowPopupMenus) { //either turf or atom was clicked, and it was a right-click, and the popup menu is enabled
+    private bool OnPress(ScalingViewport viewport, GUIBoundKeyEventArgs args, ControlDescriptor descriptor) {
+        //either turf or atom was clicked, and it was a right-click, and the popup menu is enabled, and the right-click parameter is disabled
+        if (args.Function == EngineKeyFunctions.UIRightClick && _dreamInterfaceManager.ShowPopupMenus && !descriptor.RightClick.Value) {
             var mapCoords = viewport.ScreenToMap(args.PointerLocation.Position);
             var entities = _lookupSystem.GetEntitiesInRange(mapCoords, 0.01f, LookupFlags.Uncontained | LookupFlags.Approximate);
 

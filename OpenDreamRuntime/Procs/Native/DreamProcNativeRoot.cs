@@ -1056,12 +1056,12 @@ namespace OpenDreamRuntime.Procs.Native {
                     var earPos = bundle.AtomManager.GetAtomPosition(mob);
                     var viewData = DreamProcNativeHelpers.CollectViewData(bundle.AtomManager, bundle.MapManager, earPos, range);
 
-                    ViewAlgorithm.CalculateAudibility(viewData);
+                    ViewAlgorithm.CalculateVisibility(viewData, true);
 
                     for (int x = 0; x < viewData.GetLength(0); x++) {
                         for (int y = 0; y < viewData.GetLength(1); y++) {
                             var tile = viewData[x, y];
-                            if (tile == null || tile.IsAudible == false)
+                            if (tile == null || tile.IsVisible == false)
                                 continue;
 
                             if (centerPos.X == earPos.X + tile.DeltaX && earPos.Y + tile.DeltaY == centerPos.Y) {
@@ -1925,12 +1925,12 @@ namespace OpenDreamRuntime.Procs.Native {
                     var earPos = bundle.AtomManager.GetAtomPosition(mob);
                     var viewData = DreamProcNativeHelpers.CollectViewData(bundle.AtomManager, bundle.MapManager, earPos, range);
 
-                    ViewAlgorithm.CalculateAudibility(viewData);
+                    ViewAlgorithm.CalculateVisibility(viewData, true);
 
                     for (int x = 0; x < viewData.GetLength(0); x++) {
                         for (int y = 0; y < viewData.GetLength(1); y++) {
                             var tile = viewData[x, y];
-                            if (tile == null || tile.IsAudible == false)
+                            if (tile == null || tile.IsVisible == false)
                                 continue;
 
                             if (centerPos.X == earPos.X + tile.DeltaX && earPos.Y + tile.DeltaY == centerPos.Y) {

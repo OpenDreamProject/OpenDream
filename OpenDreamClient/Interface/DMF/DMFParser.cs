@@ -233,11 +233,13 @@ public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializatio
                 while(TryGetAttribute(out var statement)){
                     trueStatements.Add(statement);
                 }
+
                 if(Check(TokenType.Colon)){ //not all ternarys have an else
                     while(TryGetAttribute(out var statement)){
                         falseStatements.Add(statement);
                     }
                 }
+
                 winSet = new DMFWinSet(element, attributeToken.Text, valueText, selectDefault, trueStatements, falseStatements);
                 return true;
             }

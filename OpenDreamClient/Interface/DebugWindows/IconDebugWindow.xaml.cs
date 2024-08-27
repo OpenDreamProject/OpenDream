@@ -39,6 +39,7 @@ internal sealed partial class IconDebugWindow : OSWindow {
         PropertiesTable.RemoveAllChildren();
         OverlaysGrid.RemoveAllChildren();
         UnderlaysGrid.RemoveAllChildren();
+        VisContentsGrid.RemoveAllChildren();
 
         // Would be nice if we could use ViewVariables instead, but I couldn't find a nice way to do that
         // Would be especially nice if we could use VV to make these editable

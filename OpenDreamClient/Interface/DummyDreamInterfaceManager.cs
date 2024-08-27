@@ -25,7 +25,7 @@ public sealed class DummyDreamInterfaceManager : IDreamInterfaceManager {
     public void FrameUpdate(FrameEventArgs frameEventArgs) {
     }
 
-    public InterfaceElement? FindElementWithId(string id) {
+    public InterfaceElement? FindElementWithId(string id, bool selectDefault = false) {
         return null;
     }
 

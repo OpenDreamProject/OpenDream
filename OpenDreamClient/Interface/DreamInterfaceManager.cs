@@ -302,7 +302,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             DefaultMap.Viewport.Eye = _eyeManager.CurrentEye;
     }
 
-    public InterfaceElement? FindElementWithId(string id) {
+    public InterfaceElement? FindElementWithId(string id, bool selectDefault = false) {
         string[] split = id.Split(".");
 
         if (split.Length == 2) {
@@ -329,6 +329,19 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             }
         } else {
             string elementId = split[0];
+
+            if (selectDefault) {
+                switch (elementId) {
+                    case "map":
+                        return DefaultMap;
+                    case "info":
+                        return DefaultInfo;
+                    case "window":
+                        return DefaultWindow;
+                    case "output":
+                        return DefaultOutput;
+                }
+            }
 
             foreach (ControlWindow window in Windows.Values) {
                 if (window.Id.Value == elementId)
@@ -602,7 +615,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                                 }
                             }
                     } else {
-                        InterfaceElement? element = FindElementWithId(elementId);
+                        InterfaceElement? element = FindElementWithId(elementId, winSet.SelectDefault);
 
                         if (element != null) {
                             element.SetProperty(winSet.Attribute, HandleEmbeddedWinget(elementId, winSet.Value), manualWinset: true);
@@ -929,7 +942,7 @@ public interface IDreamInterfaceManager {
 
     void Initialize();
     void FrameUpdate(FrameEventArgs frameEventArgs);
-    InterfaceElement? FindElementWithId(string id);
+    InterfaceElement? FindElementWithId(string id, bool selectDefault = false);
     void SaveScreenshot(bool openDialog);
     void LoadInterfaceFromSource(string source);
 

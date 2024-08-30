@@ -189,8 +189,6 @@ public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializatio
         string? element = null;
         winSet = null;
 
-        bool selectDefault = Check(TokenType.Colon); // Handling for ":[type]"
-
         Token attributeToken = Current();
 
         if (Check(_attributeTokenTypes)) {
@@ -240,12 +238,12 @@ public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializatio
                     }
                 }
 
-                winSet = new DMFWinSet(element, attributeToken.Text, valueText, selectDefault, trueStatements, falseStatements);
+                winSet = new DMFWinSet(element, attributeToken.Text, valueText, trueStatements, falseStatements);
                 return true;
             }
 
             Newline();
-            winSet = new DMFWinSet(element, attributeToken.Text, valueText, selectDefault);
+            winSet = new DMFWinSet(element, attributeToken.Text, valueText);
             return true;
         }
 

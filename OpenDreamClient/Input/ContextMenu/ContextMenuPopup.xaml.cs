@@ -41,27 +41,33 @@ internal sealed partial class ContextMenuPopup : Popup {
         _metadataQuery = _entityManager.GetEntityQuery<MetaDataComponent>();
     }
 
-    public void RepopulateEntities(IEnumerable<EntityUid> entities) {
+    public void RepopulateEntities(ClientObjectReference[] entities) {
         ContextMenu.RemoveAllChildren();
 
         if (_transformSystem == null)
             return;
 
-        foreach (EntityUid entity in entities) {
-            if (_xformQuery.TryGetComponent(entity, out TransformComponent? transform) && !_mapManager.IsGrid(_transformSystem.GetParent(transform)!.Owner)) // Not a child of another entity
-                continue;
-            if (!_spriteQuery.TryGetComponent(entity, out DMISpriteComponent? sprite)) // Has a sprite
-                continue;
-            if (sprite.Icon.Appearance?.MouseOpacity == MouseOpacity.Transparent) // Not transparent to mouse clicks
-                continue;
-            if (!sprite.IsVisible(transform, GetSeeInvisible())) // Not invisible
-                continue;
+        foreach (var objectReference in entities) {
+            if (objectReference.Type == ClientObjectReference.RefType.Entity) {
+                var entity = _entityManager.GetEntity(objectReference.Entity);
+                if (_xformQuery.TryGetComponent(entity, out TransformComponent? transform) && !_mapManager.IsGrid(_transformSystem.GetParent(transform)!.Owner)) // Not a child of another entity
+                    continue;
+                if (!_spriteQuery.TryGetComponent(entity, out DMISpriteComponent? sprite)) // Has a sprite
+                    continue;
+                if (sprite.Icon.Appearance?.MouseOpacity == MouseOpacity.Transparent) // Not transparent to mouse clicks
+                    continue;
+                if (!sprite.IsVisible(transform, GetSeeInvisible())) // Not invisible
+                    continue;
 
-            var metadata = _metadataQuery.GetComponent(entity);
-            if (string.IsNullOrEmpty(metadata.EntityName)) // Has a name
-                continue;
+                var metadata = _metadataQuery.GetComponent(entity);
+                if (string.IsNullOrEmpty(metadata.EntityName)) // Has a name
+                    continue;
 
-            ContextMenu.AddChild(new ContextMenuItem(this, new(_entityManager.GetNetEntity(entity)), metadata, sprite));
+                ContextMenu.AddChild(new ContextMenuItem(this, objectReference, metadata.EntityName, sprite));
+            } else if (objectReference.Type == ClientObjectReference.RefType.Turf) {
+                var turf = _mapManager.
+                ContextMenu.AddChild(new ContextMenuItem(this, objectReference, metadata, sprite));
+            }
         }
     }
 

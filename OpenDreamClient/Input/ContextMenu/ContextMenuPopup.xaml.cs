@@ -20,6 +20,10 @@ internal sealed partial class ContextMenuPopup : Popup {
     [Dependency] private readonly IUserInterfaceManager _uiManager = default!;
     private readonly TransformSystem? _transformSystem;
     private readonly ClientVerbSystem? _verbSystem;
+    private readonly EntityQuery<DMISpriteComponent> _spriteQuery;
+    private readonly EntityQuery<TransformComponent> _xformQuery;
+    private readonly EntityQuery<DreamMobSightComponent> _mobSightQuery;
+    private readonly EntityQuery<MetaDataComponent> _metadataQuery;
 
     public int EntityCount => ContextMenu.ChildCount;
 
@@ -31,6 +35,10 @@ internal sealed partial class ContextMenuPopup : Popup {
 
         _entitySystemManager.TryGetEntitySystem(out _transformSystem);
         _entitySystemManager.TryGetEntitySystem(out _verbSystem);
+        _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
+        _xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
+        _mobSightQuery = _entityManager.GetEntityQuery<DreamMobSightComponent>();
+        _metadataQuery = _entityManager.GetEntityQuery<MetaDataComponent>();
     }
 
     public void RepopulateEntities(IEnumerable<EntityUid> entities) {
@@ -40,14 +48,22 @@ internal sealed partial class ContextMenuPopup : Popup {
             return;
 
         foreach (EntityUid entity in entities) {
-            if (!_mapManager.IsGrid(_transformSystem.GetParent(entity).Owner)) // Not a child of another entity
+            if (_xformQuery.TryGetComponent(entity, out TransformComponent? transform) && !_mapManager.IsGrid(_transformSystem.GetParent(transform)!.Owner)) // Not a child of another entity
                 continue;
-            if (!_entityManager.TryGetComponent(entity, out DMISpriteComponent? sprite)) // Has a sprite
+            if (!_spriteQuery.TryGetComponent(entity, out DMISpriteComponent? sprite)) // Has a sprite
                 continue;
-            if (sprite.Icon.Appearance.MouseOpacity == MouseOpacity.Transparent) // Not transparent to mouse clicks
+            if (sprite.Icon.Appearance?.MouseOpacity == MouseOpacity.Transparent) // Not transparent to mouse clicks
                 continue;
 
-            var metadata = _entityManager.GetComponent<MetaDataComponent>(entity);
+            _mobSightQuery.TryGetComponent(_playerManager.LocalSession?.AttachedEntity, out var mobSight);
+            var seeVis = mobSight?.SeeInvisibility ?? 127;
+            if (!sprite.IsVisible(transform, seeVis)) // Not invisible
+                continue;
+
+            var metadata = _metadataQuery.GetComponent(entity);
+
+            if (string.IsNullOrEmpty(metadata.EntityName)) // Has a name
+                continue;
 
             ContextMenu.AddChild(new ContextMenuItem(this, new(_entityManager.GetNetEntity(entity)), metadata, sprite));
         }

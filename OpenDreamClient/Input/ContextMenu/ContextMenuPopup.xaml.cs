@@ -54,14 +54,10 @@ internal sealed partial class ContextMenuPopup : Popup {
                 continue;
             if (sprite.Icon.Appearance?.MouseOpacity == MouseOpacity.Transparent) // Not transparent to mouse clicks
                 continue;
-
-            _mobSightQuery.TryGetComponent(_playerManager.LocalSession?.AttachedEntity, out var mobSight);
-            var seeVis = mobSight?.SeeInvisibility ?? 127;
-            if (!sprite.IsVisible(transform, seeVis)) // Not invisible
+            if (!sprite.IsVisible(transform, GetSeeInvisible())) // Not invisible
                 continue;
 
             var metadata = _metadataQuery.GetComponent(entity);
-
             if (string.IsNullOrEmpty(metadata.EntityName)) // Has a name
                 continue;
 
@@ -89,7 +85,7 @@ internal sealed partial class ContextMenuPopup : Popup {
     private sbyte GetSeeInvisible() {
         if (_playerManager.LocalEntity == null)
             return 127;
-        if (!_mobSightQuery.TryGetComponent(_playerManager.LocalEntity, out DreamMobSightComponent? sight))
+        if (!_mobSightQuery.TryGetComponent(_playerManager.LocalSession?.AttachedEntity, out DreamMobSightComponent? sight))
             return 127;
 
         return sight.SeeInvisibility;

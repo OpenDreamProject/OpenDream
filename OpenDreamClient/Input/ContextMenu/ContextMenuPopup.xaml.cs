@@ -83,9 +83,9 @@ internal sealed partial class ContextMenuPopup : Popup {
 
     /// <returns>The see_invisible of our current mob</returns>
     private sbyte GetSeeInvisible() {
-        if (_playerManager.LocalEntity == null)
+        if (_playerManager.LocalSession == null)
             return 127;
-        if (!_mobSightQuery.TryGetComponent(_playerManager.LocalSession?.AttachedEntity, out DreamMobSightComponent? sight))
+        if (!_mobSightQuery.TryGetComponent(_playerManager.LocalSession.AttachedEntity, out DreamMobSightComponent? sight))
             return 127;
 
         return sight.SeeInvisibility;

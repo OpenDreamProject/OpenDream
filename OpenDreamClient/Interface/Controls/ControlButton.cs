@@ -7,6 +7,7 @@ using Robust.Client.UserInterface.Controls;
 namespace OpenDreamClient.Interface.Controls;
 
 internal sealed class ControlButton(ControlDescriptor controlDescriptor, ControlWindow window) : InterfaceControl(controlDescriptor, window) {
+    [Dependency] private readonly IResourceCache _resCache = default!;
     public const string StyleClassDMFButton = "DMFbutton";
 
     private Button _button;
@@ -28,9 +29,13 @@ internal sealed class ControlButton(ControlDescriptor controlDescriptor, Control
 
         ControlDescriptorButton controlDescriptor = (ControlDescriptorButton)ElementDescriptor;
 
+        var buttonTexturePath = controlDescriptor.IsChecked.Value
+            ? "/Textures/Interface/ButtonPressed.png"
+            : "/Textures/Interface/Button.png";
+
         _button.Text = controlDescriptor.Text.Value;
         _button.StyleBoxOverride = new StyleBoxColoredTexture {
-            Texture = IoCManager.Resolve<IResourceCache>().GetResource<TextureResource>("/Textures/Interface/Button.png"),
+            Texture = _resCache.GetResource<TextureResource>(buttonTexturePath),
             BackgroundColor = controlDescriptor.BackgroundColor.Value,
             PatchMarginTop = 2,
             PatchMarginBottom = 2,
@@ -41,6 +46,11 @@ internal sealed class ControlButton(ControlDescriptor controlDescriptor, Control
 
     private void OnButtonClick(BaseButton.ButtonEventArgs args) {
         ControlDescriptorButton controlDescriptor = (ControlDescriptorButton)ElementDescriptor;
+
+        if (controlDescriptor.ButtonType.Value == "pushbox") {
+            controlDescriptor.IsChecked.Value = !controlDescriptor.IsChecked.Value;
+            UpdateElementDescriptor();
+        }
 
         if (!string.IsNullOrEmpty(controlDescriptor.Command.Value)) {
             _interfaceManager.RunCommand(controlDescriptor.Command.AsRaw());

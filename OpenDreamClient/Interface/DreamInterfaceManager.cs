@@ -331,17 +331,15 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             string elementId = split[0];
 
             // ":[element]" returns the default element of that type
-            if (elementId[0] == ':') {
-                switch (elementId[1..]) {
-                    case "map":
-                        return DefaultMap;
-                    case "info":
-                        return DefaultInfo;
-                    case "window":
-                        return DefaultWindow;
-                    case "output":
-                        return DefaultOutput;
-                }
+            switch (elementId) {
+                case ":map":
+                    return DefaultMap;
+                case ":info":
+                    return DefaultInfo;
+                case ":window":
+                    return DefaultWindow;
+                case ":output":
+                    return DefaultOutput;
             }
 
             foreach (ControlWindow window in Windows.Values) {

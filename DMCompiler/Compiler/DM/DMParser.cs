@@ -635,8 +635,7 @@ namespace DMCompiler.Compiler.DM {
             } while (Delimiter() || statement is DMASTProcStatementLabel);
             Whitespace();
 
-            if (procStatements.Count == 0) return (null,null);
-            return (procStatements, setStatements);
+            return (procStatements.Count > 0 ? procStatements : null, setStatements.Count > 0 ? setStatements : null);
         }
 
         private DMASTProcStatement? ProcStatement() {
@@ -2200,7 +2199,27 @@ namespace DMCompiler.Compiler.DM {
                 if (Check(TokenType.DM_LeftCurlyBracket)) {
                     DMCompiler.UnimplementedWarning(path.Location, "Modified types are currently not supported and modified values will be ignored.");
 
-                    while (Current().Type != TokenType.DM_RightCurlyBracket && !Check(TokenType.EndOfFile)) Advance();
+                    BracketWhitespace();
+                    Check(TokenType.DM_Indent); // The body could be indented. We ignore that. TODO: Better braced block parsing
+                    DMASTIdentifier? overriding = Identifier();
+
+                    while (overriding != null) {
+                        BracketWhitespace();
+                        Consume(TokenType.DM_Equals, "Expected '='");
+                        BracketWhitespace();
+
+                        Expression(); // TODO: Use this (one day...)
+
+                        if (Check(TokenType.DM_Semicolon)) {
+                            BracketWhitespace();
+                            overriding = Identifier();
+                        } else {
+                            overriding = null;
+                        }
+                    }
+
+                    Check(TokenType.DM_Dedent); // We ignore indents/dedents in the body
+                    BracketWhitespace();
                     Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
                     //The lexer tosses in a newline after '}', but we avoid Newline() because we only want to remove the extra newline, not all of them
                     Check(TokenType.Newline);
@@ -2243,11 +2262,11 @@ namespace DMCompiler.Compiler.DM {
             Token constantToken = Current();
 
             switch (constantToken.Type) {
-                case TokenType.DM_Integer: Advance(); return new DMASTConstantInteger(constantToken.Location, (int)constantToken.Value);
-                case TokenType.DM_Float: Advance(); return new DMASTConstantFloat(constantToken.Location, (float)constantToken.Value);
-                case TokenType.DM_Resource: Advance(); return new DMASTConstantResource(constantToken.Location, (string)constantToken.Value);
+                case TokenType.DM_Integer: Advance(); return new DMASTConstantInteger(constantToken.Location, constantToken.ValueAsInt());
+                case TokenType.DM_Float: Advance(); return new DMASTConstantFloat(constantToken.Location, constantToken.ValueAsFloat());
+                case TokenType.DM_Resource: Advance(); return new DMASTConstantResource(constantToken.Location, constantToken.ValueAsString());
                 case TokenType.DM_Null: Advance(); return new DMASTConstantNull(constantToken.Location);
-                case TokenType.DM_RawString: Advance(); return new DMASTConstantString(constantToken.Location, (string)constantToken.Value);
+                case TokenType.DM_RawString: Advance(); return new DMASTConstantString(constantToken.Location, constantToken.ValueAsString());
                 case TokenType.DM_ConstantString:
                 case TokenType.DM_StringBegin:
                     // Don't advance, ExpressionFromString() will handle it

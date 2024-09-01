@@ -93,6 +93,10 @@ public sealed class ScreenLocation {
         return $"{mapControl}{HorizontalAnchor}+{X+1}:{PixelOffsetX},{VerticalAnchor}+{Y+1}:{PixelOffsetY}{range}";
     }
 
+    public string ToCoordinates() {
+        return $"{X+1}:{PixelOffsetX},{Y+1}:{PixelOffsetY}";
+    }
+
     private void ParseScreenLoc(string screenLoc) {
         string[] rangeSplit = screenLoc.Split(" TO ");
         Range = rangeSplit.Length > 1 ? new ScreenLocation(rangeSplit[1]) : null;

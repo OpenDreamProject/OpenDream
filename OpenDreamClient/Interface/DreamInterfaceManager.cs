@@ -743,6 +743,8 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                     return string.Join(';', Menus.Keys);
                 case "macros":
                     return string.Join(';', MacroSets.Keys);
+                case "url":
+                    return _netManager.ServerChannel?.RemoteEndPoint.ToString() ?? string.Empty; // TODO: Port should be 0 "if connected to a local .dmb file"
                 default:
                     _sawmill.Error($"Special winget \"{queryValue}\" is not implemented");
                     return string.Empty;

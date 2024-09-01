@@ -55,6 +55,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
     }
 
     public Vector2 TextureRenderOffset = Vector2.Zero;
+    public Texture? LastRenderedTexture;
 
     private int _animationFrame;
     private TimeSpan _animationFrameTime = gameTiming.CurTime;
@@ -71,6 +72,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
 
     public void Dispose() {
         CachedTexture = null;
+        LastRenderedTexture = null;
         DMI = null; //triggers the removal of the onUpdateCallback
     }
 

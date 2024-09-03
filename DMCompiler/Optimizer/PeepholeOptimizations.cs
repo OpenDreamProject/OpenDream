@@ -416,7 +416,7 @@ internal sealed class CreateListNFloats : IPeepholeOptimization {
 
         List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(pushVal1 + 1);
         args.Add(new AnnotatedBytecodeInteger(pushVal1, new Location()));
-        args.AddRange(firstInstruction.GetArgs()[1..pushVal1]);
+        args.AddRange(firstInstruction.GetArgs()[1..(pushVal1+1)]);
 
         input.RemoveRange(index, 2);
         input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.CreateListNFloats, 1, args));
@@ -457,7 +457,7 @@ internal sealed class CreateListNStrings : IPeepholeOptimization {
 
         List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(pushVal1 + 1);
         args.Add(new AnnotatedBytecodeInteger(pushVal1, new Location()));
-        args.AddRange(firstInstruction.GetArgs()[1..pushVal1]);
+        args.AddRange(firstInstruction.GetArgs()[1..(pushVal1+1)]);
 
         input.RemoveRange(index, 2);
         input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.CreateListNStrings, 1, args));
@@ -498,7 +498,7 @@ internal sealed class CreateListNResources : IPeepholeOptimization {
 
         List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(pushVal1 + 1);
         args.Add(new AnnotatedBytecodeInteger(pushVal1, new Location()));
-        args.AddRange(firstInstruction.GetArgs()[1..pushVal1]);
+        args.AddRange(firstInstruction.GetArgs()[1..(pushVal1+1)]);
 
         input.RemoveRange(index, 2);
         input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.CreateListNResources, 1, args));
@@ -537,7 +537,7 @@ internal sealed class CreateListNRefs : IPeepholeOptimization {
 
         List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(1 + pushVal1);
         args.Add(new AnnotatedBytecodeInteger(pushVal1, new Location()));
-        args.AddRange(firstInstruction.GetArgs()[1..pushVal1]);
+        args.AddRange(firstInstruction.GetArgs()[1..(pushVal1+1)]);
 
         input.RemoveRange(index, 2);
         input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.CreateListNRefs, 1, args));

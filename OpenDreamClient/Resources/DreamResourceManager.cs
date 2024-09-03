@@ -50,10 +50,6 @@ namespace OpenDreamClient.Resources {
             _netManager.RegisterNetMessage<MsgNotifyResourceUpdate>(RxResourceUpdateNotification);
         }
 
-        public void Shutdown() {
-            _resourceManager.UserData.Delete(_cacheDirectory);
-        }
-
         private void EnsureCacheDirectory() {
             if(_cacheDirectory != default)
                 return;
@@ -186,21 +182,24 @@ namespace OpenDreamClient.Resources {
             return resource;
         }
 
-        public ResPath GetCacheFilePath(string filename)
-        {
+        public ResPath GetCacheFilePath(string filename) {
+            EnsureCacheDirectory();
+
             return _cacheDirectory / new ResPath(filename).ToRelativePath();
         }
 
-        public ResPath CreateCacheFile(string filename, string data)
-        {
+        public ResPath CreateCacheFile(string filename, string data) {
+            EnsureCacheDirectory();
+
             // in BYOND when filename is a path everything except the filename at the end gets ignored - meaning all resource files end up directly in the cache folder
             var path = _cacheDirectory / new ResPath(filename).Filename;
             _resourceManager.UserData.WriteAllText(path, data);
             return new ResPath(filename);
         }
 
-        public ResPath CreateCacheFile(string filename, byte[] data)
-        {
+        public ResPath CreateCacheFile(string filename, byte[] data) {
+            EnsureCacheDirectory();
+
             // in BYOND when filename is a path everything except the filename at the end gets ignored - meaning all resource files end up directly in the cache folder
             var path = _cacheDirectory / new ResPath(filename).Filename;
             _resourceManager.UserData.WriteAllBytes(path, data);

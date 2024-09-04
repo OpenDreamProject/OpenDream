@@ -9,7 +9,6 @@ using Robust.Shared.Utility;
 namespace OpenDreamClient.Resources {
     public interface IDreamResourceManager {
         void Initialize();
-        void Shutdown();
         ResPath CreateCacheFile(string filename, string data);
         ResPath CreateCacheFile(string filename, byte[] data);
 

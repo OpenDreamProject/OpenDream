@@ -7,7 +7,7 @@ namespace OpenDreamClient.Interface.DebugWindows;
 /// <summary>
 /// A debug window that displays all the current macro sets and allows you to execute them
 /// </summary>
-public sealed class MacrosWindow : OSWindow {
+internal sealed class MacrosWindow : OSWindow {
     [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
 
     public MacrosWindow() {

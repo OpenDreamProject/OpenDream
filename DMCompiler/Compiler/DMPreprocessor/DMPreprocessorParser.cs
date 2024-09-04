@@ -334,7 +334,7 @@ internal static class DMPreprocessorParser {
                             "Expected ')' to end fexists() expression");
                     }
 
-                    var filePath = Path.GetRelativePath(".", fExistsInner.Value!.ToString()!.Replace('\\', '/'));
+                    var filePath = Path.GetRelativePath(".", fExistsInner.ValueAsString().Replace('\\', '/'));
 
                     var outputDir = Path.Combine(Path.GetDirectoryName(DMCompiler.Settings.Files?[0]) ?? "/", Path.GetDirectoryName(fExistsInner.Location.SourceFile) ?? "/");
                     if (string.IsNullOrEmpty(outputDir))
@@ -358,10 +358,10 @@ internal static class DMPreprocessorParser {
         switch (constantToken.Type) {
             case TokenType.DM_Integer:
                 Advance();
-                return (float)((int)constantToken.Value);
+                return (float)(constantToken.ValueAsInt());
             case TokenType.DM_Float:
                 Advance();
-                return (float)constantToken.Value;
+                return constantToken.ValueAsFloat();
             case TokenType.DM_ConstantString: {
                 Advance();
                 Error("Strings are not valid in preprocessor expressions. Did you mean to use a define() here?");

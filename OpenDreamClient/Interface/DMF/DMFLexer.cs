@@ -82,6 +82,7 @@ public sealed class DMFLexer(string source) {
                         textBuilder.Append(GetCurrent());
                     }
                 }
+
                 if (GetCurrent() != c) throw new Exception($"Expected '{c}' got '{GetCurrent()}'");
                 textBuilder.Append(c);
                 Advance();
@@ -95,7 +96,8 @@ public sealed class DMFLexer(string source) {
                 Advance();
                 return new(TokenType.Ternary, c);
             }
-            case ':':{
+            // If _parsingAttributeName is true, we're parsing ":[type].whatever"
+            case ':' when _parsingAttributeName == false: {
                 Advance();
                 return new(TokenType.Colon, c);
             }
@@ -109,6 +111,7 @@ public sealed class DMFLexer(string source) {
                 while (Advance() != ']' && !AtEndOfSource) {
                     textBuilder.Append(GetCurrent());
                 }
+
                 if (GetCurrent() != ']') throw new Exception("Expected ']'");
                 Advance();
                 textBuilder.Append("]]");

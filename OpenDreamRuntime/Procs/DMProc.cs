@@ -33,8 +33,8 @@ namespace OpenDreamRuntime.Procs {
 
         public DMProc(int id, TreeEntry owningType, ProcDefinitionJson json, string? name, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, DreamObjectTree objectTree, ProcScheduler procScheduler, ServerVerbSystem verbSystem)
             : base(id, owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbSrc, json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility, json.IsVerb) {
-            Bytecode = json.Bytecode ?? Array.Empty<byte>();
-            LocalNames = json.Locals;
+            Bytecode = json.Bytecode ?? [];
+            LocalNames = json.Locals ?? [];
             SourceInfo = json.SourceInfo;
             _maxStackSize = json.MaxStackSize;
             IsNullProc = CheckIfNullProc();
@@ -984,10 +984,12 @@ namespace OpenDreamRuntime.Procs {
                 if (info.Offset > _pc) {
                     break;
                 }
-                if (info.Remove is int remove) {
+
+                if (info.Remove is { } remove) {
                     count -= remove;
                 }
-                if (info.Add is string add) {
+
+                if (info.Add is { } add) {
                     names[count++] = add;
                 }
             }

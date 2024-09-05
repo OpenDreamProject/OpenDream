@@ -15,7 +15,7 @@ internal sealed partial class ContextMenuItem : PanelContainer {
 
     private readonly ContextMenuPopup _menu;
 
-    public ContextMenuItem(ContextMenuPopup menu, ClientObjectReference target, string name, DMISpriteComponent sprite) {
+    public ContextMenuItem(ContextMenuPopup menu, ClientObjectReference target, string name, DreamIcon icon) {
         IoCManager.InjectDependencies(this);
         RobustXamlLoader.Load(this);
 
@@ -25,7 +25,7 @@ internal sealed partial class ContextMenuItem : PanelContainer {
         NameLabel.Margin = new Thickness(2, 0, 4, 0);
         NameLabel.Text = name;
 
-        Icon.Texture = sprite.Icon.LastRenderedTexture;
+        Icon.Texture = icon.LastRenderedTexture;
     }
 
     protected override void MouseEntered() {

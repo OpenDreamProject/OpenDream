@@ -98,7 +98,7 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
             return null;
 
         if (underMouse.ClickUid == EntityUid.Invalid) { // A turf
-            return GetTurfUnderMouse(mapCoords);
+            return GetTurfUnderMouse(mapCoords, out _);
         } else {
             Vector2i iconPosition = (Vector2i) ((mapCoords.Position - underMouse.Position) * EyeManager.PixelsPerMeter);
 
@@ -106,18 +106,21 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
         }
     }
 
-    private (ClientObjectReference Atom, Vector2i IconPosition)? GetTurfUnderMouse(MapCoordinates mapCoords) {
+    private (ClientObjectReference Atom, Vector2i IconPosition)? GetTurfUnderMouse(MapCoordinates mapCoords, out int? turfId) {
         // Grid coordinates are half a meter off from entity coordinates
         mapCoords = new MapCoordinates(mapCoords.Position + new Vector2(0.5f), mapCoords.MapId);
 
         if (_mapManager.TryFindGridAt(mapCoords, out var gridEntity, out var grid)) {
             Vector2i position = _mapSystem.CoordinatesToTile(gridEntity, grid, _mapSystem.MapToGrid(gridEntity, mapCoords));
+            _mapSystem.TryGetTile(grid, position, out Tile tile);
+            turfId = tile.TypeId;
             Vector2i turfIconPosition = (Vector2i) ((mapCoords.Position - position) * EyeManager.PixelsPerMeter);
             MapCoordinates worldPosition = _mapSystem.GridTileToWorld(gridEntity, grid, position);
 
             return (new(position, (int)worldPosition.MapId), turfIconPosition);
         }
 
+        turfId = null;
         return null;
     }
 
@@ -137,7 +140,7 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
             }
 
             // Append the turf to the end of the context menu
-            var turfUnderMouse = GetTurfUnderMouse(mapCoords)?.Atom;
+            var turfUnderMouse = GetTurfUnderMouse(mapCoords, out var turfId)?.Atom;
             if (turfUnderMouse is not null)
                 objects[index] = turfUnderMouse.Value;
 
@@ -147,7 +150,7 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
             //note that popup_menu = 0 overrides this behaviour, as does verb invisibility (urgh), and also hidden
             //because BYOND sure loves redundancy
 
-            _contextMenu.RepopulateEntities(objects);
+            _contextMenu.RepopulateEntities(objects, turfId);
             if(_contextMenu.EntityCount == 0)
                 return true; //don't open a 1x1 empty context menu
 

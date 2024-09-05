@@ -18,6 +18,7 @@ internal sealed partial class ContextMenuPopup : Popup {
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly IUserInterfaceManager _uiManager = default!;
+    private readonly ClientAppearanceSystem? _appearanceSystem;
     private readonly TransformSystem? _transformSystem;
     private readonly ClientVerbSystem? _verbSystem;
     private readonly EntityQuery<DMISpriteComponent> _spriteQuery;
@@ -35,33 +36,40 @@ internal sealed partial class ContextMenuPopup : Popup {
 
         _entitySystemManager.TryGetEntitySystem(out _transformSystem);
         _entitySystemManager.TryGetEntitySystem(out _verbSystem);
+        _entitySystemManager.TryGetEntitySystem(out _appearanceSystem);
         _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
         _xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
         _mobSightQuery = _entityManager.GetEntityQuery<DreamMobSightComponent>();
         _metadataQuery = _entityManager.GetEntityQuery<MetaDataComponent>();
     }
 
-    public void RepopulateEntities(IEnumerable<EntityUid> entities) {
+    public void RepopulateEntities(ClientObjectReference[] entities, int? turfId) {
         ContextMenu.RemoveAllChildren();
 
         if (_transformSystem == null)
             return;
 
-        foreach (EntityUid entity in entities) {
-            if (_xformQuery.TryGetComponent(entity, out TransformComponent? transform) && !_mapManager.IsGrid(_transformSystem.GetParent(transform)!.Owner)) // Not a child of another entity
-                continue;
-            if (!_spriteQuery.TryGetComponent(entity, out DMISpriteComponent? sprite)) // Has a sprite
-                continue;
-            if (sprite.Icon.Appearance?.MouseOpacity == MouseOpacity.Transparent) // Not transparent to mouse clicks
-                continue;
-            if (!sprite.IsVisible(transform, GetSeeInvisible())) // Not invisible
-                continue;
+        foreach (var objectReference in entities) {
+            if (objectReference.Type == ClientObjectReference.RefType.Entity) {
+                var entity = _entityManager.GetEntity(objectReference.Entity);
+                if (_xformQuery.TryGetComponent(entity, out TransformComponent? transform) && !_mapManager.IsGrid(_transformSystem.GetParent(transform)!.Owner)) // Not a child of another entity
+                    continue;
+                if (!_spriteQuery.TryGetComponent(entity, out DMISpriteComponent? sprite)) // Has a sprite
+                    continue;
+                if (sprite.Icon.Appearance?.MouseOpacity == MouseOpacity.Transparent) // Not transparent to mouse clicks
+                    continue;
+                if (!sprite.IsVisible(transform, GetSeeInvisible())) // Not invisible
+                    continue;
 
-            var metadata = _metadataQuery.GetComponent(entity);
-            if (string.IsNullOrEmpty(metadata.EntityName)) // Has a name
-                continue;
+                var metadata = _metadataQuery.GetComponent(entity);
+                if (string.IsNullOrEmpty(metadata.EntityName)) // Has a name
+                    continue;
 
-            ContextMenu.AddChild(new ContextMenuItem(this, new(_entityManager.GetNetEntity(entity)), metadata, sprite));
+                ContextMenu.AddChild(new ContextMenuItem(this, objectReference, metadata.EntityName, sprite.Icon));
+            } else if (objectReference.Type == ClientObjectReference.RefType.Turf && turfId is not null && _appearanceSystem is not null) {
+                var icon = _appearanceSystem.GetTurfIcon(turfId.Value);
+                ContextMenu.AddChild(new ContextMenuItem(this, objectReference, "turf (OD WIP)", icon));
+            }
         }
     }
 

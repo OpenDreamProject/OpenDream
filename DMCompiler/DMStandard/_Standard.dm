@@ -60,6 +60,7 @@ proc/md5(T) as text|null
 proc/min(A) as num|text|null
 proc/noise_hash(...) as num
 	set opendream_unimplemented = 1
+	return 0.5
 proc/nonspantext(Haystack, Needles, Start = 1) as num
 proc/num2text(N, A, B) as text
 proc/orange(Dist = 5, Center = usr) as /list|null // NOTE: Not sure if return types have BYOND parity

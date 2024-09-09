@@ -239,8 +239,10 @@ public class DreamList : DreamObject {
     }
 
     #region Operators
-    public override DreamValue OperatorIndex(DreamValue index) {
-        return GetValue(index);
+
+    public override ProcStatus OperatorIndex(DreamValue index, DMProcState state, out DreamValue result) {
+        result = GetValue(index);
+        return ProcStatus.Continue;
     }
 
     public override void OperatorIndexAssign(DreamValue index, DreamValue value) {
@@ -754,13 +756,13 @@ public sealed class DreamOverlaysList : DreamList {
             overlay = new IconAppearance() {
                 IconState = iconState
             };
+            overlay.Icon ??= defaultIcon;
         } else if (atomManager.TryCreateAppearanceFrom(value, out var overlayAppearance)) {
             overlay = overlayAppearance;
         } else {
             return null; // Not a valid overlay
         }
 
-        overlay.Icon ??= defaultIcon;
         return overlay;
     }
 }

@@ -106,7 +106,7 @@ internal static class DreamProcNative {
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_view);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_viewers);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_walk);
-        objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_walk_to);
+        objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_walk_rand);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_walk_towards);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_winclone);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_winexists);
@@ -143,13 +143,30 @@ internal static class DreamProcNative {
 
         objectTree.SetNativeProc(objectTree.Savefile, DreamProcNativeSavefile.NativeProc_ExportText);
         objectTree.SetNativeProc(objectTree.Savefile, DreamProcNativeSavefile.NativeProc_Flush);
-
+      
         objectTree.SetNativeProc(objectTree.World, DreamProcNativeWorld.NativeProc_Export);
         objectTree.SetNativeProc(objectTree.World, DreamProcNativeWorld.NativeProc_GetConfig);
         objectTree.SetNativeProc(objectTree.World, DreamProcNativeWorld.NativeProc_Profile);
         objectTree.SetNativeProc(objectTree.World, DreamProcNativeWorld.NativeProc_SetConfig);
         objectTree.SetNativeProc(objectTree.World, DreamProcNativeWorld.NativeProc_ODHotReloadInterface);
         objectTree.SetNativeProc(objectTree.World, DreamProcNativeWorld.NativeProc_ODHotReloadResource);
+        
+        objectTree.SetNativeProc(objectTree.Database, DreamProcNativeDatabase.NativeProc_Close);
+        objectTree.SetNativeProc(objectTree.Database, DreamProcNativeDatabase.NativeProc_Error);
+        objectTree.SetNativeProc(objectTree.Database, DreamProcNativeDatabase.NativeProc_ErrorMsg);
+        objectTree.SetNativeProc(objectTree.Database, DreamProcNativeDatabase.NativeProc_Open);
+
+        objectTree.SetNativeProc(objectTree.DatabaseQuery, DreamProcNativeDatabaseQuery.NativeProc_Add);
+        objectTree.SetNativeProc(objectTree.DatabaseQuery, DreamProcNativeDatabaseQuery.NativeProc_Clear);
+        objectTree.SetNativeProc(objectTree.DatabaseQuery, DreamProcNativeDatabaseQuery.NativeProc_Close);
+        objectTree.SetNativeProc(objectTree.DatabaseQuery, DreamProcNativeDatabaseQuery.NativeProc_Columns);
+        objectTree.SetNativeProc(objectTree.DatabaseQuery, DreamProcNativeDatabaseQuery.NativeProc_Error);
+        objectTree.SetNativeProc(objectTree.DatabaseQuery, DreamProcNativeDatabaseQuery.NativeProc_ErrorMsg);
+        objectTree.SetNativeProc(objectTree.DatabaseQuery, DreamProcNativeDatabaseQuery.NativeProc_Execute);
+        objectTree.SetNativeProc(objectTree.DatabaseQuery, DreamProcNativeDatabaseQuery.NativeProc_GetColumn);
+        objectTree.SetNativeProc(objectTree.DatabaseQuery, DreamProcNativeDatabaseQuery.NativeProc_GetRowData);
+        objectTree.SetNativeProc(objectTree.DatabaseQuery, DreamProcNativeDatabaseQuery.NativeProc_NextRow);
+        objectTree.SetNativeProc(objectTree.DatabaseQuery, DreamProcNativeDatabaseQuery.NativeProc_RowsAffected);
 
         SetOverridableNativeProc(objectTree, objectTree.World, DreamProcNativeWorld.NativeProc_Error);
         SetOverridableNativeProc(objectTree, objectTree.World, DreamProcNativeWorld.NativeProc_Reboot);
@@ -163,7 +180,7 @@ internal static class DreamProcNative {
 
         var proc = objectTree.World.ObjectDefinition.GetProc(nativeProc.Name);
         if (proc.SuperProc == null) { // This proc was never overriden so just replace it
-            type.ObjectDefinition.SetProcDefinition(proc.Name, proc.Id);
+            type.ObjectDefinition.SetProcDefinition(proc.Name, nativeProc.Id, replace: true);
             return;
         }
 

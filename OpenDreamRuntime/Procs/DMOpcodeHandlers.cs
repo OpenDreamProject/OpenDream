@@ -565,8 +565,13 @@ namespace OpenDreamRuntime.Procs {
 
             // number indices always perform a normal list access here
             if (key.TryGetValueAsInteger(out _)) {
-                state.Push(state.GetIndex(owner, key));
-                return ProcStatus.Continue;
+                ProcStatus subState = state.GetIndex(owner, key, state, out DreamValue indexResult);
+                if(subState == ProcStatus.Continue) {
+                    state.Push(indexResult);
+                    return subState;
+                } else {
+                    return subState;
+                }
             }
 
             if (!key.TryGetValueAsString(out string property)) {
@@ -1386,25 +1391,32 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus IsType(DMProcState state) {
             DreamValue typeValue = state.Pop();
             DreamValue value = state.Pop();
-            TreeEntry type;
+            TreeEntry? type;
 
             if (typeValue.TryGetValueAsDreamObject(out var typeObject)) {
                 if (typeObject == null) {
-                    state.Push(new DreamValue(0));
+                    state.Push(DreamValue.False);
                     return ProcStatus.Continue;
                 }
 
                 type = typeObject.ObjectDefinition.TreeEntry;
-            } else {
-                if(!typeValue.TryGetValueAsType(out type)) {
-                    throw new Exception($"istype() attempted to check non-path {typeValue}");
-                }
+            } else if (typeValue.TryGetValueAsAppearance(out _)) {
+                // /image matches an appearance
+                state.Push(value.TryGetValueAsDreamObject<DreamObjectImage>(out _)
+                    ? DreamValue.True
+                    : DreamValue.False);
+
+                return ProcStatus.Continue;
+            } else if (!typeValue.TryGetValueAsType(out type)) {
+                state.Push(DreamValue.False);
+
+                return ProcStatus.Continue;
             }
 
             if (value.TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
                 state.Push(new DreamValue(dreamObject.IsSubtypeOf(type) ? 1 : 0));
             } else {
-                state.Push(new DreamValue(0));
+                state.Push(DreamValue.False);
             }
 
             return ProcStatus.Continue;
@@ -1641,7 +1653,13 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus Try(DMProcState state) {
-            state.StartTryBlock(state.ReadInt(), state.ReadReference().Value);
+            var catchPosition = state.ReadInt();
+            var exceptionVarRef = state.ReadReference();
+            if (exceptionVarRef.Type != DMReference.Type.Local)
+                throw new Exception(
+                    $"The reference to place a caught exception into must be a local. {exceptionVarRef} is not valid.");
+
+            state.StartTryBlock(catchPosition, exceptionVarRef.Value);
             return ProcStatus.Continue;
         }
 
@@ -2510,7 +2528,11 @@ namespace OpenDreamRuntime.Procs {
             DreamValue index = state.Pop();
             DreamValue obj = state.Pop();
 
-            state.Push(state.GetIndex(obj, index));
+            ProcStatus subState = state.GetIndex(obj, index, state, out DreamValue indexResult);
+            if(subState == ProcStatus.Continue)
+                state.Push(indexResult);
+            else
+                return subState;
             return ProcStatus.Continue;
         }
 

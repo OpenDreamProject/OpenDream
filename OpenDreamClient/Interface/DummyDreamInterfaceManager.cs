@@ -17,6 +17,7 @@ public sealed class DummyDreamInterfaceManager : IDreamInterfaceManager {
     public ControlInfo? DefaultInfo => null;
     public ControlMap? DefaultMap => null;
     public ViewRange View => new(5);
+    public bool ShowPopupMenus => true;
 
     public void Initialize() {
     }
@@ -37,7 +38,7 @@ public sealed class DummyDreamInterfaceManager : IDreamInterfaceManager {
     public void WinSet(string? controlId, string winsetParams) {
     }
 
-    public string WinGet(string controlId, string queryValue, bool forceJson = false) {
+    public string WinGet(string controlId, string queryValue, bool forceJson = false, bool forceSnowflake = false) {
         return string.Empty;
     }
 

@@ -61,7 +61,6 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_Slash,
             TokenType.DM_Modulus,
             TokenType.DM_ModulusModulus
-
         ];
 
         private static readonly TokenType[] DereferenceTypes = [
@@ -152,6 +151,7 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_Slash,
             TokenType.DM_SlashEquals,
             TokenType.DM_Bar,
+            TokenType.DM_DoubleSquareBracket,
         ];
 
         public DMASTFile File() {
@@ -635,8 +635,7 @@ namespace DMCompiler.Compiler.DM {
             } while (Delimiter() || statement is DMASTProcStatementLabel);
             Whitespace();
 
-            if (procStatements.Count == 0) return (null,null);
-            return (procStatements, setStatements);
+            return (procStatements.Count > 0 ? procStatements : null, setStatements.Count > 0 ? setStatements : null);
         }
 
         private DMASTProcStatement? ProcStatement() {
@@ -788,7 +787,6 @@ namespace DMCompiler.Compiler.DM {
                 if (vars.Length > 1)
                     return new DMASTAggregate<DMASTProcStatementVarDeclaration>(firstToken.Location, vars);
                 return vars[0];
-
             } else if (wasSlash) {
                 ReuseToken(firstToken);
             }
@@ -844,6 +842,7 @@ namespace DMCompiler.Compiler.DM {
                     Newline();
                     Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
                 }
+
                 return varDeclarations.ToArray();
             }
             else if (hasNewline) {
@@ -963,6 +962,7 @@ namespace DMCompiler.Compiler.DM {
                     Emit(WarningCode.BadToken, "Expected an identifier for set declaration");
                     return setDeclarations.ToArray();
                 }
+
                 Whitespace();
                 TokenType consumed = Consume(new[] { TokenType.DM_Equals, TokenType.DM_In },"Expected a 'in' or '=' for set declaration");
                 bool wasInKeyword = (consumed == TokenType.DM_In);
@@ -1108,7 +1108,7 @@ namespace DMCompiler.Compiler.DM {
                     if (statement != null) {
                         body = new DMASTProcBlockInner(loc, statement);
                     } else {
-                        Emit(WarningCode.BadExpression, "Expected body or statement");
+                        Emit(WarningCode.MissingBody, "Expected body or statement");
                         body = new DMASTProcBlockInner(loc);
                     }
                 }
@@ -1270,10 +1270,11 @@ namespace DMCompiler.Compiler.DM {
                     } else {
                         statement = ProcStatement();
                         if (statement == null) {
-                            DMCompiler.Emit(WarningCode.BadExpression, forLocation, "Expected body or statement");
-                            statement = new DMASTProcStatementExpression(loc, new DMASTConstantNull(loc)); // just so we can continue compiling.
+                            DMCompiler.Emit(WarningCode.MissingBody, forLocation, "Expected body or statement");
+                            statement = new DMASTInvalidProcStatement(loc);
                         }
                     }
+
                     body = new DMASTProcBlockInner(loc, statement);
                 }
 
@@ -1328,6 +1329,7 @@ namespace DMCompiler.Compiler.DM {
                         //For the sake of argument, add a statement (avoids repetitive warning emissions down the line :^) )
                         statement = new DMASTInvalidProcStatement(loc);
                     }
+
                     body = new DMASTProcBlockInner(loc, new[] { statement }, null);
                 }
 
@@ -1356,12 +1358,16 @@ namespace DMCompiler.Compiler.DM {
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
                 Whitespace();
                 DMASTExpression? value = Expression();
+                RequireExpression(ref value, "Switch statement is missing a value");
                 ConsumeRightParenthesis();
                 Whitespace();
 
                 DMASTProcStatementSwitch.SwitchCase[]? switchCases = SwitchCases();
+                if (switchCases == null) {
+                    switchCases = [];
+                    Emit(WarningCode.MissingBody, "Expected switch cases");
+                }
 
-                if (switchCases == null) Emit(WarningCode.BadExpression, "Expected switch cases");
                 return new DMASTProcStatementSwitch(loc, value, switchCases);
             }
 
@@ -1505,8 +1511,11 @@ namespace DMCompiler.Compiler.DM {
                 DMASTProcBlockInner? tryBody = ProcBlock();
                 if (tryBody == null) {
                     DMASTProcStatement? statement = ProcStatement();
+                    if (statement == null) {
+                        statement = new DMASTInvalidProcStatement(loc);
+                        Emit(WarningCode.MissingBody, "Expected body or statement");
+                    }
 
-                    if (statement == null) Emit(WarningCode.BadExpression, "Expected body or statement");
                     tryBody = new DMASTProcBlockInner(loc,statement);
                 }
 
@@ -1544,6 +1553,7 @@ namespace DMCompiler.Compiler.DM {
             if (Check(TokenType.DM_Throw)) {
                 Whitespace();
                 DMASTExpression? value = Expression();
+                RequireExpression(ref value, "Throw statement must have a value");
 
                 return new DMASTProcStatementThrow(loc, value);
             } else {
@@ -1564,7 +1574,7 @@ namespace DMCompiler.Compiler.DM {
             if (Check(TokenType.DM_LeftParenthesis)) {
                 BracketWhitespace();
 
-                DMASTCallParameter[] callParameters = CallParameters() ?? Array.Empty<DMASTCallParameter>();
+                DMASTCallParameter[] callParameters = CallParameters() ?? [];
                 BracketWhitespace();
                 ConsumeRightParenthesis();
 
@@ -2200,7 +2210,27 @@ namespace DMCompiler.Compiler.DM {
                 if (Check(TokenType.DM_LeftCurlyBracket)) {
                     DMCompiler.UnimplementedWarning(path.Location, "Modified types are currently not supported and modified values will be ignored.");
 
-                    while (Current().Type != TokenType.DM_RightCurlyBracket && !Check(TokenType.EndOfFile)) Advance();
+                    BracketWhitespace();
+                    Check(TokenType.DM_Indent); // The body could be indented. We ignore that. TODO: Better braced block parsing
+                    DMASTIdentifier? overriding = Identifier();
+
+                    while (overriding != null) {
+                        BracketWhitespace();
+                        Consume(TokenType.DM_Equals, "Expected '='");
+                        BracketWhitespace();
+
+                        Expression(); // TODO: Use this (one day...)
+
+                        if (Check(TokenType.DM_Semicolon)) {
+                            BracketWhitespace();
+                            overriding = Identifier();
+                        } else {
+                            overriding = null;
+                        }
+                    }
+
+                    Check(TokenType.DM_Dedent); // We ignore indents/dedents in the body
+                    BracketWhitespace();
                     Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
                     //The lexer tosses in a newline after '}', but we avoid Newline() because we only want to remove the extra newline, not all of them
                     Check(TokenType.Newline);
@@ -2230,7 +2260,7 @@ namespace DMCompiler.Compiler.DM {
                 DMASTCallParameter[]? procParameters = ProcCall();
                 if (procParameters == null) {
                     Emit(WarningCode.InvalidArgumentCount, "Expected proc parameters");
-                    procParameters = Array.Empty<DMASTCallParameter>();
+                    procParameters = [];
                 }
 
                 return new DMASTCall(loc, callParameters, procParameters);
@@ -2243,11 +2273,11 @@ namespace DMCompiler.Compiler.DM {
             Token constantToken = Current();
 
             switch (constantToken.Type) {
-                case TokenType.DM_Integer: Advance(); return new DMASTConstantInteger(constantToken.Location, (int)constantToken.Value);
-                case TokenType.DM_Float: Advance(); return new DMASTConstantFloat(constantToken.Location, (float)constantToken.Value);
-                case TokenType.DM_Resource: Advance(); return new DMASTConstantResource(constantToken.Location, (string)constantToken.Value);
+                case TokenType.DM_Integer: Advance(); return new DMASTConstantInteger(constantToken.Location, constantToken.ValueAsInt());
+                case TokenType.DM_Float: Advance(); return new DMASTConstantFloat(constantToken.Location, constantToken.ValueAsFloat());
+                case TokenType.DM_Resource: Advance(); return new DMASTConstantResource(constantToken.Location, constantToken.ValueAsString());
                 case TokenType.DM_Null: Advance(); return new DMASTConstantNull(constantToken.Location);
-                case TokenType.DM_RawString: Advance(); return new DMASTConstantString(constantToken.Location, (string)constantToken.Value);
+                case TokenType.DM_RawString: Advance(); return new DMASTConstantString(constantToken.Location, constantToken.ValueAsString());
                 case TokenType.DM_ConstantString:
                 case TokenType.DM_StringBegin:
                     // Don't advance, ExpressionFromString() will handle it
@@ -2358,6 +2388,7 @@ namespace DMCompiler.Compiler.DM {
                                 expression = new DMASTDereference(expression.Location, expression, operations.ToArray());
                                 operations.Clear();
                             }
+
                             expression = ParseScopeIdentifier(expression);
                             continue;
                         }

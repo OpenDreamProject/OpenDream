@@ -64,6 +64,7 @@ public enum WarningCode {
     InvalidVarType = 2702, // Var static typing
     ImplicitNullType = 2703, //  Raised when a null variable isn't explicitly statically typed as nullable
     LostTypeInfo = 2704, // An operation led to lost type information
+    UnimplementedAccess = 2800, // When accessing unimplemented procs and vars
 
     // 3000 - 3999 are reserved for stylistic configuration.
     EmptyBlock = 3100,
@@ -116,40 +117,9 @@ public struct CompilerEmission {
     };
 }
 
-[Obsolete("This is not a desirable way for the compiler to emit an error. Use CompileAbortException or ForceError() if it needs to be fatal, or an DMCompiler.Emit() otherwise.")]
-public class CompileErrorException : Exception {
-    public CompilerEmission Error;
-
-    public CompileErrorException(CompilerEmission error) : base(error.Message) {
-        Error = error;
-    }
-
-    public CompileErrorException(Location location, string message) : base(message) {
-        Error = new CompilerEmission(ErrorLevel.Error, location, message);
-    }
-
-    public CompileErrorException(string message) {
-        Error = new CompilerEmission(ErrorLevel.Error, Location.Unknown, message);
-    }
-}
-
-
-/// <summary>
-/// Represents an internal compiler error that should cause parsing for a particular block to cease. <br/>
-/// This should be ideally used for exceptions that are the fault of the compiler itself, <br/>
-/// like an abnormal state being reached or something.
-/// </summary>
-public sealed class CompileAbortException : CompileErrorException {
-    public CompileAbortException(CompilerEmission error) : base(error) {
-    }
-
-    public CompileAbortException(Location location, string message) : base(location, message) {
-    }
-
-    public CompileAbortException(string message) : base(message) {
-    }
-}
-
-public sealed class UnknownIdentifierException(Location location, string identifierName) : CompileErrorException(location, $"Unknown identifier \"{identifierName}\"") {
-    public string IdentifierName = identifierName;
+// TODO: Find a nicer way to do this
+public sealed class UnknownIdentifierException(Location location, string identifier)
+    : Exception($"Unknown identifier \"{identifier}\" - This message should not be seen") {
+    public readonly Location Location = location;
+    public readonly string Identifier = identifier;
 }

@@ -13,10 +13,12 @@ public interface IAnnotatedBytecode {
 }
 
 internal sealed class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
-    private List<IAnnotatedBytecode> _args = new();
     public Location Location;
     public DreamProcOpcode Opcode;
     public int StackSizeDelta;
+
+    private readonly List<IAnnotatedBytecode> _args = new();
+    private Location? _location;
 
     public AnnotatedBytecodeInstruction(DreamProcOpcode opcode, int stackSizeDelta, Location location) {
         Opcode = opcode;
@@ -55,6 +57,7 @@ internal sealed class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
             if (args[0] is not AnnotatedBytecodeInteger) {
                 throw new Exception("Variable arg instructions must have a sizing operand (integer) as their first arg");
             }
+
             return;
         }
 
@@ -114,7 +117,14 @@ internal sealed class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
         return _args;
     }
 
-    private Location? _location;
+    public IAnnotatedBytecode GetArg(int index) {
+        return _args[index];
+    }
+
+    public T GetArg<T>(int index) where T : IAnnotatedBytecode {
+        return (T)GetArg(index);
+    }
+
     public void SetLocation(IAnnotatedBytecode loc) {
         if (_location != null) return;
         _location = loc.GetLocation();
@@ -544,7 +554,6 @@ internal sealed class AnnotatedBytecodeLabel : IAnnotatedBytecode {
         return Location;
     }
 }
-
 
 internal sealed class AnnotatedBytecodeFilter : IAnnotatedBytecode {
     public DreamPath FilterPath;

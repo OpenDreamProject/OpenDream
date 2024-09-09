@@ -157,7 +157,8 @@ public sealed class DreamConnection {
 
     public void SendClientInfoUpdate() {
         MsgUpdateClientInfo msg = new() {
-            View = Client!.View
+            View = Client!.View,
+            ShowPopupMenus = Client!.ShowPopupMenus
         };
 
         Session?.ConnectedClient.SendMessage(msg);

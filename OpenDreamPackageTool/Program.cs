@@ -16,18 +16,22 @@ public static class Program {
         public bool TgsEngineBuild;
     }
 
-    public class ClientOptions : Options {
-
-    }
+    public class ClientOptions : Options;
 
     public class TgsOptions : Options {
         // Avoid adding arguments for TGS, to give us more flexibility while keeping compatibility
     }
 
-    public static readonly string[] SharedIgnoredResources = {
+    public static readonly string[] SharedIgnoredResources = [
         ".gitignore",
         ".directory",
         ".DS_Store"
+    ];
+
+    private static readonly IReadOnlySet<string> ValidBuildConfigurations = new HashSet<string> {
+        "Release",
+        "Debug",
+        "Tools"
     };
 
     public static int Main(string[] args) {
@@ -56,7 +60,7 @@ public static class Program {
     }
 
     public static void CopyDirectory(string src, string dest, string[]? skip = null) {
-        skip ??= Array.Empty<string>();
+        skip ??= [];
 
         var srcDir = new DirectoryInfo(src);
         if (!srcDir.Exists)
@@ -97,8 +101,18 @@ public static class Program {
                     case "--skip-build":
                         serverOptions.SkipBuild = true;
                         break;
-                    case "--debug":
-                        serverOptions.BuildConfiguration = "Debug";
+                    case "--configuration":
+                        if (i + 1 >= args.Length) {
+                            Console.Error.WriteLine("No configuration given");
+                            return false;
+                        }
+
+                        serverOptions.BuildConfiguration = args[++i];
+                        if (!ValidBuildConfigurations.Contains(serverOptions.BuildConfiguration)) {
+                            Console.Error.WriteLine($"Invalid configuration '{serverOptions.BuildConfiguration}'");
+                            return false;
+                        }
+
                         break;
                     case "--platform":
                     case "-p":
@@ -136,8 +150,18 @@ public static class Program {
                     case "--skip-build":
                         clientOptions.SkipBuild = true;
                         break;
-                    case "--debug":
-                        clientOptions.BuildConfiguration = "Debug";
+                    case "--configuration":
+                        if (i + 1 >= args.Length) {
+                            Console.Error.WriteLine("No configuration given");
+                            return false;
+                        }
+
+                        clientOptions.BuildConfiguration = args[++i];
+                        if (!ValidBuildConfigurations.Contains(clientOptions.BuildConfiguration)) {
+                            Console.Error.WriteLine($"Invalid configuration '{clientOptions.BuildConfiguration}'");
+                            return false;
+                        }
+
                         break;
                     default:
                         Console.Error.WriteLine($"Invalid argument '{arg}'");
@@ -163,8 +187,18 @@ public static class Program {
                     case "--skip-build":
                         tgsOptions.SkipBuild = true;
                         break;
-                    case "--debug":
-                        tgsOptions.BuildConfiguration = "Debug";
+                    case "--configuration":
+                        if (i + 1 >= args.Length) {
+                            Console.Error.WriteLine("No configuration given");
+                            return false;
+                        }
+
+                        tgsOptions.BuildConfiguration = args[++i];
+                        if (!ValidBuildConfigurations.Contains(tgsOptions.BuildConfiguration)) {
+                            Console.Error.WriteLine($"Invalid configuration '{tgsOptions.BuildConfiguration}'");
+                            return false;
+                        }
+
                         break;
                     default:
                         Console.Error.WriteLine($"Invalid argument '{arg}'");

@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace DMCompiler.Json;
+﻿namespace DMCompiler.Json;
 
 public sealed class DreamCompiledJson {
     public required DreamCompiledJsonMetadata Metadata { get; set; }

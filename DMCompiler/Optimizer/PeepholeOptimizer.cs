@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using DMCompiler.Bytecode;
 
 namespace DMCompiler.Optimizer;

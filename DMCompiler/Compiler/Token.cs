@@ -1,6 +1,5 @@
 ﻿// ReSharper disable InconsistentNaming
 
-using System;
 using System.Runtime.CompilerServices;
 
 namespace DMCompiler.Compiler;

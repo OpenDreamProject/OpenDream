@@ -827,7 +827,11 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.ListIndex: {
                     GetIndexReferenceValues(reference, out var index, out var indexing, peek);
 
-                    return GetIndex(indexing, index);
+                    ProcStatus subState = GetIndex(indexing, index, this, out Result);
+                    if (subState == ProcStatus.Continue)
+                        return Result;
+                    else
+                        throw new Exception("fuck this is gonna be so hard to implement");
                 }
                 default:
                     ThrowCannotGetValueOfReferenceType(reference);
@@ -916,9 +920,10 @@ namespace OpenDreamRuntime.Procs {
             throw new Exception($"Type {ownerObj.ObjectDefinition.Type} has no field called \"{field}\"");
         }
 
-        public DreamValue GetIndex(DreamValue indexing, DreamValue index) {
+        public ProcStatus GetIndex(DreamValue indexing, DreamValue index, DMProcState state, out DreamValue result) {
             if (indexing.TryGetValueAsDreamList(out var listObj)) {
-                return listObj.GetValue(index);
+                result = listObj.GetValue(index);
+                return ProcStatus.Continue;
             }
 
             if (indexing.TryGetValueAsString(out string? strValue)) {
@@ -926,16 +931,18 @@ namespace OpenDreamRuntime.Procs {
                     ThrowAttemptedToIndexString(index);
 
                 char c = strValue[strIndex - 1];
-                return new DreamValue(Convert.ToString(c));
+                result = new DreamValue(Convert.ToString(c));
+                return ProcStatus.Continue;
             }
 
             if (indexing.TryGetValueAsDreamObject(out var dreamObject)) {
                 if (dreamObject != null)
-                    return dreamObject.OperatorIndex(index);
+                    return dreamObject.OperatorIndex(index, state, out result);
             }
 
             ThrowCannotGetIndex(indexing, index);
-            return DreamValue.Null;
+            result = DreamValue.Null;
+            return ProcStatus.Continue;
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]

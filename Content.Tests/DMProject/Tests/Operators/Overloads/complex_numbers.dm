@@ -48,6 +48,15 @@
 			else
 				throw EXCEPTION("Invalid index on complex number")
 
+	proc/operator[]=(index, value) 
+		switch(index)
+			if(1)
+				src.a = value
+			if(2)
+				src.b = value
+			else
+				throw EXCEPTION("Invalid index assign on complex number [index] = [value]")				
+
 
 	proc/operator&(datum/complex/C)
 		return new /datum/complex(src.a & C.a, src.b & C.b)
@@ -91,4 +100,17 @@
 	ASSERT(result.a == 6 && result.b == -2)
 
 	result /= 2
+	ASSERT(result.a == 3 && result.b == -1)
+
+	//[] and []=
+	ASSERT(result[1] == 3)
+	ASSERT(result[2] == -1)
+	ASSERT(result[1] == 3)
+	ASSERT(result[2] == -1)
+	ASSERT(result[1] == 3)
+	ASSERT(result[2] == -1)
+	var/test = result[1]
+	test *= result[2]
+	ASSERT(test == -3)
+
 	ASSERT(result.a == 3 && result.b == -1)

@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace DMCompiler.Compiler.DM.AST;
 
 public class DMASTBinary(Location location, DMASTExpression lhs, DMASTExpression rhs) : DMASTExpression(location) {

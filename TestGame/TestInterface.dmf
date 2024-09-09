@@ -209,4 +209,3 @@ window "wingetwindow"
 		size = 0,20
 		text = "as raw"
 		command = "wingettextverb \"raw: [[wingetinput.text as raw]]\""
-

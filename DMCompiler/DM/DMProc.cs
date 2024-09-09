@@ -84,6 +84,7 @@ namespace DMCompiler.DM {
         private readonly Stack<DMProcScope> _scopes = new();
         private readonly Dictionary<string, LocalVariable> _parameters = new();
         private int _labelIdCounter;
+        private int _enumeratorIdCounter;
 
         private readonly List<string> _localVariableNames = new();
         private int _localVariableIdCounter;
@@ -99,7 +100,6 @@ namespace DMCompiler.DM {
         public AnnotatedByteCodeWriter AnnotatedBytecode = new();
 
         private Location _writerLocation;
-
 
         public DMProc(int id, DMObject dmObject, DMASTProcDefinition? astDefinition) {
             Id = id;
@@ -169,41 +169,14 @@ namespace DMCompiler.DM {
         }
 
         public ProcDefinitionJson GetJsonRepresentation() {
-            ProcDefinitionJson procDefinition = new ProcDefinitionJson();
+            var optimizer = new BytecodeOptimizer();
+            var serializer = new AnnotatedBytecodeSerializer();
 
-            procDefinition.OwningTypeId = _dmObject.Id;
-            procDefinition.Name = Name;
-            procDefinition.IsVerb = IsVerb;
+            optimizer.Optimize(AnnotatedBytecode.GetAnnotatedBytecode());
 
-            if ((Attributes & ProcAttributes.None) != ProcAttributes.None) {
-                procDefinition.Attributes = Attributes;
-            }
-
-            procDefinition.VerbSrc = VerbSrc;
-            procDefinition.VerbName = VerbName;
-            // Normally VerbCategory is "" by default and null to hide it, but we invert those during (de)serialization to reduce JSON size
-            VerbCategory = VerbCategory switch {
-                "" => null,
-                null => string.Empty,
-                _ => VerbCategory
-            };
-            procDefinition.VerbCategory = VerbCategory;
-            procDefinition.VerbDesc = VerbDesc;
-            procDefinition.Invisibility = Invisibility;
-
-            BytecodeOptimizer optimizer = new();
-
-            var bytecodelist = optimizer.Optimize(AnnotatedBytecode.GetAnnotatedBytecode());
-
-            procDefinition.MaxStackSize = AnnotatedBytecode.GetMaxStackSize();
-            AnnotatedBytecodeSerializer serializer = new();
-
-            if (bytecodelist.Count > 0)
-                procDefinition.Bytecode =
-                    serializer.Serialize(AnnotatedBytecode.GetAnnotatedBytecode());
-
+            List<ProcArgumentJson>? arguments = null;
             if (_parameters.Count > 0) {
-                procDefinition.Arguments = new List<ProcArgumentJson>();
+                arguments = new List<ProcArgumentJson>();
 
                 foreach (var parameter in _parameters.Values) {
                     if (parameter.ExplicitValueType is not { } argumentType) {
@@ -217,20 +190,36 @@ namespace DMCompiler.DM {
                         }
                     }
 
-                    procDefinition.Arguments.Add(new ProcArgumentJson {
+                    arguments.Add(new ProcArgumentJson {
                         Name = parameter.Name,
                         Type = argumentType.Type
                     });
                 }
             }
 
-            if (_localVariableNames.Count > 0) {
-                procDefinition.Locals = serializer.GetLocalVariablesJson();
-            }
+            return new ProcDefinitionJson {
+                OwningTypeId = _dmObject.Id,
+                Name = Name,
+                Attributes = Attributes,
+                MaxStackSize = AnnotatedBytecode.GetMaxStackSize(),
+                Bytecode = serializer.Serialize(AnnotatedBytecode.GetAnnotatedBytecode()),
+                Arguments = arguments,
+                SourceInfo = serializer.SourceInfo,
+                Locals = (_localVariableNames.Count > 0) ? serializer.GetLocalVariablesJson() : null,
 
-            procDefinition.SourceInfo = serializer.SourceInfo;
+                IsVerb = IsVerb,
+                VerbSrc = VerbSrc,
+                VerbName = VerbName,
+                VerbDesc = VerbDesc,
+                Invisibility = Invisibility,
 
-            return procDefinition;
+                // Normally VerbCategory is "" by default and null to hide it, but we invert those during (de)serialization to reduce JSON size
+                VerbCategory = VerbCategory switch {
+                    "" => null,
+                    null => string.Empty,
+                    _ => VerbCategory
+                }
+            };
         }
 
         public void WaitFor(bool waitFor) {
@@ -363,24 +352,29 @@ namespace DMCompiler.DM {
 
         public void CreateListEnumerator() {
             WriteOpcode(DreamProcOpcode.CreateListEnumerator);
+            WriteEnumeratorId(_enumeratorIdCounter++);
         }
 
         public void CreateFilteredListEnumerator(int filterTypeId, DreamPath filterType) {
             WriteOpcode(DreamProcOpcode.CreateFilteredListEnumerator);
+            WriteEnumeratorId(_enumeratorIdCounter++);
             WriteFilterID(filterTypeId, filterType);
         }
 
         public void CreateTypeEnumerator() {
             WriteOpcode(DreamProcOpcode.CreateTypeEnumerator);
+            WriteEnumeratorId(_enumeratorIdCounter++);
         }
 
         public void CreateRangeEnumerator() {
             WriteOpcode(DreamProcOpcode.CreateRangeEnumerator);
+            WriteEnumeratorId(_enumeratorIdCounter++);
         }
 
         public void Enumerate(DMReference reference) {
             if (_loopStack?.TryPeek(out var peek) ?? false) {
                 WriteOpcode(DreamProcOpcode.Enumerate);
+                WriteEnumeratorId(_enumeratorIdCounter - 1);
                 WriteReference(reference);
                 WriteLabel($"{peek}_end");
             } else {
@@ -391,6 +385,7 @@ namespace DMCompiler.DM {
         public void EnumerateNoAssign() {
             if (_loopStack?.TryPeek(out var peek) ?? false) {
                 WriteOpcode(DreamProcOpcode.EnumerateNoAssign);
+                WriteEnumeratorId(_enumeratorIdCounter - 1);
                 WriteLabel($"{peek}_end");
             } else {
                 DMCompiler.ForcedError(Location, "Cannot peek empty loop stack");
@@ -399,6 +394,7 @@ namespace DMCompiler.DM {
 
         public void DestroyEnumerator() {
             WriteOpcode(DreamProcOpcode.DestroyEnumerator);
+            WriteEnumeratorId(--_enumeratorIdCounter);
         }
 
         public void CreateList(int size) {
@@ -434,7 +430,8 @@ namespace DMCompiler.DM {
 
             if ((Attributes & ProcAttributes.Background) == ProcAttributes.Background) {
                 if (!DMObjectTree.TryGetGlobalProc("sleep", out var sleepProc)) {
-                    throw new CompileErrorException(Location, "Cannot do a background sleep without a sleep proc");
+                    DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, "Cannot do a background sleep without a sleep proc");
+                    return;
                 }
 
                 PushFloat(-1); // argument given to sleep()
@@ -454,6 +451,7 @@ namespace DMCompiler.DM {
             } else {
                 DMCompiler.ForcedError(Location, "Cannot pop empty loop stack");
             }
+
             EndScope();
         }
 
@@ -509,6 +507,7 @@ namespace DMCompiler.DM {
                 if (!LabelExists(codeLabel)) {
                     DMCompiler.Emit(WarningCode.ItemDoesntExist, label.Location, $"Unknown label {label.Identifier}");
                 }
+
                 Jump(codeLabel + "_end");
             } else if (_loopStack?.TryPeek(out var peek) ?? false) {
                 Jump(peek + "_end");
@@ -685,6 +684,7 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Assign);
             WriteReference(reference);
         }
+
         public void AssignInto(DMReference reference) {
             WriteOpcode(DreamProcOpcode.AssignInto);
             WriteReference(reference);
@@ -1074,6 +1074,10 @@ namespace DMCompiler.DM {
 
         private void WriteProcId(int procId) {
             AnnotatedBytecode.WriteProcId(procId, _writerLocation);
+        }
+
+        private void WriteEnumeratorId(int enumeratorId) {
+            AnnotatedBytecode.WriteEnumeratorId(enumeratorId, _writerLocation);
         }
 
         private void WriteFloat(float value) {

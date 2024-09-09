@@ -56,14 +56,15 @@ internal abstract class DMExpression(Location location) {
     // May throw if this expression is unable to be referenced
     // The emitted code will jump to endLabel after pushing `null` to the stack in the event of a short-circuit
     public virtual DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
-        throw new CompileErrorException(Location, $"attempt to reference r-value");
+        DMCompiler.Emit(WarningCode.BadExpression, Location, "attempt to reference r-value");
+        return DMReference.Invalid;
     }
 
     /// <summary>
-        /// Gets the canonical name of the expression if it exists.
-        /// </summary>
-        /// <returns>The name of the expression, or <c>null</c> if it does not have one.</returns>
-        public virtual string? GetNameof(DMObject dmObject, DMProc proc) => null;
+    /// Gets the canonical name of the expression if it exists.
+    /// </summary>
+    /// <returns>The name of the expression, or <c>null</c> if it does not have one.</returns>
+    public virtual string? GetNameof(DMObject dmObject) => null;
 
     /// <summary>
     /// Determines whether the expression returns an ambiguous path.
@@ -78,7 +79,7 @@ internal abstract class DMExpression(Location location) {
 
 // (a, b, c, ...)
 // This isn't an expression, it's just a helper class for working with argument lists
-sealed class ArgumentList {
+internal sealed class ArgumentList {
     public readonly (string? Name, DMExpression Expr)[] Expressions;
     public int Length => Expressions.Length;
     public Location Location;
@@ -108,7 +109,14 @@ sealed class ArgumentList {
                     break;
                 case Expressions.Number keyNum:
                     //Replaces an ordered argument
-                    argIndex = (int)keyNum.Value;
+                    var newIdx = (int)keyNum.Value - 1;
+
+                    if (newIdx == argIndex) {
+                        DMCompiler.Emit(WarningCode.PointlessPositionalArgument, key.Location,
+                            $"The argument at index {argIndex + 1} is a positional argument with a redundant index (\"{argIndex + 1} = value\" at argument {argIndex + 1}). This does not function like a named argument and is likely a mistake.");
+                    }
+
+                    argIndex = newIdx;
                     break;
                 case Expressions.Resource _:
                 case Expressions.ConstantPath _:

@@ -1,3 +1,4 @@
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -296,6 +297,17 @@ namespace OpenDreamRuntime {
                 connection.Session?.Channel.SendMessage(msgLoadInterface);
             }
         }
+
+        public void HotReloadResource(string fileName){
+            //ensure all paths are relative for consistency
+            var resource = _dreamResourceManager.LoadResource(Path.GetRelativePath(_dreamResourceManager.RootPath, fileName), forceReload:true);
+            var msgBrowseResource = new MsgNotifyResourceUpdate() { //send a message that this resource id has been updated, let the clients handle re-requesting it
+                ResourceId = resource.Id
+            };
+            foreach (var connection in _connections.Values) {
+                connection.Session?.Channel.SendMessage(msgBrowseResource);
+            }
+        }
     }
 }
 
@@ -320,5 +332,29 @@ public sealed class HotReloadInterfaceCommand : IConsoleCommand {
         DreamManager dreamManager = IoCManager.Resolve<DreamManager>();
         dreamManager.HotReloadInterface();
         shell.WriteLine("Reloading interface");
+    }
+}
+
+public sealed class HotReloadResourceCommand : IConsoleCommand {
+    // ReSharper disable once StringLiteralTypo
+    public string Command => "hotreloadresource";
+    public string Description => "Reload a specified resource and send the update to all clients who have the old version already";
+    public string Help => "";
+    public bool RequireServerOrSingleplayer => true;
+
+    public void Execute(IConsoleShell shell, string argStr, string[] args) {
+        if(!shell.IsLocal) {
+            shell.WriteError("You cannot use this command as a client. Execute it on the server console.");
+            return;
+        }
+
+        if (args.Length != 1) {
+            shell.WriteError("This command requires a file path to reload as an argument! Example: hotreloadresource ./path/to/resource.dmi");
+            return;
+        }
+
+        DreamManager dreamManager = IoCManager.Resolve<DreamManager>();
+        shell.WriteLine($"Reloading {args[0]}");
+        dreamManager.HotReloadResource(args[0]);
     }
 }

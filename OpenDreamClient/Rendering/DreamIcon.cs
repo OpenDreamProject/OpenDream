@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace OpenDreamClient.Rendering;
 
-internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppearanceSystem appearanceSystem) : IDisposable {
+internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming gameTiming, IClyde clyde, ClientAppearanceSystem appearanceSystem) : IDisposable {
     public delegate void SizeChangedEventHandler();
 
     public List<DreamIcon> Overlays { get; } = new();
@@ -17,6 +17,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
     public DMIResource? DMI {
         get => _dmi;
         private set {
+            _dmi?.OnUpdateCallbacks.Remove(DirtyTexture);
             _dmi = value;
             CheckSizeChange();
         }
@@ -44,24 +45,35 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
     private IconAppearance? _appearance;
 
     // TODO: We could cache these per-appearance instead of per-atom
-    public Texture? CachedTexture { get; private set; }
+    public IRenderTexture? CachedTexture {
+        get => _cachedTexture;
+        private set {
+            if (_cachedTexture != null)
+                renderTargetPool.Return(_cachedTexture);
+            _cachedTexture = value;
+        }
+    }
+
     public Vector2 TextureRenderOffset = Vector2.Zero;
+    public Texture? LastRenderedTexture;
 
     private int _animationFrame;
     private TimeSpan _animationFrameTime = gameTiming.CurTime;
     private List<AppearanceAnimation>? _appearanceAnimations;
+    private int _appearanceAnimationsLoops;
     private Box2? _cachedAABB;
-    private IRenderTexture? _ping, _pong;
     private bool _textureDirty = true;
+    private IRenderTexture? _cachedTexture;
 
-    public DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppearanceSystem appearanceSystem, int appearanceId,
-        AtomDirection? parentDir = null) : this(gameTiming, clyde, appearanceSystem) {
+    public DreamIcon(RenderTargetPool renderTargetPool, IGameTiming gameTiming, IClyde clyde, ClientAppearanceSystem appearanceSystem, int appearanceId,
+        AtomDirection? parentDir = null) : this(renderTargetPool, gameTiming, clyde, appearanceSystem) {
         SetAppearance(appearanceId, parentDir);
     }
 
     public void Dispose() {
-        _ping?.Dispose();
-        _pong?.Dispose();
+        CachedTexture = null;
+        LastRenderedTexture = null;
+        DMI = null; //triggers the removal of the onUpdateCallback
     }
 
     public Texture? GetTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData, Texture? textureOverride = null) {
@@ -73,7 +85,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
 
             var animationFrame = AnimationFrame;
             if (CachedTexture != null && !_textureDirty)
-                return CachedTexture;
+                return CachedTexture.Texture;
 
             _textureDirty = false;
             frame = DMI.GetState(Appearance.IconState)?.GetFrames(Appearance.Direction)[animationFrame];
@@ -90,12 +102,12 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
             CachedTexture = null;
         } else if (canSkipFullRender) {
             TextureRenderOffset = Vector2.Zero;
-            CachedTexture = frame;
+            return frame;
         } else {
             CachedTexture = FullRenderTexture(viewOverlay, handle, iconMetaData, frame);
         }
 
-        return CachedTexture;
+        return CachedTexture?.Texture;
     }
 
     public void SetAppearance(int? appearanceId, AtomDirection? parentDir = null) {
@@ -133,7 +145,19 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
                     start = _appearanceAnimations[^1].Start + _appearanceAnimations[^1].Duration; //if it's not parallel, it's chained
 
         _appearanceAnimations ??= new List<AppearanceAnimation>();
-        _appearanceAnimations.Add(new AppearanceAnimation(start, duration, endingAppearance, easing, loops, flags, delay));
+        if(_appearanceAnimations.Count == 0) {//only valid on the first animation
+            _appearanceAnimationsLoops = loops;
+        }
+
+        for(int i=_appearanceAnimations.Count-1; i>=0; i--) //there can be only one last-in-sequence, and it might not be the last element of the list because it could be added to mid-loop
+            if(_appearanceAnimations[i].LastInSequence) {
+                var lastAnim =  _appearanceAnimations[i];
+                lastAnim.LastInSequence = false;
+                _appearanceAnimations[i] = lastAnim;
+                break;
+            }
+            
+        _appearanceAnimations.Add(new AppearanceAnimation(start, duration, endingAppearance, easing, flags, delay, true));
     }
 
     /// <summary>
@@ -177,6 +201,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
     private void UpdateAnimation() {
         if(DMI == null || Appearance == null)
             return;
+
         DMIParser.ParsedDMIState? dmiState = DMI.Description.GetStateOrDefault(Appearance.IconState);
         if(dmiState == null)
             return;
@@ -199,12 +224,15 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
     private IconAppearance? CalculateAnimatedAppearance() {
         if (_appearanceAnimations == null || _appearance == null)
             return _appearance;
+
+        _textureDirty = true; //if we have animations, we need to recalculate the texture
         IconAppearance appearance = new IconAppearance(_appearance);
         List<AppearanceAnimation>? toRemove = null;
+        List<AppearanceAnimation>? toReAdd = null;
         for(int i = 0; i < _appearanceAnimations.Count; i++) {
             AppearanceAnimation animation = _appearanceAnimations[i];
             //if it's not the first one, and it's not parallel, break
-            if((animation.flags & AnimationFlags.AnimationParallel) == 0 && i != 0)
+            if((animation.Flags & AnimationFlags.AnimationParallel) == 0 && i != 0)
                 break;
 
             float timeFactor = Math.Clamp((float)(DateTime.Now - animation.Start).Ticks / animation.Duration.Ticks, 0.0f, 1.0f);
@@ -377,21 +405,34 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
             }
 
             if (timeFactor >= 1f) {
-                if (animation.loops > 0) {
-                    var tempAnimation = _appearanceAnimations[i];
-                    tempAnimation.loops--;
-                    _appearanceAnimations[i] = tempAnimation;
+                toRemove ??= new();
+                toRemove.Add(animation);
+                if (_appearanceAnimationsLoops != 0) { //add it back to the list with the times updated
+                    if(_appearanceAnimationsLoops != -1 && animation.LastInSequence)
+                        _appearanceAnimationsLoops -= 1;
+                    toReAdd ??= new();
+                    DateTime start;
+                    if((animation.Flags & AnimationFlags.AnimationParallel) != 0)
+                        start = _appearanceAnimations[^1].Start; //either that's also a parallel, or its one that this should be parallel with
+                    else
+                        start = _appearanceAnimations[^1].Start + _appearanceAnimations[^1].Duration; //if it's not parallel, it's chained
+                    AppearanceAnimation repeatAnimation = new AppearanceAnimation(start, animation.Duration, animation.EndAppearance, animation.Easing, animation.Flags, animation.Delay, animation.LastInSequence);
+                    toReAdd.Add(repeatAnimation);
                 }
-                if (animation.loops == 0) {
-                    toRemove ??= new();
-                    toRemove.Add(animation);
-                }
+
             }
         }
+
         if(toRemove != null)
-            foreach (AppearanceAnimation animation in toRemove!) {
+            foreach (AppearanceAnimation animation in toRemove) {
                 EndAppearanceAnimation(animation);
             }
+
+        if(toReAdd != null)
+            foreach (AppearanceAnimation animation in toReAdd) {
+                _appearanceAnimations.Add(animation);
+            }
+
         return appearance;
     }
 
@@ -408,7 +449,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
         } else {
             IoCManager.Resolve<IDreamResourceManager>().LoadResourceAsync<DMIResource>(Appearance.Icon.Value, dmi => {
                 if (dmi.Id != Appearance.Icon) return; //Icon changed while resource was loading
-
+                dmi.OnUpdateCallbacks.Add(DirtyTexture);
                 DMI = dmi;
                 _animationFrame = 0;
                 _animationFrameTime = gameTiming.CurTime;
@@ -417,7 +458,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
 
         Overlays.Clear();
         foreach (int overlayId in Appearance.Overlays) {
-            DreamIcon overlay = new DreamIcon(gameTiming, clyde, appearanceSystem, overlayId, Appearance.Direction);
+            DreamIcon overlay = new DreamIcon(renderTargetPool, gameTiming, clyde, appearanceSystem, overlayId, Appearance.Direction);
             overlay.SizeChanged += CheckSizeChange;
 
             Overlays.Add(overlay);
@@ -425,7 +466,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
 
         Underlays.Clear();
         foreach (int underlayId in Appearance.Underlays) {
-            DreamIcon underlay = new DreamIcon(gameTiming, clyde, appearanceSystem, underlayId, Appearance.Direction);
+            DreamIcon underlay = new DreamIcon(renderTargetPool, gameTiming, clyde, appearanceSystem, underlayId, Appearance.Direction);
             underlay.SizeChanged += CheckSizeChange;
 
             Underlays.Add(underlay);
@@ -437,17 +478,12 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
     /// </summary>
     /// <remarks>In a separate method to avoid closure allocations when not executed</remarks>
     /// <returns>The final texture</returns>
-    private Texture FullRenderTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData, Texture frame) {
-        if (_ping?.Size != frame.Size * 2 || _pong == null) {
-            _ping?.Dispose();
-            _pong?.Dispose();
+    private IRenderTexture FullRenderTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData, Texture frame) {
+        // TODO: This should determine the size from the filters and their settings, not just double the original
+        var ping = renderTargetPool.Rent(frame.Size * 2);
+        var pong = renderTargetPool.Rent(ping.Size);
 
-            // TODO: This should determine the size from the filters and their settings, not just double the original
-            _ping = clyde.CreateRenderTarget(frame.Size * 2, new(RenderTargetColorFormat.Rgba8Srgb));
-            _pong = clyde.CreateRenderTarget(_ping.Size, new(RenderTargetColorFormat.Rgba8Srgb));
-        }
-
-        handle.RenderInRenderTarget(_pong, () => {
+        handle.RenderInRenderTarget(pong, () => {
             //we can use the color matrix shader here, since we don't need to blend
             //also because blend mode is none, we don't need to clear
             var colorMatrix = iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity)
@@ -460,26 +496,27 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
             colorShader.SetParameter("isPlaneMaster",iconMetaData.IsPlaneMaster);
             handle.UseShader(colorShader);
 
-            handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(_pong.Size, frame.Size / 2));
+            handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(pong.Size, frame.Size / 2));
             handle.DrawTextureRect(frame, new Box2(Vector2.Zero, frame.Size));
         }, Color.Black.WithAlpha(0));
 
         foreach (DreamFilter filterId in iconMetaData.MainIcon!.Appearance!.Filters) {
             ShaderInstance s = appearanceSystem.GetFilterShader(filterId, viewOverlay.RenderSourceLookup);
 
-            handle.RenderInRenderTarget(_ping, () => {
+            handle.RenderInRenderTarget(ping, () => {
                 handle.UseShader(s);
 
                 // Technically this should be ping.Size, but they are the same size so avoid the extra closure alloc
-                handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(_pong.Size, Vector2.Zero));
-                handle.DrawTextureRect(_pong.Texture, new Box2(Vector2.Zero, _pong.Size));
+                handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(pong.Size, Vector2.Zero));
+                handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, pong.Size));
             }, Color.Black.WithAlpha(0));
 
-            (_ping, _pong) = (_pong, _ping);
+            (ping, pong) = (pong, ping);
         }
 
-        TextureRenderOffset = -(_pong.Texture.Size / 2 - frame.Size / 2);
-        return _pong.Texture;
+        renderTargetPool.Return(ping);
+        TextureRenderOffset = -(pong.Texture.Size / 2 - frame.Size / 2);
+        return pong;
     }
 
     private void CheckSizeChange() {
@@ -497,13 +534,13 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
         CachedTexture = null;
     }
 
-    private struct AppearanceAnimation(DateTime start, TimeSpan duration, IconAppearance endAppearance, AnimationEasing easing, int loops, AnimationFlags flags, int delay) {
+    private struct AppearanceAnimation(DateTime start, TimeSpan duration, IconAppearance endAppearance, AnimationEasing easing, AnimationFlags flags, int delay, bool lastInSequence) {
         public readonly DateTime Start = start;
         public readonly TimeSpan Duration = duration;
         public readonly IconAppearance EndAppearance = endAppearance;
         public readonly AnimationEasing Easing = easing;
-        public int loops = loops;
-        public readonly AnimationFlags flags = flags;
-        public int delay = delay;
+        public readonly AnimationFlags Flags = flags;
+        public readonly int Delay = delay;
+        public bool LastInSequence = lastInSequence;
     }
 }

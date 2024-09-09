@@ -204,8 +204,23 @@ internal struct ParsedKeybind {
                     if (foundKey) {
                         throw new Exception($"Duplicate key in keybind: {part}");
                     }
+
                     foundKey = true;
                     break;
+            }
+        }
+
+        // If we haven't found a key and the first part is a modifier, treat it as the keybind instead of a modifier
+        if (!foundKey) {
+            if (parts[0] == "SHIFT") {
+                parsed.Key = KeyNameToKey(parts[0]);
+                parsed.Shift = false;
+            } else if (parts[0] == "CTRL") {
+                parsed.Key = KeyNameToKey(parts[0]);
+                parsed.Ctrl = false;
+            } else if (parts[0] == "ALT") {
+                parsed.Key = KeyNameToKey(parts[0]);
+                parsed.Alt = false;
             }
         }
 

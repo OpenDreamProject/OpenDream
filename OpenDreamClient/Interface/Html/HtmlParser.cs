@@ -81,6 +81,42 @@ public static class HtmlParser {
                 case '\n':
                     appendTo.PushNewline();
                     break;
+                case '&':
+                    // HTML named/numbered entity
+                    int end = text.IndexOf(';', i);
+                    if (end == -1) {
+                        // browsers usually allow for some fallibility here
+                        break;
+                    }
+                    
+                    string insideEntity = text.Substring(i + 1, end - (i + 1));
+                    i = end;
+
+                    if (insideEntity.StartsWith('#')) {
+                        if (int.TryParse(insideEntity.Substring(1), out int result)) {
+                            currentText.Append((char) result);
+                        }
+                    } else {
+                        switch (insideEntity) {
+                            case "nbsp": currentText.Append("\u00A0"); break;
+                            case "lt": currentText.Append("<"); break;
+                            case "gt": currentText.Append(">"); break;
+                            case "amp": currentText.Append("&"); break;
+                            case "quot": currentText.Append("\""); break;
+                            case "apos": currentText.Append("'"); break;
+                            case "cent": currentText.Append("¢"); break;
+                            case "pound": currentText.Append("£"); break;
+                            case "yen": currentText.Append("¥"); break;
+                            case "euro": currentText.Append("€"); break;
+                            case "copyright": currentText.Append("©"); break;
+                            case "trademark": currentText.Append("®"); break;
+                            default:
+                                currentText.Append("&" + insideEntity + ";");
+                                break;
+                        }
+                    }
+                    
+                    break;
                 default:
                     currentText.Append(c);
                     break;

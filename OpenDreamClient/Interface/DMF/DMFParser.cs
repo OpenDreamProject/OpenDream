@@ -188,6 +188,7 @@ public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializatio
     private bool TryGetAttribute([NotNullWhen(true)] out DMFWinSet? winSet) {
         string? element = null;
         winSet = null;
+
         Token attributeToken = Current();
 
         if (Check(_attributeTokenTypes)) {
@@ -230,11 +231,13 @@ public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializatio
                 while(TryGetAttribute(out var statement)){
                     trueStatements.Add(statement);
                 }
+
                 if(Check(TokenType.Colon)){ //not all ternarys have an else
                     while(TryGetAttribute(out var statement)){
                         falseStatements.Add(statement);
                     }
                 }
+
                 winSet = new DMFWinSet(element, attributeToken.Text, valueText, trueStatements, falseStatements);
                 return true;
             }
@@ -264,6 +267,26 @@ public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializatio
         }
 
         return node;
+    }
+
+    // TODO: Replace Attributes() with this
+    public Dictionary<string, string> AttributesValues() {
+        var attributes = new Dictionary<string, string>();
+
+        while (TryGetAttribute(out var winset)) {
+            if (winset.Element != null) {
+                Error($"Element id \"{winset.Element}\" is not valid here");
+                continue;
+            }
+
+            //TODO implement the conditional check
+            if (winset.Value == "none")
+                continue;
+
+            attributes.Add(winset.Attribute, winset.Value);
+        }
+
+        return attributes;
     }
 
     private void Newline() {

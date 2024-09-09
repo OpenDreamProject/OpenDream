@@ -117,6 +117,9 @@ internal class AnnotatedBytecodeSerializer {
                 case AnnotatedBytecodeProcId annotatedBytecodeProcId:
                     _bytecodeWriter.Write(annotatedBytecodeProcId.ProcId);
                     break;
+                case AnnotatedBytecodeEnumeratorId annotatedBytecodeEnumeratorId:
+                    _bytecodeWriter.Write(annotatedBytecodeEnumeratorId.EnumeratorId);
+                    break;
                 case AnnotatedBytecodeReference annotatedBytecodeReference:
                     WriteReference(annotatedBytecodeReference);
                     break;
@@ -188,10 +191,12 @@ internal class AnnotatedBytecodeSerializer {
             case DMReference.Type.Self:
             case DMReference.Type.Args:
             case DMReference.Type.Usr:
+            case DMReference.Type.Invalid:
                 break;
 
             default:
-                throw new CompileAbortException(Location.Internal, $"Invalid reference type {reference.RefType}");
+                DMCompiler.ForcedError(_location ?? Location.Unknown, $"Encountered unknown reference type {reference.RefType}");
+                break;
         }
     }
 

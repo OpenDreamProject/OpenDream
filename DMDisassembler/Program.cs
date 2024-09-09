@@ -19,8 +19,7 @@ internal class Program {
     static void Main(string[] args) {
         if (args.Length == 0 || Path.GetExtension(args[0]) != ".json") {
             Console.WriteLine("The json output of DMCompiler must be provided as an argument");
-
-            return;
+            Environment.Exit(1);
         }
 
         string compiledJsonText = File.ReadAllText(args[0]);
@@ -29,6 +28,20 @@ internal class Program {
         if (CompiledJson.GlobalInitProc != null) GlobalInitProc = new DMProc(CompiledJson.GlobalInitProc);
         LoadAllProcs();
         LoadAllTypes();
+
+        if (args.Length == 2 && args[1] == "crash-on-test") {
+            // crash-on-test is a special mode used by CI to
+            // verify that an entire codebase can be disassembled without errors
+            int errors = TestAll();
+
+            if (errors > 0) {
+                Console.WriteLine($"Detected {errors} errors. Exiting.");
+                Environment.Exit(1);
+            } else {
+                Console.WriteLine("No errors detected. Exiting cleanly.");
+                Environment.Exit(0);
+            }
+        }
 
         bool acceptingCommands = true;
         while (acceptingCommands) {
@@ -198,7 +211,7 @@ internal class Program {
         }
     }
 
-    private static void TestAll() {
+    private static int TestAll() {
         int errored = 0, all = 0;
         foreach (DMProc proc in Procs) {
             string value = proc.Decompile();
@@ -207,8 +220,11 @@ internal class Program {
                 Console.WriteLine(value);
                 ++errored;
             }
+
             ++all;
         }
+
         Console.WriteLine($"Errors in {errored}/{all} procs");
+        return errored;
     }
 }

@@ -52,7 +52,7 @@ internal sealed class DMMParser(DMLexer lexer, int zOffset) : DMParser(lexer) {
             Consume(TokenType.DM_Equals, "Expected '='");
             Consume(TokenType.DM_LeftParenthesis, "Expected '('");
 
-            CellDefinitionJson cellDefinition = new CellDefinitionJson((string)currentToken.Value);
+            CellDefinitionJson cellDefinition = new CellDefinitionJson(currentToken.ValueAsString());
             DMASTPath? objectType = Path();
             while (objectType != null) {
                 bool skipType = !DMObjectTree.TryGetTypeId(objectType.Path, out int typeId);
@@ -120,11 +120,11 @@ internal sealed class DMMParser(DMLexer lexer, int zOffset) : DMParser(lexer) {
             Token blockStringToken = Current();
             Consume(TokenType.DM_ConstantString, "Expected a constant string");
 
-            string blockString = (string)blockStringToken.Value;
-            List<string> lines = new(blockString.Split("\n", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries));
+            string blockString = blockStringToken.ValueAsString();
+            string[] lines = blockString.Split("\n", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
 
-            mapBlock.Height = lines.Count;
-            for (int y = 1; y <= lines.Count; y++) {
+            mapBlock.Height = lines.Length;
+            for (int y = 1; y <= lines.Length; y++) {
                 string line = lines[y - 1];
                 int width = (line.Length / _cellNameLength);
 

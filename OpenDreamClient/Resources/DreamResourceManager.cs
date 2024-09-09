@@ -9,7 +9,6 @@ using Robust.Shared.Utility;
 namespace OpenDreamClient.Resources {
     public interface IDreamResourceManager {
         void Initialize();
-        void Shutdown();
         ResPath CreateCacheFile(string filename, string data);
         ResPath CreateCacheFile(string filename, byte[] data);
 
@@ -42,32 +41,34 @@ namespace OpenDreamClient.Resources {
 
         public void Initialize() {
             _sawmill = Logger.GetSawmill("opendream.res");
-            InitCacheDirectory();
 
             _netManager.RegisterNetMessage<MsgBrowseResource>(RxBrowseResource);
             _netManager.RegisterNetMessage<MsgBrowseResourceResponse>(RxBrowseResourceResponse);
             _netManager.RegisterNetMessage<MsgRequestResource>();
             _netManager.RegisterNetMessage<MsgResource>(RxResource);
+            _netManager.RegisterNetMessage<MsgNotifyResourceUpdate>(RxResourceUpdateNotification);
         }
 
-        public void Shutdown() {
-            _resourceManager.UserData.Delete(_cacheDirectory);
-        }
+        private void EnsureCacheDirectory() {
+            if(_cacheDirectory != default)
+                return;
+            if(_netManager.ServerChannel is null)
+                throw new Exception("Server doesn't appear to be connected, can't use cache right now!");
 
-        private void InitCacheDirectory() {
-            var random = new Random();
-            while (true) {
-                _cacheDirectory = new ResPath($"/OpenDream/Cache/{random.Next()}");
-                if (!_resourceManager.UserData.Exists(_cacheDirectory))
-                    break;
-            }
+            var address = _netManager.ServerChannel.RemoteEndPoint.ToString();
+            address = address.Replace(':', '.'); // colons aren't legal on Windows
+
+            _cacheDirectory = new ResPath($"/OpenDream/Cache/{address}");
+            _resourceManager.UserData.CreateDir(_cacheDirectory);
+            if (!_resourceManager.UserData.Exists(_cacheDirectory))
+                throw new Exception($"Could not create cache directory at {_cacheDirectory}");
 
             _sawmill.Debug($"Cache directory is {_cacheDirectory}");
-            _resourceManager.UserData.CreateDir(_cacheDirectory);
         }
 
         private void RxBrowseResource(MsgBrowseResource message) {
             _sawmill.Debug($"Received cache check for {message.Filename}");
+            EnsureCacheDirectory();
             if(_resourceManager.UserData.Exists(GetCacheFilePath(message.Filename))){ //TODO CHECK HASH
                 _sawmill.Debug($"Cache hit for {message.Filename}");
             } else {
@@ -82,6 +83,7 @@ namespace OpenDreamClient.Resources {
         private void RxBrowseResourceResponse(MsgBrowseResourceResponse message) {
             if(_activeBrowseRscRequests.Contains(message.Filename)) {
                 _activeBrowseRscRequests.Remove(message.Filename);
+                EnsureCacheDirectory();
                 CreateCacheFile(message.Filename, message.Data);
             } else {
                 _sawmill.Error($"Recieved a browse_rsc response for a file we didn't ask for: {message.Filename}");
@@ -91,12 +93,19 @@ namespace OpenDreamClient.Resources {
         private void RxResource(MsgResource message) {
             if (_loadingResources.ContainsKey(message.ResourceId)) {
                 LoadingResourceEntry entry = _loadingResources[message.ResourceId];
-                DreamResource resource = LoadResourceFromData(
-                    entry.ResourceType,
-                    message.ResourceId,
-                    message.ResourceData);
+                DreamResource resource;
+                if(_resourceCache.ContainsKey(message.ResourceId)){
+                    _resourceCache[message.ResourceId].UpdateData(message.ResourceData); //we update instead of replacing so we don't have to replace the handle in everything that uses it
+                    _resourceCache[message.ResourceId].OnUpdateCallbacks.ForEach(cb => cb.Invoke());
+                    resource = _resourceCache[message.ResourceId];
+                } else {
+                    resource = LoadResourceFromData(
+                        entry.ResourceType,
+                        message.ResourceId,
+                        message.ResourceData);
+                    _resourceCache[message.ResourceId] = resource;
+                }
 
-                _resourceCache[message.ResourceId] = resource;
                 foreach (Action<DreamResource> callback in entry.LoadCallbacks) {
                     try {
                         callback.Invoke(resource);
@@ -108,6 +117,15 @@ namespace OpenDreamClient.Resources {
                 _loadingResources.Remove(message.ResourceId);
             } else {
                 throw new Exception($"Received unexpected resource packet for resource id {message.ResourceId}");
+            }
+        }
+
+        private void RxResourceUpdateNotification(MsgNotifyResourceUpdate message) {
+            if (!_loadingResources.ContainsKey(message.ResourceId) && _resourceCache.TryGetValue(message.ResourceId, out var cached)) { //either we're already requesting it, or we don't have it so don't need to update
+                _sawmill.Debug($"Resource id {message.ResourceId} was updated, reloading");
+                _loadingResources[message.ResourceId] = new LoadingResourceEntry(cached.GetType());
+                var msg = new MsgRequestResource() { ResourceId = message.ResourceId };
+                _netManager.ClientSendMessage(msg);
             }
         }
 
@@ -163,21 +181,24 @@ namespace OpenDreamClient.Resources {
             return resource;
         }
 
-        public ResPath GetCacheFilePath(string filename)
-        {
+        public ResPath GetCacheFilePath(string filename) {
+            EnsureCacheDirectory();
+
             return _cacheDirectory / new ResPath(filename).ToRelativePath();
         }
 
-        public ResPath CreateCacheFile(string filename, string data)
-        {
+        public ResPath CreateCacheFile(string filename, string data) {
+            EnsureCacheDirectory();
+
             // in BYOND when filename is a path everything except the filename at the end gets ignored - meaning all resource files end up directly in the cache folder
             var path = _cacheDirectory / new ResPath(filename).Filename;
             _resourceManager.UserData.WriteAllText(path, data);
             return new ResPath(filename);
         }
 
-        public ResPath CreateCacheFile(string filename, byte[] data)
-        {
+        public ResPath CreateCacheFile(string filename, byte[] data) {
+            EnsureCacheDirectory();
+
             // in BYOND when filename is a path everything except the filename at the end gets ignored - meaning all resource files end up directly in the cache folder
             var path = _cacheDirectory / new ResPath(filename).Filename;
             _resourceManager.UserData.WriteAllBytes(path, data);

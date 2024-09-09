@@ -334,8 +334,21 @@
 			animate(transform = matrix(), time = 5, easing=SINE_EASING)
 			animate(transform = matrix()*2, time = 5, easing=CIRCULAR_EASING)
 			animate(transform = matrix(), time = 5, easing=JUMP_EASING)
-		i++
-		if(i>5)
+		if(i==6)
+			usr << "relative color"
+			animate(usr, color="#ff0000", time=5, flags=ANIMATION_RELATIVE)
+			animate(color="#00ff00", time=5, flags=ANIMATION_RELATIVE)
+			animate(color="#0000ff", time=5, flags=ANIMATION_RELATIVE)
+		if(i==7)
+			usr << "relative transform"
+			animate(usr, transform = matrix()*2, time = 5, flags=ANIMATION_RELATIVE)
+			animate(transform = matrix()*0.5, time = 5, flags=ANIMATION_RELATIVE)
+		if(i==8)
+			usr << "more relative tests"
+			animate(usr, alpha=-125, pixel_x=16, time = 5, flags=ANIMATION_RELATIVE)
+			animate(alpha=125, pixel_x=-16, time = 5, flags=ANIMATION_RELATIVE)
+		i++;
+		if(i>8)
 			i = 0
 /obj/plaque/animation_test 
 	data = "<h3>Animation Test</h3><p>Click the button to apply a series of animations to your mob</p>"
@@ -456,25 +469,28 @@
 	name = "float layer test"
 	icon = 'icons/hanoi.dmi'
 	icon_state = "5"
+	layer = OBJ_LAYER
 
 	New()
-		var/image/zero = image(icon = 'icons/hanoi.dmi', icon_state="0", layer=FLOAT_LAYER-10)
-		var/image/one = image(icon = 'icons/hanoi.dmi', icon_state="1", layer=FLOAT_LAYER-9)
-		var/image/two = image(icon = 'icons/hanoi.dmi', icon_state="2", layer=FLOAT_LAYER-8)
-		var/image/three = image(icon = 'icons/hanoi.dmi', icon_state="3", layer=FLOAT_LAYER-7)
-		var/image/four = image(icon = 'icons/hanoi.dmi', icon_state="4", layer=FLOAT_LAYER-6)
-		var/image/six = image(icon = 'icons/hanoi.dmi', icon_state="6", layer=FLOAT_LAYER-5)
-		var/image/seven = image(icon = 'icons/hanoi.dmi', icon_state="7", layer=FLOAT_LAYER-4)
-		var/image/eight = image(icon = 'icons/hanoi.dmi', icon_state="8", layer=FLOAT_LAYER-3)
-		var/image/nine = image(icon = 'icons/hanoi.dmi', icon_state="9", layer=FLOAT_LAYER-2)
+		var/image/zero = image(icon = 'icons/hanoi.dmi', icon_state="0", layer=FLOAT_LAYER)
+		var/image/one = image(icon = 'icons/hanoi.dmi', icon_state="1", layer=FLOAT_LAYER)
+		var/image/two = image(icon = 'icons/hanoi.dmi', icon_state="2", layer=FLOAT_LAYER)
+		var/image/three = image(icon = 'icons/hanoi.dmi', icon_state="3", layer=FLOAT_LAYER)
+		var/image/four = image(icon = 'icons/hanoi.dmi', icon_state="4", layer=FLOAT_LAYER)
+		var/image/six = image(icon = 'icons/hanoi.dmi', icon_state="6", layer=FLOAT_LAYER)
+		var/image/seven = image(icon = 'icons/hanoi.dmi', icon_state="7", layer=FLOAT_LAYER)
+		var/image/eight = image(icon = 'icons/hanoi.dmi', icon_state="8", layer=FLOAT_LAYER)
+		var/image/nine = image(icon = 'icons/hanoi.dmi', icon_state="9", layer=FLOAT_LAYER)
 
-		src.underlays += zero
-		src.underlays += one
-		src.underlays += two
-		src.underlays += three
+		one.underlays += zero
+		one.overlays += two
 		src.underlays += four
-		src.overlays += six
-		src.overlays += seven
-		src.overlays += eight
-		src.overlays += nine
+		src.underlays += three
+		src.underlays += one
+
+
+		eight.overlays += nine
+		seven.overlays += eight
+		six.overlays += seven
 		
+		src.overlays += six

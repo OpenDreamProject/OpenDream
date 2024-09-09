@@ -47,8 +47,6 @@ public sealed class EntryPoint : GameClient {
     }
 
     public override void Init() {
-        IoCManager.Resolve<IConfigurationManager>().OverrideDefault(CVars.NetPredict, false);
-
         IComponentFactory componentFactory = IoCManager.Resolve<IComponentFactory>();
         componentFactory.DoAutoRegistrations();
 
@@ -62,6 +60,9 @@ public sealed class EntryPoint : GameClient {
 
         IoCManager.BuildGraph();
         IoCManager.InjectDependencies(this);
+
+        _configurationManager.OverrideDefault(CVars.NetPredict, false);
+        _configurationManager.OverrideDefault(CVars.ResAutoScaleEnabled, false); // Fixes weird scaling when sizing windows too small
 
         IoCManager.Resolve<DreamUserInterfaceStateManager>().Initialize();
 
@@ -91,10 +92,6 @@ public sealed class EntryPoint : GameClient {
                 "Compatibility Mode Warning",
                 "You are using compatibility mode. Clicking in-game objects is not supported in this mode.",
                 "Ok", null, null, null);
-    }
-
-    protected override void Dispose(bool disposing) {
-        _dreamResource.Shutdown();
     }
 
     public override void Update(ModUpdateLevel level, FrameEventArgs frameEventArgs) {

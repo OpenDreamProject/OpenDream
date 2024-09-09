@@ -18,6 +18,9 @@ public interface IDMFProperty {
     public string AsJson();
     public string AsJsonDM();
     public string AsRaw();
+    
+    /// winget() calls do not act the same as embedded winget calls, and the default behaviour is some whacky combination of AsEscaped() and AsRaw(). This proc handles that. Fucking BYOND.
+    public string AsSnowflake();
 }
 
 /*
@@ -80,6 +83,10 @@ public struct DMFPropertyString(string value) : IDMFProperty {
         return Value ?? "";
     }
 
+    public string AsSnowflake() {
+        return AsRaw();
+    }
+    
     public override string ToString() {
         return AsRaw();
     }
@@ -130,6 +137,10 @@ public struct DMFPropertyNum(float value) : IDMFProperty {
         return Value.ToString(CultureInfo.InvariantCulture);
     }
 
+    public string AsSnowflake() {
+        return AsRaw();
+    }
+    
     public override string ToString() {
         return AsRaw();
     }
@@ -144,6 +155,8 @@ public struct DMFPropertyVec2 : IDMFProperty {
     public int X;
     public int Y;
     public char Delim = ',';
+
+    public Vector2i Vector => new(X, Y);
 
     public DMFPropertyVec2(int x, int y) {
         X = x;
@@ -174,11 +187,11 @@ public struct DMFPropertyVec2 : IDMFProperty {
     }
 
     public string AsArg() {
-        return X.ToString() + " " + Y.ToString();
+        return X + " " + Y;
     }
 
     public string AsEscaped() {
-        return X.ToString() + Delim + Y.ToString();
+        return X + char.ToString(Delim) + Y;
     }
 
     public string AsString() {
@@ -190,14 +203,18 @@ public struct DMFPropertyVec2 : IDMFProperty {
     }
 
     public string AsJson() {
-        return "{\"x\":" + X.ToString() + ", \"y\":" + Y.ToString() + "}";
+        return $"{{\"x\":{X}, \"y\":{Y}}}";
     }
 
     public string AsJsonDM() {
-        return "{\\\"x\\\":" + X.ToString() + ", \\\"y\\\":" + Y.ToString() + "}";
+        return $"{{\\\"x\\\":{X}, \\\"y\\\":{Y}}}";
     }
 
     public string AsRaw() {
+        return AsEscaped();
+    }
+
+    public string AsSnowflake() {
         return AsEscaped();
     }
 
@@ -215,6 +232,7 @@ public struct DMFPropertySize : IDMFProperty {
     private DMFPropertyVec2 _value;
     public int X {get => _value.X; set => _value.X = value;}
     public int Y {get => _value.Y; set => _value.Y = value;}
+    public Vector2i Vector => _value.Vector;
     private const char Delim = 'x';
 
     public DMFPropertySize(int x, int y) {
@@ -269,15 +287,23 @@ public struct DMFPropertySize : IDMFProperty {
         return _value.AsString();
     }
 
+    public string AsSnowflake() {
+        return _value.AsSnowflake();
+    }
+
     public bool Equals(string comparison) {
         return _value.Equals(comparison);
     }
+
+    public static bool operator ==(DMFPropertySize a, DMFPropertySize b) => a.Vector == b.Vector;
+    public static bool operator !=(DMFPropertySize a, DMFPropertySize b) => a.Vector != b.Vector;
 }
 
 public struct DMFPropertyPos : IDMFProperty {
     private DMFPropertyVec2 _value;
-    public int X {get => _value.X; set => _value.X = value;}
-    public int Y {get => _value.Y; set => _value.Y = value;}
+    public int X => _value.X;
+    public int Y => _value.Y;
+    public Vector2i Vector => _value.Vector;
     private const char Delim = ',';
 
     public DMFPropertyPos(int x, int y) {
@@ -332,9 +358,16 @@ public struct DMFPropertyPos : IDMFProperty {
         return _value.AsString();
     }
 
+    public string AsSnowflake() {
+        return _value.AsSnowflake();
+    }
+
     public bool Equals(string comparison) {
         return _value.Equals(comparison);
     }
+
+    public static bool operator ==(DMFPropertyPos a, DMFPropertyPos b) => a.Vector == b.Vector;
+    public static bool operator !=(DMFPropertyPos a, DMFPropertyPos b) => a.Vector != b.Vector;
 }
 
 public struct DMFPropertyColor : IDMFProperty {
@@ -393,6 +426,12 @@ public struct DMFPropertyColor : IDMFProperty {
         return Value.ToHexNoAlpha();
     }
 
+    public string AsSnowflake() {
+        if(Value == Color.Transparent)
+            return "none";
+        return Value.ToHexNoAlpha();
+    }
+
     public override string ToString() {
         return AsRaw();
     }
@@ -437,6 +476,10 @@ public struct DMFPropertyBool(bool value) : IDMFProperty {
         return Value ? "1" : "0";
     }
 
+    public string AsSnowflake() {
+        return Value ? "true" : "false";
+    }
+    
     public override string ToString() {
         return AsRaw();
     }

@@ -182,6 +182,7 @@ public class DMASTFolder {
                 break;
 
             #region Math
+
             case DMASTNegate negate:
                 switch (negate.Value) {
                     case DMASTConstantInteger exprInteger: negate.Value = new DMASTConstantInteger(expression.Location, -exprInteger.Value); break;
@@ -254,75 +255,15 @@ public class DMASTFolder {
                 break;
             }
             case DMASTAdd add: {
-                DMASTConstantInteger? lhsInt = add.LHS as DMASTConstantInteger;
-                DMASTConstantFloat? lhsFloat = add.LHS as DMASTConstantFloat;
                 DMASTConstantString? lhsString = add.LHS as DMASTConstantString;
-                DMASTConstantInteger? rhsInt = add.RHS as DMASTConstantInteger;
-                DMASTConstantFloat? rhsFloat = add.RHS as DMASTConstantFloat;
                 DMASTConstantString? rhsString = add.RHS as DMASTConstantString;
-
-                if (lhsInt != null && rhsInt != null) return new DMASTConstantInteger(expression.Location, lhsInt.Value + rhsInt.Value);
-                if (lhsInt != null && rhsFloat != null) return new DMASTConstantFloat(expression.Location, lhsInt.Value + rhsFloat.Value);
-                if (lhsFloat != null && rhsInt != null) return new DMASTConstantFloat(expression.Location, lhsFloat.Value + rhsInt.Value);
-                if (lhsFloat != null && rhsFloat != null) return new DMASTConstantFloat(expression.Location, lhsFloat.Value + rhsFloat.Value);
                 if (lhsString != null && rhsString != null) return new DMASTConstantString(expression.Location, lhsString.Value + rhsString.Value);
 
                 break;
             }
-            case DMASTSubtract subtract: {
-                DMASTConstantInteger? lhsInt = subtract.LHS as DMASTConstantInteger;
-                DMASTConstantFloat? lhsFloat = subtract.LHS as DMASTConstantFloat;
-                DMASTConstantInteger? rhsInt = subtract.RHS as DMASTConstantInteger;
-                DMASTConstantFloat? rhsFloat = subtract.RHS as DMASTConstantFloat;
 
-                if (lhsInt != null && rhsInt != null) return new DMASTConstantInteger(expression.Location, lhsInt.Value - rhsInt.Value);
-                if (lhsInt != null && rhsFloat != null) return new DMASTConstantFloat(expression.Location, lhsInt.Value - rhsFloat.Value);
-                if (lhsFloat != null && rhsInt != null) return new DMASTConstantFloat(expression.Location, lhsFloat.Value - rhsInt.Value);
-                if (lhsFloat != null && rhsFloat != null) return new DMASTConstantFloat(expression.Location, lhsFloat.Value - rhsFloat.Value);
-
-                break;
-            }
-            case DMASTMultiply multiply: {
-                DMASTConstantInteger? lhsInt = multiply.LHS as DMASTConstantInteger;
-                DMASTConstantFloat? lhsFloat = multiply.LHS as DMASTConstantFloat;
-                DMASTConstantInteger? rhsInt = multiply.RHS as DMASTConstantInteger;
-                DMASTConstantFloat? rhsFloat = multiply.RHS as DMASTConstantFloat;
-
-                if (lhsInt != null && rhsInt != null) return new DMASTConstantInteger(expression.Location, lhsInt.Value * rhsInt.Value);
-                if (lhsInt != null && rhsFloat != null) return new DMASTConstantFloat(expression.Location, lhsInt.Value * rhsFloat.Value);
-                if (lhsFloat != null && rhsInt != null) return new DMASTConstantFloat(expression.Location, lhsFloat.Value * rhsInt.Value);
-                if (lhsFloat != null && rhsFloat != null) return new DMASTConstantFloat(expression.Location, lhsFloat.Value * rhsFloat.Value);
-
-                break;
-            }
-            case DMASTDivide divide: {
-                DMASTConstantInteger? lhsInt = divide.LHS as DMASTConstantInteger;
-                DMASTConstantFloat? lhsFloat = divide.LHS as DMASTConstantFloat;
-                DMASTConstantInteger? rhsInt = divide.RHS as DMASTConstantInteger;
-                DMASTConstantFloat? rhsFloat = divide.RHS as DMASTConstantFloat;
-
-                if (lhsInt != null && rhsInt != null) return new DMASTConstantFloat(expression.Location, (float)lhsInt.Value / rhsInt.Value);
-                if (lhsInt != null && rhsFloat != null) return new DMASTConstantFloat(expression.Location, lhsInt.Value / rhsFloat.Value);
-                if (lhsFloat != null && rhsInt != null) return new DMASTConstantFloat(expression.Location, lhsFloat.Value / rhsInt.Value);
-                if (lhsFloat != null && rhsFloat != null) return new DMASTConstantFloat(expression.Location, lhsFloat.Value / rhsFloat.Value);
-
-                break;
-            }
-            case DMASTModulus modulus: {
-                if (modulus is { LHS: DMASTConstantInteger lhsInt, RHS: DMASTConstantInteger rhsInt }) {
-                    return new DMASTConstantInteger(expression.Location, lhsInt.Value % rhsInt.Value);
-                }
-
-                break;
-            }
-            case DMASTPower power: {
-                if (power is { LHS: DMASTConstantInteger lhsInt, RHS: DMASTConstantInteger rhsInt }) {
-                    return new DMASTConstantInteger(expression.Location, (int)Math.Pow(lhsInt.Value, rhsInt.Value));
-                }
-
-                break;
-            }
             #endregion Math
+
             default:
                 break;
         }

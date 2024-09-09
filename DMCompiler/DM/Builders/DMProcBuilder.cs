@@ -456,9 +456,8 @@ namespace DMCompiler.DM.Builders {
                     ProcessStatementVarDeclaration(new DMASTProcStatementVarDeclaration(statementFor.Location, decl.DeclPath, null, DMValueType.Anything));
                 }
 
-                var initializer = statementFor.Expression1 != null ? DMExpression.Create(dmObject, proc, statementFor.Expression1) : null;
-
                 if (statementFor.Expression2 != null || statementFor.Expression3 != null) {
+                    var initializer = statementFor.Expression1 != null ? DMExpression.Create(dmObject, proc, statementFor.Expression1) : null;
                     var comparator = statementFor.Expression2 != null ? DMExpression.Create(dmObject, proc, statementFor.Expression2) : null;
                     var incrementor = statementFor.Expression3 != null ? DMExpression.Create(dmObject, proc, statementFor.Expression3) : null;
 
@@ -466,6 +465,7 @@ namespace DMCompiler.DM.Builders {
                 } else {
                     switch (statementFor.Expression1) {
                         case DMASTAssign {LHS: DMASTVarDeclExpression decl, RHS: DMASTExpressionInRange range}: {
+                            var initializer = statementFor.Expression1 != null ? DMExpression.Create(dmObject, proc, statementFor.Expression1) : null;
                             var identifier = new DMASTIdentifier(decl.Location, decl.DeclPath.Path.LastElement);
                             var outputVar = DMExpression.Create(dmObject, proc, identifier);
 
@@ -503,6 +503,7 @@ namespace DMCompiler.DM.Builders {
                             break;
                         }
                         case DMASTVarDeclExpression vd: {
+                            var initializer = statementFor.Expression1 != null ? DMExpression.Create(dmObject, proc, statementFor.Expression1) : null;
                             var declInfo = new ProcVarDeclInfo(vd.DeclPath.Path);
                             var identifier = new DMASTIdentifier(vd.Location, declInfo.VarName);
                             var outputVar = DMExpression.Create(dmObject, proc, identifier);

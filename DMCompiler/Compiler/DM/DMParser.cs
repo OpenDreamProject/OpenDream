@@ -1778,8 +1778,9 @@ namespace DMCompiler.Compiler.DM {
         private DMASTExpression? ExpressionIn() {
             DMASTExpression? value = ExpressionAssign();
 
-            if (value != null && Check(TokenType.DM_In)) {
+            while (value != null && Check(TokenType.DM_In)) {
                 var loc = Current().Location;
+
                 Whitespace();
                 DMASTExpression? list = ExpressionAssign();
                 RequireExpression(ref list, "Expected a container to search in");
@@ -1790,7 +1791,7 @@ namespace DMCompiler.Compiler.DM {
                     return new DMASTExpressionInRange(loc, value, list, endRange, step);
                 }
 
-                return new DMASTExpressionIn(loc, value, list);
+                value = new DMASTExpressionIn(loc, value, list);
             }
 
             return value;

@@ -275,9 +275,10 @@ internal static class DMExpressionBuilder {
             case DMASTExpressionIn expressionIn:
                 var exprInLHS = BuildExpression(expressionIn.LHS, dmObject, proc, inferredPath);
                 var exprInRHS = BuildExpression(expressionIn.RHS, dmObject, proc, inferredPath);
-                if (exprInLHS is In) {
+                if ((expressionIn.LHS is not DMASTExpressionWrapped && exprInLHS is UnaryOp or BinaryOp or Ternary) ||
+                    (expressionIn.RHS is not DMASTExpressionWrapped && exprInRHS is BinaryOp or Ternary)) {
                     DMCompiler.Emit(WarningCode.AmbiguousInOrder, expressionIn.Location,
-                        "Order of operations for \"in\" may not be what is expected");
+                        "Order of operations for \"in\" may not be what is expected. Use parentheses to be more explicit.");
                 }
 
                 return new In(expressionIn.Location, exprInLHS, exprInRHS);

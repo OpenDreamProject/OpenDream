@@ -13,6 +13,7 @@ public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppeara
     public override MsgGroups MsgGroup => MsgGroups.EntityEvent;
 
     private enum Property : byte {
+        Name,
         Icon,
         IconState,
         Direction,
@@ -61,6 +62,9 @@ public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppeara
 
             while (property != Property.End) {
                 switch (property) {
+                    case Property.Name:
+                        appearance.Name = buffer.ReadString();
+                        break;
                     case Property.Id:
                         appearanceId = buffer.ReadVariableInt32();
                         break;
@@ -216,6 +220,9 @@ public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppeara
             }
 
             lastId = pair.Key;
+
+            buffer.Write((byte)Property.Name);
+            buffer.Write(appearance.Name);
 
             if (appearance.Icon != null) {
                 buffer.Write((byte)Property.Icon);

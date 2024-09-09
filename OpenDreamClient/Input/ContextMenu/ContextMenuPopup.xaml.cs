@@ -68,7 +68,9 @@ internal sealed partial class ContextMenuPopup : Popup {
                 ContextMenu.AddChild(new ContextMenuItem(this, objectReference, metadata.EntityName, sprite.Icon));
             } else if (objectReference.Type == ClientObjectReference.RefType.Turf && turfId is not null && _appearanceSystem is not null) {
                 var icon = _appearanceSystem.GetTurfIcon(turfId.Value);
-                ContextMenu.AddChild(new ContextMenuItem(this, objectReference, "turf (OD WIP)", icon));
+                if(icon.Appearance is null) continue;
+
+                ContextMenu.AddChild(new ContextMenuItem(this, objectReference, icon.Appearance.Name, icon));
             }
         }
     }

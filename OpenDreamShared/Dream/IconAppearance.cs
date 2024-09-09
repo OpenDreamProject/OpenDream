@@ -8,11 +8,22 @@ using Robust.Shared.GameObjects;
 
 namespace OpenDreamShared.Dream;
 
+/*
+ * Woe, weary traveler, modifying this class is not for the faint of heart.
+ * If you modify IconAppearance, be sure to update the following places:
+ * - All of the methods on IconAppearance itself
+ * - IconAppearance methods in AtomManager
+ * - MsgAllAppearances
+ * - IconDebugWindow
+ * - There may be others
+ */
+
 // TODO: Wow this is huge! Probably look into splitting this by most used/least used to reduce the size of these
 [Serializable, NetSerializable]
 public sealed class IconAppearance : IEquatable<IconAppearance> {
     public static readonly IconAppearance Default = new();
 
+    [ViewVariables] public string Name;
     [ViewVariables] public int? Icon;
     [ViewVariables] public string? IconState;
     [ViewVariables] public AtomDirection Direction = AtomDirection.South;
@@ -58,6 +69,7 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
     ];
 
     public IconAppearance() {
+        Name = string.Empty;
         Overlays = new();
         Underlays = new();
         VisContents = new();
@@ -66,6 +78,7 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
     }
 
     public IconAppearance(IconAppearance appearance) {
+        Name = appearance.Name;
         Icon = appearance.Icon;
         IconState = appearance.IconState;
         Direction = appearance.Direction;
@@ -101,6 +114,7 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
     public bool Equals(IconAppearance? appearance) {
         if (appearance == null) return false;
 
+        if (appearance.Name != Name) return false;
         if (appearance.Icon != Icon) return false;
         if (appearance.IconState != IconState) return false;
         if (appearance.Direction != Direction) return false;
@@ -187,6 +201,7 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
     public override int GetHashCode() {
         HashCode hashCode = new HashCode();
 
+        hashCode.Add(Name);
         hashCode.Add(Icon);
         hashCode.Add(IconState);
         hashCode.Add(Direction);

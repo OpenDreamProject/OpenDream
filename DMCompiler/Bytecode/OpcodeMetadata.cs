@@ -52,6 +52,7 @@ public enum OpcodeArgType {
     Resource,
     TypeId,
     ProcId,
+    EnumeratorId,
     FilterId,
     ListSize,
     Int,

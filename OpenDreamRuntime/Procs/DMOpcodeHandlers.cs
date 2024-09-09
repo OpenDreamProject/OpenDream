@@ -569,9 +569,9 @@ namespace OpenDreamRuntime.Procs {
                 if(subState == ProcStatus.Continue) {
                     state.Push(indexResult);
                     return subState;
-                }
-                else
+                } else {
                     return subState;
+                }
             }
 
             if (!key.TryGetValueAsString(out string property)) {

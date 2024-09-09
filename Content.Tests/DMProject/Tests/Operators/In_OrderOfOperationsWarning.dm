@@ -4,4 +4,4 @@
 
 /proc/RunTest()
 	if ("a" in list("a") && FALSE)
-		return true
+		return TRUE

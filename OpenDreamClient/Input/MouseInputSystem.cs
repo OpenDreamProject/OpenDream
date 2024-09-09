@@ -98,23 +98,30 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
             return null;
 
         if (underMouse.ClickUid == EntityUid.Invalid) { // A turf
-            // Grid coordinates are half a meter off from entity coordinates
-            mapCoords = new MapCoordinates(mapCoords.Position + new Vector2(0.5f), mapCoords.MapId);
-
-            if (_mapManager.TryFindGridAt(mapCoords, out var gridEntity, out var grid)) {
-                Vector2i position = _mapSystem.CoordinatesToTile(gridEntity, grid, _mapSystem.MapToGrid(gridEntity, mapCoords));
-                Vector2i turfIconPosition = (Vector2i) ((mapCoords.Position - position) * EyeManager.PixelsPerMeter);
-                MapCoordinates worldPosition = _mapSystem.GridTileToWorld(gridEntity, grid, position);
-
-                return (new(position, (int)worldPosition.MapId), turfIconPosition);
-            }
-
-            return null;
+            return GetTurfUnderMouse(mapCoords, out _);
         } else {
             Vector2i iconPosition = (Vector2i) ((mapCoords.Position - underMouse.Position) * EyeManager.PixelsPerMeter);
 
             return (new(_entityManager.GetNetEntity(underMouse.ClickUid)), iconPosition);
         }
+    }
+
+    private (ClientObjectReference Atom, Vector2i IconPosition)? GetTurfUnderMouse(MapCoordinates mapCoords, out int? turfId) {
+        // Grid coordinates are half a meter off from entity coordinates
+        mapCoords = new MapCoordinates(mapCoords.Position + new Vector2(0.5f), mapCoords.MapId);
+
+        if (_mapManager.TryFindGridAt(mapCoords, out var gridEntity, out var grid)) {
+            Vector2i position = _mapSystem.CoordinatesToTile(gridEntity, grid, _mapSystem.MapToGrid(gridEntity, mapCoords));
+            _mapSystem.TryGetTile(grid, position, out Tile tile);
+            turfId = tile.TypeId;
+            Vector2i turfIconPosition = (Vector2i) ((mapCoords.Position - position) * EyeManager.PixelsPerMeter);
+            MapCoordinates worldPosition = _mapSystem.GridTileToWorld(gridEntity, grid, position);
+
+            return (new(position, (int)worldPosition.MapId), turfIconPosition);
+        }
+
+        turfId = null;
+        return null;
     }
 
     private bool OnPress(ScalingViewport viewport, GUIBoundKeyEventArgs args, ControlDescriptor descriptor) {
@@ -123,13 +130,27 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
             var mapCoords = viewport.ScreenToMap(args.PointerLocation.Position);
             var entities = _lookupSystem.GetEntitiesInRange(mapCoords, 0.01f, LookupFlags.Uncontained | LookupFlags.Approximate);
 
+            ClientObjectReference[] objects = new ClientObjectReference[entities.Count + 1];
+
+            // We can't index a HashSet so we have to use a foreach loop
+            int index = 0;
+            foreach (var uid in entities) {
+                objects[index] = new ClientObjectReference(_entityManager.GetNetEntity(uid));
+                index += 1;
+            }
+
+            // Append the turf to the end of the context menu
+            var turfUnderMouse = GetTurfUnderMouse(mapCoords, out var turfId)?.Atom;
+            if (turfUnderMouse is not null)
+                objects[index] = turfUnderMouse.Value;
+
             //TODO filter entities by the valid verbs that exist on them
             //they should only show up if there is a verb attached to usr which matches the filter in world syntax
             //ie, obj|turf in world
             //note that popup_menu = 0 overrides this behaviour, as does verb invisibility (urgh), and also hidden
             //because BYOND sure loves redundancy
 
-            _contextMenu.RepopulateEntities(entities);
+            _contextMenu.RepopulateEntities(objects, turfId);
             if(_contextMenu.EntityCount == 0)
                 return true; //don't open a 1x1 empty context menu
 

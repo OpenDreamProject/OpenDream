@@ -1863,6 +1863,7 @@ internal static class DreamProcNativeRoot {
             }
             return new DreamValue(floatNum.ToString($"g{sigFig}"));
         }
+        
         if(bundle.Arguments.Length == 3) {
             var digits = Math.Max(bundle.GetArgument(1, "A").MustGetValueAsInteger(), 1);
             var radix = bundle.GetArgument(2, "B").MustGetValueAsInteger();

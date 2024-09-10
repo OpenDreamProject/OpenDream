@@ -1941,22 +1941,6 @@ internal static class DreamProcNativeRoot {
         return new DreamValue(hear);
     }
 
-        [DreamProc("orange")]
-        [DreamProcParameter("Dist", Type = DreamValueTypeFlag.Float, DefaultValue = 5)]
-        [DreamProcParameter("Center", Type = DreamValueTypeFlag.DreamObject)]
-        public static DreamValue NativeProc_orange(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, usr as DreamObjectAtom, bundle.Arguments);
-            if (center is null)
-                return new DreamValue(bundle.ObjectTree.CreateList());
-            DreamList rangeList = bundle.ObjectTree.CreateList(range.Height * range.Width);
-            foreach (var turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
-                rangeList.AddValue(new DreamValue(turf));
-                foreach (DreamValue content in turf.Contents.GetValues()) {
-                    rangeList.AddValue(content);
-                }
-            }
-            return new DreamValue(rangeList);
-
     [DreamProc("orange")]
     [DreamProcParameter("Dist", Type = DreamValueTypeFlag.Float, DefaultValue = 5)]
     [DreamProcParameter("Center", Type = DreamValueTypeFlag.DreamObject)]

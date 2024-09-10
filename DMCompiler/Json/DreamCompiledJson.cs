@@ -1,9 +1,7 @@
-﻿using System.Collections.Generic;
-
-namespace DMCompiler.Json;
+﻿namespace DMCompiler.Json;
 
 public sealed class DreamCompiledJson {
-    public DreamCompiledJsonMetadata Metadata { get; set; }
+    public required DreamCompiledJsonMetadata Metadata { get; set; }
     public List<string>? Strings { get; set; }
     public string[]? Resources { get; set; }
     public int[]? GlobalProcs { get; set; }

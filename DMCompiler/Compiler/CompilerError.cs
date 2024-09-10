@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace DMCompiler.Compiler;
+﻿namespace DMCompiler.Compiler;
 
 /// <remarks>
 /// All values should be unique.
@@ -73,6 +71,7 @@ public enum WarningCode {
     SuspiciousSwitchCase = 3201, // "else if" cases are actually valid DM, they just spontaneously end the switch context and begin an if-else ladder within the else case of the switch
     AssignmentInConditional = 3202,
     PickWeightedSyntax = 3203,
+    AmbiguousInOrder = 3204
 
     // 4000 - 4999 are reserved for runtime configuration. (TODO: Runtime doesn't know about configs yet!)
 }

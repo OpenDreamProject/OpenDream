@@ -182,11 +182,12 @@ public sealed class DreamObjectSavefile : DreamObject {
         }
     }
 
-    public override DreamValue OperatorIndex(DreamValue index) {
+    public override ProcStatus OperatorIndex(DreamValue index, DMProcState state, out DreamValue result) {
         if (!index.TryGetValueAsString(out var entryName))
             throw new Exception($"Invalid savefile index {index}");
 
-        return GetSavefileValue(entryName);
+        result = GetSavefileValue(entryName);
+        return ProcStatus.Continue;
     }
 
     public override void OperatorIndexAssign(DreamValue index, DreamValue value) {

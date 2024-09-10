@@ -330,6 +330,18 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         } else {
             string elementId = split[0];
 
+            // ":[element]" returns the default element of that type
+            switch (elementId) {
+                case ":map":
+                    return DefaultMap;
+                case ":info":
+                    return DefaultInfo;
+                case ":window":
+                    return DefaultWindow;
+                case ":output":
+                    return DefaultOutput;
+            }
+
             foreach (ControlWindow window in Windows.Values) {
                 if (window.Id.Value == elementId)
                     return window;
@@ -743,6 +755,8 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                     return string.Join(';', Menus.Keys);
                 case "macros":
                     return string.Join(';', MacroSets.Keys);
+                case "url":
+                    return _netManager.ServerChannel?.RemoteEndPoint.ToString() ?? string.Empty; // TODO: Port should be 0 "if connected to a local .dmb file"
                 default:
                     _sawmill.Error($"Special winget \"{queryValue}\" is not implemented");
                     return string.Empty;

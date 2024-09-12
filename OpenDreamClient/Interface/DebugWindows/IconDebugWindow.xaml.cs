@@ -18,6 +18,7 @@ internal sealed partial class IconDebugWindow : OSWindow {
     public IconDebugWindow(DreamIcon icon) {
         RobustXamlLoader.Load(this);
         Owner = IoCManager.Resolve<IClyde>().MainWindow;
+        Title = icon.Appearance?.Name ?? "Icon properties";
 
         _icon = icon;
         RefreshButton.OnPressed += OnRefreshPressed;

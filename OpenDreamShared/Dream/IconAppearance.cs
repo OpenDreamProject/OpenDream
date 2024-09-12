@@ -23,7 +23,7 @@ namespace OpenDreamShared.Dream;
 public sealed class IconAppearance : IEquatable<IconAppearance> {
     public static readonly IconAppearance Default = new();
 
-    [ViewVariables] public string Name;
+    [ViewVariables] public string Name = string.Empty;
     [ViewVariables] public int? Icon;
     [ViewVariables] public string? IconState;
     [ViewVariables] public AtomDirection Direction = AtomDirection.South;
@@ -69,7 +69,6 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
     ];
 
     public IconAppearance() {
-        Name = string.Empty;
         Overlays = new();
         Underlays = new();
         VisContents = new();

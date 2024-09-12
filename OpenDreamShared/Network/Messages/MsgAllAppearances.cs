@@ -221,8 +221,10 @@ public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppeara
 
             lastId = pair.Key;
 
-            buffer.Write((byte)Property.Name);
-            buffer.Write(appearance.Name);
+            if (appearance.Name != IconAppearance.Default.Name) {
+                buffer.Write((byte)Property.Name);
+                buffer.Write(appearance.Name);
+            }
 
             if (appearance.Icon != null) {
                 buffer.Write((byte)Property.Icon);

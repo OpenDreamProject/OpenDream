@@ -243,7 +243,8 @@ public sealed class AtomManager {
     public void SetAppearanceVar(IconAppearance appearance, string varName, DreamValue value) {
         switch (varName) {
             case "name":
-                value.TryGetValueAsString(out appearance.Name);
+                value.TryGetValueAsString(out var name);
+                appearance.Name = name ?? string.Empty;
                 break;
             case "icon":
                 if (_resourceManager.TryLoadIcon(value, out var icon)) {

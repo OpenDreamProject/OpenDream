@@ -601,8 +601,6 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                                     } else {
                                         _sawmill.Error($"Invalid element on ternary \"{statementElementId}\"");
                                     }
-
-                                    //HandleTrueFalse(statementElementId, statement);
                                 }
                             } else if (winSet.FalseStatements is not null){
                                 foreach(DMFWinSet statement in winSet.FalseStatements) {
@@ -613,8 +611,6 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                                     } else {
                                         _sawmill.Error($"Invalid element on ternary \"{statementElementId}\"");
                                     }
-
-                                    //HandleTrueFalse(statementElementId, statement);
                                 }
                             }
                     } else {

@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 
 namespace OpenDreamClient.Interface.DMF;
 
@@ -132,7 +132,7 @@ public sealed class DMFLexer(string source) {
                 var textBuilder = new StringBuilder();
                 textBuilder.Append(c);
 
-                while (!char.IsWhiteSpace(Advance()) && GetCurrent() is not ';' and not '=' and not '.' and not '?' and not ':' && !AtEndOfSource)
+                while (!char.IsWhiteSpace(Advance()) && GetCurrent() is not ';' and not '"' and not '=' and not '.' and not '?' and not ':' && !AtEndOfSource)
                     textBuilder.Append(GetCurrent());
 
                 var text = textBuilder.ToString();

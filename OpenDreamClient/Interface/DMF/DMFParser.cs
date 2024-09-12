@@ -29,6 +29,10 @@ public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializatio
 
         while (TryGetAttribute(out var winset)) {
             winSets.Add(winset);
+
+            // An empty string is being used as a delimiter (thanks TG)
+            if(Current().Type == TokenType.Value && string.IsNullOrEmpty(Current().Text))
+                Advance();
         }
 
         return winSets;

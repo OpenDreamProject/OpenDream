@@ -52,12 +52,13 @@ internal sealed partial class ScreenObjectsDebugWindow : OSWindow {
 
         container.AddChild(new Label {
             Text = screenObject.Icon.Appearance?.Name ?? "<No appearance>",
+            Margin = new(2f, 0f),
             HorizontalExpand = true
         });
 
         container.AddChild(new Label {
             Text = screenObject.ScreenLocation?.ToString() ?? "<No screen_loc>",
-            HorizontalExpand = true
+            Margin = new(2f, 0f)
         });
 
         var viewButton = new Button {

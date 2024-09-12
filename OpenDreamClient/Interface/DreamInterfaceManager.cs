@@ -587,7 +587,45 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                         _sawmill.Error($"Invalid global winset \"{winsetParams}\"");
                     }
                 } else {
-                    HandleTrueFalse(elementId, winSet);
+                    if(winSet.TrueStatements is not null) {
+                        InterfaceElement? conditionalElement = FindElementWithId(elementId);
+                        if(conditionalElement is null)
+                            _sawmill.Error($"Invalid element on ternary condition \"{elementId}\"");
+                        else
+                            if(conditionalElement.TryGetProperty(winSet.Attribute, out var conditionalCheckValue) && conditionalCheckValue.Equals(winSet.Value)) {
+                                foreach(DMFWinSet statement in winSet.TrueStatements) {
+                                    string? statementElementId = statement.Element ?? elementId;
+                                    InterfaceElement? statementElement = FindElementWithId(statementElementId);
+                                    if(statementElement is not null) {
+                                        statementElement.SetProperty(statement.Attribute, HandleEmbeddedWinget(statementElementId, statement.Value), manualWinset: true);
+                                    } else {
+                                        _sawmill.Error($"Invalid element on ternary \"{statementElementId}\"");
+                                    }
+
+                                    //HandleTrueFalse(statementElementId, statement);
+                                }
+                            } else if (winSet.FalseStatements is not null){
+                                foreach(DMFWinSet statement in winSet.FalseStatements) {
+                                    string? statementElementId = statement.Element ?? elementId;
+                                    InterfaceElement? statementElement = FindElementWithId(statementElementId);
+                                    if(statementElement is not null) {
+                                        statementElement.SetProperty(statement.Attribute, HandleEmbeddedWinget(statementElementId, statement.Value), manualWinset: true);
+                                    } else {
+                                        _sawmill.Error($"Invalid element on ternary \"{statementElementId}\"");
+                                    }
+
+                                    //HandleTrueFalse(statementElementId, statement);
+                                }
+                            }
+                    } else {
+                        InterfaceElement? element = FindElementWithId(elementId);
+
+                        if (element != null) {
+                            element.SetProperty(winSet.Attribute, HandleEmbeddedWinget(elementId, winSet.Value), manualWinset: true);
+                        } else {
+                            _sawmill.Error($"Invalid element \"{elementId}\"");
+                        }
+                    }
                 }
             }
         } else {
@@ -616,48 +654,6 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 }
             } else {
                 _sawmill.Error($"Invalid element \"{controlId}\"");
-            }
-        }
-
-        void HandleTrueFalse(string elementId, DMFWinSet winSet) {
-            if(winSet.TrueStatements is not null) {
-                InterfaceElement? conditionalElement = FindElementWithId(elementId);
-                if(conditionalElement is null)
-                    _sawmill.Error($"Invalid element on ternary condition \"{elementId}\"");
-                else
-                    if(conditionalElement.TryGetProperty(winSet.Attribute, out var conditionalCheckValue) && conditionalCheckValue.Equals(winSet.Value)) {
-                        foreach(DMFWinSet statement in winSet.TrueStatements) {
-                            string? statementElementId = statement.Element ?? elementId;
-                            InterfaceElement? statementElement = FindElementWithId(statementElementId);
-                            if(statementElement is not null) {
-                                statementElement.SetProperty(statement.Attribute, HandleEmbeddedWinget(statementElementId, statement.Value), manualWinset: true);
-                            } else {
-                                _sawmill.Error($"Invalid element on ternary \"{statementElementId}\"");
-                            }
-
-                            HandleTrueFalse(statementElementId, statement);
-                        }
-                    } else if (winSet.FalseStatements is not null){
-                        foreach(DMFWinSet statement in winSet.FalseStatements) {
-                            string? statementElementId = statement.Element ?? elementId;
-                            InterfaceElement? statementElement = FindElementWithId(statementElementId);
-                            if(statementElement is not null) {
-                                statementElement.SetProperty(statement.Attribute, HandleEmbeddedWinget(statementElementId, statement.Value), manualWinset: true);
-                            } else {
-                                _sawmill.Error($"Invalid element on ternary \"{statementElementId}\"");
-                            }
-
-                            HandleTrueFalse(statementElementId, statement);
-                        }
-                    }
-            } else if(winSet.FalseStatements is not null) {
-                InterfaceElement? element = FindElementWithId(elementId);
-
-                if (element != null) {
-                    element.SetProperty(winSet.Attribute, HandleEmbeddedWinget(elementId, winSet.Value), manualWinset: true);
-                } else {
-                    _sawmill.Error($"Invalid element \"{elementId}\"");
-                }
             }
         }
     }

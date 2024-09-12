@@ -87,6 +87,8 @@ public sealed class DMFLexer(string source) {
                 textBuilder.Append(c);
                 Advance();
 
+                _parsingAttributeName = true;
+
                 string text = textBuilder.ToString();
 
                 // Strings are treated the same un-quoted values except they can use escape codes

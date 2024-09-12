@@ -83,11 +83,15 @@ public sealed class DMFLexer(string source) {
                     }
                 }
 
+                while (char.IsWhiteSpace(GetCurrent())) Advance();
+
+                if (GetCurrent() != ':') {
+                    _parsingAttributeName = true;
+                }
+
                 if (GetCurrent() != c) throw new Exception($"Expected '{c}' got '{GetCurrent()}'");
                 textBuilder.Append(c);
                 Advance();
-
-                _parsingAttributeName = true;
 
                 string text = textBuilder.ToString();
 
@@ -143,7 +147,8 @@ public sealed class DMFLexer(string source) {
                         _ => TokenType.Attribute
                     };
 
-                    _parsingAttributeName = false;
+                    if (text != ":") // Cursed ternary handling. The parser can't tell the lexer to start parsing attribute names again when it enters the ternary false case
+                        _parsingAttributeName = false;
                 } else {
                     tokenType = TokenType.Value;
                     _parsingAttributeName = true;

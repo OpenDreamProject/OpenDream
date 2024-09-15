@@ -175,7 +175,7 @@ namespace DMCompiler.DM {
 
             List<ProcArgumentJson>? arguments = null;
             if (_parameters.Count > 0) {
-                arguments = new List<ProcArgumentJson>();
+                arguments = new List<ProcArgumentJson>(_parameters.Count);
 
                 foreach (var parameter in _parameters.Values) {
                     if (parameter.ExplicitValueType is not { } argumentType) {

@@ -985,6 +985,10 @@ public sealed class ClientScreenList : DreamList {
         return _screenObjects[screenIndex - 1];
     }
 
+    public override List<DreamValue> GetValues() {
+        return _screenObjects;
+    }
+
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
         throw new Exception("Cannot write to an index of a screen list");
     }

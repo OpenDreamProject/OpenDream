@@ -1,8 +1,8 @@
 <OSWindow xmlns="https://spacestation14.io" SizeToContent="WidthAndHeight" SetSize="680 480">
     <BoxContainer Orientation="Vertical">
-    <Button Text="Refresh" Name="RefreshButton" HorizontalAlignment="Center" />
-    <ScrollContainer HorizontalExpand="True" VerticalExpand="True">
-        <BoxContainer Orientation="Vertical" HorizontalExpand="True" VerticalExpand="True" Name="ScreenObjectsList" />
-    </ScrollContainer>
+        <Button Text="Refresh" Name="RefreshButton" HorizontalAlignment="Center" />
+        <ScrollContainer HorizontalExpand="True" VerticalExpand="True">
+            <BoxContainer Orientation="Vertical" HorizontalExpand="True" VerticalExpand="True" Name="ScreenObjectsList" />
+        </ScrollContainer>
     </BoxContainer>
 </OSWindow>

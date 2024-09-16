@@ -18,6 +18,7 @@ internal sealed partial class IconDebugWindow : OSWindow {
     public IconDebugWindow(DreamIcon icon) {
         RobustXamlLoader.Load(this);
         Owner = IoCManager.Resolve<IClyde>().MainWindow;
+        Title = icon.Appearance?.Name ?? "Icon properties";
 
         _icon = icon;
         RefreshButton.OnPressed += OnRefreshPressed;
@@ -43,6 +44,7 @@ internal sealed partial class IconDebugWindow : OSWindow {
 
         // Would be nice if we could use ViewVariables instead, but I couldn't find a nice way to do that
         // Would be especially nice if we could use VV to make these editable
+        AddPropertyIfNotDefault("Name", appearance.Name, IconAppearance.Default.Name);
         AddPropertyIfNotDefault("Icon State", appearance.IconState, IconAppearance.Default.IconState);
         AddPropertyIfNotDefault("Direction", appearance.Direction, IconAppearance.Default.Direction);
         AddPropertyIfNotDefault("Inherits Direction", appearance.InheritsDirection, IconAppearance.Default.InheritsDirection);

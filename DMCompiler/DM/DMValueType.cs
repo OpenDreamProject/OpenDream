@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace DMCompiler.DM;
+﻿namespace DMCompiler.DM;
 
 // If you are modifying this, you must also modify OpenDreamShared.Dream.DreamValueType !!
 // Unfortunately the client needs this and it can't reference DMCompiler due to the sandbox

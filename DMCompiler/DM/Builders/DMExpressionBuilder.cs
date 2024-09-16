@@ -1,4 +1,3 @@
-using System;
 using DMCompiler.Compiler;
 using Resource = DMCompiler.DM.Expressions.Resource;
 using DMCompiler.Compiler.DM.AST;
@@ -273,9 +272,15 @@ internal static class DMExpressionBuilder {
             case DMASTNameof nameof:
                 return BuildNameof(nameof, dmObject, proc, inferredPath);
             case DMASTExpressionIn expressionIn:
-                return new In(expressionIn.Location,
-                    BuildExpression(expressionIn.LHS, dmObject, proc, inferredPath),
-                    BuildExpression(expressionIn.RHS, dmObject, proc, inferredPath));
+                var exprInLHS = BuildExpression(expressionIn.LHS, dmObject, proc, inferredPath);
+                var exprInRHS = BuildExpression(expressionIn.RHS, dmObject, proc, inferredPath);
+                if ((expressionIn.LHS is not DMASTExpressionWrapped && exprInLHS is UnaryOp or BinaryOp or Ternary) ||
+                    (expressionIn.RHS is not DMASTExpressionWrapped && exprInRHS is BinaryOp or Ternary)) {
+                    DMCompiler.Emit(WarningCode.AmbiguousInOrder, expressionIn.Location,
+                        "Order of operations for \"in\" may not be what is expected. Use parentheses to be more explicit.");
+                }
+
+                return new In(expressionIn.Location, exprInLHS, exprInRHS);
             case DMASTExpressionInRange expressionInRange:
                 return new InRange(expressionInRange.Location,
                     BuildExpression(expressionInRange.Value, dmObject, proc, inferredPath),

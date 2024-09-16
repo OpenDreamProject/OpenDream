@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace DMCompiler.Json;
+﻿namespace DMCompiler.Json;
 
 public enum JsonVariableType {
     Resource = 0,

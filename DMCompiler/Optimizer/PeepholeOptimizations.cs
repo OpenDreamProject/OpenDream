@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using DMCompiler.Bytecode;
 
 namespace DMCompiler.Optimizer;

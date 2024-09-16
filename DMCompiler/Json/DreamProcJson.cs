@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using DMCompiler.DM;
+﻿using DMCompiler.DM;
 
 namespace DMCompiler.Json;
 

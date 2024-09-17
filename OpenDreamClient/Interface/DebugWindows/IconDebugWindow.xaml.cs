@@ -48,7 +48,8 @@ internal sealed partial class IconDebugWindow : OSWindow {
         AddPropertyIfNotDefault("Icon State", appearance.IconState, IconAppearance.Default.IconState);
         AddPropertyIfNotDefault("Direction", appearance.Direction, IconAppearance.Default.Direction);
         AddPropertyIfNotDefault("Inherits Direction", appearance.InheritsDirection, IconAppearance.Default.InheritsDirection);
-        AddPropertyIfNotDefault("Pixel Offset", appearance.PixelOffset, IconAppearance.Default.PixelOffset);
+        AddPropertyIfNotDefault("Pixel Offset X/Y", appearance.PixelOffset, IconAppearance.Default.PixelOffset);
+        AddPropertyIfNotDefault("Pixel Offset W/Z", appearance.PixelOffset2, IconAppearance.Default.PixelOffset2);
         AddPropertyIfNotDefault("Color", appearance.Color, IconAppearance.Default.Color);
         AddPropertyIfNotDefault("Alpha", appearance.Alpha, IconAppearance.Default.Alpha);
         AddPropertyIfNotDefault("Glide Size", appearance.GlideSize, IconAppearance.Default.GlideSize);

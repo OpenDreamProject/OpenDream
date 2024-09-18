@@ -145,7 +145,7 @@ public sealed class DreamConnection {
                 await state.Call(statProc, Client, Mob);
                 if (Session.Status == SessionStatus.InGame) {
                     var msg = new MsgUpdateStatPanels(_statPanels);
-                    Session.Channel.SendMessage(msg);
+                    Session?.Channel.SendMessage(msg);
                 }
 
                 return DreamValue.Null;
@@ -296,7 +296,7 @@ public sealed class DreamConnection {
             DefaultValue = defaultValue
         };
 
-        Session.Channel.SendMessage(msg);
+        Session?.Channel.SendMessage(msg);
         return task;
     }
 
@@ -330,7 +330,7 @@ public sealed class DreamConnection {
             Values = promptValues.ToArray()
         };
 
-        Session.Channel.SendMessage(msg);
+        Session?.Channel.SendMessage(msg);
 
         // The client returns the index of the selected item, this needs turned back into the DreamValue.
         var selectedIndex = await task;
@@ -350,7 +350,7 @@ public sealed class DreamConnection {
             ControlId = controlId
         };
 
-        Session.Channel.SendMessage(msg);
+        Session?.Channel.SendMessage(msg);
 
         return task;
     }
@@ -363,7 +363,7 @@ public sealed class DreamConnection {
             QueryValue = queryValue
         };
 
-        Session.Channel.SendMessage(msg);
+        Session?.Channel.SendMessage(msg);
 
         return task;
     }
@@ -379,7 +379,7 @@ public sealed class DreamConnection {
             Button3 = button3
         };
 
-        Session.Channel.SendMessage(msg);
+        Session?.Channel.SendMessage(msg);
         return task;
     }
 

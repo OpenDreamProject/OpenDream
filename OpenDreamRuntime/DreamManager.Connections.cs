@@ -251,7 +251,7 @@ namespace OpenDreamRuntime {
                         InterfaceText = interfaceText
                     };
 
-                    e.Session.ConnectedClient.SendMessage(msgLoadInterface);
+                    e.Session.Channel.SendMessage(msgLoadInterface);
                     break;
 
                 case SessionStatus.InGame: {

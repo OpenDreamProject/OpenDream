@@ -89,7 +89,7 @@ public sealed class DreamConnection {
             _selectedStatPanel = value;
 
             var msg = new MsgSelectStatPanel() { StatPanel = value };
-            Session?.ConnectedClient.SendMessage(msg);
+            Session?.Channel.SendMessage(msg);
         }
     }
 
@@ -145,7 +145,7 @@ public sealed class DreamConnection {
                 await state.Call(statProc, Client, Mob);
                 if (Session.Status == SessionStatus.InGame) {
                     var msg = new MsgUpdateStatPanels(_statPanels);
-                    Session.ConnectedClient.SendMessage(msg);
+                    Session.Channel.SendMessage(msg);
                 }
 
                 return DreamValue.Null;
@@ -161,7 +161,7 @@ public sealed class DreamConnection {
             ShowPopupMenus = Client!.ShowPopupMenus
         };
 
-        Session?.ConnectedClient.SendMessage(msg);
+        Session?.Channel.SendMessage(msg);
     }
 
     public void SetOutputStatPanel(string name) {
@@ -236,7 +236,7 @@ public sealed class DreamConnection {
                     throw new Exception($"Sound {value} is not a supported file type");
             }
 
-            Session?.ConnectedClient.SendMessage(msg);
+            Session?.Channel.SendMessage(msg);
             return;
         }
 
@@ -249,7 +249,7 @@ public sealed class DreamConnection {
             Control = control
         };
 
-        Session?.ConnectedClient.SendMessage(msg);
+        Session?.Channel.SendMessage(msg);
     }
 
     // TODO: Remove this. Vestigial and doesn't run all commands.
@@ -296,7 +296,7 @@ public sealed class DreamConnection {
             DefaultValue = defaultValue
         };
 
-        Session.ConnectedClient.SendMessage(msg);
+        Session.Channel.SendMessage(msg);
         return task;
     }
 
@@ -330,7 +330,7 @@ public sealed class DreamConnection {
             Values = promptValues.ToArray()
         };
 
-        Session.ConnectedClient.SendMessage(msg);
+        Session.Channel.SendMessage(msg);
 
         // The client returns the index of the selected item, this needs turned back into the DreamValue.
         var selectedIndex = await task;
@@ -350,7 +350,7 @@ public sealed class DreamConnection {
             ControlId = controlId
         };
 
-        Session.ConnectedClient.SendMessage(msg);
+        Session.Channel.SendMessage(msg);
 
         return task;
     }
@@ -363,7 +363,7 @@ public sealed class DreamConnection {
             QueryValue = queryValue
         };
 
-        Session.ConnectedClient.SendMessage(msg);
+        Session.Channel.SendMessage(msg);
 
         return task;
     }
@@ -379,7 +379,7 @@ public sealed class DreamConnection {
             Button3 = button3
         };
 
-        Session.ConnectedClient.SendMessage(msg);
+        Session.Channel.SendMessage(msg);
         return task;
     }
 
@@ -451,7 +451,7 @@ public sealed class DreamConnection {
             HtmlSource = body
         };
 
-        Session?.ConnectedClient.SendMessage(msg);
+        Session?.Channel.SendMessage(msg);
     }
 
     public void WinSet(string? controlId, string @params) {
@@ -460,13 +460,13 @@ public sealed class DreamConnection {
             Params = @params
         };
 
-        Session?.ConnectedClient.SendMessage(msg);
+        Session?.Channel.SendMessage(msg);
     }
 
     public void WinClone(string controlId, string cloneId) {
         var msg = new MsgWinClone() { ControlId = controlId, CloneId = cloneId };
 
-        Session?.ConnectedClient.SendMessage(msg);
+        Session?.Channel.SendMessage(msg);
     }
 
     /// <summary>
@@ -480,7 +480,7 @@ public sealed class DreamConnection {
             SuggestedName = suggestedName
         };
 
-        Session?.ConnectedClient.SendMessage(msg);
+        Session?.Channel.SendMessage(msg);
     }
 
     public bool TryConvertPromptResponse(DreamValueType type, object? value, out DreamValue converted) {

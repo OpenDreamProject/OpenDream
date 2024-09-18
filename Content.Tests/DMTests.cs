@@ -111,7 +111,7 @@ public sealed class DMTests : ContentUnitTest {
 
         DreamThread.Run("RunTest", async (state) => {
             if (_objectTree.TryGetGlobalProc("RunTest", out DreamProc? proc)) {
-                callTask = state.Call(proc, null, null);
+                callTask = state.Call(proc, _dreamMan.WorldInstance, null);
                 retValue = await callTask;
                 return DreamValue.Null;
             } else {

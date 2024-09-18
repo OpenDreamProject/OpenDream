@@ -8,6 +8,8 @@
     <OutputPath>../bin/Content.Shared</OutputPath>
     <AssemblyName>OpenDreamShared</AssemblyName>
     <Nullable>enable</Nullable>
+    <NoWarn>NU1507</NoWarn>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="JetBrains.Annotations" />

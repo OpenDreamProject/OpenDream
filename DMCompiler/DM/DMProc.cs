@@ -171,7 +171,7 @@ namespace DMCompiler.DM {
             var optimizer = new BytecodeOptimizer();
             var serializer = new AnnotatedBytecodeSerializer();
 
-            //optimizer.Optimize(AnnotatedBytecode.GetAnnotatedBytecode());
+            optimizer.Optimize(AnnotatedBytecode.GetAnnotatedBytecode());
 
             List<ProcArgumentJson>? arguments = null;
             if (_parameters.Count > 0) {

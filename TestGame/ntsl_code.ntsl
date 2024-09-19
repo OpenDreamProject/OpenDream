@@ -1,0 +1,15 @@
+def ntsl_main() {
+    test_ntsl_call($ntsl_var);
+    
+    $vector_to_ret = ntsl_other();
+    test_ntsl_call(at($vector_to_ret, 3));
+    at($vector_to_ret, 3, 99);
+    test_ntsl_call(at($vector_to_ret, 3));
+    
+    return $vector_to_ret;
+}
+
+def ntsl_other() {
+    test_ntsl_call("other");
+    return vector("abc", 1, 2, 3, "def");
+}

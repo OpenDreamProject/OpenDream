@@ -1,6 +1,7 @@
 using DMCompiler.Compiler.DMPreprocessor;
 using System.Linq;
 using DMCompiler.Compiler.DM.AST;
+using DMCompiler.Compiler.NTSL;
 using DMCompiler.DM;
 
 namespace DMCompiler.Compiler.DM {
@@ -201,6 +202,18 @@ namespace DMCompiler.Compiler.DM {
 
         protected DMASTStatement? Statement() {
             var loc = CurrentLoc;
+
+            if (Current().Type == TokenType.NTSL_StartFile) {
+                var ntslLexer = new NtslLexer(_lexer.SourceName, _lexer.Source);
+                var ntslParser = new NtslParser(ntslLexer);
+                var file = ntslParser.File();
+
+                // It's a good thing I don't care about doing this correctly
+                Advance();
+                Advance();
+                ReuseToken(new Token(TokenType.DM_Semicolon, ";", Location.Internal, null));
+                return file;
+            }
 
             DMASTPath? path = Path();
             if (path is null)

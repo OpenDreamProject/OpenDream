@@ -51,6 +51,18 @@ public class Parser<SourceType> {
         return false;
     }
 
+    protected bool Check(TokenType type, out Token matchedToken) {
+        if (Current().Type == type) {
+            matchedToken = Current();
+            Advance();
+
+            return true;
+        }
+
+        matchedToken = default;
+        return false;
+    }
+
     protected bool Check(Span<TokenType> types) {
         return Check(types, out _);
     }

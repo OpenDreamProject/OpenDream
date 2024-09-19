@@ -290,6 +290,8 @@ public sealed class DMLexer : TokenLexer {
 
                         break;
                     }
+                    case TokenType.NTSL_StartFile:
+                    case TokenType.NTSL_EndFile:
                     case TokenType.EndOfFile: token = preprocToken; Advance(); break;
                     default: token = CreateToken(TokenType.Error, preprocToken.Text, "Invalid token"); break;
                 }

@@ -9,7 +9,7 @@ namespace DMCompiler.Compiler.DMPreprocessor;
 /// This class acts as the first layer of digestion for the compiler, <br/>
 /// taking in raw text and outputting vague tokens descriptive enough for the preprocessor to run on them.
 /// </summary>
-internal sealed class DMPreprocessorLexer {
+internal class DMPreprocessorLexer {
     private static readonly StringBuilder TokenTextBuilder = new();
 
     public readonly string IncludeDirectory;
@@ -18,7 +18,7 @@ internal sealed class DMPreprocessorLexer {
     private readonly StreamReader _source;
     private char _current;
     private int _currentLine = 1, _currentColumn;
-    private readonly Queue<Token> _pendingTokenQueue = new(); // TODO: Possible to remove this?
+    protected readonly Queue<Token> _pendingTokenQueue = new(); // TODO: Possible to remove this?
 
     public DMPreprocessorLexer(string includeDirectory, string file, string source) {
         IncludeDirectory = includeDirectory;
@@ -36,7 +36,7 @@ internal sealed class DMPreprocessorLexer {
         Advance();
     }
 
-    public Token NextToken(bool ignoreWhitespace = false) {
+    public virtual Token NextToken(bool ignoreWhitespace = false) {
         if (_pendingTokenQueue.Count > 0) {
             Token token = _pendingTokenQueue.Dequeue();
             if (ignoreWhitespace) {
@@ -73,6 +73,7 @@ internal sealed class DMPreprocessorLexer {
                 return ignoreWhitespace
                     ? NextToken()
                     : CreateToken(TokenType.DM_Preproc_Whitespace, new string(c, whitespaceLength));
+            case '$':
             case '}': Advance(); return CreateToken(TokenType.DM_Preproc_Punctuator, c);
             case ';': Advance(); return CreateToken(TokenType.DM_Preproc_Punctuator_Semicolon, c);
             case '.': Advance(); return CreateToken(TokenType.DM_Preproc_Punctuator_Period, c);
@@ -634,12 +635,12 @@ internal sealed class DMPreprocessorLexer {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private Token CreateToken(TokenType type, string text, object? value = null) {
+    protected Token CreateToken(TokenType type, string text, object? value = null) {
         return new Token(type, text, new Location(File, _currentLine, _currentColumn), value);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private Token CreateToken(TokenType type, char text, object? value = null) {
+    protected Token CreateToken(TokenType type, char text, object? value = null) {
         return new Token(type, text.ToString(), new Location(File, _currentLine, _currentColumn), value);
     }
 }

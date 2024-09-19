@@ -1,5 +1,6 @@
 using DMCompiler.Compiler;
 using DMCompiler.Compiler.DM.AST;
+using DMCompiler.Compiler.NTSL;
 using DMCompiler.DM.Expressions;
 
 namespace DMCompiler.DM.Builders;
@@ -10,6 +11,7 @@ internal static class DMObjectBuilder {
     private static readonly List<(DMObject?, DMASTProcDefinition)> ProcDefinitions = new();
     private static readonly List<(DMObject DMObject, DMASTObjectVarDefinition VarDecl)> StaticObjectVars = new();
     private static readonly List<(DMObject DMObject, DMProc Proc, int Id, DMASTProcStatementVarDeclaration VarDecl)> StaticProcVars = new();
+    private static readonly HashSet<string> NtslVars = new();
 
     private static int _firstProcGlobal = -1;
 
@@ -22,6 +24,7 @@ internal static class DMObjectBuilder {
         ProcDefinitions.Clear();
         StaticObjectVars.Clear();
         StaticProcVars.Clear();
+        NtslVars.Clear();
 
         _firstProcGlobal = -1;
     }
@@ -98,6 +101,12 @@ internal static class DMObjectBuilder {
         // Step 6: Attempt to resolve all vars that referenced other not-yet-existing or overridden vars
         DMExpressionBuilder.ScopeOperatorEnabled = true;
         ProcessLateVarDefs(lateVarDefs, lateProcVarDefs, lateOverrides);
+
+        foreach (var ntslVar in NtslVars) {
+            if (!DMObjectTree.Root.HasGlobalVariable(ntslVar))
+                DMObjectTree.Root.CreateGlobalVariable(null, ntslVar, false, DMValueType.Anything).Value =
+                    new Null(Location.Internal);
+        }
 
         // The vars these reference were never found, emit their errors
         foreach (var lateVarDef in lateVarDefs) {
@@ -187,6 +196,16 @@ internal static class DMObjectBuilder {
             case DMASTMultipleObjectVarDefinitions multipleVarDefinitions: {
                 foreach (DMASTObjectVarDefinition varDefinition in multipleVarDefinitions.VarDefinitions) {
                     VarDefinitions.Add((DMObjectTree.GetDMObject(varDefinition.ObjectPath)!, varDefinition));
+                }
+
+                break;
+            }
+            case NtslFile ntslFile: {
+                foreach (var ntslVar in ntslFile.UsedVars)
+                    NtslVars.Add(ntslVar);
+
+                foreach (var ntslStatement in ntslFile.Statements) {
+                    ProcessStatement(ntslStatement, currentObject: DMObjectTree.Root);
                 }
 
                 break;

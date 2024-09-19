@@ -275,3 +275,18 @@
 /world/New()
 	..()
 	world.log << "World loaded!"
+	world.log << "Returned [json_encode(ntsl_main())]"
+
+/var/ntsl_var = 123
+/proc/test_ntsl_call(var/a)
+	world.log << a
+
+
+
+
+
+
+
+
+
+

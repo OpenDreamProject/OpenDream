@@ -147,7 +147,23 @@ public enum TokenType : byte {
     DM_While,
     DM_Whitespace,
     DM_Xor,
-    DM_XorEquals
+    DM_XorEquals,
+
+    NTSL_Comma,
+    NTSL_Def,
+    NTSL_EndFile,
+    NTSL_Equals,
+    NTSL_Identifier,
+    NTSL_LeftCurlyBracket,
+    NTSL_LeftParenthesis,
+    NTSL_Number,
+    NTSL_Return,
+    NTSL_RightCurlyBracket,
+    NTSL_RightParenthesis,
+    NTSL_Semicolon,
+    NTSL_StartFile,
+    NTSL_String,
+    NTSL_VarIdentifierPrefix
 }
 
 public struct Token(TokenType type, string text, Location location, object? value) {

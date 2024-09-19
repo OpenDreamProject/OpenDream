@@ -50,6 +50,10 @@ public sealed class DMPreprocessor(bool enableDirectives) : IEnumerable<Token> {
 
                     _bufferedWhitespace.Push(token);
                     break;
+                case TokenType.NTSL_EndFile:
+                    _lexerStack.Pop();
+                    yield return token;
+                    break;
                 case TokenType.EndOfFile:
                     _lexerStack.Pop();
                     break;
@@ -145,6 +149,7 @@ public sealed class DMPreprocessor(bool enableDirectives) : IEnumerable<Token> {
                 case TokenType.DM_Preproc_Punctuator_LeftBracket:
                 case TokenType.DM_Preproc_Punctuator_RightBracket:
                 case TokenType.DM_Preproc_Punctuator_Semicolon:
+                case TokenType.NTSL_StartFile:
                 case TokenType.DM_Preproc_Punctuator_RightParenthesis: {
                     while (_bufferedWhitespace.TryPop(out var whitespace)) {
                         yield return whitespace;
@@ -227,6 +232,11 @@ public sealed class DMPreprocessor(bool enableDirectives) : IEnumerable<Token> {
             case ".dms":
                 // Webclient interface file. Probably never gonna be supported.
                 DMCompiler.UnimplementedWarning(includedFrom ?? Location.Internal, "DMS files are not supported");
+                break;
+            case ".ntsl":
+                file = file.Replace('\\', '/');
+
+                _lexerStack.Push(new NtslPreprocessorLexer(includeDir, file));
                 break;
             default:
                 PreprocessFile(includeDir, file);

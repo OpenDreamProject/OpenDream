@@ -306,7 +306,7 @@ internal sealed class DMPreprocessorLexer {
                 }
 
                 if (isLong) {
-                    c = Advance();
+                    Advance();
                     HandleLineEnd(); // A newline immediately following @{" is not appended
                     TokenTextBuilder.Append(GetCurrent()); // Since we're about to Advance() again we need to append what we have
 
@@ -338,7 +338,7 @@ internal sealed class DMPreprocessorLexer {
                     Advance();
 
                 string text = TokenTextBuilder.ToString();
-                var lengthMinusFinalNewline = text[text.Length - 3] == '\n' ? 6 : 5;
+                var lengthMinusFinalNewline = text[^3] == '\n' ? 6 : 5;
                 string value = isLong ? text.Substring(3, text.Length - lengthMinusFinalNewline) : text.Substring(2, text.Length - 3);
                 return CreateToken(TokenType.DM_Preproc_ConstantString, text, value);
             }

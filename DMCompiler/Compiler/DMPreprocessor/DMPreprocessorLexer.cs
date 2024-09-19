@@ -306,22 +306,25 @@ internal sealed class DMPreprocessorLexer {
                 }
 
                 if (isLong) {
+                    c = Advance();
+                    HandleLineEnd(); // A newline immediately following @{" is not appended
+                    TokenTextBuilder.Append(GetCurrent()); // Since we're about to Advance() again we need to append what we have
+
                     bool nextCharCanTerm = false;
                     do {
                         c = Advance();
 
-                        if(nextCharCanTerm && c == '}')
+                        if (nextCharCanTerm && c == '}') {
                             break;
+                        }
 
                         if (HandleLineEnd()) {
                             TokenTextBuilder.Append('\n');
-                        } else {
-                            TokenTextBuilder.Append(c);
-                            nextCharCanTerm = false;
+                            c = GetCurrent();
                         }
 
-                        if (c == '"')
-                            nextCharCanTerm = true;
+                        TokenTextBuilder.Append(c);
+                        nextCharCanTerm = c == '"';
                     } while (!AtEndOfSource());
                 } else {
                     while (c != delimiter && !AtLineEnd() && !AtEndOfSource()) {
@@ -335,7 +338,8 @@ internal sealed class DMPreprocessorLexer {
                     Advance();
 
                 string text = TokenTextBuilder.ToString();
-                string value = isLong ? text.Substring(3, text.Length - 5) : text.Substring(2, text.Length - 3);
+                var lengthMinusFinalNewline = text[text.Length - 3] == '\n' ? 6 : 5;
+                string value = isLong ? text.Substring(3, text.Length - lengthMinusFinalNewline) : text.Substring(2, text.Length - 3);
                 return CreateToken(TokenType.DM_Preproc_ConstantString, text, value);
             }
             case '\'':

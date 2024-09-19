@@ -17,6 +17,9 @@
 	query.Execute(db)
 	
 	ASSERT(query.RowsAffected() == 1)
+	
+	del(query)
+    del(db)
 
 	fdel("foo.db")
 	fdel("bar.db")

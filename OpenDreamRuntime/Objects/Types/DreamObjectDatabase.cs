@@ -90,6 +90,9 @@ public sealed class DreamObjectDatabase(DreamObjectDefinition objectDefinition) 
     /// Closes the current SQLite connection, if it is established.
     /// </summary>
     public void Close() {
-        _connection?.Close();
+        if (_connection == null) return;
+
+        SqliteConnection.ClearPool(_connection);
+        _connection?.Dispose();
     }
 }

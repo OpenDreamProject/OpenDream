@@ -26,7 +26,7 @@ public sealed class DreamObjectClient : DreamObject {
     }
 
     protected override void HandleDeletion() {
-        Connection.Session?.ConnectedClient.Disconnect("Your client object was deleted");
+        Connection.Session?.Channel.Disconnect("Your client object was deleted");
         DreamManager.Clients.Remove(this);
 
         base.HandleDeletion();
@@ -69,7 +69,7 @@ public sealed class DreamObjectClient : DreamObject {
                 value = new(long.Parse(hashStr, System.Globalization.NumberStyles.HexNumber).ToString()); // Converts from hex to decimal. Output is in analogous format to BYOND's.
                 return true;
             case "address":
-                value = new(Connection.Session!.ConnectedClient.RemoteEndPoint.Address.ToString());
+                value = new(Connection.Session!.Channel.RemoteEndPoint.Address.ToString());
                 return true;
             case "inactivity":
                 value = new(0); // TODO

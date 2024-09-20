@@ -37,7 +37,7 @@ public sealed class LocalHostConGroup : IConGroupControllerImplementation, IPost
     }
 
     private static bool IsLocal(ICommonSession player) {
-        return IsLocal(player.ConnectedClient);
+        return IsLocal(player.Channel);
     }
 
     private static bool IsLocal(INetChannel client) {
@@ -53,7 +53,7 @@ public sealed class LocalHostConGroup : IConGroupControllerImplementation, IPost
     public bool CheckInvokable(CommandSpec command, ICommonSession? user, out IConError? error) {
         error = null;
         if (user is null) return true; // Server console
-        return IsLocal(user.ConnectedClient);
+        return IsLocal(user.Channel);
     }
 
     void IPostInjectInit.PostInject() {

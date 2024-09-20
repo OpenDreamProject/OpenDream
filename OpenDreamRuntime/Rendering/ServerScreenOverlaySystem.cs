@@ -12,13 +12,13 @@ public sealed class ServerScreenOverlaySystem : SharedScreenOverlaySystem {
         _pvsOverride.AddForceSend(screenObject.Entity, connection.Session);
 
         NetEntity ent = _entityManager.GetNetEntity(screenObject.Entity);
-        RaiseNetworkEvent(new AddScreenObjectEvent(ent), connection.Session.ConnectedClient);
+        RaiseNetworkEvent(new AddScreenObjectEvent(ent), connection.Session.Channel);
     }
 
     public void RemoveScreenObject(DreamConnection connection, DreamObjectMovable screenObject) {
         _pvsOverride.RemoveForceSend(screenObject.Entity, connection.Session);
 
         NetEntity ent = _entityManager.GetNetEntity(screenObject.Entity);
-        RaiseNetworkEvent(new RemoveScreenObjectEvent(ent), connection.Session.ConnectedClient);
+        RaiseNetworkEvent(new RemoveScreenObjectEvent(ent), connection.Session.Channel);
     }
 }

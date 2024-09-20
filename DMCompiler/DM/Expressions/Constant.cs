@@ -336,17 +336,9 @@ internal sealed class ConstantPath(Location location, DMObject dmObject, DreamPa
         if (procIndex != -1) {
             DreamPath withoutProcElement = path.RemoveElement(procIndex);
             DreamPath ownerPath = withoutProcElement.FromElements(0, -2);
-            DMObject owner = DMObjectTree.GetDMObject(ownerPath, createIfNonexistent: false);
-            string procName = path.LastElement;
+            string procName = path.LastElement!;
 
-            int? procId;
-            if (owner == DMObjectTree.Root && DMObjectTree.TryGetGlobalProc(procName, out var globalProc)) {
-                procId = globalProc.Id;
-            } else {
-                var procs = owner.GetProcs(procName);
-
-                procId = procs?[^1];
-            }
+            ResolveProc(ownerPath, procName, out var procId);
 
             if (procId == null) {
                 DMCompiler.Emit(WarningCode.ItemDoesntExist, Location,
@@ -364,11 +356,35 @@ internal sealed class ConstantPath(Location location, DMObject dmObject, DreamPa
         if (DMObjectTree.TryGetTypeId(Value, out var typeId)) {
             pathInfo = (PathType.TypeReference, typeId);
             return true;
-        } else {
-            DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {Value} does not exist");
+        }
 
-            pathInfo = null;
-            return false;
+        // If it's not a type, check again for a proc but without the /proc/ element (which is valid)
+        if (ResolveProc(path.FromElements(0, -2), path.LastElement!, out var proc)) {
+            pathInfo = (PathType.ProcReference, proc.Value);
+            return true;
+        }
+
+        DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {Value} does not exist");
+
+        pathInfo = null;
+        return false;
+
+        bool ResolveProc(DreamPath ownerPath, string procName, [NotNullWhen(true)] out int? procId) {
+            procId = null;
+
+            DMObject? owner = DMObjectTree.GetDMObject(ownerPath, createIfNonexistent: false);
+            if (owner is null) return false;
+
+            if (owner == DMObjectTree.Root && DMObjectTree.TryGetGlobalProc(procName, out var globalProc)) {
+                procId = globalProc.Id;
+                return true;
+            }
+
+            var procs = owner.GetProcs(procName);
+            if (procs is null || procs.Count == 0) return false;
+
+            procId = procs[^1];
+            return true;
         }
     }
 }

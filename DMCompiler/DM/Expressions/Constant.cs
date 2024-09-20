@@ -338,7 +338,7 @@ internal sealed class ConstantPath(Location location, DMObject dmObject, DreamPa
             DreamPath ownerPath = withoutProcElement.FromElements(0, -2);
             string procName = path.LastElement!;
 
-            ResolveProc(ownerPath, procName, out var procId);
+            ResolveProc(ownerPath, procName, false, out var procId);
 
             if (procId == null) {
                 DMCompiler.Emit(WarningCode.ItemDoesntExist, Location,
@@ -358,8 +358,8 @@ internal sealed class ConstantPath(Location location, DMObject dmObject, DreamPa
             return true;
         }
 
-        // If it's not a type, check again for a proc but without the /proc/ element (which is valid)
-        if (ResolveProc(path.FromElements(0, -2), path.LastElement!, out var proc)) {
+        // If it's not a type, check again for a proc override without the /proc/ element
+        if (ResolveProc(path.FromElements(0, -2), path.LastElement!, true, out var proc)) {
             pathInfo = (PathType.ProcReference, proc.Value);
             return true;
         }
@@ -369,7 +369,7 @@ internal sealed class ConstantPath(Location location, DMObject dmObject, DreamPa
         pathInfo = null;
         return false;
 
-        bool ResolveProc(DreamPath ownerPath, string procName, [NotNullWhen(true)] out int? procId) {
+        bool ResolveProc(DreamPath ownerPath, string procName, bool isOverride, [NotNullWhen(true)] out int? procId) {
             procId = null;
 
             DMObject? owner = DMObjectTree.GetDMObject(ownerPath, createIfNonexistent: false);
@@ -383,7 +383,16 @@ internal sealed class ConstantPath(Location location, DMObject dmObject, DreamPa
             var procs = owner.GetProcs(procName);
             if (procs is null || procs.Count == 0) return false;
 
-            procId = procs[^1];
+            if (isOverride) {
+                procId = procs[^1];
+            } else {
+                procId = procs[0];
+                if (procs.Count > 1) {
+                    DMCompiler.Emit(WarningCode.AmbiguousProcPath, Location,
+                        $"Type {ownerPath} has lateral overrides of proc {procName} but \"/proc/\" references the original definition only");
+                }
+            }
+
             return true;
         }
     }

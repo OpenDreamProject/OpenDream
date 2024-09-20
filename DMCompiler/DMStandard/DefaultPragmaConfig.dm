@@ -29,6 +29,7 @@
 #pragma DanglingVarType warning
 #pragma MissingInterpolatedExpression warning
 #pragma AmbiguousResourcePath warning
+#pragma AmbiguousProcPath warning
 #pragma SuspiciousSwitchCase warning
 #pragma PointlessPositionalArgument warning
 // NOTE: The next few pragmas are for OpenDream's experimental type checker

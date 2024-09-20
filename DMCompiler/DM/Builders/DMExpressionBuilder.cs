@@ -669,6 +669,7 @@ internal static class DMExpressionBuilder {
             }
         }
 
+        var iteration = 0; // Since we do cursed stuff to `i` for reasons(TM), we need to track the for loop's iterations elsewhere
         for (int i = 0; i < operations.Length; i++) {
             DMASTDereference.Operation astOperation = astOperations[i + astOperationOffset];
             Dereference.Operation operation;
@@ -716,7 +717,8 @@ internal static class DMExpressionBuilder {
                             }
 
                             operations = new Dereference.Operation[newOperationCount];
-                            astOperationOffset = i + 1;
+                            astOperationOffset = i + iteration + 1;
+                            iteration++;
                             i = -1;
                             prevPath = property.Type;
                             pathIsFuzzy = prevPath == null;

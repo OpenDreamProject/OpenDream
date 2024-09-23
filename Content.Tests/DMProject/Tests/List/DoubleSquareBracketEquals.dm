@@ -1,3 +1,3 @@
 /proc/RunTest()
-	var/foo[] = new()
+	var/list/foo[]=new()
 	ASSERT(islist(foo))

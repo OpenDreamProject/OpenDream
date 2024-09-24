@@ -39,7 +39,7 @@ public sealed class DreamObjectDatabase(DreamObjectDefinition objectDefinition) 
 
         filename = SanitizeFilename(filename);
 
-        _connection = new SqliteConnection($"Data Source={filename};Mode=ReadWriteCreate");
+        _connection = new SqliteConnection($"Data Source={filename};Mode=ReadWriteCreate;Pooling=false");
 
         try {
             _connection.Open();
@@ -90,9 +90,6 @@ public sealed class DreamObjectDatabase(DreamObjectDefinition objectDefinition) 
     /// Closes the current SQLite connection, if it is established.
     /// </summary>
     public void Close() {
-        if (_connection == null) return;
-
-        SqliteConnection.ClearPool(_connection);
-        _connection?.Dispose();
+        _connection?.Close();
     }
 }

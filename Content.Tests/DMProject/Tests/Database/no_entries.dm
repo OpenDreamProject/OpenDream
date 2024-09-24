@@ -13,6 +13,6 @@
 	ASSERT(query.Error() && query.ErrorMsg())
 	
 	del(query)
-    del(db)
+	del(db)
 	
 	fdel("noentries.db")

@@ -144,8 +144,6 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
             _errorMessage = exception.Message;
             database.SetError(exception.SqliteErrorCode, exception.Message);
         }
-
-        ClearCommand();
     }
 
     public void NextRow() {

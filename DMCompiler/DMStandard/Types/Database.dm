@@ -19,5 +19,7 @@
 	proc/GetRowData()
 	New(text, ...)
 	proc/NextRow()
-	proc/Reset()
 	proc/RowsAffected()
+
+	proc/Reset()
+		set opendream_unimplemented = TRUE

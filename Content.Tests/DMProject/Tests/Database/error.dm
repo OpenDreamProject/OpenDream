@@ -10,4 +10,7 @@
 	ASSERT(db.Error() == 1)
 	ASSERT(length(db.ErrorMsg()) > 1)
 
+	del(query)
+	del(db)
+
 	fdel("database.db")

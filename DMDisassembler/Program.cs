@@ -48,6 +48,7 @@ internal class Program {
             if (_selectedType != null) {
                 Console.Write(_selectedType.Path);
             }
+
             Console.Write("> ");
 
             string input = Console.ReadLine();
@@ -55,10 +56,12 @@ internal class Program {
                 // EOF
                 break;
             }
+
             string[] split = input.Split(" ");
             string command = split[0].ToLower();
 
             switch (command) {
+                case "quit":
                 case "q": acceptingCommands = false; break;
                 case "search": Search(split); break;
                 case "sel":
@@ -67,9 +70,22 @@ internal class Program {
                 case "d":
                 case "decompile": Decompile(split); break;
                 case "test-all": TestAll(); break;
+                case "help": PrintHelp(); break;
                 default: Console.WriteLine("Invalid command \"" + command + "\""); break;
             }
         }
+    }
+
+    private static void PrintHelp() {
+        Console.WriteLine("DM Disassembler for OpenDream");
+        Console.WriteLine("Commands and arguments:");
+        Console.WriteLine("help                      : Show this help");
+        Console.WriteLine("quit|q                    : Exits the disassembler");
+        Console.WriteLine("search type|proc [name]   : Search for a particular typepath or a proc on a selected type");
+        Console.WriteLine("select|sel                : Select a typepath to run further commands on");
+        Console.WriteLine("list procs|globals        : List all globals, or all procs on a selected type");
+        Console.WriteLine("decompile|d [name]        : Decompiles the proc on the selected type");
+        Console.WriteLine("test-all                  : Tries to decompile every single proc to check for issues with this disassembler; not for production use");
     }
 
     private static void Search(string[] args) {

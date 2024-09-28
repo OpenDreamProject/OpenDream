@@ -199,7 +199,7 @@ internal static partial class DreamProcNativeHelpers {
     }
 
     public static DreamValue HandleViewersHearers(NativeProc.Bundle bundle, DreamObject? usr, bool ignoreLight) {
-        DreamValue depthValue = new DreamValue(5);
+        DreamValue? depthValue = null;
         DreamObjectAtom? center = null;
 
         //Arguments are optional and can be passed in any order
@@ -226,7 +226,7 @@ internal static partial class DreamProcNativeHelpers {
             return new(view);
 
         var centerPos = bundle.AtomManager.GetAtomPosition(center);
-        if (!depthValue.TryGetValueAsInteger(out var depth))
+        if (depthValue is null || !depthValue.Value.TryGetValueAsInteger(out var depth))
             depth = bundle.DreamManager.WorldInstance.DefaultView.Range;
 
         foreach (var atom in bundle.AtomManager.EnumerateAtoms(bundle.ObjectTree.Mob)) {
@@ -258,7 +258,7 @@ internal static partial class DreamProcNativeHelpers {
     }
 
     public static DreamValue HandleOviewersOhearers(NativeProc.Bundle bundle, DreamObject? usr, bool ignoreLight) {
-        DreamValue depthValue = new DreamValue(5);
+        DreamValue? depthValue = null;
         DreamObjectAtom? center = null;
 
         //Arguments are optional and can be passed in any order
@@ -285,7 +285,7 @@ internal static partial class DreamProcNativeHelpers {
             return new(view);
 
         var centerPos = bundle.AtomManager.GetAtomPosition(center);
-        if (!depthValue.TryGetValueAsInteger(out var depth))
+        if (depthValue is null || !depthValue.Value.TryGetValueAsInteger(out var depth))
             depth = bundle.DreamManager.WorldInstance.DefaultView.Range;
 
         foreach (var atom in bundle.AtomManager.EnumerateAtoms(bundle.ObjectTree.Mob)) {

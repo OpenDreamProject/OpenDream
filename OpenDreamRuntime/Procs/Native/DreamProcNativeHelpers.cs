@@ -1,4 +1,4 @@
-﻿using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects;
 using OpenDreamShared.Dream;
 using System.Text.RegularExpressions;
 using OpenDreamRuntime.Objects.Types;
@@ -196,6 +196,127 @@ internal static partial class DreamProcNativeHelpers {
         }
 
         return tiles;
+    }
+
+    public static DreamValue HandleViewersHearers(NativeProc.Bundle bundle, DreamObject? usr, bool ignoreLight) {
+        DreamValue depthValue = new DreamValue(5);
+        DreamObjectAtom? center = null;
+
+        //Arguments are optional and can be passed in any order
+        if (bundle.Arguments.Length > 0) {
+            DreamValue firstArgument = bundle.GetArgument(0, "Depth");
+
+            if (firstArgument.TryGetValueAsDreamObject(out center)) {
+                if (bundle.Arguments.Length > 1) {
+                    depthValue = bundle.GetArgument(1, "Center");
+                }
+            } else {
+                depthValue = firstArgument;
+
+                if (bundle.Arguments.Length > 1) {
+                    bundle.GetArgument(1, "Center").TryGetValueAsDreamObject(out center);
+                }
+            }
+        }
+
+        center ??= usr as DreamObjectAtom;
+
+        DreamList view = bundle.ObjectTree.CreateList();
+        if (center == null)
+            return new(view);
+
+        var centerPos = bundle.AtomManager.GetAtomPosition(center);
+        if (!depthValue.TryGetValueAsInteger(out var depth))
+            depth = 5; //TODO: Default to world.view
+
+        foreach (var atom in bundle.AtomManager.EnumerateAtoms(bundle.ObjectTree.Mob)) {
+            var mob = (DreamObjectMob)atom;
+
+            if (centerPos.Z == mob.Z && Math.Abs(centerPos.X - mob.X) <= depth && Math.Abs(centerPos.Y - mob.Y) <= depth) {
+                (_, ViewRange range) = ResolveViewArguments(bundle.DreamManager, mob, bundle.Arguments);
+                var eyePos = bundle.AtomManager.GetAtomPosition(mob);
+                var viewData = CollectViewData(bundle.AtomManager, bundle.MapManager, eyePos, range);
+
+                ViewAlgorithm.CalculateVisibility(viewData, ignoreLight);
+
+                for (int x = 0; x < viewData.GetLength(0); x++) {
+                    for (int y = 0; y < viewData.GetLength(1); y++) {
+                        var tile = viewData[x, y];
+                        if (tile == null || tile.IsVisible == false)
+                            continue;
+
+                        if (centerPos.X == eyePos.X + tile.DeltaX && eyePos.Y + tile.DeltaY == centerPos.Y) {
+                            view.AddValue(new DreamValue(mob));
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        return new DreamValue(view);
+    }
+
+    public static DreamValue HandleOviewersOhearers(NativeProc.Bundle bundle, DreamObject? usr, bool ignoreLight) {
+        DreamValue depthValue = new DreamValue(5);
+        DreamObjectAtom? center = null;
+
+        //Arguments are optional and can be passed in any order
+        if (bundle.Arguments.Length > 0) {
+            DreamValue firstArgument = bundle.GetArgument(0, "Depth");
+
+            if (firstArgument.TryGetValueAsDreamObject(out center)) {
+                if (bundle.Arguments.Length > 1) {
+                    depthValue = bundle.GetArgument(1, "Center");
+                }
+            } else {
+                depthValue = firstArgument;
+
+                if (bundle.Arguments.Length > 1) {
+                    bundle.GetArgument(1, "Center").TryGetValueAsDreamObject(out center);
+                }
+            }
+        }
+
+        center ??= usr as DreamObjectAtom;
+
+        DreamList view = bundle.ObjectTree.CreateList();
+        if (center == null)
+            return new(view);
+
+        var centerPos = bundle.AtomManager.GetAtomPosition(center);
+        if (!depthValue.TryGetValueAsInteger(out var depth))
+            depth = 5; //TODO: Default to world.view
+
+        foreach (var atom in bundle.AtomManager.EnumerateAtoms(bundle.ObjectTree.Mob)) {
+            var mob = (DreamObjectMob)atom;
+
+            if (mob.X == centerPos.X && mob.Y == centerPos.Y)
+                continue;
+
+            if (centerPos.Z == mob.Z && Math.Abs(centerPos.X - mob.X) <= depth && Math.Abs(centerPos.Y - mob.Y) <= depth) {
+                (_, ViewRange range) = ResolveViewArguments(bundle.DreamManager, mob, bundle.Arguments);
+                var eyePos = bundle.AtomManager.GetAtomPosition(mob);
+                var viewData = CollectViewData(bundle.AtomManager, bundle.MapManager, eyePos, range);
+
+                ViewAlgorithm.CalculateVisibility(viewData, ignoreLight);
+
+                for (int x = 0; x < viewData.GetLength(0); x++) {
+                    for (int y = 0; y < viewData.GetLength(1); y++) {
+                        var tile = viewData[x, y];
+                        if (tile == null || tile.IsVisible == false)
+                            continue;
+
+                        if (centerPos.X == eyePos.X + tile.DeltaX && eyePos.Y + tile.DeltaY == centerPos.Y) {
+                            view.AddValue(new DreamValue(mob));
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        return new DreamValue(view);
     }
 
     /// <summary>

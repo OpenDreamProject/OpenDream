@@ -111,7 +111,9 @@ public sealed class DreamIcon(DreamResourceManager resourceManager) {
             frameHeight = 32;
         }
 
-        Dictionary<string, ParsedDMIState> dmiStates = new(States.Count);
+        ParsedDMIDescription newDescription = new() {Width = frameWidth, Height = frameHeight};
+        newDescription.States.EnsureCapacity(States.Count);
+
         int span = frameWidth * Math.Max(frameCount, 1);
         Rgba32[] pixels = PixelArrayPool.Rent(span * frameHeight);
 
@@ -120,7 +122,7 @@ public sealed class DreamIcon(DreamResourceManager resourceManager) {
             var iconState = iconStatePair.Value;
             ParsedDMIState newState = new() { Name = iconStatePair.Key, Loop = false, Rewind = false };
 
-            dmiStates.Add(newState.Name, newState);
+            newDescription.States.Add(newState.Name, newState);
 
             int exportedDirectionCount = DMIParser.GetExportedDirectionCount(iconState.Directions);
             for (int directionIndex = 0; directionIndex < exportedDirectionCount; directionIndex++) {
@@ -137,7 +139,6 @@ public sealed class DreamIcon(DreamResourceManager resourceManager) {
         }
 
         Image<Rgba32> dmiImage = Image.LoadPixelData<Rgba32>(pixels, span, frameHeight);
-        ParsedDMIDescription newDescription = new() {Width = frameWidth, Height = frameHeight, States = dmiStates};
 
         PixelArrayPool.Return(pixels, clearArray: true);
 

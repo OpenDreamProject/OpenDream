@@ -227,7 +227,7 @@ internal static partial class DreamProcNativeHelpers {
 
         var centerPos = bundle.AtomManager.GetAtomPosition(center);
         if (!depthValue.TryGetValueAsInteger(out var depth))
-            depth = 5; //TODO: Default to world.view
+            depth = bundle.DreamManager.WorldInstance.DefaultView.Range;
 
         foreach (var atom in bundle.AtomManager.EnumerateAtoms(bundle.ObjectTree.Mob)) {
             var mob = (DreamObjectMob)atom;
@@ -286,7 +286,7 @@ internal static partial class DreamProcNativeHelpers {
 
         var centerPos = bundle.AtomManager.GetAtomPosition(center);
         if (!depthValue.TryGetValueAsInteger(out var depth))
-            depth = 5; //TODO: Default to world.view
+            depth = bundle.DreamManager.WorldInstance.DefaultView.Range;
 
         foreach (var atom in bundle.AtomManager.EnumerateAtoms(bundle.ObjectTree.Mob)) {
             var mob = (DreamObjectMob)atom;

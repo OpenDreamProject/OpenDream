@@ -34,6 +34,7 @@ public sealed class NtslLexer(string sourceName, IEnumerable<Token> source) : To
                         case "{": token = CreateToken(TokenType.NTSL_LeftCurlyBracket, c); break;
                         case "}": token = CreateToken(TokenType.NTSL_RightCurlyBracket, c); break;
                         case "$": token = CreateToken(TokenType.NTSL_VarIdentifierPrefix, c); break;
+                        case "+": token = CreateToken(TokenType.NTSL_Add, c); break;
                         case "=": token = CreateToken(TokenType.NTSL_Equals, c); break;
                         default: token = CreateToken(TokenType.Error, c, $"Invalid punctuator token '{c}'"); break;
                     }

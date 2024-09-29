@@ -149,6 +149,7 @@ public enum TokenType : byte {
     DM_Xor,
     DM_XorEquals,
 
+    NTSL_Add,
     NTSL_Comma,
     NTSL_Def,
     NTSL_EndFile,

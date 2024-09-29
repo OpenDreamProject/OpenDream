@@ -106,7 +106,7 @@ public class NtslParser(NtslLexer lexer) : Parser<Token>(lexer) {
     }
 
     private DMASTExpression? ExpressionAssign() {
-        var expression = ExpressionPrimary();
+        var expression = ExpressionAdd();
 
         if (expression != null && Check(TokenType.NTSL_Equals)) {
             var assignTo = ExpressionAssign();
@@ -116,6 +116,22 @@ public class NtslParser(NtslLexer lexer) : Parser<Token>(lexer) {
             }
 
             return new DMASTAssign(expression.Location, expression, assignTo);
+        }
+
+        return expression;
+    }
+
+    private DMASTExpression? ExpressionAdd() {
+        var expression = ExpressionPrimary();
+
+        if (expression != null && Check(TokenType.NTSL_Add)) {
+            var toAdd = ExpressionAdd();
+            if (toAdd == null) {
+                DMCompiler.Emit(WarningCode.BadExpression, CurrentLoc, "Expected a value to add");
+                return expression;
+            }
+
+            return new DMASTAdd(expression.Location, expression, toAdd);
         }
 
         return expression;

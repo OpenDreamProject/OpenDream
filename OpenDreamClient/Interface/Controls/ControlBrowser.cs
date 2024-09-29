@@ -126,33 +126,39 @@ internal sealed class ControlBrowser : InterfaceControl {
     }
 
     private void RequestHandler(IRequestHandlerContext context) {
-        Uri newUri = new Uri(context.Url);
+        // An exception in here will presumably freeze up / crash CEF, if it's anything like BeforeBrowseHandler
+        try {
+            Uri newUri = new Uri(context.Url);
 
-        if (newUri is { Scheme: "http", Host: "127.0.0.1" }) {
-            Stream stream;
-            HttpStatusCode status;
-            var path = new ResPath(newUri.AbsolutePath);
-            if(!_dreamResource.EnsureCacheFile(newUri.AbsolutePath)) {
-                stream = Stream.Null;
-                status = HttpStatusCode.NotFound;
-            } else {
-                try {
-                    stream = _resourceManager.UserData.OpenRead(_dreamResource.GetCacheFilePath(newUri.AbsolutePath));
-                    status = HttpStatusCode.OK;
-                } catch (FileNotFoundException) {
+            if (newUri is {Scheme: "http", Host: "127.0.0.1"}) {
+                Stream stream;
+                HttpStatusCode status;
+                var path = new ResPath(newUri.AbsolutePath);
+                if (!_dreamResource.EnsureCacheFile(newUri.AbsolutePath)) {
                     stream = Stream.Null;
                     status = HttpStatusCode.NotFound;
-                } catch (Exception e) {
-                    _sawmill.Error($"Exception while loading file from {newUri}:\n{e}");
-                    stream = Stream.Null;
-                    status = HttpStatusCode.InternalServerError;
+                } else {
+                    try {
+                        stream = _resourceManager.UserData.OpenRead(
+                            _dreamResource.GetCacheFilePath(newUri.AbsolutePath));
+                        status = HttpStatusCode.OK;
+                    } catch (FileNotFoundException) {
+                        stream = Stream.Null;
+                        status = HttpStatusCode.NotFound;
+                    } catch (Exception e) {
+                        _sawmill.Error($"Exception while loading file from {newUri}:\n{e}");
+                        stream = Stream.Null;
+                        status = HttpStatusCode.InternalServerError;
+                    }
                 }
+
+                if (!FileExtensionMimeTypes.TryGetValue(path.Extension, out var mimeType))
+                    mimeType = "application/octet-stream";
+
+                context.DoRespondStream(stream, mimeType, status);
             }
-
-            if (!FileExtensionMimeTypes.TryGetValue(path.Extension, out var mimeType))
-                mimeType = "application/octet-stream";
-
-            context.DoRespondStream(stream, mimeType, status);
+        } catch (Exception e) {
+            _sawmill.Error($"Exception in RequestHandler: {e}");
         }
     }
 

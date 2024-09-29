@@ -126,7 +126,7 @@ internal sealed class ControlBrowser : InterfaceControl {
     }
 
     private void RequestHandler(IRequestHandlerContext context) {
-        // An exception in here will presumably freeze up / crash CEF, if it's anything like BeforeBrowseHandler
+        // An exception in here will crash RT (and not log it because it's uncaught)
         try {
             Uri newUri = new Uri(context.Url);
 
@@ -152,9 +152,7 @@ internal sealed class ControlBrowser : InterfaceControl {
                     }
                 }
 
-                if (!FileExtensionMimeTypes.TryGetValue(path.Extension, out var mimeType))
-                    mimeType = "application/octet-stream";
-
+                var mimeType = FileExtensionMimeTypes.GetValueOrDefault(path.Extension, "application/octet-stream");
                 context.DoRespondStream(stream, mimeType, status);
             }
         } catch (Exception e) {

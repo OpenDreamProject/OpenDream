@@ -50,5 +50,8 @@
 	
 	ASSERT(!query.GetColumn(10))
 	ASSERT(query.Error() && query.ErrorMsg())
+	
+	del(query)
+	del(db)
 
 	fdel("database.db")

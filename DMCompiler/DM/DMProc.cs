@@ -123,7 +123,6 @@ namespace DMCompiler.DM {
 
         private void DeallocLocalVariables(int amount) {
             if (amount > 0) {
-                _localVariableNames.RemoveRange(_localVariableNames.Count - amount, amount);
                 WriteLocalVariableDealloc(amount);
                 _localVariableIdCounter -= amount;
             }

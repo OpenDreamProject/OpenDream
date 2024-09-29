@@ -775,7 +775,7 @@ internal static class DreamProcNativeRoot {
             }
         }
 
-        if (failCount > 0 || string.IsNullOrEmpty(text) || string.IsNullOrEmpty(needle)) {
+        if (failCount > 0 || string.IsNullOrEmpty(text) || (string.IsNullOrEmpty(needle) && regex == null)) {
             return new DreamValue(failCount == 2 ? 1 : 0);
         }
 
@@ -826,7 +826,7 @@ internal static class DreamProcNativeRoot {
             }
         }
 
-        if (failCount > 0 || string.IsNullOrEmpty(text) || string.IsNullOrEmpty(needle)) {
+        if (failCount > 0 || string.IsNullOrEmpty(text) || (string.IsNullOrEmpty(needle) && regex == null)) {
             return new DreamValue(failCount == 2 ? 1 : 0);
         }
 

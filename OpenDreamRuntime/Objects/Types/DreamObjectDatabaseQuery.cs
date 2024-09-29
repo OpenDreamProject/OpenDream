@@ -22,6 +22,7 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
     }
 
     protected override void HandleDeletion() {
+        ClearCommand();
         CloseReader();
         base.HandleDeletion();
     }
@@ -44,13 +45,13 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
                     if (arg.TryGetValueAsString(out var stringValue)) {
                         _command.Parameters.AddWithValue($"@{i}", stringValue);
                     }
-                    
+
                     break;
                 case DreamValue.DreamValueType.Float:
                     if (arg.TryGetValueAsFloat(out var floatValue)) {
                         _command.Parameters.AddWithValue($"@{i}", floatValue);
                     }
-                    
+
                     break;
 
                 case DreamValue.DreamValueType.DreamResource:
@@ -104,11 +105,13 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
     }
 
     public void ClearCommand() {
+        _command?.Dispose();
         _command = null;
     }
 
     public void CloseReader() {
-        _reader?.Close();
+        _reader?.Dispose();
+        _reader = null;
     }
 
     public int? GetErrorCode() {
@@ -141,8 +144,6 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
             _errorMessage = exception.Message;
             database.SetError(exception.SqliteErrorCode, exception.Message);
         }
-        
-        ClearCommand();
     }
 
     public void NextRow() {

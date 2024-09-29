@@ -59,7 +59,7 @@ namespace OpenDreamRuntime.Procs {
                 Thread.Resume();
             }
 
-            public Task<DreamValue> Call(DreamProc proc, DreamObject src, DreamObject? usr, params DreamValue[] arguments) {
+            public Task<DreamValue> Call(DreamProc proc, DreamObject? src, DreamObject? usr, params DreamValue[] arguments) {
                 _callTcs = new();
                 _callProcNotify = proc.CreateState(Thread, src, usr, new DreamProcArguments(arguments));
 

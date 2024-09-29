@@ -28,7 +28,8 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
     [ViewVariables] public string? IconState;
     [ViewVariables] public AtomDirection Direction = AtomDirection.South;
     [ViewVariables] public bool InheritsDirection = true; // Inherits direction when used as an overlay
-    [ViewVariables] public Vector2i PixelOffset;
+    [ViewVariables] public Vector2i PixelOffset;  // pixel_x and pixel_y
+    [ViewVariables] public Vector2i PixelOffset2; // pixel_w and pixel_z
     [ViewVariables] public Color Color = Color.White;
     [ViewVariables] public byte Alpha = 255;
     [ViewVariables] public float GlideSize;
@@ -68,6 +69,9 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
         0, 0    // c f
     ];
 
+    // PixelOffset2 behaves the same as PixelOffset in top-down mode, so this is used
+    public Vector2i TotalPixelOffset => PixelOffset + PixelOffset2;
+
     public IconAppearance() {
         Overlays = new();
         Underlays = new();
@@ -83,6 +87,7 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
         Direction = appearance.Direction;
         InheritsDirection = appearance.InheritsDirection;
         PixelOffset = appearance.PixelOffset;
+        PixelOffset2 = appearance.PixelOffset2;
         Color = appearance.Color;
         Alpha = appearance.Alpha;
         GlideSize = appearance.GlideSize;
@@ -119,6 +124,7 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
         if (appearance.Direction != Direction) return false;
         if (appearance.InheritsDirection != InheritsDirection) return false;
         if (appearance.PixelOffset != PixelOffset) return false;
+        if (appearance.PixelOffset2 != PixelOffset2) return false;
         if (appearance.Color != Color) return false;
         if (appearance.Alpha != Alpha) return false;
         if (!appearance.GlideSize.Equals(GlideSize)) return false;
@@ -206,6 +212,7 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
         hashCode.Add(Direction);
         hashCode.Add(InheritsDirection);
         hashCode.Add(PixelOffset);
+        hashCode.Add(PixelOffset2);
         hashCode.Add(Color);
         hashCode.Add(ColorMatrix);
         hashCode.Add(Layer);

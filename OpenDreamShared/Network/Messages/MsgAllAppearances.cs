@@ -19,6 +19,7 @@ public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppeara
         Direction,
         DoesntInheritDirection,
         PixelOffset,
+        PixelOffset2,
         Color,
         Alpha,
         GlideSize,
@@ -82,6 +83,9 @@ public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppeara
                         break;
                     case Property.PixelOffset:
                         appearance.PixelOffset = (buffer.ReadVariableInt32(), buffer.ReadVariableInt32());
+                        break;
+                    case Property.PixelOffset2:
+                        appearance.PixelOffset2 = (buffer.ReadVariableInt32(), buffer.ReadVariableInt32());
                         break;
                     case Property.Color:
                         appearance.Color = buffer.ReadColor();
@@ -249,6 +253,12 @@ public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppeara
                 buffer.Write((byte)Property.PixelOffset);
                 buffer.WriteVariableInt32(appearance.PixelOffset.X);
                 buffer.WriteVariableInt32(appearance.PixelOffset.Y);
+            }
+
+            if (appearance.PixelOffset2 != IconAppearance.Default.PixelOffset2) {
+                buffer.Write((byte)Property.PixelOffset2);
+                buffer.WriteVariableInt32(appearance.PixelOffset2.X);
+                buffer.WriteVariableInt32(appearance.PixelOffset2.Y);
             }
 
             if (appearance.Color != IconAppearance.Default.Color) {

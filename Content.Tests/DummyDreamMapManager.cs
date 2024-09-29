@@ -35,16 +35,12 @@ namespace Content.Tests {
             return false;
         }
 
-        public IDreamMapManager.Cell GetCellFromTurf(DreamObjectTurf turf) {
-            throw null;
-        }
-
-        public bool TryGetCellAt(Vector2i pos, int z, out IDreamMapManager.Cell? cell) {
+        public bool TryGetCellAt(Vector2i pos, int z, [NotNullWhen(true)] out IDreamMapManager.Cell? cell) {
             cell = null;
             return false;
         }
 
-        public bool TryGetTurfAt(Vector2i pos, int z, out DreamObjectTurf turf) {
+        public bool TryGetTurfAt(Vector2i pos, int z, [NotNullWhen(true)] out DreamObjectTurf? turf) {
             turf = null;
             return false;
         }

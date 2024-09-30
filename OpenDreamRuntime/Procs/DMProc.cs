@@ -763,7 +763,7 @@ namespace OpenDreamRuntime.Procs {
                     GetIndexReferenceValues(reference, out var index, out var indexing);
 
                     if (indexing.TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
-                        dreamObject.OperatorIndexAssign(index, value);
+                        dreamObject.OperatorIndexAssign(index, this, value);
                     } else {
                         ThrowCannotAssignListIndex(index, indexing);
                     }
@@ -827,11 +827,8 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.ListIndex: {
                     GetIndexReferenceValues(reference, out var index, out var indexing, peek);
 
-                    ProcStatus subState = GetIndex(indexing, index, this, out var indexResult);
-                    if (subState == ProcStatus.Continue)
-                        return indexResult;
-                    else
-                        throw new Exception("fuck this is gonna be so hard to implement");
+                    GetIndex(indexing, index, this, out var indexResult);
+                    return indexResult;
                 }
                 default:
                     ThrowCannotGetValueOfReferenceType(reference);
@@ -920,10 +917,10 @@ namespace OpenDreamRuntime.Procs {
             throw new Exception($"Type {ownerObj.ObjectDefinition.Type} has no field called \"{field}\"");
         }
 
-        public ProcStatus GetIndex(DreamValue indexing, DreamValue index, DMProcState state, out DreamValue result) {
+        public void GetIndex(DreamValue indexing, DreamValue index, DMProcState state, out DreamValue result) {
             if (indexing.TryGetValueAsDreamList(out var listObj)) {
                 result = listObj.GetValue(index);
-                return ProcStatus.Continue;
+                return;
             }
 
             if (indexing.TryGetValueAsString(out string? strValue)) {
@@ -932,17 +929,19 @@ namespace OpenDreamRuntime.Procs {
 
                 char c = strValue[strIndex - 1];
                 result = new DreamValue(Convert.ToString(c));
-                return ProcStatus.Continue;
+                return;
             }
 
             if (indexing.TryGetValueAsDreamObject(out var dreamObject)) {
-                if (dreamObject != null)
-                    return dreamObject.OperatorIndex(index, state, out result);
+                if (dreamObject != null) {
+                    result = dreamObject.OperatorIndex(index, state);
+                    return;
+                }
             }
 
             ThrowCannotGetIndex(indexing, index);
             result = DreamValue.Null;
-            return ProcStatus.Continue;
+            return;
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]

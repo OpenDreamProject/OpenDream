@@ -96,6 +96,8 @@ public sealed class DreamConnection {
     public DreamConnection() {
         IoCManager.InjectDependencies(this);
 
+        _selectedStatPanel = "";
+
         _entitySystemManager.TryGetEntitySystem(out _screenOverlaySystem);
         _entitySystemManager.TryGetEntitySystem(out _clientImagesSystem);
         _entitySystemManager.TryGetEntitySystem(out _verbSystem);

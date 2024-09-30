@@ -1,5 +1,4 @@
 using DMCompiler.Bytecode;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using DMCompiler.DM.Expressions;
@@ -124,7 +123,6 @@ namespace DMCompiler.DM {
 
         private void DeallocLocalVariables(int amount) {
             if (amount > 0) {
-                _localVariableNames.RemoveRange(_localVariableNames.Count - amount, amount);
                 WriteLocalVariableDealloc(amount);
                 _localVariableIdCounter -= amount;
             }
@@ -169,41 +167,14 @@ namespace DMCompiler.DM {
         }
 
         public ProcDefinitionJson GetJsonRepresentation() {
-            ProcDefinitionJson procDefinition = new ProcDefinitionJson();
+            var optimizer = new BytecodeOptimizer();
+            var serializer = new AnnotatedBytecodeSerializer();
 
-            procDefinition.OwningTypeId = _dmObject.Id;
-            procDefinition.Name = Name;
-            procDefinition.IsVerb = IsVerb;
+            optimizer.Optimize(AnnotatedBytecode.GetAnnotatedBytecode());
 
-            if ((Attributes & ProcAttributes.None) != ProcAttributes.None) {
-                procDefinition.Attributes = Attributes;
-            }
-
-            procDefinition.VerbSrc = VerbSrc;
-            procDefinition.VerbName = VerbName;
-            // Normally VerbCategory is "" by default and null to hide it, but we invert those during (de)serialization to reduce JSON size
-            VerbCategory = VerbCategory switch {
-                "" => null,
-                null => string.Empty,
-                _ => VerbCategory
-            };
-            procDefinition.VerbCategory = VerbCategory;
-            procDefinition.VerbDesc = VerbDesc;
-            procDefinition.Invisibility = Invisibility;
-
-            BytecodeOptimizer optimizer = new();
-
-            var bytecodelist = optimizer.Optimize(AnnotatedBytecode.GetAnnotatedBytecode());
-
-            procDefinition.MaxStackSize = AnnotatedBytecode.GetMaxStackSize();
-            AnnotatedBytecodeSerializer serializer = new();
-
-            if (bytecodelist.Count > 0)
-                procDefinition.Bytecode =
-                    serializer.Serialize(AnnotatedBytecode.GetAnnotatedBytecode());
-
+            List<ProcArgumentJson>? arguments = null;
             if (_parameters.Count > 0) {
-                procDefinition.Arguments = new List<ProcArgumentJson>();
+                arguments = new List<ProcArgumentJson>(_parameters.Count);
 
                 foreach (var parameter in _parameters.Values) {
                     if (parameter.ExplicitValueType is not { } argumentType) {
@@ -217,20 +188,36 @@ namespace DMCompiler.DM {
                         }
                     }
 
-                    procDefinition.Arguments.Add(new ProcArgumentJson {
+                    arguments.Add(new ProcArgumentJson {
                         Name = parameter.Name,
                         Type = argumentType.Type
                     });
                 }
             }
 
-            if (_localVariableNames.Count > 0) {
-                procDefinition.Locals = serializer.GetLocalVariablesJson();
-            }
+            return new ProcDefinitionJson {
+                OwningTypeId = _dmObject.Id,
+                Name = Name,
+                Attributes = Attributes,
+                MaxStackSize = AnnotatedBytecode.GetMaxStackSize(),
+                Bytecode = serializer.Serialize(AnnotatedBytecode.GetAnnotatedBytecode()),
+                Arguments = arguments,
+                SourceInfo = serializer.SourceInfo,
+                Locals = (_localVariableNames.Count > 0) ? serializer.GetLocalVariablesJson() : null,
 
-            procDefinition.SourceInfo = serializer.SourceInfo;
+                IsVerb = IsVerb,
+                VerbSrc = VerbSrc,
+                VerbName = VerbName,
+                VerbDesc = VerbDesc,
+                Invisibility = Invisibility,
 
-            return procDefinition;
+                // Normally VerbCategory is "" by default and null to hide it, but we invert those during (de)serialization to reduce JSON size
+                VerbCategory = VerbCategory switch {
+                    "" => null,
+                    null => string.Empty,
+                    _ => VerbCategory
+                }
+            };
         }
 
         public void WaitFor(bool waitFor) {

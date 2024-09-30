@@ -511,7 +511,13 @@ namespace OpenDreamRuntime.Objects {
         }
 
         // []
-        public virtual DreamValue OperatorIndex(DreamValue index) {
+        public virtual ProcStatus OperatorIndex(DreamValue index, DMProcState state, out DreamValue result) {
+            if(TryGetProc("operator[]", out var proc)) {
+                var operatorProcState = proc.CreateState(state.Thread, this, state.Usr, new DreamProcArguments(index));
+                state.Thread.PushProcState(operatorProcState);
+                result = DreamValue.Null;
+                return ProcStatus.Called;
+            }
             throw new InvalidOperationException($"Cannot index {this} with {index}");
         }
 

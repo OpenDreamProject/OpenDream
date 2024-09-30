@@ -565,8 +565,13 @@ namespace OpenDreamRuntime.Procs {
 
             // number indices always perform a normal list access here
             if (key.TryGetValueAsInteger(out _)) {
-                state.Push(state.GetIndex(owner, key));
-                return ProcStatus.Continue;
+                ProcStatus subState = state.GetIndex(owner, key, state, out DreamValue indexResult);
+                if(subState == ProcStatus.Continue) {
+                    state.Push(indexResult);
+                    return subState;
+                } else {
+                    return subState;
+                }
             }
 
             if (!key.TryGetValueAsString(out string property)) {
@@ -602,7 +607,7 @@ namespace OpenDreamRuntime.Procs {
                         ? DreamValue.Null
                         : new DreamValue(objectDefinition.Parent.TreeEntry),
                 "type" => new DreamValue(objectDefinition.TreeEntry),
-                _ => objectDefinition.Variables[property]
+                _ => objectDefinition.Variables.TryGetValue(property, out var val) ? val : DreamValue.Null
             };
 
             state.Push(result);
@@ -2523,7 +2528,11 @@ namespace OpenDreamRuntime.Procs {
             DreamValue index = state.Pop();
             DreamValue obj = state.Pop();
 
-            state.Push(state.GetIndex(obj, index));
+            ProcStatus subState = state.GetIndex(obj, index, state, out DreamValue indexResult);
+            if(subState == ProcStatus.Continue)
+                state.Push(indexResult);
+            else
+                return subState;
             return ProcStatus.Continue;
         }
 

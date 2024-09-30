@@ -107,6 +107,7 @@ public class DreamList : DreamObject {
         if (key.TryGetValueAsInteger(out int keyInteger)) {
             return _values[keyInteger - 1]; //1-indexed
         }
+
         if (_associativeValues == null)
             return DreamValue.Null;
 
@@ -239,8 +240,10 @@ public class DreamList : DreamObject {
     }
 
     #region Operators
-    public override DreamValue OperatorIndex(DreamValue index) {
-        return GetValue(index);
+
+    public override ProcStatus OperatorIndex(DreamValue index, DMProcState state, out DreamValue result) {
+        result = GetValue(index);
+        return ProcStatus.Continue;
     }
 
     public override void OperatorIndexAssign(DreamValue index, DreamValue value) {
@@ -378,6 +381,7 @@ public class DreamList : DreamObject {
 
         return DreamValue.True;
     }
+
     #endregion Operators
 }
 
@@ -918,6 +922,19 @@ public sealed class DreamFilterList : DreamList {
         return new DreamValue(filterObject);
     }
 
+    public override List<DreamValue> GetValues() {
+        IconAppearance appearance = GetAppearance();
+        List<DreamValue> filterList = new List<DreamValue>(appearance.Filters.Count);
+
+        foreach (var filter in appearance.Filters) {
+            DreamObjectFilter filterObject = ObjectTree.CreateObject<DreamObjectFilter>(ObjectTree.Filter);
+            filterObject.Filter = filter;
+            filterList.Add(new DreamValue(filterObject));
+        }
+
+        return filterList;
+    }
+
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
         if (!value.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject) &&!value.IsNull)
             throw new Exception($"Cannot set value of filter list to {value}");
@@ -983,6 +1000,10 @@ public sealed class ClientScreenList : DreamList {
         return _screenObjects[screenIndex - 1];
     }
 
+    public override List<DreamValue> GetValues() {
+        return _screenObjects;
+    }
+
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
         throw new Exception("Cannot write to an index of a screen list");
     }
@@ -1038,6 +1059,10 @@ public sealed class ClientImagesList : DreamList {
             throw new Exception($"Invalid index into client images list: {key}");
 
         return _imageObjects[imageIndex - 1];
+    }
+
+    public override List<DreamValue> GetValues() {
+        return _imageObjects;
     }
 
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
@@ -1344,7 +1369,6 @@ internal sealed class SavefileDirList : DreamList {
         if (!value.TryGetValueAsString(out var valueStr))
             throw new Exception($"Invalid value on savefile dir name: {value}");
         _save.AddSavefileDir(valueStr);
-
     }
 
     public override void RemoveValue(DreamValue value) {

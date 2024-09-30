@@ -1,6 +1,4 @@
 ﻿using DMCompiler.Bytecode;
-using System;
-using System.Collections.Generic;
 using DMCompiler.Compiler;
 using DMCompiler.Json;
 
@@ -215,9 +213,8 @@ internal sealed class DMObject {
     }
 
     public bool IsSubtypeOf(DreamPath path) {
-        if (Path.IsDescendantOf(path)) return true;
-        if (Parent != null) return Parent.IsSubtypeOf(path);
-        return false;
+        if (path.Equals(Path)) return true;
+        return Parent != null && Parent.IsSubtypeOf(path);
     }
 
     public DMValueType GetDMValueType() {

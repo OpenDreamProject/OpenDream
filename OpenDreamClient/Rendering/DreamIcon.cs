@@ -55,12 +55,14 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
     }
 
     public Vector2 TextureRenderOffset = Vector2.Zero;
+    public Texture? LastRenderedTexture;
 
     private int _animationFrame;
-    private TimeSpan _animationFrameTime = gameTiming.CurTime;
     private List<AppearanceAnimation>? _appearanceAnimations;
+    private int _appearanceAnimationsLoops;
     private Box2? _cachedAABB;
     private bool _textureDirty = true;
+    private bool _animationComplete;
     private IRenderTexture? _cachedTexture;
 
     public DreamIcon(RenderTargetPool renderTargetPool, IGameTiming gameTiming, IClyde clyde, ClientAppearanceSystem appearanceSystem, int appearanceId,
@@ -70,6 +72,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
 
     public void Dispose() {
         CachedTexture = null;
+        LastRenderedTexture = null;
         DMI = null; //triggers the removal of the onUpdateCallback
     }
 
@@ -142,7 +145,19 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
                     start = _appearanceAnimations[^1].Start + _appearanceAnimations[^1].Duration; //if it's not parallel, it's chained
 
         _appearanceAnimations ??= new List<AppearanceAnimation>();
-        _appearanceAnimations.Add(new AppearanceAnimation(start, duration, endingAppearance, easing, loops, flags, delay));
+        if(_appearanceAnimations.Count == 0) {//only valid on the first animation
+            _appearanceAnimationsLoops = loops;
+        }
+
+        for(int i=_appearanceAnimations.Count-1; i>=0; i--) //there can be only one last-in-sequence, and it might not be the last element of the list because it could be added to mid-loop
+            if(_appearanceAnimations[i].LastInSequence) {
+                var lastAnim =  _appearanceAnimations[i];
+                lastAnim.LastInSequence = false;
+                _appearanceAnimations[i] = lastAnim;
+                break;
+            }
+            
+        _appearanceAnimations.Add(new AppearanceAnimation(start, duration, endingAppearance, easing, flags, delay, true));
     }
 
     /// <summary>
@@ -166,7 +181,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
     public void GetWorldAABB(Vector2 worldPos, ref Box2? aabb) {
         if (DMI != null && Appearance != null) {
             Vector2 size = DMI.IconSize / (float)EyeManager.PixelsPerMeter;
-            Vector2 pixelOffset = Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter;
+            Vector2 pixelOffset = Appearance.TotalPixelOffset / (float)EyeManager.PixelsPerMeter;
 
             worldPos += pixelOffset;
 
@@ -184,25 +199,37 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
     }
 
     private void UpdateAnimation() {
-        if(DMI == null || Appearance == null)
+        if(DMI == null || Appearance == null || _animationComplete)
             return;
+
         DMIParser.ParsedDMIState? dmiState = DMI.Description.GetStateOrDefault(Appearance.IconState);
         if(dmiState == null)
             return;
         DMIParser.ParsedDMIFrame[] frames = dmiState.GetFrames(Appearance.Direction);
 
         if (frames.Length <= 1) return;
-        if (_animationFrame == frames.Length - 1 && !dmiState.Loop) return;
 
-        TimeSpan elapsedTime = gameTiming.CurTime.Subtract(_animationFrameTime);
-        while (elapsedTime >= frames[_animationFrame].Delay) {
-            elapsedTime -= frames[_animationFrame].Delay;
-            _animationFrameTime += frames[_animationFrame].Delay;
+        var oldFrame = _animationFrame;
+        var currentGameTicks = gameTiming.CurTime.Ticks;
+        var sequenceDuration = frames.Aggregate(TimeSpan.Zero, (duration, frame) => duration + frame.Delay);
+        var durationDiff = new TimeSpan(currentGameTicks % sequenceDuration.Ticks);
+        var noLoop = !dmiState.Loop;
+
+        _animationFrame = 0;
+        while (durationDiff >= frames[_animationFrame].Delay) {
+            durationDiff -= frames[_animationFrame].Delay;
+
             _animationFrame++;
-            DirtyTexture();
 
-            if (_animationFrame >= frames.Length) _animationFrame -= frames.Length;
+            if (noLoop && _animationFrame == frames.Length - 1) {
+                _animationComplete = true;
+                break;
+            } else if (_animationFrame == frames.Length)
+                _animationFrame = 0;
         }
+
+        if (oldFrame != _animationFrame)
+            DirtyTexture();
     }
 
     private IconAppearance? CalculateAnimatedAppearance() {
@@ -212,10 +239,11 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
         _textureDirty = true; //if we have animations, we need to recalculate the texture
         IconAppearance appearance = new IconAppearance(_appearance);
         List<AppearanceAnimation>? toRemove = null;
+        List<AppearanceAnimation>? toReAdd = null;
         for(int i = 0; i < _appearanceAnimations.Count; i++) {
             AppearanceAnimation animation = _appearanceAnimations[i];
             //if it's not the first one, and it's not parallel, break
-            if((animation.flags & AnimationFlags.AnimationParallel) == 0 && i != 0)
+            if((animation.Flags & AnimationFlags.AnimationParallel) == 0 && i != 0)
                 break;
 
             float timeFactor = Math.Clamp((float)(DateTime.Now - animation.Start).Ticks / animation.Duration.Ticks, 0.0f, 1.0f);
@@ -378,6 +406,13 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
                 appearance.PixelOffset = (Vector2i)newPixelOffset;
             }
 
+            if (endAppearance.PixelOffset2 != _appearance.PixelOffset2) {
+                Vector2 startingOffset = appearance.PixelOffset2;
+                Vector2 newPixelOffset = Vector2.Lerp(startingOffset, endAppearance.PixelOffset2, 1.0f-factor);
+
+                appearance.PixelOffset2 = (Vector2i)newPixelOffset;
+            }
+
             if (!endAppearance.Transform.SequenceEqual(_appearance.Transform)) {
                 appearance.Transform[0] = (1.0f-factor)*_appearance.Transform[0] + (factor * endAppearance.Transform[0]);
                 appearance.Transform[1] = (1.0f-factor)*_appearance.Transform[1] + (factor * endAppearance.Transform[1]);
@@ -388,21 +423,34 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             }
 
             if (timeFactor >= 1f) {
-                if (animation.loops > 0) {
-                    var tempAnimation = _appearanceAnimations[i];
-                    tempAnimation.loops--;
-                    _appearanceAnimations[i] = tempAnimation;
+                toRemove ??= new();
+                toRemove.Add(animation);
+                if (_appearanceAnimationsLoops != 0) { //add it back to the list with the times updated
+                    if(_appearanceAnimationsLoops != -1 && animation.LastInSequence)
+                        _appearanceAnimationsLoops -= 1;
+                    toReAdd ??= new();
+                    DateTime start;
+                    if((animation.Flags & AnimationFlags.AnimationParallel) != 0)
+                        start = _appearanceAnimations[^1].Start; //either that's also a parallel, or its one that this should be parallel with
+                    else
+                        start = _appearanceAnimations[^1].Start + _appearanceAnimations[^1].Duration; //if it's not parallel, it's chained
+                    AppearanceAnimation repeatAnimation = new AppearanceAnimation(start, animation.Duration, animation.EndAppearance, animation.Easing, animation.Flags, animation.Delay, animation.LastInSequence);
+                    toReAdd.Add(repeatAnimation);
                 }
-                if (animation.loops == 0) {
-                    toRemove ??= new();
-                    toRemove.Add(animation);
-                }
+
             }
         }
+
         if(toRemove != null)
-            foreach (AppearanceAnimation animation in toRemove!) {
+            foreach (AppearanceAnimation animation in toRemove) {
                 EndAppearanceAnimation(animation);
             }
+
+        if(toReAdd != null)
+            foreach (AppearanceAnimation animation in toReAdd) {
+                _appearanceAnimations.Add(animation);
+            }
+
         return appearance;
     }
 
@@ -422,7 +470,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
                 dmi.OnUpdateCallbacks.Add(DirtyTexture);
                 DMI = dmi;
                 _animationFrame = 0;
-                _animationFrameTime = gameTiming.CurTime;
+                _animationComplete = false;
             });
         }
 
@@ -504,13 +552,13 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
         CachedTexture = null;
     }
 
-    private struct AppearanceAnimation(DateTime start, TimeSpan duration, IconAppearance endAppearance, AnimationEasing easing, int loops, AnimationFlags flags, int delay) {
+    private struct AppearanceAnimation(DateTime start, TimeSpan duration, IconAppearance endAppearance, AnimationEasing easing, AnimationFlags flags, int delay, bool lastInSequence) {
         public readonly DateTime Start = start;
         public readonly TimeSpan Duration = duration;
         public readonly IconAppearance EndAppearance = endAppearance;
         public readonly AnimationEasing Easing = easing;
-        public int loops = loops;
-        public readonly AnimationFlags flags = flags;
-        public int delay = delay;
+        public readonly AnimationFlags Flags = flags;
+        public readonly int Delay = delay;
+        public bool LastInSequence = lastInSequence;
     }
 }

@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace DMCompiler.Compiler;
 
 public class Parser<SourceType> {
@@ -28,10 +25,10 @@ public class Parser<SourceType> {
             _currentToken = _lexer.GetNextToken();
 
             if (_currentToken.Type == TokenType.Error) {
-                Emit(WarningCode.BadToken, (string)_currentToken.Value!);
+                Emit(WarningCode.BadToken, _currentToken.ValueAsString());
                 Advance();
             } else if (_currentToken.Type == TokenType.Warning) {
-                Warning((string)_currentToken.Value!);
+                Warning(_currentToken.ValueAsString());
                 Advance();
             }
         }

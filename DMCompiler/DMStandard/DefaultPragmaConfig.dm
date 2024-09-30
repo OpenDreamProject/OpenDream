@@ -14,7 +14,7 @@
 
 //2000-2999
 #pragma SoftReservedKeyword error
-#pragma DuplicateVariable error
+#pragma DuplicateVariable warning
 #pragma DuplicateProcDefinition error
 #pragma PointlessParentCall warning
 #pragma PointlessBuiltinCall warning
@@ -49,3 +49,4 @@
 #pragma UnsafeClientAccess disabled // NOTE: Only checks for unsafe accesses like "client.foobar" and doesn't consider if the client was already null-checked earlier in the proc
 #pragma AssignmentInConditional warning 
 #pragma PickWeightedSyntax disabled
+#pragma AmbiguousInOrder warning

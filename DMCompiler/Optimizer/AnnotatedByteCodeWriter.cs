@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using DMCompiler.Bytecode;
 using DMCompiler.Compiler;
 using DMCompiler.DM;

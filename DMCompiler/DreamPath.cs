@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text.Json.Serialization;
 using DMCompiler.DM;
@@ -21,6 +20,8 @@ public struct DreamPath {
     public static readonly DreamPath World = new DreamPath("/world");
     public static readonly DreamPath Client = new DreamPath("/client");
     public static readonly DreamPath Datum = new DreamPath("/datum");
+    public static readonly DreamPath Database = new DreamPath("/database");
+    public static readonly DreamPath DatabaseQuery = new DreamPath("/database/query");
     public static readonly DreamPath Matrix = new DreamPath("/matrix");
     public static readonly DreamPath Atom = new DreamPath("/atom");
     public static readonly DreamPath Area = new DreamPath("/area");
@@ -151,20 +152,6 @@ public struct DreamPath {
         Normalize(false);
     }
 
-    /// <summary>
-    /// Checks if the DreamPath is a descendant of another. NOTE: For type inheritance, use IsSubtypeOf()
-    /// </summary>
-    /// <param name="path">Path to compare to.</param>
-    public bool IsDescendantOf(DreamPath path) {
-        if (path.Elements.Length > Elements.Length) return false;
-
-        for (int i = 0; i < path.Elements.Length; i++) {
-            if (Elements[i] != path.Elements[i]) return false;
-        }
-
-        return true;
-    }
-
     public DreamPath AddToPath(string path) {
         string rawPath = PathString;
 
@@ -225,6 +212,7 @@ public struct DreamPath {
 
     public override bool Equals(object? obj) => obj is DreamPath other && Equals(other);
 
+    [Pure]
     public bool Equals(DreamPath other) {
         if (other.Elements.Length != Elements.Length) return false;
 

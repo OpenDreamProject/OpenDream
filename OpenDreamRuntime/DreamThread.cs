@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using DMCompiler.DM;
 using OpenDreamRuntime.Objects;
@@ -178,10 +179,8 @@ namespace OpenDreamRuntime {
     }
 
     public sealed class DreamThread {
-        private static readonly System.Threading.ThreadLocal<Stack<DreamThread>> CurrentlyExecuting = new(() => new(), trackAllValues: true);
-        public static IEnumerable<DreamThread> InspectExecutingThreads() {
-            return CurrentlyExecuting.Value!.Concat(CurrentlyExecuting.Values.SelectMany(x => x));
-        }
+        private static readonly ThreadLocal<Stack<DreamThread>> CurrentlyExecuting = new(() => new(), trackAllValues: true);
+        private static readonly StringBuilder ErrorMessageBuilder = new();
 
         private static int _idCounter = 0;
         public int Id { get; } = ++_idCounter;
@@ -379,24 +378,23 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public void HandleException(Exception exception) {
+        private void HandleException(Exception exception) {
             _current?.Cancel();
 
             var dreamMan = IoCManager.Resolve<DreamManager>();
 
+            ErrorMessageBuilder.Clear();
+            ErrorMessageBuilder.AppendLine($"Exception occurred: {exception.Message}");
 
-            StringBuilder builder = new();
-            builder.AppendLine($"Exception occurred: {exception.Message}");
+            ErrorMessageBuilder.AppendLine("=DM StackTrace=");
+            AppendStackTrace(ErrorMessageBuilder);
+            ErrorMessageBuilder.AppendLine();
 
-            builder.AppendLine("=DM StackTrace=");
-            AppendStackTrace(builder);
-            builder.AppendLine();
+            ErrorMessageBuilder.AppendLine("=C# StackTrace=");
+            ErrorMessageBuilder.AppendLine(exception.ToString());
+            ErrorMessageBuilder.AppendLine();
 
-            builder.AppendLine("=C# StackTrace=");
-            builder.AppendLine(exception.ToString());
-            builder.AppendLine();
-
-            var msg = builder.ToString();
+            var msg = ErrorMessageBuilder.ToString();
 
             // Instantiate an /exception and invoke world.Error()
             string file = string.Empty;
@@ -419,6 +417,10 @@ namespace OpenDreamRuntime {
             foreach (var entry in _stack) {
                 yield return entry;
             }
+        }
+
+        public static IEnumerable<DreamThread> InspectExecutingThreads() {
+            return CurrentlyExecuting.Value!.Concat(CurrentlyExecuting.Values.SelectMany(x => x));
         }
 
         private bool TryCatchException(Exception exception) {

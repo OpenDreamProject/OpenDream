@@ -1,6 +1,4 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -160,7 +158,7 @@ public sealed class DMPreprocessor(bool enableDirectives) : IEnumerable<Token> {
                 }
 
                 case TokenType.Error:
-                    DMCompiler.Emit(WarningCode.ErrorDirective, token.Location, (string)token.Value);
+                    DMCompiler.Emit(WarningCode.ErrorDirective, token.Location, token.ValueAsString());
                     break;
 
                 default:
@@ -267,7 +265,7 @@ public sealed class DMPreprocessor(bool enableDirectives) : IEnumerable<Token> {
         }
 
         DMPreprocessorLexer currentLexer = _lexerStack.Peek();
-        string file = Path.Combine(Path.GetDirectoryName(currentLexer.File.Replace('\\', Path.DirectorySeparatorChar)), (string)includedFileToken.Value);
+        string file = Path.Combine(Path.GetDirectoryName(currentLexer.File.Replace('\\', Path.DirectorySeparatorChar)), includedFileToken.ValueAsString());
         string directory = currentLexer.IncludeDirectory;
 
         IncludeFile(directory, file, includedFrom: includeToken.Location);
@@ -289,7 +287,7 @@ public sealed class DMPreprocessor(bool enableDirectives) : IEnumerable<Token> {
         if (defineIdentifier.Text == "FILE_DIR") {
             Token dirToken = GetNextToken(true);
             string? dirTokenValue = dirToken.Type switch {
-                TokenType.DM_Preproc_ConstantString => (string?)dirToken.Value,
+                TokenType.DM_Preproc_ConstantString => dirToken.ValueAsString(),
                 TokenType.DM_Preproc_Punctuator_Period => ".",
                 _ => null
             };

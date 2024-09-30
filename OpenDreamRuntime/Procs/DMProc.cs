@@ -33,8 +33,8 @@ namespace OpenDreamRuntime.Procs {
 
         public DMProc(int id, TreeEntry owningType, ProcDefinitionJson json, string? name, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, DreamObjectTree objectTree, ProcScheduler procScheduler, ServerVerbSystem verbSystem)
             : base(id, owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbSrc, json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility, json.IsVerb) {
-            Bytecode = json.Bytecode ?? Array.Empty<byte>();
-            LocalNames = json.Locals;
+            Bytecode = json.Bytecode ?? [];
+            LocalNames = json.Locals ?? [];
             SourceInfo = json.SourceInfo;
             _maxStackSize = json.MaxStackSize;
             IsNullProc = CheckIfNullProc();
@@ -827,7 +827,11 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.ListIndex: {
                     GetIndexReferenceValues(reference, out var index, out var indexing, peek);
 
-                    return GetIndex(indexing, index);
+                    ProcStatus subState = GetIndex(indexing, index, this, out var indexResult);
+                    if (subState == ProcStatus.Continue)
+                        return indexResult;
+                    else
+                        throw new Exception("fuck this is gonna be so hard to implement");
                 }
                 default:
                     ThrowCannotGetValueOfReferenceType(reference);
@@ -916,9 +920,10 @@ namespace OpenDreamRuntime.Procs {
             throw new Exception($"Type {ownerObj.ObjectDefinition.Type} has no field called \"{field}\"");
         }
 
-        public DreamValue GetIndex(DreamValue indexing, DreamValue index) {
+        public ProcStatus GetIndex(DreamValue indexing, DreamValue index, DMProcState state, out DreamValue result) {
             if (indexing.TryGetValueAsDreamList(out var listObj)) {
-                return listObj.GetValue(index);
+                result = listObj.GetValue(index);
+                return ProcStatus.Continue;
             }
 
             if (indexing.TryGetValueAsString(out string? strValue)) {
@@ -926,16 +931,18 @@ namespace OpenDreamRuntime.Procs {
                     ThrowAttemptedToIndexString(index);
 
                 char c = strValue[strIndex - 1];
-                return new DreamValue(Convert.ToString(c));
+                result = new DreamValue(Convert.ToString(c));
+                return ProcStatus.Continue;
             }
 
             if (indexing.TryGetValueAsDreamObject(out var dreamObject)) {
                 if (dreamObject != null)
-                    return dreamObject.OperatorIndex(index);
+                    return dreamObject.OperatorIndex(index, state, out result);
             }
 
             ThrowCannotGetIndex(indexing, index);
-            return DreamValue.Null;
+            result = DreamValue.Null;
+            return ProcStatus.Continue;
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -977,10 +984,12 @@ namespace OpenDreamRuntime.Procs {
                 if (info.Offset > _pc) {
                     break;
                 }
-                if (info.Remove is int remove) {
+
+                if (info.Remove is { } remove) {
                     count -= remove;
                 }
-                if (info.Add is string add) {
+
+                if (info.Add is { } add) {
                     names[count++] = add;
                 }
             }

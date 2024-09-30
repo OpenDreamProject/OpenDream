@@ -2009,6 +2009,9 @@ namespace OpenDreamRuntime.Procs {
                         } else if (name.StartsWith("v", StringComparison.InvariantCultureIgnoreCase) && color3 == default) {
                             color3 = arg.Value;
                             space = ColorHelpers.ColorSpace.HSV;
+                        } else if (name.StartsWith("l", StringComparison.InvariantCultureIgnoreCase) && color3 == default) {
+                            color3 = arg.Value;
+                            space = ColorHelpers.ColorSpace.HSL;
                         } else if (name.StartsWith("a", StringComparison.InvariantCultureIgnoreCase) && a == default)
                             a = arg.Value;
                         else if (name == "space" && space == default)
@@ -2051,6 +2054,14 @@ namespace OpenDreamRuntime.Procs {
                     float v = Math.Clamp(color3Value, 0, 100) / 100f;
 
                     color = Color.FromHsv((h, s, v, aValue / 255f));
+                    break;
+                }
+                case ColorHelpers.ColorSpace.HSL: {
+                    float h = Math.Clamp(color1Value, 0, 360) / 360f;
+                    float s = Math.Clamp(color2Value, 0, 100) / 100f;
+                    float l = Math.Clamp(color3Value, 0, 100) / 100f;
+
+                    color = Color.FromHsl((h, s, l, aValue / 255f));
                     break;
                 }
                 default:

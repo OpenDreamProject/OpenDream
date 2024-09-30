@@ -827,8 +827,7 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.ListIndex: {
                     GetIndexReferenceValues(reference, out var index, out var indexing, peek);
 
-                    GetIndex(indexing, index, this, out var indexResult);
-                    return indexResult;
+                    return GetIndex(indexing, index, this);
                 }
                 default:
                     ThrowCannotGetValueOfReferenceType(reference);
@@ -917,10 +916,9 @@ namespace OpenDreamRuntime.Procs {
             throw new Exception($"Type {ownerObj.ObjectDefinition.Type} has no field called \"{field}\"");
         }
 
-        public void GetIndex(DreamValue indexing, DreamValue index, DMProcState state, out DreamValue result) {
+        public DreamValue GetIndex(DreamValue indexing, DreamValue index, DMProcState state) {
             if (indexing.TryGetValueAsDreamList(out var listObj)) {
-                result = listObj.GetValue(index);
-                return;
+                return listObj.GetValue(index);
             }
 
             if (indexing.TryGetValueAsString(out string? strValue)) {
@@ -928,20 +926,17 @@ namespace OpenDreamRuntime.Procs {
                     ThrowAttemptedToIndexString(index);
 
                 char c = strValue[strIndex - 1];
-                result = new DreamValue(Convert.ToString(c));
-                return;
+                return new DreamValue(Convert.ToString(c));
             }
 
             if (indexing.TryGetValueAsDreamObject(out var dreamObject)) {
                 if (dreamObject != null) {
-                    result = dreamObject.OperatorIndex(index, state);
-                    return;
+                    return dreamObject.OperatorIndex(index, state);
                 }
             }
 
             ThrowCannotGetIndex(indexing, index);
-            result = DreamValue.Null;
-            return;
+            return default;
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]

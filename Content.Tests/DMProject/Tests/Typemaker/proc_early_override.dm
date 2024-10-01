@@ -1,4 +1,4 @@
-// COMPILE ERROR
+// COMPILE ERROR OD2701
 #pragma InvalidReturnType error
 
 /datum/do/re/mi/fa/so/f()

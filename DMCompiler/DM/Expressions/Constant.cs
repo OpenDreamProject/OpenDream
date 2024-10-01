@@ -385,6 +385,11 @@ internal sealed class ConstantPath(Location location, DMObject dmObject, DreamPa
 
             if (isOverride) {
                 procId = procs[^1];
+                var dmProc = DMObjectTree.AllProcs[procId.Value];
+                // Trying to resolve a procpath without the "/proc/" element only works if the proc is an override
+                if ((dmProc.Attributes & ProcAttributes.IsOverride) != ProcAttributes.IsOverride) {
+                    DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"{Value}: undefined type path");
+                }
             } else {
                 procId = procs[0];
                 if (procs.Count > 1) {

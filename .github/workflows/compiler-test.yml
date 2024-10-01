@@ -74,3 +74,11 @@ jobs:
         path: nebula
     - name: Compile Nebula Dev
       run: main\bin\DMCompiler\DMCompiler.exe nebula\nebula.dme --suppress-unimplemented
+    - name: Checkout /vg/station Master
+      uses: actions/checkout@v2
+      with:
+        repository: vgstation-coders/vgstation13
+        ref: Bleeding-Edge
+        path: vg
+    - name: Compile /vg/station Master
+      run: main\bin\DMCompiler\DMCompiler.exe vg\vgstation13.dme --suppress-unimplemented

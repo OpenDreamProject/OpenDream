@@ -8,16 +8,22 @@ namespace DMCompiler.DM;
 
 internal static class DMObjectTree {
     public static readonly List<DMObject> AllObjects = new();
+
+    /// <summary>
+    /// A list of all procs. Can be indexed by a procID int to get its DMProc
+    /// </summary>
     public static readonly List<DMProc> AllProcs = new();
 
     //TODO: These don't belong in the object tree
     public static readonly List<DMVariable> Globals = new();
     public static readonly Dictionary<string, int> GlobalProcs = new();
+
     /// <summary>
     /// Used to keep track of when we see a /proc/foo() or whatever, so that duplicates or missing definitions can be discovered,
     /// even as GlobalProcs keeps clobbering old global proc overrides/definitions.
     /// </summary>
     public static readonly HashSet<string> SeenGlobalProcDefinition = new();
+
     public static readonly List<string> StringTable = new();
     public static DMProc GlobalInitProc = default!; // Initialized by Reset() (called in the static initializer)
     public static readonly HashSet<string> Resources = new();

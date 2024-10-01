@@ -1105,20 +1105,14 @@ public sealed class ClientImagesList : DreamList {
 
 // world.contents list
 // Operates on a list of all atoms
-public sealed class WorldContentsList : DreamList {
-    private readonly AtomManager _atomManager;
-
-    public WorldContentsList(DreamObjectDefinition listDef, AtomManager atomManager) : base(listDef, 0) {
-        _atomManager = atomManager;
-    }
-
+public sealed class WorldContentsList(DreamObjectDefinition listDef, AtomManager atomManager) : DreamList(listDef, 0) {
     public override DreamValue GetValue(DreamValue key) {
         if (!key.TryGetValueAsInteger(out var index))
             throw new Exception($"Invalid index into world contents list: {key}");
-        if (index < 1 || index > _atomManager.AtomCount)
+        if (index < 1 || index > atomManager.AtomCount)
             throw new Exception($"Out of bounds index on world contents list: {index}");
 
-        var element = _atomManager.EnumerateAtoms().ElementAt(index - 1); // Ouch
+        var element = atomManager.EnumerateAtoms().ElementAt(index - 1); // Ouch
         return new DreamValue(element);
     }
 
@@ -1139,7 +1133,7 @@ public sealed class WorldContentsList : DreamList {
     }
 
     public override int GetLength() {
-        return _atomManager.AtomCount;
+        return atomManager.AtomCount;
     }
 }
 

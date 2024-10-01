@@ -2087,7 +2087,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue value = state.Pop();
 
             // Enumerate atoms rather than creating a list of every /atom using WorldContentsList.GetValues()
-            if (container is DreamObjectWorld) {
+            if (container is DreamObjectWorld && value.Type != DreamValue.DreamValueType.String) {
                 // "locate(value) in world" only works on type paths. Other values return null.
                 if (value.TryGetValueAsType(out var searchingType)) {
                     var result = state.Proc.AtomManager.EnumerateAtoms(searchingType).FirstOrDefault();

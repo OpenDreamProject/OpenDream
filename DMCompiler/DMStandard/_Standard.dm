@@ -31,6 +31,7 @@ proc/fract(n) as num
 proc/ftime(File, IsCreationTime = 0) as num
 proc/gradient(A, index)
 proc/hascall(Object, ProcName) as num
+proc/hearers(Depth = world.view, Center = usr) as /list
 proc/html_decode(HtmlText) as text
 proc/html_encode(PlainText) as text
 proc/icon_states(Icon, mode = 0) as text|null
@@ -66,6 +67,7 @@ proc/num2text(N, A, B) as text
 proc/orange(Dist = 5, Center = usr) as /list|null // NOTE: Not sure if return types have BYOND parity
 proc/oview(Dist = 5, Center = usr) as /list
 proc/oviewers(Depth = 5, Center = usr) as /list
+proc/ohearers(Depth = world.view, Center = usr) as /list
 proc/params2list(Params) as /list
 proc/rand(L, H) as num
 proc/rand_seed(Seed) as null
@@ -195,16 +197,6 @@ proc/get_step_rand(atom/movable/Ref)
 	var/dir = pick(NORTH, SOUTH, EAST, WEST, NORTHEAST, SOUTHEAST, SOUTHWEST, NORTHWEST)
 
 	return get_step(Ref, dir)
-
-proc/hearers(Depth = world.view, Center = usr) as /list
-	set opendream_unimplemented = TRUE
-	//TODO: Actual cursed hearers implementation
-	return viewers(Depth, Center)
-
-proc/ohearers(Depth = world.view, Center = usr) as /list
-	set opendream_unimplemented = TRUE
-	//TODO: Actual cursed ohearers implementation
-	return oviewers(Depth, Center)
 
 proc/step_towards(atom/movable/Ref as /atom/movable, /atom/Trg, Speed) as num
 	return Ref.Move(get_step_towards(Ref, Trg), get_dir(Ref, Trg))

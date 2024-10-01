@@ -11,4 +11,7 @@
 
 	ASSERT(query.Error()) // but there is an error for too few parameters
 
+	del(query)
+	del(db)
+
 	fdel("params.db")

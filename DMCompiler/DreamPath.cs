@@ -152,20 +152,6 @@ public struct DreamPath {
         Normalize(false);
     }
 
-    /// <summary>
-    /// Checks if the DreamPath is a descendant of another. NOTE: For type inheritance, use IsSubtypeOf()
-    /// </summary>
-    /// <param name="path">Path to compare to.</param>
-    public bool IsDescendantOf(DreamPath path) {
-        if (path.Elements.Length > Elements.Length) return false;
-
-        for (int i = 0; i < path.Elements.Length; i++) {
-            if (Elements[i] != path.Elements[i]) return false;
-        }
-
-        return true;
-    }
-
     public DreamPath AddToPath(string path) {
         string rawPath = PathString;
 

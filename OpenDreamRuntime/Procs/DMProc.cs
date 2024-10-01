@@ -827,9 +827,9 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.ListIndex: {
                     GetIndexReferenceValues(reference, out var index, out var indexing, peek);
 
-                    ProcStatus subState = GetIndex(indexing, index, this, out Result);
+                    ProcStatus subState = GetIndex(indexing, index, this, out var indexResult);
                     if (subState == ProcStatus.Continue)
-                        return Result;
+                        return indexResult;
                     else
                         throw new Exception("fuck this is gonna be so hard to implement");
                 }

@@ -14,7 +14,7 @@
 
 //2000-2999
 #pragma SoftReservedKeyword error
-#pragma DuplicateVariable error
+#pragma DuplicateVariable warning
 #pragma DuplicateProcDefinition error
 #pragma PointlessParentCall warning
 #pragma PointlessBuiltinCall warning

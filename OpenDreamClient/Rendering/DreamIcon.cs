@@ -58,11 +58,11 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
     public Texture? LastRenderedTexture;
 
     private int _animationFrame;
-    private TimeSpan _animationFrameTime = gameTiming.CurTime;
     private List<AppearanceAnimation>? _appearanceAnimations;
     private int _appearanceAnimationsLoops;
     private Box2? _cachedAABB;
     private bool _textureDirty = true;
+    private bool _animationComplete;
     private IRenderTexture? _cachedTexture;
 
     public DreamIcon(RenderTargetPool renderTargetPool, IGameTiming gameTiming, IClyde clyde, ClientAppearanceSystem appearanceSystem, int appearanceId,
@@ -199,7 +199,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
     }
 
     private void UpdateAnimation() {
-        if(DMI == null || Appearance == null)
+        if(DMI == null || Appearance == null || _animationComplete)
             return;
 
         DMIParser.ParsedDMIState? dmiState = DMI.Description.GetStateOrDefault(Appearance.IconState);
@@ -208,17 +208,28 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
         DMIParser.ParsedDMIFrame[] frames = dmiState.GetFrames(Appearance.Direction);
 
         if (frames.Length <= 1) return;
-        if (_animationFrame == frames.Length - 1 && !dmiState.Loop) return;
 
-        TimeSpan elapsedTime = gameTiming.CurTime.Subtract(_animationFrameTime);
-        while (elapsedTime >= frames[_animationFrame].Delay) {
-            elapsedTime -= frames[_animationFrame].Delay;
-            _animationFrameTime += frames[_animationFrame].Delay;
+        var oldFrame = _animationFrame;
+        var currentGameTicks = gameTiming.CurTime.Ticks;
+        var sequenceDuration = frames.Aggregate(TimeSpan.Zero, (duration, frame) => duration + frame.Delay);
+        var durationDiff = new TimeSpan(currentGameTicks % sequenceDuration.Ticks);
+        var noLoop = !dmiState.Loop;
+
+        _animationFrame = 0;
+        while (durationDiff >= frames[_animationFrame].Delay) {
+            durationDiff -= frames[_animationFrame].Delay;
+
             _animationFrame++;
-            DirtyTexture();
 
-            if (_animationFrame >= frames.Length) _animationFrame -= frames.Length;
+            if (noLoop && _animationFrame == frames.Length - 1) {
+                _animationComplete = true;
+                break;
+            } else if (_animationFrame == frames.Length)
+                _animationFrame = 0;
         }
+
+        if (oldFrame != _animationFrame)
+            DirtyTexture();
     }
 
     private IconAppearance? CalculateAnimatedAppearance() {
@@ -459,7 +470,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
                 dmi.OnUpdateCallbacks.Add(DirtyTexture);
                 DMI = dmi;
                 _animationFrame = 0;
-                _animationFrameTime = gameTiming.CurTime;
+                _animationComplete = false;
             });
         }
 

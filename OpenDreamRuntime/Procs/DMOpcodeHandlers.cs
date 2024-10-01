@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -2085,9 +2086,22 @@ namespace OpenDreamRuntime.Procs {
 
             DreamValue value = state.Pop();
 
+            // Enumerate atoms rather than creating a list of every /atom using WorldContentsList.GetValues()
+            if (container is DreamObjectWorld) {
+                // "locate(value) in world" only works on type paths. Other values return null.
+                if (value.TryGetValueAsType(out var searchingType)) {
+                    var result = state.Proc.AtomManager.EnumerateAtoms(searchingType).FirstOrDefault();
+
+                    state.Push(new(result));
+                } else {
+                    state.Push(DreamValue.Null);
+                }
+
+                return ProcStatus.Continue;
+            }
+
             DreamList? containerList;
-            if (container is DreamObjectAtom or DreamObjectWorld) {
-                // TODO: Using world.contents for this is hilariously bad due to using WorldContentsList.GetValues()
+            if (container is DreamObjectAtom) {
                 container.GetVariable("contents").TryGetValueAsDreamList(out containerList);
             } else {
                 containerList = container as DreamList;
@@ -2131,6 +2145,7 @@ namespace OpenDreamRuntime.Procs {
 
                     return ProcStatus.Continue;
                 }
+
                 state.Push(containerList.ContainsValue(value) ? value : DreamValue.Null);
                 return ProcStatus.Continue;
             }

@@ -277,7 +277,8 @@ internal class Program {
             ++all;
         }
 
-        Console.WriteLine($"Successfully dumped {all - errored}/{all} procs to {outputFile}");
+        var procCount = errored > 0 ? $"{all - errored}/{all} ({errored} failed procs)" : $"all {all}";
+        Console.WriteLine($"Successfully dumped {procCount} procs to {outputFile}");
     }
 
     private static string PrettyPrintPath(DMProc proc) {

@@ -21,7 +21,6 @@ internal class DMProc(ProcDefinitionJson json) {
     public Exception exception;
 
     public string Decompile() {
-        var foo = json.Arguments;
         List<DecompiledOpcode> decompiled = new();
         HashSet<int> labeledPositions = new();
 

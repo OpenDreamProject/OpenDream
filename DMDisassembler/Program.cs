@@ -4,7 +4,6 @@ using System.IO;
 using System.Text;
 using System.Text.Json;
 using DMCompiler.Json;
-using JetBrains.Annotations;
 
 namespace DMDisassembler;
 

@@ -1,0 +1,10 @@
+﻿/proc/RunTest()
+	ASSERT(rgb(255, 255, 255) =="#ffffff")
+	ASSERT(rgb(255, 0, 0) == "#ff0000" )
+	ASSERT(rgb(0, 0, 255) == "#0000ff")
+	ASSERT(rgb(18, 245, 230) == "#12f5e6")
+	ASSERT(rgb(202, 96, 219, space=COLORSPACE_RGB) == "#ca60db")
+	CRASH(rgb(291.70734, 56.164383, 85.882355, space=COLORSPACE_HSV))
+	ASSERT(rgb(291.70734, 56.164383, 85.882355, space=COLORSPACE_HSV) == "#ca60db")
+	ASSERT(rgb(291.70734, 63.07692, 61.764706, space=COLORSPACE_HSL) == "#ca60db" )
+	//ASSERT(rgb("#ca60db", COLORSPACE_HCY), 291.70734, 68.2215, 55.423534) // TODO Support HCY

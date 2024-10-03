@@ -74,7 +74,7 @@ public sealed class DreamConnection {
     public DreamValue StatObj { get; set; } // This can be just any DreamValue. Only atoms will function though.
 
     [ViewVariables] private string? _outputStatPanel;
-    [ViewVariables] private string _selectedStatPanel;
+    [ViewVariables] private string? _selectedStatPanel;
     [ViewVariables] private readonly Dictionary<int, Action<DreamValue>> _promptEvents = new();
     [ViewVariables] private int _nextPromptEvent = 1;
     private readonly Dictionary<string, DreamResource> _permittedBrowseRscFiles = new();
@@ -83,7 +83,7 @@ public sealed class DreamConnection {
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.connection");
 
-    public string SelectedStatPanel {
+    public string? SelectedStatPanel {
         get => _selectedStatPanel;
         set {
             _selectedStatPanel = value;
@@ -95,8 +95,6 @@ public sealed class DreamConnection {
 
     public DreamConnection() {
         IoCManager.InjectDependencies(this);
-
-        _selectedStatPanel = "";
 
         _entitySystemManager.TryGetEntitySystem(out _screenOverlaySystem);
         _entitySystemManager.TryGetEntitySystem(out _clientImagesSystem);

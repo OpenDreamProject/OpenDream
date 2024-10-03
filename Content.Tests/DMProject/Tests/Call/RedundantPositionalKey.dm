@@ -1,4 +1,4 @@
-// COMPILE ERROR
+// COMPILE ERROR OD2210
 
 #pragma PointlessPositionalArgument error
 

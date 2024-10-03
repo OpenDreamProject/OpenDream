@@ -1,4 +1,4 @@
-//COMPILE ERROR
+//COMPILE ERROR OD3100
 //Test that our pragma for this is working.
 #pragma EmptyBlock error
 /proc/RunTest()

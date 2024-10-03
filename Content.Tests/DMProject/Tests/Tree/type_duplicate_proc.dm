@@ -1,4 +1,5 @@
-//COMPILE ERROR
+//COMPILE ERROR OD2101
+#pragma DuplicateProcDefinition error
 
 //Issue OD#933: https://github.com/OpenDreamProject/OpenDream/issues/933
 

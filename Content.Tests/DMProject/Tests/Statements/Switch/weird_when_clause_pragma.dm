@@ -1,4 +1,4 @@
-//COMPILE ERROR
+//COMPILE ERROR OD3201
 //test to make sure SuspiciousSwitchCase is working
 
 #pragma SuspiciousSwitchCase error

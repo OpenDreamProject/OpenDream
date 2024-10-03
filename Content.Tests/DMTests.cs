@@ -179,7 +179,7 @@ public sealed partial class DMTests : ContentUnitTest {
                 testFlags |= DMTestFlags.Ignore;
             if (firstLine.Contains("COMPILE ERROR", StringComparison.InvariantCulture)) {
                 testFlags |= DMTestFlags.CompileError;
-                Match match = ErrorCodeRegex().Match(firstLine);  // "OD" followed by exactly 4 characters
+                Match match = ErrorCodeRegex().Match(firstLine);  // "OD" followed by exactly 4 numbers
                 if (!match.Success) {
                     Console.WriteLine($"\"COMPILE ERROR\" test \"{sourceFile}\" does not specify an error code");
                 } else {

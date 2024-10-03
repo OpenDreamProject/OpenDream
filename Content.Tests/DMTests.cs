@@ -198,7 +198,7 @@ public sealed partial class DMTests : ContentUnitTest {
         return testFlags;
     }
 
-    [GeneratedRegex(@"OD.{4}")]
+    [GeneratedRegex(@"OD[0-9]{4}")]
     private static partial Regex ErrorCodeRegex();
 
     // TODO Convert the below async tests

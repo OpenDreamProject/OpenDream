@@ -21,6 +21,7 @@ namespace DMCompiler;
 public static class DMCompiler {
     public static int ErrorCount;
     public static int WarningCount;
+    public static HashSet<WarningCode> UniqueEmissions = new();
     public static DMCompilerSettings Settings;
     public static IReadOnlyList<string> ResourceDirectories => _resourceDirectories;
 
@@ -187,6 +188,7 @@ public static class DMCompiler {
                 break;
         }
 
+        UniqueEmissions.Add(emission.Code);
         Console.WriteLine(emission);
     }
 

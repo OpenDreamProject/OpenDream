@@ -2032,9 +2032,9 @@ namespace OpenDreamRuntime.Procs {
                 return ProcStatus.Continue;
             }
 
-            int color1Value = (int)color1.UnsafeGetValueAsFloat();
-            int color2Value = (int)color2.UnsafeGetValueAsFloat();
-            int color3Value = (int)color3.UnsafeGetValueAsFloat();
+            float color1Value = color1.UnsafeGetValueAsFloat();
+            float color2Value = color2.UnsafeGetValueAsFloat();
+            float color3Value = color3.UnsafeGetValueAsFloat();
             byte aValue = a.IsNull ? (byte)255 : (byte)Math.Clamp((int)a.UnsafeGetValueAsFloat(), 0, 255);
             Color color;
 

@@ -64,19 +64,16 @@ public sealed partial class DMTests : ContentUnitTest {
         string initialDirectory = Directory.GetCurrentDirectory();
         TestContext.WriteLine($"--- TEST {sourceFile} | Flags: {testFlags}");
         try {
+            string? compiledFile = Compile(Path.Join(initialDirectory, TestsDirectory, sourceFile));
             if (testFlags.HasFlag(DMTestFlags.CompileError)) {
                 Assert.That(errorCode == -1, Is.False, "Expected an error code");
-                string? compileErrorFile = Compile(Path.Join(initialDirectory, TestsDirectory, sourceFile));
-
                 Assert.That(DMCompiler.DMCompiler.UniqueEmissions.Contains((WarningCode)errorCode), Is.True, $"Expected error code \"{errorCode}\" was not found");
-                Assert.That(compileErrorFile, Is.Null, "Expected an error during DM compilation");
+                Assert.That(compiledFile, Is.Null, "Expected an error during DM compilation");
 
-                Cleanup(compileErrorFile);
+                Cleanup(compiledFile);
                 TestContext.WriteLine($"--- PASS {sourceFile}");
                 return;
             }
-
-            string? compiledFile = Compile(Path.Join(initialDirectory, TestsDirectory, sourceFile));
 
             Assert.That(compiledFile is not null && File.Exists(compiledFile), "Failed to compile DM source file");
             Assert.That(_dreamMan.LoadJson(compiledFile), $"Failed to load {compiledFile}");

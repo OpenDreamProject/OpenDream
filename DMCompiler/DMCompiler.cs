@@ -32,6 +32,7 @@ public static class DMCompiler {
     public static bool Compile(DMCompilerSettings settings) {
         ErrorCount = 0;
         WarningCount = 0;
+        UniqueEmissions.Clear();
         Settings = settings;
         if (Settings.Files == null) return false;
         Config.Reset();

@@ -1929,7 +1929,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue color1 = default;
             DreamValue color2 = default;
             DreamValue color3 = default;
-            DreamValue a = default;
+            DreamValue a = DreamValue.Null;
             ColorHelpers.ColorSpace space = ColorHelpers.ColorSpace.RGB;
 
             if (arguments.Item1 != null) {
@@ -1974,6 +1974,9 @@ namespace OpenDreamRuntime.Procs {
                         } else if (name.StartsWith("v", StringComparison.InvariantCultureIgnoreCase) && color3 == default) {
                             color3 = arg.Value;
                             space = ColorHelpers.ColorSpace.HSV;
+                        } else if (name.StartsWith("l", StringComparison.InvariantCultureIgnoreCase) && color3 == default) {
+                            color3 = arg.Value;
+                            space = ColorHelpers.ColorSpace.HSL;
                         } else if (name.StartsWith("a", StringComparison.InvariantCultureIgnoreCase) && a == default)
                             a = arg.Value;
                         else if (name == "space" && space == default)
@@ -1994,10 +1997,10 @@ namespace OpenDreamRuntime.Procs {
                 return ProcStatus.Continue;
             }
 
-            int color1Value = (int)color1.UnsafeGetValueAsFloat();
-            int color2Value = (int)color2.UnsafeGetValueAsFloat();
-            int color3Value = (int)color3.UnsafeGetValueAsFloat();
-            byte aValue = (byte)Math.Clamp((int)a.UnsafeGetValueAsFloat(), 0, 255);
+            float color1Value = color1.UnsafeGetValueAsFloat();
+            float color2Value = color2.UnsafeGetValueAsFloat();
+            float color3Value = color3.UnsafeGetValueAsFloat();
+            byte aValue = a.IsNull ? (byte)255 : (byte)Math.Clamp((int)a.UnsafeGetValueAsFloat(), 0, 255);
             Color color;
 
             switch (space) {
@@ -2018,15 +2021,23 @@ namespace OpenDreamRuntime.Procs {
                     color = Color.FromHsv((h, s, v, aValue / 255f));
                     break;
                 }
+                case ColorHelpers.ColorSpace.HSL: {
+                    float h = Math.Clamp(color1Value, 0, 360) / 360f;
+                    float s = Math.Clamp(color2Value, 0, 100) / 100f;
+                    float l = Math.Clamp(color3Value, 0, 100) / 100f;
+
+                    color = Color.FromHsl((h, s, l, aValue / 255f));
+                    break;
+                }
                 default:
                     throw new Exception($"Unimplemented color space {space}");
             }
 
             // TODO: There is a difference between passing null and not passing a fourth arg at all
             if (a.IsNull) {
-                state.Push(new DreamValue($"#{color.RByte:X2}{color.GByte:X2}{color.BByte:X2}"));
+                state.Push(new DreamValue($"#{color.RByte:X2}{color.GByte:X2}{color.BByte:X2}".ToLower()));
             } else {
-                state.Push(new DreamValue($"#{color.RByte:X2}{color.GByte:X2}{color.BByte:X2}{color.AByte:X2}"));
+                state.Push(new DreamValue($"#{color.RByte:X2}{color.GByte:X2}{color.BByte:X2}{color.AByte:X2}".ToLower()));
             }
 
             return ProcStatus.Continue;

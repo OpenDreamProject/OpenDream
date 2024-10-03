@@ -566,13 +566,9 @@ namespace OpenDreamRuntime.Procs {
 
             // number indices always perform a normal list access here
             if (key.TryGetValueAsInteger(out _)) {
-                ProcStatus subState = state.GetIndex(owner, key, state, out DreamValue indexResult);
-                if(subState == ProcStatus.Continue) {
-                    state.Push(indexResult);
-                    return subState;
-                } else {
-                    return subState;
-                }
+                var indexResult = state.GetIndex(owner, key, state);
+                state.Push(indexResult);
+                return ProcStatus.Continue;
             }
 
             if (!key.TryGetValueAsString(out string property)) {
@@ -713,12 +709,7 @@ namespace OpenDreamRuntime.Procs {
             } else if (first.TryGetValueAsDreamResource(out _) || first.TryGetValueAsDreamObject<DreamObjectIcon>(out _)) {
                 output = IconOperationAdd(state, first, second);
             } else if (first.TryGetValueAsDreamObject<DreamObject>(out var firstDreamObject)) {
-                ProcStatus result = firstDreamObject.OperatorAdd(second, state, out DreamValue maybeOutput);
-                if (result == ProcStatus.Continue) {
-                    output = maybeOutput;
-                } else {
-                    return result;
-                }
+                output = firstDreamObject.OperatorAdd(second, state);
             } else if (first.TryGetValueAsType(out _) || first.TryGetValueAsProc(out _)) {
                 output = default; // Always errors
             } else if (second.IsNull) {
@@ -878,12 +869,8 @@ namespace OpenDreamRuntime.Procs {
                 state.Push(second);
             } else if (first.TryGetValueAsDreamObject<DreamObject>(out var firstDreamObject)) {              // Object | y
                 if (!first.IsNull) {
-                    ProcStatus result = firstDreamObject.OperatorOr(second, state, out DreamValue maybeOutput);
-                    if (result == ProcStatus.Continue) {
-                        state.Push(maybeOutput);
-                    } else {
-                        return result;
-                    }
+                    var result = firstDreamObject.OperatorOr(second, state);
+                    state.Push(result);
                 } else {
                     state.Push(DreamValue.Null);
                 }
@@ -1073,12 +1060,8 @@ namespace OpenDreamRuntime.Procs {
 
                 state.Push(new(firstFloat / secondFloat));
             } else if (first.TryGetValueAsDreamObject<DreamObject>(out var firstDreamObject)) {
-                ProcStatus result = firstDreamObject.OperatorDivide(second, state, out DreamValue maybeOutput);
-                if (result == ProcStatus.Continue) {
-                    state.Push(maybeOutput);
-                } else {
-                    return result;
-                }
+                var result = firstDreamObject.OperatorDivide(second, state);
+                state.Push(result);
             } else {
                 throw new Exception($"Invalid divide operation on {first} and {second}");
             }
@@ -1095,14 +1078,9 @@ namespace OpenDreamRuntime.Procs {
                 state.AssignReference(reference, result);
                 state.Push(result);
             } else if (first.TryGetValueAsDreamObject<DreamObject>(out var firstDreamObject)) {
-                ProcStatus procResult = firstDreamObject.OperatorDivideRef(second, state, out DreamValue maybeOutput, reference);
-                if (procResult == ProcStatus.Continue) {
-                    state.AssignReference(reference, maybeOutput);
-                    state.Push(maybeOutput);
-                } else {
-                    //DreamObject.OperatorXRef *must* handle calling and assigning the ref itself if it does not return ProcStatus.Continue
-                    return procResult;
-                }
+                var result = firstDreamObject.OperatorDivideRef(second, state);
+                state.AssignReference(reference, result);
+                state.Push(result);
             } else {
                 throw new Exception($"Invalid divide operation on {first} and {second}");
             }
@@ -1184,12 +1162,8 @@ namespace OpenDreamRuntime.Procs {
                 var secondFloat = second.UnsafeGetValueAsFloat(); // Non-numbers are always treated as 0 here
                 state.Push(new DreamValue(firstFloat * secondFloat));
             } else if (first.TryGetValueAsDreamObject<DreamObject>(out var firstDreamObject)) {
-                ProcStatus result = firstDreamObject.OperatorMultiply(second, state, out DreamValue maybeOutput);
-                if (result == ProcStatus.Continue) {
-                    state.Push(maybeOutput);
-                } else {
-                    return result;
-                }
+                var result = firstDreamObject.OperatorMultiply(second, state);
+                state.Push(result);
             } else {
                 throw new Exception($"Invalid multiply operation on {first} and {second}");
             }
@@ -1206,14 +1180,9 @@ namespace OpenDreamRuntime.Procs {
                 state.AssignReference(reference, result);
                 state.Push(result);
             } else if (first.TryGetValueAsDreamObject<DreamObject>(out var firstDreamObject)) {
-                ProcStatus procResult = firstDreamObject.OperatorMultiplyRef(second, state, out DreamValue maybeOutput, reference);
-                if (procResult == ProcStatus.Continue) {
-                    state.AssignReference(reference, maybeOutput);
-                    state.Push(maybeOutput);
-                } else {
-                    //DreamObject.OperatorXRef *must* handle calling and assigning the ref itself if it does not return ProcStatus.Continue
-                    return procResult;
-                }
+                var result = firstDreamObject.OperatorMultiplyRef(second, state);
+                state.AssignReference(reference, result);
+                state.Push(result);
             } else {
                 throw new Exception($"Invalid multiply operation on {first} and {second}");
             }
@@ -1280,12 +1249,7 @@ namespace OpenDreamRuntime.Procs {
                     output = new(firstFloat - secondFloat);
                 }
             } else if (first.TryGetValueAsDreamObject<DreamObject>(out var firstObject)) {
-                ProcStatus result = firstObject.OperatorSubtract(second, state, out DreamValue maybeOutput);
-                if (result == ProcStatus.Continue) {
-                    output = maybeOutput;
-                } else {
-                    return result;
-                }
+                output = firstObject.OperatorSubtract(second, state);
             }
 
             if (output.Type != 0) {
@@ -2543,11 +2507,8 @@ namespace OpenDreamRuntime.Procs {
             DreamValue index = state.Pop();
             DreamValue obj = state.Pop();
 
-            ProcStatus subState = state.GetIndex(obj, index, state, out DreamValue indexResult);
-            if(subState == ProcStatus.Continue)
-                state.Push(indexResult);
-            else
-                return subState;
+            var indexResult = state.GetIndex(obj, index, state);
+            state.Push(indexResult);
             return ProcStatus.Continue;
         }
 

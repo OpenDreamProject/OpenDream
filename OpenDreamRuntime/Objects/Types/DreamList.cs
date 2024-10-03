@@ -241,16 +241,15 @@ public class DreamList : DreamObject {
 
     #region Operators
 
-    public override ProcStatus OperatorIndex(DreamValue index, DMProcState state, out DreamValue result) {
-        result = GetValue(index);
-        return ProcStatus.Continue;
+    public override DreamValue OperatorIndex(DreamValue index, DMProcState state) {
+        return GetValue(index);
     }
 
-    public override void OperatorIndexAssign(DreamValue index, DreamValue value) {
+    public override void OperatorIndexAssign(DreamValue index, DMProcState state, DreamValue value) {
         SetValue(index, value);
     }
 
-    public override ProcStatus OperatorAdd(DreamValue b, DMProcState state, out DreamValue result) {
+    public override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
         DreamList listCopy = CreateCopy();
 
         if (b.TryGetValueAsDreamList(out var bList)) {
@@ -265,11 +264,10 @@ public class DreamList : DreamObject {
             listCopy.AddValue(b);
         }
 
-        result = new DreamValue(listCopy);
-        return ProcStatus.Continue;
+        return new DreamValue(listCopy);
     }
 
-    public override ProcStatus OperatorSubtract(DreamValue b, DMProcState state, out DreamValue result) {
+    public override DreamValue OperatorSubtract(DreamValue b, DMProcState state) {
         DreamList listCopy = CreateCopy();
 
         if (b.TryGetValueAsDreamList(out var bList)) {
@@ -280,11 +278,10 @@ public class DreamList : DreamObject {
             listCopy.RemoveValue(b);
         }
 
-        result = new DreamValue(listCopy);
-        return ProcStatus.Continue;
+        return new DreamValue(listCopy);
     }
 
-    public override ProcStatus OperatorOr(DreamValue b, DMProcState state, out DreamValue result) {
+    public override DreamValue OperatorOr(DreamValue b, DMProcState state) {
         DreamList list;
 
         if (b.TryGetValueAsDreamList(out var bList)) {  // List | List
@@ -294,8 +291,7 @@ public class DreamList : DreamObject {
             list.AddValue(b);
         }
 
-        result = new DreamValue(list);
-        return ProcStatus.Continue;
+        return new DreamValue(list);
     }
 
     public override DreamValue OperatorAppend(DreamValue b) {

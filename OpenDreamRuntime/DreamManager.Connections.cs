@@ -358,3 +358,24 @@ public sealed class HotReloadResourceCommand : IConsoleCommand {
         dreamManager.HotReloadResource(args[0]);
     }
 }
+
+
+public sealed class ForceGarbageCollectionCommand : IConsoleCommand {
+    // ReSharper disable once StringLiteralTypo
+    public string Command => "forcegc";
+    public string Description => "Forcefully triggers garbage collection of datums";
+    public string Help => "";
+    public bool RequireServerOrSingleplayer => true;
+
+    public void Execute(IConsoleShell shell, string argStr, string[] args) {
+        if(!shell.IsLocal) {
+            shell.WriteError("You cannot use this command as a client. Execute it on the server console.");
+            return;
+        }
+
+        DreamManager dreamManager = IoCManager.Resolve<DreamManager>();
+        shell.WriteLine("Running GC, this may take a moment...");
+        dreamManager.ForceGarbageCollection();
+        shell.WriteLine("Done running GC!");
+    }
+}

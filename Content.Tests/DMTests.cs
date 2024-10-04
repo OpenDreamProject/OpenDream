@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using DMCompiler.Compiler;
 using NUnit.Framework;
 using OpenDreamRuntime;
 using OpenDreamRuntime.Objects;
@@ -12,7 +14,7 @@ using Robust.Shared.Timing;
 namespace Content.Tests;
 
 [TestFixture]
-public sealed class DMTests : ContentUnitTest {
+public sealed partial class DMTests : ContentUnitTest {
     private const string TestProject = "DMProject";
     private const string InitializeEnvironment = "./environment.dme";
     private const string TestsDirectory = "Tests";
@@ -58,13 +60,16 @@ public sealed class DMTests : ContentUnitTest {
     }
 
     [Test, TestCaseSource(nameof(GetTests))]
-    public void TestFiles(string sourceFile, DMTestFlags testFlags) {
+    public void TestFiles(string sourceFile, DMTestFlags testFlags, int errorCode) {
         string initialDirectory = Directory.GetCurrentDirectory();
         TestContext.WriteLine($"--- TEST {sourceFile} | Flags: {testFlags}");
         try {
             string? compiledFile = Compile(Path.Join(initialDirectory, TestsDirectory, sourceFile));
             if (testFlags.HasFlag(DMTestFlags.CompileError)) {
+                Assert.That(errorCode == -1, Is.False, "Expected an error code");
+                Assert.That(DMCompiler.DMCompiler.UniqueEmissions.Contains((WarningCode)errorCode), Is.True, $"Expected error code \"{errorCode}\" was not found");
                 Assert.That(compiledFile, Is.Null, "Expected an error during DM compilation");
+
                 Cleanup(compiledFile);
                 TestContext.WriteLine($"--- PASS {sourceFile}");
                 return;
@@ -146,19 +151,21 @@ public sealed class DMTests : ContentUnitTest {
 
         foreach (string sourceFile in Directory.GetFiles(TestsDirectory, "*.dm", SearchOption.AllDirectories)) {
             string sourceFile2 = sourceFile[$"{TestsDirectory}/".Length..];
-            DMTestFlags testFlags = GetDMTestFlags(sourceFile);
+            DMTestFlags testFlags = GetDMTestFlags(sourceFile, out var errorCode);
             if (testFlags.HasFlag(DMTestFlags.Ignore))
                 continue;
 
             yield return new object[] {
                 sourceFile2,
-                testFlags
+                testFlags,
+                errorCode
             };
         }
     }
 
-    private static DMTestFlags GetDMTestFlags(string sourceFile) {
+    private static DMTestFlags GetDMTestFlags(string sourceFile, out int errorCode) {
         DMTestFlags testFlags = DMTestFlags.NoError;
+        errorCode = -1; // If it's null GetTests() fusses about a NRE
 
         using (StreamReader reader = new StreamReader(sourceFile)) {
             string? firstLine = reader.ReadLine();
@@ -166,8 +173,15 @@ public sealed class DMTests : ContentUnitTest {
                 return testFlags;
             if (firstLine.Contains("IGNORE", StringComparison.InvariantCulture))
                 testFlags |= DMTestFlags.Ignore;
-            if (firstLine.Contains("COMPILE ERROR", StringComparison.InvariantCulture))
+            if (firstLine.Contains("COMPILE ERROR", StringComparison.InvariantCulture)) {
                 testFlags |= DMTestFlags.CompileError;
+
+                Match match = ErrorCodeRegex().Match(firstLine);  // "OD" followed by exactly 4 numbers
+                if (match.Success) {
+                    errorCode = int.Parse(match.Groups[1].Value);
+                }
+            }
+
             if (firstLine.Contains("RUNTIME ERROR", StringComparison.InvariantCulture))
                 testFlags |= DMTestFlags.RuntimeError;
             if (firstLine.Contains("RETURN TRUE", StringComparison.InvariantCulture))
@@ -178,6 +192,9 @@ public sealed class DMTests : ContentUnitTest {
 
         return testFlags;
     }
+
+    [GeneratedRegex(@"OD([0-9]{4})")]
+    private static partial Regex ErrorCodeRegex();
 
     // TODO Convert the below async tests
 

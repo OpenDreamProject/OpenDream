@@ -84,7 +84,7 @@ public sealed class DreamObjectClient : DreamObject {
                 value = new(0); // TODO
                 return true;
             case "statpanel":
-                value = new(Connection.SelectedStatPanel);
+                value = Connection.SelectedStatPanel is null ? DreamValue.Null : new(Connection.SelectedStatPanel);
                 return true;
             case "connection":
                 value = new("seeker");

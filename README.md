@@ -54,4 +54,7 @@ _[/tg/station](https://github.com/tgstation/tgstation)_
 ![](./.github/assets/screenshot2.png?raw=true)
 _Version of [Paradise with a 64-bit rustg DLL](https://github.com/ike709/Paradise/tree/rustg_64)_
 
+![](./.github/assets/screenshot3.png?raw=true)
+_[Goonstation](https://github.com/goonstation/goonstation)_
+
 [DM Language]: http://secure.byond.com/

@@ -288,10 +288,10 @@ namespace OpenDreamRuntime {
                 canBePointer = refString.StartsWith("0x");
             }
 
-            if (canBePointer && int.TryParse(refString.Substring(2), System.Globalization.NumberStyles.HexNumber, null, out var RefId)) {
+            if (canBePointer && int.TryParse(refString.Substring(2), System.Globalization.NumberStyles.HexNumber, null, out var refId)) {
                 // The first one/two digits give the type, the last 6 give the index
-                var typeId = (RefType) (RefId & 0xFF000000);
-                RefId = (RefId & 0x00FFFFFF); // The ref minus its ref type prefix
+                var typeId = (RefType) (refId & 0xFF000000);
+                refId = (refId & 0x00FFFFFF); // The ref minus its ref type prefix
 
                 switch (typeId) {
                     case RefType.Null:
@@ -305,30 +305,30 @@ namespace OpenDreamRuntime {
                     case RefType.DreamObjectMob:
                     case RefType.DreamObjectTurf:
                     case RefType.DreamObject:
-                        if (ReferenceIDsToDreamObject.TryGetValue(RefId, out var weakRef) && weakRef.Target is {} dreamObject)
+                        if (ReferenceIDsToDreamObject.TryGetValue(refId, out var weakRef) && weakRef.Target is {} dreamObject)
                             return new(dreamObject);
 
                         return DreamValue.Null;
                     case RefType.String:
-                        return _objectTree.Strings.Count > RefId
-                            ? new DreamValue(_objectTree.Strings[RefId])
+                        return _objectTree.Strings.Count > refId
+                            ? new DreamValue(_objectTree.Strings[refId])
                             : DreamValue.Null;
                     case RefType.DreamType:
-                        return _objectTree.Types.Length > RefId
-                            ? new DreamValue(_objectTree.Types[RefId])
+                        return _objectTree.Types.Length > refId
+                            ? new DreamValue(_objectTree.Types[refId])
                             : DreamValue.Null;
                     case RefType.DreamResource:
-                        if (!_dreamResourceManager.TryLoadResource(RefId, out var resource))
+                        if (!_dreamResourceManager.TryLoadResource(refId, out var resource))
                             return DreamValue.Null;
 
                         return new DreamValue(resource);
                     case RefType.DreamAppearance:
                         _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
-                        return _appearanceSystem.TryGetAppearance(RefId, out IconAppearance? appearance)
+                        return _appearanceSystem.TryGetAppearance(refId, out IconAppearance? appearance)
                             ? new DreamValue(appearance)
                             : DreamValue.Null;
                     case RefType.Proc:
-                        return new(_objectTree.Procs[RefId]);
+                        return new(_objectTree.Procs[refId]);
                     default:
                         throw new Exception($"Invalid reference type for ref {refString}");
                 }

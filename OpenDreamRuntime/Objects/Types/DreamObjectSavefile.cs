@@ -40,7 +40,7 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// <summary>
     /// Real savefile location on the host OS
     /// </summary>
-    public DreamResource? Resource = default!;
+    public DreamResource? Resource;
 
     /// <summary>
     /// The current savefile data holder - the root of the savefile tree
@@ -260,7 +260,7 @@ public sealed class DreamObjectSavefile : DreamObject {
 
     public void Flush() {
         Resource!.Clear();
-        Resource!.Output(new DreamValue(JsonSerializer.Serialize<SFDreamJsonValue>(_rootNode)));
+        Resource!.Output(new DreamValue(JsonSerializer.Serialize(_rootNode)));
     }
 
     /// <summary>

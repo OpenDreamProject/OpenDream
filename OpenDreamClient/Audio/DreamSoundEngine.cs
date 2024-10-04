@@ -14,6 +14,7 @@ public sealed class DreamSoundEngine : IDreamSoundEngine {
     [Dependency] private readonly ILogManager _logManager = default!;
     [Dependency] private readonly INetManager _netManager = default!;
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+    [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IAudioManager _audioManager = default!;
     private AudioSystem? _audioSystem;
 
@@ -29,13 +30,6 @@ public sealed class DreamSoundEngine : IDreamSoundEngine {
         _netManager.Disconnect += DisconnectedFromServer;
     }
 
-    public void StopFinishedChannels() {
-        for (int i = 0; i < SoundChannelLimit; i++) {
-            if (_channels[i]?.Source.Component.Playing is false or null)
-                StopChannel(i + 1);
-        }
-    }
-
     public void PlaySound(int channel, MsgSound.FormatType format, ResourceSound sound, float volume) {
         if (_audioSystem == null)
             _entitySystemManager.Resolve(ref _audioSystem);
@@ -43,7 +37,8 @@ public sealed class DreamSoundEngine : IDreamSoundEngine {
         if (channel == 0) {
             //First available channel
             for (int i = 0; i < _channels.Length; i++) {
-                if (_channels[i] == null) {
+                //if it's null, deleted, or queued for deletion, it's free
+                if (_channels[i] == null || _entityManager.Deleted(_channels[i]!.Source.Entity) || _entityManager.IsQueuedForDeletion(_channels[i]!.Source.Entity) ) {
                     channel = i + 1;
                     break;
                 }

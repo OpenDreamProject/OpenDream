@@ -291,6 +291,8 @@ namespace DMCompiler.Compiler.DM {
                         value = Expression();
                         RequireExpression(ref value);
                     } else if (Check(TokenType.DM_DoubleSquareBracketEquals)) {
+                        if (value != null) Warning("List doubly initialized");
+
                         Whitespace();
                         value = Expression();
                         RequireExpression(ref value);

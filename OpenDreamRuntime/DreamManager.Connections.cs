@@ -359,7 +359,6 @@ public sealed class HotReloadResourceCommand : IConsoleCommand {
     }
 }
 
-
 public sealed class ForceGarbageCollectionCommand : IConsoleCommand {
     // ReSharper disable once StringLiteralTypo
     public string Command => "forcegc";

@@ -1,4 +1,4 @@
-// COMPILE ERROR
+// COMPILE ERROR OD2702
 #pragma InvalidVarType error
 /datum/do/re/mi/fa/so
 	meep = "foo"

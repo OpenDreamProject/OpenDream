@@ -1,4 +1,4 @@
-// COMPILE ERROR
+// COMPILE ERROR OD2703
 #pragma ImplicitNullType error
 
 /datum/do

@@ -226,6 +226,27 @@ namespace OpenDreamRuntime {
         }
 
         public DreamValue Resume() {
+            return ReentrantResume(null, out _);
+        }
+
+        /// <summary>
+        /// Resume this thread re-entrantly.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// This function is suitable for executing from inside a running opcode handler if
+        /// <paramref name="untilState"/> is provided.
+        /// </para>
+        /// </remarks>
+        /// <param name="untilState">
+        /// If not null, only continue running until this proc state gets returned into.
+        /// Note that if used, the parent proc will not have its <see cref="ProcState.ReturnedInto"/> called.
+        /// </param>
+        /// <param name="resultStatus">
+        /// The proc result status that caused this resume to return.
+        /// </param>
+        /// <returns>The return value of the last proc to return.</returns>
+        public DreamValue ReentrantResume(ProcState? untilState, out ProcStatus resultStatus) {
             try {
                 CurrentlyExecuting.Value!.Push(this);
                 while (_current != null) {
@@ -234,6 +255,12 @@ namespace OpenDreamRuntime {
                         // _current.Resume may mutate our state!!!
                         status = _current.Resume();
                     } catch (DMError dmError) {
+                        if (_current == null) {
+                            // This happens if a ReentrantResume cancelled, it will have already torn down the stack.
+                            // Just bail and do nothing else.
+                            resultStatus = ProcStatus.Cancelled;
+                            return default;
+                        }
                         CancelAll();
                         HandleException(dmError);
                         status = ProcStatus.Cancelled;
@@ -249,6 +276,7 @@ namespace OpenDreamRuntime {
                             var current = _current;
                             _current = null;
                             _stack.Clear();
+                            resultStatus = status;
                             return current.Result;
 
                         // Our top-most proc just returned a value
@@ -258,7 +286,8 @@ namespace OpenDreamRuntime {
 
                             // If our stack is empty, the context has finished execution
                             // so we can return the result to our native caller
-                            if (_current == null) {
+                            if (_current == null || _current == untilState) {
+                                resultStatus = status;
                                 return returned;
                             }
 
@@ -269,6 +298,7 @@ namespace OpenDreamRuntime {
                         // The context is done executing for now
                         case ProcStatus.Deferred:
                             // We return the current return value here even though it may not be the final result
+                            resultStatus = status;
                             return _current.Result;
 
                         // Our top-most proc just called a function

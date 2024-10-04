@@ -1,4 +1,4 @@
-//COMPILE ERROR
+//COMPILE ERROR OD1201
 
 #pragma WarningDirective error
 

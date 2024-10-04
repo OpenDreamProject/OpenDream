@@ -1,4 +1,4 @@
-// COMPILE ERROR
+// COMPILE ERROR OD3204
 
 #pragma AmbiguousInOrder error
 

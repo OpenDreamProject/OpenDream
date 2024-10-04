@@ -1,4 +1,4 @@
-// COMPILE ERROR
+// COMPILE ERROR OD2800
 
 #pragma UnimplementedAccess error
 

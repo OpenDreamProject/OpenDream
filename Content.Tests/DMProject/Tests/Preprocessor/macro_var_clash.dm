@@ -1,4 +1,4 @@
-// COMPILE ERROR
+// COMPILE ERROR OD0014
 
 //# issue 389
 

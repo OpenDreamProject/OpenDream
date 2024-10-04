@@ -1,4 +1,4 @@
-//COMPILE ERROR
+//COMPILE ERROR OD0010
 
 #define DAMN(what...,the...,hockeysticks...) world << list(##what)
 

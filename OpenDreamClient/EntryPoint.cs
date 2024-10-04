@@ -100,7 +100,6 @@ public sealed class EntryPoint : GameClient {
                 _dreamInterface.FrameUpdate(frameEventArgs);
                 break;
             case ModUpdateLevel.PostEngine:
-                _soundEngine.StopFinishedChannels();
                 break;
         }
     }

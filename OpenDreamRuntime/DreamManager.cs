@@ -380,10 +380,6 @@ namespace OpenDreamRuntime {
 
             WorldInstance.SpawnProc("Error", usr: null, new DreamValue(obj));
         }
-
-        public void ForceGarbageCollection() {
-            GC.Collect();
-        }
     }
 
     public enum RefType : uint {

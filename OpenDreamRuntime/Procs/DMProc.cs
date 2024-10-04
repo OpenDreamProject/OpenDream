@@ -542,8 +542,7 @@ namespace OpenDreamRuntime.Procs {
             _stackIndex = 0;
             _stack = null;
 
-            _dreamValuePool.Return(_localVariables);
-            Array.Clear(_localVariables);
+            _dreamValuePool.Return(_localVariables, true);
             _localVariables = null;
 
             _catchPosition.Clear();

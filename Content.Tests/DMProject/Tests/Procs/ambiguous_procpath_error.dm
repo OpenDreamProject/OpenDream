@@ -1,4 +1,4 @@
-// COMPILE ERROR
+// COMPILE ERROR OD2601
 #pragma AmbiguousProcPath error
 
 /datum/proc/foo()

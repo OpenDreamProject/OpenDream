@@ -23,9 +23,9 @@ public sealed class DreamObjectDatabase(DreamObjectDefinition objectDefinition) 
         throw new DMCrashRuntime("Unable to open database.");
     }
 
-    protected override void HandleDeletion() {
+    protected override void HandleDeletion(bool possiblyThreaded) {
         Close();
-        base.HandleDeletion();
+        base.HandleDeletion(possiblyThreaded);
     }
 
     /// <summary>

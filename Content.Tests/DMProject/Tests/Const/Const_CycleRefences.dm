@@ -1,4 +1,4 @@
-// COMPILE ERROR
+// COMPILE ERROR OD0404
 
 var/const/A = B
 var/const/B = C

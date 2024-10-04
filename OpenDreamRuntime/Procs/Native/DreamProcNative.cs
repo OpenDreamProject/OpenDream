@@ -33,6 +33,7 @@ internal static class DreamProcNative {
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_fract);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_ftime);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_hascall);
+        objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_hearers);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_html_decode);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_html_encode);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_icon_states);
@@ -63,6 +64,7 @@ internal static class DreamProcNative {
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_min);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_nonspantext);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_num2text);
+        objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_ohearers);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_orange);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_oview);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_oviewers);

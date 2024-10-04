@@ -62,7 +62,7 @@ public sealed class DreamObjectImage : DreamObject {
                 continue;
 
             AtomManager.SetAppearanceVar(Appearance, argName, arg);
-            if (argName == "dir") {
+            if (argName == "dir" && arg.TryGetValueAsInteger(out var argDir) && argDir > 0) {
                 // If a dir is explicitly given in the constructor then overlays using this won't use their owner's dir
                 // Setting dir after construction does not affect this
                 // This is undocumented and I hate it
@@ -239,10 +239,17 @@ public sealed class DreamObjectImage : DreamObject {
         return _entity;
     }
 
-    protected override void HandleDeletion() {
+    protected override void HandleDeletion(bool possiblyThreaded) {
+        // SAFETY: Deleting entities is not threadsafe.
+        if (possiblyThreaded) {
+            EnterIntoDelQueue();
+            return;
+        }
+
         if(_entity != EntityUid.Invalid) {
             EntityManager.DeleteEntity(_entity);
         }
-        base.HandleDeletion();
+
+        base.HandleDeletion(possiblyThreaded);
     }
 }

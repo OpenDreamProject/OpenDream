@@ -56,11 +56,17 @@ public class DreamObjectMovable : DreamObjectAtom {
         SetLoc(loc); //loc is set before /New() is ever called
     }
 
-    protected override void HandleDeletion() {
+    protected override void HandleDeletion(bool possiblyThreaded) {
+        // SAFETY: Deleting entities is not threadsafe.
+        if (possiblyThreaded) {
+            EnterIntoDelQueue();
+            return;
+        }
+
         WalkManager.StopWalks(this);
         AtomManager.DeleteMovableEntity(this);
 
-        base.HandleDeletion();
+        base.HandleDeletion(possiblyThreaded);
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {

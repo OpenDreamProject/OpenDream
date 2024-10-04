@@ -55,12 +55,12 @@ internal sealed class DMMParser(DMLexer lexer, int zOffset) : DMParser(lexer) {
             CellDefinitionJson cellDefinition = new CellDefinitionJson(currentToken.ValueAsString());
             DMASTPath? objectType = Path();
             while (objectType != null) {
-                bool skipType = !DMObjectTree.TryGetTypeId(objectType.Path, out int typeId);
-                if (skipType && _skippedTypes.Add(objectType.Path)) {
+                var type = DMObjectTree.GetDMObject(objectType.Path, createIfNonexistent: false);
+                if (type == null && _skippedTypes.Add(objectType.Path)) {
                     Warning($"Skipping type '{objectType.Path}'");
                 }
 
-                MapObjectJson mapObject = new MapObjectJson(typeId);
+                MapObjectJson mapObject = new MapObjectJson(type?.Id ?? -1);
 
                 if (Check(TokenType.DM_LeftCurlyBracket)) {
                     DMASTStatement? statement = Statement();
@@ -86,10 +86,10 @@ internal sealed class DMMParser(DMLexer lexer, int zOffset) : DMParser(lexer) {
                     Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
                 }
 
-                if (!skipType) {
-                    if (objectType.Path.IsDescendantOf(DreamPath.Turf)) {
+                if (type != null) {
+                    if (type.IsSubtypeOf(DreamPath.Turf)) {
                         cellDefinition.Turf = mapObject;
-                    } else if (objectType.Path.IsDescendantOf(DreamPath.Area)) {
+                    } else if (type.IsSubtypeOf(DreamPath.Area)) {
                         cellDefinition.Area = mapObject;
                     } else {
                         cellDefinition.Objects.Add(mapObject);

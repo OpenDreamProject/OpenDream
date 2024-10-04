@@ -1,6 +1,8 @@
-﻿using System.IO;
+﻿using System.Collections.Concurrent;
+using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using DMCompiler.Bytecode;
 using DMCompiler.Json;
 using OpenDreamRuntime.Objects;
@@ -9,6 +11,7 @@ using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
+using OpenDreamRuntime.Util;
 using OpenDreamShared;
 using OpenDreamShared.Dream;
 using Robust.Server;
@@ -44,10 +47,12 @@ namespace OpenDreamRuntime {
         // Global state that may not really (really really) belong here
         public DreamValue[] Globals { get; set; } = Array.Empty<DreamValue>();
         public List<string> GlobalNames { get; private set; } = new();
-        public Dictionary<DreamObject, int> ReferenceIDs { get; } = new();
-        public Dictionary<int, DreamObject> ReferenceIDsToDreamObject { get; } = new();
+        public ConcurrentDictionary<int, WeakDreamRef> ReferenceIDsToDreamObject { get; } = new();
         public HashSet<DreamObject> Clients { get; set; } = new();
-        public HashSet<DreamObject> Datums { get; set; } = new();
+
+        // I solemnly swear this benefits from being a linked list (constant remove times without relying on object hash) --kaylie
+        public LinkedList<WeakDreamRef> Datums { get; set; } = new();
+        public ConcurrentBag<DreamObject> DelQueue = new();
         public Random Random { get; set; } = new();
         public Dictionary<string, List<DreamObject>> Tags { get; set; } = new();
         public DreamProc ImageConstructor, ImageFactoryProc;
@@ -103,6 +108,13 @@ namespace OpenDreamRuntime {
             _dreamMapManager.UpdateTiles();
             DreamObjectSavefile.FlushAllUpdates();
             WorldInstance.SetVariableValue("cpu", WorldInstance.GetVariable("tick_usage"));
+            ProcessDelQueue();
+        }
+
+        public void ProcessDelQueue() {
+            while (DelQueue.TryTake(out var obj)) {
+                obj.Delete();
+            }
         }
 
         public bool LoadJson(string? jsonPath) {
@@ -206,10 +218,14 @@ namespace OpenDreamRuntime {
                         }
                     }
 
-                    if (!ReferenceIDs.TryGetValue(refObject, out idx)) {
-                        idx = _dreamObjectRefIdCounter++;
-                        ReferenceIDs.Add(refObject, idx);
-                        ReferenceIDsToDreamObject.Add(idx, refObject);
+                    if (refObject.RefId is not {} id) {
+                        idx = Interlocked.Increment(ref _dreamObjectRefIdCounter);
+                        refObject.RefId = idx;
+
+                        // SAFETY: Infallible! idx is always unique and add can only fail if this is not the case.
+                        ReferenceIDsToDreamObject.TryAdd(idx, new WeakDreamRef(refObject));
+                    } else {
+                        idx = id;
                     }
                 }
             } else if (value.TryGetValueAsString(out var refStr)) {
@@ -241,6 +257,26 @@ namespace OpenDreamRuntime {
             return $"[0x{((int) refType+idx):x}]";
         }
 
+        /// <summary>
+        /// Iterates the list of datums
+        /// </summary>
+        /// <returns>Datum enumerater</returns>
+        /// <remarks>As it's a convenient time, this will collect any dead datum refs as it finds them.</remarks>
+        public IEnumerable<DreamObject> IterateDatums() {
+            // This isn't a common operation so we'll use this time to also do some pruning.
+            var node = Datums.First;
+
+            while (node is not null) {
+                var next = node.Next;
+                var val = node.Value.Target;
+                if (val is null)
+                    Datums.Remove(node);
+                else
+                    yield return val;
+                node = next;
+            }
+        }
+
         public DreamValue LocateRef(string refString) {
             bool canBePointer = false;
 
@@ -269,7 +305,7 @@ namespace OpenDreamRuntime {
                     case RefType.DreamObjectMob:
                     case RefType.DreamObjectTurf:
                     case RefType.DreamObject:
-                        if (ReferenceIDsToDreamObject.TryGetValue(refId, out var dreamObject))
+                        if (ReferenceIDsToDreamObject.TryGetValue(refId, out var weakRef) && weakRef.Target is {} dreamObject)
                             return new(dreamObject);
 
                         return DreamValue.Null;

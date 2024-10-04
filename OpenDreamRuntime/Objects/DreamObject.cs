@@ -6,6 +6,7 @@ using DMCompiler.Bytecode;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
+using OpenDreamRuntime.Util;
 using Robust.Server.GameObjects;
 using Robust.Server.GameStates;
 using Robust.Server.Player;
@@ -20,6 +21,9 @@ namespace OpenDreamRuntime.Objects {
 
         [Access(typeof(DreamObject))]
         public bool Deleted;
+
+        [Access(typeof(DreamManager), typeof(DreamObject))]
+        public int? RefId;
 
         public virtual bool ShouldCallNew => true;
 
@@ -81,7 +85,7 @@ namespace OpenDreamRuntime.Objects {
 
             // Atoms are in world.contents
             if (this is not DreamObjectAtom && IsSubtypeOf(ObjectTree.Datum)) {
-                ObjectDefinition.DreamManager.Datums.Add(this);
+                ObjectDefinition.DreamManager.Datums.AddLast(new WeakDreamRef(this));
             }
         }
 
@@ -89,14 +93,12 @@ namespace OpenDreamRuntime.Objects {
             // For subtypes to implement
         }
 
-        protected virtual void HandleDeletion() {
+        protected virtual void HandleDeletion(bool possiblyThreaded) {
             // Atoms are in world.contents
-            if (this is not DreamObjectAtom && IsSubtypeOf(ObjectTree.Datum)) {
-                DreamManager.Datums.Remove(this);
-            }
+            // Datum removal used to live here, but datums are now tracked weakly.
 
-            if (DreamManager.ReferenceIDs.Remove(this, out var refId))
-                DreamManager.ReferenceIDsToDreamObject.Remove(refId);
+            if (RefId is not null)
+                DreamManager.ReferenceIDsToDreamObject.Remove(RefId.Value, out _);
 
             Tag = null;
             Deleted = true;
@@ -106,14 +108,40 @@ namespace OpenDreamRuntime.Objects {
             ObjectDefinition = null!;
         }
 
-        public void Delete() {
+        /// <summary>
+        ///     Enters the current dream object into a global del queue that is guaranteed to run on the DM thread.
+        ///     Use if your deletion handler must be on the DM thread.
+        /// </summary>
+        protected void EnterIntoDelQueue() {
+            DreamManager.DelQueue.Add(this);
+        }
+
+        /// <summary>
+        ///     Del() the object, cleaning up its variables and refs to minimize size until the .NET GC collects it.
+        /// </summary>
+        /// <param name="possiblyThreaded">If true, Delete() will be defensive and assume it may have been called from another thread by .NET</param>
+        public void Delete(bool possiblyThreaded = false) {
             if (Deleted)
                 return;
 
-            if (TryGetProc("Del", out var delProc))
-                DreamThread.Run(delProc, this, null);
+            if (TryGetProc("Del", out var delProc)) {
+                // SAFETY: See associated comment in Datum.dm. This relies on the invariant that this proc is in a
+                //         thread-safe subset of DM (if such a thing exists) or empty. Currently, it is empty.
+                var datumBaseProc = delProc is DMProc {Bytecode.Length: 0};
+                if (possiblyThreaded && !datumBaseProc) {
+                    EnterIntoDelQueue();
+                    return; //Whoops, cannot thread.
+                } else if (!datumBaseProc) {
+                    DreamThread.Run(delProc, this, null);
+                }
+            }
 
-            HandleDeletion();
+            HandleDeletion(possiblyThreaded);
+        }
+
+        ~DreamObject() {
+            // Softdel, possibly.
+            Delete(true);
         }
 
         public bool IsSubtypeOf(TreeEntry ancestor) {

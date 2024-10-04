@@ -239,10 +239,17 @@ public sealed class DreamObjectImage : DreamObject {
         return _entity;
     }
 
-    protected override void HandleDeletion() {
+    protected override void HandleDeletion(bool possiblyThreaded) {
+        // SAFETY: Deleting entities is not threadsafe.
+        if (possiblyThreaded) {
+            EnterIntoDelQueue();
+            return;
+        }
+
         if(_entity != EntityUid.Invalid) {
             EntityManager.DeleteEntity(_entity);
         }
-        base.HandleDeletion();
+
+        base.HandleDeletion(possiblyThreaded);
     }
 }

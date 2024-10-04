@@ -48,8 +48,6 @@ OpenDream makes use of a unit testing framework. You can run these unit tests by
 New features unrelated to BYOND parity go through an RFC process to solicit input from the wider community. The RFCs and more info on the RFC process can be found [here](https://github.com/OpenDreamProject/rfcs).
 
 ## Screenshots
-The following screenshots are taken from a version of Paradise Station with a recompiled 64-bit rustg DLL. This branch of Paradise is available [here](https://github.com/ike709/Paradise/tree/rustg_64).
-
 ![](./.github/assets/screenshot.png?raw=true)
 _[/tg/station](https://github.com/tgstation/tgstation)_
 

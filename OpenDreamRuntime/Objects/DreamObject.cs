@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using OpenDreamRuntime.Procs;
 using System.Globalization;
 using System.Runtime.CompilerServices;
@@ -24,7 +23,7 @@ namespace OpenDreamRuntime.Objects {
         public bool Deleted;
 
         [Access(typeof(DreamManager), typeof(DreamObject))]
-        public int? RefID;
+        public int? RefId;
 
         public virtual bool ShouldCallNew => true;
 
@@ -98,8 +97,8 @@ namespace OpenDreamRuntime.Objects {
             // Atoms are in world.contents
             // Datum removal used to live here, but datums are now tracked weakly.
 
-            if (RefID is not null)
-                DreamManager.ReferenceIDsToDreamObject.Remove(RefID.Value, out _);
+            if (RefId is not null)
+                DreamManager.ReferenceIDsToDreamObject.Remove(RefId.Value, out _);
 
             Tag = null;
             Deleted = true;
@@ -109,7 +108,6 @@ namespace OpenDreamRuntime.Objects {
             ObjectDefinition = null!;
         }
 
-
         /// <summary>
         ///     Enters the current dream object into a global del queue that is guaranteed to run on the DM thread.
         ///     Use if your deletion handler must be on the DM thread.
@@ -117,7 +115,7 @@ namespace OpenDreamRuntime.Objects {
         protected void EnterIntoDelQueue() {
             DreamManager.DelQueue.Add(this);
         }
-        
+
         /// <summary>
         ///     Del() the object, cleaning up its variables and refs to minimize size until the .NET GC collects it.
         /// </summary>

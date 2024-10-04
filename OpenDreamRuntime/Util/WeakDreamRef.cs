@@ -1,14 +1,11 @@
-﻿using System.Runtime.CompilerServices;
-using OpenDreamRuntime.Objects;
+﻿using OpenDreamRuntime.Objects;
 
 namespace OpenDreamRuntime.Util;
 
 public sealed class WeakDreamRef {
     private readonly WeakReference<DreamObject> _weakReference;
 
-    public WeakDreamRef(DreamObject obj) {
-        _weakReference = new(obj);
-    }
+    public WeakDreamRef(DreamObject obj) => _weakReference = new WeakReference<DreamObject>(obj);
 
     public DreamObject? Target {
         get {

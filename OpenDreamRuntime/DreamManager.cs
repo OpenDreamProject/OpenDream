@@ -49,6 +49,7 @@ namespace OpenDreamRuntime {
         public List<string> GlobalNames { get; private set; } = new();
         public ConcurrentDictionary<int, WeakDreamRef> ReferenceIDsToDreamObject { get; } = new();
         public HashSet<DreamObject> Clients { get; set; } = new();
+
         // I solemnly swear this benefits from being a linked list (constant remove times without relying on object hash) --kaylie
         public LinkedList<WeakDreamRef> Datums { get; set; } = new();
         public ConcurrentBag<DreamObject> DelQueue = new();
@@ -216,9 +217,10 @@ namespace OpenDreamRuntime {
                             break;
                         }
                     }
-                    if (refObject.RefID is not {} id) {
+
+                    if (refObject.RefId is not {} id) {
                         idx = Interlocked.Increment(ref _dreamObjectRefIdCounter);
-                        refObject.RefID = idx;
+                        refObject.RefId = idx;
 
                         // SAFETY: Infallible! idx is always unique and add can only fail if this is not the case.
                         ReferenceIDsToDreamObject.TryAdd(idx, new WeakDreamRef(refObject));
@@ -273,8 +275,6 @@ namespace OpenDreamRuntime {
                     yield return val;
                 node = next;
             }
-
-            yield break;
         }
 
         public DreamValue LocateRef(string refString) {
@@ -288,10 +288,10 @@ namespace OpenDreamRuntime {
                 canBePointer = refString.StartsWith("0x");
             }
 
-            if (canBePointer && int.TryParse(refString.Substring(2), System.Globalization.NumberStyles.HexNumber, null, out var refId)) {
+            if (canBePointer && int.TryParse(refString.Substring(2), System.Globalization.NumberStyles.HexNumber, null, out var RefId)) {
                 // The first one/two digits give the type, the last 6 give the index
-                var typeId = (RefType) (refId & 0xFF000000);
-                refId = (refId & 0x00FFFFFF); // The ref minus its ref type prefix
+                var typeId = (RefType) (RefId & 0xFF000000);
+                RefId = (RefId & 0x00FFFFFF); // The ref minus its ref type prefix
 
                 switch (typeId) {
                     case RefType.Null:
@@ -305,30 +305,30 @@ namespace OpenDreamRuntime {
                     case RefType.DreamObjectMob:
                     case RefType.DreamObjectTurf:
                     case RefType.DreamObject:
-                        if (ReferenceIDsToDreamObject.TryGetValue(refId, out var weakRef) && weakRef.Target is {} dreamObject)
+                        if (ReferenceIDsToDreamObject.TryGetValue(RefId, out var weakRef) && weakRef.Target is {} dreamObject)
                             return new(dreamObject);
 
                         return DreamValue.Null;
                     case RefType.String:
-                        return _objectTree.Strings.Count > refId
-                            ? new DreamValue(_objectTree.Strings[refId])
+                        return _objectTree.Strings.Count > RefId
+                            ? new DreamValue(_objectTree.Strings[RefId])
                             : DreamValue.Null;
                     case RefType.DreamType:
-                        return _objectTree.Types.Length > refId
-                            ? new DreamValue(_objectTree.Types[refId])
+                        return _objectTree.Types.Length > RefId
+                            ? new DreamValue(_objectTree.Types[RefId])
                             : DreamValue.Null;
                     case RefType.DreamResource:
-                        if (!_dreamResourceManager.TryLoadResource(refId, out var resource))
+                        if (!_dreamResourceManager.TryLoadResource(RefId, out var resource))
                             return DreamValue.Null;
 
                         return new DreamValue(resource);
                     case RefType.DreamAppearance:
                         _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
-                        return _appearanceSystem.TryGetAppearance(refId, out IconAppearance? appearance)
+                        return _appearanceSystem.TryGetAppearance(RefId, out IconAppearance? appearance)
                             ? new DreamValue(appearance)
                             : DreamValue.Null;
                     case RefType.Proc:
-                        return new(_objectTree.Procs[refId]);
+                        return new(_objectTree.Procs[RefId]);
                     default:
                         throw new Exception($"Invalid reference type for ref {refString}");
                 }

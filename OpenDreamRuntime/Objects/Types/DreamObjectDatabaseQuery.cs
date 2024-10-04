@@ -22,6 +22,11 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
     }
 
     protected override void HandleDeletion(bool possiblyThreaded) {
+        if (possiblyThreaded) {
+            EnterIntoDelQueue();
+            return;
+        }
+
         ClearCommand();
         CloseReader();
         base.HandleDeletion(possiblyThreaded);

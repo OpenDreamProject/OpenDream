@@ -290,6 +290,12 @@ namespace DMCompiler.Compiler.DM {
                         Whitespace();
                         value = Expression();
                         RequireExpression(ref value);
+                    } else if (Check(TokenType.DM_DoubleSquareBracketEquals)) {
+                        if (value != null) Warning("List doubly initialized");
+
+                        Whitespace();
+                        value = Expression();
+                        RequireExpression(ref value);
                     } else if (value == null) {
                         value = new DMASTConstantNull(loc);
                     }
@@ -869,6 +875,10 @@ namespace DMCompiler.Compiler.DM {
                 DMASTExpression? value = PathArray(ref varPath.Path);
 
                 if (Check(TokenType.DM_Equals)) {
+                    Whitespace();
+                    value = Expression();
+                    RequireExpression(ref value);
+                } else if (Check(TokenType.DM_DoubleSquareBracketEquals)) {
                     Whitespace();
                     value = Expression();
                     RequireExpression(ref value);
@@ -1722,9 +1732,7 @@ namespace DMCompiler.Compiler.DM {
                 if (Check(TokenType.DM_DoubleSquareBracketEquals)) {
                     Whitespace();
                     value = Expression();
-                }
-
-                if (Check(TokenType.DM_Equals)) {
+                } else if (Check(TokenType.DM_Equals)) {
                     Whitespace();
                     value = Expression();
                 }

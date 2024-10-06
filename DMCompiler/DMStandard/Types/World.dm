@@ -33,7 +33,7 @@
 
 	var/address
 	var/port = 0 as opendream_compiletimereadonly
-	var/internet_address = "127.0.0.1" as opendream_unimplemented
+	var/internet_address
 	var/url as opendream_unimplemented
 	var/visibility = 0 as opendream_unimplemented
 	var/status as opendream_unimplemented

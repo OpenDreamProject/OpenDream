@@ -717,8 +717,7 @@ internal static class DMExpressionBuilder {
                             }
 
                             operations = new Dereference.Operation[newOperationCount];
-                            astOperationOffset = i + iteration + 1;
-                            iteration++;
+                            astOperationOffset += i + 1;
                             i = -1;
                             prevPath = property.Type;
                             pathIsFuzzy = prevPath == null;

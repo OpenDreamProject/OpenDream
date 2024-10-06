@@ -17,7 +17,7 @@ public sealed class DreamObjectWorld : DreamObject {
 
     [Dependency] private readonly IBaseServer _server = default!;
     [Dependency] private readonly IGameTiming _gameTiming = default!;
-    [Dependency] private readonly INetManager _netManager = default!;
+    [Dependency] private readonly NetManager _netManager = default!;
     [Dependency] private readonly IConfigurationManager _cfg = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.world");
@@ -58,7 +58,7 @@ public sealed class DreamObjectWorld : DreamObject {
     }
 
     /// <summary> Tries to return the address of the server, as it appears over the internet. May return null.</summary>
-    private IPAddress? InternetAddress => null; //TODO: Implement this!
+    private IPAddress? InternetAddress => _netManager.ServerChannel?.RemoteEndPoint.Address ?? null;
 
     public DreamObjectWorld(DreamObjectDefinition objectDefinition) :
         base(objectDefinition) {

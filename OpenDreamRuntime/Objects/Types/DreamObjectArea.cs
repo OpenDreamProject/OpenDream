@@ -98,16 +98,27 @@ public sealed class DreamObjectArea : DreamObjectAtom {
     }
 
     /// <summary>
-    /// Updates our cached coordinates with the location of the "lowest" turf, if we don't already have them cached
+    /// Updates our cached coordinates with the location of the "lowest" turf, if we don't already have them cached.
+    /// <br/>
+    /// The "lowest" turf is the turf with the lowest z, y, then x.
     /// </summary>
     private void UpdateCoordinateCache() {
         if (_cachedX != null)
             return;
 
         foreach (var turf in Contents.GetTurfs()) {
-            _cachedX = Math.Min(turf.X, _cachedX ?? int.MaxValue);
-            _cachedY = Math.Min(turf.Y, _cachedY ?? int.MaxValue);
-            _cachedZ = Math.Min(turf.Z, _cachedZ ?? int.MaxValue);
+            if (_cachedX != null) {
+                if (turf.Z > _cachedZ)
+                    continue;
+                if (turf.Y > _cachedY)
+                    continue;
+                if (turf.X > _cachedX)
+                    continue;
+            }
+
+            _cachedX = turf.X;
+            _cachedY = turf.Y;
+            _cachedZ = turf.Z;
         }
 
         // 0 if there were no turfs

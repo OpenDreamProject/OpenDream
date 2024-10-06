@@ -471,12 +471,12 @@ public sealed class AtomManager {
     /// Gets an atom's appearance. Will throw if the appearance system is not available.
     /// </summary>
     /// <param name="atom">The atom to find the appearance of.</param>
-    public IconAppearance? MustGetAppearance(DreamObject atom) {
+    public ImmutableIconAppearance? MustGetAppearance(DreamObject atom) {
         return atom switch {
             DreamObjectTurf turf => AppearanceSystem!.MustGetAppearance(turf.AppearanceId),
-            DreamObjectMovable movable => movable.SpriteComponent.Appearance,
+            DreamObjectMovable movable => AppearanceSystem!.MustGetAppearance(movable.SpriteComponent.AppearanceId.Value),
             DreamObjectArea area => AppearanceSystem!.MustGetAppearance(area.AppearanceId),
-            DreamObjectImage image => image.Appearance,
+            DreamObjectImage image => AppearanceSystem!.MustGetAppearance(image.SpriteComponent.AppearanceId.Value),
             _ => throw new Exception($"Cannot get appearance of {atom}")
         };
     }
@@ -484,15 +484,15 @@ public sealed class AtomManager {
     /// <summary>
     /// Optionally looks up for an appearance. Does not try to create a new one when one is not found for this atom.
     /// </summary>
-    public bool TryGetAppearance(DreamObject atom, [NotNullWhen(true)] out IconAppearance? appearance) {
+    public bool TryGetAppearance(DreamObject atom, [NotNullWhen(true)] out ImmutableIconAppearance? appearance) {
         if (atom is DreamObjectTurf turf)
             appearance = AppearanceSystem?.MustGetAppearance(turf.AppearanceId);
         else if (atom is DreamObjectMovable movable)
-            appearance = movable.SpriteComponent.Appearance;
+            appearance = AppearanceSystem?.MustGetAppearance(movable.SpriteComponent.AppearanceId.Value);
         else if (atom is DreamObjectImage image)
-            appearance = image.Appearance;
+            appearance = AppearanceSystem?.MustGetAppearance(image.SpriteComponent.AppearanceId.Value);
         else if (atom is DreamObjectArea area)
-            appearance = AppearanceSystem.MustGetAppearance(area.AppearanceId);
+            appearance = AppearanceSystem?.MustGetAppearance(area.AppearanceId);
         else
             appearance = null;
 
@@ -512,7 +512,7 @@ public sealed class AtomManager {
         } else if (atom is DreamObjectMovable movable) {
             DMISpriteSystem.SetSpriteAppearance(new(movable.Entity, movable.SpriteComponent), appearance);
         } else if (atom is DreamObjectImage image) {
-            image.Appearance = appearance;
+            DMISpriteSystem.SetSpriteAppearance(new(image.Entity, image.SpriteComponent), appearance);
         } else if (atom is DreamObjectArea area) {
             _dreamMapManager.SetAreaAppearance(area, appearance);
         }

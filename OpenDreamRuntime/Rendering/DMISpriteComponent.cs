@@ -10,6 +10,6 @@ public sealed partial class DMISpriteComponent : SharedDMISpriteComponent {
     public ScreenLocation ScreenLocation;
 
     [Access(typeof(DMISpriteSystem))]
-    [ViewVariables] public IconAppearance? Appearance;
+    [ViewVariables] public int? AppearanceId;
 }
 

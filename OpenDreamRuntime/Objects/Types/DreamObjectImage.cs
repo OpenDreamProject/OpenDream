@@ -6,9 +6,8 @@ using Robust.Shared.Map;
 namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectImage : DreamObject {
-    private IconAppearance? _appearance;
-    public IconAppearance? Appearance { get => _appearance; set => SetAppearance(value); }
-
+    public EntityUid Entity;
+    public readonly DMISpriteComponent SpriteComponent;
     private DreamObject? _loc;
     private DreamList _overlays;
     private DreamList _underlays;
@@ -272,7 +271,7 @@ public sealed class DreamObjectImage : DreamObject {
 
         if(_appearance is not null)
             AppearanceSystem!.DecreaseAppearanceRefCount(_appearance);
-      
+
         if(_entity != EntityUid.Invalid) {
             EntityManager.DeleteEntity(_entity);
         }

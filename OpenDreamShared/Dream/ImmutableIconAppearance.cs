@@ -317,5 +317,42 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
         return (int)storedHashCode;
     }
 
+    //Creates an editable *copy* of this appearance, which must be added to the ServerAppearanceSystem to be used.
+    public IconAppearance ToMutable() {
+        IconAppearance result = new IconAppearance() {
+            Name = this.Name,
+            Icon = this.Icon,
+            IconState = this.IconState,
+            Direction = this.Direction,
+            InheritsDirection = this.InheritsDirection,
+            PixelOffset = this.PixelOffset,
+            PixelOffset2 = this.PixelOffset2,
+            Color = this.Color,
+            Alpha = this.Alpha,
+            GlideSize = this.GlideSize,
+            ColorMatrix = this.ColorMatrix,
+            Layer = this.Layer,
+            Plane = this.Plane,
+            RenderSource = this.RenderSource,
+            RenderTarget = this.RenderTarget,
+            BlendMode = this.BlendMode,
+            AppearanceFlags = this.AppearanceFlags,
+            Invisibility = this.Invisibility,
+            Opacity = this.Opacity,
+            MouseOpacity = this.MouseOpacity,
+            Overlays = new(this.Overlays),
+            Underlays = new(this.Underlays),
+            VisContents = new(this.VisContents),
+            Filters = new(this.Filters),
+            Verbs = new(this.Verbs),
+            Override = this.Override,
+        };
+
+        for (int i = 0; i < 6; i++) {
+            result.Transform[i] = Transform[i];
+        }
+        return result;
+    }
+
 }
 

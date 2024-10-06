@@ -45,34 +45,28 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         }
     }
 
-
     public int AddAppearance(IconAppearance appearance) {
+        ImmutableIconAppearance immutableAppearance = new(appearance);
         lock (_lock) {
-            if (!_appearanceToId.TryGetValue(appearance, out int appearanceId)) {
+            if (!_appearanceToId.TryGetValue(immutableAppearance, out int appearanceId)) {
                 appearanceId = _appearanceIdCounter++;
-                _appearanceToId.Add(appearance, appearanceId);
-                _idToAppearance.Add(appearanceId, appearance);
-                RaiseNetworkEvent(new NewAppearanceEvent(appearanceId, appearance));
+                _appearanceToId.Add(immutableAppearance, appearanceId);
+                _idToAppearance.Add(appearanceId, immutableAppearance);
+                RaiseNetworkEvent(new NewAppearanceEvent(appearanceId, immutableAppearance));
             }
             return appearanceId;
         }
     }
 
-    public IconAppearance MustGetAppearance(int appearanceId) {
+    public ImmutableIconAppearance MustGetAppearance(int appearanceId) {
         lock (_lock) {
             return _idToAppearance[appearanceId];
         }
     }
 
-    public bool TryGetAppearance(int appearanceId, [NotNullWhen(true)] out IconAppearance? appearance) {
+    public bool TryGetAppearance(int appearanceId, [NotNullWhen(true)] out ImmutableIconAppearance? appearance) {
         lock (_lock) {
             return _idToAppearance.TryGetValue(appearanceId, out appearance);
-        }
-    }
-
-    public bool TryGetAppearanceId(IconAppearance appearance, out int appearanceId) {
-        lock (_lock) {
-            return _appearanceToId.TryGetValue(appearance, out appearanceId);
         }
     }
 

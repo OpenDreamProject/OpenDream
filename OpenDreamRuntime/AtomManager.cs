@@ -468,14 +468,14 @@ public sealed class AtomManager {
     }
 
     /// <summary>
-    /// Gets an atom's appearance.
+    /// Gets an atom's appearance. Will throw if the appearance system is not available.
     /// </summary>
     /// <param name="atom">The atom to find the appearance of.</param>
     public IconAppearance? MustGetAppearance(DreamObject atom) {
         return atom switch {
-            DreamObjectTurf turf => AppearanceSystem?.MustGetAppearance(turf.AppearanceId),
+            DreamObjectTurf turf => AppearanceSystem!.MustGetAppearance(turf.AppearanceId),
             DreamObjectMovable movable => movable.SpriteComponent.Appearance,
-            DreamObjectArea area => AppearanceSystem.MustGetAppearance(area.AppearanceId),
+            DreamObjectArea area => AppearanceSystem!.MustGetAppearance(area.AppearanceId),
             DreamObjectImage image => image.Appearance,
             _ => throw new Exception($"Cannot get appearance of {atom}")
         };

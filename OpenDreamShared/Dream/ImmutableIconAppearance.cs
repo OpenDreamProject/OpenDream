@@ -12,7 +12,6 @@ namespace OpenDreamShared.Dream;
  * Woe, weary traveler, modifying this class is not for the faint of heart.
  * If you modify IconAppearance, be sure to update the following places:
  * - All of the methods on IconAppearance itself
- * - ImmutableIconAppearance
  * - IconAppearance methods in AtomManager
  * - MsgAllAppearances
  * - IconDebugWindow
@@ -20,34 +19,35 @@ namespace OpenDreamShared.Dream;
  */
 
 // TODO: Wow this is huge! Probably look into splitting this by most used/least used to reduce the size of these
-public sealed class IconAppearance : IEquatable<IconAppearance>, IEquatable<ImmutableIconAppearance> {
-    public static readonly IconAppearance Default = new();
+[Serializable, NetSerializable]
+public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance>, IEquatable<IconAppearance> {
+    public static readonly ImmutableIconAppearance Default = new();
 
-    [ViewVariables] public string Name = string.Empty;
-    [ViewVariables] public int? Icon;
-    [ViewVariables] public string? IconState;
-    [ViewVariables] public AtomDirection Direction = AtomDirection.South;
-    [ViewVariables] public bool InheritsDirection = true; // Inherits direction when used as an overlay
-    [ViewVariables] public Vector2i PixelOffset;  // pixel_x and pixel_y
-    [ViewVariables] public Vector2i PixelOffset2; // pixel_w and pixel_z
-    [ViewVariables] public Color Color = Color.White;
-    [ViewVariables] public byte Alpha = 255;
-    [ViewVariables] public float GlideSize;
-    [ViewVariables] public float Layer = -1f;
+    [ViewVariables] public readonly string Name = string.Empty;
+    [ViewVariables] public readonly int? Icon;
+    [ViewVariables] public readonly string? IconState;
+    [ViewVariables] public readonly AtomDirection Direction = AtomDirection.South;
+    [ViewVariables] public readonly bool InheritsDirection = true; // Inherits direction when used as an overlay
+    [ViewVariables] public readonly Vector2i PixelOffset;  // pixel_x and pixel_y
+    [ViewVariables] public readonly Vector2i PixelOffset2; // pixel_w and pixel_z
+    [ViewVariables] public readonly Color Color = Color.White;
+    [ViewVariables] public readonly byte Alpha = 255;
+    [ViewVariables] public readonly float GlideSize;
+    [ViewVariables] public readonly float Layer = -1f;
     [ViewVariables] public int Plane = -32767;
-    [ViewVariables] public BlendMode BlendMode = BlendMode.Default;
-    [ViewVariables] public AppearanceFlags AppearanceFlags = AppearanceFlags.None;
-    [ViewVariables] public sbyte Invisibility;
-    [ViewVariables] public bool Opacity;
-    [ViewVariables] public bool Override;
-    [ViewVariables] public string? RenderSource;
-    [ViewVariables] public string? RenderTarget;
-    [ViewVariables] public MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;
-    [ViewVariables] public List<int> Overlays;
-    [ViewVariables] public List<int> Underlays;
-    [ViewVariables] public List<NetEntity> VisContents;
-    [ViewVariables] public List<DreamFilter> Filters;
-    [ViewVariables] public List<int> Verbs;
+    [ViewVariables] public readonly BlendMode BlendMode = BlendMode.Default;
+    [ViewVariables] public readonly AppearanceFlags AppearanceFlags = AppearanceFlags.None;
+    [ViewVariables] public readonly sbyte Invisibility;
+    [ViewVariables] public readonly bool Opacity;
+    [ViewVariables] public readonly bool Override;
+    [ViewVariables] public readonly string? RenderSource;
+    [ViewVariables] public readonly string? RenderTarget;
+    [ViewVariables] public readonly MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;
+    [ViewVariables] public readonly int[] Overlays;
+    [ViewVariables] public readonly int[] Underlays;
+    [ViewVariables] public readonly NetEntity[] VisContents;
+    [ViewVariables] public readonly DreamFilter[] Filters;
+    [ViewVariables] public readonly int[] Verbs;
 
     /// <summary>
     /// An appearance can gain a color matrix filter by two possible forces: <br/>
@@ -60,10 +60,10 @@ public sealed class IconAppearance : IEquatable<IconAppearance>, IEquatable<Immu
     /// The reason we don't just take the slow path and always use this filter is not just for optimization,<br/>
     /// it's also for parity! See <see cref="TryRepresentMatrixAsRgbaColor"/> for more.
     /// </remarks>
-    [ViewVariables] public ColorMatrix ColorMatrix = ColorMatrix.Identity;
+    [ViewVariables] public readonly ColorMatrix ColorMatrix = ColorMatrix.Identity;
 
     /// <summary> The Transform property of this appearance, in [a,d,b,e,c,f] order</summary>
-    [ViewVariables] public float[] Transform = [
+    [ViewVariables] public readonly float[] Transform = [
         1, 0,   // a d
         0, 1,   // b e
         0, 0    // c f
@@ -72,15 +72,17 @@ public sealed class IconAppearance : IEquatable<IconAppearance>, IEquatable<Immu
     // PixelOffset2 behaves the same as PixelOffset in top-down mode, so this is used
     public Vector2i TotalPixelOffset => PixelOffset + PixelOffset2;
 
-    public IconAppearance() {
-        Overlays = new();
-        Underlays = new();
-        VisContents = new();
-        Filters = new();
-        Verbs = new();
+    private int? storedHashCode;
+
+    public ImmutableIconAppearance() {
+        Overlays = [];
+        Underlays = [];
+        VisContents = [];
+        Filters = [];
+        Verbs = [];
     }
 
-    public IconAppearance(IconAppearance appearance) {
+    public ImmutableIconAppearance(IconAppearance appearance) {
         Name = appearance.Name;
         Icon = appearance.Icon;
         IconState = appearance.IconState;
@@ -101,11 +103,11 @@ public sealed class IconAppearance : IEquatable<IconAppearance>, IEquatable<Immu
         Invisibility = appearance.Invisibility;
         Opacity = appearance.Opacity;
         MouseOpacity = appearance.MouseOpacity;
-        Overlays = new(appearance.Overlays);
-        Underlays = new(appearance.Underlays);
-        VisContents = new(appearance.VisContents);
-        Filters = new(appearance.Filters);
-        Verbs = new(appearance.Verbs);
+        Overlays = appearance.Overlays.ToArray();
+        Underlays = appearance.Underlays.ToArray();
+        VisContents = appearance.VisContents.ToArray();
+        Filters = appearance.Filters.ToArray();
+        Verbs = appearance.Verbs.ToArray();
         Override = appearance.Override;
 
         for (int i = 0; i < 6; i++) {
@@ -113,10 +115,63 @@ public sealed class IconAppearance : IEquatable<IconAppearance>, IEquatable<Immu
         }
     }
 
-    public override bool Equals(object? obj) => (obj is IconAppearance appearance && Equals(appearance)) || (obj is ImmutableIconAppearance immutableIconAppearance && Equals(immutableIconAppearance));
+    public override bool Equals(object? obj) => (obj is IconAppearance appearance && Equals(appearance)) || (obj is ImmutableIconAppearance immutable && Equals(immutable));
 
     public bool Equals(ImmutableIconAppearance? immutableIconAppearance) {
-        return immutableIconAppearance is null ? false : immutableIconAppearance.Equals(this);
+        if (immutableIconAppearance == null) return false;
+
+        if (immutableIconAppearance.Name != Name) return false;
+        if (immutableIconAppearance.Icon != Icon) return false;
+        if (immutableIconAppearance.IconState != IconState) return false;
+        if (immutableIconAppearance.Direction != Direction) return false;
+        if (immutableIconAppearance.InheritsDirection != InheritsDirection) return false;
+        if (immutableIconAppearance.PixelOffset != PixelOffset) return false;
+        if (immutableIconAppearance.PixelOffset2 != PixelOffset2) return false;
+        if (immutableIconAppearance.Color != Color) return false;
+        if (immutableIconAppearance.Alpha != Alpha) return false;
+        if (immutableIconAppearance.GlideSize != GlideSize) return false;
+        if (!immutableIconAppearance.ColorMatrix.Equals(ColorMatrix)) return false;
+        if (immutableIconAppearance.Layer != Layer) return false;
+        if (immutableIconAppearance.Plane != Plane) return false;
+        if (immutableIconAppearance.RenderSource != RenderSource) return false;
+        if (immutableIconAppearance.RenderTarget != RenderTarget) return false;
+        if (immutableIconAppearance.BlendMode != BlendMode) return false;
+        if (immutableIconAppearance.AppearanceFlags != AppearanceFlags) return false;
+        if (immutableIconAppearance.Invisibility != Invisibility) return false;
+        if (immutableIconAppearance.Opacity != Opacity) return false;
+        if (immutableIconAppearance.MouseOpacity != MouseOpacity) return false;
+        if (immutableIconAppearance.Overlays.Length != Overlays.Length) return false;
+        if (immutableIconAppearance.Underlays.Length != Underlays.Length) return false;
+        if (immutableIconAppearance.VisContents.Length != VisContents.Length) return false;
+        if (immutableIconAppearance.Filters.Length != Filters.Length) return false;
+        if (immutableIconAppearance.Verbs.Length != Verbs.Length) return false;
+        if (immutableIconAppearance.Override != Override) return false;
+
+        for (int i = 0; i < Filters.Length; i++) {
+            if (immutableIconAppearance.Filters[i] != Filters[i]) return false;
+        }
+
+        for (int i = 0; i < Overlays.Length; i++) {
+            if (immutableIconAppearance.Overlays[i] != Overlays[i]) return false;
+        }
+
+        for (int i = 0; i < Underlays.Length; i++) {
+            if (immutableIconAppearance.Underlays[i] != Underlays[i]) return false;
+        }
+
+        for (int i = 0; i < VisContents.Length; i++) {
+            if (immutableIconAppearance.VisContents[i] != VisContents[i]) return false;
+        }
+
+        for (int i = 0; i < Verbs.Length; i++) {
+            if (immutableIconAppearance.Verbs[i] != Verbs[i]) return false;
+        }
+
+        for (int i = 0; i < 6; i++) {
+            if (!immutableIconAppearance.Transform[i].Equals(Transform[i])) return false;
+        }
+
+        return true;
     }
 
     public bool Equals(IconAppearance? appearance) {
@@ -131,9 +186,9 @@ public sealed class IconAppearance : IEquatable<IconAppearance>, IEquatable<Immu
         if (appearance.PixelOffset2 != PixelOffset2) return false;
         if (appearance.Color != Color) return false;
         if (appearance.Alpha != Alpha) return false;
-        if (!appearance.GlideSize.Equals(GlideSize)) return false;
+        if (appearance.GlideSize != GlideSize) return false;
         if (!appearance.ColorMatrix.Equals(ColorMatrix)) return false;
-        if (!appearance.Layer.Equals(Layer)) return false;
+        if (appearance.Layer != Layer) return false;
         if (appearance.Plane != Plane) return false;
         if (appearance.RenderSource != RenderSource) return false;
         if (appearance.RenderTarget != RenderTarget) return false;
@@ -142,30 +197,30 @@ public sealed class IconAppearance : IEquatable<IconAppearance>, IEquatable<Immu
         if (appearance.Invisibility != Invisibility) return false;
         if (appearance.Opacity != Opacity) return false;
         if (appearance.MouseOpacity != MouseOpacity) return false;
-        if (appearance.Overlays.Count != Overlays.Count) return false;
-        if (appearance.Underlays.Count != Underlays.Count) return false;
-        if (appearance.VisContents.Count != VisContents.Count) return false;
-        if (appearance.Filters.Count != Filters.Count) return false;
-        if (appearance.Verbs.Count != Verbs.Count) return false;
+        if (appearance.Overlays.Count != Overlays.Length) return false;
+        if (appearance.Underlays.Count != Underlays.Length) return false;
+        if (appearance.VisContents.Count != VisContents.Length) return false;
+        if (appearance.Filters.Count != Filters.Length) return false;
+        if (appearance.Verbs.Count != Verbs.Length) return false;
         if (appearance.Override != Override) return false;
 
-        for (int i = 0; i < Filters.Count; i++) {
+        for (int i = 0; i < Filters.Length; i++) {
             if (appearance.Filters[i] != Filters[i]) return false;
         }
 
-        for (int i = 0; i < Overlays.Count; i++) {
+        for (int i = 0; i < Overlays.Length; i++) {
             if (appearance.Overlays[i] != Overlays[i]) return false;
         }
 
-        for (int i = 0; i < Underlays.Count; i++) {
+        for (int i = 0; i < Underlays.Length; i++) {
             if (appearance.Underlays[i] != Underlays[i]) return false;
         }
 
-        for (int i = 0; i < VisContents.Count; i++) {
+        for (int i = 0; i < VisContents.Length; i++) {
             if (appearance.VisContents[i] != VisContents[i]) return false;
         }
 
-        for (int i = 0; i < Verbs.Count; i++) {
+        for (int i = 0; i < Verbs.Length; i++) {
             if (appearance.Verbs[i] != Verbs[i]) return false;
         }
 
@@ -208,6 +263,9 @@ public sealed class IconAppearance : IEquatable<IconAppearance>, IEquatable<Immu
     }
 
     public override int GetHashCode() {
+        if(storedHashCode is not null) //because everything is readonly, this only needs to be done once
+            return (int)storedHashCode;
+
         HashCode hashCode = new HashCode();
 
         hashCode.Add(Name);
@@ -255,85 +313,9 @@ public sealed class IconAppearance : IEquatable<IconAppearance>, IEquatable<Immu
             hashCode.Add(Transform[i]);
         }
 
-        return hashCode.ToHashCode();
+        storedHashCode = hashCode.ToHashCode();
+        return (int)storedHashCode;
     }
 
-    /// <summary>
-    /// Parses the given colour string and sets this appearance to use it.
-    /// </summary>
-    /// <exception cref="ArgumentException">Thrown if color is not valid.</exception>
-    public void SetColor(string color) {
-        // TODO: the BYOND compiler enforces valid colors *unless* it's a map edit, in which case an empty string is allowed
-        ColorMatrix = ColorMatrix.Identity; // reset our color matrix if we had one
-
-        if (!ColorHelpers.TryParseColor(color, out Color)) {
-            Color = Color.White;
-        }
-    }
-
-    /// <summary>
-    /// Sets the 'color' attribute to a color matrix, which will be used on the icon later on by a shader.
-    /// </summary>
-    public void SetColor(in ColorMatrix matrix) {
-        if (TryRepresentMatrixAsRgbaColor(matrix, out var matrixColor)) {
-            Color = matrixColor.Value;
-            ColorMatrix = ColorMatrix.Identity;
-            return;
-        }
-
-        Color = Color.White;
-        ColorMatrix = matrix;
-    }
 }
 
-public enum BlendMode {
-    Default,
-    Overlay,
-    Add,
-    Subtract,
-    Multiply,
-    InsertOverlay
-}
-
-[Flags]
-public enum AppearanceFlags {
-    None = 0,
-    LongGlide = 1,
-    ResetColor = 2,
-    ResetAlpha = 4,
-    ResetTransform = 8,
-    NoClientColor = 16,
-    KeepTogether = 32,
-    KeepApart = 64,
-    PlaneMaster = 128,
-    TileBound = 256,
-    PixelScale = 512,
-    PassMouse = 1024,
-    TileMover = 2048
-}
-
-[Flags] //kinda, but only EASE_IN and EASE_OUT are used as bitflags, everything else is an enum
-public enum AnimationEasing {
-    Linear = 0,
-    Sine = 1,
-    Circular = 2,
-    Cubic = 3,
-    Bounce = 4,
-    Elastic = 5,
-    Back = 6,
-    Quad = 7,
-    Jump = 8,
-    EaseIn = 64,
-    EaseOut = 128,
-}
-
-[Flags]
-public enum AnimationFlags {
-    None = 0,
-    AnimationEndNow = 1,
-    AnimationLinearTransform = 2,
-    AnimationParallel = 4,
-    AnimationSlice = 8,
-    AnimationRelative = 256,
-    AnimationContinue = 512
-}

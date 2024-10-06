@@ -9,7 +9,7 @@ using Robust.Shared.Serialization;
 
 namespace OpenDreamShared.Network.Messages;
 
-public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppearances) : NetMessage {
+public sealed class MsgAllAppearances(Dictionary<int, ImmutableIconAppearance> allAppearances) : NetMessage {
     public override MsgGroups MsgGroup => MsgGroups.EntityEvent;
 
     private enum Property : byte {
@@ -45,7 +45,7 @@ public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppeara
         End
     }
 
-    public Dictionary<int, IconAppearance> AllAppearances = allAppearances;
+    public Dictionary<int, ImmutableIconAppearance> AllAppearances = allAppearances;
 
     public MsgAllAppearances() : this(new()) { }
 
@@ -207,7 +207,7 @@ public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppeara
                 property = (Property)buffer.ReadByte();
             }
 
-            AllAppearances.Add(appearanceId, appearance);
+            AllAppearances.Add(appearanceId, new(appearance));
         }
     }
 
@@ -333,37 +333,37 @@ public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppeara
                 buffer.Write((byte)appearance.MouseOpacity);
             }
 
-            if (appearance.Overlays.Count != 0) {
+            if (appearance.Overlays.Length != 0) {
                 buffer.Write((byte)Property.Overlays);
 
-                buffer.WriteVariableInt32(appearance.Overlays.Count);
+                buffer.WriteVariableInt32(appearance.Overlays.Length);
                 foreach (var overlay in appearance.Overlays) {
                     buffer.WriteVariableInt32(overlay);
                 }
             }
 
-            if (appearance.Underlays.Count != 0) {
+            if (appearance.Underlays.Length != 0) {
                 buffer.Write((byte)Property.Underlays);
 
-                buffer.WriteVariableInt32(appearance.Underlays.Count);
+                buffer.WriteVariableInt32(appearance.Underlays.Length);
                 foreach (var underlay in appearance.Underlays) {
                     buffer.WriteVariableInt32(underlay);
                 }
             }
 
-            if (appearance.VisContents.Count != 0) {
+            if (appearance.VisContents.Length != 0) {
                 buffer.Write((byte)Property.VisContents);
 
-                buffer.WriteVariableInt32(appearance.VisContents.Count);
+                buffer.WriteVariableInt32(appearance.VisContents.Length);
                 foreach (var item in appearance.VisContents) {
                     buffer.Write(item);
                 }
             }
 
-            if (appearance.Filters.Count != 0) {
+            if (appearance.Filters.Length != 0) {
                 buffer.Write((byte)Property.Filters);
 
-                buffer.Write(appearance.Filters.Count);
+                buffer.Write(appearance.Filters.Length);
                 foreach (var filter in appearance.Filters) {
                     using var filterStream = new MemoryStream();
 
@@ -374,10 +374,10 @@ public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppeara
                 }
             }
 
-            if (appearance.Verbs.Count != 0) {
+            if (appearance.Verbs.Length != 0) {
                 buffer.Write((byte)Property.Verbs);
 
-                buffer.WriteVariableInt32(appearance.Verbs.Count);
+                buffer.WriteVariableInt32(appearance.Verbs.Length);
                 foreach (var verb in appearance.Verbs) {
                     buffer.WriteVariableInt32(verb);
                 }

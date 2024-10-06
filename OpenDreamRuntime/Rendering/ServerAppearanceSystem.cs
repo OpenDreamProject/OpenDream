@@ -9,9 +9,9 @@ using Robust.Shared.Player;
 namespace OpenDreamRuntime.Rendering;
 
 public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
-    private readonly Dictionary<IconAppearance, int> _appearanceToId = new();
-    private readonly Dictionary<int, IconAppearance> _idToAppearance = new();
-    private readonly Dictionary<IconAppearance, int> _appearanceRefCounts = new();
+    private readonly Dictionary<ImmutableIconAppearance, int> _appearanceToId = new();
+    private readonly Dictionary<int, ImmutableIconAppearance> _idToAppearance = new();
+    private readonly Dictionary<ImmutableIconAppearance, int> _appearanceRefCounts = new();
     private int _appearanceIdCounter;
 
 
@@ -24,9 +24,9 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
 
     public override void Initialize() {
         //register empty appearance as ID 0
-        _appearanceToId.Add(IconAppearance.Default, 0);
-        _idToAppearance.Add(0, IconAppearance.Default);
-        _appearanceRefCounts.Add(IconAppearance.Default, 1);
+        _appearanceToId.Add(ImmutableIconAppearance.Default, 0);
+        _idToAppearance.Add(0, ImmutableIconAppearance.Default);
+        _appearanceRefCounts.Add(ImmutableIconAppearance.Default, 1);
         _appearanceIdCounter = 1;
         _playerManager.PlayerStatusChanged += OnPlayerStatusChanged;
     }
@@ -45,67 +45,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         }
     }
 
-    public void IncreaseAppearanceRefCount(IconAppearance appearance) {
-        lock (_lock) {
-            int count = _appearanceRefCounts.GetValueOrDefault(appearance, 0);
-            foreach(var overlayid in appearance.Overlays) {
-                IncreaseAppearanceRefCount(overlayid);
-            }
 
-            foreach(var underlayid in appearance.Underlays) {
-                IncreaseAppearanceRefCount(underlayid);
-            }
-
-            _appearanceRefCounts[appearance] = count + 1;
-        }
-    }
-
-    public void IncreaseAppearanceRefCount(int appearanceId) {
-        if (!_idToAppearance.TryGetValue(appearanceId, out IconAppearance? appearance)) {
-            throw new InvalidOperationException("Trying to increase ref count of an appearance that doesn't exist.");
-        }
-
-        IncreaseAppearanceRefCount(appearance);
-    }
-
-    public void DecreaseAppearanceRefCount(IconAppearance appearance) {
-        lock (_lock) {
-            if (!_appearanceRefCounts.TryGetValue(appearance, out int count)) {
-                throw new InvalidOperationException($"Appearance {appearance.GetHashCode()} ref count is already 0. You might be trying to remove an appearance that was never added.");
-            }
-
-            if (count == 1) {
-                foreach(var overlayid in appearance.Overlays) {
-                    DecreaseAppearanceRefCount(overlayid);
-                }
-
-                foreach(var underlayid in appearance.Underlays) {
-                    DecreaseAppearanceRefCount(underlayid);
-                }
-
-                if(_appearanceToId.TryGetValue(appearance, out int id)) {
-                    if(id==0) //don't ever remove the default appearance
-                        return;
-                    _idToAppearance.Remove(id);
-                    RaiseNetworkEvent(new RemoveAppearanceEvent(id));
-                }
-
-                _appearanceRefCounts.Remove(appearance);
-                _appearanceToId.Remove(appearance);
-                //let the GC sort out the rest
-            } else {
-                _appearanceRefCounts[appearance] = count - 1;
-            }
-        }
-    }
-
-    public void DecreaseAppearanceRefCount(int appearanceId) {
-        if (!_idToAppearance.TryGetValue(appearanceId, out IconAppearance? appearance)) {
-            throw new InvalidOperationException("Trying to decrease ref count of an appearance that doesn't exist.");
-        }
-
-        DecreaseAppearanceRefCount(appearance);
-    }
     public int AddAppearance(IconAppearance appearance) {
         lock (_lock) {
             if (!_appearanceToId.TryGetValue(appearance, out int appearanceId)) {

@@ -669,7 +669,6 @@ internal static class DMExpressionBuilder {
             }
         }
 
-        var iteration = 0; // Since we do cursed stuff to `i` for reasons(TM), we need to track the for loop's iterations elsewhere
         for (int i = 0; i < operations.Length; i++) {
             DMASTDereference.Operation astOperation = astOperations[i + astOperationOffset];
             Dereference.Operation operation;

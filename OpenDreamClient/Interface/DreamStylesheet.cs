@@ -188,6 +188,7 @@ public static class DreamStylesheet {
 
             // TabContainer
             Element<TabContainer>()
+                .Prop(TabContainer.StylePropertyPanelStyleBox, new StyleBoxInfoPanel(DefaultBackgroundColor))
                 // Active tab style
                 .Prop(TabContainer.StylePropertyTabStyleBox, tabButtonActive)
                 // Inactive tab style

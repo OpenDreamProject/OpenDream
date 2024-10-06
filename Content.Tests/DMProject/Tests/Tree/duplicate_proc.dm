@@ -1,4 +1,5 @@
-// COMPILE ERROR
+// COMPILE ERROR OD2101
+#pragma DuplicateProcDefinition error
 
 //# issue 172
 

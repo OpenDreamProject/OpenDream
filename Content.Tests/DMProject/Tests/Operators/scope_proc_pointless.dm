@@ -1,4 +1,4 @@
-// COMPILE ERROR
+// COMPILE ERROR OD2209
 #pragma PointlessScopeOperator error
 
 /datum/proc/foo()

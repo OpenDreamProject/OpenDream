@@ -1,3 +1,13 @@
+#ifndef OPENDREAM
+/world/proc/ODHotReloadInterface()
+	world.log << "OpenDream-specific procs don't exist in BYOND."
+	return
+
+/world/proc/ODHotReloadResource()
+	world.log << "OpenDream-specific procs don't exist in BYOND."
+	return
+#endif
+
 #define TURF_PLANE -10
 
 /obj/plane_master
@@ -96,6 +106,28 @@
 	verb/say_loud()
 		var/msg = input("Please put the message you want to say loudly.", "Say Loud", "Hello!")
 		world << "[ckey] says loudly: \"[msg]\""
+
+	verb/show_ohearers()
+		var/list/ohearers = ohearers()
+
+		usr << "All hearers: "
+		for (var/mob/hearer in ohearers)
+			usr << hearer
+
+	verb/start_walk()
+		set name = "Walk North"
+		usr << "Walking north. Use the 'Walk Stop' verb to cease."
+		walk(src, NORTH)
+		
+	verb/start_walk_rand()
+		set name = "Walk Randomly"
+		usr << "Walking randomly. Use the 'Walk Stop' verb to cease."
+		walk_rand(src)
+	
+	verb/stop_walk()
+		set name = "Walk Stop"
+		usr << "Walking stopped."
+		walk(src, 0)
 
 	verb/move_up()
 		step(src, UP)
@@ -237,6 +269,10 @@
 
 		world.maxx = x
 		world.maxy = y
+
+	verb/toggle_show_popups()
+		client.show_popup_menus = !client.show_popup_menus
+		src << "Popups are now [client.show_popup_menus ? "enabled" : "disabled"]"
 
 /mob/Stat()
 	if (statpanel("Status"))

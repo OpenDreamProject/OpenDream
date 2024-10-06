@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using DMCompiler.Bytecode;
@@ -111,7 +109,7 @@ public partial class DMParser {
             Token currentToken = Current();
             Advance();
 
-            string tokenValue = (string)currentToken.Value;
+            string tokenValue = currentToken.ValueAsString();
 
             // If an interpolation comes after this, ignore the last character (always '[')
             int iterateLength = currentToken.Type is TokenType.DM_StringBegin or TokenType.DM_StringMiddle

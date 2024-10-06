@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using DMCompiler.Bytecode;
 using DMCompiler.Compiler;
@@ -35,11 +33,7 @@ namespace DMCompiler.DM.Builders {
                     proc.JumpIfFalse(afterDefaultValueCheck);
 
                     //Set default
-                    try {
-                        DMExpression.Emit(dmObject, proc, parameter.Value, parameter.ObjectType);
-                    } catch (CompileErrorException e) {
-                        DMCompiler.Emit(e.Error);
-                    }
+                    DMExpression.Emit(dmObject, proc, parameter.Value, parameter.ObjectType);
                     proc.Assign(parameterRef);
                     proc.Pop();
 
@@ -57,28 +51,26 @@ namespace DMCompiler.DM.Builders {
         /// B.) have no descendant proc which actually has code in it (implying that this proc is just some abstract virtual for it)
         /// </param>
         private void ProcessBlockInner(DMASTProcBlockInner block, bool silenceEmptyBlockWarning = false) {
-            foreach (var stmt in block.SetStatements) { // Done first because all set statements are "hoisted" -- evaluated before any code in the block is run
-                Location loc = stmt.Location;
+            // Done first because all set statements are "hoisted" -- evaluated before any code in the block is run
+            foreach (var stmt in block.SetStatements) {
+                Debug.Assert(stmt.IsAggregateOr<DMASTProcStatementSet>(), "Non-set statements were located in the block's SetStatements array! This is a bug.");
+
                 try {
                     ProcessStatement(stmt);
-                    Debug.Assert(stmt.IsAggregateOr<DMASTProcStatementSet>(), "Non-set statements were located in the block's SetStatements array! This is a bug.");
-                } catch (CompileAbortException e) {
-                    // The statement's location info isn't passed all the way down so change the error to make it more accurate
-                    e.Error.Location = loc;
-                    DMCompiler.Emit(e.Error);
-                    return; // Don't spam the error that will continue to exist
-                } catch (CompileErrorException e) {
-                    //Retreat from the statement when there's an error
-                    DMCompiler.Emit(e.Error);
+                } catch (UnknownIdentifierException e) {
+                    DMCompiler.Emit(WarningCode.ItemDoesntExist, e.Location, $"Unknown identifier \"{e.Identifier}\"");
                 }
             }
+
             if(!silenceEmptyBlockWarning && block.Statements.Length == 0) { // If this block has no real statements
                 // Not an error in BYOND, but we do have an emission for this!
-                if(block.SetStatements.Length != 0) { // Give a more articulate message about this, since it's kinda weird
+                if (block.SetStatements.Length != 0) {
+                    // Give a more articulate message about this, since it's kinda weird
                     DMCompiler.Emit(WarningCode.EmptyBlock,block.Location,"Empty block detected - set statements are executed outside of, before, and unconditional to, this block");
                 } else {
                     DMCompiler.Emit(WarningCode.EmptyBlock,block.Location,"Empty block detected");
                 }
+
                 return;
             }
 
@@ -87,14 +79,8 @@ namespace DMCompiler.DM.Builders {
 
                 try {
                     ProcessStatement(statement);
-                } catch (CompileAbortException e) {
-                    // The statement's location info isn't passed all the way down so change the error to make it more accurate
-                    e.Error.Location = statement.Location;
-                    DMCompiler.Emit(e.Error);
-                    return; // Don't spam the error that will continue to exist
-                } catch (CompileErrorException e) {
-                    //Retreat from the statement when there's an error
-                    DMCompiler.Emit(e.Error);
+                } catch (UnknownIdentifierException e) {
+                    DMCompiler.Emit(WarningCode.ItemDoesntExist, e.Location, $"Unknown identifier \"{e.Identifier}\"");
                 }
             }
         }
@@ -137,7 +123,9 @@ namespace DMCompiler.DM.Builders {
                     foreach (var declare in gregVar.Statements)
                         ProcessStatementVarDeclaration(declare);
                     break;
-                default: throw new CompileAbortException(statement.Location, "Invalid proc statement");
+                default:
+                    DMCompiler.ForcedError(statement.Location, $"Invalid proc statement {statement.GetType()}");
+                    break;
             }
         }
 
@@ -253,8 +241,10 @@ namespace DMCompiler.DM.Builders {
             }
 
             // oh no.
-            if (constant is null)
-                throw new CompileErrorException(statementSet.Location, $"'{attribute}' attribute must be a constant"); // FIXME: Manual promotion of errors would be cool here
+            if (constant is null) {
+                DMCompiler.Emit(WarningCode.BadExpression, statementSet.Location, $"'{attribute}' attribute must be a constant");
+                return;
+            }
 
             // Check if it was 'set x in y' or whatever
             // (which is illegal for everything except setting src to something)
@@ -303,23 +293,28 @@ namespace DMCompiler.DM.Builders {
                     break;
                 case "name":
                     if (constant is not Expressions.String nameStr) {
-                        throw new CompileErrorException(statementSet.Location, "name attribute must be a string");
+                        DMCompiler.Emit(WarningCode.BadExpression, constant.Location, "name attribute must be a string");
+                        break;
                     }
 
                     proc.VerbName = nameStr.Value;
                     break;
                 case "category":
-                    proc.VerbCategory = constant switch {
-                        Expressions.String str => str.Value,
-                        Expressions.Null => null,
-                        _ => throw new CompileErrorException(statementSet.Location, "category attribute must be a string or null")
-                    };
+                    if (constant is Expressions.String str) {
+                        proc.VerbCategory = str.Value;
+                    } else if (constant is Null) {
+                        proc.VerbCategory = null;
+                    } else {
+                        DMCompiler.Emit(WarningCode.BadExpression, constant.Location,
+                            "category attribute must be a string or null");
+                    }
 
                     break;
                 case "desc":
                     // TODO: verb.desc is supposed to be printed when you type the verb name and press F1. Check the ref for details.
                     if (constant is not Expressions.String descStr) {
-                        throw new CompileErrorException(statementSet.Location, "desc attribute must be a string");
+                        DMCompiler.Emit(WarningCode.BadExpression, constant.Location, "desc attribute must be a string");
+                        break;
                     }
 
                     proc.VerbDesc = descStr.Value;
@@ -327,8 +322,9 @@ namespace DMCompiler.DM.Builders {
                 case "invisibility":
                     // The ref says 0-101 for atoms and 0-100 for verbs
                     // BYOND doesn't clamp the actual var value but it does seem to treat out-of-range values as their extreme
-                    if (constant is not Expressions.Number invisNum) {
-                        throw new CompileErrorException(statementSet.Location, "invisibility attribute must be an int");
+                    if (constant is not Number invisNum) {
+                        DMCompiler.Emit(WarningCode.BadExpression, constant.Location, "invisibility attribute must be an int");
+                        break;
                     }
 
                     proc.Invisibility = Convert.ToSByte(Math.Clamp(MathF.Floor(invisNum.Value), 0f, 100f));
@@ -368,19 +364,14 @@ namespace DMCompiler.DM.Builders {
 
             DMExpression value;
             if (varDeclaration.Value != null) {
-                try {
-                    value = DMExpression.Create(dmObject, proc, varDeclaration.Value, varDeclaration.Type);
+                value = DMExpression.Create(dmObject, proc, varDeclaration.Value, varDeclaration.Type);
 
-                    if (!varDeclaration.ValType.MatchesType(value.ValType)) {
-                        DMCompiler.Emit(WarningCode.InvalidVarType, varDeclaration.Location,
-                            $"{varDeclaration.Name}: Invalid var value {value.ValType}, expected {varDeclaration.ValType}");
-                    }
-                } catch (CompileErrorException e) {
-                    DMCompiler.Emit(e.Error);
-                    value = new Expressions.Null(varDeclaration.Location);
+                if (!varDeclaration.ValType.MatchesType(value.ValType)) {
+                    DMCompiler.Emit(WarningCode.InvalidVarType, varDeclaration.Location,
+                        $"{varDeclaration.Name}: Invalid var value {value.ValType}, expected {varDeclaration.ValType}");
                 }
             } else {
-                value = new Expressions.Null(varDeclaration.Location);
+                value = new Null(varDeclaration.Location);
             }
 
             bool successful;
@@ -463,9 +454,8 @@ namespace DMCompiler.DM.Builders {
                     ProcessStatementVarDeclaration(new DMASTProcStatementVarDeclaration(statementFor.Location, decl.DeclPath, null, DMValueType.Anything));
                 }
 
-                var initializer = statementFor.Expression1 != null ? DMExpression.Create(dmObject, proc, statementFor.Expression1) : null;
-
                 if (statementFor.Expression2 != null || statementFor.Expression3 != null) {
+                    var initializer = statementFor.Expression1 != null ? DMExpression.Create(dmObject, proc, statementFor.Expression1) : null;
                     var comparator = statementFor.Expression2 != null ? DMExpression.Create(dmObject, proc, statementFor.Expression2) : null;
                     var incrementor = statementFor.Expression3 != null ? DMExpression.Create(dmObject, proc, statementFor.Expression3) : null;
 
@@ -473,6 +463,7 @@ namespace DMCompiler.DM.Builders {
                 } else {
                     switch (statementFor.Expression1) {
                         case DMASTAssign {LHS: DMASTVarDeclExpression decl, RHS: DMASTExpressionInRange range}: {
+                            var initializer = statementFor.Expression1 != null ? DMExpression.Create(dmObject, proc, statementFor.Expression1) : null;
                             var identifier = new DMASTIdentifier(decl.Location, decl.DeclPath.Path.LastElement);
                             var outputVar = DMExpression.Create(dmObject, proc, identifier);
 
@@ -510,6 +501,7 @@ namespace DMCompiler.DM.Builders {
                             break;
                         }
                         case DMASTVarDeclExpression vd: {
+                            var initializer = statementFor.Expression1 != null ? DMExpression.Create(dmObject, proc, statementFor.Expression1) : null;
                             var declInfo = new ProcVarDeclInfo(vd.DeclPath.Path);
                             var identifier = new DMASTIdentifier(vd.Location, declInfo.VarName);
                             var outputVar = DMExpression.Create(dmObject, proc, identifier);
@@ -802,14 +794,8 @@ namespace DMCompiler.DM.Builders {
 
                     foreach (DMASTExpression value in switchCaseValues.Values) {
                         Constant GetCaseValue(DMASTExpression expression) {
-                            Constant? constant = null;
-
-                            try {
-                                if (!DMExpression.TryConstant(dmObject, proc, expression, out constant))
-                                    DMCompiler.Emit(WarningCode.HardConstContext, expression.Location, "Expected a constant");
-                            } catch (CompileErrorException e) {
-                                DMCompiler.Emit(e.Error);
-                            }
+                            if (!DMExpression.TryConstant(dmObject, proc, expression, out var constant))
+                                DMCompiler.Emit(WarningCode.HardConstContext, expression.Location, "Expected a constant");
 
                             // Return 0 if unsuccessful so that we can continue compiling
                             return constant ?? new Number(expression.Location, 0.0f);

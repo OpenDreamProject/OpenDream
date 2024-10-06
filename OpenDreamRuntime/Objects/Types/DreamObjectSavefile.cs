@@ -40,7 +40,7 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// <summary>
     /// Real savefile location on the host OS
     /// </summary>
-    public DreamResource Resource = default!;
+    public DreamResource? Resource;
 
     /// <summary>
     /// The current savefile data holder - the root of the savefile tree
@@ -124,9 +124,22 @@ public sealed class DreamObjectSavefile : DreamObject {
         Savefiles.Add(this);
     }
 
-    protected override void HandleDeletion() {
+    protected override void HandleDeletion(bool possiblyThreaded) {
+        // SAFETY: Close() is not threadsafe and doesn't have reason to be.
+        if (possiblyThreaded) {
+            EnterIntoDelQueue();
+            return;
+        }
+
+        if (Deleted)
+            return;
+
+        if (Resource is null)
+            return; // Seemingly a long-standing issue, I don't know how to fix this, and it only now appears due to the fact objects always Del() now.
+                    // Why we can get here? who knows lol
+
         Close();
-        base.HandleDeletion();
+        base.HandleDeletion(possiblyThreaded);
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
@@ -138,7 +151,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                 value = _eof ? DreamValue.True : DreamValue.False;
                 return true;
             case "name":
-                value = new DreamValue(Resource.ResourcePath ?? "[no path]");
+                value = new DreamValue(Resource?.ResourcePath ?? "[no path]");
                 return true;
             case "dir":
                 value = new DreamValue(new SavefileDirList(ObjectTree.List.ObjectDefinition, this));
@@ -182,14 +195,14 @@ public sealed class DreamObjectSavefile : DreamObject {
         }
     }
 
-    public override DreamValue OperatorIndex(DreamValue index) {
+    public override DreamValue OperatorIndex(DreamValue index, DMProcState state) {
         if (!index.TryGetValueAsString(out var entryName))
             throw new Exception($"Invalid savefile index {index}");
 
         return GetSavefileValue(entryName);
     }
 
-    public override void OperatorIndexAssign(DreamValue index, DreamValue value) {
+    public override void OperatorIndexAssign(DreamValue index, DMProcState state, DreamValue value) {
         if (!index.TryGetValueAsString(out var entryName))
             throw new Exception($"Invalid savefile index {index}");
 
@@ -219,7 +232,7 @@ public sealed class DreamObjectSavefile : DreamObject {
             try {
                 savefile.Flush();
             } catch (Exception e) {
-                _sawmill.Error($"Error flushing savefile {savefile.Resource.ResourcePath}: {e}");
+                _sawmill.Error($"Error flushing savefile {savefile.Resource!.ResourcePath}: {e}");
             }
         }
         SavefilesToFlush.Clear();
@@ -227,14 +240,14 @@ public sealed class DreamObjectSavefile : DreamObject {
 
     public void Close() {
         Flush();
-        if (_isTemporary && Resource.ResourcePath != null) {
+        if (_isTemporary && Resource?.ResourcePath != null) {
             File.Delete(Resource.ResourcePath);
         }
         //check to see if the file is still in use by another savefile datum
-        if(Resource.ResourcePath != null) {
+        if(Resource?.ResourcePath != null) {
             var fineToDelete = true;
             foreach (var savefile in Savefiles) {
-                if (savefile == this || savefile.Resource.ResourcePath != Resource.ResourcePath) continue;
+                if (savefile == this || savefile.Resource!.ResourcePath != Resource.ResourcePath) continue;
                 fineToDelete = false;
                 break;
             }
@@ -246,8 +259,8 @@ public sealed class DreamObjectSavefile : DreamObject {
     }
 
     public void Flush() {
-        Resource.Clear();
-        Resource.Output(new DreamValue(JsonSerializer.Serialize<SFDreamJsonValue>(_rootNode)));
+        Resource!.Clear();
+        Resource!.Output(new DreamValue(JsonSerializer.Serialize(_rootNode)));
     }
 
     /// <summary>
@@ -462,7 +475,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                         //if this is a savefile, just return a filedata object with it encoded
                         savefile.Flush(); //flush the savefile to make sure the backing resource is up to date
                         return new SFDreamFileValue(){
-                            Name = savefile.Resource.ResourcePath,
+                            Name = savefile.Resource!.ResourcePath,
                             Ext = ".sav",
                             Length = savefile.Resource.ResourceData!.Length,
                             Crc32 = CalculateCrc32(savefile.Resource.ResourceData),

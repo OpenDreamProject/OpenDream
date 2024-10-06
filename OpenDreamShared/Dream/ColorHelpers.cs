@@ -29,7 +29,8 @@ public static class ColorHelpers {
 
     public enum ColorSpace {
         RGB = 0,
-        HSV = 1
+        HSV = 1,
+        HSL = 2
     }
 
     public static bool TryParseColor(string color, out Color colorOut, string defaultAlpha = "ff") {

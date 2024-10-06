@@ -1,6 +1,4 @@
 ﻿using DMCompiler.Bytecode;
-using System;
-using System.Collections.Generic;
 using DMCompiler.Compiler;
 using DMCompiler.Json;
 
@@ -146,20 +144,16 @@ internal sealed class DMObject {
     }
 
     public void CreateInitializationProc() {
-        if (InitializationProcExpressions.Count > 0 && InitializationProc == null) {
-            var init = DMObjectTree.CreateDMProc(this, null);
-            InitializationProc = init.Id;
-            init.Call(DMReference.SuperProc, DMCallArgumentsType.None, 0);
+        if (InitializationProcExpressions.Count <= 0 || InitializationProc != null)
+            return;
 
-            foreach (DMExpression expression in InitializationProcExpressions) {
-                try {
-                    init.DebugSource(expression.Location);
+        var init = DMObjectTree.CreateDMProc(this, null);
+        InitializationProc = init.Id;
+        init.Call(DMReference.SuperProc, DMCallArgumentsType.None, 0);
 
-                    expression.EmitPushValue(this, init);
-                } catch (CompileErrorException e) {
-                    DMCompiler.Emit(e.Error);
-                }
-            }
+        foreach (DMExpression expression in InitializationProcExpressions) {
+            init.DebugSource(expression.Location);
+            expression.EmitPushValue(this, init);
         }
     }
 
@@ -219,9 +213,8 @@ internal sealed class DMObject {
     }
 
     public bool IsSubtypeOf(DreamPath path) {
-        if (Path.IsDescendantOf(path)) return true;
-        if (Parent != null) return Parent.IsSubtypeOf(path);
-        return false;
+        if (path.Equals(Path)) return true;
+        return Parent != null && Parent.IsSubtypeOf(path);
     }
 
     public DMValueType GetDMValueType() {

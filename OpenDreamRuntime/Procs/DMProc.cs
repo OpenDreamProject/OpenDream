@@ -33,8 +33,8 @@ namespace OpenDreamRuntime.Procs {
 
         public DMProc(int id, TreeEntry owningType, ProcDefinitionJson json, string? name, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, DreamObjectTree objectTree, ProcScheduler procScheduler, ServerVerbSystem verbSystem)
             : base(id, owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbSrc, json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility, json.IsVerb) {
-            Bytecode = json.Bytecode ?? Array.Empty<byte>();
-            LocalNames = json.Locals;
+            Bytecode = json.Bytecode ?? [];
+            LocalNames = json.Locals ?? [];
             SourceInfo = json.SourceInfo;
             _maxStackSize = json.MaxStackSize;
             IsNullProc = CheckIfNullProc();
@@ -496,6 +496,9 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public void StartTryBlock(int catchPosition, int catchVarIndex = NoTryCatchVar) {
+            if (catchVarIndex != NoTryCatchVar)
+                catchVarIndex += ArgumentCount; // We're given a local var index so we need to account for our arguments
+
             _catchPosition.Push(catchPosition);
             _catchVarIndex.Push(catchVarIndex);
         }
@@ -539,7 +542,7 @@ namespace OpenDreamRuntime.Procs {
             _stackIndex = 0;
             _stack = null;
 
-            _dreamValuePool.Return(_localVariables);
+            _dreamValuePool.Return(_localVariables, true);
             _localVariables = null;
 
             _catchPosition.Clear();
@@ -760,7 +763,7 @@ namespace OpenDreamRuntime.Procs {
                     GetIndexReferenceValues(reference, out var index, out var indexing);
 
                     if (indexing.TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
-                        dreamObject.OperatorIndexAssign(index, value);
+                        dreamObject.OperatorIndexAssign(index, this, value);
                     } else {
                         ThrowCannotAssignListIndex(index, indexing);
                     }
@@ -824,7 +827,7 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.ListIndex: {
                     GetIndexReferenceValues(reference, out var index, out var indexing, peek);
 
-                    return GetIndex(indexing, index);
+                    return GetIndex(indexing, index, this);
                 }
                 default:
                     ThrowCannotGetValueOfReferenceType(reference);
@@ -913,7 +916,7 @@ namespace OpenDreamRuntime.Procs {
             throw new Exception($"Type {ownerObj.ObjectDefinition.Type} has no field called \"{field}\"");
         }
 
-        public DreamValue GetIndex(DreamValue indexing, DreamValue index) {
+        public DreamValue GetIndex(DreamValue indexing, DreamValue index, DMProcState state) {
             if (indexing.TryGetValueAsDreamList(out var listObj)) {
                 return listObj.GetValue(index);
             }
@@ -927,12 +930,13 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (indexing.TryGetValueAsDreamObject(out var dreamObject)) {
-                if (dreamObject != null)
-                    return dreamObject.OperatorIndex(index);
+                if (dreamObject != null) {
+                    return dreamObject.OperatorIndex(index, state);
+                }
             }
 
             ThrowCannotGetIndex(indexing, index);
-            return DreamValue.Null;
+            return default;
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -974,10 +978,12 @@ namespace OpenDreamRuntime.Procs {
                 if (info.Offset > _pc) {
                     break;
                 }
-                if (info.Remove is int remove) {
+
+                if (info.Remove is { } remove) {
                     count -= remove;
                 }
-                if (info.Add is string add) {
+
+                if (info.Add is { } add) {
                     names[count++] = add;
                 }
             }

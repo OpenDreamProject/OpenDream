@@ -13,11 +13,13 @@ public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppeara
     public override MsgGroups MsgGroup => MsgGroups.EntityEvent;
 
     private enum Property : byte {
+        Name,
         Icon,
         IconState,
         Direction,
         DoesntInheritDirection,
         PixelOffset,
+        PixelOffset2,
         Color,
         Alpha,
         GlideSize,
@@ -61,6 +63,9 @@ public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppeara
 
             while (property != Property.End) {
                 switch (property) {
+                    case Property.Name:
+                        appearance.Name = buffer.ReadString();
+                        break;
                     case Property.Id:
                         appearanceId = buffer.ReadVariableInt32();
                         break;
@@ -78,6 +83,9 @@ public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppeara
                         break;
                     case Property.PixelOffset:
                         appearance.PixelOffset = (buffer.ReadVariableInt32(), buffer.ReadVariableInt32());
+                        break;
+                    case Property.PixelOffset2:
+                        appearance.PixelOffset2 = (buffer.ReadVariableInt32(), buffer.ReadVariableInt32());
                         break;
                     case Property.Color:
                         appearance.Color = buffer.ReadColor();
@@ -217,6 +225,11 @@ public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppeara
 
             lastId = pair.Key;
 
+            if (appearance.Name != IconAppearance.Default.Name) {
+                buffer.Write((byte)Property.Name);
+                buffer.Write(appearance.Name);
+            }
+
             if (appearance.Icon != null) {
                 buffer.Write((byte)Property.Icon);
                 buffer.WriteVariableInt32(appearance.Icon.Value);
@@ -240,6 +253,12 @@ public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppeara
                 buffer.Write((byte)Property.PixelOffset);
                 buffer.WriteVariableInt32(appearance.PixelOffset.X);
                 buffer.WriteVariableInt32(appearance.PixelOffset.Y);
+            }
+
+            if (appearance.PixelOffset2 != IconAppearance.Default.PixelOffset2) {
+                buffer.Write((byte)Property.PixelOffset2);
+                buffer.WriteVariableInt32(appearance.PixelOffset2.X);
+                buffer.WriteVariableInt32(appearance.PixelOffset2.Y);
             }
 
             if (appearance.Color != IconAppearance.Default.Color) {

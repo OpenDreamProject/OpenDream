@@ -94,17 +94,12 @@ public sealed class EntryPoint : GameClient {
                 "Ok", null, null, null);
     }
 
-    protected override void Dispose(bool disposing) {
-        _dreamResource.Shutdown();
-    }
-
     public override void Update(ModUpdateLevel level, FrameEventArgs frameEventArgs) {
         switch (level) {
             case ModUpdateLevel.FramePostEngine:
                 _dreamInterface.FrameUpdate(frameEventArgs);
                 break;
             case ModUpdateLevel.PostEngine:
-                _soundEngine.StopFinishedChannels();
                 break;
         }
     }

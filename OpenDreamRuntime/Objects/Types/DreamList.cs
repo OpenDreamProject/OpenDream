@@ -107,6 +107,7 @@ public class DreamList : DreamObject {
         if (key.TryGetValueAsInteger(out int keyInteger)) {
             return _values[keyInteger - 1]; //1-indexed
         }
+
         if (_associativeValues == null)
             return DreamValue.Null;
 
@@ -239,15 +240,16 @@ public class DreamList : DreamObject {
     }
 
     #region Operators
-    public override DreamValue OperatorIndex(DreamValue index) {
+
+    public override DreamValue OperatorIndex(DreamValue index, DMProcState state) {
         return GetValue(index);
     }
 
-    public override void OperatorIndexAssign(DreamValue index, DreamValue value) {
+    public override void OperatorIndexAssign(DreamValue index, DMProcState state, DreamValue value) {
         SetValue(index, value);
     }
 
-    public override ProcStatus OperatorAdd(DreamValue b, DMProcState state, out DreamValue result) {
+    public override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
         DreamList listCopy = CreateCopy();
 
         if (b.TryGetValueAsDreamList(out var bList)) {
@@ -262,11 +264,10 @@ public class DreamList : DreamObject {
             listCopy.AddValue(b);
         }
 
-        result = new DreamValue(listCopy);
-        return ProcStatus.Continue;
+        return new DreamValue(listCopy);
     }
 
-    public override ProcStatus OperatorSubtract(DreamValue b, DMProcState state, out DreamValue result) {
+    public override DreamValue OperatorSubtract(DreamValue b, DMProcState state) {
         DreamList listCopy = CreateCopy();
 
         if (b.TryGetValueAsDreamList(out var bList)) {
@@ -277,11 +278,10 @@ public class DreamList : DreamObject {
             listCopy.RemoveValue(b);
         }
 
-        result = new DreamValue(listCopy);
-        return ProcStatus.Continue;
+        return new DreamValue(listCopy);
     }
 
-    public override ProcStatus OperatorOr(DreamValue b, DMProcState state, out DreamValue result) {
+    public override DreamValue OperatorOr(DreamValue b, DMProcState state) {
         DreamList list;
 
         if (b.TryGetValueAsDreamList(out var bList)) {  // List | List
@@ -291,8 +291,7 @@ public class DreamList : DreamObject {
             list.AddValue(b);
         }
 
-        result = new DreamValue(list);
-        return ProcStatus.Continue;
+        return new DreamValue(list);
     }
 
     public override DreamValue OperatorAppend(DreamValue b) {
@@ -378,26 +377,23 @@ public class DreamList : DreamObject {
 
         return DreamValue.True;
     }
+
     #endregion Operators
 }
 
 // /datum.vars list
-sealed class DreamListVars : DreamList {
-    private readonly DreamObject _dreamObject;
+internal sealed class DreamListVars(DreamObjectDefinition listDef, DreamObject dreamObject) : DreamList(listDef, 0) {
+    public readonly DreamObject DreamObject = dreamObject;
 
     public override bool IsAssociative =>
         true; // We don't use the associative array but, yes, we behave like an associative list
 
-    public DreamListVars(DreamObjectDefinition listDef, DreamObject dreamObject) : base(listDef, 0) {
-        _dreamObject = dreamObject;
-    }
-
     public override int GetLength() {
-        return _dreamObject.GetVariableNames().Concat(_dreamObject.ObjectDefinition.GlobalVariables.Keys).Count();
+        return DreamObject.GetVariableNames().Concat(DreamObject.ObjectDefinition.GlobalVariables.Keys).Count();
     }
 
     public override List<DreamValue> GetValues() {
-        return _dreamObject.GetVariableNames().Concat(_dreamObject.ObjectDefinition.GlobalVariables.Keys).Select(name => new DreamValue(name)).ToList();
+        return DreamObject.GetVariableNames().Concat(DreamObject.ObjectDefinition.GlobalVariables.Keys).Select(name => new DreamValue(name)).ToList();
     }
 
     public override bool ContainsKey(DreamValue value) {
@@ -405,7 +401,7 @@ sealed class DreamListVars : DreamList {
             return false;
         }
 
-        return _dreamObject.HasVariable(varName);
+        return DreamObject.HasVariable(varName);
     }
 
     public override bool ContainsValue(DreamValue value) {
@@ -417,9 +413,9 @@ sealed class DreamListVars : DreamList {
             throw new Exception($"Invalid var index {key}");
         }
 
-        if (!_dreamObject.TryGetVariable(varName, out var objectVar)) {
+        if (!DreamObject.TryGetVariable(varName, out var objectVar)) {
             throw new Exception(
-                $"Cannot get value of undefined var \"{key}\" on type {_dreamObject.ObjectDefinition.Type}");
+                $"Cannot get value of undefined var \"{key}\" on type {DreamObject.ObjectDefinition.Type}");
         }
 
         return objectVar;
@@ -427,23 +423,19 @@ sealed class DreamListVars : DreamList {
 
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
         if (key.TryGetValueAsString(out var varName)) {
-            if (!_dreamObject.HasVariable(varName)) {
+            if (!DreamObject.HasVariable(varName)) {
                 throw new Exception(
-                    $"Cannot set value of undefined var \"{varName}\" on type {_dreamObject.ObjectDefinition.Type}");
+                    $"Cannot set value of undefined var \"{varName}\" on type {DreamObject.ObjectDefinition.Type}");
             }
 
-            _dreamObject.SetVariable(varName, value);
+            DreamObject.SetVariable(varName, value);
         } else {
             throw new Exception($"Invalid var index {key}");
         }
     }
 
-    public override DreamValue Initial(string name) {
-        return _dreamObject.Initial(name);
-    }
-
     public override bool IsSaved(string name) {
-        return _dreamObject.IsSaved(name);
+        return DreamObject.IsSaved(name);
     }
 }
 
@@ -762,13 +754,13 @@ public sealed class DreamOverlaysList : DreamList {
             overlay = new IconAppearance() {
                 IconState = iconState
             };
+            overlay.Icon ??= defaultIcon;
         } else if (atomManager.TryCreateAppearanceFrom(value, out var overlayAppearance)) {
             overlay = overlayAppearance;
         } else {
             return null; // Not a valid overlay
         }
 
-        overlay.Icon ??= defaultIcon;
         return overlay;
     }
 }
@@ -835,6 +827,8 @@ public sealed class DreamVisContentsList : DreamList {
                 return; // vis_contents cannot contain duplicates
             _visContents.Add(turf);
             entity = EntityUid.Invalid; // TODO: Support turfs in vis_contents
+        } else if (value == DreamValue.Null) {
+            return; // vis_contents cannot contain nulls
         } else {
             throw new Exception($"Cannot add {value} to a vis_contents list");
         }
@@ -924,6 +918,19 @@ public sealed class DreamFilterList : DreamList {
         return new DreamValue(filterObject);
     }
 
+    public override List<DreamValue> GetValues() {
+        IconAppearance appearance = GetAppearance();
+        List<DreamValue> filterList = new List<DreamValue>(appearance.Filters.Count);
+
+        foreach (var filter in appearance.Filters) {
+            DreamObjectFilter filterObject = ObjectTree.CreateObject<DreamObjectFilter>(ObjectTree.Filter);
+            filterObject.Filter = filter;
+            filterList.Add(new DreamValue(filterObject));
+        }
+
+        return filterList;
+    }
+
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
         if (!value.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject) &&!value.IsNull)
             throw new Exception($"Cannot set value of filter list to {value}");
@@ -989,6 +996,10 @@ public sealed class ClientScreenList : DreamList {
         return _screenObjects[screenIndex - 1];
     }
 
+    public override List<DreamValue> GetValues() {
+        return _screenObjects;
+    }
+
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
         throw new Exception("Cannot write to an index of a screen list");
     }
@@ -1046,6 +1057,10 @@ public sealed class ClientImagesList : DreamList {
         return _imageObjects[imageIndex - 1];
     }
 
+    public override List<DreamValue> GetValues() {
+        return _imageObjects;
+    }
+
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
         throw new Exception("Cannot write to an index of a client images list");
     }
@@ -1086,20 +1101,14 @@ public sealed class ClientImagesList : DreamList {
 
 // world.contents list
 // Operates on a list of all atoms
-public sealed class WorldContentsList : DreamList {
-    private readonly AtomManager _atomManager;
-
-    public WorldContentsList(DreamObjectDefinition listDef, AtomManager atomManager) : base(listDef, 0) {
-        _atomManager = atomManager;
-    }
-
+public sealed class WorldContentsList(DreamObjectDefinition listDef, AtomManager atomManager) : DreamList(listDef, 0) {
     public override DreamValue GetValue(DreamValue key) {
         if (!key.TryGetValueAsInteger(out var index))
             throw new Exception($"Invalid index into world contents list: {key}");
-        if (index < 1 || index > _atomManager.AtomCount)
+        if (index < 1 || index > atomManager.AtomCount)
             throw new Exception($"Out of bounds index on world contents list: {index}");
 
-        var element = _atomManager.EnumerateAtoms().ElementAt(index - 1); // Ouch
+        var element = atomManager.EnumerateAtoms().ElementAt(index - 1); // Ouch
         return new DreamValue(element);
     }
 
@@ -1120,7 +1129,7 @@ public sealed class WorldContentsList : DreamList {
     }
 
     public override int GetLength() {
-        return _atomManager.AtomCount;
+        return atomManager.AtomCount;
     }
 }
 
@@ -1350,7 +1359,6 @@ internal sealed class SavefileDirList : DreamList {
         if (!value.TryGetValueAsString(out var valueStr))
             throw new Exception($"Invalid value on savefile dir name: {value}");
         _save.AddSavefileDir(valueStr);
-
     }
 
     public override void RemoveValue(DreamValue value) {

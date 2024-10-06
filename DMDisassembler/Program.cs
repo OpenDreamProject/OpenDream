@@ -19,8 +19,7 @@ internal class Program {
     static void Main(string[] args) {
         if (args.Length == 0 || Path.GetExtension(args[0]) != ".json") {
             Console.WriteLine("The json output of DMCompiler must be provided as an argument");
-
-            return;
+            Environment.Exit(1);
         }
 
         string compiledJsonText = File.ReadAllText(args[0]);
@@ -30,11 +29,26 @@ internal class Program {
         LoadAllProcs();
         LoadAllTypes();
 
+        if (args.Length == 2 && args[1] == "crash-on-test") {
+            // crash-on-test is a special mode used by CI to
+            // verify that an entire codebase can be disassembled without errors
+            int errors = TestAll();
+
+            if (errors > 0) {
+                Console.WriteLine($"Detected {errors} errors. Exiting.");
+                Environment.Exit(1);
+            } else {
+                Console.WriteLine("No errors detected. Exiting cleanly.");
+                Environment.Exit(0);
+            }
+        }
+
         bool acceptingCommands = true;
         while (acceptingCommands) {
             if (_selectedType != null) {
                 Console.Write(_selectedType.Path);
             }
+
             Console.Write("> ");
 
             string input = Console.ReadLine();
@@ -42,10 +56,12 @@ internal class Program {
                 // EOF
                 break;
             }
+
             string[] split = input.Split(" ");
             string command = split[0].ToLower();
 
             switch (command) {
+                case "quit":
                 case "q": acceptingCommands = false; break;
                 case "search": Search(split); break;
                 case "sel":
@@ -54,9 +70,22 @@ internal class Program {
                 case "d":
                 case "decompile": Decompile(split); break;
                 case "test-all": TestAll(); break;
+                case "help": PrintHelp(); break;
                 default: Console.WriteLine("Invalid command \"" + command + "\""); break;
             }
         }
+    }
+
+    private static void PrintHelp() {
+        Console.WriteLine("DM Disassembler for OpenDream");
+        Console.WriteLine("Commands and arguments:");
+        Console.WriteLine("help                      : Show this help");
+        Console.WriteLine("quit|q                    : Exits the disassembler");
+        Console.WriteLine("search type|proc [name]   : Search for a particular typepath or a proc on a selected type");
+        Console.WriteLine("select|sel                : Select a typepath to run further commands on");
+        Console.WriteLine("list procs|globals        : List all globals, or all procs on a selected type");
+        Console.WriteLine("decompile|d [name]        : Decompiles the proc on the selected type");
+        Console.WriteLine("test-all                  : Tries to decompile every single proc to check for issues with this disassembler; not for production use");
     }
 
     private static void Search(string[] args) {
@@ -198,7 +227,7 @@ internal class Program {
         }
     }
 
-    private static void TestAll() {
+    private static int TestAll() {
         int errored = 0, all = 0;
         foreach (DMProc proc in Procs) {
             string value = proc.Decompile();
@@ -207,8 +236,11 @@ internal class Program {
                 Console.WriteLine(value);
                 ++errored;
             }
+
             ++all;
         }
+
         Console.WriteLine($"Errors in {errored}/{all} procs");
+        return errored;
     }
 }

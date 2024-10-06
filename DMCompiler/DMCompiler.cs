@@ -3,8 +3,6 @@ using DMCompiler.Compiler.DM;
 using DMCompiler.Compiler.DMM;
 using DMCompiler.Compiler.DMPreprocessor;
 using DMCompiler.DM;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -23,6 +21,7 @@ namespace DMCompiler;
 public static class DMCompiler {
     public static int ErrorCount;
     public static int WarningCount;
+    public static HashSet<WarningCode> UniqueEmissions = new();
     public static DMCompilerSettings Settings;
     public static IReadOnlyList<string> ResourceDirectories => _resourceDirectories;
 
@@ -33,6 +32,7 @@ public static class DMCompiler {
     public static bool Compile(DMCompilerSettings settings) {
         ErrorCount = 0;
         WarningCount = 0;
+        UniqueEmissions.Clear();
         Settings = settings;
         if (Settings.Files == null) return false;
         Config.Reset();
@@ -189,6 +189,7 @@ public static class DMCompiler {
                 break;
         }
 
+        UniqueEmissions.Add(emission.Code);
         Console.WriteLine(emission);
     }
 
@@ -233,7 +234,7 @@ public static class DMCompiler {
         if (Settings.SuppressUnimplementedWarnings)
             return;
 
-        ForcedWarning(loc, message);
+        Emit(WarningCode.UnimplementedAccess, loc, message);
     }
 
     public static void VerbosePrint(string message) {
@@ -266,7 +267,7 @@ public static class DMCompiler {
 
     private static string SaveJson(List<DreamMapJson> maps, string interfaceFile, string outputFile) {
         var jsonRep = DMObjectTree.CreateJsonRepresentation();
-        DreamCompiledJson compiledDream = new DreamCompiledJson {
+        var compiledDream = new DreamCompiledJson {
             Metadata = new DreamCompiledJsonMetadata { Version = OpcodeVerifier.GetOpcodesHash() },
             Strings = DMObjectTree.StringTable,
             Resources = DMObjectTree.Resources.ToArray(),
@@ -282,12 +283,16 @@ public static class DMCompiler {
             compiledDream.GlobalInitProc = DMObjectTree.GlobalInitProc.GetJsonRepresentation();
 
         if (DMObjectTree.Globals.Count > 0) {
-            GlobalListJson globalListJson = new GlobalListJson();
-            globalListJson.GlobalCount = DMObjectTree.Globals.Count;
-            globalListJson.Names = new List<string>(globalListJson.GlobalCount);
+            GlobalListJson globalListJson = new GlobalListJson {
+                GlobalCount = DMObjectTree.Globals.Count,
+                Names = new(),
+                Globals = new()
+            };
+
+            globalListJson.Names.EnsureCapacity(globalListJson.GlobalCount);
 
             // Approximate capacity (4/285 in tgstation, ~3%)
-            globalListJson.Globals = new Dictionary<int, object>((int) (DMObjectTree.Globals.Count * 0.03));
+            globalListJson.Globals.EnsureCapacity((int)(DMObjectTree.Globals.Count * 0.03));
 
             for (int i = 0; i < DMObjectTree.Globals.Count; i++) {
                 DMVariable global = DMObjectTree.Globals[i];
@@ -300,6 +305,7 @@ public static class DMCompiler {
                     globalListJson.Globals.Add(i, globalJson);
                 }
             }
+
             compiledDream.Globals = globalListJson;
         }
 

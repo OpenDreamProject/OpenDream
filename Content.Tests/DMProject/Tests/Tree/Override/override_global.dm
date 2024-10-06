@@ -1,4 +1,4 @@
-// COMPILE ERROR
+// COMPILE ERROR OD0406
 
 /turf/C = 4
 /datum/var/const/C = 5

@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.IO;
 using DMCompiler.Bytecode;
 using DMCompiler.Compiler;
@@ -193,10 +191,12 @@ internal class AnnotatedBytecodeSerializer {
             case DMReference.Type.Self:
             case DMReference.Type.Args:
             case DMReference.Type.Usr:
+            case DMReference.Type.Invalid:
                 break;
 
             default:
-                throw new CompileAbortException(Location.Internal, $"Invalid reference type {reference.RefType}");
+                DMCompiler.ForcedError(_location ?? Location.Unknown, $"Encountered unknown reference type {reference.RefType}");
+                break;
         }
     }
 

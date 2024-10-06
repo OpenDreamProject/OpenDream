@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -308,15 +307,18 @@ internal sealed class DMPreprocessorLexer {
 
                 if (isLong) {
                     bool nextCharCanTerm = false;
-                    do {
-                        c = Advance();
 
-                        if(nextCharCanTerm && c == '}')
+                    Advance();
+                    do {
+                        c = GetCurrent();
+
+                        if (nextCharCanTerm && c == '}')
                             break;
 
                         if (HandleLineEnd()) {
                             TokenTextBuilder.Append('\n');
                         } else {
+                            Advance();
                             TokenTextBuilder.Append(c);
                             nextCharCanTerm = false;
                         }
@@ -336,7 +338,20 @@ internal sealed class DMPreprocessorLexer {
                     Advance();
 
                 string text = TokenTextBuilder.ToString();
-                string value = isLong ? text.Substring(3, text.Length - 5) : text.Substring(2, text.Length - 3);
+                string value;
+
+                if (isLong) {
+                    // Long strings ignore a newline immediately after the @{" and before the "}
+                    if (TokenTextBuilder[3] == '\n')
+                        TokenTextBuilder.Remove(3, 1);
+                    if (TokenTextBuilder[^3] == '\n')
+                        TokenTextBuilder.Remove(TokenTextBuilder.Length - 3, 1);
+
+                    value = TokenTextBuilder.ToString(3, TokenTextBuilder.Length - 5);
+                } else {
+                    value = TokenTextBuilder.ToString(2, TokenTextBuilder.Length - 3);
+                }
+
                 return CreateToken(TokenType.DM_Preproc_ConstantString, text, value);
             }
             case '\'':

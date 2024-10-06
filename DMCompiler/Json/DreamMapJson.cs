@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace DMCompiler.Json;
+﻿namespace DMCompiler.Json;
 
 public sealed class DreamMapJson {
     public int MaxX { get; set; }
@@ -11,15 +8,11 @@ public sealed class DreamMapJson {
     public List<MapBlockJson> Blocks { get; set; } = new();
 }
 
-public sealed class CellDefinitionJson {
-    public string Name { get; set; }
+public sealed class CellDefinitionJson(string name) {
+    public string Name { get; set; } = name;
     public MapObjectJson Turf { get; set; }
-    public MapObjectJson Area { get; set; }
+    public MapObjectJson? Area { get; set; }
     public List<MapObjectJson> Objects { get; set; } = new();
-
-    public CellDefinitionJson(string name) {
-        Name = name;
-    }
 }
 
 public sealed class MapObjectJson(int type) {

@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using DMCompiler.Bytecode;
 
@@ -16,7 +14,7 @@ internal interface IPeepholeOptimization {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static AnnotatedBytecodeInstruction GetInstructionAndValue(IAnnotatedBytecode input, out float value, int argIndex = 0) {
         AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input);
-        value = ((firstInstruction.GetArgs()[argIndex] as AnnotatedBytecodeFloat)!).Value;
+        value = firstInstruction.GetArg<AnnotatedBytecodeFloat>(argIndex).Value;
         return firstInstruction;
     }
 

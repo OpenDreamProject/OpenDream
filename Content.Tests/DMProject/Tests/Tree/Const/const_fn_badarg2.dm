@@ -1,4 +1,4 @@
-// COMPILE ERROR
+// COMPILE ERROR OD0500
 
 /proc/somered()
 	return 127

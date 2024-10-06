@@ -26,7 +26,7 @@ public static class DMIParser {
 
     public sealed class ParsedDMIDescription {
         public int Width, Height;
-        public Dictionary<string, ParsedDMIState> States;
+        public Dictionary<string, ParsedDMIState> States = new();
 
         /// <summary>
         /// Gets the requested state, or the default if it doesn't exist
@@ -73,7 +73,7 @@ public static class DMIParser {
     }
 
     public sealed class ParsedDMIState {
-        public string Name;
+        public string Name = string.Empty;
         public bool Loop = true;
         public bool Rewind = false;
 
@@ -273,13 +273,10 @@ public static class DMIParser {
 
             var desc = new ParsedDMIDescription() {
                 Width = (int)imageSize.Value.X,
-                Height = (int)imageSize.Value.Y,
-                States = new()
+                Height = (int)imageSize.Value.Y
             };
 
-            var state = new ParsedDMIState() {
-                Name = string.Empty
-            };
+            var state = new ParsedDMIState();
 
             var frame = new ParsedDMIFrame() {
                 X = 0,
@@ -297,14 +294,12 @@ public static class DMIParser {
 
     private static ParsedDMIDescription ParseDMIDescription(string dmiDescription, uint imageWidth) {
         ParsedDMIDescription description = new ParsedDMIDescription();
-        ParsedDMIState currentState = null;
+        ParsedDMIState? currentState = null;
         int currentFrameX = 0;
         int currentFrameY = 0;
         int currentStateDirectionCount = 1;
         int currentStateFrameCount = 1;
-        float[] currentStateFrameDelays = null;
-
-        description.States = new Dictionary<string, ParsedDMIState>();
+        float[]? currentStateFrameDelays = null;
 
         string[] lines = dmiDescription.Split("\n");
         foreach (string line in lines) {
@@ -385,9 +380,11 @@ public static class DMIParser {
 
                         break;
                     case "loop":
+                        if (currentState is null) break;
                         currentState.Loop = (int.Parse(value) == 0);
                         break;
                     case "rewind":
+                        if (currentState is null) break;
                         currentState.Rewind = (int.Parse(value) == 1);
                         break;
                     case "movement":
@@ -403,6 +400,8 @@ public static class DMIParser {
                 throw new Exception($"Invalid line in DMI description: \"{line}\"");
             }
         }
+
+        if (currentState is null) return description;
 
         for (int i = 0; i < currentStateDirectionCount; i++) {
             ParsedDMIFrame[] frames = new ParsedDMIFrame[currentStateFrameCount];

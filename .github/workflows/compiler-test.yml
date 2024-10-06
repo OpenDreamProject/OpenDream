@@ -28,10 +28,14 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 8.0.100
-    - name: Install dependencies
+    - name: Install compiler dependencies
       run: dotnet restore main/DMCompiler/DMCompiler.csproj
-    - name: Build
+    - name: Install disassembler dependencies
+      run: dotnet restore main/DMDisassembler/DMDisassembler.csproj
+    - name: Build compiler
       run: dotnet build main/DMCompiler/DMCompiler.csproj --property WarningLevel=0 --configuration Release --no-restore /m
+    - name: Build disassembler
+      run: dotnet build main/DMDisassembler/DMDisassembler.csproj --property WarningLevel=0 --configuration Release --no-restore /m
     - name: Compile TestGame
       run: main\bin\DMCompiler\DMCompiler.exe main\TestGame\environment.dme --suppress-unimplemented
     - name: Checkout /tg/station Master
@@ -42,6 +46,8 @@ jobs:
         path: tg
     - name: Compile /tg/station Master
       run: main\bin\DMCompiler\DMCompiler.exe tg\tgstation.dme --suppress-unimplemented
+    - name: Disassemble /tg/station Master
+      run: main\bin\DMDisassembler\DMDisassembler.exe tg\tgstation.json crash-on-error
     - name: Checkout Goonstation Master
       uses: actions/checkout@v2
       with:
@@ -68,3 +74,19 @@ jobs:
         path: nebula
     - name: Compile Nebula Dev
       run: main\bin\DMCompiler\DMCompiler.exe nebula\nebula.dme --suppress-unimplemented
+    - name: Checkout /vg/station Master
+      uses: actions/checkout@v2
+      with:
+        repository: vgstation-coders/vgstation13
+        ref: Bleeding-Edge
+        path: vg
+    - name: Compile /vg/station Master
+      run: main\bin\DMCompiler\DMCompiler.exe vg\vgstation13.dme --suppress-unimplemented
+    - name: Checkout CM Master
+      uses: actions/checkout@v2
+      with:
+        repository: cmss13-devs/cmss13
+        ref: master
+        path: cm
+    - name: Compile CM Master
+      run: main\bin\DMCompiler\DMCompiler.exe cm\colonialmarines.dme --suppress-unimplemented

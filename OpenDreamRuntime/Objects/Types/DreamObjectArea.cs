@@ -110,9 +110,9 @@ public sealed class DreamObjectArea : DreamObjectAtom {
             if (_cachedX != null) {
                 if (turf.Z > _cachedZ)
                     continue;
-                if (turf.Y > _cachedY)
-                    continue;
-                if (turf.X > _cachedX)
+
+                int index = turf.Y * DreamMapManager.Size.X + turf.X;
+                if (index >= _cachedY * DreamMapManager.Size.X + _cachedX)
                     continue;
             }
 

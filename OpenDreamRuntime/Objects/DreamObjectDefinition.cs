@@ -60,7 +60,7 @@ public sealed class DreamObjectDefinition {
     public FrozenSet<string> ConstVariables = FrozenSet<string>.Empty;
 
     // Contains hashes of variables that are tagged /tmp.
-    public HashSet<string>? TmpVariables = null;
+    public FrozenSet<string> TmpVariables = FrozenSet<string>.Empty;
 
     public DreamObjectDefinition(DreamObjectDefinition copyFrom) {
         DreamManager = copyFrom.DreamManager;
@@ -85,7 +85,7 @@ public sealed class DreamObjectDefinition {
         Variables = new Dictionary<string, DreamValue>(copyFrom.Variables);
         GlobalVariables = copyFrom.GlobalVariables;
         ConstVariables = copyFrom.ConstVariables;
-        TmpVariables = copyFrom.TmpVariables is not null ? new HashSet<string>(copyFrom.TmpVariables) : null;
+        TmpVariables = copyFrom.TmpVariables;
         Procs = new Dictionary<string, int>(copyFrom.Procs);
         OverridingProcs = new Dictionary<string, int>(copyFrom.OverridingProcs);
         if (copyFrom.Verbs != null)
@@ -119,8 +119,7 @@ public sealed class DreamObjectDefinition {
             if (Parent != ObjectTree.Root.ObjectDefinition) // Don't include root-level globals
                 GlobalVariables = Parent.GlobalVariables;
             ConstVariables = Parent.ConstVariables;
-            if (Parent.TmpVariables != null)
-                TmpVariables = new HashSet<string>(Parent.TmpVariables);
+            TmpVariables = Parent.TmpVariables;
         }
     }
 

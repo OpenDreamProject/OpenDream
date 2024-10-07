@@ -1187,13 +1187,8 @@ public sealed class TurfContentsList : DreamList {
 }
 
 // area.contents list
-public sealed class AreaContentsList : DreamList {
-    private readonly DreamObjectArea _area;
+public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectArea area) : DreamList(listDef, 0) {
     private readonly List<DreamObjectTurf> _turfs = new();
-
-    public AreaContentsList(DreamObjectDefinition listDef, DreamObjectArea area) : base(listDef, 0) {
-        _area = area;
-    }
 
     public override DreamValue GetValue(DreamValue key) {
         if (!key.TryGetValueAsInteger(out var index))
@@ -1238,14 +1233,16 @@ public sealed class AreaContentsList : DreamList {
         if (!value.TryGetValueAsDreamObject<DreamObjectTurf>(out var turf))
             throw new Exception($"Cannot add {value} to area contents");
 
-        turf.Cell.Area = _area;
-
-        // TODO: Actually keep track of every turf in an area, not just which ones have been added by DM through .contents
+        turf.Cell.Area = area;
         _turfs.Add(turf);
     }
 
     public override void RemoveValue(DreamValue value) {
-        // TODO
+        if (!value.TryGetValueAsDreamObject<DreamObjectTurf>(out var turf))
+            throw new Exception($"Cannot remove {value} from area contents");
+
+        _turfs.Remove(turf); // Remove first, in case the new area (default) is still this area
+        turf.Cell.Area = DreamMapManager.DefaultArea;
     }
 
     public override void Cut(int start = 1, int end = 0) {

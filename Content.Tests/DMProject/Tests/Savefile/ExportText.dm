@@ -1,8 +1,8 @@
-/obj/savetest
-	var/obj/savetest/recurse = null
+/datum/savetest
+	var/datum/savetest/recurse = null
 
 /proc/RunTest()
-	var/obj/savetest/O = new() //create a test object
+	var/datum/savetest/O = new() //create a test object
 	O.name = "test"
 	//O.recurse = O //TODO
 

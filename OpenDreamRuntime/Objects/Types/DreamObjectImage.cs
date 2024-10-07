@@ -38,6 +38,7 @@ public sealed class DreamObjectImage : DreamObject {
         //TODO this means we send all mutable appearances to clients, even though we don't send the entity they're attached to
         Entity = EntityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace)); //spawning an entity in nullspace means it never actually gets sent to any clients until it's placed on the map, or it gets a PVS override
         SpriteComponent = EntityManager.AddComponent<DMISpriteComponent>(Entity);
+        AtomManager.SetSpriteAppearance((Entity, SpriteComponent), AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
     }
 
     public override void Initialize(DreamProcArguments args) {
@@ -47,7 +48,7 @@ public sealed class DreamObjectImage : DreamObject {
         IconAppearance? iconAppearance;
         if (icon.IsNull || !AtomManager.TryCreateAppearanceFrom(icon, out iconAppearance)) {
             // Use a default appearance, but log a warning about it if icon wasn't null
-            iconAppearance = AtomManager.GetAppearanceFromDefinition(ObjectDefinition);
+            iconAppearance = AtomManager.MustGetAppearance(this)!.ToMutable(); //object def appearance is created in the constructor
             if (!icon.IsNull)
                 Logger.GetSawmill("opendream.image")
                     .Warning($"Attempted to create an /image from {icon}. This is invalid and a default image was created instead.");

@@ -30,6 +30,7 @@ public class DreamObjectMovable : DreamObjectAtom {
     public DreamObjectMovable(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
         Entity = AtomManager.CreateMovableEntity(this);
         SpriteComponent = EntityManager.GetComponent<DMISpriteComponent>(Entity);
+        AtomManager.SetSpriteAppearance((Entity, SpriteComponent), AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
         _transformComponent = EntityManager.GetComponent<TransformComponent>(Entity);
     }
 

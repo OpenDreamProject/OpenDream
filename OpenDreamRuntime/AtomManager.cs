@@ -474,22 +474,22 @@ public sealed class AtomManager {
     public ImmutableIconAppearance? MustGetAppearance(DreamObject atom) {
         return atom switch {
             DreamObjectTurf turf => AppearanceSystem!.MustGetAppearance(turf.AppearanceId),
-            DreamObjectMovable movable => AppearanceSystem!.MustGetAppearance(movable.SpriteComponent.AppearanceId.Value),
+            DreamObjectMovable movable => AppearanceSystem!.MustGetAppearance(movable.SpriteComponent.AppearanceId!.Value),
             DreamObjectArea area => AppearanceSystem!.MustGetAppearance(area.AppearanceId),
-            DreamObjectImage image => AppearanceSystem!.MustGetAppearance(image.SpriteComponent.AppearanceId.Value),
+            DreamObjectImage image => AppearanceSystem!.MustGetAppearance(image.SpriteComponent.AppearanceId!.Value),
             _ => throw new Exception($"Cannot get appearance of {atom}")
         };
     }
 
     /// <summary>
-    /// Optionally looks up for an appearance. Does not try to create a new one when one is not found for this atom.
+    /// Optionally looks up for an appearance. Does not try to create a new one when one is not found for this atom. An invalid AppearanceId is an error, but null is fine.
     /// </summary>
     public bool TryGetAppearance(DreamObject atom, [NotNullWhen(true)] out ImmutableIconAppearance? appearance) {
         if (atom is DreamObjectTurf turf)
             appearance = AppearanceSystem?.MustGetAppearance(turf.AppearanceId);
-        else if (atom is DreamObjectMovable movable)
+        else if (atom is DreamObjectMovable movable && movable.SpriteComponent.AppearanceId is not null)
             appearance = AppearanceSystem?.MustGetAppearance(movable.SpriteComponent.AppearanceId.Value);
-        else if (atom is DreamObjectImage image)
+        else if (atom is DreamObjectImage image && image.SpriteComponent.AppearanceId is not null)
             appearance = AppearanceSystem?.MustGetAppearance(image.SpriteComponent.AppearanceId.Value);
         else if (atom is DreamObjectArea area)
             appearance = AppearanceSystem?.MustGetAppearance(area.AppearanceId);

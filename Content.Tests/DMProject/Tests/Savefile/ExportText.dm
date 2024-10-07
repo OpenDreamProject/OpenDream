@@ -1,4 +1,5 @@
 /datum/savetest
+	var/name
 	var/datum/savetest/recurse = null
 
 /proc/RunTest()

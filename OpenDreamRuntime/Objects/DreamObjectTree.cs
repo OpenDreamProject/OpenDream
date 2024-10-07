@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -47,8 +48,8 @@ public sealed class DreamObjectTree {
     public TreeEntry Obj { get; private set; }
     public TreeEntry Mob { get; private set; }
 
-    private readonly Dictionary<string, TreeEntry> _pathToType = new();
-    private Dictionary<string, int> _globalProcIds;
+    private FrozenDictionary<string, TreeEntry>? _pathToType;
+    private FrozenDictionary<string, int>? _globalProcIds;
 
     [Dependency] private readonly AtomManager _atomManager = default!;
     [Dependency] private readonly DreamManager _dreamManager = default!;
@@ -96,7 +97,7 @@ public sealed class DreamObjectTree {
     }
 
     public TreeEntry GetTreeEntry(string path) {
-        if (!_pathToType.TryGetValue(path, out TreeEntry? type)) {
+        if (!_pathToType!.TryGetValue(path, out TreeEntry? type)) {
             throw new Exception($"Object '{path}' does not exist");
         }
 
@@ -108,7 +109,7 @@ public sealed class DreamObjectTree {
     }
 
     public bool TryGetTreeEntry(string path, [NotNullWhen(true)] out TreeEntry? treeEntry) {
-        return _pathToType.TryGetValue(path, out treeEntry);
+        return _pathToType!.TryGetValue(path, out treeEntry);
     }
 
     public DreamObjectDefinition GetObjectDefinition(int typeId) {
@@ -116,7 +117,7 @@ public sealed class DreamObjectTree {
     }
 
     public bool TryGetGlobalProc(string name, [NotNullWhen(true)] out DreamProc? globalProc) {
-        globalProc = _globalProcIds.TryGetValue(name, out int procId) ? Procs[procId] : null;
+        globalProc = _globalProcIds!.TryGetValue(name, out int procId) ? Procs[procId] : null;
 
         return (globalProc != null);
     }
@@ -265,6 +266,8 @@ public sealed class DreamObjectTree {
     private void LoadTypesFromJson(DreamTypeJson[] types, ProcDefinitionJson[]? procs, int[]? globalProcs) {
         Types = new TreeEntry[types.Length];
 
+        var pathToTypes = new Dictionary<string, TreeEntry>(types.Length);
+
         //First pass: Create types and set them up for initialization
         Types[0] = Root;
         for (int i = 1; i < Types.Length; i++) {
@@ -272,8 +275,10 @@ public sealed class DreamObjectTree {
             var type = new TreeEntry(path, i);
 
             Types[i] = type;
-            _pathToType[path] = type;
+            pathToTypes[path] = type;
         }
+
+        _pathToType = pathToTypes.ToFrozenDictionary();
 
         World = GetTreeEntry("/world");
         List = GetTreeEntry("/list");
@@ -426,13 +431,17 @@ public sealed class DreamObjectTree {
         }
 
         if (jsonGlobalProcs != null) {
-            _globalProcIds = new(jsonGlobalProcs.Length);
+            Dictionary<string, int> globalProcIds = new(jsonGlobalProcs.Length);
 
             foreach (var procId in jsonGlobalProcs) {
                 var proc = Procs[procId];
 
-                _globalProcIds.Add(proc.Name, procId);
+                globalProcIds.Add(proc.Name, procId);
             }
+
+            _globalProcIds = globalProcIds.ToFrozenDictionary();
+        } else {
+            _globalProcIds = FrozenDictionary<string, int>.Empty;
         }
     }
 
@@ -454,14 +463,14 @@ public sealed class DreamObjectTree {
 
     internal void SetGlobalNativeProc(NativeProc.HandlerFn func) {
         var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-        var proc = new NativeProc(_globalProcIds[name], Root, name, argumentNames, defaultArgumentValues, func, _dreamManager, _atomManager, _dreamMapManager, _dreamResourceManager, _walkManager, this);
+        var proc = new NativeProc(_globalProcIds![name], Root, name, argumentNames, defaultArgumentValues, func, _dreamManager, _atomManager, _dreamMapManager, _dreamResourceManager, _walkManager, this);
 
         Procs[proc.Id] = proc;
     }
 
     public void SetGlobalNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func) {
         var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-        var proc = new AsyncNativeProc(_globalProcIds[name], Root, name, argumentNames, defaultArgumentValues, func);
+        var proc = new AsyncNativeProc(_globalProcIds![name], Root, name, argumentNames, defaultArgumentValues, func);
 
         Procs[proc.Id] = proc;
     }

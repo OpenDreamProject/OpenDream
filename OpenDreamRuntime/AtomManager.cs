@@ -385,7 +385,7 @@ public sealed class AtomManager {
         }
     }
 
-    public DreamValue GetAppearanceVar(IconAppearance appearance, string varName) {
+    public DreamValue GetAppearanceVar(ImmutableIconAppearance appearance, string varName) {
         switch (varName) {
             case "name":
                 return new(appearance.Name);
@@ -458,7 +458,7 @@ public sealed class AtomManager {
 
                 return new(matrix);
             case "appearance":
-                IconAppearance appearanceCopy = new IconAppearance(appearance); // Return a copy
+                IconAppearance appearanceCopy = appearance.ToMutable(); // Return a copy
                 return new(appearanceCopy);
             // TODO: overlays, underlays, filters
             //       Those are handled separately by whatever is calling GetAppearanceVar currently

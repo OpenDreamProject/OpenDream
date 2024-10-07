@@ -6,13 +6,12 @@ using Robust.Shared.Map;
 namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectImage : DreamObject {
-    public EntityUid Entity;
+    public EntityUid Entity = EntityUid.Invalid;
     public readonly DMISpriteComponent SpriteComponent;
     private DreamObject? _loc;
     private DreamList _overlays;
     private DreamList _underlays;
     private readonly DreamList _filters;
-    private EntityUid _entity = EntityUid.Invalid;
 
     /// <summary>
     /// All the args in /image/New() after "icon" and "loc", in their correct order
@@ -255,10 +254,6 @@ public sealed class DreamObjectImage : DreamObject {
     }
 
     public void SetAppearance(IconAppearance? appearance) {
-        if(appearance is not null)
-            AppearanceSystem!.IncreaseAppearanceRefCount(appearance);
-        if(_appearance is not null)
-            AppearanceSystem!.DecreaseAppearanceRefCount(_appearance);
         _appearance = appearance;
     }
 
@@ -268,9 +263,6 @@ public sealed class DreamObjectImage : DreamObject {
             EnterIntoDelQueue();
             return;
         }
-
-        if(_appearance is not null)
-            AppearanceSystem!.DecreaseAppearanceRefCount(_appearance);
 
         if(_entity != EntityUid.Invalid) {
             EntityManager.DeleteEntity(_entity);

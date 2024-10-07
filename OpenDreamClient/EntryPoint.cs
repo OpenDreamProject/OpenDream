@@ -110,7 +110,7 @@ public sealed class EntryPoint : GameClient {
             return;
         }
 
-        clientAppearanceSystem.SetAllAppearances(message.AllAppearances);
+        clientAppearanceSystem.SetAllAppearances(message.AllAppearancesMutable!);
     }
 
     // As of RobustToolbox v0.90.0.0 there's a TileEdgeOverlay that breaks our rendering

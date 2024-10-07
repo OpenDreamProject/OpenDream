@@ -45,7 +45,9 @@ public sealed class MsgAllAppearances(Dictionary<int, ImmutableIconAppearance> a
         End
     }
 
+    //write them as immutable, read them as mutable (client wants them mutable)
     public Dictionary<int, ImmutableIconAppearance> AllAppearances = allAppearances;
+    public Dictionary<int, IconAppearance>? AllAppearancesMutable = null;
 
     public MsgAllAppearances() : this(new()) { }
 
@@ -53,7 +55,7 @@ public sealed class MsgAllAppearances(Dictionary<int, ImmutableIconAppearance> a
         var count = buffer.ReadInt32();
         var appearanceId = -1;
 
-        AllAppearances = new(count);
+        AllAppearancesMutable = new(count);
 
         for (int i = 0; i < count; i++) {
             var appearance = new IconAppearance();
@@ -207,7 +209,7 @@ public sealed class MsgAllAppearances(Dictionary<int, ImmutableIconAppearance> a
                 property = (Property)buffer.ReadByte();
             }
 
-            AllAppearances.Add(appearanceId, new(appearance));
+            AllAppearancesMutable.Add(appearanceId, appearance);
         }
     }
 

@@ -35,6 +35,7 @@ public sealed class DreamObjectImage : DreamObject {
             _underlays = new DreamOverlaysList(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
             _filters = new DreamFilterList(ObjectTree.List.ObjectDefinition, this);
         }
+        //TODO this means we send all mutable appearances to clients, even though we don't send the entity they're attached to
         Entity = EntityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace)); //spawning an entity in nullspace means it never actually gets sent to any clients until it's placed on the map, or it gets a PVS override
         SpriteComponent = EntityManager.AddComponent<DMISpriteComponent>(Entity);
     }

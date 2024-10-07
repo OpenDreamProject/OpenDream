@@ -58,7 +58,7 @@ public class DreamObjectAtom : DreamObject {
                 value = (Desc != null) ? new(Desc) : DreamValue.Null;
                 return true;
             case "appearance":
-                var appearanceCopy = new IconAppearance(AtomManager.MustGetAppearance(this)!);
+                var appearanceCopy = AtomManager.MustGetAppearance(this)!.ToMutable();
 
                 value = new(appearanceCopy);
                 return true;

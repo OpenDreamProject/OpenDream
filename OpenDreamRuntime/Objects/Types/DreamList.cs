@@ -579,7 +579,7 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
             throw new Exception($"Invalid index into verbs list: {key}");
 
         var verbs = GetVerbs();
-        if (index < 1 || index > verbs.Count)
+        if (index < 1 || index > verbs.Length)
             throw new Exception($"Out of bounds index on verbs list: {index}");
 
         return new DreamValue(verbSystem.GetVerb(verbs[index - 1]));
@@ -590,7 +590,7 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
         if (appearance == null || verbSystem == null)
             return new List<DreamValue>();
 
-        var values = new List<DreamValue>(appearance.Verbs.Count);
+        var values = new List<DreamValue>(appearance.Verbs.Length);
 
         foreach (var verbId in appearance.Verbs) {
             var verb = verbSystem.GetVerb(verbId);
@@ -629,11 +629,11 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
     }
 
     public override int GetLength() {
-        return GetVerbs().Count;
+        return GetVerbs().Length;
     }
 
-    private List<int> GetVerbs() {
-        IconAppearance? appearance = atomManager.MustGetAppearance(atom);
+    private int[] GetVerbs() {
+        var appearance = atomManager.MustGetAppearance(atom);
         if (appearance == null)
             throw new Exception("Atom has no appearance");
 

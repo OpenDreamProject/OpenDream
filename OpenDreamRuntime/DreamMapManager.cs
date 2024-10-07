@@ -12,6 +12,7 @@ using Robust.Shared.Map.Components;
 using Robust.Shared.Utility;
 using Level = OpenDreamRuntime.IDreamMapManager.Level;
 using Cell = OpenDreamRuntime.IDreamMapManager.Cell;
+using System.Collections;
 
 namespace OpenDreamRuntime;
 
@@ -216,15 +217,30 @@ public sealed class DreamMapManager : IDreamMapManager {
         _turfAreaLookup.Clear();
         int oldAppearance = area.AppearanceId;
         area.AppearanceId  = _appearanceSystem.AddAppearance(appearance);
-        //_appearanceSystem.DecreaseAppearanceRefCount(oldAppearance);
-        //_appearanceSystem.IncreaseAppearanceRefCount(area.AppearanceId);
+
+        //get all unique turf appearances
+        //create the new version of each of those appearances
+        //for each turf, update the appropriate ID
+
+        Dictionary<int, int> oldToNewAppearanceID = new();
         foreach (var turf in area.Contents.GetTurfs()) {
-            IconAppearance? turfAppearance = new(_atomManager.MustGetAppearance(turf));
+            if(oldToNewAppearanceID.TryGetValue(turf.AppearanceId, out int newID))
+                turf.AppearanceId = newID;
+            else {
+                IconAppearance? turfAppearance = _atomManager.MustGetAppearance(turf)?.ToMutable();
 
-            if(turfAppearance is null) continue;
+                if(turfAppearance is null) continue;
 
-            turfAppearance.Overlays.Remove(oldAppearance);
-            SetTurfAppearance(turf, turfAppearance);
+                turfAppearance.Overlays.Remove(oldAppearance);
+                turfAppearance.Overlays.Add(area.AppearanceId);
+                newID = _appearanceSystem.AddAppearance(appearance);
+                oldToNewAppearanceID.Add(turf.AppearanceId, newID);
+                turf.AppearanceId = newID;
+            }
+
+            var level = _levels[turf.Z - 1];
+            int turfId = (newID + 1); // +1 because 0 is used for empty turfs
+            level.QueuedTileUpdates[(turf.X, turf.Y)] = new Tile(turfId);
         }
     }
 

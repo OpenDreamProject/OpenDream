@@ -398,8 +398,6 @@ public sealed class DreamObjectTree {
             }
 
             objectDefinition.GlobalVariables = globalVars.ToFrozenDictionary();
-        } else {
-            objectDefinition.GlobalVariables = FrozenDictionary<string, int>.Empty;
         }
 
         if (jsonObject.ConstVariables != null) {
@@ -445,8 +443,6 @@ public sealed class DreamObjectTree {
             }
 
             _globalProcIds = globalProcIds.ToFrozenDictionary();
-        } else {
-            _globalProcIds = FrozenDictionary<string, int>.Empty;
         }
     }
 

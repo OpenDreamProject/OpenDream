@@ -392,9 +392,14 @@ public sealed class DreamObjectTree {
         }
 
         if (jsonObject.GlobalVariables != null) {
+            Dictionary<string, int> globalVars = new Dictionary<string, int>(jsonObject.GlobalVariables.Count);
             foreach (KeyValuePair<string, int> jsonGlobalVariable in jsonObject.GlobalVariables) {
-                objectDefinition.GlobalVariables.Add(jsonGlobalVariable.Key, jsonGlobalVariable.Value);
+                globalVars.Add(jsonGlobalVariable.Key, jsonGlobalVariable.Value);
             }
+
+            objectDefinition.GlobalVariables = globalVars.ToFrozenDictionary();
+        } else {
+            objectDefinition.GlobalVariables = FrozenDictionary<string, int>.Empty;
         }
 
         if (jsonObject.ConstVariables != null) {

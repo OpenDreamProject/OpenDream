@@ -428,6 +428,11 @@ public sealed class DreamIconOperationBlendImage : DreamIconOperationBlend {
 
         var blendingFrame = blendingDirFrames[frame];
 
+        // Use the smaller of the two sizes if they're different
+        // TODO: 1,1 should be bottom left, not top left
+        bounds = UIBox2i.FromDimensions(bounds.Left, bounds.Top, Math.Min(_blending.Width, bounds.Width),
+            Math.Min(_blending.Height, bounds.Height));
+
         _blending.ProcessPixelRows(accessor => {
             // TODO: x & y offsets
 

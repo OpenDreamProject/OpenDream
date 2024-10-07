@@ -233,7 +233,7 @@ public sealed class DreamMapManager : IDreamMapManager {
 
                 turfAppearance.Overlays.Remove(oldAppearance);
                 turfAppearance.Overlays.Add(area.AppearanceId);
-                newID = _appearanceSystem.AddAppearance(appearance);
+                newID = _appearanceSystem.AddAppearance(turfAppearance);
                 oldToNewAppearanceID.Add(turf.AppearanceId, newID);
                 turf.AppearanceId = newID;
             }

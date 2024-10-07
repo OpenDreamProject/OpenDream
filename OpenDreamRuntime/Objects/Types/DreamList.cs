@@ -453,7 +453,7 @@ sealed class DreamGlobalVars : DreamList {
 
     public override List<DreamValue> GetValues() {
         var root = _objectTree.Root.ObjectDefinition;
-        List<DreamValue> values = new List<DreamValue>(root.GlobalVariables.Keys.Count - 1);
+        List<DreamValue> values = new List<DreamValue>(root.GlobalVariables.Keys.Length - 1);
         // Skip world
         foreach (var key in root.GlobalVariables.Keys.Skip(1)) {
             values.Add(new DreamValue(key));

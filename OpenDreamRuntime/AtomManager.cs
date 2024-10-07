@@ -500,8 +500,8 @@ public sealed class AtomManager {
     }
 
     public void UpdateAppearance(DreamObject atom, Action<IconAppearance> update) {
-        var appearance = MustGetAppearance(atom);
-        appearance = (appearance != null) ? new(appearance) : new(); // Clone the appearance
+        ImmutableIconAppearance immutableAppearance = MustGetAppearance(atom);
+        IconAppearance appearance = (immutableAppearance != null) ? immutableAppearance.ToMutable() : new(); // Clone the appearance
         update(appearance);
         SetAtomAppearance(atom, appearance);
     }
@@ -527,17 +527,27 @@ public sealed class AtomManager {
     }
 
     public void AnimateAppearance(DreamObject atom, TimeSpan duration, AnimationEasing easing, int loop, AnimationFlags flags, int delay, bool chainAnim, Action<IconAppearance> animate) {
-        if (atom is not DreamObjectMovable movable)
-            return; //Animating non-movables is unimplemented TODO: should handle images and maybe filters
-
-        IconAppearance appearance = new IconAppearance(movable.SpriteComponent.Appearance);
+        //TODO: should handle filters
+        IconAppearance appearance;
+        EntityUid targetEntity;
+        DMISpriteComponent targetComponent;
+        if (atom is DreamObjectMovable movable) {
+            targetEntity = movable.Entity;
+            targetComponent = movable.SpriteComponent;
+            appearance = AppearanceSystem!.MustGetAppearance(targetComponent.AppearanceId!.Value).ToMutable();
+        } else if (atom is DreamObjectImage image){
+            targetEntity = image.Entity;
+            targetComponent = image.SpriteComponent;
+            appearance = AppearanceSystem!.MustGetAppearance(targetComponent.AppearanceId!.Value).ToMutable();
+        } else
+            throw new ArgumentException($"Cannot animate appearance of {atom}");
 
         animate(appearance);
 
         // Don't send the updated appearance to clients, they will animate it
-        DMISpriteSystem.SetSpriteAppearance(new(movable.Entity, movable.SpriteComponent), appearance, dirty: false);
+        DMISpriteSystem.SetSpriteAppearance(new(targetEntity, targetComponent), appearance, dirty: false);
 
-        NetEntity ent = _entityManager.GetNetEntity(movable.Entity);
+        NetEntity ent = _entityManager.GetNetEntity(targetEntity);
 
         AppearanceSystem?.Animate(ent, appearance, duration, easing, loop, flags, delay, chainAnim);
     }
@@ -549,7 +559,7 @@ public sealed class AtomManager {
         }
 
         if (value.TryGetValueAsDreamObject<DreamObjectImage>(out var copyFromImage)) {
-            appearance = new(copyFromImage.Appearance!);
+            appearance = MustGetAppearance(copyFromImage)!.ToMutable();
             return true;
         }
 
@@ -559,7 +569,7 @@ public sealed class AtomManager {
         }
 
         if (value.TryGetValueAsDreamObject<DreamObjectAtom>(out var copyFromAtom)) {
-            appearance = new(MustGetAppearance(copyFromAtom));
+            appearance = MustGetAppearance(copyFromAtom)?.ToMutable();
             return true;
         }
 
@@ -631,7 +641,6 @@ public sealed class AtomManager {
         }
 
         _definitionAppearanceCache.Add(def, appearance);
-        AppearanceSystem?.IncreaseAppearanceRefCount(appearance);
         return appearance;
     }
 

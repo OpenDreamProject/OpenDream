@@ -216,8 +216,8 @@ public sealed class DreamMapManager : IDreamMapManager {
         _turfAreaLookup.Clear();
         int oldAppearance = area.AppearanceId;
         area.AppearanceId  = _appearanceSystem.AddAppearance(appearance);
-        _appearanceSystem.DecreaseAppearanceRefCount(oldAppearance);
-        _appearanceSystem.IncreaseAppearanceRefCount(area.AppearanceId);
+        //_appearanceSystem.DecreaseAppearanceRefCount(oldAppearance);
+        //_appearanceSystem.IncreaseAppearanceRefCount(area.AppearanceId);
         foreach (var turf in area.Contents.GetTurfs()) {
             IconAppearance? turfAppearance = new(_atomManager.MustGetAppearance(turf));
 

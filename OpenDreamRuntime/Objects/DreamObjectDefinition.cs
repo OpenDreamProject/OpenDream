@@ -1,4 +1,4 @@
-﻿using System.Collections.Frozen;
+using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using OpenDreamRuntime.Procs;
@@ -54,10 +54,10 @@ public sealed class DreamObjectDefinition {
     public readonly Dictionary<string, DreamValue> Variables = new();
 
     // Maps /static variables from name to their index in the global variable table.
-    public FrozenDictionary<string, int> GlobalVariables;
+    public FrozenDictionary<string, int> GlobalVariables = FrozenDictionary<string, int>.Empty;
 
     // Contains hashes of variables that are tagged /const.
-    public HashSet<string>? ConstVariables = null;
+    public FrozenSet<string> ConstVariables = FrozenSet<string>.Empty;
 
     // Contains hashes of variables that are tagged /tmp.
     public HashSet<string>? TmpVariables = null;

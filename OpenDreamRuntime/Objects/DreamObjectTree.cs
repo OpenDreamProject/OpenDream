@@ -48,8 +48,8 @@ public sealed class DreamObjectTree {
     public TreeEntry Obj { get; private set; }
     public TreeEntry Mob { get; private set; }
 
-    private FrozenDictionary<string, TreeEntry>? _pathToType;
-    private FrozenDictionary<string, int>? _globalProcIds;
+    private FrozenDictionary<string, TreeEntry> _pathToType = FrozenDictionary<string, TreeEntry>.Empty;
+    private FrozenDictionary<string, int> _globalProcIds = FrozenDictionary<string, int>.Empty;
 
     [Dependency] private readonly AtomManager _atomManager = default!;
     [Dependency] private readonly DreamManager _dreamManager = default!;
@@ -97,7 +97,7 @@ public sealed class DreamObjectTree {
     }
 
     public TreeEntry GetTreeEntry(string path) {
-        if (!_pathToType!.TryGetValue(path, out TreeEntry? type)) {
+        if (!_pathToType.TryGetValue(path, out TreeEntry? type)) {
             throw new Exception($"Object '{path}' does not exist");
         }
 
@@ -109,7 +109,7 @@ public sealed class DreamObjectTree {
     }
 
     public bool TryGetTreeEntry(string path, [NotNullWhen(true)] out TreeEntry? treeEntry) {
-        return _pathToType!.TryGetValue(path, out treeEntry);
+        return _pathToType.TryGetValue(path, out treeEntry);
     }
 
     public DreamObjectDefinition GetObjectDefinition(int typeId) {
@@ -117,7 +117,7 @@ public sealed class DreamObjectTree {
     }
 
     public bool TryGetGlobalProc(string name, [NotNullWhen(true)] out DreamProc? globalProc) {
-        globalProc = _globalProcIds!.TryGetValue(name, out int procId) ? Procs[procId] : null;
+        globalProc = _globalProcIds.TryGetValue(name, out int procId) ? Procs[procId] : null;
 
         return (globalProc != null);
     }

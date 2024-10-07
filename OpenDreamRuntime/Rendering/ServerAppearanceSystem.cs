@@ -70,6 +70,12 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         }
     }
 
+    public bool TryGetAppearanceId(IconAppearance appearance,out int appearanceId) {
+        lock (_lock) {
+            return _appearanceToId.TryGetValue(new(appearance), out appearanceId);
+        }
+    }
+
     public void Animate(NetEntity entity, IconAppearance targetAppearance, TimeSpan duration, AnimationEasing easing, int loop, AnimationFlags flags, int delay, bool chainAnim) {
         int appearanceId = AddAppearance(targetAppearance);
 

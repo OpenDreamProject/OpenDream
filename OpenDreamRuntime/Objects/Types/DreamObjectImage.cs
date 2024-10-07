@@ -35,24 +35,22 @@ public sealed class DreamObjectImage : DreamObject {
             _underlays = new DreamOverlaysList(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
             _filters = new DreamFilterList(ObjectTree.List.ObjectDefinition, this);
         }
+        Entity = EntityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace)); //spawning an entity in nullspace means it never actually gets sent to any clients until it's placed on the map, or it gets a PVS override
+        SpriteComponent = EntityManager.AddComponent<DMISpriteComponent>(Entity);
     }
 
     public override void Initialize(DreamProcArguments args) {
         base.Initialize(args);
 
         DreamValue icon = args.GetArgument(0);
-        IconAppearance? iconAppearance = null;
+        IconAppearance? iconAppearance;
         if (icon.IsNull || !AtomManager.TryCreateAppearanceFrom(icon, out iconAppearance)) {
             // Use a default appearance, but log a warning about it if icon wasn't null
-            Appearance = new(AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
+            iconAppearance = AtomManager.GetAppearanceFromDefinition(ObjectDefinition);
             if (!icon.IsNull)
                 Logger.GetSawmill("opendream.image")
                     .Warning($"Attempted to create an /image from {icon}. This is invalid and a default image was created instead.");
         }
-
-        if(iconAppearance is not null)
-            Appearance = iconAppearance;
-
 
         int argIndex = 1;
         DreamValue loc = args.GetArgument(1);
@@ -60,12 +58,10 @@ public sealed class DreamObjectImage : DreamObject {
             argIndex = 2;
         }
 
-        iconAppearance = null; //mutate the appearance and then set it at the end to handle ref counts and client update
         foreach (string argName in IconCreationArgs) {
             var arg = args.GetArgument(argIndex++);
             if (arg.IsNull)
                 continue;
-            iconAppearance ??= new(Appearance!);
 
             AtomManager.SetAppearanceVar(iconAppearance, argName, arg);
             if (argName == "dir" && arg.TryGetValueAsInteger(out var argDir) && argDir > 0) {
@@ -76,10 +72,7 @@ public sealed class DreamObjectImage : DreamObject {
             }
         }
 
-        if (iconAppearance is not null) {
-            AppearanceSystem!.AddAppearance(iconAppearance); // this is a no-op if the appearance is already in the system
-            Appearance = iconAppearance;
-        }
+        AtomManager.SetAtomAppearance(this, iconAppearance);
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
@@ -100,7 +93,7 @@ public sealed class DreamObjectImage : DreamObject {
                 return true;
             default: {
                 if (AtomManager.IsValidAppearanceVar(varName)) {
-                    value = AtomManager.GetAppearanceVar(Appearance!, varName);
+                    value = AtomManager.GetAppearanceVar(AtomManager.MustGetAppearance(this)!, varName);
                     return true;
                 } else {
                     return base.TryGetVar(varName, out value);
@@ -116,14 +109,9 @@ public sealed class DreamObjectImage : DreamObject {
                     return; // Ignore attempts to set an invalid appearance
 
                 // The dir does not get changed
-                newAppearance.Direction = Appearance!.Direction;
-
-                Appearance = newAppearance;
-                if(_entity != EntityUid.Invalid) {
-                    DMISpriteComponent sprite = EntityManager.GetComponent<DMISpriteComponent>(_entity);
-                    AtomManager.SetSpriteAppearance(new(_entity, sprite), Appearance);
-                }
-
+                var originalAppearance = AtomManager.MustGetAppearance(this);
+                newAppearance.Direction = originalAppearance!.Direction;
+                AtomManager.SetAtomAppearance(this, newAppearance);
                 break;
             case "loc":
                 value.TryGetValueAsDreamObject(out _loc);
@@ -139,7 +127,7 @@ public sealed class DreamObjectImage : DreamObject {
                     if (valueList != null) {
                         _overlays = valueList.CreateCopy();
                     } else {
-                        var overlay = DreamOverlaysList.CreateOverlayAppearance(AtomManager, value, Appearance?.Icon);
+                        var overlay = DreamOverlaysList.CreateOverlayAppearance(AtomManager, value, AtomManager.MustGetAppearance(this)?.Icon);
                         if (overlay == null)
                             return;
 
@@ -171,7 +159,7 @@ public sealed class DreamObjectImage : DreamObject {
                     if (valueList != null) {
                         _underlays = valueList.CreateCopy();
                     } else {
-                        var underlay = DreamOverlaysList.CreateOverlayAppearance(AtomManager, value, Appearance?.Icon);
+                        var underlay = DreamOverlaysList.CreateOverlayAppearance(AtomManager, value, AtomManager.MustGetAppearance(this)?.Icon);
                         if (underlay == null)
                             return;
 
@@ -213,19 +201,16 @@ public sealed class DreamObjectImage : DreamObject {
                 break;
             }
             case "override": {
-                Appearance!.Override = value.IsTruthy();
+                IconAppearance iconAppearance = AtomManager.MustGetAppearance(this)!.ToMutable();
+                iconAppearance.Override = value.IsTruthy();
+                AtomManager.SetAtomAppearance(this, iconAppearance);
                 break;
             }
             default:
                 if (AtomManager.IsValidAppearanceVar(varName)) {
-                    IconAppearance iconAppearance = new(Appearance!);
+                    IconAppearance iconAppearance = AtomManager.MustGetAppearance(this)!.ToMutable();
                     AtomManager.SetAppearanceVar(iconAppearance, varName, value);
-                    Appearance = iconAppearance;
-                    if(_entity != EntityUid.Invalid) {
-                        DMISpriteComponent sprite = EntityManager.GetComponent<DMISpriteComponent>(_entity);
-                        AtomManager.SetSpriteAppearance(new(_entity, sprite), Appearance!);
-                    }
-
+                    AtomManager.SetAtomAppearance(this, iconAppearance);
                     break;
                 }
 
@@ -238,25 +223,6 @@ public sealed class DreamObjectImage : DreamObject {
         return this._loc;
     }
 
-    /// <summary>
-    /// Get or create the entity associated with this image. Used for putting this image in the world ie, with vis_contents
-    /// The associated entity is deleted when the image is.
-    /// </summary>
-    public EntityUid GetEntity() {
-        if(_entity == EntityUid.Invalid) {
-            _entity = EntityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace));
-            DMISpriteComponent sprite = EntityManager.AddComponent<DMISpriteComponent>(_entity);
-            if(Appearance is not null)
-                AtomManager.SetSpriteAppearance(new(_entity, sprite), Appearance);
-        }
-
-        return _entity;
-    }
-
-    public void SetAppearance(IconAppearance? appearance) {
-        _appearance = appearance;
-    }
-
     protected override void HandleDeletion(bool possiblyThreaded) {
         // SAFETY: Deleting entities is not threadsafe.
         if (possiblyThreaded) {
@@ -264,8 +230,8 @@ public sealed class DreamObjectImage : DreamObject {
             return;
         }
 
-        if(_entity != EntityUid.Invalid) {
-            EntityManager.DeleteEntity(_entity);
+        if(Entity != EntityUid.Invalid) {
+            EntityManager.DeleteEntity(Entity);
         }
 
         base.HandleDeletion(possiblyThreaded);

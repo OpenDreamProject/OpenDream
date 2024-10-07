@@ -1,4 +1,4 @@
-using System.Collections.Frozen;
+﻿using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using OpenDreamRuntime.Procs;
@@ -84,7 +84,7 @@ public sealed class DreamObjectDefinition {
 
         Variables = new Dictionary<string, DreamValue>(copyFrom.Variables);
         GlobalVariables = copyFrom.GlobalVariables;
-        ConstVariables = copyFrom.ConstVariables is not null ? new HashSet<string>(copyFrom.ConstVariables) : null;
+        ConstVariables = copyFrom.ConstVariables;
         TmpVariables = copyFrom.TmpVariables is not null ? new HashSet<string>(copyFrom.TmpVariables) : null;
         Procs = new Dictionary<string, int>(copyFrom.Procs);
         OverridingProcs = new Dictionary<string, int>(copyFrom.OverridingProcs);
@@ -118,8 +118,7 @@ public sealed class DreamObjectDefinition {
                 Verbs = new List<int>(Parent.Verbs);
             if (Parent != ObjectTree.Root.ObjectDefinition) // Don't include root-level globals
                 GlobalVariables = Parent.GlobalVariables;
-            if (Parent.ConstVariables != null)
-                ConstVariables = new HashSet<string>(Parent.ConstVariables);
+            ConstVariables = Parent.ConstVariables;
             if (Parent.TmpVariables != null)
                 TmpVariables = new HashSet<string>(Parent.TmpVariables);
         }

@@ -401,10 +401,12 @@ public sealed class DreamObjectTree {
         }
 
         if (jsonObject.ConstVariables != null) {
-            objectDefinition.ConstVariables ??= new();
+            HashSet<string> constVars = new HashSet<string>(jsonObject.ConstVariables.Count);
             foreach (string jsonConstVariable in jsonObject.ConstVariables) {
-                objectDefinition.ConstVariables.Add(jsonConstVariable);
+                constVars.Add(jsonConstVariable);
             }
+
+            objectDefinition.ConstVariables = constVars.ToFrozenSet();
         }
 
         if(jsonObject.TmpVariables != null) {

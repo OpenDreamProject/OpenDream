@@ -262,8 +262,7 @@ internal class Program {
         var outputFile = Path.ChangeExtension(JsonFile, ".dmd")!;
         using StreamWriter writer = new StreamWriter(outputFile, append: false, encoding: Encoding.UTF8, bufferSize: 65536);
 
-        foreach (DMProc proc in Procs)
-        {
+        foreach (DMProc proc in Procs) {
             string value = proc.Decompile();
             if (proc.exception != null) {
                 Console.WriteLine("Error disassembling " + PrettyPrintPath(proc));

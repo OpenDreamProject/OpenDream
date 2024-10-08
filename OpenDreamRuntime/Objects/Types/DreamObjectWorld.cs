@@ -64,8 +64,11 @@ public sealed class DreamObjectWorld : DreamObject {
         base(objectDefinition) {
         IoCManager.InjectDependencies(this);
 
+        SetTicklag(objectDefinition.Variables["tick_lag"]);
         SetLog(objectDefinition.Variables["log"]);
-        SetFps(objectDefinition.Variables["fps"]);
+        if(objectDefinition.Variables["fps"].TryGetValueAsInteger(out var fpsVal) && fpsVal != 10) // To not override tick_lag, only set if it isn't the default 10 FPS
+            SetFps(objectDefinition.Variables["fps"]);
+        SetSleepOffline(objectDefinition.Variables["sleep_offline"]);
 
         DreamValue view = objectDefinition.Variables["view"];
         if (view.TryGetValueAsString(out var viewString)) {
@@ -239,12 +242,15 @@ public sealed class DreamObjectWorld : DreamObject {
             case "hub_password":
             case "mob":
             case "name":
-            case "sleep_offline":
             case "status":
             case "version":
             case "visibility":
                 // Set it in the var dictionary, so reading at least gives the same value
                 base.SetVar(varName, value);
+                break;
+
+            case "sleep_offline":
+                SetSleepOffline(value);
                 break;
 
             case "time": // Doesn't error, but doesn't affect its value either
@@ -255,10 +261,7 @@ public sealed class DreamObjectWorld : DreamObject {
                 break;
 
             case "tick_lag":
-                if (!value.TryGetValueAsFloat(out var tickLag))
-                    tickLag = 1; // An invalid tick_lag gets turned into 1
-
-                TickLag = tickLag;
+                SetTicklag(value);
                 break;
 
             case "fps":
@@ -313,5 +316,23 @@ public sealed class DreamObjectWorld : DreamObject {
             fpsValue = 10f;
 
         Fps = (int)Math.Round(fpsValue);
+    }
+
+    private void SetTicklag(DreamValue value) {
+        if (!value.TryGetValueAsFloat(out var tickLag))
+            tickLag = 1; // An invalid tick_lag gets turned into 1
+
+        TickLag = tickLag;
+    }
+
+    private void SetSleepOffline(DreamValue sleepOffline) {
+        if (sleepOffline.IsTruthy()) {
+            _cfg.OverrideDefault(CVars.GameAutoPauseEmpty, true);
+            SetVariableValue("sleep_offline", DreamValue.True);
+            return;
+        }
+
+        SetVariableValue("sleep_offline", DreamValue.False);
+        _cfg.OverrideDefault(CVars.GameAutoPauseEmpty, false);
     }
 }

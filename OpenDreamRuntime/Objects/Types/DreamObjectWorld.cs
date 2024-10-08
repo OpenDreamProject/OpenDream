@@ -326,7 +326,7 @@ public sealed class DreamObjectWorld : DreamObject {
     }
 
     private void SetSleepOffline(DreamValue sleepOffline) {
-        if (sleepOffline.TryGetValueAsInteger(out var value) && value == 1) {
+        if (sleepOffline.IsTruthy()) {
             _cfg.OverrideDefault(CVars.GameAutoPauseEmpty, true);
             return;
         }

@@ -66,7 +66,8 @@ public sealed class DreamObjectWorld : DreamObject {
 
         SetTicklag(objectDefinition.Variables["tick_lag"]);
         SetLog(objectDefinition.Variables["log"]);
-        SetFps(objectDefinition.Variables["fps"]);
+        if(objectDefinition.Variables["fps"].TryGetValueAsInteger(out var fpsVal) && fpsVal != 10) // To not override tick_lag, only set if it isn't the default 10 FPS
+            SetFps(objectDefinition.Variables["fps"]);
         SetSleepOffline(objectDefinition.Variables["sleep_offline"]);
 
         DreamValue view = objectDefinition.Variables["view"];
@@ -249,7 +250,6 @@ public sealed class DreamObjectWorld : DreamObject {
                 break;
 
             case "sleep_offline":
-                base.SetVar(varName, value); // Only 1 and not-1 matter, but set it in case any user code cares what the actual value is
                 SetSleepOffline(value);
                 break;
 
@@ -328,9 +328,11 @@ public sealed class DreamObjectWorld : DreamObject {
     private void SetSleepOffline(DreamValue sleepOffline) {
         if (sleepOffline.IsTruthy()) {
             _cfg.OverrideDefault(CVars.GameAutoPauseEmpty, true);
+            SetVariableValue("sleep_offline", DreamValue.True);
             return;
         }
 
+        SetVariableValue("sleep_offline", DreamValue.False);
         _cfg.OverrideDefault(CVars.GameAutoPauseEmpty, false);
     }
 }

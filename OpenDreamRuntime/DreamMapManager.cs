@@ -29,10 +29,10 @@ public sealed class DreamMapManager : IDreamMapManager {
     public Vector2i Size { get; private set; }
     public int Levels => _levels.Count;
 
+    public DreamObjectArea DefaultArea => GetOrCreateArea(_defaultArea);
+
     private readonly List<Level> _levels = new();
     private readonly Dictionary<MapObjectJson, DreamObjectArea> _areas = new();
-
-    private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.map");
 
     // Set in Initialize
     private MapObjectJson _defaultArea = default!;
@@ -162,8 +162,7 @@ public sealed class DreamMapManager : IDreamMapManager {
 
         if(area is not null) {
             cell.Area.Contents.RemoveValue(new(cell.Turf));
-            cell.Area = area;
-            cell.Area.Contents.AddValue(new(cell.Turf));
+            area.Contents.AddValue(new(cell.Turf));
         }
 
         if (cell.Turf != null) {
@@ -311,7 +310,6 @@ public sealed class DreamMapManager : IDreamMapManager {
                 }
             }
         }
-
     }
 
     public void SetZLevels(int levels) {
@@ -406,6 +404,7 @@ public sealed class DreamMapManager : IDreamMapManager {
 
                 ++blockX;
             }
+
             ++blockY;
         }
     }
@@ -451,17 +450,29 @@ public interface IDreamMapManager {
     }
 
     public sealed class Cell {
+        public DreamObjectArea Area {
+            get => _area;
+            set {
+                _area.ResetCoordinateCache();
+                _area = value;
+                _area.ResetCoordinateCache();
+            }
+        }
+
         public DreamObjectTurf? Turf;
-        public DreamObjectArea Area;
         public readonly List<DreamObjectMovable> Movables = new();
 
+        private DreamObjectArea _area;
+
         public Cell(DreamObjectArea area) {
-            Area = area;
+            _area = area;
+            _area.ResetCoordinateCache();
         }
     }
 
     public Vector2i Size { get; }
     public int Levels { get; }
+    public DreamObjectArea DefaultArea { get; }
 
     public void Initialize();
     public void LoadMaps(List<DreamMapJson>? maps);

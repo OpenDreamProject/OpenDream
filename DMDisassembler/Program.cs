@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Text.Json;
 using DMCompiler.Json;
 
 namespace DMDisassembler;
 
 internal class Program {
+    public static string JsonFile = string.Empty;
     public static DreamCompiledJson CompiledJson;
     public static DMProc GlobalInitProc = null;
     public static List<DMProc> Procs = null;
@@ -22,6 +24,8 @@ internal class Program {
             Environment.Exit(1);
         }
 
+        JsonFile = args[0];
+
         string compiledJsonText = File.ReadAllText(args[0]);
 
         CompiledJson = JsonSerializer.Deserialize<DreamCompiledJson>(compiledJsonText);
@@ -29,16 +33,21 @@ internal class Program {
         LoadAllProcs();
         LoadAllTypes();
 
-        if (args.Length == 2 && args[1] == "crash-on-test") {
-            // crash-on-test is a special mode used by CI to
-            // verify that an entire codebase can be disassembled without errors
-            int errors = TestAll();
+        if (args.Length == 2) {
+            if (args[1] == "crash-on-test") {
+                // crash-on-test is a special mode used by CI to
+                // verify that an entire codebase can be disassembled without errors
+                int errors = TestAll();
 
-            if (errors > 0) {
-                Console.WriteLine($"Detected {errors} errors. Exiting.");
-                Environment.Exit(1);
-            } else {
-                Console.WriteLine("No errors detected. Exiting cleanly.");
+                if (errors > 0) {
+                    Console.WriteLine($"Detected {errors} errors. Exiting.");
+                    Environment.Exit(1);
+                } else {
+                    Console.WriteLine("No errors detected. Exiting cleanly.");
+                    Environment.Exit(0);
+                }
+            } else if (args[1] == "dump-all") {
+                DumpAll();
                 Environment.Exit(0);
             }
         }
@@ -70,6 +79,7 @@ internal class Program {
                 case "d":
                 case "decompile": Decompile(split); break;
                 case "test-all": TestAll(); break;
+                case "dump-all": DumpAll(); break;
                 case "help": PrintHelp(); break;
                 default: Console.WriteLine("Invalid command \"" + command + "\""); break;
             }
@@ -85,6 +95,7 @@ internal class Program {
         Console.WriteLine("select|sel                : Select a typepath to run further commands on");
         Console.WriteLine("list procs|globals        : List all globals, or all procs on a selected type");
         Console.WriteLine("decompile|d [name]        : Decompiles the proc on the selected type");
+        Console.WriteLine("dump-all                  : Decompiles every proc and writes the output to a file");
         Console.WriteLine("test-all                  : Tries to decompile every single proc to check for issues with this disassembler; not for production use");
     }
 
@@ -232,7 +243,7 @@ internal class Program {
         foreach (DMProc proc in Procs) {
             string value = proc.Decompile();
             if (proc.exception != null) {
-                Console.WriteLine("Error disassembling " + proc.Name);
+                Console.WriteLine("Error disassembling " + PrettyPrintPath(proc));
                 Console.WriteLine(value);
                 ++errored;
             }
@@ -242,5 +253,38 @@ internal class Program {
 
         Console.WriteLine($"Errors in {errored}/{all} procs");
         return errored;
+    }
+
+    private static void DumpAll() {
+        Console.WriteLine("Dumping all procs. This may take a moment.");
+        int errored = 0, all = 0;
+        // ".dmd" for "dm disassembly"
+        var outputFile = Path.ChangeExtension(JsonFile, ".dmd")!;
+        using StreamWriter writer = new StreamWriter(outputFile, append: false, encoding: Encoding.UTF8, bufferSize: 65536);
+
+        foreach (DMProc proc in Procs) {
+            string value = proc.Decompile();
+            if (proc.exception != null) {
+                Console.WriteLine("Error disassembling " + PrettyPrintPath(proc));
+                ++errored;
+            } else {
+                writer.WriteLine(PrettyPrintPath(proc) + ":");
+                writer.WriteLine(value);
+            }
+
+            ++all;
+        }
+
+        var procCount = errored > 0 ? $"{all - errored}/{all} ({errored} failed procs)" : $"all {all}";
+        Console.WriteLine($"Successfully dumped {procCount} procs to {outputFile}");
+    }
+
+    private static string PrettyPrintPath(DMProc proc) {
+        var path = CompiledJson.Types![proc.OwningTypeId].Path;
+        var args = proc.GetArguments();
+
+        if(args is null)
+            return path + (path[^1] == '/' ? "" : "/") + (proc.IsOverride ? "" : "proc/") + proc.Name + "()";
+        return path + (path[^1] == '/' ? "" : "/") + (proc.IsOverride ? "" : "proc/") + proc.Name + $"({string.Join(", ", args)})";
     }
 }

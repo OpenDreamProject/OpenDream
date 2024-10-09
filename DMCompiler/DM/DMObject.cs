@@ -227,4 +227,8 @@ internal sealed class DMObject {
 
         return DMValueType.Anything;
     }
+
+    public DreamPath[] GetDMAncestors() {
+
+    }
 }

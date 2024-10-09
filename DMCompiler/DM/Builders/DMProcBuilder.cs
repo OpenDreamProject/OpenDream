@@ -601,8 +601,10 @@ namespace DMCompiler.DM.Builders {
                 lValue = null;
             }
 
+            list.EmitPushValue(dmObject, proc);
             // Depending on the var's type and possibly a given "as [types]", an implicit istype() check is performed
             DreamPath? implicitTypeCheck = null;
+            bool alreadyCreatedEnumerator = false; // Keep track of if we did CreateFilteredBaseTypesListEnumerator already
             if (dmTypes == null) {
                 // No "as" means the var's type will be used
                 implicitTypeCheck = lValue?.Path;
@@ -610,23 +612,25 @@ namespace DMCompiler.DM.Builders {
                 // "as /datum" will perform a check for /datum
                 implicitTypeCheck = dmTypes.Value.TypePath;
             } else if (!dmTypes.Value.IsAnything) {
-                // "as anything" performs no check. Other values are unimplemented.
-                DMCompiler.UnimplementedWarning(outputVar.Location,
-                    $"As type {dmTypes} in for loops is unimplemented. No type check will be performed.");
+                // "as anything" performs no check. Other than that, all that's left are type assignments like `as mob|obj|area`.
+                proc.CreateFilteredBaseTypesListEnumerator((byte) dmTypes.Value.Type, dmTypes.Value.Type);
+                alreadyCreatedEnumerator = true;
+                DMCompiler.VerbosePrint($"Created CreateFilteredBaseTypesListEnumerator");
             }
 
-            list.EmitPushValue(dmObject, proc);
-            if (implicitTypeCheck != null) {
-                if (DMObjectTree.TryGetTypeId(implicitTypeCheck.Value, out var filterTypeId)) {
-                    // Create an enumerator that will do the implicit istype() for us
-                    proc.CreateFilteredListEnumerator(filterTypeId, implicitTypeCheck.Value);
+            if (!alreadyCreatedEnumerator) {
+                if (implicitTypeCheck != null) {
+                    if (DMObjectTree.TryGetTypeId(implicitTypeCheck.Value, out var filterTypeId)) {
+                        // Create an enumerator that will do the implicit istype() for us
+                        proc.CreateFilteredListEnumerator(filterTypeId, implicitTypeCheck.Value);
+                    } else {
+                        DMCompiler.Emit(WarningCode.ItemDoesntExist, outputVar.Location,
+                            $"Cannot filter enumeration by type {implicitTypeCheck.Value}, it does not exist");
+                        proc.CreateListEnumerator();
+                    }
                 } else {
-                    DMCompiler.Emit(WarningCode.ItemDoesntExist, outputVar.Location,
-                        $"Cannot filter enumeration by type {implicitTypeCheck.Value}, it does not exist");
                     proc.CreateListEnumerator();
                 }
-            } else {
-                proc.CreateListEnumerator();
             }
 
             proc.StartScope();

@@ -24,6 +24,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
 
     public override void Initialize() {
         SubscribeNetworkEvent<NewAppearanceEvent>(OnNewAppearance);
+        SubscribeNetworkEvent<RemoveAppearanceEvent>(e => _appearances.Remove(e.AppearanceId));
         SubscribeNetworkEvent<AnimationEvent>(OnAnimation);
         SubscribeLocalEvent<DMISpriteComponent, WorldAABBEvent>(OnWorldAABB);
     }
@@ -68,10 +69,10 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     }
 
     private void OnNewAppearance(NewAppearanceEvent e) {
-        _appearances[e.AppearanceId] = e.Appearance;
+        _appearances[e.AppearanceId] = e.Appearance.ToMutable();
 
         if (_appearanceLoadCallbacks.TryGetValue(e.AppearanceId, out var callbacks)) {
-            foreach (var callback in callbacks) callback(e.Appearance);
+            foreach (var callback in callbacks) callback(_appearances[e.AppearanceId]);
         }
     }
 

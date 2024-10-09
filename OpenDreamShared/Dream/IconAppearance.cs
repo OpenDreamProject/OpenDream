@@ -12,6 +12,7 @@ namespace OpenDreamShared.Dream;
  * Woe, weary traveler, modifying this class is not for the faint of heart.
  * If you modify IconAppearance, be sure to update the following places:
  * - All of the methods on IconAppearance itself
+ * - ImmutableIconAppearance
  * - IconAppearance methods in AtomManager
  * - MsgAllAppearances
  * - IconDebugWindow
@@ -19,8 +20,7 @@ namespace OpenDreamShared.Dream;
  */
 
 // TODO: Wow this is huge! Probably look into splitting this by most used/least used to reduce the size of these
-[Serializable, NetSerializable]
-public sealed class IconAppearance : IEquatable<IconAppearance> {
+public sealed class IconAppearance : IEquatable<IconAppearance>, IEquatable<ImmutableIconAppearance> {
     public static readonly IconAppearance Default = new();
 
     [ViewVariables] public string Name = string.Empty;
@@ -113,7 +113,11 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
         }
     }
 
-    public override bool Equals(object? obj) => obj is IconAppearance appearance && Equals(appearance);
+    public override bool Equals(object? obj) => (obj is IconAppearance appearance && Equals(appearance)) || (obj is ImmutableIconAppearance immutableIconAppearance && Equals(immutableIconAppearance));
+
+    public bool Equals(ImmutableIconAppearance? immutableIconAppearance) {
+        return immutableIconAppearance is null ? false : immutableIconAppearance.Equals(this);
+    }
 
     public bool Equals(IconAppearance? appearance) {
         if (appearance == null) return false;

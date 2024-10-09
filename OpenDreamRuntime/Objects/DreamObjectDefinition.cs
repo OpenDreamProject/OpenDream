@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Collections.Frozen;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
@@ -51,12 +52,15 @@ public sealed class DreamObjectDefinition {
 
     // Maps variables from their name to their initial value.
     public readonly Dictionary<string, DreamValue> Variables = new();
+
     // Maps /static variables from name to their index in the global variable table.
-    public readonly Dictionary<string, int> GlobalVariables = new();
+    public FrozenDictionary<string, int> GlobalVariables = FrozenDictionary<string, int>.Empty;
+
     // Contains hashes of variables that are tagged /const.
-    public HashSet<string>? ConstVariables = null;
+    public FrozenSet<string> ConstVariables = FrozenSet<string>.Empty;
+
     // Contains hashes of variables that are tagged /tmp.
-    public HashSet<string>? TmpVariables = null;
+    public FrozenSet<string> TmpVariables = FrozenSet<string>.Empty;
 
     public DreamObjectDefinition(DreamObjectDefinition copyFrom) {
         DreamManager = copyFrom.DreamManager;
@@ -79,9 +83,9 @@ public sealed class DreamObjectDefinition {
         InitializationProc = copyFrom.InitializationProc;
 
         Variables = new Dictionary<string, DreamValue>(copyFrom.Variables);
-        GlobalVariables = new Dictionary<string, int>(copyFrom.GlobalVariables);
-        ConstVariables = copyFrom.ConstVariables is not null ? new HashSet<string>(copyFrom.ConstVariables) : null;
-        TmpVariables = copyFrom.TmpVariables is not null ? new HashSet<string>(copyFrom.TmpVariables) : null;
+        GlobalVariables = copyFrom.GlobalVariables;
+        ConstVariables = copyFrom.ConstVariables;
+        TmpVariables = copyFrom.TmpVariables;
         Procs = new Dictionary<string, int>(copyFrom.Procs);
         OverridingProcs = new Dictionary<string, int>(copyFrom.OverridingProcs);
         if (copyFrom.Verbs != null)
@@ -113,11 +117,9 @@ public sealed class DreamObjectDefinition {
             if (Parent.Verbs != null)
                 Verbs = new List<int>(Parent.Verbs);
             if (Parent != ObjectTree.Root.ObjectDefinition) // Don't include root-level globals
-                GlobalVariables = new Dictionary<string, int>(Parent.GlobalVariables);
-            if (Parent.ConstVariables != null)
-                ConstVariables = new HashSet<string>(Parent.ConstVariables);
-            if (Parent.TmpVariables != null)
-                TmpVariables = new HashSet<string>(Parent.TmpVariables);
+                GlobalVariables = Parent.GlobalVariables;
+            ConstVariables = Parent.ConstVariables;
+            TmpVariables = Parent.TmpVariables;
         }
     }
 

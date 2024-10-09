@@ -2227,8 +2227,8 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (objectDefinition.GlobalVariables.ContainsKey(property)
-            || (objectDefinition.ConstVariables is not null && objectDefinition.ConstVariables.Contains(property))
-            || (objectDefinition.TmpVariables is not null && objectDefinition.TmpVariables.Contains(property))) {
+            || (objectDefinition.ConstVariables.Contains(property))
+            || (objectDefinition.TmpVariables.Contains(property))) {
                 state.Push(new DreamValue(0));
             } else {
                 state.Push(new DreamValue(1));

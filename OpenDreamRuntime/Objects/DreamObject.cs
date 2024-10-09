@@ -149,11 +149,12 @@ namespace OpenDreamRuntime.Objects {
         }
 
         #region Variables
+
         public virtual bool IsSaved(string name) {
             return ObjectDefinition.Variables.ContainsKey(name)
                 && !ObjectDefinition.GlobalVariables.ContainsKey(name)
-                && !(ObjectDefinition.ConstVariables is not null && ObjectDefinition.ConstVariables.Contains(name))
-                && !(ObjectDefinition.TmpVariables is not null && ObjectDefinition.TmpVariables.Contains(name));
+                && !(ObjectDefinition.ConstVariables.Contains(name))
+                && !(ObjectDefinition.TmpVariables.Contains(name));
         }
 
         public bool HasVariable(string name) {

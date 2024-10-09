@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -47,8 +48,8 @@ public sealed class DreamObjectTree {
     public TreeEntry Obj { get; private set; }
     public TreeEntry Mob { get; private set; }
 
-    private readonly Dictionary<string, TreeEntry> _pathToType = new();
-    private Dictionary<string, int> _globalProcIds;
+    private FrozenDictionary<string, TreeEntry> _pathToType = FrozenDictionary<string, TreeEntry>.Empty;
+    private FrozenDictionary<string, int> _globalProcIds = FrozenDictionary<string, int>.Empty;
 
     [Dependency] private readonly AtomManager _atomManager = default!;
     [Dependency] private readonly DreamManager _dreamManager = default!;
@@ -124,13 +125,15 @@ public sealed class DreamObjectTree {
     public IEnumerable<TreeEntry> GetAllDescendants(TreeEntry treeEntry) {
         yield return treeEntry;
 
-        foreach (int typeId in treeEntry.InheritingTypes) {
-            TreeEntry type = Types[typeId];
-            IEnumerator<TreeEntry> typeChildren = GetAllDescendants(type).GetEnumerator();
+        if (treeEntry.InheritingTypes is not null) {
+            foreach (int typeId in treeEntry.InheritingTypes) {
+                TreeEntry type = Types[typeId];
+                IEnumerator<TreeEntry> typeChildren = GetAllDescendants(type).GetEnumerator();
 
-            while (typeChildren.MoveNext()) yield return typeChildren.Current;
+                while (typeChildren.MoveNext()) yield return typeChildren.Current;
 
-            typeChildren.Dispose();
+                typeChildren.Dispose();
+            }
         }
     }
 
@@ -265,6 +268,8 @@ public sealed class DreamObjectTree {
     private void LoadTypesFromJson(DreamTypeJson[] types, ProcDefinitionJson[]? procs, int[]? globalProcs) {
         Types = new TreeEntry[types.Length];
 
+        var pathToTypes = new Dictionary<string, TreeEntry>(types.Length);
+
         //First pass: Create types and set them up for initialization
         Types[0] = Root;
         for (int i = 1; i < Types.Length; i++) {
@@ -272,8 +277,10 @@ public sealed class DreamObjectTree {
             var type = new TreeEntry(path, i);
 
             Types[i] = type;
-            _pathToType[path] = type;
+            pathToTypes[path] = type;
         }
+
+        _pathToType = pathToTypes.ToFrozenDictionary();
 
         World = GetTreeEntry("/world");
         List = GetTreeEntry("/list");
@@ -307,7 +314,7 @@ public sealed class DreamObjectTree {
 
             if (jsonType.Parent != null) {
                 TreeEntry parent = Types[jsonType.Parent.Value];
-
+                parent.InheritingTypes ??= new List<int>(1);
                 parent.InheritingTypes.Add(i);
                 type.ParentEntry = parent;
             }
@@ -387,23 +394,30 @@ public sealed class DreamObjectTree {
         }
 
         if (jsonObject.GlobalVariables != null) {
+            Dictionary<string, int> globalVars = new Dictionary<string, int>(jsonObject.GlobalVariables.Count);
             foreach (KeyValuePair<string, int> jsonGlobalVariable in jsonObject.GlobalVariables) {
-                objectDefinition.GlobalVariables.Add(jsonGlobalVariable.Key, jsonGlobalVariable.Value);
+                globalVars.Add(jsonGlobalVariable.Key, jsonGlobalVariable.Value);
             }
+
+            objectDefinition.GlobalVariables = globalVars.ToFrozenDictionary();
         }
 
         if (jsonObject.ConstVariables != null) {
-            objectDefinition.ConstVariables ??= new();
+            HashSet<string> constVars = new HashSet<string>(jsonObject.ConstVariables.Count);
             foreach (string jsonConstVariable in jsonObject.ConstVariables) {
-                objectDefinition.ConstVariables.Add(jsonConstVariable);
+                constVars.Add(jsonConstVariable);
             }
+
+            objectDefinition.ConstVariables = constVars.ToFrozenSet();
         }
 
         if(jsonObject.TmpVariables != null) {
-            objectDefinition.TmpVariables ??= new();
+            HashSet<string> tmpVars = new HashSet<string>(jsonObject.TmpVariables.Count);
             foreach (string jsonTmpVariable in jsonObject.TmpVariables) {
-                objectDefinition.TmpVariables.Add(jsonTmpVariable);
+                tmpVars.Add(jsonTmpVariable);
             }
+
+            objectDefinition.TmpVariables = tmpVars.ToFrozenSet();
         }
     }
 
@@ -426,13 +440,15 @@ public sealed class DreamObjectTree {
         }
 
         if (jsonGlobalProcs != null) {
-            _globalProcIds = new(jsonGlobalProcs.Length);
+            Dictionary<string, int> globalProcIds = new(jsonGlobalProcs.Length);
 
             foreach (var procId in jsonGlobalProcs) {
                 var proc = Procs[procId];
 
-                _globalProcIds.Add(proc.Name, procId);
+                globalProcIds.Add(proc.Name, procId);
             }
+
+            _globalProcIds = globalProcIds.ToFrozenDictionary();
         }
     }
 
@@ -454,14 +470,14 @@ public sealed class DreamObjectTree {
 
     internal void SetGlobalNativeProc(NativeProc.HandlerFn func) {
         var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-        var proc = new NativeProc(_globalProcIds[name], Root, name, argumentNames, defaultArgumentValues, func, _dreamManager, _atomManager, _dreamMapManager, _dreamResourceManager, _walkManager, this);
+        var proc = new NativeProc(_globalProcIds![name], Root, name, argumentNames, defaultArgumentValues, func, _dreamManager, _atomManager, _dreamMapManager, _dreamResourceManager, _walkManager, this);
 
         Procs[proc.Id] = proc;
     }
 
     public void SetGlobalNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func) {
         var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-        var proc = new AsyncNativeProc(_globalProcIds[name], Root, name, argumentNames, defaultArgumentValues, func);
+        var proc = new AsyncNativeProc(_globalProcIds![name], Root, name, argumentNames, defaultArgumentValues, func);
 
         Procs[proc.Id] = proc;
     }
@@ -482,11 +498,13 @@ public sealed class DreamObjectTree {
     /// Enumerate the inheritance tree in post-order
     /// </summary>
     private IEnumerable<TreeEntry> TraversePostOrder(TreeEntry from) {
-        foreach (int typeId in from.InheritingTypes) {
-            TreeEntry type = Types[typeId];
-            using IEnumerator<TreeEntry> typeChildren = TraversePostOrder(type).GetEnumerator();
+        if (from.InheritingTypes is not null) {
+            foreach (int typeId in from.InheritingTypes) {
+                TreeEntry type = Types[typeId];
+                using IEnumerator<TreeEntry> typeChildren = TraversePostOrder(type).GetEnumerator();
 
-            while (typeChildren.MoveNext()) yield return typeChildren.Current;
+                while (typeChildren.MoveNext()) yield return typeChildren.Current;
+            }
         }
 
         yield return from;
@@ -499,7 +517,7 @@ public sealed class TreeEntry {
     public readonly int Id;
     public DreamObjectDefinition ObjectDefinition;
     public TreeEntry ParentEntry;
-    public readonly List<int> InheritingTypes = new();
+    public List<int>? InheritingTypes;
 
     /// <summary>
     /// This node's index in the inheritance tree based on a depth-first search<br/>

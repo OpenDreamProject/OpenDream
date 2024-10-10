@@ -17,8 +17,6 @@ using Robust.Shared.ContentPack;
 using Robust.Shared.Network;
 using Robust.Shared.Random;
 using Robust.Shared.Serialization.Manager;
-using Robust.Shared.Serialization.Markdown.Mapping;
-using Robust.Shared.Serialization.Markdown.Value;
 using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 using SixLabors.ImageSharp;
@@ -31,7 +29,6 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
     [Dependency] private readonly IClyde _clyde = default!;
     [Dependency] private readonly IBaseClient _client = default!;
-    [Dependency] private readonly IUserInterfaceManager _userInterfaceManager = default!;
     [Dependency] private readonly IEyeManager _eyeManager = default!;
     [Dependency] private readonly IClientNetManager _netManager = default!;
     [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
@@ -72,7 +69,6 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
     public bool ShowPopupMenus { get; private set; } = true;
 
-    private readonly Dictionary<string, BrowsePopup> _popupWindows = new();
     private ViewRange _view = new(5);
 
     public void LoadInterfaceFromSource(string source) {
@@ -180,41 +176,51 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     }
 
     private void RxBrowse(MsgBrowse pBrowse) {
-        if (pBrowse.HtmlSource == null && pBrowse.Window != null) {
-            //Closing a popup
-            if (_popupWindows.TryGetValue(pBrowse.Window, out var popup)) {
-                popup.Close();
+        var referencedElement = (pBrowse.Window != null) ? FindElementWithId(pBrowse.Window) : DefaultWindow;
+
+        if (pBrowse.HtmlSource == null && referencedElement != null) {
+            // Closing the referenced window or browser
+
+            if (referencedElement is ControlWindow window) {
+                window.CloseChildWindow();
+            } else if (referencedElement is ControlBrowser browser) {
+                // TODO: What does "closing" the browser mean? Redirect to a blank page or remove the control entirely?
+                browser.SetFileSource(null);
             }
         } else if (pBrowse.HtmlSource != null) {
-            //Outputting to a browser
-            string htmlFileName;
-            ControlBrowser? outputBrowser;
-            BrowsePopup? popup = null;
+            var htmlFileName = $"browse{_random.Next()}"; // TODO: Possible collisions and explicit file names
+            ControlBrowser? outputBrowser = referencedElement as ControlBrowser;
 
-            if (pBrowse.Window != null) {
-                htmlFileName = $"browse{_random.Next()}"; // TODO: Possible collisions and explicit file names
-                outputBrowser = FindElementWithId(pBrowse.Window) as ControlBrowser;
+            if (outputBrowser == null) {
+                if (referencedElement is ControlWindow window) {
+                    outputBrowser = null;
 
-                if (outputBrowser == null) {
-                    if (!_popupWindows.TryGetValue(pBrowse.Window, out popup)) {
-                        // Creating a new popup
-                        popup = new BrowsePopup(pBrowse.Window, pBrowse.Size, _clyde.MainWindow);
-                        popup.Closed += () => { _popupWindows.Remove(pBrowse.Window); };
+                    // Find a browser within this window
+                    foreach (var childControl in window.ChildControls) {
+                        if (childControl is not ControlBrowser browser)
+                            continue;
 
-                        _popupWindows.Add(pBrowse.Window, popup);
+                        outputBrowser = browser;
+                        break;
                     }
+                } else if (pBrowse.Window != null) {
+                    // Creating a new popup
+                    var popup = new BrowsePopup(pBrowse.Window, pBrowse.Size, _clyde.MainWindow);
+                    popup.Closed += () => { Windows.Remove(pBrowse.Window); };
 
                     outputBrowser = popup.Browser;
+                    Windows.Add(pBrowse.Window, popup.WindowElement);
+                    popup.Open();
                 }
-            } else {
-                //TODO: Find embedded browser panel
+            }
+
+            if (outputBrowser == null) {
+                _sawmill.Error($"Failed to find a browser element in window \"{pBrowse.Window}\" to browse()");
                 return;
             }
 
             var cacheFile = _dreamResource.CreateCacheFile(htmlFileName + ".html", pBrowse.HtmlSource);
             outputBrowser.SetFileSource(cacheFile);
-
-            popup?.Open();
         }
     }
 
@@ -312,8 +318,6 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
             if (Windows.ContainsKey(windowId)) {
                 window = Windows[windowId];
-            } else if (_popupWindows.TryGetValue(windowId, out var popup)) {
-                window = popup.WindowElement;
             } else if (Menus.TryGetValue(windowId, out var menu)) {
                 if (menu.MenuElements.TryGetValue(elementId, out var menuElement))
                     return menuElement;
@@ -366,9 +370,6 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 if (macroSet.Macros.TryGetValue(elementId, out var macroElement))
                     return macroElement;
             }
-
-            if (_popupWindows.TryGetValue(elementId, out var popup))
-                return popup.WindowElement;
         }
 
         return null;
@@ -835,8 +836,8 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     }
 
     private void Reset() {
-        _userInterfaceManager.MainViewport.Visible = false;
-        //close windows if they're open, and clear all child uielements
+        _uiManager.MainViewport.Visible = false;
+        //close windows if they're open, and clear all child ui elements
         foreach (var window in Windows.Values){
             window.CloseChildWindow();
             window.UIElement.RemoveAllChildren();
@@ -846,12 +847,6 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         Menus.Clear();
         MacroSets.Clear();
 
-        //close popups if they're open
-        foreach (var popup in _popupWindows.Values) {
-            popup.Close();
-        }
-
-        _popupWindows.Clear();
         _inputManager.ResetAllBindings();
     }
 
@@ -892,7 +887,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         LayoutContainer.SetAnchorRight(DefaultWindow.UIElement, 1);
         LayoutContainer.SetAnchorBottom(DefaultWindow.UIElement, 1);
 
-        _userInterfaceManager.StateRoot.AddChild(DefaultWindow.UIElement);
+        _uiManager.StateRoot.AddChild(DefaultWindow.UIElement);
     }
 
     private void LoadDescriptor(ElementDescriptor descriptor) {

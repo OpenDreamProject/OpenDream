@@ -90,8 +90,13 @@ internal sealed class ControlBrowser : InterfaceControl {
         _webView.ExecuteJavaScript($"{jsFunction}({string.Join(",", parts)})");
     }
 
-    public void SetFileSource(ResPath filepath) {
-        _webView.Url = "http://127.0.0.1/" + filepath; // hostname must be the localhost IP for TGUI to work properly
+    public void SetFileSource(ResPath? filepath) {
+        if (filepath != null) {
+            // hostname must be the localhost IP for TGUI to work properly
+            _webView.Url = "http://127.0.0.1/" + filepath;
+        } else {
+            _webView.Url = "about:blank";
+        }
     }
 
     private void BeforeBrowseHandler(IBeforeBrowseContext context) {
@@ -157,6 +162,7 @@ internal sealed class ControlBrowser : InterfaceControl {
             }
         } catch (Exception e) {
             _sawmill.Error($"Exception in RequestHandler: {e}");
+            context.DoCancel();
         }
     }
 

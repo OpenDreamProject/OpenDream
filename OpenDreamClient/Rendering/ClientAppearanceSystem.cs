@@ -48,6 +48,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     public void LoadAppearance(int appearanceId, Action<IconAppearance> loadCallback) {
         if (_appearances.TryGetValue(appearanceId, out var appearance)) {
             loadCallback(appearance);
+            return;
         }
 
         if (!_appearanceLoadCallbacks.ContainsKey(appearanceId)) {

@@ -40,13 +40,16 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     private void OnPlayerStatusChanged(object? sender, SessionStatusEventArgs e) {
         if (e.NewStatus == SessionStatus.InGame) {
             //todo this is probably stupid slow
-            Dictionary<int, IconAppearance> sendData = new(_idToAppearance.Count);
-            ImmutableIconAppearance? immutable;
-            foreach(int key in _idToAppearance.Keys ){
-                if(_idToAppearance[key].TryGetTarget(out immutable))
-                    sendData.Add(key, immutable.ToMutable());
+            lock (_lock) {
+                Dictionary<int, IconAppearance> sendData = new(_idToAppearance.Count);
+                ImmutableIconAppearance? immutable;
+                foreach(int key in _idToAppearance.Keys ){
+                    if(_idToAppearance[key].TryGetTarget(out immutable))
+                        sendData.Add(key, immutable.ToMutable());
+                }
+                e.Session.Channel.SendMessage(new MsgAllAppearances(sendData));
             }
-            e.Session.Channel.SendMessage(new MsgAllAppearances(sendData));
+
         }
     }
 
@@ -62,13 +65,18 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
 
     //this should only be called by the ImmutableIconAppearance's finalizer
     public void RemoveAppearance(ImmutableIconAppearance appearance) {
+        lock (_lock) {
+            _idToAppearance.Remove(appearance.GetHashCode());
+        }
         RaiseNetworkEvent(new RemoveAppearanceEvent(appearance.GetHashCode()));
     }
 
     public ImmutableIconAppearance MustGetAppearanceByID(int appearanceId) {
-        if(!_idToAppearance[appearanceId].TryGetTarget(out var result))
-            throw new Exception($"Deleted appearance ID ${appearanceId} in MustGetAppearanceByID()");
-        return result;
+        lock (_lock) {
+            if(!_idToAppearance[appearanceId].TryGetTarget(out var result))
+                throw new Exception($"Attempted to access deleted appearance ID ${appearanceId} in MustGetAppearanceByID()");
+            return result;
+        }
     }
 
     public bool TryGetAppearanceByID(int appearanceId, [NotNullWhen(true)] out ImmutableIconAppearance? appearance) {

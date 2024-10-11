@@ -14,12 +14,12 @@ public sealed class DMISpriteSystem : EntitySystem {
     }
 
     private void GetComponentState(EntityUid uid, DMISpriteComponent component, ref ComponentGetState args) {
-        args.State = new SharedDMISpriteComponent.DMISpriteComponentState(component.AppearanceId, component.ScreenLocation);
+        args.State = new SharedDMISpriteComponent.DMISpriteComponentState(component.Appearance.GetHashCode(), component.ScreenLocation);
     }
 
     public void SetSpriteAppearance(Entity<DMISpriteComponent> ent, IconAppearance appearance, bool dirty = true) {
         DMISpriteComponent component = ent.Comp;
-        component.AppearanceId = _appearance?.AddAppearance(appearance);
+        component.Appearance = _appearance?.AddAppearance(appearance);
         if(dirty)
             Dirty(ent, component);
     }

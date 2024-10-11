@@ -5,24 +5,25 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Robust.Shared.GameObjects;
+using OpenDreamShared.Dream;
+using System.Diagnostics.Contracts;
+using System.Linq;
+using Pidgin;
 
-namespace OpenDreamShared.Dream;
+namespace OpenDreamRuntime.Rendering;
 
 /*
  * Woe, weary traveler, modifying this class is not for the faint of heart.
  * If you modify IconAppearance, be sure to update the following places:
- * - All of the methods on IconAppearance itself
+ * - All of the methods on ImmutableIconAppearance itself
+ * - IconAppearance
  * - IconAppearance methods in AtomManager
- * - MsgAllAppearances
- * - IconDebugWindow
  * - There may be others
  */
 
 // TODO: Wow this is huge! Probably look into splitting this by most used/least used to reduce the size of these
-[Serializable, NetSerializable]
-public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance>, IEquatable<IconAppearance> {
-    public static readonly ImmutableIconAppearance Default = new();
 
+public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance> {
     [ViewVariables] public readonly string Name = string.Empty;
     [ViewVariables] public readonly int? Icon;
     [ViewVariables] public readonly string? IconState;
@@ -43,8 +44,8 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
     [ViewVariables] public readonly string? RenderSource;
     [ViewVariables] public readonly string? RenderTarget;
     [ViewVariables] public readonly MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;
-    [ViewVariables] public readonly int[] Overlays;
-    [ViewVariables] public readonly int[] Underlays;
+    [ViewVariables] public readonly ImmutableIconAppearance[] Overlays;
+    [ViewVariables] public readonly ImmutableIconAppearance[] Underlays;
     [ViewVariables] public readonly NetEntity[] VisContents;
     [ViewVariables] public readonly DreamFilter[] Filters;
     [ViewVariables] public readonly int[] Verbs;
@@ -73,16 +74,11 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
     public Vector2i TotalPixelOffset => PixelOffset + PixelOffset2;
 
     private int? storedHashCode;
+    private ServerAppearanceSystem appearanceSystem;
 
-    public ImmutableIconAppearance() {
-        Overlays = [];
-        Underlays = [];
-        VisContents = [];
-        Filters = [];
-        Verbs = [];
-    }
+    public ImmutableIconAppearance(IconAppearance appearance, ServerAppearanceSystem serverAppearanceSystem) {
+        this.appearanceSystem = serverAppearanceSystem;
 
-    public ImmutableIconAppearance(IconAppearance appearance) {
         Name = appearance.Name;
         Icon = appearance.Icon;
         IconState = appearance.IconState;
@@ -103,19 +99,28 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
         Invisibility = appearance.Invisibility;
         Opacity = appearance.Opacity;
         MouseOpacity = appearance.MouseOpacity;
-        Overlays = appearance.Overlays.ToArray();
-        Underlays = appearance.Underlays.ToArray();
+
+        int i = 0;
+        Overlays = new ImmutableIconAppearance[appearance.Overlays.Count];
+        foreach(int overlayId in appearance.Overlays)
+            Overlays[i++] = serverAppearanceSystem.MustGetAppearanceByID(overlayId);
+
+        i = 0;
+        Underlays = new ImmutableIconAppearance[appearance.Underlays.Count];
+        foreach(int underlayId in appearance.Underlays)
+            Underlays[i++] = serverAppearanceSystem.MustGetAppearanceByID(underlayId);
+
         VisContents = appearance.VisContents.ToArray();
         Filters = appearance.Filters.ToArray();
         Verbs = appearance.Verbs.ToArray();
         Override = appearance.Override;
 
-        for (int i = 0; i < 6; i++) {
+        for (i = 0; i < 6; i++) {
             Transform[i] = appearance.Transform[i];
         }
     }
 
-    public override bool Equals(object? obj) => (obj is IconAppearance appearance && Equals(appearance)) || (obj is ImmutableIconAppearance immutable && Equals(immutable));
+    public override bool Equals(object? obj) => obj is ImmutableIconAppearance immutable && Equals(immutable);
 
     public bool Equals(ImmutableIconAppearance? immutableIconAppearance) {
         if (immutableIconAppearance == null) return false;
@@ -169,63 +174,6 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
 
         for (int i = 0; i < 6; i++) {
             if (!immutableIconAppearance.Transform[i].Equals(Transform[i])) return false;
-        }
-
-        return true;
-    }
-
-    public bool Equals(IconAppearance? appearance) {
-        if (appearance == null) return false;
-
-        if (appearance.Name != Name) return false;
-        if (appearance.Icon != Icon) return false;
-        if (appearance.IconState != IconState) return false;
-        if (appearance.Direction != Direction) return false;
-        if (appearance.InheritsDirection != InheritsDirection) return false;
-        if (appearance.PixelOffset != PixelOffset) return false;
-        if (appearance.PixelOffset2 != PixelOffset2) return false;
-        if (appearance.Color != Color) return false;
-        if (appearance.Alpha != Alpha) return false;
-        if (appearance.GlideSize != GlideSize) return false;
-        if (!appearance.ColorMatrix.Equals(ColorMatrix)) return false;
-        if (appearance.Layer != Layer) return false;
-        if (appearance.Plane != Plane) return false;
-        if (appearance.RenderSource != RenderSource) return false;
-        if (appearance.RenderTarget != RenderTarget) return false;
-        if (appearance.BlendMode != BlendMode) return false;
-        if (appearance.AppearanceFlags != AppearanceFlags) return false;
-        if (appearance.Invisibility != Invisibility) return false;
-        if (appearance.Opacity != Opacity) return false;
-        if (appearance.MouseOpacity != MouseOpacity) return false;
-        if (appearance.Overlays.Count != Overlays.Length) return false;
-        if (appearance.Underlays.Count != Underlays.Length) return false;
-        if (appearance.VisContents.Count != VisContents.Length) return false;
-        if (appearance.Filters.Count != Filters.Length) return false;
-        if (appearance.Verbs.Count != Verbs.Length) return false;
-        if (appearance.Override != Override) return false;
-
-        for (int i = 0; i < Filters.Length; i++) {
-            if (appearance.Filters[i] != Filters[i]) return false;
-        }
-
-        for (int i = 0; i < Overlays.Length; i++) {
-            if (appearance.Overlays[i] != Overlays[i]) return false;
-        }
-
-        for (int i = 0; i < Underlays.Length; i++) {
-            if (appearance.Underlays[i] != Underlays[i]) return false;
-        }
-
-        for (int i = 0; i < VisContents.Length; i++) {
-            if (appearance.VisContents[i] != VisContents[i]) return false;
-        }
-
-        for (int i = 0; i < Verbs.Length; i++) {
-            if (appearance.Verbs[i] != Verbs[i]) return false;
-        }
-
-        for (int i = 0; i < 6; i++) {
-            if (!appearance.Transform[i].Equals(Transform[i])) return false;
         }
 
         return true;
@@ -289,11 +237,11 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
         hashCode.Add(BlendMode);
         hashCode.Add(AppearanceFlags);
 
-        foreach (int overlay in Overlays) {
+        foreach (ImmutableIconAppearance overlay in Overlays) {
             hashCode.Add(overlay);
         }
 
-        foreach (int underlay in Underlays) {
+        foreach (ImmutableIconAppearance underlay in Underlays) {
             hashCode.Add(underlay);
         }
 
@@ -318,6 +266,7 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
     }
 
     //Creates an editable *copy* of this appearance, which must be added to the ServerAppearanceSystem to be used.
+    [Pure]
     public IconAppearance ToMutable() {
         IconAppearance result = new IconAppearance() {
             Name = this.Name,
@@ -340,18 +289,26 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
             Invisibility = this.Invisibility,
             Opacity = this.Opacity,
             MouseOpacity = this.MouseOpacity,
-            Overlays = new(this.Overlays),
-            Underlays = new(this.Underlays),
+            Overlays = new(this.Overlays.Length),
+            Underlays = new(this.Underlays.Length),
             VisContents = new(this.VisContents),
             Filters = new(this.Filters),
             Verbs = new(this.Verbs),
             Override = this.Override,
         };
+        foreach(ImmutableIconAppearance overlay in Overlays)
+            result.Overlays.Add(overlay.GetHashCode());
+        foreach(ImmutableIconAppearance underlay in Underlays)
+            result.Underlays.Add(underlay.GetHashCode());
 
         for (int i = 0; i < 6; i++) {
             result.Transform[i] = Transform[i];
         }
         return result;
+    }
+
+    ~ImmutableIconAppearance() {
+        appearanceSystem.RemoveAppearance(this);
     }
 
 }

@@ -69,7 +69,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     }
 
     private void OnNewAppearance(NewAppearanceEvent e) {
-        _appearances[e.AppearanceId] = e.Appearance.ToMutable();
+        _appearances[e.AppearanceId] = e.Appearance;
 
         if (_appearanceLoadCallbacks.TryGetValue(e.AppearanceId, out var callbacks)) {
             foreach (var callback in callbacks) callback(_appearances[e.AppearanceId]);

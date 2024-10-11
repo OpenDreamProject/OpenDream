@@ -193,53 +193,53 @@ public sealed class DreamMapManager : IDreamMapManager {
     private readonly Dictionary<ValueTuple<IconAppearance, int>, IconAppearance> _turfAreaLookup = new();
 
     public void SetTurfAppearance(DreamObjectTurf turf, IconAppearance appearance) {
-        if(turf.Cell.Area.AppearanceId != 0)
-            if(!appearance.Overlays.Contains(turf.Cell.Area.AppearanceId)) {
-                if(!_turfAreaLookup.TryGetValue((appearance, turf.Cell.Area.AppearanceId), out var newAppearance)) {
+        if(turf.Cell.Area.Appearance != _appearanceSystem.DefaultAppearance)
+            if(!appearance.Overlays.Contains(turf.Cell.Area.Appearance.GetHashCode())) {
+                if(!_turfAreaLookup.TryGetValue((appearance, turf.Cell.Area.Appearance.GetHashCode()), out var newAppearance)) {
                     newAppearance = new(appearance);
-                    newAppearance.Overlays.Add(turf.Cell.Area.AppearanceId);
-                    _turfAreaLookup.Add((appearance, turf.Cell.Area.AppearanceId), newAppearance);
+                    newAppearance.Overlays.Add(turf.Cell.Area.Appearance.GetHashCode());
+                    _turfAreaLookup.Add((appearance, turf.Cell.Area.Appearance.GetHashCode()), newAppearance);
                 }
 
                 appearance = newAppearance;
             }
 
-        int appearanceId = _appearanceSystem.AddAppearance(appearance);
+        var immutableAppearance = _appearanceSystem.AddAppearance(appearance);
 
         var level = _levels[turf.Z - 1];
-        int turfId = (appearanceId + 1); // +1 because 0 is used for empty turfs
+        int turfId = immutableAppearance.GetHashCode() + 1; // +1 because 0 is used for empty turfs
         level.QueuedTileUpdates[(turf.X, turf.Y)] = new Tile(turfId);
-        turf.AppearanceId = appearanceId;
+        turf.Appearance = immutableAppearance;
     }
 
     public void SetAreaAppearance(DreamObjectArea area, IconAppearance appearance) {
         //if an area changes appearance, invalidate the lookup
         _turfAreaLookup.Clear();
-        int oldAppearance = area.AppearanceId;
-        area.AppearanceId  = _appearanceSystem.AddAppearance(appearance);
+        int oldAppearanceId = area.Appearance.GetHashCode();
+        area.Appearance  = _appearanceSystem.AddAppearance(appearance);
 
         //get all unique turf appearances
         //create the new version of each of those appearances
         //for each turf, update the appropriate ID
 
-        Dictionary<int, int> oldToNewAppearanceID = new();
+        Dictionary<ImmutableIconAppearance, ImmutableIconAppearance> oldToNewAppearance = new();
         foreach (var turf in area.Contents.GetTurfs()) {
-            if(oldToNewAppearanceID.TryGetValue(turf.AppearanceId, out int newID))
-                turf.AppearanceId = newID;
+            if(oldToNewAppearance.TryGetValue(turf.Appearance, out var newAppearance))
+                turf.Appearance = newAppearance;
             else {
                 IconAppearance? turfAppearance = _atomManager.MustGetAppearance(turf)?.ToMutable();
 
                 if(turfAppearance is null) continue;
 
-                turfAppearance.Overlays.Remove(oldAppearance);
-                turfAppearance.Overlays.Add(area.AppearanceId);
-                newID = _appearanceSystem.AddAppearance(turfAppearance);
-                oldToNewAppearanceID.Add(turf.AppearanceId, newID);
-                turf.AppearanceId = newID;
+                turfAppearance.Overlays.Remove(oldAppearanceId);
+                turfAppearance.Overlays.Add(area.Appearance.GetHashCode());
+                newAppearance = _appearanceSystem.AddAppearance(turfAppearance);
+                oldToNewAppearance.Add(turf.Appearance, newAppearance);
+                turf.Appearance = newAppearance;
             }
 
             var level = _levels[turf.Z - 1];
-            int turfId = (newID + 1); // +1 because 0 is used for empty turfs
+            int turfId = newAppearance.GetHashCode() + 1; // +1 because 0 is used for empty turfs
             level.QueuedTileUpdates[(turf.X, turf.Y)] = new Tile(turfId);
         }
     }

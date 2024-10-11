@@ -8,8 +8,10 @@ using DMCompiler.Json;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.DebugAdapter;
+using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
+using Robust.Server.GameObjects;
 using Robust.Shared.Utility;
 
 namespace OpenDreamRuntime.Procs {
@@ -892,7 +894,7 @@ namespace OpenDreamRuntime.Procs {
                 if (!Proc.AtomManager.IsValidAppearanceVar(field))
                     ThrowInvalidAppearanceVar(field);
 
-                return Proc.AtomManager.GetAppearanceVar(new ImmutableIconAppearance(appearance), field); //TODO gross, bad
+                return Proc.AtomManager.GetAppearanceVar(appearance, field);
             } else if (owner.TryGetValueAsType(out var ownerType) && ownerType.ObjectDefinition.Variables.TryGetValue(field, out var val)) {
                 return val; // equivalent to initial()
             }

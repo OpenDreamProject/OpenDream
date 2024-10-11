@@ -20,7 +20,8 @@ namespace OpenDreamShared.Dream;
  */
 
 // TODO: Wow this is huge! Probably look into splitting this by most used/least used to reduce the size of these
-public sealed class IconAppearance : IEquatable<IconAppearance>, IEquatable<ImmutableIconAppearance> {
+[Serializable, NetSerializable]
+public sealed class IconAppearance : IEquatable<IconAppearance> {
     public static readonly IconAppearance Default = new();
 
     [ViewVariables] public string Name = string.Empty;
@@ -113,11 +114,7 @@ public sealed class IconAppearance : IEquatable<IconAppearance>, IEquatable<Immu
         }
     }
 
-    public override bool Equals(object? obj) => (obj is IconAppearance appearance && Equals(appearance)) || (obj is ImmutableIconAppearance immutableIconAppearance && Equals(immutableIconAppearance));
-
-    public bool Equals(ImmutableIconAppearance? immutableIconAppearance) {
-        return immutableIconAppearance is null ? false : immutableIconAppearance.Equals(this);
-    }
+    public override bool Equals(object? obj) => obj is IconAppearance appearance && Equals(appearance);
 
     public bool Equals(IconAppearance? appearance) {
         if (appearance == null) return false;

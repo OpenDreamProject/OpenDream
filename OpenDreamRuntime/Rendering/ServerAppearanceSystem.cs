@@ -9,11 +9,11 @@ using Robust.Shared.Player;
 namespace OpenDreamRuntime.Rendering;
 
 public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
-    private readonly Dictionary<ImmutableIconAppearance, int> _appearanceToId = new();
-    private readonly Dictionary<int, ImmutableIconAppearance> _idToAppearance = new();
-    private readonly Dictionary<ImmutableIconAppearance, int> _appearanceRefCounts = new();
-    private int _appearanceIdCounter;
+    //use the appearance hash as the id!
+    //appearance hash to weakref
+    private readonly Dictionary<int, WeakReference<ImmutableIconAppearance>> _idToAppearance = new();
 
+    public readonly ImmutableIconAppearance DefaultAppearance;
 
     /// <summary>
     /// This system is used by the PVS thread, we need to be thread-safe
@@ -22,62 +22,64 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
 
     [Dependency] private readonly IPlayerManager _playerManager = default!;
 
+    public ServerAppearanceSystem() {
+        DefaultAppearance = new ImmutableIconAppearance(IconAppearance.Default, this);
+    }
+
     public override void Initialize() {
-        //register empty appearance as ID 0
-        _appearanceToId.Add(ImmutableIconAppearance.Default, 0);
-        _idToAppearance.Add(0, ImmutableIconAppearance.Default);
-        _appearanceRefCounts.Add(ImmutableIconAppearance.Default, 1);
-        _appearanceIdCounter = 1;
+        _idToAppearance.Add(DefaultAppearance.GetHashCode(), new(DefaultAppearance));
         _playerManager.PlayerStatusChanged += OnPlayerStatusChanged;
     }
 
     public override void Shutdown() {
         lock (_lock) {
-            _appearanceToId.Clear();
             _idToAppearance.Clear();
-            _appearanceIdCounter = 0;
         }
     }
 
     private void OnPlayerStatusChanged(object? sender, SessionStatusEventArgs e) {
         if (e.NewStatus == SessionStatus.InGame) {
-            e.Session.Channel.SendMessage(new MsgAllAppearances(_idToAppearance));
-        }
-    }
-
-    public int AddAppearance(IconAppearance appearance) {
-        ImmutableIconAppearance immutableAppearance = new(appearance);
-        lock (_lock) {
-            if (!_appearanceToId.TryGetValue(immutableAppearance, out int appearanceId)) {
-                appearanceId = _appearanceIdCounter++;
-                _appearanceToId.Add(immutableAppearance, appearanceId);
-                _idToAppearance.Add(appearanceId, immutableAppearance);
-                RaiseNetworkEvent(new NewAppearanceEvent(appearanceId, immutableAppearance));
+            //todo this is probably stupid slow
+            Dictionary<int, IconAppearance> sendData = new(_idToAppearance.Count);
+            ImmutableIconAppearance? immutable;
+            foreach(int key in _idToAppearance.Keys ){
+                if(_idToAppearance[key].TryGetTarget(out immutable))
+                    sendData.Add(key, immutable.ToMutable());
             }
-            return appearanceId;
+            e.Session.Channel.SendMessage(new MsgAllAppearances(sendData));
         }
     }
 
-    public ImmutableIconAppearance MustGetAppearance(int appearanceId) {
+    public ImmutableIconAppearance AddAppearance(IconAppearance appearance) {
+        ImmutableIconAppearance immutableAppearance = new(appearance, this);
         lock (_lock) {
-            return _idToAppearance[appearanceId];
+            if (_idToAppearance.TryAdd(immutableAppearance.GetHashCode(), new(immutableAppearance))) {
+                RaiseNetworkEvent(new NewAppearanceEvent(immutableAppearance.GetHashCode(), immutableAppearance.ToMutable()));
+            }
+            return immutableAppearance;
         }
     }
 
-    public bool TryGetAppearance(int appearanceId, [NotNullWhen(true)] out ImmutableIconAppearance? appearance) {
-        lock (_lock) {
-            return _idToAppearance.TryGetValue(appearanceId, out appearance);
-        }
+    //this should only be called by the ImmutableIconAppearance's finalizer
+    public void RemoveAppearance(ImmutableIconAppearance appearance) {
+        RaiseNetworkEvent(new RemoveAppearanceEvent(appearance.GetHashCode()));
     }
 
-    public bool TryGetAppearanceId(IconAppearance appearance,out int appearanceId) {
+    public ImmutableIconAppearance MustGetAppearanceByID(int appearanceId) {
+        if(!_idToAppearance[appearanceId].TryGetTarget(out var result))
+            throw new Exception($"Deleted appearance ID ${appearanceId} in MustGetAppearanceByID()");
+        return result;
+    }
+
+    public bool TryGetAppearanceByID(int appearanceId, [NotNullWhen(true)] out ImmutableIconAppearance? appearance) {
         lock (_lock) {
-            return _appearanceToId.TryGetValue(new(appearance), out appearanceId);
+            appearance = null;
+            return _idToAppearance.TryGetValue(appearanceId, out var appearanceRef) && appearanceRef.TryGetTarget(out appearance);
         }
     }
 
     public void Animate(NetEntity entity, IconAppearance targetAppearance, TimeSpan duration, AnimationEasing easing, int loop, AnimationFlags flags, int delay, bool chainAnim) {
-        int appearanceId = AddAppearance(targetAppearance);
+        int appearanceId = AddAppearance(targetAppearance).GetHashCode();
 
         RaiseNetworkEvent(new AnimationEvent(entity, appearanceId, duration, easing, loop, flags, delay, chainAnim));
     }

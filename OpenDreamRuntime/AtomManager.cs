@@ -385,6 +385,11 @@ public sealed class AtomManager {
         }
     }
 
+    //TODO THIS IS A SUPER NASTY HACK
+    public DreamValue GetAppearanceVar(IconAppearance appearance, string varName) {
+        return GetAppearanceVar(AppearanceSystem.AddAppearance(appearance), varName);
+    }
+
     public DreamValue GetAppearanceVar(ImmutableIconAppearance appearance, string varName) {
         switch (varName) {
             case "name":
@@ -473,10 +478,10 @@ public sealed class AtomManager {
     /// <param name="atom">The atom to find the appearance of.</param>
     public ImmutableIconAppearance? MustGetAppearance(DreamObject atom) {
         return atom switch {
-            DreamObjectTurf turf => AppearanceSystem!.MustGetAppearance(turf.AppearanceId),
-            DreamObjectMovable movable => AppearanceSystem!.MustGetAppearance(movable.SpriteComponent.AppearanceId!.Value),
-            DreamObjectArea area => AppearanceSystem!.MustGetAppearance(area.AppearanceId),
-            DreamObjectImage image => AppearanceSystem!.MustGetAppearance(image.SpriteComponent.AppearanceId!.Value),
+            DreamObjectTurf turf => turf.Appearance,
+            DreamObjectMovable movable => movable.SpriteComponent.Appearance!,
+            DreamObjectArea area => area.Appearance,
+            DreamObjectImage image => image.SpriteComponent.Appearance!,
             _ => throw new Exception($"Cannot get appearance of {atom}")
         };
     }
@@ -486,13 +491,13 @@ public sealed class AtomManager {
     /// </summary>
     public bool TryGetAppearance(DreamObject atom, [NotNullWhen(true)] out ImmutableIconAppearance? appearance) {
         if (atom is DreamObjectTurf turf)
-            appearance = AppearanceSystem?.MustGetAppearance(turf.AppearanceId);
-        else if (atom is DreamObjectMovable movable && movable.SpriteComponent.AppearanceId is not null)
-            appearance = AppearanceSystem?.MustGetAppearance(movable.SpriteComponent.AppearanceId.Value);
-        else if (atom is DreamObjectImage image && image.SpriteComponent.AppearanceId is not null)
-            appearance = AppearanceSystem?.MustGetAppearance(image.SpriteComponent.AppearanceId.Value);
+            appearance = turf.Appearance;
+        else if (atom is DreamObjectMovable movable && movable.SpriteComponent.Appearance is not null)
+            appearance = movable.SpriteComponent.Appearance;
+        else if (atom is DreamObjectImage image && image.SpriteComponent.Appearance is not null)
+            appearance = image.SpriteComponent.Appearance;
         else if (atom is DreamObjectArea area)
-            appearance = AppearanceSystem?.MustGetAppearance(area.AppearanceId);
+            appearance = area.Appearance;
         else
             appearance = null;
 
@@ -534,11 +539,11 @@ public sealed class AtomManager {
         if (atom is DreamObjectMovable movable) {
             targetEntity = movable.Entity;
             targetComponent = movable.SpriteComponent;
-            appearance = AppearanceSystem!.MustGetAppearance(targetComponent.AppearanceId!.Value).ToMutable();
+            appearance = targetComponent.Appearance!.ToMutable();
         } else if (atom is DreamObjectImage image){
             targetEntity = image.Entity;
             targetComponent = image.SpriteComponent;
-            appearance = AppearanceSystem!.MustGetAppearance(targetComponent.AppearanceId!.Value).ToMutable();
+            appearance = targetComponent.Appearance!.ToMutable();
         } else
             throw new ArgumentException($"Cannot animate appearance of {atom}");
 

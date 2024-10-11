@@ -9,7 +9,7 @@ using Robust.Shared.Serialization;
 
 namespace OpenDreamShared.Network.Messages;
 
-public sealed class MsgAllAppearances(Dictionary<int, ImmutableIconAppearance> allAppearances) : NetMessage {
+public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppearances) : NetMessage {
     public override MsgGroups MsgGroup => MsgGroups.EntityEvent;
 
     private enum Property : byte {
@@ -45,9 +45,7 @@ public sealed class MsgAllAppearances(Dictionary<int, ImmutableIconAppearance> a
         End
     }
 
-    //write them as immutable, read them as mutable (client wants them mutable)
-    public Dictionary<int, ImmutableIconAppearance> AllAppearances = allAppearances;
-    public Dictionary<int, IconAppearance>? AllAppearancesMutable = null;
+    public Dictionary<int, IconAppearance> AllAppearances = allAppearances;
 
     public MsgAllAppearances() : this(new()) { }
 
@@ -55,7 +53,7 @@ public sealed class MsgAllAppearances(Dictionary<int, ImmutableIconAppearance> a
         var count = buffer.ReadInt32();
         var appearanceId = -1;
 
-        AllAppearancesMutable = new(count);
+        AllAppearances = new(count);
 
         for (int i = 0; i < count; i++) {
             var appearance = new IconAppearance();
@@ -209,7 +207,7 @@ public sealed class MsgAllAppearances(Dictionary<int, ImmutableIconAppearance> a
                 property = (Property)buffer.ReadByte();
             }
 
-            AllAppearancesMutable.Add(appearanceId, appearance);
+            AllAppearances.Add(appearanceId, appearance);
         }
     }
 
@@ -335,37 +333,37 @@ public sealed class MsgAllAppearances(Dictionary<int, ImmutableIconAppearance> a
                 buffer.Write((byte)appearance.MouseOpacity);
             }
 
-            if (appearance.Overlays.Length != 0) {
+            if (appearance.Overlays.Count != 0) {
                 buffer.Write((byte)Property.Overlays);
 
-                buffer.WriteVariableInt32(appearance.Overlays.Length);
+                buffer.WriteVariableInt32(appearance.Overlays.Count);
                 foreach (var overlay in appearance.Overlays) {
                     buffer.WriteVariableInt32(overlay);
                 }
             }
 
-            if (appearance.Underlays.Length != 0) {
+            if (appearance.Underlays.Count != 0) {
                 buffer.Write((byte)Property.Underlays);
 
-                buffer.WriteVariableInt32(appearance.Underlays.Length);
+                buffer.WriteVariableInt32(appearance.Underlays.Count);
                 foreach (var underlay in appearance.Underlays) {
                     buffer.WriteVariableInt32(underlay);
                 }
             }
 
-            if (appearance.VisContents.Length != 0) {
+            if (appearance.VisContents.Count != 0) {
                 buffer.Write((byte)Property.VisContents);
 
-                buffer.WriteVariableInt32(appearance.VisContents.Length);
+                buffer.WriteVariableInt32(appearance.VisContents.Count);
                 foreach (var item in appearance.VisContents) {
                     buffer.Write(item);
                 }
             }
 
-            if (appearance.Filters.Length != 0) {
+            if (appearance.Filters.Count != 0) {
                 buffer.Write((byte)Property.Filters);
 
-                buffer.Write(appearance.Filters.Length);
+                buffer.Write(appearance.Filters.Count);
                 foreach (var filter in appearance.Filters) {
                     using var filterStream = new MemoryStream();
 
@@ -376,10 +374,10 @@ public sealed class MsgAllAppearances(Dictionary<int, ImmutableIconAppearance> a
                 }
             }
 
-            if (appearance.Verbs.Length != 0) {
+            if (appearance.Verbs.Count != 0) {
                 buffer.Write((byte)Property.Verbs);
 
-                buffer.WriteVariableInt32(appearance.Verbs.Length);
+                buffer.WriteVariableInt32(appearance.Verbs.Count);
                 foreach (var verb in appearance.Verbs) {
                     buffer.WriteVariableInt32(verb);
                 }

@@ -1,12 +1,15 @@
-﻿namespace OpenDreamRuntime.Objects.Types;
+﻿using OpenDreamRuntime.Rendering;
+
+namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectArea : DreamObjectAtom {
     public int X, Y, Z;
     public readonly AreaContentsList Contents;
-    public int AppearanceId;
+    public ImmutableIconAppearance Appearance;
 
     public DreamObjectArea(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
         Contents = new(ObjectTree.List.ObjectDefinition, this);
+        Appearance = AppearanceSystem!.DefaultAppearance;
         AtomManager.SetAtomAppearance(this, AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
     }
 

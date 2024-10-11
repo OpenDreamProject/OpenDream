@@ -667,9 +667,7 @@ public sealed class DreamOverlaysList : DreamList {
         var values = new List<DreamValue>(overlays.Length);
 
         foreach (var overlay in overlays) {
-            var overlayAppearance = _appearanceSystem.MustGetAppearance(overlay);
-
-            values.Add(new(overlayAppearance.ToMutable()));
+            values.Add(new(overlay.ToMutable()));
         }
 
         return values;
@@ -697,8 +695,7 @@ public sealed class DreamOverlaysList : DreamList {
         if (_appearanceSystem == null)
             return DreamValue.Null;
 
-        int overlayId = overlaysList[overlayIndex - 1];
-        ImmutableIconAppearance overlayAppearance = _appearanceSystem.MustGetAppearance(overlayId);
+        ImmutableIconAppearance overlayAppearance = overlaysList[overlayIndex - 1];
         return new DreamValue(overlayAppearance.ToMutable());
     }
 
@@ -714,7 +711,7 @@ public sealed class DreamOverlaysList : DreamList {
             IconAppearance? overlayAppearance = CreateOverlayAppearance(_atomManager, value, appearance.Icon);
             overlayAppearance ??= new IconAppearance();
 
-            GetOverlaysList(appearance).Add(_appearanceSystem.AddAppearance(overlayAppearance));
+            GetOverlaysList(appearance).Add(_appearanceSystem.AddAppearance(overlayAppearance).GetHashCode());
         });
     }
 
@@ -724,10 +721,10 @@ public sealed class DreamOverlaysList : DreamList {
 
         _atomManager.UpdateAppearance(_owner, appearance => {
             IconAppearance? overlayAppearance = CreateOverlayAppearance(_atomManager, value, appearance.Icon);
-            if (overlayAppearance == null || !_appearanceSystem.TryGetAppearanceId(overlayAppearance, out var id))
+            if (overlayAppearance == null)
                 return;
 
-            GetOverlaysList(appearance).Remove(id);
+            GetOverlaysList(appearance).Remove(_appearanceSystem.AddAppearance(overlayAppearance).GetHashCode());
         });
     }
 
@@ -739,7 +736,7 @@ public sealed class DreamOverlaysList : DreamList {
     private List<int> GetOverlaysList(IconAppearance appearance) =>
         _isUnderlays ? appearance.Underlays : appearance.Overlays;
 
-    private int[] GetOverlaysArray(ImmutableIconAppearance appearance) =>
+    private ImmutableIconAppearance[] GetOverlaysArray(ImmutableIconAppearance appearance) =>
         _isUnderlays ? appearance.Underlays : appearance.Overlays;
 
     private ImmutableIconAppearance GetAppearance() {

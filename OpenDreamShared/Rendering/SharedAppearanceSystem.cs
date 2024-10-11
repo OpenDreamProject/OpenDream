@@ -7,9 +7,9 @@ namespace OpenDreamShared.Rendering;
 
 public abstract class SharedAppearanceSystem : EntitySystem {
     [Serializable, NetSerializable]
-    public sealed class NewAppearanceEvent(int appearanceId, ImmutableIconAppearance appearance) : EntityEventArgs {
+    public sealed class NewAppearanceEvent(int appearanceId, IconAppearance appearance) : EntityEventArgs {
         public int AppearanceId { get; } = appearanceId;
-        public ImmutableIconAppearance Appearance { get; } = appearance;
+        public IconAppearance Appearance { get; } = appearance;
     }
 
     [Serializable, NetSerializable]

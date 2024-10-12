@@ -26,6 +26,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
 
     public ServerAppearanceSystem() {
         DefaultAppearance = new ImmutableIconAppearance(IconAppearance.Default, this);
+        DefaultAppearance.MarkRegistered();
         _sawmill = Logger.GetSawmill("Appearance");
     }
 
@@ -63,10 +64,10 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
             if(_idToAppearance.TryGetValue(immutableAppearance.GetHashCode(), out var weakReference) && weakReference.TryGetTarget(out var originalImmutable)) {
                 return originalImmutable;
             } else {
+                immutableAppearance.MarkRegistered();
                 _idToAppearance[immutableAppearance.GetHashCode()] = new(immutableAppearance);
-                //immutableAppearance.MarkRegistered();
                 RaiseNetworkEvent(new NewAppearanceEvent(immutableAppearance.GetHashCode(), immutableAppearance.ToMutable()));
-                _sawmill.Debug($"Created appearance ${immutableAppearance.GetHashCode()}");
+                //_sawmill.Debug($"Created appearance ${immutableAppearance.GetHashCode()}");
                 return immutableAppearance;
             }
         }
@@ -75,11 +76,15 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     //this should only be called by the ImmutableIconAppearance's finalizer
     public void RemoveAppearance(ImmutableIconAppearance appearance) {
         lock (_lock) {
-            //only remove if this is the exact same reference
-            if(_idToAppearance.TryGetValue(appearance.GetHashCode(), out var weakReference) && weakReference.TryGetTarget(out var immutableIconAppearance) && object.ReferenceEquals(immutableIconAppearance,appearance)){
+            if(_idToAppearance.TryGetValue(appearance.GetHashCode(), out var weakRef)) {
+                //it is possible that a new appearance was created with the same hash before the GC got around to cleaning up the old one
+                if(weakRef.TryGetTarget(out var target) && !object.ReferenceEquals(target,appearance))
+                    return;
                 _idToAppearance.Remove(appearance.GetHashCode());
                 RaiseNetworkEvent(new RemoveAppearanceEvent(appearance.GetHashCode()));
                 _sawmill.Debug($"Deleted appearance ${appearance.GetHashCode()}");
+            } else {
+                _sawmill.Warning($"BAD REMOVAL ${appearance.GetHashCode()}");
             }
         }
     }

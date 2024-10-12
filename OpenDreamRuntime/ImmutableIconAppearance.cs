@@ -25,6 +25,7 @@ namespace OpenDreamRuntime.Rendering;
 
 public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance> {
 
+    bool registered = false;
     [ViewVariables] public readonly string Name = string.Empty;
     [ViewVariables] public readonly int? Icon;
     [ViewVariables] public readonly string? IconState;
@@ -76,6 +77,10 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
 
     private int? storedHashCode;
     private ServerAppearanceSystem appearanceSystem;
+
+    public void MarkRegistered(){
+        registered = true;
+    }
 
     public ImmutableIconAppearance(IconAppearance appearance, ServerAppearanceSystem serverAppearanceSystem) {
         this.appearanceSystem = serverAppearanceSystem;
@@ -309,7 +314,8 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
     }
 
     ~ImmutableIconAppearance() {
-        appearanceSystem.RemoveAppearance(this);
+        if(registered)
+            appearanceSystem.RemoveAppearance(this);
     }
 
 }

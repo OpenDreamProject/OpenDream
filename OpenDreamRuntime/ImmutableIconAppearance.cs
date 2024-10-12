@@ -24,6 +24,7 @@ namespace OpenDreamRuntime.Rendering;
 // TODO: Wow this is huge! Probably look into splitting this by most used/least used to reduce the size of these
 
 public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance> {
+
     [ViewVariables] public readonly string Name = string.Empty;
     [ViewVariables] public readonly int? Icon;
     [ViewVariables] public readonly string? IconState;

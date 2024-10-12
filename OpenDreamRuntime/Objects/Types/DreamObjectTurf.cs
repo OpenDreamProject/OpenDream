@@ -14,8 +14,7 @@ public sealed class DreamObjectTurf : DreamObjectAtom {
         Z = z;
         Cell = cell;
         Contents = new TurfContentsList(ObjectTree.List.ObjectDefinition, Cell);
-        Appearance = AppearanceSystem!.DefaultAppearance;
-
+        AtomManager.SetAtomAppearance(this, AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
     }
 
     public void SetTurfType(DreamObjectDefinition objectDefinition) {

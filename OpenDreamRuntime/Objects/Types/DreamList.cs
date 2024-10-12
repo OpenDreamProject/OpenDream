@@ -647,6 +647,8 @@ public sealed class DreamOverlaysList : DreamList {
     [Dependency] private readonly AtomManager _atomManager = default!;
     private readonly ServerAppearanceSystem? _appearanceSystem;
 
+    private List<ImmutableIconAppearance> hardRefs = new();
+
     private readonly DreamObject _owner;
     private readonly bool _isUnderlays;
 
@@ -710,8 +712,9 @@ public sealed class DreamOverlaysList : DreamList {
         _atomManager.UpdateAppearance(_owner, appearance => {
             IconAppearance? overlayAppearance = CreateOverlayAppearance(_atomManager, value, appearance.Icon);
             overlayAppearance ??= new IconAppearance();
-
-            GetOverlaysList(appearance).Add(_appearanceSystem.AddAppearance(overlayAppearance).GetHashCode());
+            ImmutableIconAppearance immutableOverlay = _appearanceSystem.AddAppearance(overlayAppearance);
+            hardRefs.Add(immutableOverlay);
+            GetOverlaysList(appearance).Add(immutableOverlay.GetHashCode());
         });
     }
 
@@ -723,8 +726,9 @@ public sealed class DreamOverlaysList : DreamList {
             IconAppearance? overlayAppearance = CreateOverlayAppearance(_atomManager, value, appearance.Icon);
             if (overlayAppearance == null)
                 return;
-
-            GetOverlaysList(appearance).Remove(_appearanceSystem.AddAppearance(overlayAppearance).GetHashCode());
+            ImmutableIconAppearance immutableOverlay = _appearanceSystem.AddAppearance(overlayAppearance);
+            hardRefs.Remove(immutableOverlay);
+            GetOverlaysList(appearance).Remove(immutableOverlay.GetHashCode());
         });
     }
 

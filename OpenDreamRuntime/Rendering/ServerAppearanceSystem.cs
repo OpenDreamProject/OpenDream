@@ -20,10 +20,13 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     /// </summary>
     private readonly object _lock = new();
 
+    private ISawmill _sawmill;
+
     [Dependency] private readonly IPlayerManager _playerManager = default!;
 
     public ServerAppearanceSystem() {
         DefaultAppearance = new ImmutableIconAppearance(IconAppearance.Default, this);
+        _sawmill = Logger.GetSawmill("Appearance");
     }
 
     public override void Initialize() {
@@ -47,6 +50,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
                     if(_idToAppearance[key].TryGetTarget(out immutable))
                         sendData.Add(key, immutable.ToMutable());
                 }
+                _sawmill.Debug($"Sending {sendData.Count} appearances to client");
                 e.Session.Channel.SendMessage(new MsgAllAppearances(sendData));
             }
 
@@ -56,19 +60,28 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     public ImmutableIconAppearance AddAppearance(IconAppearance appearance) {
         ImmutableIconAppearance immutableAppearance = new(appearance, this);
         lock (_lock) {
-            if (_idToAppearance.TryAdd(immutableAppearance.GetHashCode(), new(immutableAppearance))) {
+            if(_idToAppearance.TryGetValue(immutableAppearance.GetHashCode(), out var weakReference) && weakReference.TryGetTarget(out var originalImmutable)) {
+                return originalImmutable;
+            } else {
+                _idToAppearance[immutableAppearance.GetHashCode()] = new(immutableAppearance);
+                //immutableAppearance.MarkRegistered();
                 RaiseNetworkEvent(new NewAppearanceEvent(immutableAppearance.GetHashCode(), immutableAppearance.ToMutable()));
+                _sawmill.Debug($"Created appearance ${immutableAppearance.GetHashCode()}");
+                return immutableAppearance;
             }
-            return immutableAppearance;
         }
     }
 
     //this should only be called by the ImmutableIconAppearance's finalizer
     public void RemoveAppearance(ImmutableIconAppearance appearance) {
         lock (_lock) {
-            _idToAppearance.Remove(appearance.GetHashCode());
+            //only remove if this is the exact same reference
+            if(_idToAppearance.TryGetValue(appearance.GetHashCode(), out var weakReference) && weakReference.TryGetTarget(out var immutableIconAppearance) && object.ReferenceEquals(immutableIconAppearance,appearance)){
+                _idToAppearance.Remove(appearance.GetHashCode());
+                RaiseNetworkEvent(new RemoveAppearanceEvent(appearance.GetHashCode()));
+                _sawmill.Debug($"Deleted appearance ${appearance.GetHashCode()}");
+            }
         }
-        RaiseNetworkEvent(new RemoveAppearanceEvent(appearance.GetHashCode()));
     }
 
     public ImmutableIconAppearance MustGetAppearanceByID(int appearanceId) {

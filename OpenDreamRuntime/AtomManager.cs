@@ -535,7 +535,10 @@ public sealed class AtomManager {
         //TODO: should handle filters
         IconAppearance appearance;
         EntityUid targetEntity;
-        DMISpriteComponent targetComponent;
+        DMISpriteComponent? targetComponent = null;
+        NetEntity ent = NetEntity.Invalid;
+        int? turfId = null;
+
         if (atom is DreamObjectMovable movable) {
             targetEntity = movable.Entity;
             targetComponent = movable.SpriteComponent;
@@ -544,17 +547,33 @@ public sealed class AtomManager {
             targetEntity = image.Entity;
             targetComponent = image.SpriteComponent;
             appearance = targetComponent.Appearance!.ToMutable();
+        } else if (atom is DreamObjectTurf turf) {
+            targetEntity = EntityUid.Invalid;
+            turfId = turf.Appearance.GetHashCode() + 1;
+            appearance = turf.Appearance.ToMutable();
+        //} else if (atom is DreamObjectArea area) {
+            //??????
+          //  appearance = area.Appearance.ToMutable();
+          // area appearance should be an overlay on turfs, so could maybe get away with animating that?
         } else
             throw new ArgumentException($"Cannot animate appearance of {atom}");
 
         animate(appearance);
 
-        // Don't send the updated appearance to clients, they will animate it
-        DMISpriteSystem.SetSpriteAppearance(new(targetEntity, targetComponent), appearance, dirty: false);
 
-        NetEntity ent = _entityManager.GetNetEntity(targetEntity);
 
-        AppearanceSystem?.Animate(ent, appearance, duration, easing, loop, flags, delay, chainAnim);
+        if(targetComponent is not null) {
+            ent = _entityManager.GetNetEntity(targetEntity);
+            // Don't send the updated appearance to clients, they will animate it
+            DMISpriteSystem.SetSpriteAppearance(new(targetEntity, targetComponent), appearance, dirty: false);
+        } else if (atom is DreamObjectTurf turf) {
+            //this is basically the only time it's okay to set turf.Appearance outside of DreamMapManager.SetTurfAppearance()
+            //because we don't want to notify the client of the appearance change
+            turf.Appearance = AppearanceSystem!.AddAppearance(appearance);
+        } else if (atom is DreamObjectArea area) {
+            //fuck knows, this will trigger a bunch of turf updates to? idek
+        }
+        AppearanceSystem?.Animate(ent, appearance, duration, easing, loop, flags, delay, chainAnim, turfId);
     }
 
     public bool TryCreateAppearanceFrom(DreamValue value, [NotNullWhen(true)] out IconAppearance? appearance) {

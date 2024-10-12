@@ -78,13 +78,20 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     }
 
     private void OnAnimation(AnimationEvent e) {
-        EntityUid ent = _entityManager.GetEntity(e.Entity);
-        if (!_entityManager.TryGetComponent<DMISpriteComponent>(ent, out var sprite))
-            return;
+        if(e.Entity == NetEntity.Invalid && e.turfId is not null) { //it's a turf or area
+            if(_turfIcons.TryGetValue(e.turfId.Value, out var turfIcon))
+                LoadAppearance(e.TargetAppearanceId, targetAppearance => {
+                    turfIcon.StartAppearanceAnimation(targetAppearance, e.Duration, e.Easing, e.Loop, e.Flags, e.Delay, e.ChainAnim);
+                });
+        } else { //image or movable
+            EntityUid ent = _entityManager.GetEntity(e.Entity);
+            if (!_entityManager.TryGetComponent<DMISpriteComponent>(ent, out var sprite))
+                return;
 
-        LoadAppearance(e.TargetAppearanceId, targetAppearance => {
-            sprite.Icon.StartAppearanceAnimation(targetAppearance, e.Duration, e.Easing, e.Loop, e.Flags, e.Delay, e.ChainAnim);
-        });
+            LoadAppearance(e.TargetAppearanceId, targetAppearance => {
+                sprite.Icon.StartAppearanceAnimation(targetAppearance, e.Duration, e.Easing, e.Loop, e.Flags, e.Delay, e.ChainAnim);
+            });
+        }
     }
 
     private void OnWorldAABB(EntityUid uid, DMISpriteComponent comp, ref WorldAABBEvent e) {

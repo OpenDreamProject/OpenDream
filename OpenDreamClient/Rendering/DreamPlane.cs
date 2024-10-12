@@ -72,7 +72,6 @@ internal sealed class DreamPlane(IRenderTexture mainRenderTarget) : IDisposable 
     public void DrawMouseMap(DrawingHandleWorld handle, DreamViewOverlay overlay, Vector2i renderTargetSize, Box2 worldAABB) {
         if (Master?.MouseOpacity == MouseOpacity.Transparent)
             return;
-        handle.UseShader(overlay.BlockColorInstance);
         foreach (var sprite in Sprites) {
             if (sprite.MouseOpacity == MouseOpacity.Transparent || sprite.ShouldPassMouse)
                 continue;
@@ -91,7 +90,7 @@ internal sealed class DreamPlane(IRenderTexture mainRenderTarget) : IDisposable 
             var colorB = (byte)((hash >> 16) & 0xFF);
             Color targetColor = new Color(colorR, colorG, colorB); //TODO - this could result in mis-clicks due to hash-collision since we ditch a whole byte.
             overlay.MouseMapLookup[targetColor] = sprite;
-
+            handle.UseShader(overlay.BlockColorInstance); //it seems like you could put this outside the loop, but you can't without breakng the mousemap
             handle.SetTransform(DreamViewOverlay.CalculateDrawingMatrix(sprite.TransformToApply, pos, texture.Size, renderTargetSize));
             handle.DrawTextureRect(texture, new Box2(Vector2.Zero, texture.Size), targetColor);
         }

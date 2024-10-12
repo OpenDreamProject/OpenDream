@@ -3,14 +3,44 @@
 namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectArea : DreamObjectAtom {
-    public int X, Y, Z;
+    public int X {
+        get {
+            UpdateCoordinateCache();
+            return _cachedX!.Value;
+        }
+    }
+
+    public int Y {
+        get {
+            UpdateCoordinateCache();
+            return _cachedY!.Value;
+        }
+    }
+
+    public int Z {
+        get {
+            UpdateCoordinateCache();
+            return _cachedZ!.Value;
+        }
+    }
+
     public readonly AreaContentsList Contents;
     public ImmutableIconAppearance Appearance;
+
+    // Iterating all our turfs to find the one with the lowest coordinates is slow business
+    private int? _cachedX, _cachedY, _cachedZ;
 
     public DreamObjectArea(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
         Contents = new(ObjectTree.List.ObjectDefinition, this);
         Appearance = AppearanceSystem!.DefaultAppearance;
         AtomManager.SetAtomAppearance(this, AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
+    }
+
+    /// <summary>
+    /// Forces us to find the up-to-date "lowest" turf on next coordinate var access
+    /// </summary>
+    public void ResetCoordinateCache() {
+        _cachedX = _cachedY = _cachedZ = null;
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
@@ -35,14 +65,9 @@ public sealed class DreamObjectArea : DreamObjectAtom {
     protected override void SetVar(string varName, DreamValue value) {
         switch (varName) {
             case "x":
-                value.TryGetValueAsInteger(out X);
-                break;
             case "y":
-                value.TryGetValueAsInteger(out Y);
-                break;
             case "z":
-                value.TryGetValueAsInteger(out Z);
-                break;
+                throw new Exception($"Cannot set coordinate var '{varName}' on an area");
             case "contents":
                 // TODO
                 break;
@@ -73,5 +98,33 @@ public sealed class DreamObjectArea : DreamObjectAtom {
         }
 
         base.OperatorOutput(b);
+    }
+
+    /// <summary>
+    /// Updates our cached coordinates with the location of the "lowest" turf, if we don't already have them cached.
+    /// <br/>
+    /// The "lowest" turf is the turf with the lowest z, y, then x.
+    /// </summary>
+    private void UpdateCoordinateCache() {
+        if (_cachedX != null)
+            return;
+
+        foreach (var turf in Contents.GetTurfs()) {
+            if (_cachedX != null) {
+                if (turf.Z > _cachedZ)
+                    continue;
+
+                int index = turf.Y * DreamMapManager.Size.X + turf.X;
+                if (index >= _cachedY * DreamMapManager.Size.X + _cachedX)
+                    continue;
+            }
+
+            _cachedX = turf.X;
+            _cachedY = turf.Y;
+            _cachedZ = turf.Z;
+        }
+
+        // 0 if there were no turfs
+        _cachedX ??= _cachedY = _cachedZ = 0;
     }
 }

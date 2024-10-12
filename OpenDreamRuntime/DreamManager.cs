@@ -317,6 +317,7 @@ namespace OpenDreamRuntime {
                         return _objectTree.Types.Length > refId
                             ? new DreamValue(_objectTree.Types[refId])
                             : DreamValue.Null;
+                    case RefType.DreamResourceIcon: // Alias of DreamResource for now. TODO: Does this *only* contain icon resources?
                     case RefType.DreamResource:
                         if (!_dreamResourceManager.TryLoadResource(refId, out var resource))
                             return DreamValue.Null;
@@ -390,6 +391,7 @@ namespace OpenDreamRuntime {
         DreamObjectArea = 0x4000000,
         DreamObjectClient = 0x5000000,
         DreamObjectFilter = 0x5300000,
+        DreamResourceIcon = 0xC000000,
         DreamObjectImage = 0xD000000,
         DreamObjectList = 0xF000000,
         DreamObjectDatum = 0x21000000,

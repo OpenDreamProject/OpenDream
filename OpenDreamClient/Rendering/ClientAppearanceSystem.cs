@@ -78,8 +78,8 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     }
 
     private void OnAnimation(AnimationEvent e) {
-        if(e.Entity == NetEntity.Invalid && e.turfId is not null) { //it's a turf or area
-            if(_turfIcons.TryGetValue(e.turfId.Value, out var turfIcon))
+        if(e.Entity == NetEntity.Invalid && e.TurfId is not null) { //it's a turf or area
+            if(_turfIcons.TryGetValue(e.TurfId.Value, out var turfIcon))
                 LoadAppearance(e.TargetAppearanceId, targetAppearance => {
                     turfIcon.StartAppearanceAnimation(targetAppearance, e.Duration, e.Easing, e.Loop, e.Flags, e.Delay, e.ChainAnim);
                 });

@@ -1,4 +1,4 @@
-//COMPILE ERROR
+//COMPILE ERROR OD3101
 //Test that our pragma for this is working.
 #pragma EmptyProc error
 

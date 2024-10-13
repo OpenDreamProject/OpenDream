@@ -3,6 +3,7 @@ using Robust.Server.Player;
 using Robust.Shared.Enums;
 using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
 using System.Diagnostics.CodeAnalysis;
+using OpenDreamShared.Network.Messages;
 using Robust.Shared.Player;
 
 namespace OpenDreamRuntime.Rendering;
@@ -20,6 +21,10 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     [Dependency] private readonly IPlayerManager _playerManager = default!;
 
     public override void Initialize() {
+        //register empty appearance as ID 0
+        _appearanceToId.Add(IconAppearance.Default, 0);
+        _idToAppearance.Add(0, IconAppearance.Default);
+        _appearanceIdCounter = 1;
         _playerManager.PlayerStatusChanged += OnPlayerStatusChanged;
     }
 
@@ -33,7 +38,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
 
     private void OnPlayerStatusChanged(object? sender, SessionStatusEventArgs e) {
         if (e.NewStatus == SessionStatus.InGame) {
-            RaiseNetworkEvent(new AllAppearancesEvent(_idToAppearance), e.Session.ConnectedClient);
+            e.Session.Channel.SendMessage(new MsgAllAppearances(_idToAppearance));
         }
     }
 
@@ -68,9 +73,9 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         }
     }
 
-    public void Animate(NetEntity entity, IconAppearance targetAppearance, TimeSpan duration) {
+    public void Animate(NetEntity entity, IconAppearance targetAppearance, TimeSpan duration, AnimationEasing easing, int loop, AnimationFlags flags, int delay, bool chainAnim) {
         int appearanceId = AddAppearance(targetAppearance);
 
-        RaiseNetworkEvent(new AnimationEvent(entity, appearanceId, duration));
+        RaiseNetworkEvent(new AnimationEvent(entity, appearanceId, duration, easing, loop, flags, delay, chainAnim));
     }
 }

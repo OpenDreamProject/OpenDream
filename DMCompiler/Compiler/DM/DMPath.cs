@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace DMCompiler.Compiler.DM {
+﻿namespace DMCompiler.Compiler.DM {
     public abstract class VarDeclInfo {
         public DreamPath? TypePath;
         public string VarName;

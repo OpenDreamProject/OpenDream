@@ -1,4 +1,4 @@
-// COMPILE ERROR
+// COMPILE ERROR OD0404
 //# issue 360
 
 bad:

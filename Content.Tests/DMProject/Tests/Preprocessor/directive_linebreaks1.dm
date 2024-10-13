@@ -1,4 +1,4 @@
-// COMPILE ERROR
+// COMPILE ERROR OD0404
 
 #define A 5\
 #define B 6

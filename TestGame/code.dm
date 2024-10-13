@@ -1,3 +1,13 @@
+#ifndef OPENDREAM
+/world/proc/ODHotReloadInterface()
+	world.log << "OpenDream-specific procs don't exist in BYOND."
+	return
+
+/world/proc/ODHotReloadResource()
+	world.log << "OpenDream-specific procs don't exist in BYOND."
+	return
+#endif
+
 #define TURF_PLANE -10
 
 /obj/plane_master
@@ -22,6 +32,21 @@
 
 /turf/blue
 	icon_state = "turf_blue"
+
+/area/withicon
+	icon = 'icons/objects.dmi'
+	icon_state = "overlay"
+
+	New()
+		toggleBlink()
+
+	proc/toggleBlink()
+		if (icon == 'icons/objects.dmi')
+			icon = null
+		else
+			icon = 'icons/objects.dmi'
+		spawn(20)	
+			toggleBlink()
 
 /mob
 	icon = 'icons/mob.dmi'
@@ -48,6 +73,10 @@
 		usr << "menus: [json_encode(winget(usr, null, "menus"))]"
 		usr << "macros: [json_encode(winget(usr, null, "macros"))]"
 
+	verb/browse_rsc_test()
+		usr << browse_rsc('icons/mob.dmi', "mobicon.png")
+		usr << browse_rsc('icons/mob.dmi', "mobicon.png")
+		usr << browse("<p><img src=mobicon.png></p>Oh look, it's you!","window=honk")
 
 	verb/rotate()
 		for(var/i in 1 to 8)
@@ -77,6 +106,28 @@
 	verb/say_loud()
 		var/msg = input("Please put the message you want to say loudly.", "Say Loud", "Hello!")
 		world << "[ckey] says loudly: \"[msg]\""
+
+	verb/show_ohearers()
+		var/list/ohearers = ohearers()
+
+		usr << "All hearers: "
+		for (var/mob/hearer in ohearers)
+			usr << hearer
+
+	verb/start_walk()
+		set name = "Walk North"
+		usr << "Walking north. Use the 'Walk Stop' verb to cease."
+		walk(src, NORTH)
+		
+	verb/start_walk_rand()
+		set name = "Walk Randomly"
+		usr << "Walking randomly. Use the 'Walk Stop' verb to cease."
+		walk_rand(src)
+	
+	verb/stop_walk()
+		set name = "Walk Stop"
+		usr << "Walking stopped."
+		walk(src, 0)
 
 	verb/move_up()
 		step(src, UP)
@@ -192,6 +243,36 @@
 		spawn(20)
 			src << "showing main window"
 			winset(src,"mainwindow","is-visible=true")
+			
+	verb/winget_text_verb(var/rawtext as command_text)
+		set name = "wingettextverb"
+		world << "recieved: [rawtext]"			
+
+	verb/test_hot_reload_interface()
+		set category = "Test"
+		src << "trying hot reload of interface..."
+		world.ODHotReloadInterface()
+		src << "done hot reload of interface!"
+
+	verb/test_hot_reload_icon()
+		set category = "Test"
+		src << "trying hot reload of icon..."
+		world.ODHotReloadResource("icons/turf.dmi")
+		src << "done hot reload of icon!"
+
+	verb/manipulate_world_size()
+		var/x = input("New World X?", "World Size", 0) as num|null
+		var/y = input("New World Y?", "World Size", 0) as num|null
+
+		if(!x || !y)
+			return
+
+		world.maxx = x
+		world.maxy = y
+
+	verb/toggle_show_popups()
+		client.show_popup_menus = !client.show_popup_menus
+		src << "Popups are now [client.show_popup_menus ? "enabled" : "disabled"]"
 
 /mob/Stat()
 	if (statpanel("Status"))

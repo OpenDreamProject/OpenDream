@@ -39,7 +39,7 @@ public static class ViewAlgorithm {
 
     // As described by https://www.byond.com/forum/post/2130277#comment20659267
     // Step 1 is done by the calling code so this can be shared between server and client
-    public static void CalculateVisibility(Tile?[,] tiles) {
+    public static void CalculateVisibility(Tile?[,] tiles, bool ignoreLight = false) { // ignore light is used for hearers()
         var width = tiles.GetLength(0);
         var height = tiles.GetLength(1);
         Tile? eye = null;
@@ -58,7 +58,7 @@ public static class ViewAlgorithm {
             tile.Vis2 = 0;
             tile.Visibility = 0;
 
-            if (tile.DeltaX == 0 && tile.DeltaY == 0)
+            if (tile is {DeltaX: 0, DeltaY: 0})
                 eye = tile;
         }
 

@@ -9,6 +9,7 @@ namespace OpenDreamRuntime.Objects.Types;
 public class DreamObjectMovable : DreamObjectAtom {
     public EntityUid Entity;
     public readonly DMISpriteComponent SpriteComponent;
+    public DreamObjectAtom? Loc;
 
     // TODO: Cache this shit. GetWorldPosition is slow.
     public Vector2i Position => (Vector2i?)TransformSystem?.GetWorldPosition(_transformComponent) ?? (0, 0);
@@ -18,7 +19,6 @@ public class DreamObjectMovable : DreamObjectAtom {
 
     private readonly TransformComponent _transformComponent;
 
-    private DreamObjectAtom? _loc;
 
     private string? ScreenLoc {
         get => _screenLoc;
@@ -56,11 +56,17 @@ public class DreamObjectMovable : DreamObjectAtom {
         SetLoc(loc); //loc is set before /New() is ever called
     }
 
-    protected override void HandleDeletion() {
+    protected override void HandleDeletion(bool possiblyThreaded) {
+        // SAFETY: Deleting entities is not threadsafe.
+        if (possiblyThreaded) {
+            EnterIntoDelQueue();
+            return;
+        }
+
         WalkManager.StopWalks(this);
         AtomManager.DeleteMovableEntity(this);
 
-        base.HandleDeletion();
+        base.HandleDeletion(possiblyThreaded);
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
@@ -75,7 +81,7 @@ public class DreamObjectMovable : DreamObjectAtom {
                 value = new(Z);
                 return true;
             case "loc":
-                value = new(_loc);
+                value = new(Loc);
                 return true;
             case "screen_loc":
                 value = (ScreenLoc != null) ? new(ScreenLoc) : DreamValue.Null;
@@ -97,7 +103,7 @@ public class DreamObjectMovable : DreamObjectAtom {
             case "locs":
                 // Unimplemented; just return a list containing src.loc
                 DreamList locs = ObjectTree.CreateList();
-                locs.AddValue(new(_loc));
+                locs.AddValue(new(Loc));
 
                 value = new DreamValue(locs);
                 return true;
@@ -152,7 +158,7 @@ public class DreamObjectMovable : DreamObjectAtom {
     }
 
     private void SetLoc(DreamObjectAtom? loc) {
-        _loc = loc;
+        Loc = loc;
         if (TransformSystem == null)
             return;
 

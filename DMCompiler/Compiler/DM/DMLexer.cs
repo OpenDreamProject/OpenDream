@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text;
 
 namespace DMCompiler.Compiler.DM;
@@ -226,6 +224,7 @@ public sealed class DMLexer : TokenLexer {
                             case ":=": token = CreateToken(TokenType.DM_AssignInto, c); break;
                             case "[]": token = CreateToken(TokenType.DM_DoubleSquareBracket, c); break;
                             case "[]=": token = CreateToken(TokenType.DM_DoubleSquareBracketEquals, c); break;
+                            case "::": token = CreateToken(TokenType.DM_DoubleColon, c); break;
                             default: token = CreateToken(TokenType.Error, c, $"Invalid punctuator token '{c}'"); break;
                         }
 

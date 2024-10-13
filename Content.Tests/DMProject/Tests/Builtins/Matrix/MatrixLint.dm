@@ -1,4 +1,4 @@
-// COMPILE ERROR
+// COMPILE ERROR OD2207
 #pragma SuspiciousMatrixCall error
 
 /proc/RunTest()

@@ -27,8 +27,8 @@ public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializatio
     public List<DMFWinSet> GlobalWinSet() {
         List<DMFWinSet> winSets = new();
 
-        while (TryGetAttribute(out var element, out var key, out var attribute)) {
-            winSets.Add(new(element, key, attribute));
+        while (TryGetAttribute(out var winset)) {
+            winSets.Add(winset);
         }
 
         return winSets;
@@ -185,10 +185,10 @@ public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializatio
         return false;
     }
 
-    private bool TryGetAttribute(out string? element, [NotNullWhen(true)] out string? key, [NotNullWhen(true)] out string? token) {
-        element = null;
-        key = null;
-        token = null;
+    private bool TryGetAttribute([NotNullWhen(true)] out DMFWinSet? winSet) {
+        string? element = null;
+        winSet = null;
+
         Token attributeToken = Current();
 
         if (Check(_attributeTokenTypes)) {
@@ -221,14 +221,29 @@ public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializatio
                 if (!Check(TokenType.Value) && !Check(TokenType.Attribute))
                     Error($"Invalid attribute value ({valueText})");
             } else if (!Check(TokenType.Value))
-                if(Check(TokenType.Semicolon)) //thing.attribute=; means thing.attribute=empty string
+                if(Check(TokenType.Semicolon) || Check(TokenType.EndOfFile)) //thing.attribute=; means thing.attribute=empty string
                     valueText = "";
                 else
                     Error($"Invalid attribute value ({valueText})");
+            else if (Check(TokenType.Ternary)) {
+                List<DMFWinSet> trueStatements = new();
+                List<DMFWinSet> falseStatements = new();
+                while(TryGetAttribute(out var statement)){
+                    trueStatements.Add(statement);
+                }
+
+                if(Check(TokenType.Colon)){ //not all ternarys have an else
+                    while(TryGetAttribute(out var statement)){
+                        falseStatements.Add(statement);
+                    }
+                }
+
+                winSet = new DMFWinSet(element, attributeToken.Text, valueText, trueStatements, falseStatements);
+                return true;
+            }
 
             Newline();
-            key = attributeToken.Text;
-            token = valueText;
+            winSet = new DMFWinSet(element, attributeToken.Text, valueText);
             return true;
         }
 
@@ -238,19 +253,40 @@ public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializatio
     public MappingDataNode Attributes() {
         var node = new MappingDataNode();
 
-        while (TryGetAttribute(out var element, out var key, out var value)) {
-            if (element != null) {
-                Error($"Element id \"{element}\" is not valid here");
+        while (TryGetAttribute(out var winset)) {
+            if (winset.Element != null) {
+                Error($"Element id \"{winset.Element}\" is not valid here");
                 continue;
             }
 
-            if (value == "none")
+            //TODO implement the conditional check
+            if (winset.Value == "none")
                 continue;
 
-            node.Add(key, value);
+            node.Add(winset.Attribute, winset.Value);
         }
 
         return node;
+    }
+
+    // TODO: Replace Attributes() with this
+    public Dictionary<string, string> AttributesValues() {
+        var attributes = new Dictionary<string, string>();
+
+        while (TryGetAttribute(out var winset)) {
+            if (winset.Element != null) {
+                Error($"Element id \"{winset.Element}\" is not valid here");
+                continue;
+            }
+
+            //TODO implement the conditional check
+            if (winset.Value == "none")
+                continue;
+
+            attributes.Add(winset.Attribute, winset.Value);
+        }
+
+        return attributes;
     }
 
     private void Newline() {

@@ -1,17 +1,9 @@
-using System.Collections.Generic;
-
 namespace DMCompiler.Compiler;
 
 public class Parser<SourceType> {
-    /// <summary> Includes errors and warnings accumulated by this parser. </summary>
-    /// <remarks> These initial capacities are arbitrary. We just assume there's a decent chance you'll get a handful of errors/warnings. </remarks>
-    public List<CompilerEmission> Emissions = new(8);
-
     protected Lexer<SourceType> _lexer;
     private Token _currentToken;
     private readonly Stack<Token> _tokenStack = new(1);
-    /// <summary>The maximum number of errors or warnings we'd ever place into <see cref="Emissions"/>.</summary>
-    protected const int MAX_EMISSIONS_RECORDED = 50_000_000;
 
     protected Parser(Lexer<SourceType> lexer) {
         _lexer = lexer;
@@ -33,10 +25,10 @@ public class Parser<SourceType> {
             _currentToken = _lexer.GetNextToken();
 
             if (_currentToken.Type == TokenType.Error) {
-                Error((string)_currentToken.Value!, throwException: false);
+                Emit(WarningCode.BadToken, _currentToken.ValueAsString());
                 Advance();
             } else if (_currentToken.Type == TokenType.Warning) {
-                Warning((string)_currentToken.Value!);
+                Warning(_currentToken.ValueAsString());
                 Advance();
             }
         }
@@ -59,22 +51,28 @@ public class Parser<SourceType> {
         return false;
     }
 
-    protected bool Check(TokenType[] types) {
+    protected bool Check(Span<TokenType> types) {
+        return Check(types, out _);
+    }
+
+    protected bool Check(Span<TokenType> types, out Token matchedToken) {
         TokenType currentType = Current().Type;
         foreach (TokenType type in types) {
             if (currentType == type) {
+                matchedToken = Current();
                 Advance();
 
                 return true;
             }
         }
 
+        matchedToken = default;
         return false;
     }
 
     protected void Consume(TokenType type, string errorMessage) {
         if (!Check(type)) {
-            Error(errorMessage);
+            Emit(WarningCode.BadToken, errorMessage);
         }
     }
 
@@ -84,23 +82,8 @@ public class Parser<SourceType> {
             if (Check(type)) return type;
         }
 
-        Error(errorMessage);
+        Emit(WarningCode.BadToken, errorMessage);
         return TokenType.Unknown;
-    }
-
-    /// <summary>
-    /// Emits an error discovered during parsing, optionally causing a throw.
-    /// </summary>
-    /// <remarks> This implementation on <see cref="Parser{SourceType}"/> does not make use of <see cref="WarningCode"/> <br/>
-    /// since there are some parsers that aren't always in the compilation context, like the ones for DMF and DMM. <br/>
-    /// </remarks>
-    protected void Error(string message, bool throwException = true) {
-        CompilerEmission error = new CompilerEmission(ErrorLevel.Error, _currentToken.Location, message);
-
-        if(Emissions.Count < MAX_EMISSIONS_RECORDED)
-            Emissions.Add(error);
-        if (throwException)
-            throw new CompileErrorException(error);
     }
 
     /// <summary>
@@ -111,6 +94,15 @@ public class Parser<SourceType> {
     /// </remarks>
     protected void Warning(string message, Token? token = null) {
         token ??= _currentToken;
-        Emissions.Add(new CompilerEmission(ErrorLevel.Warning, token?.Location, message));
+        DMCompiler.ForcedWarning(token.Value.Location, message);
+    }
+
+    /// <returns> True if this will raise an error, false if not. You can use this return value to help improve error emission around this (depending on how permissive we're being)</returns>
+    protected bool Emit(WarningCode code, Location location, string message) {
+        return DMCompiler.Emit(code, location, message);
+    }
+
+    protected bool Emit(WarningCode code, string message) {
+        return Emit(code, Current().Location, message);
     }
 }

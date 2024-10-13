@@ -59,7 +59,7 @@ namespace OpenDreamRuntime.Procs {
                 Thread.Resume();
             }
 
-            public Task<DreamValue> Call(DreamProc proc, DreamObject src, DreamObject? usr, params DreamValue[] arguments) {
+            public Task<DreamValue> Call(DreamProc proc, DreamObject? src, DreamObject? usr, params DreamValue[] arguments) {
                 _callTcs = new();
                 _callProcNotify = proc.CreateState(Thread, src, usr, new DreamProcArguments(arguments));
 
@@ -169,7 +169,7 @@ namespace OpenDreamRuntime.Procs {
         private readonly Func<State, Task<DreamValue>> _taskFunc;
 
         public AsyncNativeProc(int id, TreeEntry owningType, string name, List<string> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, Func<State, Task<DreamValue>> taskFunc)
-            : base(id, owningType, name, null, ProcAttributes.None, argumentNames, null, null, null, null, 0) {
+            : base(id, owningType, name, null, ProcAttributes.None, argumentNames, null, null, null, null, null, 0) {
             _defaultArgumentValues = defaultArgumentValues;
             _taskFunc = taskFunc;
         }

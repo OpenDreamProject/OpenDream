@@ -27,8 +27,9 @@ public sealed class AtomGlideSystem : EntitySystem {
     private bool _ignoreMoveEvent;
 
     public override void Initialize() {
-        _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
+        UpdatesBefore.Add(typeof(SharedTransformSystem));
 
+        _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
 
         _transformSystem.OnGlobalMoveEvent += OnTransformMove;
     }
@@ -38,6 +39,11 @@ public sealed class AtomGlideSystem : EntitySystem {
     }
 
     public override void FrameUpdate(float frameTime) {
+        // As of writing, Reset() does nothing but clear the transform system's _lerpingTransforms list
+        // We update before SharedTransformSystem so this serves to disable RT's lerping, which fights our gliding
+        // TODO: This kinda fights RT. Would be nice to modify RT to make it play nicer.
+        _transformSystem.Reset();
+
         _ignoreMoveEvent = false;
 
         for (int i = 0; i < _currentGlides.Count; i++) {
@@ -81,7 +87,6 @@ public sealed class AtomGlideSystem : EntitySystem {
         }
     }
 
-    // TODO: This kinda fights RT. Would be nice to modify RT to make it play nicer.
     /// <summary>
     /// Disables RT lerping and sets up the entity's glide
     /// </summary>
@@ -123,7 +128,6 @@ public sealed class AtomGlideSystem : EntitySystem {
         }
 
         // Move the transform to our starting point
-        // Also serves the function of disabling RT's lerp
         _transformSystem.SetLocalPositionNoLerp(e.Sender, startingFrom, e.Component);
 
         glide.EndPos = glidingTo;

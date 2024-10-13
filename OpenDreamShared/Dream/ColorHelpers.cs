@@ -27,6 +27,12 @@ public static class ColorHelpers {
         {"cyan", new Color(0, 255, 255)}
     };
 
+    public enum ColorSpace {
+        RGB = 0,
+        HSV = 1,
+        HSL = 2
+    }
+
     public static bool TryParseColor(string color, out Color colorOut, string defaultAlpha = "ff") {
         if (color.StartsWith("#")) {
             if (color.Length == 4 || color.Length == 5) { //4-bit color; repeat each digit

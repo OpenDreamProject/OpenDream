@@ -4,9 +4,9 @@
 
 	var/log = null
 
-	var/area = /area
-	var/turf = /turf
-	var/mob = /mob
+	var/area = /area as /area
+	var/turf = /turf as /turf
+	var/mob = /mob as /mob
 
 	var/name = "OpenDream World"
 	var/time
@@ -19,11 +19,11 @@
 	var/tick_usage
 	var/loop_checks = 0 as opendream_unimplemented
 
-	var/maxx = null
-	var/maxy = null
-	var/maxz = null
-	var/icon_size = 32
-	var/view = 5
+	var/maxx = null as num|null
+	var/maxy = null as num|null
+	var/maxz = null as num|null
+	var/icon_size = 32 as num
+	var/view = 5 as text|num
 	var/movement_mode = LEGACY_MOVEMENT_MODE as opendream_unimplemented
 
 	var/byond_version = DM_VERSION
@@ -113,3 +113,7 @@
 	proc/PayCredits(player, credits, note)
 		set opendream_unimplemented = TRUE
 		return 0
+
+	proc/ODHotReloadInterface()
+
+	proc/ODHotReloadResource(var/file_name)

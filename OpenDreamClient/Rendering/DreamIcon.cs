@@ -4,10 +4,11 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
 using Robust.Client.Graphics;
 using Robust.Shared.Timing;
+using System.Linq;
 
 namespace OpenDreamClient.Rendering;
 
-internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem appearanceSystem) {
+internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming gameTiming, IClyde clyde, ClientAppearanceSystem appearanceSystem) : IDisposable {
     public delegate void SizeChangedEventHandler();
 
     public List<DreamIcon> Overlays { get; } = new();
@@ -16,6 +17,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
     public DMIResource? DMI {
         get => _dmi;
         private set {
+            _dmi?.OnUpdateCallbacks.Remove(DirtyTexture);
             _dmi = value;
             CheckSizeChange();
         }
@@ -33,30 +35,85 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
     public IconAppearance? Appearance {
         get => CalculateAnimatedAppearance();
         private set {
+            if (_appearance?.Equals(value) is true)
+                return;
+
             _appearance = value;
             UpdateIcon();
         }
     }
     private IconAppearance? _appearance;
 
-    public AtlasTexture? CurrentFrame => (Appearance == null || DMI == null)
-        ? null
-        : DMI.GetState(Appearance.IconState)?.GetFrames(Appearance.Direction)[AnimationFrame];
+    // TODO: We could cache these per-appearance instead of per-atom
+    public IRenderTexture? CachedTexture {
+        get => _cachedTexture;
+        private set {
+            if (_cachedTexture != null)
+                renderTargetPool.Return(_cachedTexture);
+            _cachedTexture = value;
+        }
+    }
+
+    public Vector2 TextureRenderOffset = Vector2.Zero;
+    public Texture? LastRenderedTexture;
 
     private int _animationFrame;
-    private TimeSpan _animationFrameTime = gameTiming.CurTime;
-    private AppearanceAnimation? _appearanceAnimation;
+    private List<AppearanceAnimation>? _appearanceAnimations;
+    private int _appearanceAnimationsLoops;
     private Box2? _cachedAABB;
+    private bool _textureDirty = true;
+    private bool _animationComplete;
+    private IRenderTexture? _cachedTexture;
 
-    public DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem appearanceSystem, int appearanceId,
-        AtomDirection? parentDir = null) : this(gameTiming, appearanceSystem) {
+    public DreamIcon(RenderTargetPool renderTargetPool, IGameTiming gameTiming, IClyde clyde, ClientAppearanceSystem appearanceSystem, int appearanceId,
+        AtomDirection? parentDir = null) : this(renderTargetPool, gameTiming, clyde, appearanceSystem) {
         SetAppearance(appearanceId, parentDir);
+    }
+
+    public void Dispose() {
+        CachedTexture = null;
+        LastRenderedTexture = null;
+        DMI = null; //triggers the removal of the onUpdateCallback
+    }
+
+    public Texture? GetTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData, Texture? textureOverride = null) {
+        Texture? frame;
+
+        if (textureOverride == null) {
+            if (Appearance == null || DMI == null)
+                return null;
+
+            var animationFrame = AnimationFrame;
+            if (CachedTexture != null && !_textureDirty)
+                return CachedTexture.Texture;
+
+            _textureDirty = false;
+            frame = DMI.GetState(Appearance.IconState)?.GetFrames(Appearance.Direction)[animationFrame];
+        } else {
+            frame = textureOverride;
+        }
+
+        var canSkipFullRender = Appearance?.Filters.Count is 0 or null &&
+                                    iconMetaData.ColorToApply == Color.White &&
+                                    iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity) &&
+                                    iconMetaData.AlphaToApply.Equals(1.0f);
+
+        if (frame == null) {
+            CachedTexture = null;
+        } else if (canSkipFullRender) {
+            TextureRenderOffset = Vector2.Zero;
+            return frame;
+        } else {
+            CachedTexture = FullRenderTexture(viewOverlay, handle, iconMetaData, frame);
+        }
+
+        return CachedTexture?.Texture;
     }
 
     public void SetAppearance(int? appearanceId, AtomDirection? parentDir = null) {
         // End any animations that are currently happening
         // Note that this isn't faithful to the original behavior
-        EndAppearanceAnimation();
+        EndAppearanceAnimation(null);
 
         if (appearanceId == null) {
             Appearance = null;
@@ -74,22 +131,57 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
         });
     }
 
-    public void StartAppearanceAnimation(IconAppearance endingAppearance, TimeSpan duration) {
+    //three things to do here, chained animations, loops and parallel animations
+    public void StartAppearanceAnimation(IconAppearance endingAppearance, TimeSpan duration, AnimationEasing easing, int loops, AnimationFlags flags, int delay, bool chainAnim) {
         _appearance = CalculateAnimatedAppearance(); //Animation starts from the current animated appearance
-        _appearanceAnimation = new AppearanceAnimation(DateTime.Now, duration, endingAppearance);
+        DateTime start = DateTime.Now;
+        if(!chainAnim)
+            EndAppearanceAnimation(null);
+        else
+            if(_appearanceAnimations != null && _appearanceAnimations.Count > 0)
+                if((flags & AnimationFlags.AnimationParallel) != 0)
+                    start = _appearanceAnimations[^1].Start; //either that's also a parallel, or its one that this should be parallel with
+                else
+                    start = _appearanceAnimations[^1].Start + _appearanceAnimations[^1].Duration; //if it's not parallel, it's chained
+
+        _appearanceAnimations ??= new List<AppearanceAnimation>();
+        if(_appearanceAnimations.Count == 0) {//only valid on the first animation
+            _appearanceAnimationsLoops = loops;
+        }
+
+        for(int i=_appearanceAnimations.Count-1; i>=0; i--) //there can be only one last-in-sequence, and it might not be the last element of the list because it could be added to mid-loop
+            if(_appearanceAnimations[i].LastInSequence) {
+                var lastAnim =  _appearanceAnimations[i];
+                lastAnim.LastInSequence = false;
+                _appearanceAnimations[i] = lastAnim;
+                break;
+            }
+            
+        _appearanceAnimations.Add(new AppearanceAnimation(start, duration, endingAppearance, easing, flags, delay, true));
     }
 
-    public void EndAppearanceAnimation() {
-        if (_appearanceAnimation != null)
-            _appearance = _appearanceAnimation.Value.EndAppearance;
-
-        _appearanceAnimation = null;
+    /// <summary>
+    /// Ends the target appearance animation. If appearanceAnimation is null, ends all animations.
+    /// </summary>
+    /// <param name="appearanceAnimation">Animation to end</param>
+    private void EndAppearanceAnimation(AppearanceAnimation? appearanceAnimation) {
+        if (appearanceAnimation == null){
+            if(_appearanceAnimations?.Count > 0) {
+                Appearance = _appearanceAnimations[^1].EndAppearance;
+                _appearanceAnimations.Clear();
+            }
+            return;
+        }
+        if (_appearanceAnimations != null && _appearanceAnimations.Contains(appearanceAnimation!.Value)) {
+            _appearance = appearanceAnimation!.Value.EndAppearance;
+            _appearanceAnimations.Remove(appearanceAnimation!.Value);
+        }
     }
 
     public void GetWorldAABB(Vector2 worldPos, ref Box2? aabb) {
         if (DMI != null && Appearance != null) {
             Vector2 size = DMI.IconSize / (float)EyeManager.PixelsPerMeter;
-            Vector2 pixelOffset = Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter;
+            Vector2 pixelOffset = Appearance.TotalPixelOffset / (float)EyeManager.PixelsPerMeter;
 
             worldPos += pixelOffset;
 
@@ -107,55 +199,264 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
     }
 
     private void UpdateAnimation() {
-        if(DMI == null || Appearance == null)
+        if(DMI == null || Appearance == null || _animationComplete)
             return;
+
         DMIParser.ParsedDMIState? dmiState = DMI.Description.GetStateOrDefault(Appearance.IconState);
         if(dmiState == null)
             return;
         DMIParser.ParsedDMIFrame[] frames = dmiState.GetFrames(Appearance.Direction);
 
-        if (_animationFrame == frames.Length - 1 && !dmiState.Loop) return;
+        if (frames.Length <= 1) return;
 
-        TimeSpan elapsedTime = gameTiming.CurTime.Subtract(_animationFrameTime);
-        while (elapsedTime >= frames[_animationFrame].Delay) {
-            elapsedTime -= frames[_animationFrame].Delay;
-            _animationFrameTime += frames[_animationFrame].Delay;
+        var oldFrame = _animationFrame;
+        var currentGameTicks = gameTiming.CurTime.Ticks;
+        var sequenceDuration = frames.Aggregate(TimeSpan.Zero, (duration, frame) => duration + frame.Delay);
+        var durationDiff = new TimeSpan(currentGameTicks % sequenceDuration.Ticks);
+        var noLoop = !dmiState.Loop;
+
+        _animationFrame = 0;
+        while (durationDiff >= frames[_animationFrame].Delay) {
+            durationDiff -= frames[_animationFrame].Delay;
+
             _animationFrame++;
 
-            if (_animationFrame >= frames.Length) _animationFrame -= frames.Length;
+            if (noLoop && _animationFrame == frames.Length - 1) {
+                _animationComplete = true;
+                break;
+            } else if (_animationFrame == frames.Length)
+                _animationFrame = 0;
         }
+
+        if (oldFrame != _animationFrame)
+            DirtyTexture();
     }
 
     private IconAppearance? CalculateAnimatedAppearance() {
-        if (_appearanceAnimation == null || _appearance == null)
+        if (_appearanceAnimations == null || _appearance == null)
             return _appearance;
 
-        AppearanceAnimation animation = _appearanceAnimation.Value;
+        _textureDirty = true; //if we have animations, we need to recalculate the texture
         IconAppearance appearance = new IconAppearance(_appearance);
-        float factor = Math.Clamp((float)(DateTime.Now - animation.Start).Ticks / animation.Duration.Ticks, 0.0f, 1.0f);
-        IconAppearance endAppearance = animation.EndAppearance;
+        List<AppearanceAnimation>? toRemove = null;
+        List<AppearanceAnimation>? toReAdd = null;
+        for(int i = 0; i < _appearanceAnimations.Count; i++) {
+            AppearanceAnimation animation = _appearanceAnimations[i];
+            //if it's not the first one, and it's not parallel, break
+            if((animation.Flags & AnimationFlags.AnimationParallel) == 0 && i != 0)
+                break;
 
-        if (endAppearance.PixelOffset != _appearance.PixelOffset) {
-            Vector2 startingOffset = appearance.PixelOffset;
-            Vector2 newPixelOffset = Vector2.Lerp(startingOffset, endAppearance.PixelOffset, factor);
+            float timeFactor = Math.Clamp((float)(DateTime.Now - animation.Start).Ticks / animation.Duration.Ticks, 0.0f, 1.0f);
+            float factor = 0;
+            if((animation.Easing & AnimationEasing.EaseIn) != 0)
+                timeFactor = timeFactor/2.0f;
+            if((animation.Easing & AnimationEasing.EaseOut) != 0)
+                timeFactor = 0.5f+timeFactor/2.0f;
 
-            appearance.PixelOffset = (Vector2i)newPixelOffset;
+            switch (animation.Easing) {
+                case AnimationEasing.Linear:
+                    factor = timeFactor;
+                    break;
+                case AnimationEasing.Sine:
+                    factor = MathF.Sin(timeFactor * MathF.PI / 2);
+                    break;
+                case AnimationEasing.Circular:
+                    factor = MathF.Sqrt(1 - MathF.Pow(1 - timeFactor, 2));
+                    break;
+                case AnimationEasing.Cubic:
+                    factor = 1 - MathF.Pow(1-timeFactor, 3);
+                    break;
+                case AnimationEasing.Bounce: //https://stackoverflow.com/questions/25249829/bouncing-ease-equation-in-c-sharp great match for byond behaviour
+                    float bounce = timeFactor*2.75f;
+                    if(bounce<1)
+                        factor = MathF.Pow(bounce, 2);
+                    else if(bounce<2) {
+                        bounce -= 1.5f;
+                        factor = MathF.Pow(bounce, 2)+ 0.75f;
+                    } else if(bounce<2.5) {
+                        bounce -= 2.25f;
+                        factor = MathF.Pow(bounce, 2) + 0.9375f;
+                    } else {
+                        bounce -= 2.625f;
+                        factor = MathF.Pow(bounce, 2) + 0.984375f;
+                    }
+                    break;
+                case AnimationEasing.Elastic: //http://www.java2s.com/example/csharp/system/easing-equation-function-for-an-elastic-exponentially-decaying-sine-w.html with d=1, s=pi/2, c=2, b = -1
+                    factor = MathF.Pow(2, -10 * timeFactor) * MathF.Sin((timeFactor - MathF.PI/2.0f) * (2.0f*MathF.PI/0.3f)) + 1.0f;
+                    break;
+                case AnimationEasing.Back: //https://learn.microsoft.com/en-us/dotnet/api/system.windows.media.animation.backease?view=windowsdesktop-8.0
+                    factor = MathF.Pow(timeFactor, 3) - timeFactor * MathF.Sin(timeFactor * MathF.PI);
+                    break;
+                case AnimationEasing.Quad:
+                    factor = 1 - MathF.Pow(1-timeFactor,2);
+                    break;
+                case AnimationEasing.Jump:
+                    factor = (timeFactor < 1) ? 0 : 1;
+                    break;
+            }
+
+            IconAppearance endAppearance = animation.EndAppearance;
+
+            //non-smooth animations
+            /*
+            dir
+            icon
+            icon_state
+            invisibility
+            maptext
+            suffix
+            */
+
+            if (endAppearance.Direction != _appearance.Direction) {
+                appearance.Direction = endAppearance.Direction;
+            }
+            if (endAppearance.Icon != _appearance.Icon) {
+                appearance.Icon = endAppearance.Icon;
+            }
+            if (endAppearance.IconState != _appearance.IconState) {
+                appearance.IconState = endAppearance.IconState;
+            }
+            if (endAppearance.Invisibility != _appearance.Invisibility) {
+                appearance.Invisibility = endAppearance.Invisibility;
+            }
+            /* TODO maptext
+            if (endAppearance.MapText != _appearance.MapText) {
+                appearance.MapText = endAppearance.MapText;
+            }
+            */
+            /* TODO suffix
+            if (endAppearance.Suffix != _appearance.Suffix) {
+                appearance.Suffix = endAppearance.Suffix;
+            }
+            */
+
+            //smooth animation properties
+            /*
+            alpha
+            color
+            glide_size
+            infra_luminosity
+            layer
+            maptext_width, maptext_height, maptext_x, maptext_y
+            luminosity
+            pixel_x, pixel_y, pixel_w, pixel_z
+            transform
+            */
+
+            if (endAppearance.Alpha != _appearance.Alpha) {
+                appearance.Alpha = (byte)Math.Clamp(((1-factor) * _appearance.Alpha) + (factor * endAppearance.Alpha), 0, 255);
+            }
+
+            if (endAppearance.Color != _appearance.Color) {
+                appearance.Color = Color.FromSrgb(new Color(
+                    Math.Clamp(((1-factor) * _appearance.Color.R) + (factor * endAppearance.Color.R), 0, 1),
+                    Math.Clamp(((1-factor) * _appearance.Color.G) + (factor * endAppearance.Color.G), 0, 1),
+                    Math.Clamp(((1-factor) * _appearance.Color.B) + (factor * endAppearance.Color.B), 0, 1),
+                    Math.Clamp(((1-factor) * _appearance.Color.A) + (factor * endAppearance.Color.A), 0, 1)
+                ));
+            }
+
+            if (!endAppearance.ColorMatrix.Equals(_appearance.ColorMatrix)){
+                ColorMatrix.Interpolate(ref _appearance.ColorMatrix, ref endAppearance.ColorMatrix, factor, out appearance.ColorMatrix);
+            }
+
+
+            if (endAppearance.GlideSize != _appearance.GlideSize) {
+                appearance.GlideSize = ((1-factor) * _appearance.GlideSize) + (factor * endAppearance.GlideSize);
+            }
+
+            /* TODO infraluminosity
+            if (endAppearance.InfraLuminosity != _appearance.InfraLuminosity) {
+                appearance.InfraLuminosity = ((1-factor) * _appearance.InfraLuminosity) + (factor * endAppearance.InfraLuminosity);
+            }
+            */
+
+            if (endAppearance.Layer != _appearance.Layer) {
+                appearance.Layer = ((1-factor) * _appearance.Layer) + (factor * endAppearance.Layer);
+            }
+
+            /* TODO luminosity
+            if (endAppearance.Luminosity != _appearance.Luminosity) {
+                appearance.Luminosity = ((1-factor) * _appearance.Luminosity) + (factor * endAppearance.Luminosity);
+            }
+            */
+
+            /* TODO maptext
+            if (endAppearance.MapTextWidth != _appearance.MapTextWidth) {
+                appearance.MapTextWidth = (ushort)Math.Clamp(((1-factor) * _appearance.MapTextWidth) + (factor * endAppearance.MapTextWidth), 0, 65535);
+            }
+
+            if (endAppearance.MapTextHeight != _appearance.MapTextHeight) {
+                appearance.MapTextHeight = (ushort)Math.Clamp(((1-factor) * _appearance.MapTextHeight) + (factor * endAppearance.MapTextHeight), 0, 65535);
+            }
+
+            if (endAppearance.MapTextX != _appearance.MapTextX) {
+                appearance.MapTextX = (short)Math.Clamp(((1-factor) * _appearance.MapTextX) + (factor * endAppearance.MapTextX), -32768, 32767);
+            }
+
+            if (endAppearance.MapTextY != _appearance.MapTextY) {
+                appearance.MapTextY = (short)Math.Clamp(((1-factor) * _appearance.MapTextY) + (factor * endAppearance.MapTextY), -32768, 32767);
+            }
+            */
+
+            if (endAppearance.PixelOffset != _appearance.PixelOffset) {
+                Vector2 startingOffset = appearance.PixelOffset;
+                Vector2 newPixelOffset = Vector2.Lerp(startingOffset, endAppearance.PixelOffset, 1.0f-factor);
+
+                appearance.PixelOffset = (Vector2i)newPixelOffset;
+            }
+
+            if (endAppearance.PixelOffset2 != _appearance.PixelOffset2) {
+                Vector2 startingOffset = appearance.PixelOffset2;
+                Vector2 newPixelOffset = Vector2.Lerp(startingOffset, endAppearance.PixelOffset2, 1.0f-factor);
+
+                appearance.PixelOffset2 = (Vector2i)newPixelOffset;
+            }
+
+            if (!endAppearance.Transform.SequenceEqual(_appearance.Transform)) {
+                appearance.Transform[0] = (1.0f-factor)*_appearance.Transform[0] + (factor * endAppearance.Transform[0]);
+                appearance.Transform[1] = (1.0f-factor)*_appearance.Transform[1] + (factor * endAppearance.Transform[1]);
+                appearance.Transform[2] = (1.0f-factor)*_appearance.Transform[2] + (factor * endAppearance.Transform[2]);
+                appearance.Transform[3] = (1.0f-factor)*_appearance.Transform[3] + (factor * endAppearance.Transform[3]);
+                appearance.Transform[4] = (1.0f-factor)*_appearance.Transform[4] + (factor * endAppearance.Transform[4]);
+                appearance.Transform[5] = (1.0f-factor)*_appearance.Transform[5] + (factor * endAppearance.Transform[5]);
+            }
+
+            if (timeFactor >= 1f) {
+                toRemove ??= new();
+                toRemove.Add(animation);
+                if (_appearanceAnimationsLoops != 0) { //add it back to the list with the times updated
+                    if(_appearanceAnimationsLoops != -1 && animation.LastInSequence)
+                        _appearanceAnimationsLoops -= 1;
+                    toReAdd ??= new();
+                    DateTime start;
+                    if((animation.Flags & AnimationFlags.AnimationParallel) != 0)
+                        start = _appearanceAnimations[^1].Start; //either that's also a parallel, or its one that this should be parallel with
+                    else
+                        start = _appearanceAnimations[^1].Start + _appearanceAnimations[^1].Duration; //if it's not parallel, it's chained
+                    AppearanceAnimation repeatAnimation = new AppearanceAnimation(start, animation.Duration, animation.EndAppearance, animation.Easing, animation.Flags, animation.Delay, animation.LastInSequence);
+                    toReAdd.Add(repeatAnimation);
+                }
+
+            }
         }
 
-        if (endAppearance.Direction != _appearance.Direction) {
-            appearance.Direction = endAppearance.Direction;
-        }
+        if(toRemove != null)
+            foreach (AppearanceAnimation animation in toRemove) {
+                EndAppearanceAnimation(animation);
+            }
 
-        // TODO: Other animatable properties
-
-        if (factor >= 1f) {
-            EndAppearanceAnimation();
-        }
+        if(toReAdd != null)
+            foreach (AppearanceAnimation animation in toReAdd) {
+                _appearanceAnimations.Add(animation);
+            }
 
         return appearance;
     }
 
     private void UpdateIcon() {
+        DirtyTexture();
+
         if (Appearance == null) {
             DMI = null;
             return;
@@ -166,16 +467,16 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
         } else {
             IoCManager.Resolve<IDreamResourceManager>().LoadResourceAsync<DMIResource>(Appearance.Icon.Value, dmi => {
                 if (dmi.Id != Appearance.Icon) return; //Icon changed while resource was loading
-
+                dmi.OnUpdateCallbacks.Add(DirtyTexture);
                 DMI = dmi;
                 _animationFrame = 0;
-                _animationFrameTime = gameTiming.CurTime;
+                _animationComplete = false;
             });
         }
 
         Overlays.Clear();
         foreach (int overlayId in Appearance.Overlays) {
-            DreamIcon overlay = new DreamIcon(gameTiming, appearanceSystem, overlayId, Appearance.Direction);
+            DreamIcon overlay = new DreamIcon(renderTargetPool, gameTiming, clyde, appearanceSystem, overlayId, Appearance.Direction);
             overlay.SizeChanged += CheckSizeChange;
 
             Overlays.Add(overlay);
@@ -183,11 +484,57 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
 
         Underlays.Clear();
         foreach (int underlayId in Appearance.Underlays) {
-            DreamIcon underlay = new DreamIcon(gameTiming, appearanceSystem, underlayId, Appearance.Direction);
+            DreamIcon underlay = new DreamIcon(renderTargetPool, gameTiming, clyde, appearanceSystem, underlayId, Appearance.Direction);
             underlay.SizeChanged += CheckSizeChange;
 
             Underlays.Add(underlay);
         }
+    }
+
+    /// <summary>
+    /// Perform a full (slower) render of this icon's texture, including filters and color
+    /// </summary>
+    /// <remarks>In a separate method to avoid closure allocations when not executed</remarks>
+    /// <returns>The final texture</returns>
+    private IRenderTexture FullRenderTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData, Texture frame) {
+        // TODO: This should determine the size from the filters and their settings, not just double the original
+        var ping = renderTargetPool.Rent(frame.Size * 2);
+        var pong = renderTargetPool.Rent(ping.Size);
+
+        handle.RenderInRenderTarget(pong, () => {
+            //we can use the color matrix shader here, since we don't need to blend
+            //also because blend mode is none, we don't need to clear
+            var colorMatrix = iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity)
+                ? new ColorMatrix(iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply))
+                : iconMetaData.ColorMatrixToApply;
+
+            ShaderInstance colorShader = DreamViewOverlay.ColorInstance.Duplicate();
+            colorShader.SetParameter("colorMatrix", colorMatrix.GetMatrix4());
+            colorShader.SetParameter("offsetVector", colorMatrix.GetOffsetVector());
+            colorShader.SetParameter("isPlaneMaster",iconMetaData.IsPlaneMaster);
+            handle.UseShader(colorShader);
+
+            handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(pong.Size, frame.Size / 2));
+            handle.DrawTextureRect(frame, new Box2(Vector2.Zero, frame.Size));
+        }, Color.Black.WithAlpha(0));
+
+        foreach (DreamFilter filterId in iconMetaData.MainIcon!.Appearance!.Filters) {
+            ShaderInstance s = appearanceSystem.GetFilterShader(filterId, viewOverlay.RenderSourceLookup);
+
+            handle.RenderInRenderTarget(ping, () => {
+                handle.UseShader(s);
+
+                // Technically this should be ping.Size, but they are the same size so avoid the extra closure alloc
+                handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(pong.Size, Vector2.Zero));
+                handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, pong.Size));
+            }, Color.Black.WithAlpha(0));
+
+            (ping, pong) = (pong, ping);
+        }
+
+        renderTargetPool.Return(ping);
+        TextureRenderOffset = -(pong.Texture.Size / 2 - frame.Size / 2);
+        return pong;
     }
 
     private void CheckSizeChange() {
@@ -200,9 +547,18 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
         }
     }
 
-    private struct AppearanceAnimation(DateTime start, TimeSpan duration, IconAppearance endAppearance) {
+    private void DirtyTexture() {
+        _textureDirty = true;
+        CachedTexture = null;
+    }
+
+    private struct AppearanceAnimation(DateTime start, TimeSpan duration, IconAppearance endAppearance, AnimationEasing easing, AnimationFlags flags, int delay, bool lastInSequence) {
         public readonly DateTime Start = start;
         public readonly TimeSpan Duration = duration;
         public readonly IconAppearance EndAppearance = endAppearance;
+        public readonly AnimationEasing Easing = easing;
+        public readonly AnimationFlags Flags = flags;
+        public readonly int Delay = delay;
+        public bool LastInSequence = lastInSequence;
     }
 }

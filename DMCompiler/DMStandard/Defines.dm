@@ -22,6 +22,7 @@
 #define MOB_LAYER 4
 #define FLY_LAYER 5
 #define EFFECTS_LAYER 5000
+#define TOPDOWN_LAYER 10000
 #define BACKGROUND_LAYER 20000
 
 #define FLOAT_PLANE -32767
@@ -31,12 +32,27 @@
 #define NEUTER "neuter"
 #define PLURAL "plural"
 
+//animate() flags arg
 #define ANIMATION_END_NOW 1
 #define ANIMATION_LINEAR_TRANSFORM 2
 #define ANIMATION_PARALLEL 4
+#define ANIMATION_SLICE 8
+#define ANIMATION_RELATIVE 256
+#define ANIMATION_CONTINUE 512
+
+//animate() easing arg
+#define LINEAR_EASING	0
+#define SINE_EASING		1
+#define CIRCULAR_EASING	2
+#define CUBIC_EASING	3
+#define BOUNCE_EASING	4
+#define ELASTIC_EASING	5
+#define BACK_EASING		6
+#define QUAD_EASING		7
+#define JUMP_EASING		8
+//flags applied to the animate() easing arg
 #define EASE_IN 64
 #define EASE_OUT 128
-#define ANIMATION_RELATIVE 256
 
 #define NO_STEPS 0
 #define FORWARD_STEPS 1
@@ -123,17 +139,6 @@
 #define PASS_MOUSE 		(1<<10)
 #define TILE_MOVER		(1<<11)
 
-//animate() easing arg
-#define LINEAR_EASING	1
-#define SINE_EASING		2
-#define CIRCULAR_EASING	3
-#define QUAD_EASING		4
-#define CUBIC_EASING	5
-#define BOUNCE_EASING	6
-#define ELASTIC_EASING	7
-#define BACK_EASING		8
-#define JUMP_EASING		9
-
 //Undocumented matrix defines (see https://www.byond.com/forum/post/1881375)
 #define MATRIX_COPY 0
 #define MATRIX_MULTIPLY 1 // idk why this is first, either
@@ -211,3 +216,6 @@
 #define NORMAL_RAND 1
 #define LINEAR_RAND 2
 #define SQUARE_RAND 3
+
+// v515 json_encode() pretty print flag
+#define JSON_PRETTY_PRINT 1

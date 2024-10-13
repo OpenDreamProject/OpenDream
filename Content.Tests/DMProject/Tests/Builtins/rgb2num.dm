@@ -1,6 +1,7 @@
 ﻿#define COLORCOMPARE(rgb, r, g, b) ASSERT((rgb[1] == r) && (rgb[2] == g) && (rgb[3] == b))
 
 /proc/RunTest()
+	COLORCOMPARE(rgb2num(null), 255, 255, 255)
 	COLORCOMPARE(rgb2num("#fff"), 255, 255, 255)
 	COLORCOMPARE(rgb2num("#f00"), 255, 0, 0)
 	COLORCOMPARE(rgb2num("#00f"), 0, 0, 255)

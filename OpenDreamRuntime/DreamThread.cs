@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using DMCompiler.DM;
 using OpenDreamRuntime.Objects;
@@ -34,12 +35,13 @@ namespace OpenDreamRuntime {
         public int? VerbId = null; // Null until registered as a verb in ServerVerbSystem
         public string VerbName => _verbName ?? Name;
         public readonly string? VerbCategory = string.Empty;
+        public readonly VerbSrc? VerbSrc;
         public readonly sbyte Invisibility;
 
         private readonly string? _verbName;
         private readonly string? _verbDesc;
 
-        protected DreamProc(int id, TreeEntry owningType, string name, DreamProc? superProc, ProcAttributes attributes, List<string>? argumentNames, List<DreamValueType>? argumentTypes, string? verbName, string? verbCategory, string? verbDesc, sbyte invisibility, bool isVerb = false) {
+        protected DreamProc(int id, TreeEntry owningType, string name, DreamProc? superProc, ProcAttributes attributes, List<string>? argumentNames, List<DreamValueType>? argumentTypes, VerbSrc? verbSrc, string? verbName, string? verbCategory, string? verbDesc, sbyte invisibility, bool isVerb = false) {
             Id = id;
             OwningType = owningType;
             Name = name;
@@ -49,6 +51,7 @@ namespace OpenDreamRuntime {
             ArgumentNames = argumentNames;
             ArgumentTypes = argumentTypes;
 
+            VerbSrc = verbSrc;
             _verbName = verbName;
             if (verbCategory is not null) {
                 // (de)serialization meme to reduce JSON size
@@ -81,6 +84,9 @@ namespace OpenDreamRuntime {
                     return (_verbDesc != null) ? new DreamValue(_verbDesc) : DreamValue.Null;
                 case "invisibility":
                     return new DreamValue(Invisibility);
+                case "hidden":
+                    Logger.GetSawmill("opendream.dmproc").Warning("The 'hidden' field on verbs will always return null.");
+                    return DreamValue.Null;
                 default:
                     throw new Exception($"Cannot get field \"{field}\" from {OwningType.ToString()}.{Name}()");
             }
@@ -173,10 +179,8 @@ namespace OpenDreamRuntime {
     }
 
     public sealed class DreamThread {
-        private static readonly System.Threading.ThreadLocal<Stack<DreamThread>> CurrentlyExecuting = new(() => new(), trackAllValues: true);
-        public static IEnumerable<DreamThread> InspectExecutingThreads() {
-            return CurrentlyExecuting.Value!.Concat(CurrentlyExecuting.Values.SelectMany(x => x));
-        }
+        private static readonly ThreadLocal<Stack<DreamThread>> CurrentlyExecuting = new(() => new(), trackAllValues: true);
+        private static readonly StringBuilder ErrorMessageBuilder = new();
 
         private static int _idCounter = 0;
         public int Id { get; } = ++_idCounter;
@@ -189,6 +193,11 @@ namespace OpenDreamRuntime {
         // The amount of stack frames containing `WaitFor = false`
         private int _syncCount = 0;
 
+        /// <summary>
+        /// Stores the last object that was animated, so that animate() can be called without the object parameter. Does not need to be passed to spawn calls, only current execution context.
+        /// </summary>
+        public DreamValue? LastAnimatedObject = null;
+
         public string Name { get; }
 
         internal DreamDebugManager.ThreadStepMode? StepMode { get; set; }
@@ -199,6 +208,11 @@ namespace OpenDreamRuntime {
 
         public static DreamValue Run(DreamProc proc, DreamObject src, DreamObject? usr, params DreamValue[] arguments) {
             var context = new DreamThread(proc.ToString());
+
+            if (proc is NativeProc nativeProc) {
+                return nativeProc.Call(context, src, usr, new(arguments));
+            }
+
             var state = proc.CreateState(context, src, usr, new DreamProcArguments(arguments));
             context.PushProcState(state);
             return context.Resume();
@@ -212,6 +226,27 @@ namespace OpenDreamRuntime {
         }
 
         public DreamValue Resume() {
+            return ReentrantResume(null, out _);
+        }
+
+        /// <summary>
+        /// Resume this thread re-entrantly.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// This function is suitable for executing from inside a running opcode handler if
+        /// <paramref name="untilState"/> is provided.
+        /// </para>
+        /// </remarks>
+        /// <param name="untilState">
+        /// If not null, only continue running until this proc state gets returned into.
+        /// Note that if used, the parent proc will not have its <see cref="ProcState.ReturnedInto"/> called.
+        /// </param>
+        /// <param name="resultStatus">
+        /// The proc result status that caused this resume to return.
+        /// </param>
+        /// <returns>The return value of the last proc to return.</returns>
+        public DreamValue ReentrantResume(ProcState? untilState, out ProcStatus resultStatus) {
             try {
                 CurrentlyExecuting.Value!.Push(this);
                 while (_current != null) {
@@ -220,6 +255,12 @@ namespace OpenDreamRuntime {
                         // _current.Resume may mutate our state!!!
                         status = _current.Resume();
                     } catch (DMError dmError) {
+                        if (_current == null) {
+                            // This happens if a ReentrantResume cancelled, it will have already torn down the stack.
+                            // Just bail and do nothing else.
+                            resultStatus = ProcStatus.Cancelled;
+                            return default;
+                        }
                         CancelAll();
                         HandleException(dmError);
                         status = ProcStatus.Cancelled;
@@ -235,6 +276,7 @@ namespace OpenDreamRuntime {
                             var current = _current;
                             _current = null;
                             _stack.Clear();
+                            resultStatus = status;
                             return current.Result;
 
                         // Our top-most proc just returned a value
@@ -244,7 +286,8 @@ namespace OpenDreamRuntime {
 
                             // If our stack is empty, the context has finished execution
                             // so we can return the result to our native caller
-                            if (_current == null) {
+                            if (_current == null || _current == untilState) {
+                                resultStatus = status;
                                 return returned;
                             }
 
@@ -255,6 +298,7 @@ namespace OpenDreamRuntime {
                         // The context is done executing for now
                         case ProcStatus.Deferred:
                             // We return the current return value here even though it may not be the final result
+                            resultStatus = status;
                             return _current.Result;
 
                         // Our top-most proc just called a function
@@ -364,27 +408,23 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public void HandleException(Exception exception) {
+        private void HandleException(Exception exception) {
             _current?.Cancel();
 
             var dreamMan = IoCManager.Resolve<DreamManager>();
 
+            ErrorMessageBuilder.Clear();
+            ErrorMessageBuilder.AppendLine($"Exception occurred: {exception.Message}");
 
-            StringBuilder builder = new();
-            builder.AppendLine($"Exception occurred: {exception.Message}");
+            ErrorMessageBuilder.AppendLine("=DM StackTrace=");
+            AppendStackTrace(ErrorMessageBuilder);
+            ErrorMessageBuilder.AppendLine();
 
-            builder.AppendLine("=DM StackTrace=");
-            AppendStackTrace(builder);
-            builder.AppendLine();
+            ErrorMessageBuilder.AppendLine("=C# StackTrace=");
+            ErrorMessageBuilder.AppendLine(exception.ToString());
+            ErrorMessageBuilder.AppendLine();
 
-            builder.AppendLine("=C# StackTrace=");
-            builder.AppendLine(exception.ToString());
-            builder.AppendLine();
-
-            var msg = builder.ToString();
-
-            // TODO: Defining world.Error() causes byond to no longer print exceptions to the log unless ..() is called
-            dreamMan.WriteWorldLog(msg, LogLevel.Error);
+            var msg = ErrorMessageBuilder.ToString();
 
             // Instantiate an /exception and invoke world.Error()
             string file = string.Empty;
@@ -394,8 +434,8 @@ namespace OpenDreamRuntime {
                 file = source.Item1;
                 line = source.Item2;
             }
-            dreamMan.HandleException(exception, msg, file, line);
 
+            dreamMan.HandleException(exception, msg, file, line);
             IoCManager.Resolve<IDreamDebugManager>().HandleException(this, exception);
         }
 
@@ -403,9 +443,14 @@ namespace OpenDreamRuntime {
             if (_current is not null) {
                 yield return _current;
             }
+
             foreach (var entry in _stack) {
                 yield return entry;
             }
+        }
+
+        public static IEnumerable<DreamThread> InspectExecutingThreads() {
+            return CurrentlyExecuting.Value!.Concat(CurrentlyExecuting.Values.SelectMany(x => x));
         }
 
         private bool TryCatchException(Exception exception) {

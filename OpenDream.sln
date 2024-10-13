@@ -11,6 +11,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TestGame", "TestGame", "{72
 		TestGame\map_z1.dmm = TestGame\map_z1.dmm
 		TestGame\map_z2.dmm = TestGame\map_z2.dmm
 		TestGame\map_z3.dmm = TestGame\map_z3.dmm
+		TestGame\TestInterface.dmf = TestGame\TestInterface.dmf
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "icons", "icons", "{4F1F4C68-4117-4ECC-8174-D399C1D6C409}"
@@ -98,6 +99,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Robust.Serialization.Generator", "RobustToolbox\Robust.Serialization.Generator\Robust.Serialization.Generator.csproj", "{366AA569-0889-491B-AB00-F038EAEC5221}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenDreamPackageTool", "OpenDreamPackageTool\OpenDreamPackageTool.csproj", "{351729DE-F70D-4136-AD48-1E08A715C1B1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Robust.Xaml", "RobustToolbox\Robust.Xaml\Robust.Xaml.csproj", "{62F71077-77A6-4F0F-9A47-AA341668E194}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -428,6 +431,16 @@ Global
 		{351729DE-F70D-4136-AD48-1E08A715C1B1}.Release|x64.Build.0 = Release|Any CPU
 		{351729DE-F70D-4136-AD48-1E08A715C1B1}.Tools|Any CPU.ActiveCfg = Debug|Any CPU
 		{351729DE-F70D-4136-AD48-1E08A715C1B1}.Tools|Any CPU.Build.0 = Debug|Any CPU
+		{62F71077-77A6-4F0F-9A47-AA341668E194}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62F71077-77A6-4F0F-9A47-AA341668E194}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62F71077-77A6-4F0F-9A47-AA341668E194}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{62F71077-77A6-4F0F-9A47-AA341668E194}.Debug|x64.Build.0 = Debug|Any CPU
+		{62F71077-77A6-4F0F-9A47-AA341668E194}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62F71077-77A6-4F0F-9A47-AA341668E194}.Release|Any CPU.Build.0 = Release|Any CPU
+		{62F71077-77A6-4F0F-9A47-AA341668E194}.Release|x64.ActiveCfg = Release|Any CPU
+		{62F71077-77A6-4F0F-9A47-AA341668E194}.Release|x64.Build.0 = Release|Any CPU
+		{62F71077-77A6-4F0F-9A47-AA341668E194}.Tools|Any CPU.ActiveCfg = Debug|Any CPU
+		{62F71077-77A6-4F0F-9A47-AA341668E194}.Tools|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

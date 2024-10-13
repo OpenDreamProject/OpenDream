@@ -1,16 +1,14 @@
-using System;
-using System.Collections.Generic;
 using System.Text;
 
 namespace DMCompiler.Compiler.DMPreprocessor;
 
 internal class DMMacro {
-    private readonly List<string> _parameters;
-    private readonly List<Token> _tokens;
-    private readonly string _overflowParameter;
+    private readonly List<string>? _parameters;
+    private readonly List<Token>? _tokens;
+    private readonly string? _overflowParameter;
     private readonly int _overflowParameterIndex;
 
-    public DMMacro(List<string> parameters, List<Token> tokens) {
+    public DMMacro(List<string>? parameters, List<Token>? tokens) {
         _parameters = parameters;
         _tokens = tokens;
 
@@ -53,7 +51,10 @@ internal class DMMacro {
     /// <returns>A list of tokens replacing the identifier</returns>
     /// <exception cref="ArgumentException">Thrown if no parameters were given but are required</exception>
     // TODO: Convert this to an IEnumerator<Token>? Could cut down on allocations.
-    public virtual List<Token> Expand(Token replacing, List<List<Token>>? parameters) {
+    public virtual List<Token>? Expand(Token replacing, List<List<Token>>? parameters) {
+        if (_tokens == null)
+            return null;
+
         // If this macro has no parameters then we can just return our list of tokens
         if (!HasParameters())
             return _tokens;
@@ -66,9 +67,9 @@ internal class DMMacro {
         foreach (Token token in _tokens) {
             string parameterName =
                 token.Type is TokenType.DM_Preproc_TokenConcat or TokenType.DM_Preproc_ParameterStringify
-                    ? (string) token.Value
+                    ? token.ValueAsString()
                     : token.Text;
-            int parameterIndex = _parameters.IndexOf(parameterName);
+            int parameterIndex = _parameters!.IndexOf(parameterName);
 
             if (parameterIndex != -1 && parameters.Count > parameterIndex) {
                 List<Token> parameter = parameters[parameterIndex];
@@ -136,49 +137,43 @@ internal class DMMacro {
 }
 
 // __LINE__
-internal sealed class DMMacroLine : DMMacro {
-    public DMMacroLine() : base(null, null) { }
+internal sealed class DMMacroLine() : DMMacro(null, null) {
+    public override List<Token> Expand(Token replacing, List<List<Token>>? parameters) {
+        var line = replacing.Location.Line;
+        if (line == null)
+            throw new ArgumentException($"Token {replacing} does not have a line number", nameof(replacing));
 
-    public override List<Token> Expand(Token replacing, List<List<Token>> parameters) {
-        return new(1) {
-            new Token(TokenType.DM_Preproc_Number, replacing.Location.Line.ToString(), replacing.Location, null)
-        };
+        return [
+            new Token(TokenType.DM_Preproc_Number, line.Value.ToString(), replacing.Location, null)
+        ];
     }
 }
 
 // __FILE__
-internal sealed class DMMacroFile : DMMacro {
-    public DMMacroFile() : base(null, null) { }
-
-    public override List<Token> Expand(Token replacing, List<List<Token>> parameters) {
+internal sealed class DMMacroFile() : DMMacro(null, null) {
+    public override List<Token> Expand(Token replacing, List<List<Token>>? parameters) {
         string path = replacing.Location.SourceFile.Replace(@"\", @"\\"); //Escape any backwards slashes
 
-        return new(1) {
+        return [
             new Token(TokenType.DM_Preproc_ConstantString, $"\"{path}\"", replacing.Location, path)
-        };
+        ];
     }
 }
 
 // DM_VERSION
-
-internal sealed class DMMacroVersion : DMMacro {
-    public DMMacroVersion() : base(null, null) { }
-
-    public override List<Token> Expand(Token replacing, List<List<Token>> parameters) {
-        return new(1) {
+internal sealed class DMMacroVersion() : DMMacro(null, null) {
+    public override List<Token> Expand(Token replacing, List<List<Token>>? parameters) {
+        return [
             new Token(TokenType.DM_Preproc_Number, DMCompiler.Settings.DMVersion, replacing.Location, null)
-        };
+        ];
     }
 }
 
 // DM_BUILD
-
-internal sealed class DMMacroBuild : DMMacro {
-    public DMMacroBuild() : base(null, null) { }
-
-    public override List<Token> Expand(Token replacing, List<List<Token>> parameters) {
-        return new(1) {
+internal sealed class DMMacroBuild() : DMMacro(null, null) {
+    public override List<Token> Expand(Token replacing, List<List<Token>>? parameters) {
+        return [
             new Token(TokenType.DM_Preproc_Number, DMCompiler.Settings.DMBuild, replacing.Location, null)
-        };
+        ];
     }
 }

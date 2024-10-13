@@ -70,18 +70,19 @@ internal sealed class DreamPlane(IRenderTexture mainRenderTarget) : IDisposable 
     /// Draws this plane's mouse map onto the current render target
     /// </summary>
     public void DrawMouseMap(DrawingHandleWorld handle, DreamViewOverlay overlay, Vector2i renderTargetSize, Box2 worldAABB) {
-        handle.UseShader(overlay.BlockColorInstance);
+        if (Master?.MouseOpacity == MouseOpacity.Transparent)
+            return;
         foreach (var sprite in Sprites) {
             if (sprite.MouseOpacity == MouseOpacity.Transparent || sprite.ShouldPassMouse)
                 continue;
 
-            var texture = sprite.Texture;
+            var texture = sprite.GetTexture(overlay, handle);
             if (texture == null)
                 continue;
 
             var pos = (sprite.Position - worldAABB.BottomLeft) * EyeManager.PixelsPerMeter;
-            if (sprite.TextureOverride != null)
-                pos -= sprite.TextureOverride.Size / 2 - new Vector2(EyeManager.PixelsPerMeter, EyeManager.PixelsPerMeter) / 2;
+            if (sprite.MainIcon != null)
+                pos += sprite.MainIcon.TextureRenderOffset;
 
             int hash = sprite.GetHashCode();
             var colorR = (byte)(hash & 0xFF);
@@ -89,8 +90,8 @@ internal sealed class DreamPlane(IRenderTexture mainRenderTarget) : IDisposable 
             var colorB = (byte)((hash >> 16) & 0xFF);
             Color targetColor = new Color(colorR, colorG, colorB); //TODO - this could result in mis-clicks due to hash-collision since we ditch a whole byte.
             overlay.MouseMapLookup[targetColor] = sprite;
-
-            handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(renderTargetSize, pos));
+            handle.UseShader(overlay.BlockColorInstance); //it seems like you could put this outside the loop, but you can't without breakng the mousemap
+            handle.SetTransform(DreamViewOverlay.CalculateDrawingMatrix(sprite.TransformToApply, pos, texture.Size, renderTargetSize));
             handle.DrawTextureRect(texture, new Box2(Vector2.Zero, texture.Size), targetColor);
         }
     }

@@ -18,8 +18,13 @@ internal sealed partial class ContextMenuPopup : Popup {
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly IUserInterfaceManager _uiManager = default!;
+    private readonly ClientAppearanceSystem? _appearanceSystem;
     private readonly TransformSystem? _transformSystem;
     private readonly ClientVerbSystem? _verbSystem;
+    private readonly EntityQuery<DMISpriteComponent> _spriteQuery;
+    private readonly EntityQuery<TransformComponent> _xformQuery;
+    private readonly EntityQuery<DreamMobSightComponent> _mobSightQuery;
+    private readonly EntityQuery<MetaDataComponent> _metadataQuery;
 
     public int EntityCount => ContextMenu.ChildCount;
 
@@ -31,25 +36,42 @@ internal sealed partial class ContextMenuPopup : Popup {
 
         _entitySystemManager.TryGetEntitySystem(out _transformSystem);
         _entitySystemManager.TryGetEntitySystem(out _verbSystem);
+        _entitySystemManager.TryGetEntitySystem(out _appearanceSystem);
+        _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
+        _xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
+        _mobSightQuery = _entityManager.GetEntityQuery<DreamMobSightComponent>();
+        _metadataQuery = _entityManager.GetEntityQuery<MetaDataComponent>();
     }
 
-    public void RepopulateEntities(IEnumerable<EntityUid> entities) {
+    public void RepopulateEntities(ClientObjectReference[] entities, int? turfId) {
         ContextMenu.RemoveAllChildren();
 
         if (_transformSystem == null)
             return;
 
-        foreach (EntityUid entity in entities) {
-            if (!_mapManager.IsGrid(_transformSystem.GetParent(entity).Owner)) // Not a child of another entity
-                continue;
-            if (!_entityManager.TryGetComponent(entity, out DMISpriteComponent? sprite)) // Has a sprite
-                continue;
-            if (sprite.Icon.Appearance.MouseOpacity == MouseOpacity.Transparent) // Not transparent to mouse clicks
-                continue;
+        foreach (var objectReference in entities) {
+            if (objectReference.Type == ClientObjectReference.RefType.Entity) {
+                var entity = _entityManager.GetEntity(objectReference.Entity);
+                if (_xformQuery.TryGetComponent(entity, out TransformComponent? transform) && !_mapManager.IsGrid(_transformSystem.GetParent(transform)!.Owner)) // Not a child of another entity
+                    continue;
+                if (!_spriteQuery.TryGetComponent(entity, out DMISpriteComponent? sprite)) // Has a sprite
+                    continue;
+                if (sprite.Icon.Appearance?.MouseOpacity == MouseOpacity.Transparent) // Not transparent to mouse clicks
+                    continue;
+                if (!sprite.IsVisible(transform, GetSeeInvisible())) // Not invisible
+                    continue;
 
-            var metadata = _entityManager.GetComponent<MetaDataComponent>(entity);
+                var metadata = _metadataQuery.GetComponent(entity);
+                if (string.IsNullOrEmpty(metadata.EntityName)) // Has a name
+                    continue;
 
-            ContextMenu.AddChild(new ContextMenuItem(this, entity, metadata, sprite));
+                ContextMenu.AddChild(new ContextMenuItem(this, objectReference, metadata.EntityName, sprite.Icon));
+            } else if (objectReference.Type == ClientObjectReference.RefType.Turf && turfId is not null && _appearanceSystem is not null) {
+                var icon = _appearanceSystem.GetTurfIcon(turfId.Value);
+                if(icon.Appearance is null) continue;
+
+                ContextMenu.AddChild(new ContextMenuItem(this, objectReference, icon.Appearance.Name, icon));
+            }
         }
     }
 
@@ -59,7 +81,7 @@ internal sealed partial class ContextMenuPopup : Popup {
             _uiManager.ModalRoot.RemoveChild(_currentVerbMenu);
         }
 
-        _currentVerbMenu = new VerbMenuPopup(_entityManager, _verbSystem, GetSeeInvisible(), item.Entity, item.EntityMetaData, item.EntitySprite);
+        _currentVerbMenu = new VerbMenuPopup(_verbSystem, GetSeeInvisible(), item.Target);
 
         _currentVerbMenu.OnVerbSelected += Close;
 
@@ -71,10 +93,10 @@ internal sealed partial class ContextMenuPopup : Popup {
 
     /// <returns>The see_invisible of our current mob</returns>
     private sbyte GetSeeInvisible() {
-        if (_playerManager.LocalEntity == null)
-            return 0;
-        if (!_entityManager.TryGetComponent(_playerManager.LocalEntity, out DreamMobSightComponent? sight))
-            return 0;
+        if (_playerManager.LocalSession == null)
+            return 127;
+        if (!_mobSightQuery.TryGetComponent(_playerManager.LocalSession.AttachedEntity, out DreamMobSightComponent? sight))
+            return 127;
 
         return sight.SeeInvisibility;
     }

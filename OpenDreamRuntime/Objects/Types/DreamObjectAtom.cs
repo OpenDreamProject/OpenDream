@@ -27,10 +27,16 @@ public class DreamObjectAtom : DreamObject {
         ObjectDefinition.Variables["desc"].TryGetValueAsString(out Desc);
     }
 
-    protected override void HandleDeletion() {
+    protected override void HandleDeletion(bool possiblyThreaded) {
+        // SAFETY: RemoveAtom is not threadsafe.
+        if (possiblyThreaded) {
+            EnterIntoDelQueue();
+            return;
+        }
+
         AtomManager.RemoveAtom(this);
 
-        base.HandleDeletion();
+        base.HandleDeletion(possiblyThreaded);
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
@@ -157,11 +163,12 @@ public class DreamObjectAtom : DreamObject {
             case "filters": {
                 Filters.Cut();
 
-                if (value.TryGetValueAsDreamList(out var valueList)) {
-                    // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue filterValue in valueList.GetValues()) {
-                        Filters.AddValue(filterValue);
-                    }
+                if (value.TryGetValueAsDreamList(out var valueList)) { // filters = list("type"=...)
+                    var filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, valueList);
+                    if (filterObject == null) // list() with invalid "type" is ignored
+                        break;
+
+                    Filters.AddValue(new(filterObject));
                 } else if (!value.IsNull) {
                     Filters.AddValue(value);
                 }

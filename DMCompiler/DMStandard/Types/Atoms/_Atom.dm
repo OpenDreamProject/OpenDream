@@ -7,18 +7,18 @@
 	var/suffix = null as opendream_unimplemented
 
 	// The initialization/usage of these lists is handled internally by the runtime
-	var/list/verbs = null
+	var/tmp/list/verbs = null
 	var/list/contents = null
 	var/list/overlays = null
 	var/list/underlays = null
-	var/list/vis_locs = null as opendream_unimplemented
+	var/tmp/list/vis_locs = null as opendream_unimplemented
 	var/list/vis_contents = null
 
-	var/atom/loc
+	var/tmp/atom/loc
 	var/dir = SOUTH
-	var/x = 0
-	var/y = 0
-	var/z = 0
+	var/tmp/x = 0
+	var/tmp/y = 0
+	var/tmp/z = 0
 	var/pixel_x = 0
 	var/pixel_y = 0
 	var/pixel_z = 0 as opendream_unimplemented
@@ -53,9 +53,9 @@
 	var/step_x as opendream_unimplemented
 	var/step_y as opendream_unimplemented
 	var/render_source
-	var/mouse_drag_pointer as opendream_unimplemented
-	var/mouse_drop_pointer as opendream_unimplemented
-	var/mouse_over_pointer as opendream_unimplemented
+	var/tmp/mouse_drag_pointer as opendream_unimplemented
+	var/tmp/mouse_drop_pointer as opendream_unimplemented
+	var/tmp/mouse_over_pointer as opendream_unimplemented
 	var/render_target
 	var/vis_flags as opendream_unimplemented
 
@@ -106,3 +106,6 @@
 		return TRUE
 
 	proc/Stat()
+	
+	New(loc)
+		..()

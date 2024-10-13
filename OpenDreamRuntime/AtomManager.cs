@@ -208,11 +208,14 @@ public sealed class AtomManager {
 
     public bool IsValidAppearanceVar(string name) {
         switch (name) {
+            case "name":
             case "icon":
             case "icon_state":
             case "dir":
             case "pixel_x":
             case "pixel_y":
+            case "pixel_w":
+            case "pixel_z":
             case "color":
             case "layer":
             case "invisibility":
@@ -241,6 +244,10 @@ public sealed class AtomManager {
 
     public void SetAppearanceVar(IconAppearance appearance, string varName, DreamValue value) {
         switch (varName) {
+            case "name":
+                value.TryGetValueAsString(out var name);
+                appearance.Name = name ?? string.Empty;
+                break;
             case "icon":
                 if (_resourceManager.TryLoadIcon(value, out var icon)) {
                     appearance.Icon = icon.Id;
@@ -269,6 +276,12 @@ public sealed class AtomManager {
             case "pixel_y":
                 value.TryGetValueAsInteger(out appearance.PixelOffset.Y);
                 break;
+            case "pixel_w":
+                value.TryGetValueAsInteger(out appearance.PixelOffset2.X);
+                break;
+            case "pixel_z":
+                value.TryGetValueAsInteger(out appearance.PixelOffset2.Y);
+                break;
             case "color":
                 if(value.TryGetValueAsDreamList(out var list)) {
                     if(DreamProcNativeHelpers.TryParseColorMatrix(list, out var matrix)) {
@@ -289,7 +302,7 @@ public sealed class AtomManager {
             case "invisibility":
                 value.TryGetValueAsInteger(out int vis);
                 vis = Math.Clamp(vis, -127, 127); // DM ref says [0, 101]. BYOND compiler says [-127, 127]
-                appearance.Invisibility = vis;
+                appearance.Invisibility = (sbyte)vis;
                 break;
             case "opacity":
                 value.TryGetValueAsInteger(out var opacity);
@@ -313,7 +326,7 @@ public sealed class AtomManager {
                 break;
             case "alpha":
                 value.TryGetValueAsFloat(out float floatAlpha);
-                appearance.Alpha = (byte) floatAlpha;
+                appearance.Alpha = (byte) Math.Clamp(floatAlpha, 0, 255);
                 break;
             case "glide_size":
                 value.TryGetValueAsFloat(out float glideSize);
@@ -366,6 +379,8 @@ public sealed class AtomManager {
 
     public DreamValue GetAppearanceVar(IconAppearance appearance, string varName) {
         switch (varName) {
+            case "name":
+                return new(appearance.Name);
             case "icon":
                 if (appearance.Icon == null)
                     return DreamValue.Null;
@@ -384,6 +399,10 @@ public sealed class AtomManager {
                 return new(appearance.PixelOffset.X);
             case "pixel_y":
                 return new(appearance.PixelOffset.Y);
+            case "pixel_w":
+                return new(appearance.PixelOffset2.X);
+            case "pixel_z":
+                return new(appearance.PixelOffset2.Y);
             case "color":
                 if(!appearance.ColorMatrix.Equals(ColorMatrix.Identity)) {
                     var matrixList = _objectTree.CreateList(20);
@@ -448,7 +467,7 @@ public sealed class AtomManager {
         return atom switch {
             DreamObjectTurf turf => AppearanceSystem.MustGetAppearance(turf.AppearanceId),
             DreamObjectMovable movable => movable.SpriteComponent.Appearance,
-            DreamObjectArea => new IconAppearance(),
+            DreamObjectArea area => AppearanceSystem.MustGetAppearance(area.AppearanceId),
             DreamObjectImage image => image.Appearance,
             _ => throw new Exception($"Cannot get appearance of {atom}")
         };
@@ -464,6 +483,8 @@ public sealed class AtomManager {
             appearance = movable.SpriteComponent.Appearance;
         else if (atom is DreamObjectImage image)
             appearance = image.Appearance;
+        else if (atom is DreamObjectArea area)
+            appearance = AppearanceSystem.MustGetAppearance(area.AppearanceId);
         else
             appearance = null;
 
@@ -485,12 +506,14 @@ public sealed class AtomManager {
             movable.SpriteComponent.SetAppearance(appearance);
         } else if (atom is DreamObjectImage image) {
             image.Appearance = appearance;
+        } else if (atom is DreamObjectArea area) {
+            _dreamMapManager.SetAreaAppearance(area, appearance);
         }
     }
 
-    public void AnimateAppearance(DreamObjectAtom atom, TimeSpan duration, Action<IconAppearance> animate) {
+    public void AnimateAppearance(DreamObject atom, TimeSpan duration, AnimationEasing easing, int loop, AnimationFlags flags, int delay, bool chainAnim, Action<IconAppearance> animate) {
         if (atom is not DreamObjectMovable movable)
-            return; //Animating non-movables is unimplemented
+            return; //Animating non-movables is unimplemented TODO: should handle images and maybe filters
 
         IconAppearance appearance = new IconAppearance(movable.SpriteComponent.Appearance);
 
@@ -501,7 +524,7 @@ public sealed class AtomManager {
 
         NetEntity ent = _entityManager.GetNetEntity(movable.Entity);
 
-        AppearanceSystem.Animate(ent, appearance, duration);
+        AppearanceSystem.Animate(ent, appearance, duration, easing, loop, flags, delay, chainAnim);
     }
 
     public bool TryCreateAppearanceFrom(DreamValue value, [NotNullWhen(true)] out IconAppearance? appearance) {
@@ -541,6 +564,7 @@ public sealed class AtomManager {
         if (_definitionAppearanceCache.TryGetValue(def, out var appearance))
             return appearance;
 
+        def.TryGetVariable("name", out var nameVar);
         def.TryGetVariable("icon", out var iconVar);
         def.TryGetVariable("icon_state", out var stateVar);
         def.TryGetVariable("color", out var colorVar);
@@ -560,6 +584,7 @@ public sealed class AtomManager {
         def.TryGetVariable("appearance_flags", out var appearanceFlagsVar);
 
         appearance = new IconAppearance();
+        SetAppearanceVar(appearance, "name", nameVar);
         SetAppearanceVar(appearance, "icon", iconVar);
         SetAppearanceVar(appearance, "icon_state", stateVar);
         SetAppearanceVar(appearance, "color", colorVar);

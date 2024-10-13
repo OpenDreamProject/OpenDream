@@ -11,17 +11,17 @@ internal sealed class DMVariable {
     /// </remarks>
     public bool IsConst;
     public bool IsTmp;
-    public DMExpression Value;
-    public DMValueType ValType;
+    public DMExpression? Value;
+    public DMComplexValueType ValType;
 
-    public DMVariable(DreamPath? type, string name, bool isGlobal, bool isConst, bool isTmp, DMValueType valType = DMValueType.Anything) {
+    public DMVariable(DreamPath? type, string name, bool isGlobal, bool isConst, bool isTmp, DMComplexValueType? valType = null) {
         Type = type;
         Name = name;
         IsGlobal = isGlobal;
         IsConst = isConst;
         IsTmp = isTmp;
         Value = null;
-        ValType = valType;
+        ValType = valType ?? DMValueType.Anything;
     }
 
     /// <summary>

@@ -1,4 +1,5 @@
 using OpenDreamClient.Interface.Controls;
+using OpenDreamClient.Interface.Controls.UI;
 using Robust.Client.Graphics;
 using Robust.Client.ResourceManagement;
 using Robust.Client.UserInterface;
@@ -9,11 +10,14 @@ using static Robust.Client.UserInterface.StylesheetHelpers;
 namespace OpenDreamClient.Interface;
 
 public static class DreamStylesheet {
+    public static Color DefaultBackgroundColor = Color.FromHex("#F0F0F0");
+
     public static Stylesheet Make() {
         var res = IoCManager.Resolve<IResourceCache>();
         var textureCloseButton = res.GetResource<TextureResource>("/cross.svg.png").Texture;
         var notoSansFont = res.GetResource<FontResource>("/Fonts/NotoSans-Regular.ttf");
         var notoSansBoldFont = res.GetResource<FontResource>("/Fonts/NotoSans-Bold.ttf");
+        var notoSansFont8 = new VectorFont(notoSansFont, 8);
         var notoSansFont10 = new VectorFont(notoSansFont, 10);
         var notoSansFont12 = new VectorFont(notoSansFont, 12);
         var notoSansBoldFont14 = new VectorFont(notoSansBoldFont, 14);
@@ -33,9 +37,31 @@ public static class DreamStylesheet {
             ContentMarginTopOverride = 10
         };
 
+        var tabButtonActive = new StyleBoxColoredTexture {
+            Texture = res.GetResource<TextureResource>("/Textures/Interface/TabButton.png"),
+            PatchMarginTop = 2,
+            PatchMarginBottom = 2,
+            PatchMarginLeft = 2,
+            PatchMarginRight = 2,
+            ContentMarginLeftOverride = 5,
+            ContentMarginRightOverride = 5,
+            ContentMarginBottomOverride = 5 // The selected button is positioned higher than the rest
+        };
+
+        var tabButtonInactive = new StyleBoxColoredTexture {
+            Texture = res.GetResource<TextureResource>("/Textures/Interface/TabButton.png"),
+            PatchMarginTop = 2,
+            PatchMarginBottom = 2,
+            PatchMarginLeft = 2,
+            PatchMarginRight = 2,
+            ContentMarginLeftOverride = 5,
+            ContentMarginRightOverride = 5,
+            PaddingTop = 3 // Account for the active button's ContentMarginBottomOverride
+        };
+
         return new Stylesheet(new StyleRule[] {
             Element<WindowRoot>()
-                .Prop("background", Color.White),
+                .Prop(UIRoot.StylePropBackground, DefaultBackgroundColor),
 
             Element<PanelContainer>().Class("MapBackground")
                 .Prop("panel", new StyleBoxFlat { BackgroundColor = Color. Black}),
@@ -46,6 +72,9 @@ public static class DreamStylesheet {
                     BorderColor = Color.DarkGray,
                     BorderThickness = new Thickness(1)
                 }),
+
+            Element<PanelContainer>().Class(ControlInfo.StyleClassDMFInfo)
+                .Prop(PanelContainer.StylePropertyPanel, new StyleBoxFlat(DefaultBackgroundColor)),
 
             // Default font.
             Element()
@@ -127,7 +156,7 @@ public static class DreamStylesheet {
             // DMF ControlButton
             Element<Label>().Class(ControlButton.StyleClassDMFButton)
                 .Prop(Label.StylePropertyAlignMode, Label.AlignMode.Center)
-                .Prop(Label.StylePropertyFont, notoSansFont10),
+                .Prop(Label.StylePropertyFont, notoSansFont8),
 
             // CheckBox unchecked
             Element<TextureRect>().Class(CheckBox.StyleClassCheckBox)
@@ -159,16 +188,13 @@ public static class DreamStylesheet {
 
             // TabContainer
             Element<TabContainer>()
-                // Panel style
-                .Prop(TabContainer.StylePropertyPanelStyleBox, new StyleBoxFlat { BackgroundColor = Color.White, BorderThickness = new Thickness(1), BorderColor = Color.Black})
+                .Prop(TabContainer.StylePropertyPanelStyleBox, new StyleBoxInfoPanel(DefaultBackgroundColor))
                 // Active tab style
-                .Prop(TabContainer.StylePropertyTabStyleBox, new StyleBoxFlat {
-                    BackgroundColor = Color.FromHex("#707070"), PaddingLeft = 1, PaddingRight = 1, ContentMarginLeftOverride = 5, ContentMarginRightOverride = 5
-                })
+                .Prop(TabContainer.StylePropertyTabStyleBox, tabButtonActive)
                 // Inactive tab style
-                .Prop(TabContainer.StylePropertyTabStyleBoxInactive, new StyleBoxFlat {
-                    BackgroundColor = Color.FromHex("#D0D0D0"), PaddingLeft = 1, PaddingRight = 1, ContentMarginLeftOverride = 5, ContentMarginRightOverride = 5
-                })
+                .Prop(TabContainer.StylePropertyTabStyleBoxInactive, tabButtonInactive)
+                .Prop(TabContainer.stylePropertyTabFontColor, Color.Black)
+                .Prop(TabContainer.StylePropertyTabFontColorInactive, Color.Black)
                 .Prop("font", notoSansFont10),
 
             //BarControl - composed of ProgressBar and Slider
@@ -180,7 +206,6 @@ public static class DreamStylesheet {
                 .Prop(Slider.StylePropertyForeground, new StyleBoxFlat { BackgroundColor = Color.LightGray, BorderThickness = new Thickness(1), BorderColor = Color.Black})
                 .Prop(Slider.StylePropertyGrabber, new StyleBoxFlat { BackgroundColor = Color.Transparent, BorderThickness = new Thickness(1), BorderColor = Color.Black, ContentMarginLeftOverride=10, ContentMarginRightOverride=10})
                 .Prop(Slider.StylePropertyFill, new StyleBoxFlat { BackgroundColor = Color.Transparent, BorderThickness = new Thickness(0), BorderColor = Color.Black}),
-
         });
     }
 }

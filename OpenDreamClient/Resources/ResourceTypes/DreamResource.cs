@@ -6,8 +6,9 @@ namespace OpenDreamClient.Resources.ResourceTypes;
 [Virtual]
 public class DreamResource {
     public readonly int Id;
+    public List<Action> OnUpdateCallbacks = new();
 
-    protected readonly byte[] Data;
+    protected byte[] Data;
 
     [UsedImplicitly]
     public DreamResource(int id, byte[] data) {
@@ -17,5 +18,9 @@ public class DreamResource {
 
     public void WriteTo(Stream stream) {
         stream.Write(Data);
+    }
+
+    public virtual void UpdateData(byte[] data) {
+        Data = data;
     }
 }

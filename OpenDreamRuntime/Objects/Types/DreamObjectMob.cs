@@ -62,10 +62,9 @@ public sealed class DreamObjectMob : DreamObjectMovable {
             case "client":
                 value.TryGetValueAsDreamObject<DreamObjectClient>(out var newClient);
 
+                // An invalid client or a null does nothing here
                 if (newClient != null) {
                     newClient.Connection.Mob = this;
-                } else if (Connection != null) {
-                    Connection.Mob = null;
                 }
 
                 break;

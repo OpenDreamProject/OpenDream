@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using DMCompiler.Bytecode;
+﻿using DMCompiler.Bytecode;
 using DMCompiler.Compiler;
 using DMCompiler.Json;
 
@@ -47,9 +45,10 @@ internal sealed class DMObject {
     /// <see langword="TODO:"/> Make this (and other things) match the nomenclature of <see cref="HasLocalVariable"/>
     /// </remarks>
     public DMVariable? GetVariable(string name) {
-        if (Variables.TryGetValue(name, out var variable)) {
+        if (Variables.TryGetValue(name, out var variable))
             return variable;
-        }
+        if (VariableOverrides.TryGetValue(name, out variable))
+             return variable;
 
         return Parent?.GetVariable(name);
     }
@@ -92,7 +91,20 @@ internal sealed class DMObject {
     }
 
     public List<int>? GetProcs(string name) {
-        return Procs.GetValueOrDefault(name, Parent?.GetProcs(name) ?? null);
+        return Procs.GetValueOrDefault(name) ?? Parent?.GetProcs(name);
+    }
+
+    public DMComplexValueType? GetProcReturnTypes(string name) {
+        if (this == DMObjectTree.Root && DMObjectTree.TryGetGlobalProc(name, out var globalProc))
+            return globalProc.RawReturnTypes;
+        if (GetProcs(name) is not { } procs)
+            return Parent?.GetProcReturnTypes(name);
+
+        var proc = DMObjectTree.AllProcs[procs[0]];
+        if ((proc.Attributes & ProcAttributes.IsOverride) != 0)
+            return Parent?.GetProcReturnTypes(name) ?? DMValueType.Anything;
+
+        return proc.RawReturnTypes;
     }
 
     public void AddVerb(DMProc verb) {
@@ -100,8 +112,8 @@ internal sealed class DMObject {
         _verbs.Add(verb);
     }
 
-    public DMVariable CreateGlobalVariable(DreamPath? type, string name, bool isConst, DMValueType valType = DMValueType.Anything) {
-        int id = DMObjectTree.CreateGlobal(out DMVariable global, type, name, isConst, valType);
+    public DMVariable CreateGlobalVariable(DreamPath? type, string name, bool isConst, DMComplexValueType? valType = null) {
+        int id = DMObjectTree.CreateGlobal(out DMVariable global, type, name, isConst, valType ?? DMValueType.Anything);
 
         GlobalVariables[name] = id;
         return global;
@@ -119,27 +131,29 @@ internal sealed class DMObject {
         return Parent?.GetGlobalVariableId(name);
     }
 
-    public DMVariable GetGlobalVariable(string name) {
+    public DMVariable? GetGlobalVariable(string name) {
         int? id = GetGlobalVariableId(name);
 
         return (id == null) ? null : DMObjectTree.Globals[id.Value];
     }
 
+    public DMComplexValueType GetReturnType(string name) {
+        var procId = GetProcs(name)?[^1];
+
+        return procId is null ? DMValueType.Anything : DMObjectTree.AllProcs[procId.Value].ReturnTypes;
+    }
+
     public void CreateInitializationProc() {
-        if (InitializationProcExpressions.Count > 0 && InitializationProc == null) {
-            var init = DMObjectTree.CreateDMProc(this, null);
-            InitializationProc = init.Id;
-            init.Call(DMReference.SuperProc, DMCallArgumentsType.None, 0);
+        if (InitializationProcExpressions.Count <= 0 || InitializationProc != null)
+            return;
 
-            foreach (DMExpression expression in InitializationProcExpressions) {
-                try {
-                    init.DebugSource(expression.Location);
+        var init = DMObjectTree.CreateDMProc(this, null);
+        InitializationProc = init.Id;
+        init.Call(DMReference.SuperProc, DMCallArgumentsType.None, 0);
 
-                    expression.EmitPushValue(this, init);
-                } catch (CompileErrorException e) {
-                    DMCompiler.Emit(e.Error);
-                }
-            }
+        foreach (DMExpression expression in InitializationProcExpressions) {
+            init.DebugSource(expression.Location);
+            expression.EmitPushValue(this, init);
         }
     }
 
@@ -199,8 +213,18 @@ internal sealed class DMObject {
     }
 
     public bool IsSubtypeOf(DreamPath path) {
-        if (Path.IsDescendantOf(path)) return true;
-        if (Parent != null) return Parent.IsSubtypeOf(path);
-        return false;
+        if (path.Equals(Path)) return true;
+        return Parent != null && Parent.IsSubtypeOf(path);
+    }
+
+    public DMValueType GetDMValueType() {
+        if (IsSubtypeOf(DreamPath.Mob))
+            return DMValueType.Mob;
+        if (IsSubtypeOf(DreamPath.Obj))
+            return DMValueType.Obj;
+        if (IsSubtypeOf(DreamPath.Area))
+            return DMValueType.Area;
+
+        return DMValueType.Anything;
     }
 }

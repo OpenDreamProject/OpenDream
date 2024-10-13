@@ -11,6 +11,7 @@ public sealed class DreamObjectImage : DreamObject {
     private DreamObject? _loc;
     private DreamList _overlays;
     private DreamList _underlays;
+    private readonly DreamList _filters;
     private EntityUid _entity = EntityUid.Invalid;
 
     /// <summary>
@@ -29,9 +30,11 @@ public sealed class DreamObjectImage : DreamObject {
             // /mutable_appearance.overlays and /mutable_appearance.underlays are normal lists
             _overlays = ObjectTree.CreateList();
             _underlays = ObjectTree.CreateList();
+            _filters = ObjectTree.CreateList();
         } else {
             _overlays = new DreamOverlaysList(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
             _underlays = new DreamOverlaysList(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
+            _filters = new DreamFilterList(ObjectTree.List.ObjectDefinition, this);
         }
     }
 
@@ -39,9 +42,9 @@ public sealed class DreamObjectImage : DreamObject {
         base.Initialize(args);
 
         DreamValue icon = args.GetArgument(0);
-        if (!AtomManager.TryCreateAppearanceFrom(icon, out Appearance)) {
+        if (icon.IsNull || !AtomManager.TryCreateAppearanceFrom(icon, out Appearance)) {
             // Use a default appearance, but log a warning about it if icon wasn't null
-            Appearance = new IconAppearance();
+            Appearance = new(AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
             if (!icon.IsNull)
                 Logger.GetSawmill("opendream.image")
                     .Warning($"Attempted to create an /image from {icon}. This is invalid and a default image was created instead.");
@@ -59,7 +62,7 @@ public sealed class DreamObjectImage : DreamObject {
                 continue;
 
             AtomManager.SetAppearanceVar(Appearance, argName, arg);
-            if (argName == "dir") {
+            if (argName == "dir" && arg.TryGetValueAsInteger(out var argDir) && argDir > 0) {
                 // If a dir is explicitly given in the constructor then overlays using this won't use their owner's dir
                 // Setting dir after construction does not affect this
                 // This is undocumented and I hate it
@@ -81,6 +84,9 @@ public sealed class DreamObjectImage : DreamObject {
             case "underlays":
                 value = new(_underlays);
                 return true;
+            case "filters":
+                value = new(_filters);
+                return true;
             default: {
                 if (AtomManager.IsValidAppearanceVar(varName)) {
                     value = AtomManager.GetAppearanceVar(Appearance!, varName);
@@ -91,7 +97,6 @@ public sealed class DreamObjectImage : DreamObject {
             }
         }
     }
-
 
     protected override void SetVar(string varName, DreamValue value) {
         switch (varName) {
@@ -107,6 +112,7 @@ public sealed class DreamObjectImage : DreamObject {
                     DMISpriteComponent sprite = EntityManager.GetComponent<DMISpriteComponent>(_entity);
                     sprite.SetAppearance(Appearance!);
                 }
+
                 break;
             case "loc":
                 value.TryGetValueAsDreamObject(out _loc);
@@ -178,6 +184,23 @@ public sealed class DreamObjectImage : DreamObject {
 
                 break;
             }
+            case "filters": {
+                value.TryGetValueAsDreamList(out var valueList);
+
+                _filters.Cut();
+
+                if (valueList != null) { // filters = list("type"=...)
+                    var filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, valueList);
+                    if (filterObject == null) // list() with invalid "type" is ignored
+                        break;
+
+                    _filters.AddValue(new(filterObject));
+                } else if (!value.IsNull) {
+                    _filters.AddValue(value);
+                }
+
+                break;
+            }
             case "override": {
                 Appearance!.Override = value.IsTruthy();
                 break;
@@ -189,6 +212,7 @@ public sealed class DreamObjectImage : DreamObject {
                         DMISpriteComponent sprite = EntityManager.GetComponent<DMISpriteComponent>(_entity);
                         sprite.SetAppearance(Appearance!);
                     }
+
                     break;
                 }
 
@@ -211,13 +235,21 @@ public sealed class DreamObjectImage : DreamObject {
             DMISpriteComponent sprite = EntityManager.AddComponent<DMISpriteComponent>(_entity);
             sprite.SetAppearance(Appearance!);
         }
+
         return _entity;
     }
 
-    protected override void HandleDeletion() {
+    protected override void HandleDeletion(bool possiblyThreaded) {
+        // SAFETY: Deleting entities is not threadsafe.
+        if (possiblyThreaded) {
+            EnterIntoDelQueue();
+            return;
+        }
+
         if(_entity != EntityUid.Invalid) {
             EntityManager.DeleteEntity(_entity);
         }
-        base.HandleDeletion();
+
+        base.HandleDeletion(possiblyThreaded);
     }
 }

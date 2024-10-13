@@ -1,9 +1,7 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Bytecode;
 using DMCompiler.Compiler;
-using DMCompiler.Compiler.DM;
+using DMCompiler.Compiler.DM.AST;
 using DMCompiler.Json;
 
 namespace DMCompiler.DM;
@@ -21,7 +19,7 @@ internal static class DMObjectTree {
     /// </summary>
     public static readonly HashSet<string> SeenGlobalProcDefinition = new();
     public static readonly List<string> StringTable = new();
-    public static DMProc GlobalInitProc;
+    public static DMProc GlobalInitProc = default!; // Initialized by Reset() (called in the static initializer)
     public static readonly HashSet<string> Resources = new();
 
     public static DMObject Root => GetDMObject(DreamPath.Root)!;
@@ -74,6 +72,16 @@ internal static class DMObjectTree {
         AllProcs.Add(dmProc);
 
         return dmProc;
+    }
+
+    /// <summary>
+    /// Returns the "New()" DMProc for a given object type ID
+    /// </summary>
+    /// <returns></returns>
+    public static DMProc GetNewProc(int id) {
+        var obj = AllObjects[id];
+        var targetProc = obj!.GetProcs("New")[0];
+        return AllProcs[targetProc];
     }
 
     public static DMObject? GetDMObject(DreamPath path, bool createIfNonexistent = true) {
@@ -176,7 +184,7 @@ internal static class DMObjectTree {
         return null;
     }
 
-    public static int CreateGlobal(out DMVariable global, DreamPath? type, string name, bool isConst, DMValueType valType = DMValueType.Anything) {
+    public static int CreateGlobal(out DMVariable global, DreamPath? type, string name, bool isConst, DMComplexValueType valType) {
         int id = Globals.Count;
 
         global = new DMVariable(type, name, true, isConst, false, valType);
@@ -184,8 +192,9 @@ internal static class DMObjectTree {
         return id;
     }
 
-    public static void AddGlobalProc(string name, int id) {
-        GlobalProcs[name] = id; // Said in this way so it clobbers previous definitions of this global proc (the ..() stuff doesn't work with glob procs)
+    public static void AddGlobalProc(DMProc proc) {
+        // Said in this way so it clobbers previous definitions of this global proc (the ..() stuff doesn't work with glob procs)
+        GlobalProcs[proc.Name] = proc.Id;
     }
 
     public static void AddGlobalInitAssign(int globalId, DMExpression value) {
@@ -196,14 +205,10 @@ internal static class DMObjectTree {
         if (_globalInitAssigns.Count == 0) return;
 
         foreach (var assign in _globalInitAssigns) {
-            try {
-                GlobalInitProc.DebugSource(assign.Value.Location);
+            GlobalInitProc.DebugSource(assign.Value.Location);
 
-                assign.Value.EmitPushValue(Root, GlobalInitProc);
-                GlobalInitProc.Assign(DMReference.CreateGlobal(assign.GlobalId));
-            } catch (CompileErrorException e) {
-                DMCompiler.Emit(e.Error);
-            }
+            assign.Value.EmitPushValue(Root, GlobalInitProc);
+            GlobalInitProc.Assign(DMReference.CreateGlobal(assign.GlobalId));
         }
 
         GlobalInitProc.ResolveLabels();

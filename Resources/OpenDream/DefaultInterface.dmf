@@ -39,14 +39,6 @@ menu "menu"
 		name = "Quit"
 		command = ".quit"
 		category = "Menu"
-	elem
-		name = "Show Popup"
-		command = ".winset \"testwindow.is-visible=true\""
-		category = "Menu"
-	elem
-		name = "Hide Popup"
-		command = ".winset \"testwindow.is-visible=false\""
-		category = "Menu"		
 
 window "mapwindow"
 	elem "mapwindow"
@@ -124,7 +116,7 @@ window "mainwindow"
 		icon = "icons/mob.dmi"
 	elem "split"
 		type = CHILD
-		pos = 3,0
+		pos = 0,0
 		size = 0x0
 		anchor1 = 0,0
 		anchor2 = 100,100
@@ -132,13 +124,4 @@ window "mainwindow"
 		right = "infowindow"
 		is-vert = true
 
-window "testwindow"
-	elem "testwindow"
-		type = MAIN
-		size = 200x100
-		title = "popup"
-		is-visible = false
-	elem "testwindowlabel"
-		type = LABEL
-		text = "I am a test"
 

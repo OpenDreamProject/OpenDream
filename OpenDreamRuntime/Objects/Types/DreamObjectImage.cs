@@ -7,11 +7,13 @@ namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectImage : DreamObject {
     public EntityUid Entity = EntityUid.Invalid;
-    public readonly DMISpriteComponent SpriteComponent;
+    public readonly DMISpriteComponent? SpriteComponent;
     private DreamObject? _loc;
     private DreamList _overlays;
     private DreamList _underlays;
     private readonly DreamList _filters;
+    public readonly bool IsMutableAppearance;
+    public IconAppearance? MutableAppearance;
 
     /// <summary>
     /// All the args in /image/New() after "icon" and "loc", in their correct order
@@ -30,25 +32,26 @@ public sealed class DreamObjectImage : DreamObject {
             _overlays = ObjectTree.CreateList();
             _underlays = ObjectTree.CreateList();
             _filters = ObjectTree.CreateList();
+            IsMutableAppearance = true;
         } else {
             _overlays = new DreamOverlaysList(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
             _underlays = new DreamOverlaysList(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
             _filters = new DreamFilterList(ObjectTree.List.ObjectDefinition, this);
+            IsMutableAppearance = false;
+            Entity = EntityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace)); //spawning an entity in nullspace means it never actually gets sent to any clients until it's placed on the map, or it gets a PVS override
+            SpriteComponent = EntityManager.AddComponent<DMISpriteComponent>(Entity);
         }
-        //TODO this means we send all mutable appearances to clients, even though we don't send the entity they're attached to
-        Entity = EntityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace)); //spawning an entity in nullspace means it never actually gets sent to any clients until it's placed on the map, or it gets a PVS override
-        SpriteComponent = EntityManager.AddComponent<DMISpriteComponent>(Entity);
-        AtomManager.SetSpriteAppearance((Entity, SpriteComponent), AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
+        AtomManager.SetAtomAppearance(this, AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
     }
 
     public override void Initialize(DreamProcArguments args) {
         base.Initialize(args);
 
         DreamValue icon = args.GetArgument(0);
-        IconAppearance? iconAppearance;
-        if (icon.IsNull || !AtomManager.TryCreateAppearanceFrom(icon, out iconAppearance)) {
+        IconAppearance iconAppearance;
+        if (icon.IsNull || !AtomManager.TryCreateAppearanceFrom(icon, out iconAppearance!)) {
             // Use a default appearance, but log a warning about it if icon wasn't null
-            iconAppearance = AtomManager.MustGetAppearance(this)!.ToMutable(); //object def appearance is created in the constructor
+            iconAppearance = IsMutableAppearance ? MutableAppearance! : AtomManager.MustGetAppearance(this)!.ToMutable(); //object def appearance is created in the constructor
             if (!icon.IsNull)
                 Logger.GetSawmill("opendream.image")
                     .Warning($"Attempted to create an /image from {icon}. This is invalid and a default image was created instead.");
@@ -203,14 +206,14 @@ public sealed class DreamObjectImage : DreamObject {
                 break;
             }
             case "override": {
-                IconAppearance iconAppearance = AtomManager.MustGetAppearance(this)!.ToMutable();
+                IconAppearance iconAppearance = IsMutableAppearance ? MutableAppearance! : AtomManager.MustGetAppearance(this)!.ToMutable();
                 iconAppearance.Override = value.IsTruthy();
                 AtomManager.SetAtomAppearance(this, iconAppearance);
                 break;
             }
             default:
                 if (AtomManager.IsValidAppearanceVar(varName)) {
-                    IconAppearance iconAppearance = AtomManager.MustGetAppearance(this)!.ToMutable();
+                    IconAppearance iconAppearance = IsMutableAppearance ? MutableAppearance! : AtomManager.MustGetAppearance(this)!.ToMutable();
                     AtomManager.SetAppearanceVar(iconAppearance, varName, value);
                     AtomManager.SetAtomAppearance(this, iconAppearance);
                     break;

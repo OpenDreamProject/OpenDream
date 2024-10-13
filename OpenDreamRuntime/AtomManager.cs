@@ -481,20 +481,20 @@ public sealed class AtomManager {
             DreamObjectTurf turf => turf.Appearance,
             DreamObjectMovable movable => movable.SpriteComponent.Appearance!,
             DreamObjectArea area => area.Appearance,
-            DreamObjectImage image => image.SpriteComponent.Appearance!,
+            DreamObjectImage image => image.IsMutableAppearance ? AppearanceSystem!.AddAppearance(image.MutableAppearance!) : image.SpriteComponent!.Appearance!,
             _ => throw new Exception($"Cannot get appearance of {atom}")
         };
     }
 
     /// <summary>
-    /// Optionally looks up for an appearance. Does not try to create a new one when one is not found for this atom. An invalid AppearanceId is an error, but null is fine.
+    /// Optionally looks up for an appearance. Does not try to create a new one when one is not found for this atom.
     /// </summary>
     public bool TryGetAppearance(DreamObject atom, [NotNullWhen(true)] out ImmutableIconAppearance? appearance) {
         if (atom is DreamObjectTurf turf)
             appearance = turf.Appearance;
         else if (atom is DreamObjectMovable movable && movable.SpriteComponent.Appearance is not null)
             appearance = movable.SpriteComponent.Appearance;
-        else if (atom is DreamObjectImage image && image.SpriteComponent.Appearance is not null)
+        else if (atom is DreamObjectImage image)
             appearance = image.SpriteComponent.Appearance;
         else if (atom is DreamObjectArea area)
             appearance = area.Appearance;
@@ -505,7 +505,7 @@ public sealed class AtomManager {
     }
 
     public void UpdateAppearance(DreamObject atom, Action<IconAppearance> update) {
-        ImmutableIconAppearance immutableAppearance = MustGetAppearance(atom);
+        ImmutableIconAppearance? immutableAppearance = MustGetAppearance(atom);
         IconAppearance appearance = (immutableAppearance != null) ? immutableAppearance.ToMutable() : new(); // Clone the appearance
         update(appearance);
         SetAtomAppearance(atom, appearance);
@@ -517,7 +517,10 @@ public sealed class AtomManager {
         } else if (atom is DreamObjectMovable movable) {
             DMISpriteSystem.SetSpriteAppearance(new(movable.Entity, movable.SpriteComponent), appearance);
         } else if (atom is DreamObjectImage image) {
-            DMISpriteSystem.SetSpriteAppearance(new(image.Entity, image.SpriteComponent), appearance);
+            if(image.IsMutableAppearance)
+                image.MutableAppearance = appearance;
+            else
+                DMISpriteSystem.SetSpriteAppearance(new(image.Entity, image.SpriteComponent!), appearance);
         } else if (atom is DreamObjectArea area) {
             _dreamMapManager.SetAreaAppearance(area, appearance);
         }
@@ -543,10 +546,10 @@ public sealed class AtomManager {
             targetEntity = movable.Entity;
             targetComponent = movable.SpriteComponent;
             appearance = targetComponent.Appearance!.ToMutable();
-        } else if (atom is DreamObjectImage image){
+        } else if (atom is DreamObjectImage image && !image.IsMutableAppearance){
             targetEntity = image.Entity;
             targetComponent = image.SpriteComponent;
-            appearance = targetComponent.Appearance!.ToMutable();
+            appearance = targetComponent!.Appearance!.ToMutable();
         } else if (atom is DreamObjectTurf turf) {
             targetEntity = EntityUid.Invalid;
             turfId = turf.Appearance.GetHashCode() + 1;

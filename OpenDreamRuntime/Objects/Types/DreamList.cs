@@ -713,7 +713,7 @@ public sealed class DreamOverlaysList : DreamList {
             IconAppearance? overlayAppearance = CreateOverlayAppearance(_atomManager, value, appearance.Icon);
             overlayAppearance ??= new IconAppearance();
             ImmutableIconAppearance immutableOverlay = _appearanceSystem.AddAppearance(overlayAppearance);
-            //hardRefs.Add(immutableOverlay);
+            hardRefs.Add(immutableOverlay);
             GetOverlaysList(appearance).Add(immutableOverlay.GetHashCode());
         });
     }
@@ -727,7 +727,6 @@ public sealed class DreamOverlaysList : DreamList {
             if (overlayAppearance == null)
                 return;
             ImmutableIconAppearance immutableOverlay = _appearanceSystem.AddAppearance(overlayAppearance);
-            //hardRefs.Remove(immutableOverlay);
             GetOverlaysList(appearance).Remove(immutableOverlay.GetHashCode());
         });
     }

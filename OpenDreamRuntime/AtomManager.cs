@@ -387,7 +387,7 @@ public sealed class AtomManager {
 
     //TODO THIS IS A SUPER NASTY HACK
     public DreamValue GetAppearanceVar(IconAppearance appearance, string varName) {
-        return GetAppearanceVar(AppearanceSystem.AddAppearance(appearance), varName);
+        return GetAppearanceVar(new ImmutableIconAppearance(appearance, AppearanceSystem), varName);
     }
 
     public DreamValue GetAppearanceVar(ImmutableIconAppearance appearance, string varName) {

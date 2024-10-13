@@ -98,7 +98,7 @@ public sealed class DreamObjectImage : DreamObject {
                 return true;
             default: {
                 if (AtomManager.IsValidAppearanceVar(varName)) {
-                    value = AtomManager.GetAppearanceVar(AtomManager.MustGetAppearance(this), varName);
+                    value = IsMutableAppearance ? AtomManager.GetAppearanceVar(MutableAppearance!, varName) : AtomManager.GetAppearanceVar(AtomManager.MustGetAppearance(this), varName);
                     return true;
                 } else {
                     return base.TryGetVar(varName, out value);

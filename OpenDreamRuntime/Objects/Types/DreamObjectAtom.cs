@@ -58,7 +58,7 @@ public class DreamObjectAtom : DreamObject {
                 value = (Desc != null) ? new(Desc) : DreamValue.Null;
                 return true;
             case "appearance":
-                var appearanceCopy = AtomManager.MustGetAppearance(this)!.ToMutable();
+                var appearanceCopy = AtomManager.MustGetAppearance(this).ToMutable();
 
                 value = new(appearanceCopy);
                 return true;
@@ -84,7 +84,7 @@ public class DreamObjectAtom : DreamObject {
 
             default:
                 if (AtomManager.IsValidAppearanceVar(varName)) {
-                    var appearance = AtomManager.MustGetAppearance(this)!;
+                    var appearance = AtomManager.MustGetAppearance(this);
 
                     value = AtomManager.GetAppearanceVar(appearance, varName);
                     return true;
@@ -114,7 +114,7 @@ public class DreamObjectAtom : DreamObject {
                     return; // Ignore attempts to set an invalid appearance
 
                 // The dir does not get changed
-                newAppearance.Direction = AtomManager.MustGetAppearance(this)!.Direction;
+                newAppearance.Direction = AtomManager.MustGetAppearance(this).Direction;
 
                 AtomManager.SetAtomAppearance(this, newAppearance);
                 break;

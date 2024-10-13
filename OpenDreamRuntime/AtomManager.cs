@@ -476,7 +476,7 @@ public sealed class AtomManager {
     /// Gets an atom's appearance. Will throw if the appearance system is not available.
     /// </summary>
     /// <param name="atom">The atom to find the appearance of.</param>
-    public ImmutableIconAppearance? MustGetAppearance(DreamObject atom) {
+    public ImmutableIconAppearance MustGetAppearance(DreamObject atom) {
         return atom switch {
             DreamObjectTurf turf => turf.Appearance,
             DreamObjectMovable movable => movable.SpriteComponent.Appearance!,
@@ -495,7 +495,7 @@ public sealed class AtomManager {
         else if (atom is DreamObjectMovable movable && movable.SpriteComponent.Appearance is not null)
             appearance = movable.SpriteComponent.Appearance;
         else if (atom is DreamObjectImage image)
-            appearance = image.SpriteComponent.Appearance;
+            appearance = image.SpriteComponent?.Appearance;
         else if (atom is DreamObjectArea area)
             appearance = area.Appearance;
         else
@@ -505,8 +505,8 @@ public sealed class AtomManager {
     }
 
     public void UpdateAppearance(DreamObject atom, Action<IconAppearance> update) {
-        ImmutableIconAppearance? immutableAppearance = MustGetAppearance(atom);
-        IconAppearance appearance = (immutableAppearance != null) ? immutableAppearance.ToMutable() : new(); // Clone the appearance
+        ImmutableIconAppearance immutableAppearance = MustGetAppearance(atom);
+        IconAppearance appearance = immutableAppearance.ToMutable(); // Clone the appearance
         update(appearance);
         SetAtomAppearance(atom, appearance);
     }
@@ -563,8 +563,6 @@ public sealed class AtomManager {
 
         animate(appearance);
 
-
-
         if(targetComponent is not null) {
             ent = _entityManager.GetNetEntity(targetEntity);
             // Don't send the updated appearance to clients, they will animate it
@@ -576,6 +574,7 @@ public sealed class AtomManager {
         } else if (atom is DreamObjectArea area) {
             //fuck knows, this will trigger a bunch of turf updates to? idek
         }
+
         AppearanceSystem?.Animate(ent, appearance, duration, easing, loop, flags, delay, chainAnim, turfId);
     }
 
@@ -586,7 +585,7 @@ public sealed class AtomManager {
         }
 
         if (value.TryGetValueAsDreamObject<DreamObjectImage>(out var copyFromImage)) {
-            appearance = MustGetAppearance(copyFromImage)!.ToMutable();
+            appearance = MustGetAppearance(copyFromImage).ToMutable();
             return true;
         }
 
@@ -596,7 +595,7 @@ public sealed class AtomManager {
         }
 
         if (value.TryGetValueAsDreamObject<DreamObjectAtom>(out var copyFromAtom)) {
-            appearance = MustGetAppearance(copyFromAtom)?.ToMutable();
+            appearance = MustGetAppearance(copyFromAtom).ToMutable();
             return true;
         }
 

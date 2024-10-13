@@ -8,10 +8,8 @@ using DMCompiler.Json;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.DebugAdapter;
-using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
-using Robust.Server.GameObjects;
 using Robust.Shared.Utility;
 
 namespace OpenDreamRuntime.Procs {

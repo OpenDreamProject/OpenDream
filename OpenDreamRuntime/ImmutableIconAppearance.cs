@@ -1,14 +1,6 @@
-﻿using Robust.Shared.Maths;
-using Robust.Shared.Serialization;
-using Robust.Shared.ViewVariables;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using Robust.Shared.GameObjects;
-using OpenDreamShared.Dream;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Linq;
-using Pidgin;
+using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Rendering;
 
@@ -24,28 +16,27 @@ namespace OpenDreamRuntime.Rendering;
 // TODO: Wow this is huge! Probably look into splitting this by most used/least used to reduce the size of these
 
 public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance> {
-
-    bool registered = false;
-    [ViewVariables] public readonly string Name = string.Empty;
+    private bool registered = false;
+    [ViewVariables] public readonly string Name;
     [ViewVariables] public readonly int? Icon;
     [ViewVariables] public readonly string? IconState;
-    [ViewVariables] public readonly AtomDirection Direction = AtomDirection.South;
-    [ViewVariables] public readonly bool InheritsDirection = true; // Inherits direction when used as an overlay
+    [ViewVariables] public readonly AtomDirection Direction;
+    [ViewVariables] public readonly bool InheritsDirection; // Inherits direction when used as an overlay
     [ViewVariables] public readonly Vector2i PixelOffset;  // pixel_x and pixel_y
     [ViewVariables] public readonly Vector2i PixelOffset2; // pixel_w and pixel_z
-    [ViewVariables] public readonly Color Color = Color.White;
-    [ViewVariables] public readonly byte Alpha = 255;
+    [ViewVariables] public readonly Color Color;
+    [ViewVariables] public readonly byte Alpha;
     [ViewVariables] public readonly float GlideSize;
-    [ViewVariables] public readonly float Layer = -1f;
-    [ViewVariables] public int Plane = -32767;
-    [ViewVariables] public readonly BlendMode BlendMode = BlendMode.Default;
-    [ViewVariables] public readonly AppearanceFlags AppearanceFlags = AppearanceFlags.None;
+    [ViewVariables] public readonly float Layer;
+    [ViewVariables] public int Plane;
+    [ViewVariables] public readonly BlendMode BlendMode;
+    [ViewVariables] public readonly AppearanceFlags AppearanceFlags;
     [ViewVariables] public readonly sbyte Invisibility;
     [ViewVariables] public readonly bool Opacity;
     [ViewVariables] public readonly bool Override;
     [ViewVariables] public readonly string? RenderSource;
     [ViewVariables] public readonly string? RenderTarget;
-    [ViewVariables] public readonly MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;
+    [ViewVariables] public readonly MouseOpacity MouseOpacity;
     [ViewVariables] public readonly ImmutableIconAppearance[] Overlays;
     [ViewVariables] public readonly ImmutableIconAppearance[] Underlays;
     [ViewVariables] public readonly NetEntity[] VisContents;
@@ -75,15 +66,15 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
     // PixelOffset2 behaves the same as PixelOffset in top-down mode, so this is used
     public Vector2i TotalPixelOffset => PixelOffset + PixelOffset2;
 
-    private int? storedHashCode;
-    private ServerAppearanceSystem appearanceSystem;
+    private int? _storedHashCode;
+    private readonly ServerAppearanceSystem appearanceSystem;
 
     public void MarkRegistered(){
         registered = true;
     }
 
     public ImmutableIconAppearance(IconAppearance appearance, ServerAppearanceSystem serverAppearanceSystem) {
-        this.appearanceSystem = serverAppearanceSystem;
+        appearanceSystem = serverAppearanceSystem;
 
         Name = appearance.Name;
         Icon = appearance.Icon;
@@ -109,12 +100,12 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
         int i = 0;
         Overlays = new ImmutableIconAppearance[appearance.Overlays.Count];
         foreach(int overlayId in appearance.Overlays)
-            Overlays[i++] = serverAppearanceSystem.MustGetAppearanceByID(overlayId);
+            Overlays[i++] = serverAppearanceSystem.MustGetAppearanceById(overlayId);
 
         i = 0;
         Underlays = new ImmutableIconAppearance[appearance.Underlays.Count];
         foreach(int underlayId in appearance.Underlays)
-            Underlays[i++] = serverAppearanceSystem.MustGetAppearanceByID(underlayId);
+            Underlays[i++] = serverAppearanceSystem.MustGetAppearanceById(underlayId);
 
         VisContents = appearance.VisContents.ToArray();
         Filters = appearance.Filters.ToArray();
@@ -163,11 +154,11 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
         }
 
         for (int i = 0; i < Overlays.Length; i++) {
-            if (immutableIconAppearance.Overlays[i] != Overlays[i]) return false;
+            if (!immutableIconAppearance.Overlays[i].Equals(Overlays[i])) return false;
         }
 
         for (int i = 0; i < Underlays.Length; i++) {
-            if (immutableIconAppearance.Underlays[i] != Underlays[i]) return false;
+            if (!immutableIconAppearance.Underlays[i].Equals(Underlays[i])) return false;
         }
 
         for (int i = 0; i < VisContents.Length; i++) {
@@ -185,40 +176,9 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
         return true;
     }
 
-    /// <summary>
-    /// This is a helper used for both optimization and parity. <br/>
-    /// In BYOND, if a color matrix is representable as an RGBA color string, <br/>
-    /// then it is coerced into one internally before being saved onto some appearance. <br/>
-    /// This does the linear algebra madness necessary to determine whether this is the case or not.
-    /// </summary>
-    private static bool TryRepresentMatrixAsRgbaColor(in ColorMatrix matrix, [NotNullWhen(true)] out Color? maybeColor) {
-        maybeColor = null;
-
-        // The R G B A values need to be bounded [0,1] for a color conversion to work;
-        // anything higher implies trying to render "superblue" or something.
-        float diagonalSum = 0f;
-        foreach (float diagonalValue in matrix.GetDiagonal()) {
-            if (diagonalValue < 0 || diagonalValue > 1)
-                return false;
-            diagonalSum += diagonalValue;
-        }
-
-        // and then all of the other values need to be zero, including the offset vector.
-        float sum = 0f;
-        foreach (float value in matrix.GetValues()) {
-            if (value < 0f) // To avoid situations like negatives and positives cancelling out this checksum.
-                return false;
-            sum += value;
-        }
-
-        if (sum - diagonalSum == 0) // PREEETTY sure I can trust the floating-point math here. Not 100% though
-            maybeColor = new Color(matrix.c11, matrix.c22, matrix.c33, matrix.c44);
-        return maybeColor is not null;
-    }
-
     public override int GetHashCode() {
-        if(storedHashCode is not null) //because everything is readonly, this only needs to be done once
-            return (int)storedHashCode;
+        if(_storedHashCode is not null) //because everything is readonly, this only needs to be done once
+            return (int)_storedHashCode;
 
         HashCode hashCode = new HashCode();
 
@@ -267,49 +227,52 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
             hashCode.Add(Transform[i]);
         }
 
-        storedHashCode = hashCode.ToHashCode();
-        return (int)storedHashCode;
+        _storedHashCode = hashCode.ToHashCode();
+        return (int)_storedHashCode;
     }
 
     //Creates an editable *copy* of this appearance, which must be added to the ServerAppearanceSystem to be used.
     [Pure]
     public IconAppearance ToMutable() {
         IconAppearance result = new IconAppearance() {
-            Name = this.Name,
-            Icon = this.Icon,
-            IconState = this.IconState,
-            Direction = this.Direction,
-            InheritsDirection = this.InheritsDirection,
-            PixelOffset = this.PixelOffset,
-            PixelOffset2 = this.PixelOffset2,
-            Color = this.Color,
-            Alpha = this.Alpha,
-            GlideSize = this.GlideSize,
-            ColorMatrix = this.ColorMatrix,
-            Layer = this.Layer,
-            Plane = this.Plane,
-            RenderSource = this.RenderSource,
-            RenderTarget = this.RenderTarget,
-            BlendMode = this.BlendMode,
-            AppearanceFlags = this.AppearanceFlags,
-            Invisibility = this.Invisibility,
-            Opacity = this.Opacity,
-            MouseOpacity = this.MouseOpacity,
-            Overlays = new(this.Overlays.Length),
-            Underlays = new(this.Underlays.Length),
-            VisContents = new(this.VisContents),
-            Filters = new(this.Filters),
-            Verbs = new(this.Verbs),
-            Override = this.Override,
+            Name = Name,
+            Icon = Icon,
+            IconState = IconState,
+            Direction = Direction,
+            InheritsDirection = InheritsDirection,
+            PixelOffset = PixelOffset,
+            PixelOffset2 = PixelOffset2,
+            Color = Color,
+            Alpha = Alpha,
+            GlideSize = GlideSize,
+            ColorMatrix = ColorMatrix,
+            Layer = Layer,
+            Plane = Plane,
+            RenderSource = RenderSource,
+            RenderTarget = RenderTarget,
+            BlendMode = BlendMode,
+            AppearanceFlags = AppearanceFlags,
+            Invisibility = Invisibility,
+            Opacity = Opacity,
+            MouseOpacity = MouseOpacity,
+            Overlays = new(Overlays.Length),
+            Underlays = new(Underlays.Length),
+            VisContents = new(VisContents),
+            Filters = new(Filters),
+            Verbs = new(Verbs),
+            Override = Override,
         };
+
         foreach(ImmutableIconAppearance overlay in Overlays)
             result.Overlays.Add(overlay.GetHashCode());
+
         foreach(ImmutableIconAppearance underlay in Underlays)
             result.Underlays.Add(underlay.GetHashCode());
 
         for (int i = 0; i < 6; i++) {
             result.Transform[i] = Transform[i];
         }
+
         return result;
     }
 

@@ -28,6 +28,6 @@ public abstract class SharedAppearanceSystem : EntitySystem {
         public AnimationFlags Flags = flags;
         public int Delay = delay;
         public bool ChainAnim = chainAnim;
-        public int? turfId = turfId;
+        public int? TurfId = turfId;
     }
 }

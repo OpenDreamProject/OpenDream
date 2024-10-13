@@ -20,14 +20,11 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     /// </summary>
     private readonly object _lock = new();
 
-    private ISawmill _sawmill;
-
     [Dependency] private readonly IPlayerManager _playerManager = default!;
 
     public ServerAppearanceSystem() {
         DefaultAppearance = new ImmutableIconAppearance(IconAppearance.Default, this);
         DefaultAppearance.MarkRegistered();
-        _sawmill = Logger.GetSawmill("Appearance");
     }
 
     public override void Initialize() {
@@ -46,12 +43,13 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
             //todo this is probably stupid slow
             lock (_lock) {
                 Dictionary<int, IconAppearance> sendData = new(_idToAppearance.Count);
-                ImmutableIconAppearance? immutable;
-                foreach(int key in _idToAppearance.Keys ){
+
+                foreach(int key in _idToAppearance.Keys){
+                    ImmutableIconAppearance? immutable;
                     if(_idToAppearance[key].TryGetTarget(out immutable))
                         sendData.Add(key, immutable.ToMutable());
                 }
-                _sawmill.Debug($"Sending {sendData.Count} appearances to client");
+
                 e.Session.Channel.SendMessage(new MsgAllAppearances(sendData));
             }
 
@@ -67,7 +65,6 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
                 immutableAppearance.MarkRegistered();
                 _idToAppearance[immutableAppearance.GetHashCode()] = new(immutableAppearance);
                 RaiseNetworkEvent(new NewAppearanceEvent(immutableAppearance.GetHashCode(), immutableAppearance.ToMutable()));
-                //_sawmill.Debug($"Created appearance ${immutableAppearance.GetHashCode()}");
                 return immutableAppearance;
             }
         }
@@ -78,18 +75,14 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         lock (_lock) {
             if(_idToAppearance.TryGetValue(appearance.GetHashCode(), out var weakRef)) {
                 //it is possible that a new appearance was created with the same hash before the GC got around to cleaning up the old one
-                if(weakRef.TryGetTarget(out var target) && !object.ReferenceEquals(target,appearance))
+                if(weakRef.TryGetTarget(out var target) && !ReferenceEquals(target,appearance))
                     return;
                 _idToAppearance.Remove(appearance.GetHashCode());
                 RaiseNetworkEvent(new RemoveAppearanceEvent(appearance.GetHashCode()));
-                _sawmill.Debug($"Deleted appearance ${appearance.GetHashCode()}");
-            } else {
-                _sawmill.Warning($"BAD REMOVAL ${appearance.GetHashCode()}");
-            }
-        }
+}           }
     }
 
-    public ImmutableIconAppearance MustGetAppearanceByID(int appearanceId) {
+    public ImmutableIconAppearance MustGetAppearanceById(int appearanceId) {
         lock (_lock) {
             if(!_idToAppearance[appearanceId].TryGetTarget(out var result))
                 throw new Exception($"Attempted to access deleted appearance ID ${appearanceId} in MustGetAppearanceByID()");
@@ -97,7 +90,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         }
     }
 
-    public bool TryGetAppearanceByID(int appearanceId, [NotNullWhen(true)] out ImmutableIconAppearance? appearance) {
+    public bool TryGetAppearanceById(int appearanceId, [NotNullWhen(true)] out ImmutableIconAppearance? appearance) {
         lock (_lock) {
             appearance = null;
             return _idToAppearance.TryGetValue(appearanceId, out var appearanceRef) && appearanceRef.TryGetTarget(out appearance);

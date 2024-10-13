@@ -5,6 +5,7 @@ using Robust.Shared.GameStates;
 using OpenDreamShared.Dream;
 
 namespace OpenDreamShared.Rendering;
+
 [NetworkedComponent]
 public abstract partial class SharedDMISpriteComponent : Component {
     [Serializable, NetSerializable]

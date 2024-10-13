@@ -12,7 +12,6 @@ using Robust.Shared.Map.Components;
 using Robust.Shared.Utility;
 using Level = OpenDreamRuntime.IDreamMapManager.Level;
 using Cell = OpenDreamRuntime.IDreamMapManager.Cell;
-using System.Collections;
 
 namespace OpenDreamRuntime;
 
@@ -226,9 +225,7 @@ public sealed class DreamMapManager : IDreamMapManager {
             if(oldToNewAppearance.TryGetValue(turf.Appearance, out var newAppearance))
                 turf.Appearance = newAppearance;
             else {
-                IconAppearance? turfAppearance = _atomManager.MustGetAppearance(turf)?.ToMutable();
-
-                if(turfAppearance is null) continue;
+                IconAppearance turfAppearance = _atomManager.MustGetAppearance(turf).ToMutable();
 
                 turfAppearance.Overlays.Remove(oldAppearanceId);
                 turfAppearance.Overlays.Add(area.Appearance.GetHashCode());

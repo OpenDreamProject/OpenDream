@@ -891,6 +891,7 @@ public sealed class DreamFilterList : DreamList {
                 return i;
             i++;
         }
+
         return -1;
     }
 

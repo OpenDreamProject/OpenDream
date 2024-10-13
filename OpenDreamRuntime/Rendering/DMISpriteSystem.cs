@@ -14,7 +14,7 @@ public sealed class DMISpriteSystem : EntitySystem {
     }
 
     private void GetComponentState(EntityUid uid, DMISpriteComponent component, ref ComponentGetState args) {
-        args.State = new SharedDMISpriteComponent.DMISpriteComponentState(component.Appearance.GetHashCode(), component.ScreenLocation);
+        args.State = new SharedDMISpriteComponent.DMISpriteComponentState(component.Appearance?.GetHashCode(), component.ScreenLocation);
     }
 
     public void SetSpriteAppearance(Entity<DMISpriteComponent> ent, IconAppearance appearance, bool dirty = true) {

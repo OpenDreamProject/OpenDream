@@ -32,7 +32,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
     }
 
     [ViewVariables]
-    public IconAppearance? Appearance {
+    public MutableIconAppearance? Appearance {
         get => CalculateAnimatedAppearance();
         private set {
             if (_appearance?.Equals(value) is true)
@@ -42,7 +42,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             UpdateIcon();
         }
     }
-    private IconAppearance? _appearance;
+    private MutableIconAppearance? _appearance;
 
     // TODO: We could cache these per-appearance instead of per-atom
     public IRenderTexture? CachedTexture {
@@ -122,7 +122,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
 
         appearanceSystem.LoadAppearance(appearanceId.Value, appearance => {
             if (parentDir != null && appearance.InheritsDirection) {
-                appearance = new IconAppearance(appearance) {
+                appearance = new MutableIconAppearance(appearance) {
                     Direction = parentDir.Value
                 };
             }
@@ -132,7 +132,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
     }
 
     //three things to do here, chained animations, loops and parallel animations
-    public void StartAppearanceAnimation(IconAppearance endingAppearance, TimeSpan duration, AnimationEasing easing, int loops, AnimationFlags flags, int delay, bool chainAnim) {
+    public void StartAppearanceAnimation(MutableIconAppearance endingAppearance, TimeSpan duration, AnimationEasing easing, int loops, AnimationFlags flags, int delay, bool chainAnim) {
         _appearance = CalculateAnimatedAppearance(); //Animation starts from the current animated appearance
         DateTime start = DateTime.Now;
         if(!chainAnim)
@@ -156,7 +156,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
                 _appearanceAnimations[i] = lastAnim;
                 break;
             }
-            
+
         _appearanceAnimations.Add(new AppearanceAnimation(start, duration, endingAppearance, easing, flags, delay, true));
     }
 
@@ -232,12 +232,12 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             DirtyTexture();
     }
 
-    private IconAppearance? CalculateAnimatedAppearance() {
+    private MutableIconAppearance? CalculateAnimatedAppearance() {
         if (_appearanceAnimations == null || _appearance == null)
             return _appearance;
 
         _textureDirty = true; //if we have animations, we need to recalculate the texture
-        IconAppearance appearance = new IconAppearance(_appearance);
+        MutableIconAppearance appearance = new MutableIconAppearance(_appearance);
         List<AppearanceAnimation>? toRemove = null;
         List<AppearanceAnimation>? toReAdd = null;
         for(int i = 0; i < _appearanceAnimations.Count; i++) {
@@ -295,7 +295,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
                     break;
             }
 
-            IconAppearance endAppearance = animation.EndAppearance;
+            MutableIconAppearance endAppearance = animation.EndAppearance;
 
             //non-smooth animations
             /*
@@ -552,10 +552,10 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
         CachedTexture = null;
     }
 
-    private struct AppearanceAnimation(DateTime start, TimeSpan duration, IconAppearance endAppearance, AnimationEasing easing, AnimationFlags flags, int delay, bool lastInSequence) {
+    private struct AppearanceAnimation(DateTime start, TimeSpan duration, MutableIconAppearance endAppearance, AnimationEasing easing, AnimationFlags flags, int delay, bool lastInSequence) {
         public readonly DateTime Start = start;
         public readonly TimeSpan Duration = duration;
-        public readonly IconAppearance EndAppearance = endAppearance;
+        public readonly MutableIconAppearance EndAppearance = endAppearance;
         public readonly AnimationEasing Easing = easing;
         public readonly AnimationFlags Flags = flags;
         public readonly int Delay = delay;

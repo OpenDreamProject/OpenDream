@@ -182,7 +182,7 @@ public class DreamObjectAtom : DreamObject {
 
                     // Clone the appearance
                     // TODO: We can probably avoid cloning while the DMISpriteComponent is dirty
-                    IconAppearance appearance = (immutableAppearance  != null) ? immutableAppearance.ToMutable() : new();
+                    MutableIconAppearance appearance = (immutableAppearance  != null) ? immutableAppearance.ToMutable() : new();
 
                     AtomManager.SetAppearanceVar(appearance, varName, value);
                     AtomManager.SetAtomAppearance(this, appearance);

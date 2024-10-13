@@ -10,8 +10,8 @@ using Robust.Shared.Timing;
 namespace OpenDreamClient.Rendering;
 
 internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
-    private Dictionary<int, IconAppearance> _appearances = new();
-    private readonly Dictionary<int, List<Action<IconAppearance>>> _appearanceLoadCallbacks = new();
+    private Dictionary<int, MutableIconAppearance> _appearances = new();
+    private readonly Dictionary<int, List<Action<MutableIconAppearance>>> _appearanceLoadCallbacks = new();
     private readonly Dictionary<int, DreamIcon> _turfIcons = new();
     private readonly Dictionary<DreamFilter, ShaderInstance> _filterShaders = new();
 
@@ -35,17 +35,17 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         _turfIcons.Clear();
     }
 
-    public void SetAllAppearances(Dictionary<int, IconAppearance> appearances) {
+    public void SetAllAppearances(Dictionary<int, MutableIconAppearance> appearances) {
         _appearances = appearances;
 
-        foreach (KeyValuePair<int, IconAppearance> pair in _appearances) {
+        foreach (KeyValuePair<int, MutableIconAppearance> pair in _appearances) {
             if (_appearanceLoadCallbacks.TryGetValue(pair.Key, out var callbacks)) {
                 foreach (var callback in callbacks) callback(pair.Value);
             }
         }
     }
 
-    public void LoadAppearance(int appearanceId, Action<IconAppearance> loadCallback) {
+    public void LoadAppearance(int appearanceId, Action<MutableIconAppearance> loadCallback) {
         if (_appearances.TryGetValue(appearanceId, out var appearance)) {
             loadCallback(appearance);
             return;

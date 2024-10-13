@@ -13,7 +13,7 @@ public sealed class DreamObjectImage : DreamObject {
     private DreamList _underlays;
     private readonly DreamList _filters;
     public readonly bool IsMutableAppearance;
-    public IconAppearance? MutableAppearance;
+    public MutableIconAppearance? MutableAppearance;
 
     /// <summary>
     /// All the args in /image/New() after "icon" and "loc", in their correct order
@@ -49,9 +49,9 @@ public sealed class DreamObjectImage : DreamObject {
         base.Initialize(args);
 
         DreamValue icon = args.GetArgument(0);
-        if (icon.IsNull || !AtomManager.TryCreateAppearanceFrom(icon, out var iconAppearance)) {
+        if (icon.IsNull || !AtomManager.TryCreateAppearanceFrom(icon, out var MutableIconAppearance)) {
             // Use a default appearance, but log a warning about it if icon wasn't null
-            iconAppearance = IsMutableAppearance ? MutableAppearance! : AtomManager.MustGetAppearance(this).ToMutable(); //object def appearance is created in the constructor
+            MutableIconAppearance = IsMutableAppearance ? MutableAppearance! : AtomManager.MustGetAppearance(this).ToMutable(); //object def appearance is created in the constructor
             if (!icon.IsNull)
                 Logger.GetSawmill("opendream.image")
                     .Warning($"Attempted to create an /image from {icon}. This is invalid and a default image was created instead.");
@@ -68,16 +68,16 @@ public sealed class DreamObjectImage : DreamObject {
             if (arg.IsNull)
                 continue;
 
-            AtomManager.SetAppearanceVar(iconAppearance, argName, arg);
+            AtomManager.SetAppearanceVar(MutableIconAppearance, argName, arg);
             if (argName == "dir" && arg.TryGetValueAsInteger(out var argDir) && argDir > 0) {
                 // If a dir is explicitly given in the constructor then overlays using this won't use their owner's dir
                 // Setting dir after construction does not affect this
                 // This is undocumented and I hate it
-                iconAppearance.InheritsDirection = false;
+                MutableIconAppearance.InheritsDirection = false;
             }
         }
 
-        AtomManager.SetAtomAppearance(this, iconAppearance);
+        AtomManager.SetAtomAppearance(this, MutableIconAppearance);
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
@@ -206,16 +206,16 @@ public sealed class DreamObjectImage : DreamObject {
                 break;
             }
             case "override": {
-                IconAppearance iconAppearance = IsMutableAppearance ? MutableAppearance! : AtomManager.MustGetAppearance(this).ToMutable();
-                iconAppearance.Override = value.IsTruthy();
-                AtomManager.SetAtomAppearance(this, iconAppearance);
+                MutableIconAppearance MutableIconAppearance = IsMutableAppearance ? MutableAppearance! : AtomManager.MustGetAppearance(this).ToMutable();
+                MutableIconAppearance.Override = value.IsTruthy();
+                AtomManager.SetAtomAppearance(this, MutableIconAppearance);
                 break;
             }
             default:
                 if (AtomManager.IsValidAppearanceVar(varName)) {
-                    IconAppearance iconAppearance = IsMutableAppearance ? MutableAppearance! : AtomManager.MustGetAppearance(this).ToMutable();
-                    AtomManager.SetAppearanceVar(iconAppearance, varName, value);
-                    AtomManager.SetAtomAppearance(this, iconAppearance);
+                    MutableIconAppearance MutableIconAppearance = IsMutableAppearance ? MutableAppearance! : AtomManager.MustGetAppearance(this).ToMutable();
+                    AtomManager.SetAppearanceVar(MutableIconAppearance, varName, value);
+                    AtomManager.SetAtomAppearance(this, MutableIconAppearance);
                     break;
                 }
 

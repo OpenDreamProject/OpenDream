@@ -102,7 +102,7 @@ public struct DreamValue : IEquatable<DreamValue> {
         _refValue = value;
     }
 
-    public DreamValue(IconAppearance appearance) {
+    public DreamValue(MutableIconAppearance appearance) {
         Type = DreamValueType.Appearance;
         _refValue = appearance;
     }
@@ -315,9 +315,9 @@ public struct DreamValue : IEquatable<DreamValue> {
         throw new InvalidCastException("Value " + this + " was not the expected type of DreamProc");
     }
 
-    public bool TryGetValueAsAppearance([NotNullWhen(true)] out IconAppearance? args) {
+    public bool TryGetValueAsAppearance([NotNullWhen(true)] out MutableIconAppearance? args) {
         if (Type == DreamValueType.Appearance) {
-            args = Unsafe.As<IconAppearance>(_refValue)!;
+            args = Unsafe.As<MutableIconAppearance>(_refValue)!;
 
             return true;
         }
@@ -326,9 +326,9 @@ public struct DreamValue : IEquatable<DreamValue> {
         return false;
     }
 
-    public IconAppearance MustGetValueAsAppearance() {
+    public MutableIconAppearance MustGetValueAsAppearance() {
         if (Type == DreamValueType.Appearance) {
-            return Unsafe.As<IconAppearance>(_refValue)!;
+            return Unsafe.As<MutableIconAppearance>(_refValue)!;
         }
         throw new InvalidCastException("Value " + this + " was not the expected type of Appearance");
     }

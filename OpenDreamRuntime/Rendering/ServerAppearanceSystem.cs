@@ -23,7 +23,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     [Dependency] private readonly IPlayerManager _playerManager = default!;
 
     public ServerAppearanceSystem() {
-        DefaultAppearance = new ImmutableIconAppearance(IconAppearance.Default, this);
+        DefaultAppearance = new ImmutableIconAppearance(MutableIconAppearance.Default, this);
         DefaultAppearance.MarkRegistered();
     }
 
@@ -42,7 +42,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         if (e.NewStatus == SessionStatus.InGame) {
             //todo this is probably stupid slow
             lock (_lock) {
-                Dictionary<int, IconAppearance> sendData = new(_idToAppearance.Count);
+                Dictionary<int, MutableIconAppearance> sendData = new(_idToAppearance.Count);
 
                 foreach(int key in _idToAppearance.Keys){
                     ImmutableIconAppearance? immutable;
@@ -56,7 +56,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         }
     }
 
-    public ImmutableIconAppearance AddAppearance(IconAppearance appearance) {
+    public ImmutableIconAppearance AddAppearance(MutableIconAppearance appearance) {
         ImmutableIconAppearance immutableAppearance = new(appearance, this);
         lock (_lock) {
             if(_idToAppearance.TryGetValue(immutableAppearance.GetHashCode(), out var weakReference) && weakReference.TryGetTarget(out var originalImmutable)) {
@@ -97,7 +97,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         }
     }
 
-    public void Animate(NetEntity entity, IconAppearance targetAppearance, TimeSpan duration, AnimationEasing easing, int loop, AnimationFlags flags, int delay, bool chainAnim, int? turfId) {
+    public void Animate(NetEntity entity, MutableIconAppearance targetAppearance, TimeSpan duration, AnimationEasing easing, int loop, AnimationFlags flags, int delay, bool chainAnim, int? turfId) {
         int appearanceId = AddAppearance(targetAppearance).GetHashCode();
 
         RaiseNetworkEvent(new AnimationEvent(entity, appearanceId, duration, easing, loop, flags, delay, chainAnim, turfId));

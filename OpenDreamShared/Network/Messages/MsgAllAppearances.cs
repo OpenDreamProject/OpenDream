@@ -9,7 +9,7 @@ using Robust.Shared.Serialization;
 
 namespace OpenDreamShared.Network.Messages;
 
-public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppearances) : NetMessage {
+public sealed class MsgAllAppearances(Dictionary<int, MutableIconAppearance> allAppearances) : NetMessage {
     public override MsgGroups MsgGroup => MsgGroups.EntityEvent;
 
     private enum Property : byte {
@@ -45,7 +45,7 @@ public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppeara
         End
     }
 
-    public Dictionary<int, IconAppearance> AllAppearances = allAppearances;
+    public Dictionary<int, MutableIconAppearance> AllAppearances = allAppearances;
 
     public MsgAllAppearances() : this(new()) { }
 
@@ -56,7 +56,7 @@ public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppeara
         AllAppearances = new(count);
 
         for (int i = 0; i < count; i++) {
-            var appearance = new IconAppearance();
+            var appearance = new MutableIconAppearance();
             var property = (Property)buffer.ReadByte();
 
             appearanceId++;
@@ -225,7 +225,7 @@ public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppeara
 
             lastId = pair.Key;
 
-            if (appearance.Name != IconAppearance.Default.Name) {
+            if (appearance.Name != MutableIconAppearance.Default.Name) {
                 buffer.Write((byte)Property.Name);
                 buffer.Write(appearance.Name);
             }
@@ -240,7 +240,7 @@ public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppeara
                 buffer.Write(appearance.IconState);
             }
 
-            if (appearance.Direction != IconAppearance.Default.Direction) {
+            if (appearance.Direction != MutableIconAppearance.Default.Direction) {
                 buffer.Write((byte)Property.Direction);
                 buffer.Write((byte)appearance.Direction);
             }
@@ -249,71 +249,71 @@ public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppeara
                 buffer.Write((byte)Property.DoesntInheritDirection);
             }
 
-            if (appearance.PixelOffset != IconAppearance.Default.PixelOffset) {
+            if (appearance.PixelOffset != MutableIconAppearance.Default.PixelOffset) {
                 buffer.Write((byte)Property.PixelOffset);
                 buffer.WriteVariableInt32(appearance.PixelOffset.X);
                 buffer.WriteVariableInt32(appearance.PixelOffset.Y);
             }
 
-            if (appearance.PixelOffset2 != IconAppearance.Default.PixelOffset2) {
+            if (appearance.PixelOffset2 != MutableIconAppearance.Default.PixelOffset2) {
                 buffer.Write((byte)Property.PixelOffset2);
                 buffer.WriteVariableInt32(appearance.PixelOffset2.X);
                 buffer.WriteVariableInt32(appearance.PixelOffset2.Y);
             }
 
-            if (appearance.Color != IconAppearance.Default.Color) {
+            if (appearance.Color != MutableIconAppearance.Default.Color) {
                 buffer.Write((byte)Property.Color);
                 buffer.Write(appearance.Color);
             }
 
-            if (appearance.Alpha != IconAppearance.Default.Alpha) {
+            if (appearance.Alpha != MutableIconAppearance.Default.Alpha) {
                 buffer.Write((byte)Property.Alpha);
                 buffer.Write(appearance.Alpha);
             }
 
-            if (!appearance.GlideSize.Equals(IconAppearance.Default.GlideSize)) {
+            if (!appearance.GlideSize.Equals(MutableIconAppearance.Default.GlideSize)) {
                 buffer.Write((byte)Property.GlideSize);
                 buffer.Write(appearance.GlideSize);
             }
 
-            if (!appearance.ColorMatrix.Equals(IconAppearance.Default.ColorMatrix)) {
+            if (!appearance.ColorMatrix.Equals(MutableIconAppearance.Default.ColorMatrix)) {
                 buffer.Write((byte)Property.ColorMatrix);
 
                 foreach (var value in appearance.ColorMatrix.GetValues())
                     buffer.Write(value);
             }
 
-            if (!appearance.Layer.Equals(IconAppearance.Default.Layer)) {
+            if (!appearance.Layer.Equals(MutableIconAppearance.Default.Layer)) {
                 buffer.Write((byte)Property.Layer);
                 buffer.Write(appearance.Layer);
             }
 
-            if (appearance.Plane != IconAppearance.Default.Plane) {
+            if (appearance.Plane != MutableIconAppearance.Default.Plane) {
                 buffer.Write((byte)Property.Plane);
                 buffer.WriteVariableInt32(appearance.Plane);
             }
 
-            if (appearance.BlendMode != IconAppearance.Default.BlendMode) {
+            if (appearance.BlendMode != MutableIconAppearance.Default.BlendMode) {
                 buffer.Write((byte)Property.BlendMode);
                 buffer.Write((byte)appearance.BlendMode);
             }
 
-            if (appearance.AppearanceFlags != IconAppearance.Default.AppearanceFlags) {
+            if (appearance.AppearanceFlags != MutableIconAppearance.Default.AppearanceFlags) {
                 buffer.Write((byte)Property.AppearanceFlags);
                 buffer.Write((int)appearance.AppearanceFlags);
             }
 
-            if (appearance.Invisibility != IconAppearance.Default.Invisibility) {
+            if (appearance.Invisibility != MutableIconAppearance.Default.Invisibility) {
                 buffer.Write((byte)Property.Invisibility);
                 buffer.Write(appearance.Invisibility);
             }
 
-            if (appearance.Opacity != IconAppearance.Default.Opacity) {
+            if (appearance.Opacity != MutableIconAppearance.Default.Opacity) {
                 buffer.Write((byte)Property.Opacity);
                 buffer.Write(appearance.Opacity);
             }
 
-            if (appearance.Override != IconAppearance.Default.Override) {
+            if (appearance.Override != MutableIconAppearance.Default.Override) {
                 buffer.Write((byte)Property.Override);
                 buffer.Write(appearance.Override);
             }
@@ -328,7 +328,7 @@ public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppeara
                 buffer.Write(appearance.RenderTarget);
             }
 
-            if (appearance.MouseOpacity != IconAppearance.Default.MouseOpacity) {
+            if (appearance.MouseOpacity != MutableIconAppearance.Default.MouseOpacity) {
                 buffer.Write((byte)Property.MouseOpacity);
                 buffer.Write((byte)appearance.MouseOpacity);
             }
@@ -383,7 +383,7 @@ public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppeara
                 }
             }
 
-            if (!appearance.Transform.SequenceEqual(IconAppearance.Default.Transform)) {
+            if (!appearance.Transform.SequenceEqual(MutableIconAppearance.Default.Transform)) {
                 buffer.Write((byte)Property.Transform);
 
                 for (int i = 0; i < 6; i++) {

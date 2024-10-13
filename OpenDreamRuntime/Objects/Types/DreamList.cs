@@ -709,8 +709,8 @@ public sealed class DreamOverlaysList : DreamList {
             return;
 
         _atomManager.UpdateAppearance(_owner, appearance => {
-            IconAppearance? overlayAppearance = CreateOverlayAppearance(_atomManager, value, appearance.Icon);
-            overlayAppearance ??= new IconAppearance();
+            MutableIconAppearance? overlayAppearance = CreateOverlayAppearance(_atomManager, value, appearance.Icon);
+            overlayAppearance ??= new MutableIconAppearance();
             ImmutableIconAppearance immutableOverlay = _appearanceSystem.AddAppearance(overlayAppearance);
             hardRefs.Add(immutableOverlay);
             GetOverlaysList(appearance).Add(immutableOverlay.GetHashCode());
@@ -722,7 +722,7 @@ public sealed class DreamOverlaysList : DreamList {
             return;
 
         _atomManager.UpdateAppearance(_owner, appearance => {
-            IconAppearance? overlayAppearance = CreateOverlayAppearance(_atomManager, value, appearance.Icon);
+            MutableIconAppearance? overlayAppearance = CreateOverlayAppearance(_atomManager, value, appearance.Icon);
             if (overlayAppearance == null)
                 return;
             ImmutableIconAppearance immutableOverlay = _appearanceSystem.AddAppearance(overlayAppearance);
@@ -736,7 +736,7 @@ public sealed class DreamOverlaysList : DreamList {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private List<int> GetOverlaysList(IconAppearance appearance) =>
+    private List<int> GetOverlaysList(MutableIconAppearance appearance) =>
         _isUnderlays ? appearance.Underlays : appearance.Overlays;
 
     private ImmutableIconAppearance[] GetOverlaysArray(ImmutableIconAppearance appearance) =>
@@ -750,11 +750,11 @@ public sealed class DreamOverlaysList : DreamList {
         return appearance;
     }
 
-    public static IconAppearance? CreateOverlayAppearance(AtomManager atomManager, DreamValue value, int? defaultIcon) {
-        IconAppearance overlay;
+    public static MutableIconAppearance? CreateOverlayAppearance(AtomManager atomManager, DreamValue value, int? defaultIcon) {
+        MutableIconAppearance overlay;
 
         if (value.TryGetValueAsString(out var iconState)) {
-            overlay = new IconAppearance() {
+            overlay = new MutableIconAppearance() {
                 IconState = iconState
             };
             overlay.Icon ??= defaultIcon;

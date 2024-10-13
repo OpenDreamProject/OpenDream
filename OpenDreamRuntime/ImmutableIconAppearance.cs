@@ -6,10 +6,10 @@ namespace OpenDreamRuntime.Rendering;
 
 /*
  * Woe, weary traveler, modifying this class is not for the faint of heart.
- * If you modify IconAppearance, be sure to update the following places:
+ * If you modify MutableIconAppearance, be sure to update the following places:
  * - All of the methods on ImmutableIconAppearance itself
- * - IconAppearance
- * - IconAppearance methods in AtomManager
+ * - MutableIconAppearance
+ * - MutableIconAppearance methods in AtomManager
  * - There may be others
  */
 
@@ -73,7 +73,7 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
         registered = true;
     }
 
-    public ImmutableIconAppearance(IconAppearance appearance, ServerAppearanceSystem serverAppearanceSystem) {
+    public ImmutableIconAppearance(MutableIconAppearance appearance, ServerAppearanceSystem serverAppearanceSystem) {
         appearanceSystem = serverAppearanceSystem;
 
         Name = appearance.Name;
@@ -233,8 +233,8 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
 
     //Creates an editable *copy* of this appearance, which must be added to the ServerAppearanceSystem to be used.
     [Pure]
-    public IconAppearance ToMutable() {
-        IconAppearance result = new IconAppearance() {
+    public MutableIconAppearance ToMutable() {
+        MutableIconAppearance result = new MutableIconAppearance() {
             Name = Name,
             Icon = Icon,
             IconState = IconState,

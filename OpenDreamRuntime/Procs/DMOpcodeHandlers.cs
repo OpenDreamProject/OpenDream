@@ -2616,7 +2616,7 @@ namespace OpenDreamRuntime.Procs {
                     if (!second.TryGetValueAsAppearance(out var secondValue))
                         return false;
 
-                    IconAppearance firstValue = first.MustGetValueAsAppearance();
+                    MutableIconAppearance firstValue = first.MustGetValueAsAppearance();
                     return firstValue.Equals(secondValue);
                 }
             }

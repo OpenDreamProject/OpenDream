@@ -10,10 +10,10 @@ namespace OpenDreamShared.Dream;
 
 /*
  * Woe, weary traveler, modifying this class is not for the faint of heart.
- * If you modify IconAppearance, be sure to update the following places:
- * - All of the methods on IconAppearance itself
+ * If you modify MutableIconAppearance, be sure to update the following places:
+ * - All of the methods on MutableIconAppearance itself
  * - ImmutableIconAppearance
- * - IconAppearance methods in AtomManager
+ * - MutableIconAppearance methods in AtomManager
  * - MsgAllAppearances
  * - IconDebugWindow
  * - There may be others
@@ -21,8 +21,8 @@ namespace OpenDreamShared.Dream;
 
 // TODO: Wow this is huge! Probably look into splitting this by most used/least used to reduce the size of these
 [Serializable, NetSerializable]
-public sealed class IconAppearance : IEquatable<IconAppearance> {
-    public static readonly IconAppearance Default = new();
+public sealed class MutableIconAppearance : IEquatable<MutableIconAppearance> {
+    public static readonly MutableIconAppearance Default = new();
 
     [ViewVariables] public string Name = string.Empty;
     [ViewVariables] public int? Icon;
@@ -73,7 +73,7 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
     // PixelOffset2 behaves the same as PixelOffset in top-down mode, so this is used
     public Vector2i TotalPixelOffset => PixelOffset + PixelOffset2;
 
-    public IconAppearance() {
+    public MutableIconAppearance() {
         Overlays = new();
         Underlays = new();
         VisContents = new();
@@ -81,7 +81,7 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
         Verbs = new();
     }
 
-    public IconAppearance(IconAppearance appearance) {
+    public MutableIconAppearance(MutableIconAppearance appearance) {
         Name = appearance.Name;
         Icon = appearance.Icon;
         IconState = appearance.IconState;
@@ -114,9 +114,9 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
         }
     }
 
-    public override bool Equals(object? obj) => obj is IconAppearance appearance && Equals(appearance);
+    public override bool Equals(object? obj) => obj is MutableIconAppearance appearance && Equals(appearance);
 
-    public bool Equals(IconAppearance? appearance) {
+    public bool Equals(MutableIconAppearance? appearance) {
         if (appearance == null) return false;
 
         if (appearance.Name != Name) return false;

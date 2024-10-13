@@ -263,6 +263,36 @@ public struct ColorMatrix {
                c54 == other.c54;
     }
 
+    public override int GetHashCode() {
+        HashCode hashCode = new HashCode();
+        hashCode.Add(c11);
+        hashCode.Add(c12);
+        hashCode.Add(c13);
+        hashCode.Add(c14);
+
+        hashCode.Add(c21);
+        hashCode.Add(c22);
+        hashCode.Add(c23);
+        hashCode.Add(c24);
+
+        hashCode.Add(c31);
+        hashCode.Add(c32);
+        hashCode.Add(c33);
+        hashCode.Add(c34);
+
+        hashCode.Add(c41);
+        hashCode.Add(c42);
+        hashCode.Add(c43);
+        hashCode.Add(c44);
+
+        hashCode.Add(c51);
+        hashCode.Add(c52);
+        hashCode.Add(c53);
+        hashCode.Add(c54);
+
+        return hashCode.ToHashCode();
+    }
+
     /// <summary>
     /// Multiplies two instances.
     /// </summary>

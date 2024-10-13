@@ -680,7 +680,6 @@ public sealed class DreamOverlaysList : DreamList {
             List<int> overlaysList = GetOverlaysList(appearance);
             int count = overlaysList.Count + 1;
             if (end == 0 || end > count) end = count;
-
             overlaysList.RemoveRange(start - 1, end - start);
         });
     }
@@ -727,6 +726,7 @@ public sealed class DreamOverlaysList : DreamList {
             if (overlayAppearance == null)
                 return;
             ImmutableIconAppearance immutableOverlay = _appearanceSystem.AddAppearance(overlayAppearance);
+            hardRefs.Remove(immutableOverlay);
             GetOverlaysList(appearance).Remove(immutableOverlay.GetHashCode());
         });
     }

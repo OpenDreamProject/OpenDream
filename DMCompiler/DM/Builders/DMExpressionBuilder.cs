@@ -404,7 +404,11 @@ internal static class DMExpressionBuilder {
 
                     var field = dmObject?.GetVariable(name);
                     if (field != null) {
-                        return new Field(identifier.Location, field, field.ValType);
+                        if (field.IsConst)
+                            return new Field(identifier.Location, field, field.ValType);
+
+                        return BadExpression(WarningCode.BadExpression, identifier.Location,
+                            "Var \"{name}\" cannot be used in this context");
                     }
                 }
 

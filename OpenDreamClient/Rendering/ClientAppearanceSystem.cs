@@ -6,6 +6,7 @@ using Robust.Shared.Prototypes;
 using OpenDreamClient.Resources;
 using OpenDreamClient.Resources.ResourceTypes;
 using Robust.Shared.Timing;
+using OpenDreamShared.Network.Messages;
 
 namespace OpenDreamClient.Rendering;
 
@@ -23,7 +24,6 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     [Dependency] private readonly DMISpriteSystem _spriteSystem = default!;
 
     public override void Initialize() {
-        SubscribeNetworkEvent<NewAppearanceEvent>(OnNewAppearance);
         SubscribeNetworkEvent<RemoveAppearanceEvent>(e => _appearances.Remove(e.AppearanceId));
         SubscribeNetworkEvent<AnimationEvent>(OnAnimation);
         SubscribeLocalEvent<DMISpriteComponent, WorldAABBEvent>(OnWorldAABB);
@@ -35,12 +35,14 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         _turfIcons.Clear();
     }
 
-    public void SetAllAppearances(Dictionary<int, MutableIconAppearance> appearances) {
-        _appearances = appearances;
+    public void SetAllAppearances(Dictionary<int, IBufferableAppearance> appearances) {
+        _appearances = new(appearances.Count);
 
-        foreach (KeyValuePair<int, MutableIconAppearance> pair in _appearances) {
+        foreach (KeyValuePair<int, IBufferableAppearance> pair in appearances) {
+            MutableIconAppearance cast = (MutableIconAppearance) pair.Value;
+            _appearances.Add(pair.Key, cast);
             if (_appearanceLoadCallbacks.TryGetValue(pair.Key, out var callbacks)) {
-                foreach (var callback in callbacks) callback(pair.Value);
+                foreach (var callback in callbacks) callback(cast);
             }
         }
     }
@@ -69,8 +71,8 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         return icon;
     }
 
-    private void OnNewAppearance(NewAppearanceEvent e) {
-        _appearances[e.AppearanceId] = e.Appearance;
+    public void OnNewAppearance(MsgNewAppearance e) {
+        _appearances[e.AppearanceId] = (MutableIconAppearance)e.Appearance;
 
         if (_appearanceLoadCallbacks.TryGetValue(e.AppearanceId, out var callbacks)) {
             foreach (var callback in callbacks) callback(_appearances[e.AppearanceId]);

@@ -1,6 +1,11 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.IO;
+using Lidgren.Network;
+using Robust.Shared.Network;
 using OpenDreamShared.Dream;
+using Robust.Shared.Serialization;
+using System.Linq;
 
 namespace OpenDreamRuntime.Rendering;
 
@@ -15,7 +20,7 @@ namespace OpenDreamRuntime.Rendering;
 
 // TODO: Wow this is huge! Probably look into splitting this by most used/least used to reduce the size of these
 
-public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance> {
+public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance>, IBufferableAppearance {
     private bool registered = false;
     [ViewVariables] public readonly string Name;
     [ViewVariables] public readonly int? Icon;
@@ -274,6 +279,183 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
         }
 
         return result;
+    }
+
+    public void WriteToBuffer(NetOutgoingMessage buffer, IRobustSerializer serializer) {
+        buffer.Write((byte)IconAppearanceProperty.Id);
+        buffer.WriteVariableInt32(GetHashCode());
+
+        if (Name != MutableIconAppearance.Default.Name) {
+            buffer.Write((byte)IconAppearanceProperty.Name);
+            buffer.Write(Name);
+        }
+
+        if (Icon != null) {
+            buffer.Write((byte)IconAppearanceProperty.Icon);
+            buffer.WriteVariableInt32(Icon.Value);
+        }
+
+        if (IconState != null) {
+            buffer.Write((byte)IconAppearanceProperty.IconState);
+            buffer.Write(IconState);
+        }
+
+        if (Direction != MutableIconAppearance.Default.Direction) {
+            buffer.Write((byte)IconAppearanceProperty.Direction);
+            buffer.Write((byte)Direction);
+        }
+
+        if (InheritsDirection != true) {
+            buffer.Write((byte)IconAppearanceProperty.DoesntInheritDirection);
+        }
+
+        if (PixelOffset != MutableIconAppearance.Default.PixelOffset) {
+            buffer.Write((byte)IconAppearanceProperty.PixelOffset);
+            buffer.WriteVariableInt32(PixelOffset.X);
+            buffer.WriteVariableInt32(PixelOffset.Y);
+        }
+
+        if (PixelOffset2 != MutableIconAppearance.Default.PixelOffset2) {
+            buffer.Write((byte)IconAppearanceProperty.PixelOffset2);
+            buffer.WriteVariableInt32(PixelOffset2.X);
+            buffer.WriteVariableInt32(PixelOffset2.Y);
+        }
+
+        if (Color != MutableIconAppearance.Default.Color) {
+            buffer.Write((byte)IconAppearanceProperty.Color);
+            buffer.Write(Color);
+        }
+
+        if (Alpha != MutableIconAppearance.Default.Alpha) {
+            buffer.Write((byte)IconAppearanceProperty.Alpha);
+            buffer.Write(Alpha);
+        }
+
+        if (!GlideSize.Equals(MutableIconAppearance.Default.GlideSize)) {
+            buffer.Write((byte)IconAppearanceProperty.GlideSize);
+            buffer.Write(GlideSize);
+        }
+
+        if (!ColorMatrix.Equals(MutableIconAppearance.Default.ColorMatrix)) {
+            buffer.Write((byte)IconAppearanceProperty.ColorMatrix);
+
+            foreach (var value in ColorMatrix.GetValues())
+                buffer.Write(value);
+        }
+
+        if (!Layer.Equals(MutableIconAppearance.Default.Layer)) {
+            buffer.Write((byte)IconAppearanceProperty.Layer);
+            buffer.Write(Layer);
+        }
+
+        if (Plane != MutableIconAppearance.Default.Plane) {
+            buffer.Write((byte)IconAppearanceProperty.Plane);
+            buffer.WriteVariableInt32(Plane);
+        }
+
+        if (BlendMode != MutableIconAppearance.Default.BlendMode) {
+            buffer.Write((byte)IconAppearanceProperty.BlendMode);
+            buffer.Write((byte)BlendMode);
+        }
+
+        if (AppearanceFlags != MutableIconAppearance.Default.AppearanceFlags) {
+            buffer.Write((byte)IconAppearanceProperty.AppearanceFlags);
+            buffer.Write((int)AppearanceFlags);
+        }
+
+        if (Invisibility != MutableIconAppearance.Default.Invisibility) {
+            buffer.Write((byte)IconAppearanceProperty.Invisibility);
+            buffer.Write(Invisibility);
+        }
+
+        if (Opacity != MutableIconAppearance.Default.Opacity) {
+            buffer.Write((byte)IconAppearanceProperty.Opacity);
+            buffer.Write(Opacity);
+        }
+
+        if (Override != MutableIconAppearance.Default.Override) {
+            buffer.Write((byte)IconAppearanceProperty.Override);
+            buffer.Write(Override);
+        }
+
+        if (!string.IsNullOrWhiteSpace(RenderSource)) {
+            buffer.Write((byte)IconAppearanceProperty.RenderSource);
+            buffer.Write(RenderSource);
+        }
+
+        if (!string.IsNullOrWhiteSpace(RenderTarget)) {
+            buffer.Write((byte)IconAppearanceProperty.RenderTarget);
+            buffer.Write(RenderTarget);
+        }
+
+        if (MouseOpacity != MutableIconAppearance.Default.MouseOpacity) {
+            buffer.Write((byte)IconAppearanceProperty.MouseOpacity);
+            buffer.Write((byte)MouseOpacity);
+        }
+
+        if (Overlays.Length != 0) {
+            buffer.Write((byte)IconAppearanceProperty.Overlays);
+
+            buffer.WriteVariableInt32(Overlays.Length);
+            foreach (var overlay in Overlays) {
+                buffer.WriteVariableInt32(overlay.GetHashCode());
+            }
+        }
+
+        if (Underlays.Length != 0) {
+            buffer.Write((byte)IconAppearanceProperty.Underlays);
+
+            buffer.WriteVariableInt32(Underlays.Length);
+            foreach (var underlay in Underlays) {
+                buffer.WriteVariableInt32(underlay.GetHashCode());
+            }
+        }
+
+        if (VisContents.Length != 0) {
+            buffer.Write((byte)IconAppearanceProperty.VisContents);
+
+            buffer.WriteVariableInt32(VisContents.Length);
+            foreach (var item in VisContents) {
+                buffer.Write(item);
+            }
+        }
+
+        if (Filters.Length != 0) {
+            buffer.Write((byte)IconAppearanceProperty.Filters);
+
+            buffer.Write(Filters.Length);
+            foreach (var filter in Filters) {
+                using var filterStream = new MemoryStream();
+
+                serializer.Serialize(filterStream, filter);
+                buffer.WriteVariableInt32((int)filterStream.Length);
+                filterStream.TryGetBuffer(out var filterBuffer);
+                buffer.Write(filterBuffer);
+            }
+        }
+
+        if (Verbs.Length != 0) {
+            buffer.Write((byte)IconAppearanceProperty.Verbs);
+
+            buffer.WriteVariableInt32(Verbs.Length);
+            foreach (var verb in Verbs) {
+                buffer.WriteVariableInt32(verb);
+            }
+        }
+
+        if (!Transform.SequenceEqual(MutableIconAppearance.Default.Transform)) {
+            buffer.Write((byte)IconAppearanceProperty.Transform);
+
+            for (int i = 0; i < 6; i++) {
+                buffer.Write(Transform[i]);
+            }
+        }
+
+        buffer.Write((byte)IconAppearanceProperty.End);
+    }
+
+    public int ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {
+        throw new NotImplementedException();
     }
 
     ~ImmutableIconAppearance() {

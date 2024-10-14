@@ -5,6 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Robust.Shared.GameObjects;
+using Lidgren.Network;
+using Robust.Shared.Network;
+using System.IO;
 
 namespace OpenDreamShared.Dream;
 
@@ -13,15 +16,15 @@ namespace OpenDreamShared.Dream;
  * If you modify MutableIconAppearance, be sure to update the following places:
  * - All of the methods on MutableIconAppearance itself
  * - ImmutableIconAppearance
- * - MutableIconAppearance methods in AtomManager
+ * - IconAppearance methods in AtomManager
  * - MsgAllAppearances
  * - IconDebugWindow
+ * - IconAppearanceProperty enum
  * - There may be others
  */
 
 // TODO: Wow this is huge! Probably look into splitting this by most used/least used to reduce the size of these
-[Serializable, NetSerializable]
-public sealed class MutableIconAppearance : IEquatable<MutableIconAppearance> {
+public sealed class MutableIconAppearance : IEquatable<MutableIconAppearance>, IBufferableAppearance {
     public static readonly MutableIconAppearance Default = new();
 
     [ViewVariables] public string Name = string.Empty;
@@ -281,6 +284,165 @@ public sealed class MutableIconAppearance : IEquatable<MutableIconAppearance> {
         Color = Color.White;
         ColorMatrix = matrix;
     }
+
+
+    public int ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {
+        int? appearanceId = null;
+        var property = (IconAppearanceProperty)buffer.ReadByte();
+        while (property != IconAppearanceProperty.End) {
+            switch (property) {
+                case IconAppearanceProperty.Name:
+                    Name = buffer.ReadString();
+                    break;
+                case IconAppearanceProperty.Id:
+                    appearanceId = buffer.ReadVariableInt32();
+                    break;
+                case IconAppearanceProperty.Icon:
+                    Icon = buffer.ReadVariableInt32();
+                    break;
+                case IconAppearanceProperty.IconState:
+                    IconState = buffer.ReadString();
+                    break;
+                case IconAppearanceProperty.Direction:
+                    Direction = (AtomDirection)buffer.ReadByte();
+                    break;
+                case IconAppearanceProperty.DoesntInheritDirection:
+                    InheritsDirection = false;
+                    break;
+                case IconAppearanceProperty.PixelOffset:
+                    PixelOffset = (buffer.ReadVariableInt32(), buffer.ReadVariableInt32());
+                    break;
+                case IconAppearanceProperty.PixelOffset2:
+                    PixelOffset2 = (buffer.ReadVariableInt32(), buffer.ReadVariableInt32());
+                    break;
+                case IconAppearanceProperty.Color:
+                    Color = buffer.ReadColor();
+                    break;
+                case IconAppearanceProperty.Alpha:
+                    Alpha = buffer.ReadByte();
+                    break;
+                case IconAppearanceProperty.GlideSize:
+                    GlideSize = buffer.ReadFloat();
+                    break;
+                case IconAppearanceProperty.Layer:
+                    Layer = buffer.ReadFloat();
+                    break;
+                case IconAppearanceProperty.Plane:
+                    Plane = buffer.ReadVariableInt32();
+                    break;
+                case IconAppearanceProperty.BlendMode:
+                    BlendMode = (BlendMode)buffer.ReadByte();
+                    break;
+                case IconAppearanceProperty.AppearanceFlags:
+                    AppearanceFlags = (AppearanceFlags)buffer.ReadInt32();
+                    break;
+                case IconAppearanceProperty.Invisibility:
+                    Invisibility = buffer.ReadSByte();
+                    break;
+                case IconAppearanceProperty.Opacity:
+                    Opacity = buffer.ReadBoolean();
+                    break;
+                case IconAppearanceProperty.Override:
+                    Override = buffer.ReadBoolean();
+                    break;
+                case IconAppearanceProperty.RenderSource:
+                    RenderSource = buffer.ReadString();
+                    break;
+                case IconAppearanceProperty.RenderTarget:
+                    RenderTarget = buffer.ReadString();
+                    break;
+                case IconAppearanceProperty.MouseOpacity:
+                    MouseOpacity = (MouseOpacity)buffer.ReadByte();
+                    break;
+                case IconAppearanceProperty.ColorMatrix:
+                    ColorMatrix = new(
+                        buffer.ReadSingle(), buffer.ReadSingle(), buffer.ReadSingle(), buffer.ReadSingle(),
+                        buffer.ReadSingle(), buffer.ReadSingle(), buffer.ReadSingle(), buffer.ReadSingle(),
+                        buffer.ReadSingle(), buffer.ReadSingle(), buffer.ReadSingle(), buffer.ReadSingle(),
+                        buffer.ReadSingle(), buffer.ReadSingle(), buffer.ReadSingle(), buffer.ReadSingle(),
+                        buffer.ReadSingle(), buffer.ReadSingle(), buffer.ReadSingle(), buffer.ReadSingle()
+                    );
+
+                    break;
+                case IconAppearanceProperty.Overlays: {
+                    var overlaysCount = buffer.ReadVariableInt32();
+
+                    Overlays.EnsureCapacity(overlaysCount);
+                    for (int overlaysI = 0; overlaysI < overlaysCount; overlaysI++) {
+                        Overlays.Add(buffer.ReadVariableInt32());
+                    }
+
+                    break;
+                }
+                case IconAppearanceProperty.Underlays: {
+                    var underlaysCount = buffer.ReadVariableInt32();
+
+                    Underlays.EnsureCapacity(underlaysCount);
+                    for (int underlaysI = 0; underlaysI < underlaysCount; underlaysI++) {
+                        Underlays.Add(buffer.ReadVariableInt32());
+                    }
+
+                    break;
+                }
+                case IconAppearanceProperty.VisContents: {
+                    var visContentsCount = buffer.ReadVariableInt32();
+
+                    VisContents.EnsureCapacity(visContentsCount);
+                    for (int visContentsI = 0; visContentsI < visContentsCount; visContentsI++) {
+                        VisContents.Add(buffer.ReadNetEntity());
+                    }
+
+                    break;
+                }
+                case IconAppearanceProperty.Filters: {
+                    var filtersCount = buffer.ReadInt32();
+
+                    Filters.EnsureCapacity(filtersCount);
+                    for (int filtersI = 0; filtersI < filtersCount; filtersI++) {
+                        var filterLength = buffer.ReadVariableInt32();
+                        var filterData = buffer.ReadBytes(filterLength);
+                        using var filterStream = new MemoryStream(filterData);
+                        var filter = serializer.Deserialize<DreamFilter>(filterStream);
+
+                        Filters.Add(filter);
+                    }
+
+                    break;
+                }
+                case IconAppearanceProperty.Verbs: {
+                    var verbsCount = buffer.ReadVariableInt32();
+
+                    Verbs.EnsureCapacity(verbsCount);
+                    for (int verbsI = 0; verbsI < verbsCount; verbsI++) {
+                        Verbs.Add(buffer.ReadVariableInt32());
+                    }
+
+                    break;
+                }
+                case IconAppearanceProperty.Transform: {
+                    Transform = [
+                        buffer.ReadSingle(), buffer.ReadSingle(),
+                        buffer.ReadSingle(), buffer.ReadSingle(),
+                        buffer.ReadSingle(), buffer.ReadSingle()
+                    ];
+
+                    break;
+                }
+                default:
+                    throw new Exception($"Invalid property {property}");
+            }
+
+            property = (IconAppearanceProperty)buffer.ReadByte();
+        }
+        if(appearanceId is not null)
+            return appearanceId.Value;
+        else
+            throw new Exception("No appearance ID found in buffer");
+    }
+
+    public void WriteToBuffer(NetOutgoingMessage buffer, IRobustSerializer serializer) {
+        throw new NotImplementedException();
+    }
 }
 
 public enum BlendMode {
@@ -334,3 +496,37 @@ public enum AnimationFlags {
     AnimationRelative = 256,
     AnimationContinue = 512
 }
+
+//used for encoding for netmessages
+public enum IconAppearanceProperty : byte {
+        Name,
+        Icon,
+        IconState,
+        Direction,
+        DoesntInheritDirection,
+        PixelOffset,
+        PixelOffset2,
+        Color,
+        Alpha,
+        GlideSize,
+        ColorMatrix,
+        Layer,
+        Plane,
+        BlendMode,
+        AppearanceFlags,
+        Invisibility,
+        Opacity,
+        Override,
+        RenderSource,
+        RenderTarget,
+        MouseOpacity,
+        Overlays,
+        Underlays,
+        VisContents,
+        Filters,
+        Verbs,
+        Transform,
+
+        Id,
+        End
+    }

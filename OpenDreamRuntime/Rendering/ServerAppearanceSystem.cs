@@ -5,6 +5,8 @@ using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
 using System.Diagnostics.CodeAnalysis;
 using OpenDreamShared.Network.Messages;
 using Robust.Shared.Player;
+using Robust.Server.GameObjects;
+using Robust.Shared.Network;
 
 namespace OpenDreamRuntime.Rendering;
 
@@ -14,6 +16,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     private readonly Dictionary<int, WeakReference<ImmutableIconAppearance>> _idToAppearance = new();
 
     public readonly ImmutableIconAppearance DefaultAppearance;
+    [Dependency] private readonly IServerNetManager _networkManager = default!;
 
     /// <summary>
     /// This system is used by the PVS thread, we need to be thread-safe
@@ -42,12 +45,12 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         if (e.NewStatus == SessionStatus.InGame) {
             //todo this is probably stupid slow
             lock (_lock) {
-                Dictionary<int, MutableIconAppearance> sendData = new(_idToAppearance.Count);
+                Dictionary<int, IBufferableAppearance> sendData = new(_idToAppearance.Count);
 
                 foreach(int key in _idToAppearance.Keys){
                     ImmutableIconAppearance? immutable;
                     if(_idToAppearance[key].TryGetTarget(out immutable))
-                        sendData.Add(key, immutable.ToMutable());
+                        sendData.Add(key, immutable);
                 }
 
                 e.Session.Channel.SendMessage(new MsgAllAppearances(sendData));
@@ -64,7 +67,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
             } else {
                 immutableAppearance.MarkRegistered();
                 _idToAppearance[immutableAppearance.GetHashCode()] = new(immutableAppearance);
-                RaiseNetworkEvent(new NewAppearanceEvent(immutableAppearance.GetHashCode(), immutableAppearance.ToMutable()));
+                _networkManager.ServerSendToAll(new MsgNewAppearance(immutableAppearance));
                 return immutableAppearance;
             }
         }

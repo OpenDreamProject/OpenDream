@@ -40,7 +40,7 @@
 	var/process
 	var/list/params = null
 
-	var/sleep_offline = 0 as opendream_unimplemented
+	var/sleep_offline = 0
 
 	var/system_type
 

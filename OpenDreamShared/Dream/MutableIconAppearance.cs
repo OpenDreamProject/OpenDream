@@ -24,6 +24,7 @@ namespace OpenDreamShared.Dream;
  */
 
 // TODO: Wow this is huge! Probably look into splitting this by most used/least used to reduce the size of these
+[Serializable]
 public sealed class MutableIconAppearance : IEquatable<MutableIconAppearance>, IBufferableAppearance {
     public static readonly MutableIconAppearance Default = new();
 

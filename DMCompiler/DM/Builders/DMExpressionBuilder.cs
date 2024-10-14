@@ -401,6 +401,15 @@ internal static class DMExpressionBuilder {
                         var global = new GlobalField(identifier.Location, globalVar.Type, globalId.Value, globalVar.ValType);
                         return global;
                     }
+
+                    var field = dmObject?.GetVariable(name);
+                    if (field != null) {
+                        if (field.IsConst)
+                            return new Field(identifier.Location, field, field.ValType);
+
+                        return BadExpression(WarningCode.BadExpression, identifier.Location,
+                            "Var \"{name}\" cannot be used in this context");
+                    }
                 }
 
                 throw new UnknownIdentifierException(identifier.Location, name);

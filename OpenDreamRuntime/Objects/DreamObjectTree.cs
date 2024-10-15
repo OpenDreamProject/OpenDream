@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -47,8 +48,8 @@ public sealed class DreamObjectTree {
     public TreeEntry Obj { get; private set; }
     public TreeEntry Mob { get; private set; }
 
-    private readonly Dictionary<string, TreeEntry> _pathToType = new();
-    private Dictionary<string, int> _globalProcIds;
+    private FrozenDictionary<string, TreeEntry> _pathToType = FrozenDictionary<string, TreeEntry>.Empty;
+    private FrozenDictionary<string, int> _globalProcIds = FrozenDictionary<string, int>.Empty;
 
     [Dependency] private readonly AtomManager _atomManager = default!;
     [Dependency] private readonly DreamManager _dreamManager = default!;
@@ -267,13 +268,16 @@ public sealed class DreamObjectTree {
 
         //First pass: Create types and set them up for initialization
         Types[0] = Root;
+        var pathToType = new Dictionary<string, TreeEntry>(types.Length);
         for (int i = 1; i < Types.Length; i++) {
             var path = types[i].Path;
             var type = new TreeEntry(path, i);
 
             Types[i] = type;
-            _pathToType[path] = type;
+            pathToType[path] = type;
         }
+
+        _pathToType = pathToType.ToFrozenDictionary();
 
         World = GetTreeEntry("/world");
         List = GetTreeEntry("/list");
@@ -426,13 +430,15 @@ public sealed class DreamObjectTree {
         }
 
         if (jsonGlobalProcs != null) {
-            _globalProcIds = new(jsonGlobalProcs.Length);
+            Dictionary<string, int> globalProcIds = new(jsonGlobalProcs.Length);
 
             foreach (var procId in jsonGlobalProcs) {
                 var proc = Procs[procId];
 
-                _globalProcIds.Add(proc.Name, procId);
+                globalProcIds.Add(proc.Name, procId);
             }
+
+            _globalProcIds = globalProcIds.ToFrozenDictionary();
         }
     }
 

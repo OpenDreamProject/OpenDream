@@ -1,17 +1,14 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Text;
+using System.Text.RegularExpressions;
 using OpenDreamRuntime.Procs;
 
 namespace OpenDreamRuntime.Objects.Types;
 
-public sealed class DreamObjectRegex : DreamObject {
+public sealed class DreamObjectRegex(DreamObjectDefinition objectDefinition) : DreamObject(objectDefinition) {
     public override bool ShouldCallNew => false;
 
     public Regex Regex;
     public bool IsGlobal;
-
-    public DreamObjectRegex(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
-
-    }
 
     public override void Initialize(DreamProcArguments args) {
         base.Initialize(args);
@@ -30,28 +27,47 @@ public sealed class DreamObjectRegex : DreamObject {
                 if (flagsString.Contains('g')) IsGlobal = true;
             }
 
-            for(var i = 0; i < patternString.Length; i++) {
-                if (patternString[i] != '\\')
-                    continue;
+            // BYOND has some escape codes C# doesn't understand, like \l and \L
+            // We need to replace those with ones it does understand
+            StringBuilder newPatternBuilder = new(patternString.Length);
+            bool insideBrackets = false;
+            for (var i = 0; i < patternString.Length; i++) {
+                char c = patternString[i];
 
-                ++i; // Move to the first char of the escape code
-                if (i >= patternString.Length)
-                    throw new Exception($"Invalid escape code at end of regex {pattern}");
+                switch (c) {
+                    case '\\':
+                        c = patternString[++i];
 
-                // BYOND recognizes some escape codes C# doesn't. We replace those with their equivalent here.
-                switch (patternString[i]) {
-                    case 'l': // Any letter A through Z, case-insensitive
-                        patternString = patternString.Remove(i - 1, 2).Insert(i - 1, "[A-Za-z]");
-                        i += 6;
-                        break;
-                    case 'L': // Any character except a letter or line break
-                        patternString = patternString.Remove(i - 1, 2).Insert(i - 1, "[^A-Za-z\\n]");
-                        i += 9;
-                        break;
+                        if (c == 'l') {
+                            if (!insideBrackets) // \l can be used inside [], so don't append more brackets if so
+                                newPatternBuilder.Append('[');
+                            newPatternBuilder.Append("A-Za-z");
+                            if (!insideBrackets)
+                                newPatternBuilder.Append(']');
+                        } else if (c == 'L') {
+                            if (insideBrackets) // TODO: Can this be used inside [] in BYOND?
+                                throw new Exception("Cannot use \\L inside a character group");
+
+                            newPatternBuilder.Append("[^A-Za-z\\n]");
+                        } else {
+                            newPatternBuilder.Append('\\');
+                            goto default;
+                        }
+
+                        continue;
+                    case '[':
+                        insideBrackets = true;
+                        goto default;
+                    case ']' when insideBrackets:
+                        insideBrackets = false;
+                        goto default;
+                    default:
+                        newPatternBuilder.Append(c);
+                        continue;
                 }
             }
 
-            Regex = new Regex(patternString, options);
+            Regex = new Regex(newPatternBuilder.ToString(), options);
         } else {
             throw new Exception("Invalid regex pattern " + pattern);
         }

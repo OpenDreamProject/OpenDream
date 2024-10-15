@@ -444,7 +444,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             }
 
             default: {
-                string[] argsRaw = fullCommand.Split(' ', 2, StringSplitOptions.TrimEntries);
+                string[] argsRaw = fullCommand!.Split(' ', 2, StringSplitOptions.TrimEntries);
                 string command = argsRaw[0].ToLowerInvariant(); // Case-insensitive
 
                 if (!_entitySystemManager.TryGetEntitySystem(out ClientVerbSystem? verbSystem))
@@ -891,21 +891,22 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     }
 
     private void LoadDescriptor(ElementDescriptor descriptor) {
+        // Note: Id has a getter to ensure Id.Value is never null
         switch (descriptor) {
             case MacroSetDescriptor macroSetDescriptor:
                 InterfaceMacroSet macroSet = new(macroSetDescriptor, _entitySystemManager, _inputManager, _uiManager);
 
-                MacroSets[macroSet.Id.Value] = macroSet;
+                MacroSets[macroSet.Id.Value!] = macroSet;
                 break;
             case MenuDescriptor menuDescriptor:
                 InterfaceMenu menu = new(menuDescriptor);
 
-                Menus.Add(menu.Id.Value, menu);
+                Menus.Add(menu.Id.Value!, menu);
                 break;
             case WindowDescriptor windowDescriptor:
                 ControlWindow window = new ControlWindow(windowDescriptor);
 
-                Windows.Add(windowDescriptor.Id.Value, window);
+                Windows.Add(windowDescriptor.Id.Value!, window);
                 if (window.IsDefault) {
                     DefaultWindow = window;
                 }

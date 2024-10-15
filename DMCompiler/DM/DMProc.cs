@@ -132,7 +132,7 @@ namespace DMCompiler.DM {
             DMCompiler.VerbosePrint($"Compiling proc {_dmObject?.Path.ToString() ?? "Unknown"}.{Name}()");
 
             if (_astDefinition is not null) { // It's null for initialization procs
-                new DMProcBuilder(_dmObject, this).ProcessProcDefinition(_astDefinition);
+                new DMProcBuilder(_dmObject!, this).ProcessProcDefinition(_astDefinition);
             }
         }
 
@@ -246,7 +246,7 @@ namespace DMCompiler.DM {
 
         public void AddParameter(string name, DMComplexValueType? valueType, DreamPath? type) {
             if (_parameters.ContainsKey(name)) {
-                DMCompiler.Emit(WarningCode.DuplicateVariable, _astDefinition.Location, $"Duplicate argument \"{name}\"");
+                DMCompiler.Emit(WarningCode.DuplicateVariable, _astDefinition?.Location ?? Location.Unknown, $"Duplicate argument \"{name}\"");
             } else {
                 Parameters.Add(name);
                 _parameters.Add(name, new LocalVariable(name, _parameters.Count, true, type, valueType));

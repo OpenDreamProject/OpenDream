@@ -94,10 +94,11 @@ internal static class Program {
                 case "skip-bad-args": break;
                 case "define":
                     var parts = arg.Value?.Split('=', 2); // Only split on the first = in case of stuff like "--define AAA=0==1"
-                    if (parts is { Length: 0 }) {
+                    if (parts is null || parts is { Length: 0 }) {
                         Console.WriteLine("Compiler arg 'define' requires macro identifier for definition directive");
                         return false;
                     }
+                    
                     settings.MacroDefines ??= new Dictionary<string, string>();
                     settings.MacroDefines[parts[0]] = parts.Length > 1 ? parts[1] : "";
                     break;

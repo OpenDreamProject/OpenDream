@@ -41,7 +41,7 @@ public sealed class DMASTProcDefinition : DMASTStatement {
         if (procElementIndex != -1) path = path.RemoveElement(procElementIndex);
 
         ObjectPath = (path.Elements.Length > 1) ? path.FromElements(0, -2) : DreamPath.Root;
-        Name = path.LastElement;
+        Name = path.LastElement ?? "<unknown>";
         Parameters = parameters;
         Body = body;
         ReturnTypes = returnType;
@@ -52,8 +52,7 @@ public sealed class DMASTObjectVarDefinition(
     Location location,
     DreamPath path,
     DMASTExpression value,
-    DMComplexValueType valType,
-    DreamPath? valPath = null) : DMASTStatement(location) {
+    DMComplexValueType valType) : DMASTStatement(location) {
     /// <summary>The path of the object that we are a property of.</summary>
     public DreamPath ObjectPath => _varDecl.ObjectPath;
 
@@ -88,7 +87,7 @@ public sealed class DMASTObjectVarOverride : DMASTStatement {
 
     public DMASTObjectVarOverride(Location location, DreamPath path, DMASTExpression value) : base(location) {
         ObjectPath = path.FromElements(0, -2);
-        VarName = path.LastElement;
+        VarName = path.LastElement ?? "<unknown>";
         Value = value;
     }
 }

@@ -20,6 +20,7 @@ public class Lexer<SourceType> {
         if (source == null)
             throw new FileNotFoundException("Source file could not be read: " + sourceName);
         _sourceEnumerator = Source.GetEnumerator();
+        _current = _sourceEnumerator.Current;
     }
 
     public Token GetNextToken() {

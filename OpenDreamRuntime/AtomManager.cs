@@ -481,7 +481,7 @@ public sealed class AtomManager {
             DreamObjectTurf turf => turf.Appearance,
             DreamObjectMovable movable => movable.SpriteComponent.Appearance!,
             DreamObjectArea area => area.Appearance,
-            DreamObjectImage image => image.IsMutableAppearance ? AppearanceSystem!.AddAppearance(image.MutableAppearance!) : image.SpriteComponent!.Appearance!,
+            DreamObjectImage image => image.IsMutableAppearance ? AppearanceSystem!.AddAppearance(image.MutableAppearance!, RegisterApearance: false) : image.SpriteComponent!.Appearance!,
             _ => throw new Exception($"Cannot get appearance of {atom}")
         };
     }

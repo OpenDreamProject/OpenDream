@@ -7,6 +7,7 @@ using OpenDreamShared.Network.Messages;
 using Robust.Shared.Player;
 using Robust.Server.GameObjects;
 using Robust.Shared.Network;
+using System.Diagnostics;
 
 namespace OpenDreamRuntime.Rendering;
 
@@ -28,6 +29,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     public ServerAppearanceSystem() {
         DefaultAppearance = new ImmutableIconAppearance(MutableIconAppearance.Default, this);
         DefaultAppearance.MarkRegistered();
+        Debug.Assert(DefaultAppearance.GetHashCode() == MutableIconAppearance.Default.GetHashCode());
     }
 
     public override void Initialize() {
@@ -59,15 +61,17 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         }
     }
 
-    public ImmutableIconAppearance AddAppearance(MutableIconAppearance appearance) {
+    public ImmutableIconAppearance AddAppearance(MutableIconAppearance appearance, bool RegisterApearance = true) {
         ImmutableIconAppearance immutableAppearance = new(appearance, this);
         lock (_lock) {
             if(_idToAppearance.TryGetValue(immutableAppearance.GetHashCode(), out var weakReference) && weakReference.TryGetTarget(out var originalImmutable)) {
                 return originalImmutable;
-            } else {
+            } else if (RegisterApearance) {
                 immutableAppearance.MarkRegistered();
                 _idToAppearance[immutableAppearance.GetHashCode()] = new(immutableAppearance);
                 _networkManager.ServerSendToAll(new MsgNewAppearance(immutableAppearance));
+                return immutableAppearance;
+            } else {
                 return immutableAppearance;
             }
         }

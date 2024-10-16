@@ -6,6 +6,7 @@ using Robust.Shared.Network;
 using OpenDreamShared.Dream;
 using Robust.Shared.Serialization;
 using System.Linq;
+using System.Diagnostics;
 
 namespace OpenDreamRuntime.Rendering;
 
@@ -278,6 +279,8 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
             result.Transform[i] = Transform[i];
         }
 
+        //THIS MUST MATCH, IT NOT MATCHING MEANS APPEARANCES ARE TOTALLY BROKEN
+        Debug.Assert(result.GetHashCode() == this.GetHashCode());
         return result;
     }
 

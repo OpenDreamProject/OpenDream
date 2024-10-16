@@ -208,6 +208,7 @@ public sealed class MutableIconAppearance : IEquatable<MutableIconAppearance>, I
         return maybeColor is not null;
     }
 
+    //it is *ESSENTIAL* that this matches the hashcode of the equivelant ImmutableIconAppearance. There's a debug assert and everything.
     public override int GetHashCode() {
         HashCode hashCode = new HashCode();
 

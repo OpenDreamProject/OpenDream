@@ -646,9 +646,6 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
 public sealed class DreamOverlaysList : DreamList {
     [Dependency] private readonly AtomManager _atomManager = default!;
     private readonly ServerAppearanceSystem? _appearanceSystem;
-
-    private List<ImmutableIconAppearance> hardRefs = new();
-
     private readonly DreamObject _owner;
     private readonly bool _isUnderlays;
 
@@ -688,7 +685,7 @@ public sealed class DreamOverlaysList : DreamList {
         if (!key.TryGetValueAsInteger(out var overlayIndex) || overlayIndex < 1)
             throw new Exception($"Invalid index into {(_isUnderlays ? "underlays" : "overlays")} list: {key}");
 
-        ImmutableIconAppearance appearance = GetAppearance();
+        ImmutableIconAppearance appearance = _atomManager.MustGetAppearance(_owner);
         var overlaysList = GetOverlaysArray(appearance);
         if (overlayIndex > overlaysList.Length)
             throw new Exception($"Atom only has {overlaysList.Length} {(_isUnderlays ? "underlay" : "overlay")}(s), cannot index {overlayIndex}");
@@ -708,11 +705,13 @@ public sealed class DreamOverlaysList : DreamList {
         if (_appearanceSystem == null)
             return;
 
+        MutableIconAppearance? overlayAppearance = CreateOverlayAppearance(_atomManager, value, _atomManager.MustGetAppearance(_owner).Icon);
+        overlayAppearance ??= new MutableIconAppearance();
+        ImmutableIconAppearance immutableOverlay = _appearanceSystem.AddAppearance(overlayAppearance);
+
+        //after UpdateApparance is done, the atom is set with a new immutable appearance containing a hard ref to the overlay
+        //only /mutable_appearance handles it differently, and that's done in DreamObjectImage
         _atomManager.UpdateAppearance(_owner, appearance => {
-            MutableIconAppearance? overlayAppearance = CreateOverlayAppearance(_atomManager, value, appearance.Icon);
-            overlayAppearance ??= new MutableIconAppearance();
-            ImmutableIconAppearance immutableOverlay = _appearanceSystem.AddAppearance(overlayAppearance);
-            hardRefs.Add(immutableOverlay);
             GetOverlaysList(appearance).Add(immutableOverlay.GetHashCode());
         });
     }
@@ -721,34 +720,26 @@ public sealed class DreamOverlaysList : DreamList {
         if (_appearanceSystem == null)
             return;
 
+        MutableIconAppearance? overlayAppearance = CreateOverlayAppearance(_atomManager, value, _atomManager.MustGetAppearance(_owner).Icon);
+        if (overlayAppearance == null)
+            return;
+
         _atomManager.UpdateAppearance(_owner, appearance => {
-            MutableIconAppearance? overlayAppearance = CreateOverlayAppearance(_atomManager, value, appearance.Icon);
-            if (overlayAppearance == null)
-                return;
-            ImmutableIconAppearance immutableOverlay = _appearanceSystem.AddAppearance(overlayAppearance);
-            hardRefs.Remove(immutableOverlay);
-            GetOverlaysList(appearance).Remove(immutableOverlay.GetHashCode());
+            GetOverlaysList(appearance).Remove(overlayAppearance.GetHashCode()); //because the hashcode for mutable == immutable, we can use it directly
         });
     }
 
     public override int GetLength() {
-        return GetOverlaysArray(GetAppearance()).Length;
+        return GetOverlaysArray(_atomManager.MustGetAppearance(_owner)).Length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private List<int> GetOverlaysList(MutableIconAppearance appearance) =>
         _isUnderlays ? appearance.Underlays : appearance.Overlays;
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private ImmutableIconAppearance[] GetOverlaysArray(ImmutableIconAppearance appearance) =>
         _isUnderlays ? appearance.Underlays : appearance.Overlays;
-
-    private ImmutableIconAppearance GetAppearance() {
-        var appearance = _atomManager.MustGetAppearance(_owner);
-        if (appearance == null)
-            throw new Exception("Atom has no appearance");
-
-        return appearance;
-    }
 
     public static MutableIconAppearance? CreateOverlayAppearance(AtomManager atomManager, DreamValue value, int? defaultIcon) {
         MutableIconAppearance overlay;

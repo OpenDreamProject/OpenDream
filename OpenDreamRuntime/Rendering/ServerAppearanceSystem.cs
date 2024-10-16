@@ -48,7 +48,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         if (e.NewStatus == SessionStatus.InGame) {
             //todo this is probably stupid slow
             lock (_lock) {
-                Dictionary<int, IBufferableAppearance> sendData = new(_idToAppearance.Count);
+                Dictionary<int, ImmutableIconAppearance> sendData = new(_idToAppearance.Count);
 
                 foreach(int key in _idToAppearance.Keys){
                     ImmutableIconAppearance? immutable;

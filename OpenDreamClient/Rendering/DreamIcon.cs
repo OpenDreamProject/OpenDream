@@ -121,13 +121,12 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
         }
 
         appearanceSystem.LoadAppearance(appearanceId.Value, appearance => {
+            var mutableAppearance = appearance.ToMutable();
             if (parentDir != null && appearance.InheritsDirection) {
-                appearance = new MutableIconAppearance(appearance) {
-                    Direction = parentDir.Value
-                };
+                mutableAppearance.Direction = parentDir.Value;
             }
 
-            Appearance = appearance;
+            Appearance = mutableAppearance;
         });
     }
 

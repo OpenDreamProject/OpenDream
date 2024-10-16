@@ -11,8 +11,8 @@ using OpenDreamShared.Network.Messages;
 namespace OpenDreamClient.Rendering;
 
 internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
-    private Dictionary<int, MutableIconAppearance> _appearances = new();
-    private readonly Dictionary<int, List<Action<MutableIconAppearance>>> _appearanceLoadCallbacks = new();
+    private Dictionary<int, ImmutableIconAppearance> _appearances = new();
+    private readonly Dictionary<int, List<Action<ImmutableIconAppearance>>> _appearanceLoadCallbacks = new();
     private readonly Dictionary<int, DreamIcon> _turfIcons = new();
     private readonly Dictionary<DreamFilter, ShaderInstance> _filterShaders = new();
 
@@ -35,14 +35,10 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         _turfIcons.Clear();
     }
 
-    public void SetAllAppearances(Dictionary<int, IBufferableAppearance> appearances) {
-        _appearances = new(appearances.Count);
-
-        foreach (KeyValuePair<int, IBufferableAppearance> pair in appearances) {
-            _appearances.Add(pair.Key, (MutableIconAppearance) pair.Value);
-        }
+    public void SetAllAppearances(Dictionary<int, ImmutableIconAppearance> appearances) {
+        _appearances = appearances;
         //need to do this because all overlays can't be resolved until the whole appearance table is populated
-        foreach(KeyValuePair<int, MutableIconAppearance> pair in _appearances) {
+        foreach(KeyValuePair<int, ImmutableIconAppearance> pair in _appearances) {
             pair.Value.ResolveOverlays(this);
             if(pair.Value.GetHashCode() != pair.Key)
                 Logger.GetSawmill("opendream.appearance").Error($"SetAllAppearances: Appearance ID and Hash DO NOT MATCH. THIS IS REALLY BAD. {pair.Value.GetHashCode()} != {pair.Key}");
@@ -52,7 +48,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         }
     }
 
-    public void LoadAppearance(int appearanceId, Action<MutableIconAppearance> loadCallback) {
+    public void LoadAppearance(int appearanceId, Action<ImmutableIconAppearance> loadCallback) {
         if (_appearances.TryGetValue(appearanceId, out var appearance)) {
             loadCallback(appearance);
             return;
@@ -77,13 +73,12 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     }
 
     public void OnNewAppearance(MsgNewAppearance e) {
-        _appearances[e.AppearanceId] = (MutableIconAppearance)e.Appearance;
-        _appearances[e.AppearanceId].ResolveOverlays(this);
-        if(_appearances[e.AppearanceId].GetHashCode() != e.AppearanceId)
-            throw new Exception($"Appearance ID and Hash DO NOT MATCH. THIS IS REALLY BAD. {_appearances[e.AppearanceId].GetHashCode()} != {e.AppearanceId}");
+        int appearanceId = e.Appearance.GetHashCode();
+        _appearances[appearanceId] = e.Appearance;
+        _appearances[appearanceId].ResolveOverlays(this);
 
-        if (_appearanceLoadCallbacks.TryGetValue(e.AppearanceId, out var callbacks)) {
-            foreach (var callback in callbacks) callback(_appearances[e.AppearanceId]);
+        if (_appearanceLoadCallbacks.TryGetValue(appearanceId, out var callbacks)) {
+            foreach (var callback in callbacks) callback(_appearances[appearanceId]);
         }
     }
 
@@ -91,7 +86,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         if(e.Entity == NetEntity.Invalid && e.TurfId is not null) { //it's a turf or area
             if(_turfIcons.TryGetValue(e.TurfId.Value, out var turfIcon))
                 LoadAppearance(e.TargetAppearanceId, targetAppearance => {
-                    turfIcon.StartAppearanceAnimation(targetAppearance, e.Duration, e.Easing, e.Loop, e.Flags, e.Delay, e.ChainAnim);
+                    turfIcon.StartAppearanceAnimation(targetAppearance.ToMutable(), e.Duration, e.Easing, e.Loop, e.Flags, e.Delay, e.ChainAnim);
                 });
         } else { //image or movable
             EntityUid ent = _entityManager.GetEntity(e.Entity);
@@ -99,7 +94,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
                 return;
 
             LoadAppearance(e.TargetAppearanceId, targetAppearance => {
-                sprite.Icon.StartAppearanceAnimation(targetAppearance, e.Duration, e.Easing, e.Loop, e.Flags, e.Delay, e.ChainAnim);
+                sprite.Icon.StartAppearanceAnimation(targetAppearance.ToMutable(), e.Duration, e.Easing, e.Loop, e.Flags, e.Delay, e.ChainAnim);
             });
         }
     }
@@ -218,7 +213,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     }
 
     public override ImmutableIconAppearance MustGetAppearanceById(int appearanceId) {
-        return new(_appearances[appearanceId], this);
+        return _appearances[appearanceId];
     }
 
     public override void RemoveAppearance(ImmutableIconAppearance appearance) {

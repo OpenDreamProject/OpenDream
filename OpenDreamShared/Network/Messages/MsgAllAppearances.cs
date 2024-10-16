@@ -9,9 +9,9 @@ using Robust.Shared.Serialization;
 
 namespace OpenDreamShared.Network.Messages;
 
-public sealed class MsgAllAppearances(Dictionary<int, IBufferableAppearance> allAppearances) : NetMessage {
+public sealed class MsgAllAppearances(Dictionary<int, ImmutableIconAppearance> allAppearances) : NetMessage {
     public override MsgGroups MsgGroup => MsgGroups.EntityEvent;
-    public Dictionary<int, IBufferableAppearance> AllAppearances = allAppearances;
+    public Dictionary<int, ImmutableIconAppearance> AllAppearances = allAppearances;
     public MsgAllAppearances() : this(new()) { }
 
     public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {
@@ -19,9 +19,8 @@ public sealed class MsgAllAppearances(Dictionary<int, IBufferableAppearance> all
         AllAppearances = new(count);
 
         for (int i = 0; i < count; i++) {
-            var appearance = new MutableIconAppearance();
-            var appearanceId = appearance.ReadFromBuffer(buffer, serializer);
-            AllAppearances.Add(appearanceId, appearance);
+            var appearance = new ImmutableIconAppearance(buffer, serializer);
+            AllAppearances.Add(appearance.GetHashCode(), appearance);
         }
     }
 

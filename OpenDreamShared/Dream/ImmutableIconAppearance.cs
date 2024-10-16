@@ -1,14 +1,15 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
+﻿using System.Diagnostics.Contracts;
 using System.IO;
 using Lidgren.Network;
 using Robust.Shared.Network;
-using OpenDreamShared.Dream;
 using Robust.Shared.Serialization;
 using System.Linq;
-using System.Diagnostics;
+using Robust.Shared.ViewVariables;
+using Robust.Shared.Maths;
+using System;
+using OpenDreamShared.Rendering;
 
-namespace OpenDreamRuntime.Rendering;
+namespace OpenDreamShared.Dream;
 
 /*
  * Woe, weary traveler, modifying this class is not for the faint of heart.
@@ -20,7 +21,7 @@ namespace OpenDreamRuntime.Rendering;
  */
 
 // TODO: Wow this is huge! Probably look into splitting this by most used/least used to reduce the size of these
-
+[Serializable]
 public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance>, IBufferableAppearance {
     private bool registered = false;
     [ViewVariables] public readonly string Name;
@@ -45,7 +46,7 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
     [ViewVariables] public readonly MouseOpacity MouseOpacity;
     [ViewVariables] public readonly ImmutableIconAppearance[] Overlays;
     [ViewVariables] public readonly ImmutableIconAppearance[] Underlays;
-    [ViewVariables] public readonly NetEntity[] VisContents;
+    [ViewVariables] public readonly Robust.Shared.GameObjects.NetEntity[] VisContents;
     [ViewVariables] public readonly DreamFilter[] Filters;
     [ViewVariables] public readonly int[] Verbs;
 
@@ -73,13 +74,13 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
     public Vector2i TotalPixelOffset => PixelOffset + PixelOffset2;
 
     private int? _storedHashCode;
-    private readonly ServerAppearanceSystem appearanceSystem;
+    private readonly SharedAppearanceSystem appearanceSystem;
 
     public void MarkRegistered(){
         registered = true;
     }
 
-    public ImmutableIconAppearance(MutableIconAppearance appearance, ServerAppearanceSystem serverAppearanceSystem) {
+    public ImmutableIconAppearance(MutableIconAppearance appearance, SharedAppearanceSystem serverAppearanceSystem) {
         appearanceSystem = serverAppearanceSystem;
 
         Name = appearance.Name;
@@ -103,22 +104,15 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
         Opacity = appearance.Opacity;
         MouseOpacity = appearance.MouseOpacity;
 
-        int i = 0;
-        Overlays = new ImmutableIconAppearance[appearance.Overlays.Count];
-        foreach(int overlayId in appearance.Overlays)
-            Overlays[i++] = serverAppearanceSystem.MustGetAppearanceById(overlayId);
-
-        i = 0;
-        Underlays = new ImmutableIconAppearance[appearance.Underlays.Count];
-        foreach(int underlayId in appearance.Underlays)
-            Underlays[i++] = serverAppearanceSystem.MustGetAppearanceById(underlayId);
+        Overlays = appearance.Overlays.ToArray();
+        Underlays = appearance.Underlays.ToArray();
 
         VisContents = appearance.VisContents.ToArray();
         Filters = appearance.Filters.ToArray();
         Verbs = appearance.Verbs.ToArray();
         Override = appearance.Override;
 
-        for (i = 0; i < 6; i++) {
+        for (int i = 0; i < 6; i++) {
             Transform[i] = appearance.Transform[i];
         }
     }
@@ -210,11 +204,11 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
         hashCode.Add(AppearanceFlags);
 
         foreach (ImmutableIconAppearance overlay in Overlays) {
-            hashCode.Add(overlay);
+            hashCode.Add(overlay.GetHashCode());
         }
 
         foreach (ImmutableIconAppearance underlay in Underlays) {
-            hashCode.Add(underlay);
+            hashCode.Add(underlay.GetHashCode());
         }
 
         foreach (int visContent in VisContents) {
@@ -270,17 +264,17 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
         };
 
         foreach(ImmutableIconAppearance overlay in Overlays)
-            result.Overlays.Add(overlay.GetHashCode());
+            result.Overlays.Add(overlay);
 
         foreach(ImmutableIconAppearance underlay in Underlays)
-            result.Underlays.Add(underlay.GetHashCode());
+            result.Underlays.Add(underlay);
 
         for (int i = 0; i < 6; i++) {
             result.Transform[i] = Transform[i];
         }
 
         //THIS MUST MATCH, IT NOT MATCHING MEANS APPEARANCES ARE TOTALLY BROKEN
-        Debug.Assert(result.GetHashCode() == this.GetHashCode());
+        Robust.Shared.Utility.DebugTools.Assert(result.GetHashCode() == this.GetHashCode());
         return result;
     }
 

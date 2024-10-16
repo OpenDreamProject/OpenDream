@@ -9,7 +9,7 @@ public sealed partial class DMISpriteComponent : SharedDMISpriteComponent {
     [Access(typeof(DMISpriteSystem))]
     public ScreenLocation ScreenLocation;
 
-    [Access(typeof(DMISpriteSystem))]
+    //[Access(typeof(DMISpriteSystem))]
     [ViewVariables] public ImmutableIconAppearance? Appearance;
 }
 

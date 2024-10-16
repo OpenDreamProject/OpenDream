@@ -475,16 +475,16 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
         }
 
         Overlays.Clear();
-        foreach (int overlayId in Appearance.Overlays) {
-            DreamIcon overlay = new DreamIcon(renderTargetPool, gameTiming, clyde, appearanceSystem, overlayId, Appearance.Direction);
+        foreach (var overlayAppearance in Appearance.Overlays) {
+            DreamIcon overlay = new DreamIcon(renderTargetPool, gameTiming, clyde, appearanceSystem, overlayAppearance.GetHashCode(), Appearance.Direction);
             overlay.SizeChanged += CheckSizeChange;
 
             Overlays.Add(overlay);
         }
 
         Underlays.Clear();
-        foreach (int underlayId in Appearance.Underlays) {
-            DreamIcon underlay = new DreamIcon(renderTargetPool, gameTiming, clyde, appearanceSystem, underlayId, Appearance.Direction);
+        foreach (var underlayAppearance in Appearance.Underlays) {
+            DreamIcon underlay = new DreamIcon(renderTargetPool, gameTiming, clyde, appearanceSystem, underlayAppearance.GetHashCode(), Appearance.Direction);
             underlay.SizeChanged += CheckSizeChange;
 
             Underlays.Add(underlay);

@@ -4,10 +4,13 @@ using Robust.Shared.ViewVariables;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using Robust.Shared.GameObjects;
 using Lidgren.Network;
 using Robust.Shared.Network;
 using System.IO;
+using Robust.Shared.IoC;
+using OpenDreamShared.Rendering;
+using Robust.Shared.Enums;
+using Robust.Shared.Utility;
 
 namespace OpenDreamShared.Dream;
 
@@ -48,9 +51,15 @@ public sealed class MutableIconAppearance : IEquatable<MutableIconAppearance>, I
     [ViewVariables] public string? RenderSource;
     [ViewVariables] public string? RenderTarget;
     [ViewVariables] public MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;
-    [ViewVariables] public List<int> Overlays;
-    [ViewVariables] public List<int> Underlays;
-    [ViewVariables] public List<NetEntity> VisContents;
+    [ViewVariables] public List<ImmutableIconAppearance> Overlays;
+    [ViewVariables] public List<ImmutableIconAppearance> Underlays;
+
+    [NonSerialized]
+    private List<int>? _overlayIDs;
+    [NonSerialized]
+    private List<int>? _underlayIDs;
+
+    [ViewVariables] public List<Robust.Shared.GameObjects.NetEntity> VisContents;
     [ViewVariables] public List<DreamFilter> Filters;
     [ViewVariables] public List<int> Verbs;
 
@@ -116,6 +125,18 @@ public sealed class MutableIconAppearance : IEquatable<MutableIconAppearance>, I
         for (int i = 0; i < 6; i++) {
             Transform[i] = appearance.Transform[i];
         }
+    }
+
+    //this should only be called client-side, after network transfer
+    public void ResolveOverlays(SharedAppearanceSystem appearanceSystem) {
+        if(_overlayIDs is not null)
+            foreach(int overlayID in _overlayIDs)
+                Overlays.Add(appearanceSystem.MustGetAppearanceById(overlayID));
+        if(_underlayIDs is not null)
+            foreach(int underlayID in _underlayIDs)
+                Underlays.Add(appearanceSystem.MustGetAppearanceById(underlayID));
+            _overlayIDs = null;
+            _underlayIDs = null;
     }
 
     public override bool Equals(object? obj) => obj is MutableIconAppearance appearance && Equals(appearance);
@@ -233,12 +254,23 @@ public sealed class MutableIconAppearance : IEquatable<MutableIconAppearance>, I
         hashCode.Add(BlendMode);
         hashCode.Add(AppearanceFlags);
 
-        foreach (int overlay in Overlays) {
-            hashCode.Add(overlay);
+
+        if(_overlayIDs is not null) {
+            foreach(var overlayid in _overlayIDs)
+                hashCode.Add(overlayid);
+        } else {
+            foreach (var overlay in Overlays) {
+                hashCode.Add(overlay.GetHashCode());
+            }
         }
 
-        foreach (int underlay in Underlays) {
-            hashCode.Add(underlay);
+        if(_underlayIDs is not null) {
+            foreach(var underlayid in _underlayIDs)
+                hashCode.Add(underlayid);
+        } else {
+            foreach (var underlay in Underlays) {
+                hashCode.Add(underlay.GetHashCode());
+            }
         }
 
         foreach (int visContent in VisContents) {
@@ -290,6 +322,7 @@ public sealed class MutableIconAppearance : IEquatable<MutableIconAppearance>, I
 
     public int ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {
         int? appearanceId = null;
+
         var property = (IconAppearanceProperty)buffer.ReadByte();
         while (property != IconAppearanceProperty.End) {
             switch (property) {
@@ -370,8 +403,9 @@ public sealed class MutableIconAppearance : IEquatable<MutableIconAppearance>, I
                     var overlaysCount = buffer.ReadVariableInt32();
 
                     Overlays.EnsureCapacity(overlaysCount);
+                    _overlayIDs = new(overlaysCount);
                     for (int overlaysI = 0; overlaysI < overlaysCount; overlaysI++) {
-                        Overlays.Add(buffer.ReadVariableInt32());
+                        _overlayIDs.Add(buffer.ReadVariableInt32());
                     }
 
                     break;
@@ -380,8 +414,9 @@ public sealed class MutableIconAppearance : IEquatable<MutableIconAppearance>, I
                     var underlaysCount = buffer.ReadVariableInt32();
 
                     Underlays.EnsureCapacity(underlaysCount);
+                    _underlayIDs = new(underlaysCount);
                     for (int underlaysI = 0; underlaysI < underlaysCount; underlaysI++) {
-                        Underlays.Add(buffer.ReadVariableInt32());
+                        _underlayIDs.Add(buffer.ReadVariableInt32());
                     }
 
                     break;
@@ -436,6 +471,9 @@ public sealed class MutableIconAppearance : IEquatable<MutableIconAppearance>, I
 
             property = (IconAppearanceProperty)buffer.ReadByte();
         }
+
+        //if this fails it means there's something wrong with reading/writing appearances across the network and it will break everything
+        DebugTools.Assert(appearanceId == this.GetHashCode());
         if(appearanceId is not null)
             return appearanceId.Value;
         else

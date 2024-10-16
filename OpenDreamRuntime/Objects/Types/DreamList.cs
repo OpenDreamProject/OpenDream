@@ -674,7 +674,7 @@ public sealed class DreamOverlaysList : DreamList {
 
     public override void Cut(int start = 1, int end = 0) {
         _atomManager.UpdateAppearance(_owner, appearance => {
-            List<int> overlaysList = GetOverlaysList(appearance);
+            var overlaysList = GetOverlaysList(appearance);
             int count = overlaysList.Count + 1;
             if (end == 0 || end > count) end = count;
             overlaysList.RemoveRange(start - 1, end - start);
@@ -712,7 +712,7 @@ public sealed class DreamOverlaysList : DreamList {
         //after UpdateApparance is done, the atom is set with a new immutable appearance containing a hard ref to the overlay
         //only /mutable_appearance handles it differently, and that's done in DreamObjectImage
         _atomManager.UpdateAppearance(_owner, appearance => {
-            GetOverlaysList(appearance).Add(immutableOverlay.GetHashCode());
+            GetOverlaysList(appearance).Add(immutableOverlay);
         });
     }
 
@@ -725,7 +725,7 @@ public sealed class DreamOverlaysList : DreamList {
             return;
 
         _atomManager.UpdateAppearance(_owner, appearance => {
-            GetOverlaysList(appearance).Remove(overlayAppearance.GetHashCode()); //because the hashcode for mutable == immutable, we can use it directly
+            GetOverlaysList(appearance).Remove(_appearanceSystem.MustGetAppearanceById(overlayAppearance.GetHashCode())); //because the hashcode for mutable == immutable, we can use it directly
         });
     }
 
@@ -734,7 +734,7 @@ public sealed class DreamOverlaysList : DreamList {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private List<int> GetOverlaysList(MutableIconAppearance appearance) =>
+    private List<ImmutableIconAppearance> GetOverlaysList(MutableIconAppearance appearance) =>
         _isUnderlays ? appearance.Underlays : appearance.Overlays;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

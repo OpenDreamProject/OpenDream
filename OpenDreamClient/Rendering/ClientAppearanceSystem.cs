@@ -39,10 +39,15 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         _appearances = new(appearances.Count);
 
         foreach (KeyValuePair<int, IBufferableAppearance> pair in appearances) {
-            MutableIconAppearance cast = (MutableIconAppearance) pair.Value;
-            _appearances.Add(pair.Key, cast);
+            _appearances.Add(pair.Key, (MutableIconAppearance) pair.Value);
+        }
+        //need to do this because all overlays can't be resolved until the whole appearance table is populated
+        foreach(KeyValuePair<int, MutableIconAppearance> pair in _appearances) {
+            pair.Value.ResolveOverlays(this);
+            if(pair.Value.GetHashCode() != pair.Key)
+                Logger.GetSawmill("opendream.appearance").Error($"SetAllAppearances: Appearance ID and Hash DO NOT MATCH. THIS IS REALLY BAD. {pair.Value.GetHashCode()} != {pair.Key}");
             if (_appearanceLoadCallbacks.TryGetValue(pair.Key, out var callbacks)) {
-                foreach (var callback in callbacks) callback(cast);
+                foreach (var callback in callbacks) callback(pair.Value);
             }
         }
     }
@@ -73,6 +78,9 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
 
     public void OnNewAppearance(MsgNewAppearance e) {
         _appearances[e.AppearanceId] = (MutableIconAppearance)e.Appearance;
+        _appearances[e.AppearanceId].ResolveOverlays(this);
+        if(_appearances[e.AppearanceId].GetHashCode() != e.AppearanceId)
+            throw new Exception($"Appearance ID and Hash DO NOT MATCH. THIS IS REALLY BAD. {_appearances[e.AppearanceId].GetHashCode()} != {e.AppearanceId}");
 
         if (_appearanceLoadCallbacks.TryGetValue(e.AppearanceId, out var callbacks)) {
             foreach (var callback in callbacks) callback(_appearances[e.AppearanceId]);
@@ -207,5 +215,13 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         filter.Used = true;
         _filterShaders[filter] = instance;
         return instance;
+    }
+
+    public override ImmutableIconAppearance MustGetAppearanceById(int appearanceId) {
+        return new(_appearances[appearanceId], this);
+    }
+
+    public override void RemoveAppearance(ImmutableIconAppearance appearance) {
+        throw new NotImplementedException();
     }
 }

@@ -1,4 +1,5 @@
 ﻿using OpenDreamRuntime.Rendering;
+using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.Types;
 

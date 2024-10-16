@@ -192,10 +192,10 @@ public sealed class DreamMapManager : IDreamMapManager {
 
     public void SetTurfAppearance(DreamObjectTurf turf, MutableIconAppearance appearance) {
         if(turf.Cell.Area.Appearance != _appearanceSystem.DefaultAppearance)
-            if(!appearance.Overlays.Contains(turf.Cell.Area.Appearance.GetHashCode())) {
+            if(!appearance.Overlays.Contains(turf.Cell.Area.Appearance)) {
                 if(!_turfAreaLookup.TryGetValue((appearance, turf.Cell.Area.Appearance.GetHashCode()), out var newAppearance)) {
                     newAppearance = new(appearance);
-                    newAppearance.Overlays.Add(turf.Cell.Area.Appearance.GetHashCode());
+                    newAppearance.Overlays.Add(turf.Cell.Area.Appearance);
                     _turfAreaLookup.Add((appearance, turf.Cell.Area.Appearance.GetHashCode()), newAppearance);
                 }
 
@@ -213,7 +213,7 @@ public sealed class DreamMapManager : IDreamMapManager {
     public void SetAreaAppearance(DreamObjectArea area, MutableIconAppearance appearance) {
         //if an area changes appearance, invalidate the lookup
         _turfAreaLookup.Clear();
-        int oldAppearanceId = area.Appearance.GetHashCode();
+        var oldAppearance = area.Appearance;
         area.Appearance  = _appearanceSystem.AddAppearance(appearance);
 
         //get all unique turf appearances
@@ -227,8 +227,8 @@ public sealed class DreamMapManager : IDreamMapManager {
             else {
                 MutableIconAppearance turfAppearance = _atomManager.MustGetAppearance(turf).ToMutable();
 
-                turfAppearance.Overlays.Remove(oldAppearanceId);
-                turfAppearance.Overlays.Add(area.Appearance.GetHashCode());
+                turfAppearance.Overlays.Remove(oldAppearance);
+                turfAppearance.Overlays.Add(area.Appearance);
                 newAppearance = _appearanceSystem.AddAppearance(turfAppearance);
                 oldToNewAppearance.Add(turf.Appearance, newAppearance);
                 turf.Appearance = newAppearance;

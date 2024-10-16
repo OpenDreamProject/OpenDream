@@ -6,6 +6,10 @@ using System;
 namespace OpenDreamShared.Rendering;
 
 public abstract class SharedAppearanceSystem : EntitySystem {
+
+    public abstract ImmutableIconAppearance MustGetAppearanceById(int appearanceId);
+    public abstract void RemoveAppearance(ImmutableIconAppearance appearance);
+
     [Serializable, NetSerializable]
     public sealed class NewAppearanceEvent(int appearanceId, MutableIconAppearance appearance) : EntityEventArgs {
         public int AppearanceId { get; } = appearanceId;

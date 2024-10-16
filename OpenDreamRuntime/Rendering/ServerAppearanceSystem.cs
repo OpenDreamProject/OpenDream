@@ -8,6 +8,7 @@ using Robust.Shared.Player;
 using Robust.Server.GameObjects;
 using Robust.Shared.Network;
 using System.Diagnostics;
+using Robust.Shared.Utility;
 
 namespace OpenDreamRuntime.Rendering;
 
@@ -63,6 +64,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
 
     public ImmutableIconAppearance AddAppearance(MutableIconAppearance appearance, bool RegisterApearance = true) {
         ImmutableIconAppearance immutableAppearance = new(appearance, this);
+        DebugTools.Assert(appearance.GetHashCode() == immutableAppearance.GetHashCode());
         lock (_lock) {
             if(_idToAppearance.TryGetValue(immutableAppearance.GetHashCode(), out var weakReference) && weakReference.TryGetTarget(out var originalImmutable)) {
                 return originalImmutable;
@@ -78,7 +80,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     }
 
     //this should only be called by the ImmutableIconAppearance's finalizer
-    public void RemoveAppearance(ImmutableIconAppearance appearance) {
+    public override void RemoveAppearance(ImmutableIconAppearance appearance) {
         lock (_lock) {
             if(_idToAppearance.TryGetValue(appearance.GetHashCode(), out var weakRef)) {
                 //it is possible that a new appearance was created with the same hash before the GC got around to cleaning up the old one
@@ -89,7 +91,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
 }           }
     }
 
-    public ImmutableIconAppearance MustGetAppearanceById(int appearanceId) {
+    public override ImmutableIconAppearance MustGetAppearanceById(int appearanceId) {
         lock (_lock) {
             if(!_idToAppearance[appearanceId].TryGetTarget(out var result))
                 throw new Exception($"Attempted to access deleted appearance ID ${appearanceId} in MustGetAppearanceByID()");

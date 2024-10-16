@@ -274,6 +274,54 @@
 		client.show_popup_menus = !client.show_popup_menus
 		src << "Popups are now [client.show_popup_menus ? "enabled" : "disabled"]"
 
+	// input() test		
+	verb/text_test()
+		set category = "Input Test"
+		src << input("Input test: text") as text|null
+	
+	// todo: implement
+	// verb/password_test()
+	// 	set category = "Input Test"
+	// 	src << input("Input test: password") as password|null
+		
+	verb/multiline_test()
+		set category = "Input Test"
+		src << input("Input test: message") as message|null
+		
+	verb/command_test()
+		set category = "Input Test"
+		src << input("Input test: command_text") as command_text|null
+		
+	verb/num_test()
+		set category = "Input Test"
+		src << input("Input test: num") as num|null
+		
+	verb/icon_test()
+		set category = "Input Test"
+		src << input("Input test: icon") as icon|null
+		
+	verb/sound_test()
+		set category = "Input Test"
+		src << input("Input test: sound") as sound|null
+		
+	verb/file_test()
+		set category = "Input Test"
+		src << input("Input test: file") as file|null
+		
+	// todo: implement
+	// verb/key_test()
+	// 	set category = "Input Test"
+	// 	src << input("Input test: key") as key|null
+		
+	verb/color_test()
+		set category = "Input Test"
+		src << input("Input test: color") as color|null
+		
+	verb/list_test()
+		set category = "Input Test"
+		src << input("Input test: list") as null|anything in list("option 1", "option 2", "option 3", "option 4", "option 5")
+		
+
 /mob/Stat()
 	if (statpanel("Status"))
 		stat("tick_usage", world.tick_usage)

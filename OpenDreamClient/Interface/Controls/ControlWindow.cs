@@ -333,15 +333,16 @@ public sealed class ControlWindow : InterfaceControl {
     }
 
     public override void SetProperty(string property, string value, bool manualWinset = false) {
-        if (_myWindow.osWindow is {ClydeWindow: not null}) {
-            switch (property) {
-                case "size":
+        switch (property) {
+            case "size":
+                if (_myWindow.osWindow is {ClydeWindow: not null}) {
                     _myWindow.osWindow.ClydeWindow.Size = new DMFPropertySize(value).Vector;
-                    return;
-                case "pos":
-                    // TODO: RT offers no ability to position windows
-                    return;
-            }
+                }
+
+                return;
+            case "pos":
+                // TODO: RT offers no ability to position windows
+                return;
         }
 
         base.SetProperty(property, value, manualWinset);

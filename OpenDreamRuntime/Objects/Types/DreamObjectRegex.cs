@@ -45,10 +45,18 @@ public sealed class DreamObjectRegex(DreamObjectDefinition objectDefinition) : D
                             if (!insideBrackets)
                                 newPatternBuilder.Append(']');
                         } else if (c == 'L') {
-                            if (insideBrackets) // TODO: Can this be used inside [] in BYOND?
-                                throw new Exception("Cannot use \\L inside a character group");
+                            if (insideBrackets) {
+                                var bracketIndex = patternString.LastIndexOf('[', i);
+                                var caret = patternString[bracketIndex + 1];
+                                if(caret != '^')
+                                    throw new NotImplementedException("OpenDream can't currently handle '\\L' inside of regex brackets unless it already contains '^'");
+                            } else {
+                                newPatternBuilder.Append('[');
+                            }
 
-                            newPatternBuilder.Append("[^A-Za-z\\n]");
+                            newPatternBuilder.Append("A-Za-z\\n");
+                            if (!insideBrackets)
+                                newPatternBuilder.Append(']');
                         } else {
                             newPatternBuilder.Append('\\');
                             goto default;

@@ -1,10 +1,13 @@
-﻿namespace OpenDreamRuntime.Objects.Types;
+﻿using OpenDreamRuntime.Rendering;
+using OpenDreamShared.Dream;
+
+namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectTurf : DreamObjectAtom {
     public readonly int X, Y, Z;
     public readonly IDreamMapManager.Cell Cell;
     public readonly TurfContentsList Contents;
-    public int AppearanceId;
+    public ImmutableIconAppearance Appearance;
 
     public DreamObjectTurf(DreamObjectDefinition objectDefinition, int x, int y, int z, IDreamMapManager.Cell cell) : base(objectDefinition) {
         X = x;
@@ -12,6 +15,7 @@ public sealed class DreamObjectTurf : DreamObjectAtom {
         Z = z;
         Cell = cell;
         Contents = new TurfContentsList(ObjectTree.List.ObjectDefinition, Cell);
+        AtomManager.SetAtomAppearance(this, AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
     }
 
     public void SetTurfType(DreamObjectDefinition objectDefinition) {

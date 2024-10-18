@@ -4,24 +4,32 @@ using Robust.Shared.ViewVariables;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using Robust.Shared.GameObjects;
+using Lidgren.Network;
+using Robust.Shared.Network;
+using System.IO;
+using Robust.Shared.IoC;
+using OpenDreamShared.Rendering;
+using Robust.Shared.Enums;
+using Robust.Shared.Utility;
 
 namespace OpenDreamShared.Dream;
 
 /*
  * Woe, weary traveler, modifying this class is not for the faint of heart.
- * If you modify IconAppearance, be sure to update the following places:
- * - All of the methods on IconAppearance itself
+ * If you modify MutableIconAppearance, be sure to update the following places:
+ * - All of the methods on MutableIconAppearance itself
+ * - ImmutableIconAppearance
  * - IconAppearance methods in AtomManager
  * - MsgAllAppearances
  * - IconDebugWindow
+ * - IconAppearanceProperty enum
  * - There may be others
  */
 
 // TODO: Wow this is huge! Probably look into splitting this by most used/least used to reduce the size of these
-[Serializable, NetSerializable]
-public sealed class IconAppearance : IEquatable<IconAppearance> {
-    public static readonly IconAppearance Default = new();
+[Serializable]
+public sealed class MutableIconAppearance : IEquatable<MutableIconAppearance>{
+    public static readonly MutableIconAppearance Default = new();
 
     [ViewVariables] public string Name = string.Empty;
     [ViewVariables] public int? Icon;
@@ -43,9 +51,9 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
     [ViewVariables] public string? RenderSource;
     [ViewVariables] public string? RenderTarget;
     [ViewVariables] public MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;
-    [ViewVariables] public List<int> Overlays;
-    [ViewVariables] public List<int> Underlays;
-    [ViewVariables] public List<NetEntity> VisContents;
+    [ViewVariables] public List<ImmutableIconAppearance> Overlays;
+    [ViewVariables] public List<ImmutableIconAppearance> Underlays;
+    [ViewVariables] public List<Robust.Shared.GameObjects.NetEntity> VisContents;
     [ViewVariables] public List<DreamFilter> Filters;
     [ViewVariables] public List<int> Verbs;
 
@@ -72,7 +80,7 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
     // PixelOffset2 behaves the same as PixelOffset in top-down mode, so this is used
     public Vector2i TotalPixelOffset => PixelOffset + PixelOffset2;
 
-    public IconAppearance() {
+    public MutableIconAppearance() {
         Overlays = new();
         Underlays = new();
         VisContents = new();
@@ -80,7 +88,7 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
         Verbs = new();
     }
 
-    public IconAppearance(IconAppearance appearance) {
+    public MutableIconAppearance(MutableIconAppearance appearance) {
         Name = appearance.Name;
         Icon = appearance.Icon;
         IconState = appearance.IconState;
@@ -112,10 +120,9 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
             Transform[i] = appearance.Transform[i];
         }
     }
+    public override bool Equals(object? obj) => obj is MutableIconAppearance appearance && Equals(appearance);
 
-    public override bool Equals(object? obj) => obj is IconAppearance appearance && Equals(appearance);
-
-    public bool Equals(IconAppearance? appearance) {
+    public bool Equals(MutableIconAppearance? appearance) {
         if (appearance == null) return false;
 
         if (appearance.Name != Name) return false;
@@ -203,6 +210,7 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
         return maybeColor is not null;
     }
 
+    //it is *ESSENTIAL* that this matches the hashcode of the equivelant ImmutableIconAppearance. There's a debug assert and everything.
     public override int GetHashCode() {
         HashCode hashCode = new HashCode();
 
@@ -227,12 +235,13 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
         hashCode.Add(BlendMode);
         hashCode.Add(AppearanceFlags);
 
-        foreach (int overlay in Overlays) {
-            hashCode.Add(overlay);
+        foreach (var overlay in Overlays) {
+            hashCode.Add(overlay.GetHashCode());
         }
 
-        foreach (int underlay in Underlays) {
-            hashCode.Add(underlay);
+
+        foreach (var underlay in Underlays) {
+            hashCode.Add(underlay.GetHashCode());
         }
 
         foreach (int visContent in VisContents) {
@@ -333,3 +342,37 @@ public enum AnimationFlags {
     AnimationRelative = 256,
     AnimationContinue = 512
 }
+
+//used for encoding for netmessages
+public enum IconAppearanceProperty : byte {
+        Name,
+        Icon,
+        IconState,
+        Direction,
+        DoesntInheritDirection,
+        PixelOffset,
+        PixelOffset2,
+        Color,
+        Alpha,
+        GlideSize,
+        ColorMatrix,
+        Layer,
+        Plane,
+        BlendMode,
+        AppearanceFlags,
+        Invisibility,
+        Opacity,
+        Override,
+        RenderSource,
+        RenderTarget,
+        MouseOpacity,
+        Overlays,
+        Underlays,
+        VisContents,
+        Filters,
+        Verbs,
+        Transform,
+
+        Id,
+        End
+    }

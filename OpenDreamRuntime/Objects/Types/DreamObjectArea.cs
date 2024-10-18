@@ -1,4 +1,7 @@
-﻿namespace OpenDreamRuntime.Objects.Types;
+﻿using OpenDreamRuntime.Rendering;
+using OpenDreamShared.Dream;
+
+namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectArea : DreamObjectAtom {
     public int X {
@@ -23,13 +26,14 @@ public sealed class DreamObjectArea : DreamObjectAtom {
     }
 
     public readonly AreaContentsList Contents;
-    public int AppearanceId;
+    public ImmutableIconAppearance Appearance;
 
     // Iterating all our turfs to find the one with the lowest coordinates is slow business
     private int? _cachedX, _cachedY, _cachedZ;
 
     public DreamObjectArea(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
         Contents = new(ObjectTree.List.ObjectDefinition, this);
+        Appearance = AppearanceSystem!.DefaultAppearance;
         AtomManager.SetAtomAppearance(this, AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
     }
 

@@ -7,6 +7,12 @@ namespace OpenDreamClient.Interface.Html;
 public static class HtmlParser {
     private const string TagNotClosedError = "HTML tag was not closed";
 
+    private static readonly ISawmill Sawmill;
+
+    static HtmlParser() {
+        Sawmill = IoCManager.Resolve<ILogManager>().GetSawmill("opendream.html_parser");
+    }
+
     public static void Parse(string text, FormattedMessage appendTo) {
         StringBuilder currentText = new();
         Stack<string> tags = new();
@@ -32,7 +38,7 @@ public static class HtmlParser {
                     i++;
                     SkipWhitespace();
                     if (i >= text.Length) {
-                        Logger.Error(TagNotClosedError);
+                        Sawmill.Error(TagNotClosedError);
                         return;
                     }
 
@@ -51,7 +57,7 @@ public static class HtmlParser {
                     } while (i < text.Length);
 
                     if (c != '>') {
-                        Logger.Error(TagNotClosedError);
+                        Sawmill.Error(TagNotClosedError);
                         return;
                     }
 
@@ -62,10 +68,10 @@ public static class HtmlParser {
                     currentText.Clear();
                     if (closingTag) {
                         if (tags.Count == 0) {
-                            Logger.Error("Unexpected closing tag");
+                            Sawmill.Error("Unexpected closing tag");
                             return;
                         } else if (tags.Peek() != tagType) {
-                            Logger.Error($"Invalid closing tag </{tagType}>, expected </{tags.Peek()}>");
+                            Sawmill.Error($"Invalid closing tag </{tagType}>, expected </{tags.Peek()}>");
                             return;
                         }
 
@@ -88,7 +94,7 @@ public static class HtmlParser {
                         // browsers usually allow for some fallibility here
                         break;
                     }
-                    
+
                     string insideEntity = text.Substring(i + 1, end - (i + 1));
                     i = end;
 
@@ -115,7 +121,7 @@ public static class HtmlParser {
                                 break;
                         }
                     }
-                    
+
                     break;
                 default:
                     currentText.Append(c);
@@ -159,7 +165,7 @@ public static class HtmlParser {
                     parameter = new(color);
                     break;
                 default:
-                    Logger.Debug($"Unimplemented HTML attribute \"{attributeName}\"");
+                    Sawmill.Debug($"Unimplemented HTML attribute \"{attributeName}\"");
                     continue;
             }
 

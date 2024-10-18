@@ -242,6 +242,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.OutputControl, DMOpcodeHandlers.OutputControl},
             {DreamProcOpcode.BitShiftRight, DMOpcodeHandlers.BitShiftRight},
             {DreamProcOpcode.CreateFilteredListEnumerator, DMOpcodeHandlers.CreateFilteredListEnumerator},
+            {DreamProcOpcode.CreateFilteredBaseTypesListEnumerator, DMOpcodeHandlers.CreateFilteredBaseTypesListEnumerator},
             {DreamProcOpcode.Power, DMOpcodeHandlers.Power},
             {DreamProcOpcode.Prompt, DMOpcodeHandlers.Prompt},
             {DreamProcOpcode.Ftp, DMOpcodeHandlers.Ftp},

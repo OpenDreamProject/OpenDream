@@ -4,12 +4,15 @@ using OpenDreamClient.Interface.DMF;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
+using Robust.Shared;
+using Robust.Shared.Configuration;
 
 namespace OpenDreamClient.Interface.Controls;
 
 public sealed class ControlWindow : InterfaceControl {
     [Dependency] private readonly IClyde _clyde = default!;
     [Dependency] private readonly IUserInterfaceManager _uiMgr = default!;
+    [Dependency] private readonly IConfigurationManager _configurationManager = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.window");
 
@@ -336,7 +339,11 @@ public sealed class ControlWindow : InterfaceControl {
         switch (property) {
             case "size":
                 if (_myWindow.osWindow is {ClydeWindow: not null}) {
-                    _myWindow.osWindow.ClydeWindow.Size = new DMFPropertySize(value).Vector;
+                    var size = new DMFPropertySize(value);
+                    var uiScale = _configurationManager.GetCVar(CVars.DisplayUIScale);
+                    size.X = (int)(size.X * uiScale);
+                    size.Y = (int)(size.Y * uiScale);
+                    _myWindow.osWindow.ClydeWindow.Size = size.Vector;
                 }
 
                 return;

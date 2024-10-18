@@ -90,6 +90,7 @@ public sealed class ControlWindow : InterfaceControl {
         window.Owner = _clyde.MainWindow;
 
         _myWindow = (window, _myWindow.clydeWindow);
+        window.Create();
         UpdateWindowAttributes(_myWindow);
         return window;
     }
@@ -176,18 +177,10 @@ public sealed class ControlWindow : InterfaceControl {
         // TODO: this would probably be cleaner if an OSWindow for MainWindow was available.
         var (osWindow, clydeWindow) = windowRoot;
 
-        //if our window is null or closed, and we are visible, we need to create a new one. Otherwise we need to update the existing one.
+        //if our window is null or closed, we need to create a new one. Otherwise we need to update the existing one.
         if(osWindow == null && clydeWindow == null) {
-            if (WindowDescriptor.IsVisible.Value) {
-                CreateWindow();
-                return; //we return because CreateWindow() calls UpdateWindowAttributes() again.
-            }
-        }
-
-        if(osWindow != null && !osWindow.IsOpen) {
-            if (WindowDescriptor.IsVisible.Value) {
-                osWindow.Show();
-            }
+            CreateWindow();
+            return; //we return because CreateWindow() calls UpdateWindowAttributes() again.
         }
 
         if (osWindow != null) osWindow.Title = Title;
@@ -340,8 +333,17 @@ public sealed class ControlWindow : InterfaceControl {
     }
 
     public override void SetProperty(string property, string value, bool manualWinset = false) {
-        if (property is "size" or "pos")
-            return; // TODO: RT offers no ability to resize or position windows
+        switch (property) {
+            case "size":
+                if (_myWindow.osWindow is {ClydeWindow: not null}) {
+                    _myWindow.osWindow.ClydeWindow.Size = new DMFPropertySize(value).Vector;
+                }
+
+                return;
+            case "pos":
+                // TODO: RT offers no ability to position windows
+                return;
+        }
 
         base.SetProperty(property, value, manualWinset);
     }

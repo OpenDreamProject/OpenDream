@@ -57,6 +57,7 @@ public enum WarningCode {
     DanglingVarType = 2401, // For types inferred by a particular var definition and nowhere else, that ends up not existing (not forced-fatal because BYOND doesn't always error)
     MissingInterpolatedExpression = 2500, // A text macro is missing a required interpolated expression
     AmbiguousResourcePath = 2600,
+    AmbiguousProcPath = 2601, // A procpath is being referenced with a /proc/ element even though lateral overrides exist and will be ignored
     UnsupportedTypeCheck = 2700,
     InvalidReturnType = 2701, // Proc static typing
     InvalidVarType = 2702, // Var static typing

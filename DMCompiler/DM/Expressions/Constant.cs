@@ -336,17 +336,9 @@ internal sealed class ConstantPath(Location location, DMObject dmObject, DreamPa
         if (procIndex != -1) {
             DreamPath withoutProcElement = path.RemoveElement(procIndex);
             DreamPath ownerPath = withoutProcElement.FromElements(0, -2);
-            DMObject owner = DMObjectTree.GetDMObject(ownerPath, createIfNonexistent: false);
-            string procName = path.LastElement;
+            string procName = path.LastElement!;
 
-            int? procId;
-            if (owner == DMObjectTree.Root && DMObjectTree.TryGetGlobalProc(procName, out var globalProc)) {
-                procId = globalProc.Id;
-            } else {
-                var procs = owner.GetProcs(procName);
-
-                procId = procs?[^1];
-            }
+            ResolveProc(ownerPath, procName, false, out var procId);
 
             if (procId == null) {
                 DMCompiler.Emit(WarningCode.ItemDoesntExist, Location,
@@ -364,11 +356,49 @@ internal sealed class ConstantPath(Location location, DMObject dmObject, DreamPa
         if (DMObjectTree.TryGetTypeId(Value, out var typeId)) {
             pathInfo = (PathType.TypeReference, typeId);
             return true;
-        } else {
-            DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {Value} does not exist");
+        }
 
-            pathInfo = null;
-            return false;
+        // If it's not a type, check again for a proc override without the /proc/ element
+        if (ResolveProc(path.FromElements(0, -2), path.LastElement!, true, out var proc)) {
+            pathInfo = (PathType.ProcReference, proc.Value);
+            return true;
+        }
+
+        DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {Value} does not exist");
+
+        pathInfo = null;
+        return false;
+
+        bool ResolveProc(DreamPath ownerPath, string procName, bool isOverride, [NotNullWhen(true)] out int? procId) {
+            procId = null;
+
+            DMObject? owner = DMObjectTree.GetDMObject(ownerPath, createIfNonexistent: false);
+            if (owner is null) return false;
+
+            if (owner == DMObjectTree.Root && DMObjectTree.TryGetGlobalProc(procName, out var globalProc)) {
+                procId = globalProc.Id;
+                return true;
+            }
+
+            var procs = owner.GetProcs(procName);
+            if (procs is null || procs.Count == 0) return false;
+
+            if (isOverride) {
+                procId = procs[^1];
+                var dmProc = DMObjectTree.AllProcs[procId.Value];
+                // Trying to resolve a procpath without the "/proc/" element only works if the proc is an override
+                if ((dmProc.Attributes & ProcAttributes.IsOverride) != ProcAttributes.IsOverride) {
+                    DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"{Value}: undefined type path");
+                }
+            } else {
+                procId = procs[0];
+                if (procs.Count > 1) {
+                    DMCompiler.Emit(WarningCode.AmbiguousProcPath, Location,
+                        $"Type {ownerPath} has lateral overrides of proc {procName} but \"/proc/\" references the original definition only");
+                }
+            }
+
+            return true;
         }
     }
 }

@@ -535,7 +535,6 @@ public sealed class AtomManager {
     }
 
     public void AnimateAppearance(DreamObject atom, TimeSpan duration, AnimationEasing easing, int loop, AnimationFlags flags, int delay, bool chainAnim, Action<MutableIconAppearance> animate) {
-        //TODO: should handle filters
         MutableIconAppearance appearance;
         EntityUid targetEntity;
         DMISpriteComponent? targetComponent = null;
@@ -554,10 +553,16 @@ public sealed class AtomManager {
             targetEntity = EntityUid.Invalid;
             turfId = turf.Appearance.GetHashCode() + 1;
             appearance = turf.Appearance.ToMutable();
-        //} else if (atom is DreamObjectArea area) {
-            //??????
-          //  appearance = area.Appearance.ToMutable();
-          // area appearance should be an overlay on turfs, so could maybe get away with animating that?
+        } else if (atom is DreamObjectArea area) {
+            return;
+            //TODO: animate area appearance
+            //area appearance should be an overlay on turfs, so could maybe get away with animating that?
+        } else if (atom is DreamObjectClient client) {
+            return;
+            //TODO: animate client appearance
+        } else if (atom is DreamObjectFilter filter) {
+            return;
+            //TODO: animate filters
         } else
             throw new ArgumentException($"Cannot animate appearance of {atom}");
 

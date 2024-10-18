@@ -725,7 +725,7 @@ public sealed class DreamOverlaysList : DreamList {
             return;
 
         _atomManager.UpdateAppearance(_owner, appearance => {
-            GetOverlaysList(appearance).Remove(_appearanceSystem.MustGetAppearanceById(overlayAppearance.GetHashCode())); //because the hashcode for mutable == immutable, we can use it directly
+            GetOverlaysList(appearance).Remove(_appearanceSystem.AddAppearance(overlayAppearance, registerApearance:false));
         });
     }
 

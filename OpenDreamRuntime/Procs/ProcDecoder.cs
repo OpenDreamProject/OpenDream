@@ -162,6 +162,7 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
                 return (opcode, ReadInt(), ReadReference(), ReadInt());
 
             case DreamProcOpcode.CreateFilteredListEnumerator:
+            case DreamProcOpcode.CreateFilteredBaseTypesListEnumerator:
             case DreamProcOpcode.EnumerateNoAssign:
                 return (opcode, ReadInt(), ReadInt());
 
@@ -284,6 +285,12 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
                 break;
 
             case (DreamProcOpcode.CreateFilteredListEnumerator, int enumeratorId, int type):
+                text.Append(enumeratorId);
+                text.Append(' ');
+                text.Append(getTypePath(type));
+                break;
+
+            case (DreamProcOpcode.CreateFilteredBaseTypesListEnumerator, int enumeratorId, int type):
                 text.Append(enumeratorId);
                 text.Append(' ');
                 text.Append(getTypePath(type));

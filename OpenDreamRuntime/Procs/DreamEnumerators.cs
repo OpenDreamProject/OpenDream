@@ -84,7 +84,7 @@ internal sealed class DreamValueArrayEnumerator : IDreamValueEnumerator {
 
 /// <summary>
 /// Enumerates over an array of DreamValues, filtering for a certain type
-/// <code>for (var/obj/item/I in contents)</code>
+/// <code>for (var/I as obj|mob in contents)</code>
 /// </summary>
 internal sealed class FilteredDreamValueArrayEnumerator : IDreamValueEnumerator {
     private readonly DreamValue[] _dreamValueArray;
@@ -92,6 +92,39 @@ internal sealed class FilteredDreamValueArrayEnumerator : IDreamValueEnumerator 
     private int _current = -1;
 
     public FilteredDreamValueArrayEnumerator(DreamValue[] dreamValueArray, TreeEntry filterType) {
+        _dreamValueArray = dreamValueArray;
+        _filterType = filterType;
+    }
+
+    public bool Enumerate(DMProcState state, DreamReference? reference) {
+        do {
+            _current++;
+            if (_current >= _dreamValueArray.Length) {
+                if (reference != null)
+                    state.AssignReference(reference.Value, DreamValue.Null);
+                return false;
+            }
+
+            DreamValue value = _dreamValueArray[_current];
+            if (value.TryGetValueAsDreamObject(out var dreamObject) && (dreamObject?.IsSubtypeOf(_filterType) ?? false)) {
+                if (reference != null)
+                    state.AssignReference(reference.Value, value);
+                return true;
+            }
+        } while (true);
+    }
+}
+
+/// <summary>
+/// Enumerates over an array of DreamValues, filtering for a certain type
+/// <code>for (var/I as obj|mob in contents)</code>
+/// </summary>
+internal sealed class FilteredDreamValueArrayEnumeratorAeiou : IDreamValueEnumerator {
+    private readonly DreamValue[] _dreamValueArray;
+    private readonly byte _filterType;
+    private int _current = -1;
+
+    public FilteredDreamValueArrayEnumeratorAeiou(DreamValue[] dreamValueArray, byte filterType) {
         _dreamValueArray = dreamValueArray;
         _filterType = filterType;
     }

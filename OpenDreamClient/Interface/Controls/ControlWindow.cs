@@ -177,7 +177,7 @@ public sealed class ControlWindow : InterfaceControl {
         // TODO: this would probably be cleaner if an OSWindow for MainWindow was available.
         var (osWindow, clydeWindow) = windowRoot;
 
-        //if our window is null or closed, and we are visible, we need to create a new one. Otherwise we need to update the existing one.
+        //if our window is null or closed, we need to create a new one. Otherwise we need to update the existing one.
         if(osWindow == null && clydeWindow == null) {
             CreateWindow();
             return; //we return because CreateWindow() calls UpdateWindowAttributes() again.

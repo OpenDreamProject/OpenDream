@@ -45,10 +45,15 @@ public sealed class DreamObjectRegex(DreamObjectDefinition objectDefinition) : D
                             if (!insideBrackets)
                                 newPatternBuilder.Append(']');
                         } else if (c == 'L') {
-                            if (insideBrackets) // TODO: Can this be used inside [] in BYOND?
-                                throw new Exception("Cannot use \\L inside a character group");
+                            if (!insideBrackets) {
+                                newPatternBuilder.Append('[');
+                            }
 
-                            newPatternBuilder.Append("[^A-Za-z\\n]");
+                            // TODO: This should really be "\W0-9_-[\n]" but "-[\n]" doesn't work unless it's at the end
+                            newPatternBuilder.Append("\\W0-9_");
+
+                            if (!insideBrackets)
+                                newPatternBuilder.Append(']');
                         } else {
                             newPatternBuilder.Append('\\');
                             goto default;

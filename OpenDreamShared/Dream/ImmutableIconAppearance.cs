@@ -9,7 +9,6 @@ using Robust.Shared.Maths;
 using System;
 using OpenDreamShared.Rendering;
 using System.Collections.Generic;
-using Robust.Shared.Player;
 
 namespace OpenDreamShared.Dream;
 
@@ -25,7 +24,9 @@ namespace OpenDreamShared.Dream;
 // TODO: Wow this is huge! Probably look into splitting this by most used/least used to reduce the size of these
 [Serializable]
 public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance>{
-    private bool registered = false;
+    private bool _registered;
+    private int? _storedHashCode;
+    private readonly SharedAppearanceSystem? _appearanceSystem;
     [ViewVariables] public readonly string Name = MutableIconAppearance.Default.Name;
     [ViewVariables] public readonly int? Icon = MutableIconAppearance.Default.Icon;
     [ViewVariables] public readonly string? IconState = MutableIconAppearance.Default.IconState;
@@ -37,7 +38,7 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
     [ViewVariables] public readonly byte Alpha = MutableIconAppearance.Default.Alpha;
     [ViewVariables] public readonly float GlideSize = MutableIconAppearance.Default.GlideSize;
     [ViewVariables] public readonly float Layer = MutableIconAppearance.Default.Layer;
-    [ViewVariables] public int Plane = MutableIconAppearance.Default.Plane;
+    [ViewVariables] public readonly int Plane = MutableIconAppearance.Default.Plane;
     [ViewVariables] public readonly BlendMode BlendMode = MutableIconAppearance.Default.BlendMode;
     [ViewVariables] public readonly AppearanceFlags AppearanceFlags = MutableIconAppearance.Default.AppearanceFlags;
     [ViewVariables] public readonly sbyte Invisibility = MutableIconAppearance.Default.Invisibility;
@@ -48,25 +49,16 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
     [ViewVariables] public readonly MouseOpacity MouseOpacity = MutableIconAppearance.Default.MouseOpacity;
     [ViewVariables] public readonly ImmutableIconAppearance[] Overlays;
     [ViewVariables] public readonly ImmutableIconAppearance[] Underlays;
+
     [NonSerialized]
     private List<int>? _overlayIDs;
+
     [NonSerialized]
     private List<int>? _underlayIDs;
+
     [ViewVariables] public readonly Robust.Shared.GameObjects.NetEntity[] VisContents;
     [ViewVariables] public readonly DreamFilter[] Filters;
     [ViewVariables] public readonly int[] Verbs;
-
-    /// <summary>
-    /// An appearance can gain a color matrix filter by two possible forces: <br/>
-    /// 1. the /atom.color var is modified. <br/>
-    /// 2. the /atom.filters var gets a new filter of type "color". <br/>
-    /// DM crashes in some circumstances of this but we, as an extension :^), should try not to. <br/>
-    /// So, this exists as a way for the appearance to remember whether it's coloured by .color, specifically.
-    /// </summary>
-    /// <remarks>
-    /// The reason we don't just take the slow path and always use this filter is not just for optimization,<br/>
-    /// it's also for parity! See <see cref="TryRepresentMatrixAsRgbaColor"/> for more.
-    /// </remarks>
     [ViewVariables] public readonly ColorMatrix ColorMatrix = ColorMatrix.Identity;
 
     /// <summary> The Transform property of this appearance, in [a,d,b,e,c,f] order</summary>
@@ -79,11 +71,8 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
     // PixelOffset2 behaves the same as PixelOffset in top-down mode, so this is used
     public Vector2i TotalPixelOffset => PixelOffset + PixelOffset2;
 
-    private int? _storedHashCode;
-    private readonly SharedAppearanceSystem? appearanceSystem;
-
     public void MarkRegistered(){
-        registered = true;
+        _registered = true;
     }
 
     //this should only be called client-side, after network transfer
@@ -100,9 +89,8 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
         _underlayIDs = null;
     }
 
-
     public ImmutableIconAppearance(MutableIconAppearance appearance, SharedAppearanceSystem? serverAppearanceSystem) {
-        appearanceSystem = serverAppearanceSystem;
+        _appearanceSystem = serverAppearanceSystem;
 
         Name = appearance.Name;
         Icon = appearance.Icon;
@@ -258,7 +246,6 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
         VisContents = [];
         Filters = [];
         Verbs =[];
-
 
         var property = (IconAppearanceProperty)buffer.ReadByte();
         while (property != IconAppearanceProperty.End) {
@@ -636,9 +623,8 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
     }
 
     ~ImmutableIconAppearance() {
-        if(registered)
-            appearanceSystem!.RemoveAppearance(this);
+        if(_registered)
+            _appearanceSystem!.RemoveAppearance(this);
     }
-
 }
 

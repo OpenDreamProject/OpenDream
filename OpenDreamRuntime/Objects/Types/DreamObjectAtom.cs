@@ -178,16 +178,11 @@ public class DreamObjectAtom : DreamObject {
             default:
                 if (AtomManager.IsValidAppearanceVar(varName)) {
                     // Basically AtomManager.UpdateAppearance() but without the performance impact of using actions
-                    var immutableAppearance = AtomManager.MustGetAppearance(this);
-
-                    // Clone the appearance
-                    // TODO: We can probably avoid cloning while the DMISpriteComponent is dirty
-                    MutableIconAppearance appearance = (immutableAppearance  != null) ? immutableAppearance.ToMutable() : new();
-
+                    MutableIconAppearance appearance = AtomManager.MustGetAppearance(this).ToMutable();
                     AtomManager.SetAppearanceVar(appearance, varName, value);
                     AtomManager.SetAtomAppearance(this, appearance);
                     break;
-                }
+            }
 
                 base.SetVar(varName, value);
                 break;

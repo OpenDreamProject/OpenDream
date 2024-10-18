@@ -481,7 +481,7 @@ public sealed class AtomManager {
             DreamObjectTurf turf => turf.Appearance,
             DreamObjectMovable movable => movable.SpriteComponent.Appearance!,
             DreamObjectArea area => area.Appearance,
-            DreamObjectImage image => image.IsMutableAppearance ? AppearanceSystem!.AddAppearance(image.MutableAppearance!, RegisterApearance: false) : image.SpriteComponent!.Appearance!,
+            DreamObjectImage image => image.IsMutableAppearance ? AppearanceSystem!.AddAppearance(image.MutableAppearance!, registerApearance: false) : image.SpriteComponent!.Appearance!,
             _ => throw new Exception($"Cannot get appearance of {atom}")
         };
     }
@@ -495,7 +495,7 @@ public sealed class AtomManager {
         else if (atom is DreamObjectMovable movable && movable.SpriteComponent.Appearance is not null)
             appearance = movable.SpriteComponent.Appearance;
         else if (atom is DreamObjectImage image)
-            appearance = image.SpriteComponent?.Appearance;
+            appearance = image.IsMutableAppearance ? AppearanceSystem!.AddAppearance(image.MutableAppearance!, registerApearance: false) : image.SpriteComponent?.Appearance;
         else if (atom is DreamObjectArea area)
             appearance = area.Appearance;
         else
@@ -545,11 +545,11 @@ public sealed class AtomManager {
         if (atom is DreamObjectMovable movable) {
             targetEntity = movable.Entity;
             targetComponent = movable.SpriteComponent;
-            appearance = targetComponent.Appearance!.ToMutable();
+            appearance = MustGetAppearance(atom).ToMutable();
         } else if (atom is DreamObjectImage image && !image.IsMutableAppearance){
             targetEntity = image.Entity;
             targetComponent = image.SpriteComponent;
-            appearance = targetComponent!.Appearance!.ToMutable();
+            appearance = MustGetAppearance(atom).ToMutable();
         } else if (atom is DreamObjectTurf turf) {
             targetEntity = EntityUid.Invalid;
             turfId = turf.Appearance.GetHashCode() + 1;

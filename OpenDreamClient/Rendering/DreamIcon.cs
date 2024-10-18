@@ -42,6 +42,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             UpdateIcon();
         }
     }
+
     private MutableIconAppearance? _appearance;
 
     // TODO: We could cache these per-appearance instead of per-atom

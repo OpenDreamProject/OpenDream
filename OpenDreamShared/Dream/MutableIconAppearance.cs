@@ -1,16 +1,8 @@
 ﻿using Robust.Shared.Maths;
-using Robust.Shared.Serialization;
 using Robust.Shared.ViewVariables;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using Lidgren.Network;
-using Robust.Shared.Network;
-using System.IO;
-using Robust.Shared.IoC;
-using OpenDreamShared.Rendering;
-using Robust.Shared.Enums;
-using Robust.Shared.Utility;
 
 namespace OpenDreamShared.Dream;
 
@@ -120,6 +112,7 @@ public sealed class MutableIconAppearance : IEquatable<MutableIconAppearance>{
             Transform[i] = appearance.Transform[i];
         }
     }
+
     public override bool Equals(object? obj) => obj is MutableIconAppearance appearance && Equals(appearance);
 
     public bool Equals(MutableIconAppearance? appearance) {
@@ -238,7 +231,6 @@ public sealed class MutableIconAppearance : IEquatable<MutableIconAppearance>{
         foreach (var overlay in Overlays) {
             hashCode.Add(overlay.GetHashCode());
         }
-
 
         foreach (var underlay in Underlays) {
             hashCode.Add(underlay.GetHashCode());
@@ -372,7 +364,6 @@ public enum IconAppearanceProperty : byte {
         Filters,
         Verbs,
         Transform,
-
         Id,
         End
     }

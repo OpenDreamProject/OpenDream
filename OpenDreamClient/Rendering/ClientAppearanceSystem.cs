@@ -40,8 +40,6 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         //need to do this because all overlays can't be resolved until the whole appearance table is populated
         foreach(KeyValuePair<int, ImmutableIconAppearance> pair in _appearances) {
             pair.Value.ResolveOverlays(this);
-            if(pair.Value.GetHashCode() != pair.Key)
-                Logger.GetSawmill("opendream.appearance").Error($"SetAllAppearances: Appearance ID and Hash DO NOT MATCH. THIS IS REALLY BAD. {pair.Value.GetHashCode()} != {pair.Key}");
             if (_appearanceLoadCallbacks.TryGetValue(pair.Key, out var callbacks)) {
                 foreach (var callback in callbacks) callback(pair.Value);
             }

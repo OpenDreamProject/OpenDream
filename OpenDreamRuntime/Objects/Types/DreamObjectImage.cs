@@ -49,9 +49,9 @@ public sealed class DreamObjectImage : DreamObject {
         base.Initialize(args);
 
         DreamValue icon = args.GetArgument(0);
-        if (icon.IsNull || !AtomManager.TryCreateAppearanceFrom(icon, out var MutableIconAppearance)) {
+        if (icon.IsNull || !AtomManager.TryCreateAppearanceFrom(icon, out var mutableIconAppearance)) {
             // Use a default appearance, but log a warning about it if icon wasn't null
-            MutableIconAppearance = IsMutableAppearance ? MutableAppearance! : AtomManager.MustGetAppearance(this).ToMutable(); //object def appearance is created in the constructor
+            mutableIconAppearance = IsMutableAppearance ? MutableAppearance! : AtomManager.MustGetAppearance(this).ToMutable(); //object def appearance is created in the constructor
             if (!icon.IsNull)
                 Logger.GetSawmill("opendream.image")
                     .Warning($"Attempted to create an /image from {icon}. This is invalid and a default image was created instead.");
@@ -68,16 +68,16 @@ public sealed class DreamObjectImage : DreamObject {
             if (arg.IsNull)
                 continue;
 
-            AtomManager.SetAppearanceVar(MutableIconAppearance, argName, arg);
+            AtomManager.SetAppearanceVar(mutableIconAppearance, argName, arg);
             if (argName == "dir" && arg.TryGetValueAsInteger(out var argDir) && argDir > 0) {
                 // If a dir is explicitly given in the constructor then overlays using this won't use their owner's dir
                 // Setting dir after construction does not affect this
                 // This is undocumented and I hate it
-                MutableIconAppearance.InheritsDirection = false;
+                mutableIconAppearance.InheritsDirection = false;
             }
         }
 
-        AtomManager.SetAtomAppearance(this, MutableIconAppearance);
+        AtomManager.SetAtomAppearance(this, mutableIconAppearance);
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
@@ -115,7 +115,7 @@ public sealed class DreamObjectImage : DreamObject {
 
                 // The dir does not get changed
                 var originalAppearance = AtomManager.MustGetAppearance(this);
-                newAppearance.Direction = originalAppearance!.Direction;
+                newAppearance.Direction = originalAppearance.Direction;
                 AtomManager.SetAtomAppearance(this, newAppearance);
                 break;
             case "loc":
@@ -206,16 +206,16 @@ public sealed class DreamObjectImage : DreamObject {
                 break;
             }
             case "override": {
-                MutableIconAppearance MutableIconAppearance = IsMutableAppearance ? MutableAppearance! : AtomManager.MustGetAppearance(this).ToMutable();
-                MutableIconAppearance.Override = value.IsTruthy();
-                AtomManager.SetAtomAppearance(this, MutableIconAppearance);
+                MutableIconAppearance mutableIconAppearance = IsMutableAppearance ? MutableAppearance! : AtomManager.MustGetAppearance(this).ToMutable();
+                mutableIconAppearance.Override = value.IsTruthy();
+                AtomManager.SetAtomAppearance(this, mutableIconAppearance);
                 break;
             }
             default:
                 if (AtomManager.IsValidAppearanceVar(varName)) {
-                    MutableIconAppearance MutableIconAppearance = IsMutableAppearance ? MutableAppearance! : AtomManager.MustGetAppearance(this).ToMutable();
-                    AtomManager.SetAppearanceVar(MutableIconAppearance, varName, value);
-                    AtomManager.SetAtomAppearance(this, MutableIconAppearance);
+                    MutableIconAppearance mutableIconAppearance = IsMutableAppearance ? MutableAppearance! : AtomManager.MustGetAppearance(this).ToMutable();
+                    AtomManager.SetAppearanceVar(mutableIconAppearance, varName, value);
+                    AtomManager.SetAtomAppearance(this, mutableIconAppearance);
                     break;
                 }
 

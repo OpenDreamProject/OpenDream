@@ -259,6 +259,7 @@ public sealed class DreamObjectMatrix : DreamObject {
     #endregion Operators
 
     #region Helpers
+
     /// <summary> Used to create a float array understandable by <see cref="MutableIconAppearance.Transform"/> to be a transform. </summary>
     /// <returns>The matrix's values in an array, in [a,d,b,e,c,f] order.</returns>
     /// <remarks>This will not verify that this is a /matrix</remarks>

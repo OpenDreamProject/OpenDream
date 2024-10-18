@@ -5,7 +5,6 @@ using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
 using System.Diagnostics.CodeAnalysis;
 using OpenDreamShared.Network.Messages;
 using Robust.Shared.Player;
-using Robust.Server.GameObjects;
 using Robust.Shared.Network;
 using System.Diagnostics;
 using Robust.Shared.Utility;
@@ -13,8 +12,11 @@ using Robust.Shared.Utility;
 namespace OpenDreamRuntime.Rendering;
 
 public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
-    //use the appearance hash as the id!
-    //appearance hash to weakref
+    /// <summary>
+    /// Each appearance's HashCode is used as its ID. Here we store these as weakrefs, so each object which holds an appearance MUST
+    /// hold that ImmutableIconAppearance until it is no longer needed. Overlays & underlays are stored as hard refs on the ImmutableIconAppearance
+    /// so you only need to hold the main appearance.
+    /// </summary>
     private readonly Dictionary<int, WeakReference<ImmutableIconAppearance>> _idToAppearance = new();
 
     public readonly ImmutableIconAppearance DefaultAppearance;
@@ -51,8 +53,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
                 Dictionary<int, ImmutableIconAppearance> sendData = new(_idToAppearance.Count);
 
                 foreach(int key in _idToAppearance.Keys){
-                    ImmutableIconAppearance? immutable;
-                    if(_idToAppearance[key].TryGetTarget(out immutable))
+                    if(_idToAppearance[key].TryGetTarget(out var immutable))
                         sendData.Add(key, immutable);
                 }
 
@@ -62,14 +63,16 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         }
     }
 
-    public ImmutableIconAppearance AddAppearance(MutableIconAppearance appearance, bool RegisterApearance = true) {
+    public ImmutableIconAppearance AddAppearance(MutableIconAppearance appearance, bool registerApearance = true) {
         ImmutableIconAppearance immutableAppearance = new(appearance, this);
+        //if this debug assert fails, you've probably changed an icon appearance var and not updated its counterpart
+        //this debug MUST pass. A number of things rely on these hashcodes being equivalent *on the server*.
         DebugTools.Assert(appearance.GetHashCode() == immutableAppearance.GetHashCode());
         lock (_lock) {
             if(_idToAppearance.TryGetValue(immutableAppearance.GetHashCode(), out var weakReference) && weakReference.TryGetTarget(out var originalImmutable)) {
                 return originalImmutable;
-            } else if (RegisterApearance) {
-                immutableAppearance.MarkRegistered();
+            } else if (registerApearance) {
+                immutableAppearance.MarkRegistered(); //lets this appearance know it needs to do GC finaliser
                 _idToAppearance[immutableAppearance.GetHashCode()] = new(immutableAppearance);
                 _networkManager.ServerSendToAll(new MsgNewAppearance(immutableAppearance));
                 return immutableAppearance;
@@ -88,7 +91,8 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
                     return;
                 _idToAppearance.Remove(appearance.GetHashCode());
                 RaiseNetworkEvent(new RemoveAppearanceEvent(appearance.GetHashCode()));
-}           }
+            }
+        }
     }
 
     public override ImmutableIconAppearance MustGetAppearanceById(int appearanceId) {

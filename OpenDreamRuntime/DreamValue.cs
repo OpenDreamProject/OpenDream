@@ -757,4 +757,5 @@ public sealed class DreamValueColorMatrixSerializer : ITypeReader<ColorMatrix, D
         return new(source);
     }
 }
+
 #endregion Serialization

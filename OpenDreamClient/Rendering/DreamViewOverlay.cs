@@ -188,7 +188,7 @@ internal sealed class DreamViewOverlay : Overlay {
         current.MouseOpacity = icon.Appearance.MouseOpacity;
 
         //reverse rotation transforms because of 180 flip from RenderTarget->world transform
-        Matrix3x2 MutableIconAppearanceTransformMatrix = new Matrix3x2(
+        Matrix3x2 iconAppearanceTransformMatrix = new Matrix3x2(
             icon.Appearance.Transform[0], -icon.Appearance.Transform[2],
             -icon.Appearance.Transform[1], icon.Appearance.Transform[3],
             icon.Appearance.Transform[4], icon.Appearance.Transform[5]
@@ -210,9 +210,9 @@ internal sealed class DreamViewOverlay : Overlay {
                 current.AlphaToApply = parentIcon.AlphaToApply * (icon.Appearance.Alpha / 255.0f);
 
             if ((icon.Appearance.AppearanceFlags & AppearanceFlags.ResetTransform) != 0 || keepTogether) //RESET_TRANSFORM
-                current.TransformToApply = MutableIconAppearanceTransformMatrix;
+                current.TransformToApply = iconAppearanceTransformMatrix;
             else
-                current.TransformToApply = MutableIconAppearanceTransformMatrix * parentIcon.TransformToApply;
+                current.TransformToApply = iconAppearanceTransformMatrix * parentIcon.TransformToApply;
 
             if ((icon.Appearance.Plane < -10000)) //FLOAT_PLANE - Note: yes, this really is how it works. Yes it's dumb as shit.
                 current.Plane = parentIcon.Plane + (icon.Appearance.Plane + 32767);
@@ -228,7 +228,7 @@ internal sealed class DreamViewOverlay : Overlay {
             current.ColorToApply = icon.Appearance.Color;
             current.ColorMatrixToApply = icon.Appearance.ColorMatrix;
             current.AlphaToApply = icon.Appearance.Alpha/255.0f;
-            current.TransformToApply = MutableIconAppearanceTransformMatrix;
+            current.TransformToApply = iconAppearanceTransformMatrix;
             current.Plane = icon.Appearance.Plane;
             current.Layer = Math.Max(0, icon.Appearance.Layer); //float layers are invalid for icons with no parent
         }

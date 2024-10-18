@@ -169,7 +169,15 @@ public static class DreamStylesheet {
             // LineEdit
             Element<LineEdit>()
                 // background color
-                .Prop(LineEdit.StylePropertyStyleBox, new StyleBoxFlat{ BackgroundColor = Color.FromHex("#D3B5B5"), BorderThickness = new Thickness(1), BorderColor = Color.FromHex("#abadb3")})
+                .Prop(LineEdit.StylePropertyStyleBox, new StyleBoxFlat {
+                    BackgroundColor = Color.White,
+                    BorderThickness = new Thickness(2, 2, 1, 1),
+                    BorderColor = Color.FromHex("#abadb3"),
+                    ContentMarginLeftOverride = 2 + 2,
+                    ContentMarginTopOverride = 2 + 2,
+                    ContentMarginRightOverride = 2 + 1,
+                    ContentMarginBottomOverride = 2 + 1,
+                })
                 // default font color
                 .Prop("font-color", Color.Black)
                 .Prop("cursor-color", Color.Black),
@@ -182,9 +190,36 @@ public static class DreamStylesheet {
             Element<LineEdit>().Pseudo(LineEdit.StylePseudoClassPlaceholder)
                 .Prop("font-color", Color.FromHex("#7d7d7d")),
 
+            // TextEdit
+            Element<TextEdit>()
+                // default font color
+                .Prop("font-color", Color.Black)
+                .Prop("cursor-color", Color.Black),
+
             // ItemList selected item
             Element<ItemList>()
-                .Prop(ItemList.StylePropertySelectedItemBackground, new StyleBoxFlat { BackgroundColor = Color.Blue }),
+                .Prop(ItemList.StylePropertyBackground, new StyleBoxFlat {
+                    BackgroundColor = Color.White,
+                    BorderThickness = new Thickness(2, 2, 1, 1), // pretend shadow effect
+                    BorderColor = Color.FromHex("#abadb3")
+                })
+                .Prop(ItemList.StylePropertyItemBackground, new StyleBoxFlat {
+                    ContentMarginLeftOverride = 4,
+                    ContentMarginRightOverride = 8,
+                    Padding = new Thickness(2, 2, 1, 1)
+                })
+                .Prop(ItemList.StylePropertySelectedItemBackground, new StyleBoxFlat {
+                    BackgroundColor = Color.FromHex("#0000aa99"),
+                    // this is INTENDED do not make the overrides a padding
+                    ContentMarginLeftOverride = 4,
+                    ContentMarginRightOverride = 8,
+                    Padding = new Thickness(2, 2, 1, 1)
+                })
+                .Prop(ItemList.StylePropertyDisabledItemBackground, new StyleBoxFlat {
+                    ContentMarginLeftOverride = 4,
+                    ContentMarginRightOverride = 8,
+                    Padding = new Thickness(2, 2, 1, 1)
+                }),
 
             // TabContainer
             Element<TabContainer>()
@@ -206,6 +241,37 @@ public static class DreamStylesheet {
                 .Prop(Slider.StylePropertyForeground, new StyleBoxFlat { BackgroundColor = Color.LightGray, BorderThickness = new Thickness(1), BorderColor = Color.Black})
                 .Prop(Slider.StylePropertyGrabber, new StyleBoxFlat { BackgroundColor = Color.Transparent, BorderThickness = new Thickness(1), BorderColor = Color.Black, ContentMarginLeftOverride=10, ContentMarginRightOverride=10})
                 .Prop(Slider.StylePropertyFill, new StyleBoxFlat { BackgroundColor = Color.Transparent, BorderThickness = new Thickness(0), BorderColor = Color.Black}),
+
+            // that thing on the top, some might say "topbar"
+            Element<MenuBar>()
+                .Prop(PanelContainer.StylePropertyPanel, new StyleBoxFlat {
+                    Padding = new Thickness(1)
+                }),
+
+            new StyleRule(new SelectorChild(
+                    new SelectorElement(typeof(MenuBar.MenuTopButton), null, null, null),
+                    new SelectorElement(typeof(Label), null, null, null)),
+                [
+                    new StyleProperty("font", notoSansFont10)
+                ]),
+
+            Element<MenuBar.MenuTopButton>()
+                .Prop(PanelContainer.StylePropertyPanel, new StyleBoxFlat {
+                    ContentMarginLeftOverride = 3,
+                    ContentMarginRightOverride = 3,
+                    ContentMarginTopOverride = 2,
+                    ContentMarginBottomOverride = 2,
+                }),
+
+            Element<MenuBar.MenuTopButton>()
+                .Pseudo(MenuBar.MenuTopButton.StylePseudoClassHover)
+                .Prop(PanelContainer.StylePropertyPanel, new StyleBoxFlat {
+                    BackgroundColor = Color.FromHex("#bfbfbf"),
+                    ContentMarginLeftOverride = 3,
+                    ContentMarginRightOverride = 3,
+                    ContentMarginTopOverride = 2,
+                    ContentMarginBottomOverride = 2,
+                }),
         });
     }
 }

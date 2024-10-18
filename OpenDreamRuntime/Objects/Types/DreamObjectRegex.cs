@@ -45,16 +45,13 @@ public sealed class DreamObjectRegex(DreamObjectDefinition objectDefinition) : D
                             if (!insideBrackets)
                                 newPatternBuilder.Append(']');
                         } else if (c == 'L') {
-                            if (insideBrackets) {
-                                var bracketIndex = patternString.LastIndexOf('[', i);
-                                var caret = patternString[bracketIndex + 1];
-                                if(caret != '^')
-                                    throw new NotImplementedException("OpenDream can't currently handle '\\L' inside of regex brackets unless it already contains '^'");
-                            } else {
+                            if (!insideBrackets) {
                                 newPatternBuilder.Append('[');
                             }
 
-                            newPatternBuilder.Append("A-Za-z\\n");
+                            // TODO: This should really be "\W0-9_-[\n]" but "-[\n]" doesn't work unless it's at the end
+                            newPatternBuilder.Append("\\W0-9_");
+
                             if (!insideBrackets)
                                 newPatternBuilder.Append(']');
                         } else {

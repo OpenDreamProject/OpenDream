@@ -12,7 +12,7 @@ internal abstract class DMExpression(Location location) {
     public virtual DMComplexValueType ValType => DMValueType.Anything;
 
     // TODO: proc and dmObject can be null, address nullability contract
-    public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
+    public static DMExpression Create(DMObject? dmObject, DMProc? proc, DMASTExpression expression, DreamPath? inferredPath = null) {
         return DMExpressionBuilder.BuildExpression(expression, dmObject, proc, inferredPath);
     }
 

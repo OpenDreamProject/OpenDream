@@ -142,7 +142,7 @@ internal sealed class Locate(Location location, DMExpression path, DMExpression?
                 return;
             }
 
-            DMReference world = DMReference.CreateGlobal(dmObject.GetGlobalVariableId("world").Value);
+            DMReference world = DMReference.CreateGlobal(dmObject.GetGlobalVariableId("world")!.Value);
             proc.PushReferenceValue(world);
         }
 

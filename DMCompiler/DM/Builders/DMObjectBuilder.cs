@@ -204,7 +204,7 @@ internal static class DMObjectBuilder {
         if (objectDefinition.InnerBlock != null) ProcessBlockInner(objectDefinition.InnerBlock, newCurrentObject);
     }
 
-    private static void ProcessVarDefinition(DMObject? varObject, DMASTObjectVarDefinition? varDefinition) {
+    private static void ProcessVarDefinition(DMObject varObject, DMASTObjectVarDefinition varDefinition) {
         DMVariable? variable = null;
 
         //DMObjects store two bundles of variables; the statics in GlobalVariables and the non-statics in Variables.
@@ -255,7 +255,7 @@ internal static class DMObjectBuilder {
         SetVariableValue(varObject, ref variable, varDefinition.Location, expression);
     }
 
-    private static void ProcessVarOverride(DMObject? varObject, DMASTObjectVarOverride? varOverride) {
+    private static void ProcessVarOverride(DMObject varObject, DMASTObjectVarOverride varOverride) {
         switch (varOverride.VarName) {
             // Keep in mind that anything here, by default, affects all objects, even those who don't inherit from /datum
             case "tag": {
@@ -282,7 +282,7 @@ internal static class DMObjectBuilder {
         varObject.VariableOverrides[variable.Name] = variable;
     }
 
-    private static void ProcessProcDefinition(DMASTProcDefinition procDefinition, DMObject? currentObject) {
+    private static void ProcessProcDefinition(DMASTProcDefinition procDefinition, DMObject currentObject) {
         string procName = procDefinition.Name;
         DMObject dmObject = DMObjectTree.GetDMObject(currentObject.Path.Combine(procDefinition.ObjectPath));
         bool hasProc = dmObject.HasProc(procName); // Trying to avoid calling this several times since it's recursive and maybe slow

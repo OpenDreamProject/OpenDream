@@ -743,7 +743,8 @@ internal sealed class ConstFoldPower : IPeepholeOptimization {
 
 // AssignPop [ref]
 // PushReferenceValue [ref]
-// -> AssignAndPushReferenceValue [ref]
+// -> Assign [ref]
+// These opcodes can be reduced to a single Assign as long as the [ref]s are the same
 internal sealed class AssignAndPushReferenceValue : IPeepholeOptimization {
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
@@ -776,7 +777,7 @@ internal sealed class AssignAndPushReferenceValue : IPeepholeOptimization {
         AnnotatedBytecodeReference assignTarget = firstInstruction.GetArg<AnnotatedBytecodeReference>(0);
 
         input.RemoveRange(index, 2);
-        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.AssignAndPushReferenceValue, [assignTarget]));
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.Assign, [assignTarget]));
     }
 }
 

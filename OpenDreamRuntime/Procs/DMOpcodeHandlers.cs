@@ -2900,16 +2900,6 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
-        public static ProcStatus AssignAndPushReferenceValue(DMProcState state) {
-            DreamReference reference = state.ReadReference();
-            DreamValue value = state.Pop();
-
-            state.AssignReference(reference, value);
-            state.Push(value);
-
-            return ProcStatus.Continue;
-        }
-
         public static ProcStatus PushReferenceAndDereferenceField(DMProcState state) {
             DreamReference reference = state.ReadReference();
             string fieldName = state.ReadString();

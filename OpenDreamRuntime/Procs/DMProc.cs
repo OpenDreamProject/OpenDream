@@ -305,7 +305,6 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.PushRefandJumpIfNotNull, DMOpcodeHandlers.PushReferenceAndJumpIfNotNull},
             {DreamProcOpcode.NullRef, DMOpcodeHandlers.NullRef},
             {DreamProcOpcode.AssignPop, DMOpcodeHandlers.AssignPop},
-            {DreamProcOpcode.AssignAndPushReferenceValue, DMOpcodeHandlers.AssignAndPushReferenceValue},
             {DreamProcOpcode.PushRefAndDereferenceField, DMOpcodeHandlers.PushReferenceAndDereferenceField},
             {DreamProcOpcode.PushNRefs, DMOpcodeHandlers.PushNRefs},
             {DreamProcOpcode.PushNFloats, DMOpcodeHandlers.PushNFloats},

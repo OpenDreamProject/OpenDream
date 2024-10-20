@@ -1,6 +1,7 @@
-﻿using Dependency = Robust.Shared.IoC.DependencyAttribute;
+using Dependency = Robust.Shared.IoC.DependencyAttribute;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -44,7 +45,6 @@ public struct DreamValue : IEquatable<DreamValue> {
         Appearance    = 1 << (DreamValueType.Appearance    - 1)
         // @formatter:on
     }
-
 
     public static DreamValue Null {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -112,9 +112,9 @@ public struct DreamValue : IEquatable<DreamValue> {
         get => Type == DreamValueType.DreamObject && (_refValue == null || Unsafe.As<DreamObject>(_refValue).Deleted);
     }
 
-    public override string ToString() {
+    public readonly override string ToString() {
         if (Type == DreamValueType.Float)
-            return _floatValue.ToString();
+            return _floatValue.ToString(CultureInfo.InvariantCulture);
         else if (Type == 0)
             return "<Uninitialized DreamValue>";
         else if (_refValue == null) {
@@ -160,7 +160,7 @@ public struct DreamValue : IEquatable<DreamValue> {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryGetValueAsInteger(out int value) {
+    public readonly bool TryGetValueAsInteger(out int value) {
         value = (int)_floatValue;
         return Type == DreamValueType.Float;
     }
@@ -182,7 +182,7 @@ public struct DreamValue : IEquatable<DreamValue> {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryGetValueAsFloat(out float value) {
+    public readonly bool TryGetValueAsFloat(out float value) {
         value = _floatValue;
         return Type == DreamValueType.Float;
     }
@@ -200,7 +200,7 @@ public struct DreamValue : IEquatable<DreamValue> {
         throw new InvalidCastException($"Value {this} was not the expected type of float");
     }
 
-    public bool TryGetValueAsDreamResource([NotNullWhen(true)] out DreamResource? value) {
+    public readonly bool TryGetValueAsDreamResource([NotNullWhen(true)] out DreamResource? value) {
         if (Type == DreamValueType.DreamResource) {
             value = Unsafe.As<DreamResource>(_refValue)!;
             return true;
@@ -214,6 +214,7 @@ public struct DreamValue : IEquatable<DreamValue> {
         if (Type == DreamValueType.DreamResource) {
             return Unsafe.As<DreamResource>(_refValue)!;
         }
+
         throw new InvalidCastException("Value " + this + " was not the expected type of DreamResource");
     }
 
@@ -249,7 +250,7 @@ public struct DreamValue : IEquatable<DreamValue> {
         return _refValue is T;
     }
 
-    public bool TryGetValueAsDreamObject<T>([NotNullWhen(true)] out T? dreamObject) where T : DreamObject {
+    public readonly bool TryGetValueAsDreamObject<T>([NotNullWhen(true)] out T? dreamObject) where T : DreamObject {
         if (_refValue is T dreamObjectValue) {
             dreamObject = dreamObjectValue;
             return true;
@@ -259,7 +260,7 @@ public struct DreamValue : IEquatable<DreamValue> {
         return false;
     }
 
-    public bool TryGetValueAsDreamList([NotNullWhen(true)] out DreamList? list) {
+    public readonly bool TryGetValueAsDreamList([NotNullWhen(true)] out DreamList? list) {
         return TryGetValueAsDreamObject(out list);
     }
 
@@ -277,16 +278,15 @@ public struct DreamValue : IEquatable<DreamValue> {
         throw new InvalidCastException("Value " + this + " was not the expected type of DreamList");
     }
 
-    public bool TryGetValueAsType([NotNullWhen(true)] out TreeEntry? type) {
+    public readonly bool TryGetValueAsType([NotNullWhen(true)] out TreeEntry? type) {
         if (Type == DreamValueType.DreamType) {
             type = Unsafe.As<TreeEntry>(_refValue)!;
 
             return true;
-        } else {
-            type = null;
-
-            return false;
         }
+
+        type = null;
+        return false;
     }
 
     public TreeEntry MustGetValueAsType() {
@@ -296,26 +296,26 @@ public struct DreamValue : IEquatable<DreamValue> {
         return Unsafe.As<TreeEntry>(_refValue)!;
     }
 
-    public bool TryGetValueAsProc([NotNullWhen(true)] out DreamProc? proc) {
+    public readonly bool TryGetValueAsProc([NotNullWhen(true)] out DreamProc? proc) {
         if (Type == DreamValueType.DreamProc) {
             proc = Unsafe.As<DreamProc>(_refValue)!;
 
             return true;
-        } else {
-            proc = null;
-
-            return false;
         }
+
+        proc = null;
+        return false;
     }
 
     public DreamProc MustGetValueAsProc() {
         if (Type == DreamValueType.DreamProc) {
             return Unsafe.As<DreamProc>(_refValue)!;
         }
+
         throw new InvalidCastException("Value " + this + " was not the expected type of DreamProc");
     }
 
-    public bool TryGetValueAsAppearance([NotNullWhen(true)] out IconAppearance? args) {
+    public readonly bool TryGetValueAsAppearance([NotNullWhen(true)] out IconAppearance? args) {
         if (Type == DreamValueType.Appearance) {
             args = Unsafe.As<IconAppearance>(_refValue)!;
 
@@ -330,6 +330,7 @@ public struct DreamValue : IEquatable<DreamValue> {
         if (Type == DreamValueType.Appearance) {
             return Unsafe.As<IconAppearance>(_refValue)!;
         }
+
         throw new InvalidCastException("Value " + this + " was not the expected type of Appearance");
     }
 
@@ -365,6 +366,7 @@ public struct DreamValue : IEquatable<DreamValue> {
                     return floatValue.ToString("g6");
                 }
 
+                // ReSharper disable once CompareOfFloatsByEqualityOperator
                 if (floatValue >= 1000000 && ((int)floatValue == floatValue)) {
                     return floatValue.ToString("g8");
                 }
@@ -372,11 +374,10 @@ public struct DreamValue : IEquatable<DreamValue> {
                 return floatValue.ToString("g6");
 
             case DreamValueType.DreamResource:
-                TryGetValueAsDreamResource(out var rscPath);
-                return rscPath.ResourcePath;
+                var rsc = MustGetValueAsDreamResource();
+                return rsc.ResourcePath ?? rsc.Id.ToString();
             case DreamValueType.DreamType:
-                TryGetValueAsType(out var type);
-                return type.Path;
+                return MustGetValueAsType().Path;
             case DreamValueType.DreamProc:
                 var proc = MustGetValueAsProc();
 
@@ -437,6 +438,7 @@ public struct DreamValue : IEquatable<DreamValue> {
 }
 
 #region Serialization
+
 public sealed class DreamValueJsonConverter : JsonConverter<DreamValue> {
     [Dependency] private readonly DreamObjectTree _objectTree = default!;
     [Dependency] private readonly DreamResourceManager _resourceManager = default!;
@@ -536,12 +538,9 @@ public sealed class DreamValueJsonConverter : JsonConverter<DreamValue> {
 // The following allows for serializing using DreamValues with ISerializationManager
 // Currently only implemented to the point that they can be used for DreamFilters
 
-public sealed class DreamValueDataNode : DataNode<DreamValueDataNode>, IEquatable<DreamValueDataNode> {
-    public DreamValueDataNode(DreamValue value) : base(NodeMark.Invalid, NodeMark.Invalid) {
-        Value = value;
-    }
-
-    public DreamValue Value { get; set; }
+public sealed class DreamValueDataNode(DreamValue value)
+    : DataNode<DreamValueDataNode>(NodeMark.Invalid, NodeMark.Invalid), IEquatable<DreamValueDataNode> {
+    public DreamValue Value { get; set; } = value;
     public override bool IsEmpty => false;
 
     public override DreamValueDataNode Copy() {
@@ -667,7 +666,6 @@ public sealed class DreamValueMatrix3Serializer : ITypeReader<Matrix3x2, DreamVa
     }
 }
 
-
 [TypeSerializer]
 public sealed class DreamValueIconSerializer : ITypeReader<int, DreamValueDataNode> {
     private readonly DreamResourceManager _dreamResourceManager = IoCManager.Resolve<DreamResourceManager>();
@@ -717,7 +715,6 @@ public sealed class DreamValueFlagsSerializer : ITypeReader<short, DreamValueDat
     }
 }
 
-
 [TypeSerializer]
 public sealed class DreamValueColorMatrixSerializer : ITypeReader<ColorMatrix, DreamValueDataNode>, ITypeCopyCreator<ColorMatrix> {
     public ColorMatrix Read(ISerializationManager serializationManager,
@@ -743,7 +740,6 @@ public sealed class DreamValueColorMatrixSerializer : ITypeReader<ColorMatrix, D
         DreamValueDataNode node,
         IDependencyCollection dependencies,
         ISerializationContext? context = null) {
-
         if (node.Value.TryGetValueAsDreamList(out var _))
             return new ValidatedValueNode(node);
         //TODO: Improve validation
@@ -757,4 +753,5 @@ public sealed class DreamValueColorMatrixSerializer : ITypeReader<ColorMatrix, D
         return new(source);
     }
 }
+
 #endregion Serialization

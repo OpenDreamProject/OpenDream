@@ -551,7 +551,6 @@ public sealed class AtomManager {
             appearance = MustGetAppearance(atom).ToMutable();
         } else if (atom is DreamObjectTurf turf) {
             targetEntity = EntityUid.Invalid;
-            turfId = turf.Appearance.GetHashCode() + 1;
             appearance = turf.Appearance.ToMutable();
         } else if (atom is DreamObjectArea area) {
             return;
@@ -573,9 +572,9 @@ public sealed class AtomManager {
             // Don't send the updated appearance to clients, they will animate it
             DMISpriteSystem.SetSpriteAppearance(new(targetEntity, targetComponent), appearance, dirty: false);
         } else if (atom is DreamObjectTurf turf) {
-            //this is basically the only time it's okay to set turf.Appearance outside of DreamMapManager.SetTurfAppearance()
-            //because we don't want to notify the client of the appearance change
-            turf.Appearance = AppearanceSystem!.AddAppearance(appearance);
+            //TODO: turf appearances are just set to the end appearance, they do not get properly animated
+            _dreamMapManager.SetTurfAppearance(turf, appearance);
+            turfId = appearance.GetHashCode()+1;
         } else if (atom is DreamObjectArea area) {
             //fuck knows, this will trigger a bunch of turf updates to? idek
         }

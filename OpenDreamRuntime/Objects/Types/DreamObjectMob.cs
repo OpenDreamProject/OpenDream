@@ -68,12 +68,18 @@ public sealed class DreamObjectMob : DreamObjectMovable {
                 }
 
                 break;
+            // "key" uses ckey comparison when *assigning* according to docs so... Just make them use same code path
+            // RobustToolbox auth allows usernames in form of a-z0-9_ so there can be a collision between User1 and User_1
+            case "key":
             case "ckey":
                 if (!value.TryGetValueAsString(out Key)) { // TODO: Does the key get set to a player's un-canonized username?
                     if (Connection != null)
                         Connection.Mob = null;
                     break;
                 }
+
+                // Ensure "canonical" form
+                Key = DreamProcNativeHelpers.Ckey(Key);
 
                 foreach (var connection in DreamManager.Connections) {
                     if (DreamProcNativeHelpers.Ckey(connection.Session!.Name) == Key) {
@@ -82,19 +88,6 @@ public sealed class DreamObjectMob : DreamObjectMovable {
                     }
                 }
 
-                break;
-            case "key":
-                if (!value.TryGetValueAsString(out Key)) {
-                    if (Connection != null)
-                        Connection.Mob = null;
-                    break;
-                }
-
-                if (PlayerManager.TryGetSessionByUsername(Key, out var session)) {
-                    var connection = DreamManager.GetConnectionBySession(session);
-
-                    connection.Mob = this;
-                }
 
                 break;
             case "see_invisible":

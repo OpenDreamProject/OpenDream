@@ -22,7 +22,6 @@ namespace OpenDreamClient;
 public sealed class EntryPoint : GameClient {
     [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
     [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
-    [Dependency] private readonly IDreamSoundEngine _soundEngine = default!;
     [Dependency] private readonly IOverlayManager _overlayManager = default!;
     [Dependency] private readonly ILightManager _lightManager = default!;
     [Dependency] private readonly IConfigurationManager _configurationManager = default!;

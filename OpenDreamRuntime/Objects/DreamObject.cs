@@ -148,6 +148,10 @@ namespace OpenDreamRuntime.Objects {
             return ObjectDefinition.IsSubtypeOf(ancestor);
         }
 
+        public bool IsSubtypeOf(byte ancestors) {
+            return ObjectDefinition.IsSubtypeOf(ancestors);
+        }
+
         #region Variables
         public virtual bool IsSaved(string name) {
             return ObjectDefinition.Variables.ContainsKey(name)

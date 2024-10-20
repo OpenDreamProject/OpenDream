@@ -4,15 +4,12 @@ using OpenDreamClient.Interface.DMF;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
-using Robust.Shared;
-using Robust.Shared.Configuration;
 
 namespace OpenDreamClient.Interface.Controls;
 
 public sealed class ControlWindow : InterfaceControl {
     [Dependency] private readonly IClyde _clyde = default!;
     [Dependency] private readonly IUserInterfaceManager _uiMgr = default!;
-    [Dependency] private readonly IConfigurationManager _configurationManager = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.window");
 

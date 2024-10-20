@@ -101,6 +101,24 @@ internal class ReturnReferenceValue : IPeepholeOptimization {
     }
 }
 
+// PushFloat [float]
+// Return
+// -> ReturnFloat [float]
+internal class ReturnFloat : IPeepholeOptimization {
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.PushFloat,
+            DreamProcOpcode.Return
+        ];
+    }
+
+    public void Apply(List<IAnnotatedBytecode> input, int index) {
+        var firstInstruction = IPeepholeOptimization.GetInstructionAndValue(input[index], out var pushVal);
+        IPeepholeOptimization.ReplaceInstructions(input, index, 2,
+            new AnnotatedBytecodeInstruction(DreamProcOpcode.ReturnFloat, [new AnnotatedBytecodeFloat(pushVal, firstInstruction.Location)]));
+    }
+}
+
 // PushReferenceValue [ref]
 // JumpIfFalse [label]
 // -> JumpIfReferenceFalse [ref] [label]

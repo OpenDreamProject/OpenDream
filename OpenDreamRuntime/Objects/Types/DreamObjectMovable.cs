@@ -1,4 +1,4 @@
-﻿using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
 using Robust.Shared.Map;
@@ -19,6 +19,10 @@ public class DreamObjectMovable : DreamObjectAtom {
 
     private readonly TransformComponent _transformComponent;
 
+    public readonly MovableContentsList Contents;
+
+    public TransformChildrenEnumerator ChildEnumerator => _transformComponent.ChildEnumerator;
+    public int ChildCount => _transformComponent.ChildCount;
 
     private string? ScreenLoc {
         get => _screenLoc;
@@ -39,6 +43,8 @@ public class DreamObjectMovable : DreamObjectAtom {
         Entity = AtomManager.CreateMovableEntity(this);
         SpriteComponent = EntityManager.GetComponent<DMISpriteComponent>(Entity);
         _transformComponent = EntityManager.GetComponent<TransformComponent>(Entity);
+
+        Contents = new MovableContentsList(ObjectTree.List.ObjectDefinition, this);
     }
 
     public override void Initialize(DreamProcArguments args) {
@@ -87,18 +93,7 @@ public class DreamObjectMovable : DreamObjectAtom {
                 value = (ScreenLoc != null) ? new(ScreenLoc) : DreamValue.Null;
                 return true;
             case "contents":
-                DreamList contents = ObjectTree.CreateList();
-
-                using (var childEnumerator = _transformComponent.ChildEnumerator) {
-                    while (childEnumerator.MoveNext(out EntityUid child)) {
-                        if (!AtomManager.TryGetMovableFromEntity(child, out var childAtom))
-                            continue;
-
-                        contents.AddValue(new DreamValue(childAtom));
-                    }
-                }
-
-                value = new(contents);
+                value = new(Contents);
                 return true;
             case "locs":
                 // Unimplemented; just return a list containing src.loc

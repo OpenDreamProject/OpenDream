@@ -1,4 +1,4 @@
-﻿using System.Buffers;
+using System.Buffers;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
@@ -3022,6 +3022,14 @@ internal static class DreamProcNativeRoot {
         (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, usr as DreamObjectAtom, bundle.Arguments);
         if (center is null)
             return new(view);
+
+        if (center.TryGetVariable("contents", out var centerContents) && centerContents.TryGetValueAsDreamList(out var centerContentsList)) {
+            foreach (var content in centerContentsList.GetValues()) {
+                view.AddValue(content);
+            }
+        }
+
+        // Center gets included during the walk through the tiles
 
         var eyePos = bundle.AtomManager.GetAtomPosition(center);
         var viewData = DreamProcNativeHelpers.CollectViewData(bundle.AtomManager, bundle.MapManager, eyePos, range);

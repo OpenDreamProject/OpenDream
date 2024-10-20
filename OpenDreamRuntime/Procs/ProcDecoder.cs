@@ -83,6 +83,7 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
                 return (opcode, ReadValueType());
 
             case DreamProcOpcode.PushFloat:
+            case DreamProcOpcode.ReturnFloat:
                 return (opcode, ReadFloat());
 
             case DreamProcOpcode.SwitchOnFloat:

@@ -321,7 +321,8 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.CreateListNResources, DMOpcodeHandlers.CreateListNResources},
             {DreamProcOpcode.JumpIfNotNull, DMOpcodeHandlers.JumpIfNotNull},
             {DreamProcOpcode.IsTypeDirect, DMOpcodeHandlers.IsTypeDirect},
-            {DreamProcOpcode.ReturnReferenceValue, DMOpcodeHandlers.ReturnReferenceValue}
+            {DreamProcOpcode.ReturnReferenceValue, DMOpcodeHandlers.ReturnReferenceValue},
+            {DreamProcOpcode.ReturnFloat, DMOpcodeHandlers.ReturnFloat}
         };
 
         public static readonly unsafe delegate*<DMProcState, ProcStatus>[] OpcodeHandlers;

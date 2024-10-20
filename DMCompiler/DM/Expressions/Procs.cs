@@ -118,7 +118,7 @@ internal sealed class ProcCall(Location location, DMExpression target, ArgumentL
         (DMObject? procOwner, DMProc? targetProc) = GetTargetProc(dmObject);
         DoCompileTimeLinting(procOwner, targetProc);
         if ((targetProc?.Attributes & ProcAttributes.Unimplemented) == ProcAttributes.Unimplemented) {
-            DMCompiler.UnimplementedWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}.{targetProc.Name}() is not implemented");
+            DMCompiler.UnimplementedWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}.{targetProc?.Name}() is not implemented");
         }
 
         string endLabel = proc.NewLabelName();

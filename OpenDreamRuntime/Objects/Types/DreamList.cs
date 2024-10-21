@@ -142,6 +142,14 @@ public class DreamList : DreamObject {
         _values.Add(value);
     }
 
+    public virtual void AddValueRange(DreamList valueRange) {
+        _values.AddRange(valueRange.GetValues());
+    }
+
+    public virtual void AddValueRange(IEnumerable<DreamValue> valueRange) {
+        _values.AddRange(valueRange);
+    }
+
     //Does not include associations
     public virtual bool ContainsValue(DreamValue value) {
         for (int i = 0; i < _values.Count; i++) {
@@ -1294,7 +1302,7 @@ public sealed class MovableContentsList(DreamObjectDefinition listDef, DreamObje
     }
 
     public override List<DreamValue> GetValues() {
-        List<DreamValue> values = [];
+        List<DreamValue> values = new List<DreamValue>(_movable.ChildCount);
 
         using (var childEnumerator = _movable.ChildEnumerator) {
             while (childEnumerator.MoveNext(out EntityUid child)) {

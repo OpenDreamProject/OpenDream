@@ -3024,9 +3024,7 @@ internal static class DreamProcNativeRoot {
             return new(view);
 
         if (center.TryGetVariable("contents", out var centerContents) && centerContents.TryGetValueAsDreamList(out var centerContentsList)) {
-            foreach (var content in centerContentsList.GetValues()) {
-                view.AddValue(content);
-            }
+            view.AddValueRange(centerContentsList);
         }
 
         // Center gets included during the walk through the tiles

@@ -272,7 +272,7 @@ internal sealed class PushStringFloat : IPeepholeOptimization {
         // Otherwise, replace with PushNOfStringFloat
 
         int stackDelta = 0;
-        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(2 * count + 1);
+        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(2 * count + 1) { new AnnotatedBytecodeInteger(count, input[index].GetLocation()) };
         args.Add(new AnnotatedBytecodeInteger(count, input[index].GetLocation()));
 
         for (int i = 0; i < count; i++) {

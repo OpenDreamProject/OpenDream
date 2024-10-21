@@ -518,7 +518,7 @@ public sealed class AtomManager {
             DMISpriteSystem.SetSpriteAppearance(new(movable.Entity, movable.SpriteComponent), appearance);
         } else if (atom is DreamObjectImage image) {
             if(image.IsMutableAppearance)
-                image.MutableAppearance = appearance;
+                image.MutableAppearance = new(appearance); //this needs to be a copy
             else
                 DMISpriteSystem.SetSpriteAppearance(new(image.Entity, image.SpriteComponent!), appearance);
         } else if (atom is DreamObjectArea area) {

@@ -236,6 +236,8 @@ internal sealed class PushNRef : IPeepholeOptimization {
 // PushString [string]
 // PushFloat [float]
 // -> PushStringFloat [string] [float]
+// or if there's multiple
+// -> PushNOfStringFloat [count] [string] [float] ... [string] [float]
 internal sealed class PushStringFloat : IPeepholeOptimization {
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
@@ -249,13 +251,40 @@ internal sealed class PushStringFloat : IPeepholeOptimization {
             throw new ArgumentOutOfRangeException(nameof(index), "Index plus one is outside the bounds of the input list.");
         }
 
-        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
-        AnnotatedBytecodeInstruction secondInstruction = (AnnotatedBytecodeInstruction)(input[index + 1]);
-        AnnotatedBytecodeString pushVal1 = firstInstruction.GetArg<AnnotatedBytecodeString>(0);
-        AnnotatedBytecodeFloat pushVal2 = secondInstruction.GetArg<AnnotatedBytecodeFloat>(0);
+        int count = 0;
+        while (index + count*2 + 1 < input.Count &&
+               input[index + count * 2] is AnnotatedBytecodeInstruction { Opcode: DreamProcOpcode.PushString } && input[index + count * 2 + 1] is AnnotatedBytecodeInstruction { Opcode: DreamProcOpcode.PushFloat }) {
+            count++;
+        }
 
-        input.RemoveRange(index, 2);
-        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.PushStringFloat, [pushVal1, pushVal2]));
+        // If the pattern only occurs once, replace with PushStringFloat and return
+        if (count == 1) {
+            AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
+            AnnotatedBytecodeInstruction secondInstruction = (AnnotatedBytecodeInstruction)(input[index + 1]);
+            AnnotatedBytecodeString pushVal1 = firstInstruction.GetArg<AnnotatedBytecodeString>(0);
+            AnnotatedBytecodeFloat pushVal2 = secondInstruction.GetArg<AnnotatedBytecodeFloat>(0);
+
+            input.RemoveRange(index, 2);
+            input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.PushStringFloat, [pushVal1, pushVal2]));
+            return;
+        }
+
+        // Otherwise, replace with PushNOfStringFloat
+
+        int stackDelta = 0;
+        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(2 * count + 1);
+        args.Add(new AnnotatedBytecodeInteger(count, input[index].GetLocation()));
+
+        for (int i = 0; i < count; i++) {
+            AnnotatedBytecodeInstruction stringInstruction = (AnnotatedBytecodeInstruction)(input[index + i*2]);
+            AnnotatedBytecodeInstruction floatInstruction = (AnnotatedBytecodeInstruction)(input[index + i*2 + 1]);
+            args.Add(stringInstruction.GetArg<AnnotatedBytecodeString>(0));
+            args.Add(floatInstruction.GetArg<AnnotatedBytecodeFloat>(0));
+            stackDelta += 2;
+        }
+
+        input.RemoveRange(index, count * 2);
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.PushNOfStringFloats, stackDelta, args));
     }
 }
 
@@ -308,41 +337,6 @@ internal sealed class SwitchOnString : IPeepholeOptimization {
 
         input.RemoveRange(index, 2);
         input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.SwitchOnString, [pushVal, jumpLabel]));
-    }
-}
-
-// PushStringFloat [string] [float]
-// ...
-// PushStringFloat [string] [float]
-// -> PushArbitraryNOfStringFloat [count] [string] [float] ... [string] [float]
-internal sealed class PushNOfStringFloat : IPeepholeOptimization {
-    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
-        return [
-            DreamProcOpcode.PushStringFloat,
-            DreamProcOpcode.PushStringFloat
-        ];
-    }
-
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
-        int count = 0;
-        int stackDelta = 0;
-        while (index + count < input.Count &&
-               input[index + count] is AnnotatedBytecodeInstruction { Opcode: DreamProcOpcode.PushStringFloat }) {
-            count++;
-        }
-
-        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(2 * count + 1);
-        args.Add(new AnnotatedBytecodeInteger(count, new Location()));
-
-        for (int i = 0; i < count; i++) {
-            AnnotatedBytecodeInstruction instruction = (AnnotatedBytecodeInstruction)(input[index + i]);
-            args.Add(instruction.GetArg(0));
-            args.Add(instruction.GetArg(1));
-            stackDelta += 2;
-        }
-
-        input.RemoveRange(index, count);
-        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.PushNOfStringFloats, stackDelta, args));
     }
 }
 

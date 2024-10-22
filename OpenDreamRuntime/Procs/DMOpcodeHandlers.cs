@@ -742,6 +742,7 @@ namespace OpenDreamRuntime.Procs {
             throw new Exception("Invalid add operation on " + first + " and " + second);
         }
 
+        /// <remarks>Any changes here should be replicated in <see cref="AppendNoPush"/></remarks>
         public static ProcStatus Append(DMProcState state) {
             DreamReference reference = state.ReadReference();
             DreamValue second = state.Pop();
@@ -776,6 +777,46 @@ namespace OpenDreamRuntime.Procs {
 
             state.AssignReference(reference, result);
             state.Push(result);
+            return ProcStatus.Continue;
+        }
+
+        /// <summary>
+        /// Identical to <see cref="Append"/> except it never pushes the result to the stack
+        /// </summary>
+        public static ProcStatus AppendNoPush(DMProcState state) {
+            DreamReference reference = state.ReadReference();
+            DreamValue second = state.Pop();
+            DreamValue first = state.GetReferenceValue(reference, peek: true);
+
+            DreamValue result;
+            if (first.TryGetValueAsDreamResource(out _) || first.TryGetValueAsDreamObject<DreamObjectIcon>(out _)) {
+                result = IconOperationAdd(state, first, second);
+            } else if (first.TryGetValueAsDreamObject(out var firstObj)) {
+                if (firstObj != null) {
+                    state.PopReference(reference);
+                    firstObj.OperatorAppend(second);
+
+                    return ProcStatus.Continue;
+                } else {
+                    result = second;
+                }
+            } else if (!second.IsNull) {
+                switch (first.Type) {
+                    case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
+                        result = new DreamValue(first.MustGetValueAsFloat() + second.MustGetValueAsFloat());
+                        break;
+                    case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
+                        result = new DreamValue(first.MustGetValueAsString() + second.MustGetValueAsString());
+                        break;
+                    default:
+                        throw new Exception("Invalid append operation on " + first + " and " + second);
+                }
+            } else {
+                result = first;
+            }
+
+            state.AssignReference(reference, result);
+
             return ProcStatus.Continue;
         }
 

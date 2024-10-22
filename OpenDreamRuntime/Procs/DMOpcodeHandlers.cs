@@ -2867,25 +2867,10 @@ namespace OpenDreamRuntime.Procs {
             DreamProcNativeIcon.Blend(iconObj.Icon, blend, DreamIconOperationBlend.BlendType.Add, 0, 0);
             return new DreamValue(iconObj);
         }
+
         #endregion Helpers
 
         #region Peephole Optimizations
-
-        public static ProcStatus PushReferenceAndJumpIfNotNull(DMProcState state) {
-            DreamReference reference = state.ReadReference();
-            int jumpTo = state.ReadInt();
-
-            DreamValue value = state.GetReferenceValue(reference);
-
-            if (!value.IsNull) {
-                state.Push(value);
-                state.Jump(jumpTo);
-            } else {
-                state.Push(DreamValue.Null);
-            }
-
-            return ProcStatus.Continue;
-        }
 
         public static ProcStatus NullRef(DMProcState state) {
             state.AssignReference(state.ReadReference(), DreamValue.Null);
@@ -3085,17 +3070,6 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
-        public static ProcStatus JumpIfNotNull(DMProcState state) {
-            int position = state.ReadInt();
-
-            if (!state.Peek().IsNull) {
-                state.PopDrop();
-                state.Jump(position);
-            }
-
-            return ProcStatus.Continue;
-        }
-
         public static ProcStatus IsTypeDirect(DMProcState state) {
             DreamValue value = state.Pop();
             int typeId = state.ReadInt();
@@ -3108,6 +3082,11 @@ namespace OpenDreamRuntime.Procs {
             }
 
             return ProcStatus.Continue;
+        }
+
+        public static ProcStatus ReturnFloat(DMProcState state) {
+            state.SetReturn(new DreamValue(state.ReadFloat()));
+            return ProcStatus.Returned;
         }
 
         #endregion

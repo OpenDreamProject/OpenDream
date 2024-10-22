@@ -253,8 +253,7 @@ public enum DreamProcOpcode : byte {
     [OpcodeMetadata]
     Abs = 0x83,
     // Peephole optimization opcodes
-    [OpcodeMetadata(0, OpcodeArgType.Reference, OpcodeArgType.Label)]
-    PushRefandJumpIfNotNull = 0x84,
+    //0x84
     [OpcodeMetadata(-1, OpcodeArgType.Reference)]
     AssignPop = 0x85,
     [OpcodeMetadata(1, OpcodeArgType.Reference, OpcodeArgType.String)]
@@ -285,14 +284,15 @@ public enum DreamProcOpcode : byte {
     CreateListNResources = 0x92,
     [OpcodeMetadata(0, OpcodeArgType.String, OpcodeArgType.Label)]
     SwitchOnString = 0x93,
-    [OpcodeMetadata(1, OpcodeArgType.Label)]
-    JumpIfNotNull = 0x94,
+    //0x94
     [OpcodeMetadata(0, OpcodeArgType.TypeId)]
     IsTypeDirect = 0x95,
     [OpcodeMetadata(0, OpcodeArgType.Reference)]
     NullRef = 0x96,
     [OpcodeMetadata(0, OpcodeArgType.Reference)]
     ReturnReferenceValue = 0x97,
+    [OpcodeMetadata(0, OpcodeArgType.Float)]
+    ReturnFloat = 0x98,
 }
 // ReSharper restore MissingBlankLines
 

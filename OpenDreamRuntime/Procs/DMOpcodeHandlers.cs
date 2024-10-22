@@ -3084,6 +3084,11 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
+        public static ProcStatus ReturnFloat(DMProcState state) {
+            state.SetReturn(new DreamValue(state.ReadFloat()));
+            return ProcStatus.Returned;
+        }
+
         #endregion
     }
 }

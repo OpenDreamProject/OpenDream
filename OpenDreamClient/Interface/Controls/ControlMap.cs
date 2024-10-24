@@ -20,6 +20,9 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
     protected override void UpdateElementDescriptor() {
         base.UpdateElementDescriptor();
 
+        // Don't attempt to render any non-main viewports
+        Viewport.Visible = MapDescriptor.IsDefault.Value;
+
         Viewport.StretchMode = MapDescriptor.ZoomMode.Value switch {
             "blur" => ScalingViewportStretchMode.Bilinear,
             "distort" => ScalingViewportStretchMode.Nearest,

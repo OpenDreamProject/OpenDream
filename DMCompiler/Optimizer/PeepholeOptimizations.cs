@@ -4,8 +4,8 @@ namespace DMCompiler.Optimizer;
 
 // Assign [ref]
 // Pop
-// -> AssignPop [ref]
-internal sealed class AssignPop : IPeepholeOptimization {
+// -> AssignNoPush [ref]
+internal sealed class AssignNoPush : IPeepholeOptimization {
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.Assign,
@@ -22,18 +22,18 @@ internal sealed class AssignPop : IPeepholeOptimization {
         AnnotatedBytecodeReference assignTarget = firstInstruction.GetArg<AnnotatedBytecodeReference>(0);
 
         input.RemoveRange(index, 2);
-        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.AssignPop, [assignTarget]));
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.AssignNoPush, [assignTarget]));
     }
 }
 
 // PushNull
-// AssignPop [ref]
+// AssignNoPush [ref]
 // -> AssignNull [ref]
 internal sealed class AssignNull : IPeepholeOptimization {
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushNull,
-            DreamProcOpcode.AssignPop
+            DreamProcOpcode.AssignNoPush
         ];
     }
 
@@ -98,6 +98,24 @@ internal class ReturnReferenceValue : IPeepholeOptimization {
         AnnotatedBytecodeReference pushVal = firstInstruction.GetArg<AnnotatedBytecodeReference>(0);
         input.RemoveRange(index, 2);
         input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.ReturnReferenceValue, [pushVal]));
+    }
+}
+
+// PushFloat [float]
+// Return
+// -> ReturnFloat [float]
+internal class ReturnFloat : IPeepholeOptimization {
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.PushFloat,
+            DreamProcOpcode.Return
+        ];
+    }
+
+    public void Apply(List<IAnnotatedBytecode> input, int index) {
+        var firstInstruction = IPeepholeOptimization.GetInstructionAndValue(input[index], out var pushVal);
+        IPeepholeOptimization.ReplaceInstructions(input, index, 2,
+            new AnnotatedBytecodeInstruction(DreamProcOpcode.ReturnFloat, [new AnnotatedBytecodeFloat(pushVal, firstInstruction.Location)]));
     }
 }
 

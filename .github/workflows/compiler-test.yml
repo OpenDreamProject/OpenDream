@@ -90,3 +90,11 @@ jobs:
         path: cm
     - name: Compile CM Master
       run: main\bin\DMCompiler\DMCompiler.exe cm\colonialmarines.dme --suppress-unimplemented
+    - name: Checkout Aurora Master
+      uses: actions/checkout@v2
+      with:
+        repository: Aurorastation/Aurora.3
+        ref: master
+        path: aurora
+    - name: Compile Aurora Master
+      run: main\bin\DMCompiler\DMCompiler.exe aurora\aurorastation.dme --suppress-unimplemented

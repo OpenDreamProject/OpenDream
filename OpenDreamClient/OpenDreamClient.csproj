@@ -8,6 +8,7 @@
     <OutputPath>..\bin\Content.Client\</OutputPath>
     <OutputType Condition="'$(FullRelease)' != 'True'">Exe</OutputType>
     <Nullable>enable</Nullable>
+    <NoWarn>NU1507</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\OpenDreamShared\OpenDreamShared.csproj" />

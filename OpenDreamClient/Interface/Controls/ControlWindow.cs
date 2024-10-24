@@ -19,7 +19,7 @@ public sealed class ControlWindow : InterfaceControl {
 
     public readonly List<InterfaceControl> ChildControls = new();
 
-    public string Title => WindowDescriptor.Title.Value ?? (WindowDescriptor.IsDefault.Value ? "OpenDream World" : WindowDescriptor.Id.AsRaw());
+    public string Title => WindowDescriptor.Title.Value;
     public InterfaceMacroSet Macro => _interfaceManager.MacroSets[WindowDescriptor.Macro.AsRaw()];
 
     private WindowDescriptor WindowDescriptor => (WindowDescriptor)ElementDescriptor;
@@ -37,7 +37,7 @@ public sealed class ControlWindow : InterfaceControl {
         // Don't call base.UpdateElementDescriptor();
 
         _menuContainer.RemoveAllChildren();
-        if (WindowDescriptor.Menu.Value != null && _interfaceManager.Menus.TryGetValue(WindowDescriptor.Menu.Value, out var menu)) {
+        if (_interfaceManager.Menus.TryGetValue(WindowDescriptor.Menu.Value, out var menu)) {
             _menuContainer.AddChild(menu.MenuBar);
             _menuContainer.Visible = true;
         } else {

@@ -41,15 +41,13 @@ raw
 */
 
 public struct DMFPropertyString(string value) : IDMFProperty {
-    public string? Value = value;
+    public string Value = value;
 
     public string AsArg() {
-        return Value != null ? "\""+AsEscaped()+"\"" : "\"\"";
+        return "\""+AsEscaped()+"\"";
     }
 
     public string AsEscaped() {
-        if(Value == null)
-            return "";
         return Value
             .Replace("\\", "\\\\")
             .Replace("\"", "\\\"");
@@ -60,10 +58,7 @@ public struct DMFPropertyString(string value) : IDMFProperty {
     }
 
     public string AsParams() {
-        if(Value == null)
-            return "";
-        else
-            return System.Web.HttpUtility.UrlEncode(Value);
+        return System.Web.HttpUtility.UrlEncode(Value);
     }
 
     public string AsJson() {
@@ -80,7 +75,7 @@ public struct DMFPropertyString(string value) : IDMFProperty {
     }
 
     public string AsRaw() {
-        return Value ?? "";
+        return Value;
     }
 
     public string AsSnowflake() {

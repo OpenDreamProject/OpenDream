@@ -177,7 +177,7 @@ public sealed class DMPreprocessor(bool enableDirectives) : IEnumerable<Token> {
     }
 
     public void DefineMacro(string key, string value) {
-        var lexer = new DMPreprocessorLexer(null, "<command line>", value);
+        var lexer = new DMPreprocessorLexer(string.Empty, "<command line>", value);
         var list = new List<Token>();
 
         while (lexer.NextToken() is { Type: not TokenType.EndOfFile } token) {

@@ -142,6 +142,14 @@ public class DreamList : DreamObject {
         _values.Add(value);
     }
 
+    public virtual void AddValueRange(DreamList valueRange) {
+        _values.AddRange(valueRange.GetValues());
+    }
+
+    public virtual void AddValueRange(IEnumerable<DreamValue> valueRange) {
+        _values.AddRange(valueRange);
+    }
+
     //Does not include associations
     public virtual bool ContainsValue(DreamValue value) {
         for (int i = 0; i < _values.Count; i++) {
@@ -1260,6 +1268,91 @@ public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectA
 
     public IEnumerable<DreamObjectTurf> GetTurfs() {
         return _turfs;
+    }
+}
+
+// mob.contents, obj.contents list
+public sealed class MovableContentsList(DreamObjectDefinition listDef, DreamObjectMovable movable) : DreamList(listDef, 0) {
+    private readonly DreamObjectMovable _movable = movable;
+    public override DreamValue GetValue(DreamValue key) {
+        if (!key.TryGetValueAsInteger(out var index))
+            throw new Exception($"Invalid index into movable contents list: {key}");
+
+
+        if (index < 1 || index > _movable.ChildCount)
+            throw new Exception($"Out of bounds index on movable contents list: {index}");
+
+
+        using (var childEnumerator = _movable.ChildEnumerator) {
+            while (index >= 1) {
+                var current = childEnumerator.MoveNext(out EntityUid child);
+
+                if (index == 1) {
+                    if (AtomManager.TryGetMovableFromEntity(child, out var childObject))
+                        return new DreamValue(childObject);
+                    else
+                        throw new Exception($"Invalid child in movable contents list: {child}");
+                }
+
+                index--;
+            }
+        }
+
+        throw new Exception($"Out of bounds index on movable contents list after iterating: {key}");
+    }
+
+    public override List<DreamValue> GetValues() {
+        List<DreamValue> values = new List<DreamValue>(_movable.ChildCount);
+
+        using (var childEnumerator = _movable.ChildEnumerator) {
+            while (childEnumerator.MoveNext(out EntityUid child)) {
+                if (!AtomManager.TryGetMovableFromEntity(child, out var childObject))
+                    continue;
+
+                values.Add(new DreamValue(childObject));
+            }
+        }
+
+        return values;
+    }
+
+    public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
+        throw new Exception("Cannot set an index of movable contents list");
+    }
+
+    public override void AddValue(DreamValue value) {
+        if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
+            throw new Exception($"Cannot add {value} to movable contents");
+
+        movable.SetVariable("loc", new (_movable));
+    }
+
+    public override void RemoveValue(DreamValue value) {
+        if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
+            throw new Exception($"Cannot remove {value} from movable contents");
+
+        movable.SetVariable("loc", DreamValue.Null);
+    }
+
+    public override bool ContainsValue(DreamValue value) {
+        if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
+            return false;
+
+        if (!movable.TryGetVariable("loc", out var _locVariable))
+            return false;
+
+        if (!_locVariable.TryGetValueAsDreamObject<DreamObjectAtom>(out var _loc))
+            return false;
+
+        return _loc == _movable;
+    }
+
+    public override void Cut(int start = 1, int end = 0) {
+        // TODO
+    }
+
+    public override int GetLength() {
+        return _movable.ChildCount;
     }
 }
 

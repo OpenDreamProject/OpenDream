@@ -180,6 +180,7 @@ namespace OpenDreamRuntime.Procs {
         private static readonly ArrayPool<DreamValue> _dreamValuePool = ArrayPool<DreamValue>.Create();
 
         #region Opcode Handlers
+
         //Human readable friendly version, which will be converted to a more efficient lookup at runtime.
         private static readonly Dictionary<DreamProcOpcode, OpcodeHandler> _opcodeHandlers = new() {
             {DreamProcOpcode.BitShiftLeft, DMOpcodeHandlers.BitShiftLeft},
@@ -302,9 +303,8 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.DebuggerBreakpoint, DMOpcodeHandlers.DebuggerBreakpoint},
             {DreamProcOpcode.Rgb, DMOpcodeHandlers.Rgb},
             // Peephole optimizer opcode handlers
-            {DreamProcOpcode.PushRefandJumpIfNotNull, DMOpcodeHandlers.PushReferenceAndJumpIfNotNull},
             {DreamProcOpcode.NullRef, DMOpcodeHandlers.NullRef},
-            {DreamProcOpcode.AssignPop, DMOpcodeHandlers.AssignPop},
+            {DreamProcOpcode.AssignNoPush, DMOpcodeHandlers.AssignNoPush},
             {DreamProcOpcode.PushRefAndDereferenceField, DMOpcodeHandlers.PushReferenceAndDereferenceField},
             {DreamProcOpcode.PushNRefs, DMOpcodeHandlers.PushNRefs},
             {DreamProcOpcode.PushNFloats, DMOpcodeHandlers.PushNFloats},
@@ -319,12 +319,13 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.CreateListNStrings, DMOpcodeHandlers.CreateListNStrings},
             {DreamProcOpcode.CreateListNRefs, DMOpcodeHandlers.CreateListNRefs},
             {DreamProcOpcode.CreateListNResources, DMOpcodeHandlers.CreateListNResources},
-            {DreamProcOpcode.JumpIfNotNull, DMOpcodeHandlers.JumpIfNotNull},
             {DreamProcOpcode.IsTypeDirect, DMOpcodeHandlers.IsTypeDirect},
-            {DreamProcOpcode.ReturnReferenceValue, DMOpcodeHandlers.ReturnReferenceValue}
+            {DreamProcOpcode.ReturnReferenceValue, DMOpcodeHandlers.ReturnReferenceValue},
+            {DreamProcOpcode.ReturnFloat, DMOpcodeHandlers.ReturnFloat}
         };
 
         public static readonly unsafe delegate*<DMProcState, ProcStatus>[] OpcodeHandlers;
+
         #endregion
 
         public DreamManager DreamManager => _proc.DreamManager;

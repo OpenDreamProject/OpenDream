@@ -2,6 +2,30 @@ using DMCompiler.Bytecode;
 
 namespace DMCompiler.Optimizer;
 
+// Append [ref]
+// Pop
+// -> AppendNoPush [ref]
+internal sealed class AppendNoPush : IPeepholeOptimization {
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.Append,
+            DreamProcOpcode.Pop
+        ];
+    }
+
+    public void Apply(List<IAnnotatedBytecode> input, int index) {
+        if (index + 1 >= input.Count) {
+            throw new ArgumentOutOfRangeException(nameof(index), "Bytecode index is outside the bounds of the input list.");
+        }
+
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
+        AnnotatedBytecodeReference assignTarget = firstInstruction.GetArg<AnnotatedBytecodeReference>(0);
+
+        input.RemoveRange(index, 2);
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.AppendNoPush, [assignTarget]));
+    }
+}
+
 // Assign [ref]
 // Pop
 // -> AssignNoPush [ref]

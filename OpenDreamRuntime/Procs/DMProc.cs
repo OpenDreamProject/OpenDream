@@ -207,6 +207,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.Negate, DMOpcodeHandlers.Negate},
             {DreamProcOpcode.Modulus, DMOpcodeHandlers.Modulus},
             {DreamProcOpcode.Append, DMOpcodeHandlers.Append},
+            {DreamProcOpcode.AppendNoPush, DMOpcodeHandlers.AppendNoPush},
             {DreamProcOpcode.CreateRangeEnumerator, DMOpcodeHandlers.CreateRangeEnumerator},
             {DreamProcOpcode.Input, DMOpcodeHandlers.Input},
             {DreamProcOpcode.CompareLessThanOrEqual, DMOpcodeHandlers.CompareLessThanOrEqual},

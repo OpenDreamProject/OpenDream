@@ -29,6 +29,10 @@ public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializatio
 
         while (TryGetAttribute(out var winset)) {
             winSets.Add(winset);
+
+            // An empty string is being used as a delimiter (thanks TG)
+            if(Current().Type == TokenType.Value && string.IsNullOrEmpty(Current().Text))
+                Advance();
         }
 
         return winSets;
@@ -228,13 +232,17 @@ public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializatio
             else if (Check(TokenType.Ternary)) {
                 List<DMFWinSet> trueStatements = new();
                 List<DMFWinSet> falseStatements = new();
-                while(TryGetAttribute(out var statement)){
-                    trueStatements.Add(statement);
+                if(TryGetAttribute(out var trueStatement)){
+                    trueStatements.Add(trueStatement);
                 }
 
-                if(Check(TokenType.Colon)){ //not all ternarys have an else
-                    while(TryGetAttribute(out var statement)){
-                        falseStatements.Add(statement);
+                // This happens if a ternary false case follows a string in the true case
+                var colonAttribute = Current().Type == TokenType.Attribute && Current().Text == ":";
+                if (colonAttribute) Advance();
+
+                if(colonAttribute || Check(TokenType.Colon)){ //not all ternaries have an else
+                    if(TryGetAttribute(out var falseStatement)){
+                        falseStatements.Add(falseStatement);
                     }
                 }
 

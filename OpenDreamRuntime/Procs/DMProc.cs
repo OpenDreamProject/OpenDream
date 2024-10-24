@@ -305,7 +305,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.Rgb, DMOpcodeHandlers.Rgb},
             // Peephole optimizer opcode handlers
             {DreamProcOpcode.NullRef, DMOpcodeHandlers.NullRef},
-            {DreamProcOpcode.AssignPop, DMOpcodeHandlers.AssignPop},
+            {DreamProcOpcode.AssignNoPush, DMOpcodeHandlers.AssignNoPush},
             {DreamProcOpcode.PushRefAndDereferenceField, DMOpcodeHandlers.PushReferenceAndDereferenceField},
             {DreamProcOpcode.PushNRefs, DMOpcodeHandlers.PushNRefs},
             {DreamProcOpcode.PushNFloats, DMOpcodeHandlers.PushNFloats},
@@ -321,7 +321,8 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.CreateListNRefs, DMOpcodeHandlers.CreateListNRefs},
             {DreamProcOpcode.CreateListNResources, DMOpcodeHandlers.CreateListNResources},
             {DreamProcOpcode.IsTypeDirect, DMOpcodeHandlers.IsTypeDirect},
-            {DreamProcOpcode.ReturnReferenceValue, DMOpcodeHandlers.ReturnReferenceValue}
+            {DreamProcOpcode.ReturnReferenceValue, DMOpcodeHandlers.ReturnReferenceValue},
+            {DreamProcOpcode.ReturnFloat, DMOpcodeHandlers.ReturnFloat}
         };
 
         public static readonly unsafe delegate*<DMProcState, ProcStatus>[] OpcodeHandlers;

@@ -256,7 +256,7 @@ public enum DreamProcOpcode : byte {
     [OpcodeMetadata(-1, OpcodeArgType.Reference)]
     AppendNoPush = 0x84,
     [OpcodeMetadata(-1, OpcodeArgType.Reference)]
-    AssignPop = 0x85,
+    AssignNoPush = 0x85,
     [OpcodeMetadata(1, OpcodeArgType.Reference, OpcodeArgType.String)]
     PushRefAndDereferenceField = 0x86,
     [OpcodeMetadata(true, 0, OpcodeArgType.Int)]
@@ -292,6 +292,8 @@ public enum DreamProcOpcode : byte {
     NullRef = 0x96,
     [OpcodeMetadata(0, OpcodeArgType.Reference)]
     ReturnReferenceValue = 0x97,
+    [OpcodeMetadata(0, OpcodeArgType.Float)]
+    ReturnFloat = 0x98,
 }
 // ReSharper restore MissingBlankLines
 

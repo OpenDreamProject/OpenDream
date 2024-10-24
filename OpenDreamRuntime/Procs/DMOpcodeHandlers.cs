@@ -2918,7 +2918,7 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
-        public static ProcStatus AssignPop(DMProcState state) {
+        public static ProcStatus AssignNoPush(DMProcState state) {
             DreamReference reference = state.ReadReference();
             DreamValue value = state.Pop();
 
@@ -3123,6 +3123,11 @@ namespace OpenDreamRuntime.Procs {
             }
 
             return ProcStatus.Continue;
+        }
+
+        public static ProcStatus ReturnFloat(DMProcState state) {
+            state.SetReturn(new DreamValue(state.ReadFloat()));
+            return ProcStatus.Returned;
         }
 
         #endregion

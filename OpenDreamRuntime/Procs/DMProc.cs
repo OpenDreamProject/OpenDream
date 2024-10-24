@@ -304,7 +304,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.Rgb, DMOpcodeHandlers.Rgb},
             // Peephole optimizer opcode handlers
             {DreamProcOpcode.NullRef, DMOpcodeHandlers.NullRef},
-            {DreamProcOpcode.AssignPop, DMOpcodeHandlers.AssignPop},
+            {DreamProcOpcode.AssignNoPush, DMOpcodeHandlers.AssignNoPush},
             {DreamProcOpcode.PushRefAndDereferenceField, DMOpcodeHandlers.PushReferenceAndDereferenceField},
             {DreamProcOpcode.PushNRefs, DMOpcodeHandlers.PushNRefs},
             {DreamProcOpcode.PushNFloats, DMOpcodeHandlers.PushNFloats},

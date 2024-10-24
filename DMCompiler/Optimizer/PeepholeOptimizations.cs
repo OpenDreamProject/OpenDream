@@ -4,8 +4,8 @@ namespace DMCompiler.Optimizer;
 
 // Assign [ref]
 // Pop
-// -> AssignPop [ref]
-internal sealed class AssignPop : IPeepholeOptimization {
+// -> AssignNoPush [ref]
+internal sealed class AssignNoPush : IPeepholeOptimization {
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.Assign,
@@ -22,18 +22,18 @@ internal sealed class AssignPop : IPeepholeOptimization {
         AnnotatedBytecodeReference assignTarget = firstInstruction.GetArg<AnnotatedBytecodeReference>(0);
 
         input.RemoveRange(index, 2);
-        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.AssignPop, [assignTarget]));
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.AssignNoPush, [assignTarget]));
     }
 }
 
 // PushNull
-// AssignPop [ref]
+// AssignNoPush [ref]
 // -> AssignNull [ref]
 internal sealed class AssignNull : IPeepholeOptimization {
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushNull,
-            DreamProcOpcode.AssignPop
+            DreamProcOpcode.AssignNoPush
         ];
     }
 

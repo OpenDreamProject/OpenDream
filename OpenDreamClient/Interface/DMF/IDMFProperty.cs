@@ -222,38 +222,20 @@ public struct DMFPropertyVec2 : IDMFProperty, IEquatable<DMFPropertyVec2> {
         return comparisonVec.X == X && comparisonVec.Y == Y;
     }
 
-    public bool Equals(DMFPropertyVec2 other)
-    {
+    public bool Equals(DMFPropertyVec2 other) {
         return X == other.X && Y == other.Y && Delim == other.Delim;
     }
 
-    public override bool Equals(object? obj)
-    {
+    public override bool Equals(object? obj) {
         return obj is DMFPropertyVec2 other && Equals(other);
     }
 
-    public override int GetHashCode()
-    {
+    public override int GetHashCode() {
         return HashCode.Combine(X, Y, Delim);
     }
 }
 
 public struct DMFPropertySize : IDMFProperty, IEquatable<DMFPropertySize> {
-    public bool Equals(DMFPropertySize other)
-    {
-        return _value.Equals(other._value);
-    }
-
-    public override bool Equals(object? obj)
-    {
-        return obj is DMFPropertySize other && Equals(other);
-    }
-
-    public override int GetHashCode()
-    {
-        return _value.GetHashCode();
-    }
-
     private DMFPropertyVec2 _value;
     public int X {get => _value.X; set => _value.X = value;}
     public int Y {get => _value.Y; set => _value.Y = value;}
@@ -320,26 +302,23 @@ public struct DMFPropertySize : IDMFProperty, IEquatable<DMFPropertySize> {
         return _value.Equals(comparison);
     }
 
+    public bool Equals(DMFPropertySize other) {
+        return _value.Equals(other._value);
+    }
+
+    public override bool Equals(object? obj) {
+        return obj is DMFPropertySize other && Equals(other);
+    }
+
+    public override int GetHashCode() {
+        return _value.GetHashCode();
+    }
+
     public static bool operator ==(DMFPropertySize a, DMFPropertySize b) => a.Vector == b.Vector;
     public static bool operator !=(DMFPropertySize a, DMFPropertySize b) => a.Vector != b.Vector;
 }
 
 public struct DMFPropertyPos : IDMFProperty, IEquatable<DMFPropertyPos> {
-    public bool Equals(DMFPropertyPos other)
-    {
-        return _value.Equals(other._value);
-    }
-
-    public override bool Equals(object? obj)
-    {
-        return obj is DMFPropertyPos other && Equals(other);
-    }
-
-    public override int GetHashCode()
-    {
-        return _value.GetHashCode();
-    }
-
     private DMFPropertyVec2 _value;
     public int X => _value.X;
     public int Y => _value.Y;
@@ -404,6 +383,18 @@ public struct DMFPropertyPos : IDMFProperty, IEquatable<DMFPropertyPos> {
 
     public bool Equals(string comparison) {
         return _value.Equals(comparison);
+    }
+
+    public bool Equals(DMFPropertyPos other) {
+        return _value.Equals(other._value);
+    }
+
+    public override bool Equals(object? obj) {
+        return obj is DMFPropertyPos other && Equals(other);
+    }
+
+    public override int GetHashCode() {
+        return _value.GetHashCode();
     }
 
     public static bool operator ==(DMFPropertyPos a, DMFPropertyPos b) => a.Vector == b.Vector;

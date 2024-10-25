@@ -126,7 +126,15 @@ internal class Dereference : LValue {
                 break;
 
             case CallOperation callOperation:
-                var (argumentsType, argumentStackSize) = callOperation.Parameters.EmitArguments(dmObject, proc, null);
+                DMProc? targetProc = null;
+                if (callOperation.Path is not null) {
+                    var obj = DMObjectTree.GetDMObject(callOperation.Path.Value, false);
+                    var procs = obj?.GetProcs(callOperation.Identifier);
+                    if (procs is not null && procs.Count > 0) {
+                        targetProc = DMObjectTree.AllProcs[procs[0]];
+                    }
+                }
+                var (argumentsType, argumentStackSize) = callOperation.Parameters.EmitArguments(dmObject, proc, targetProc);
                 proc.DereferenceCall(callOperation.Identifier, argumentsType, argumentStackSize);
                 break;
 

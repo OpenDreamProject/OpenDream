@@ -783,7 +783,7 @@ internal static class DMExpressionBuilder {
                         Parameters = argumentList,
                         Safe = callOperation.Safe,
                         Identifier = field,
-                        Path = null
+                        Path = prevPath
                     };
                     prevPath = null;
                     pathIsFuzzy = true;

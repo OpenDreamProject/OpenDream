@@ -763,6 +763,7 @@ internal static class DMExpressionBuilder {
                 case DMASTDereference.CallOperation callOperation: {
                     var field = callOperation.Identifier;
                     ArgumentList argumentList = new(deref.Expression.Location, dmObject, proc, callOperation.Parameters);
+                    DreamPath? nextPath = null;
 
                     if (!callOperation.NoSearch && !pathIsFuzzy) {
                         if (prevPath == null) {
@@ -777,6 +778,9 @@ internal static class DMExpressionBuilder {
                         if (!fromObject.HasProc(field))
                             return BadExpression(WarningCode.ItemDoesntExist, callOperation.Location,
                                 $"Type {prevPath.Value} does not have a proc named \"{field}\"");
+
+                        var returnTypes = fromObject.GetProcReturnTypes(field) ?? DMValueType.Anything;
+                        nextPath = returnTypes.IsPath ? returnTypes.TypePath : returnTypes.AsPath();
                     }
 
                     operation = new Dereference.CallOperation {
@@ -785,8 +789,9 @@ internal static class DMExpressionBuilder {
                         Identifier = field,
                         Path = prevPath
                     };
-                    prevPath = null;
-                    pathIsFuzzy = true;
+                    prevPath = nextPath;
+                    if(prevPath is null)
+                        pathIsFuzzy = true;
                     break;
                 }
 

@@ -184,7 +184,7 @@ internal static class DMObjectTree {
         return null;
     }
 
-    public static int CreateGlobal(out DMVariable global, DreamPath? type, string name, bool isConst, DMComplexValueType valType) {
+    public static int CreateGlobal(out DMVariable global, DreamPath? type, string name, bool isConst, DMComplexValueType? valType) {
         int id = Globals.Count;
 
         global = new DMVariable(type, name, true, isConst, false, valType);

@@ -113,7 +113,7 @@ internal sealed class DMObject {
     }
 
     public DMVariable CreateGlobalVariable(DreamPath? type, string name, bool isConst, DMComplexValueType? valType = null) {
-        int id = DMObjectTree.CreateGlobal(out DMVariable global, type, name, isConst, valType ?? DMValueType.Anything);
+        int id = DMObjectTree.CreateGlobal(out DMVariable global, type, name, isConst, valType);
 
         GlobalVariables[name] = id;
         return global;

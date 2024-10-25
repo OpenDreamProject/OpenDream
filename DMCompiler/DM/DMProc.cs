@@ -230,7 +230,7 @@ namespace DMCompiler.DM {
         }
 
         public DMVariable CreateGlobalVariable(DreamPath? type, string name, bool isConst, out int id) {
-            id = DMObjectTree.CreateGlobal(out DMVariable global, type, name, isConst, DMValueType.Anything);
+            id = DMObjectTree.CreateGlobal(out DMVariable global, type, name, isConst, null);
 
             GlobalVariables[name] = id;
             return global;

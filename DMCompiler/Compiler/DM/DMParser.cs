@@ -300,7 +300,7 @@ namespace DMCompiler.Compiler.DM {
                         value = new DMASTConstantNull(loc);
                     }
 
-                    var valType = AsComplexTypes() ?? DMValueType.Anything;
+                    var valType = AsComplexTypes();
                     var varDef = new DMASTObjectVarDefinition(loc, varPath, value, valType);
 
                     varDefinitions.Add(varDef);
@@ -2735,7 +2735,7 @@ namespace DMCompiler.Compiler.DM {
                     if (path == null)
                         path = pathType;
                     else
-                        DMCompiler.Emit(WarningCode.BadToken, CurrentLoc,
+                        DMCompiler.Emit(WarningCode.LostTypeInfo, CurrentLoc,
                             $"Only one type path can be used, ignoring {pathType}");
                 }
 

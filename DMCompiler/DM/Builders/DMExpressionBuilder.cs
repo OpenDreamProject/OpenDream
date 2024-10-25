@@ -1062,11 +1062,11 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
             if (inferredPath == null)
                 return BadExpression(WarningCode.BadExpression, locate.Location, "inferred locate requires a type");
 
-            return new LocateInferred(locate.Location, inferredPath.Value, container);
+            return new LocateInferred(Compiler, locate.Location, inferredPath.Value, container);
         }
 
         var pathExpr = BuildExpression(locate.Expression, inferredPath);
-        return new Locate(locate.Location, pathExpr, container);
+        return new Locate(Compiler, locate.Location, pathExpr, container);
     }
 
     private DMExpression BuildImplicitAsType(DMASTImplicitAsType asType, DreamPath? inferredPath) {

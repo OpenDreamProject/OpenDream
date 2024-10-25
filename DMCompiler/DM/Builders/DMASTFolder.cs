@@ -254,13 +254,6 @@ public class DMASTFolder {
 
                 break;
             }
-            case DMASTAdd add: {
-                DMASTConstantString? lhsString = add.LHS as DMASTConstantString;
-                DMASTConstantString? rhsString = add.RHS as DMASTConstantString;
-                if (lhsString != null && rhsString != null) return new DMASTConstantString(expression.Location, lhsString.Value + rhsString.Value);
-
-                break;
-            }
 
             #endregion Math
 

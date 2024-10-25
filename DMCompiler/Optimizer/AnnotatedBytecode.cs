@@ -249,6 +249,10 @@ internal sealed class AnnotatedBytecodeString : IAnnotatedBytecode {
     public Location GetLocation() {
         return Location;
     }
+
+    public string ResolveString() {
+        return DMObjectTree.StringTable[Id];
+    }
 }
 
 internal sealed class AnnotatedBytecodeArgumentType : IAnnotatedBytecode {

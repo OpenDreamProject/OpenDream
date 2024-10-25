@@ -35,7 +35,7 @@ proc/hearers(Depth = world.view, Center = usr) as /list
 proc/html_decode(HtmlText) as text
 proc/html_encode(PlainText) as text
 proc/icon_states(Icon, mode = 0) as text|null
-proc/image(icon, loc, icon_state, layer, dir, pixel_x, pixel_y)
+proc/image(icon, loc, icon_state, layer, dir, pixel_x, pixel_y) as /image
 proc/isarea(Loc1) as num
 proc/isfile(File) as num
 proc/isicon(Icon) as num
@@ -55,7 +55,7 @@ proc/json_decode(JSON)
 proc/json_encode(Value, flags)
 proc/length_char(E) as num
 proc/list2params(List) as text
-proc/lowertext(T as text) as text
+proc/lowertext(T as text|null) as text
 proc/max(A) as num|text|null
 proc/md5(T) as text|null
 proc/min(A) as num|text|null
@@ -146,11 +146,11 @@ proc/replacetextEx_char(Haystack as text, Needle, Replacement, Start = 1, End = 
 	set opendream_unimplemented = TRUE
 	return Haystack
 
-/proc/step(atom/movable/Ref as /atom/movable, var/Dir, var/Speed=0) as num
+/proc/step(atom/movable/Ref, var/Dir as num|null, var/Speed=0) as num
 	//TODO: Speed = step_size if Speed is 0
 	return Ref.Move(get_step(Ref, Dir), Dir)
 
-/proc/step_away(atom/movable/Ref as /atom/movable, /atom/Trg, Max=5, Speed=0) as num
+/proc/step_away(atom/movable/Ref, /atom/Trg, Max=5, Speed=0) as num
     return Ref.Move(get_step_away(Ref, Trg, Max), turn(get_dir(Ref, Trg), 180))
 
 /proc/step_to(atom/movable/Ref, atom/Trg, Min = 0, Speed = 0) as num
@@ -159,7 +159,7 @@ proc/replacetextEx_char(Haystack as text, Needle, Replacement, Start = 1, End = 
 	var/dist = get_dist(Ref, Trg)
 	if (dist <= Min) return
 
-	var/step_dir = get_dir(Ref, Trg)
+	var/step_dir = get_dir(Ref, Trg) as num
 	return step(Ref, step_dir, Speed)
 
 /proc/get_step_to(Ref, Trg, Min=0)
@@ -198,7 +198,7 @@ proc/get_step_rand(atom/movable/Ref)
 
 	return get_step(Ref, dir)
 
-proc/step_towards(atom/movable/Ref as /atom/movable, /atom/Trg, Speed) as num
+proc/step_towards(atom/movable/Ref as obj|mob, /atom/Trg, Speed) as num
 	return Ref.Move(get_step_towards(Ref, Trg), get_dir(Ref, Trg))
 
 proc/step_rand(atom/movable/Ref, Speed=0)

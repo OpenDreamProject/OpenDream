@@ -11,7 +11,7 @@
 	var/tag
 	var/const/type = /client
 
-	var/mob/mob as /mob|null
+	var/mob/mob as mob|null
 	var/atom/eye
 	var/lazy_eye = 0 as opendream_unimplemented
 	var/perspective = MOB_PERSPECTIVE
@@ -49,8 +49,7 @@
 
 	proc/New(TopicData)
 		// Search every mob for one with our ckey
-		// TODO: This /mob|mob thing is kinda silly huh?
-		for (var/mob/M as /mob|mob in world)
+		for (var/mob/M as mob in world)
 			if (M.key == key)
 				mob = M
 				break

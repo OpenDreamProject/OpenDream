@@ -46,7 +46,11 @@ internal sealed class Arglist(Location location, DMExpression expr) : DMExpressi
 // new x (...)
 internal sealed class New(Location location, DMExpression expr, ArgumentList arguments) : DMExpression(location) {
     public override bool PathIsFuzzy => Path == null;
-    public override DMComplexValueType ValType => !expr.ValType.IsAnything ? expr.ValType : (Path?.GetAtomType() ?? DMValueType.Anything);
+    public override DMComplexValueType ValType {
+        get {
+            return !expr.ValType.IsAnything ? (expr.ValType.IsPath ? expr.ValType.TypePath!.Value.GetAtomType() : expr.ValType) : (Path?.GetAtomType() ?? DMValueType.Anything);
+        }
+    }
 
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         var argumentInfo = arguments.EmitArguments(dmObject, proc, null);
@@ -59,7 +63,12 @@ internal sealed class New(Location location, DMExpression expr, ArgumentList arg
 // new /x/y/z (...)
 internal sealed class NewPath(Location location, ConstantPath targetPath, ArgumentList arguments) : DMExpression(location) {
     public override DreamPath? Path => targetPath.Value;
-    public override DMComplexValueType ValType => targetPath.Value.GetAtomType();
+    public override DMComplexValueType ValType {
+        get {
+            var atomType = Path?.GetAtomType() ?? DMValueType.Anything;
+            return atomType switch { DMValueType.Anything => new DMComplexValueType(DMValueType.Path, Path), _ => atomType };
+        }
+    }
 
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         if (!targetPath.TryResolvePath(out var pathInfo)) {
@@ -98,7 +107,7 @@ internal sealed class NewPath(Location location, ConstantPath targetPath, Argume
 
 // locate()
 internal sealed class LocateInferred(Location location, DreamPath path, DMExpression? container) : DMExpression(location) {
-    public override DMComplexValueType ValType => path;
+    public override DMComplexValueType ValType => path.GetAtomType();
 
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         if (!DMObjectTree.TryGetTypeId(path, out var typeId)) {
@@ -129,6 +138,7 @@ internal sealed class LocateInferred(Location location, DreamPath path, DMExpres
 // locate(x)
 internal sealed class Locate(Location location, DMExpression path, DMExpression? container) : DMExpression(location) {
     public override bool PathIsFuzzy => true;
+    public override DMComplexValueType ValType => path.Path?.GetAtomType() ?? DMValueType.Anything;
 
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         path.EmitPushValue(dmObject, proc);
@@ -340,6 +350,7 @@ internal sealed class Length(Location location, DMExpression value) : DMExpressi
 // get_step(ref, dir)
 internal sealed class GetStep(Location location, DMExpression refValue, DMExpression dir) : DMExpression(location) {
     public override bool PathIsFuzzy => true;
+    public override DMComplexValueType ValType => DMValueType.Turf | DMValueType.Null;
 
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         refValue.EmitPushValue(dmObject, proc);
@@ -351,6 +362,7 @@ internal sealed class GetStep(Location location, DMExpression refValue, DMExpres
 // get_dir(loc1, loc2)
 internal sealed class GetDir(Location location, DMExpression loc1, DMExpression loc2) : DMExpression(location) {
     public override bool PathIsFuzzy => true;
+    public override DMComplexValueType ValType => DMValueType.Num; // invalid/no dir is 0, not null
 
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         loc1.EmitPushValue(dmObject, proc);
@@ -435,6 +447,7 @@ internal sealed class List : DMExpression {
 
 // Value of var/list/L[1][2][3]
 internal sealed class DimensionalList(Location location, DMExpression[] sizes) : DMExpression(location) {
+    public override DMComplexValueType ValType => DreamPath.List;
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         // This basically emits new /list(1, 2, 3)
 

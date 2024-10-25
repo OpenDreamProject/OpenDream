@@ -20,7 +20,10 @@ internal sealed class Ternary : DMExpression {
                 $"Ternary has type paths {b.ValType.TypePath} and {c.ValType.TypePath} but a value can only have one type path. Using {b.ValType.TypePath}.");
         }
 
-        ValType = new(b.ValType.Type | c.ValType.Type, b.ValType.TypePath ?? c.ValType.TypePath);
+        if (b.ValType.IsAnything || c.ValType.IsAnything)
+            ValType = DMValueType.Anything;
+        else
+            ValType = new(b.ValType.Type | c.ValType.Type, b.ValType.TypePath ?? c.ValType.TypePath);
     }
 
     public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {

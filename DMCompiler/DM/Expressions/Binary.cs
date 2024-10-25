@@ -322,6 +322,7 @@ internal sealed class BinaryOr(Location location, DMExpression lhs, DMExpression
 
 // x == y
 internal sealed class Equal(Location location, DMExpression lhs, DMExpression rhs) : BinaryOp(location, lhs, rhs) {
+    public override DMComplexValueType ValType => DMValueType.Num; // todo: DMValueType.Bool
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         LHS.EmitPushValue(dmObject, proc);
         RHS.EmitPushValue(dmObject, proc);
@@ -331,6 +332,7 @@ internal sealed class Equal(Location location, DMExpression lhs, DMExpression rh
 
 // x != y
 internal sealed class NotEqual(Location location, DMExpression lhs, DMExpression rhs) : BinaryOp(location, lhs, rhs) {
+    public override DMComplexValueType ValType => DMValueType.Num; // todo: DMValueType.Bool
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         LHS.EmitPushValue(dmObject, proc);
         RHS.EmitPushValue(dmObject, proc);
@@ -340,6 +342,7 @@ internal sealed class NotEqual(Location location, DMExpression lhs, DMExpression
 
 // x ~= y
 internal sealed class Equivalent(Location location, DMExpression lhs, DMExpression rhs) : BinaryOp(location, lhs, rhs) {
+    public override DMComplexValueType ValType => DMValueType.Num; // todo: DMValueType.Bool
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         LHS.EmitPushValue(dmObject, proc);
         RHS.EmitPushValue(dmObject, proc);
@@ -349,6 +352,7 @@ internal sealed class Equivalent(Location location, DMExpression lhs, DMExpressi
 
 // x ~! y
 internal sealed class NotEquivalent(Location location, DMExpression lhs, DMExpression rhs) : BinaryOp(location, lhs, rhs) {
+    public override DMComplexValueType ValType => DMValueType.Num; // todo: DMValueType.Bool
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         LHS.EmitPushValue(dmObject, proc);
         RHS.EmitPushValue(dmObject, proc);
@@ -358,6 +362,7 @@ internal sealed class NotEquivalent(Location location, DMExpression lhs, DMExpre
 
 // x > y
 internal sealed class GreaterThan(Location location, DMExpression lhs, DMExpression rhs) : BinaryOp(location, lhs, rhs) {
+    public override DMComplexValueType ValType => DMValueType.Num; // todo: DMValueType.Bool
     public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
         if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
             constant = null;
@@ -385,6 +390,7 @@ internal sealed class GreaterThan(Location location, DMExpression lhs, DMExpress
 
 // x >= y
 internal sealed class GreaterThanOrEqual(Location location, DMExpression lhs, DMExpression rhs) : BinaryOp(location, lhs, rhs) {
+    public override DMComplexValueType ValType => DMValueType.Num; // todo: DMValueType.Bool
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         LHS.EmitPushValue(dmObject, proc);
         RHS.EmitPushValue(dmObject, proc);
@@ -413,6 +419,7 @@ internal sealed class GreaterThanOrEqual(Location location, DMExpression lhs, DM
 
 // x < y
 internal sealed class LessThan(Location location, DMExpression lhs, DMExpression rhs) : BinaryOp(location, lhs, rhs) {
+    public override DMComplexValueType ValType => DMValueType.Num; // todo: DMValueType.Bool
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         LHS.EmitPushValue(dmObject, proc);
         RHS.EmitPushValue(dmObject, proc);
@@ -440,6 +447,7 @@ internal sealed class LessThan(Location location, DMExpression lhs, DMExpression
 
 // x <= y
 internal sealed class LessThanOrEqual(Location location, DMExpression lhs, DMExpression rhs) : BinaryOp(location, lhs, rhs) {
+    public override DMComplexValueType ValType => DMValueType.Num; // todo: DMValueType.Bool
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         LHS.EmitPushValue(dmObject, proc);
         RHS.EmitPushValue(dmObject, proc);
@@ -496,6 +504,7 @@ internal sealed class Or(Location location, DMExpression lhs, DMExpression rhs) 
 
 // x && y
 internal sealed class And(Location location, DMExpression lhs, DMExpression rhs) : BinaryOp(location, lhs, rhs) {
+    public override DMComplexValueType ValType => RHS.ValType;
     public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
         if (LHS.TryAsConstant(out var lhs) && !lhs.IsTruthy()) {
             constant = lhs;
@@ -523,6 +532,7 @@ internal sealed class And(Location location, DMExpression lhs, DMExpression rhs)
 
 // x in y
 internal sealed class In(Location location, DMExpression expr, DMExpression container) : BinaryOp(location, expr, container) {
+    public override DMComplexValueType ValType => DMValueType.Num; // todo: DMValueType.Bool
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         LHS.EmitPushValue(dmObject, proc);
         RHS.EmitPushValue(dmObject, proc);

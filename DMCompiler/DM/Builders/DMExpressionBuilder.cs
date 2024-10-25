@@ -581,7 +581,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                 if (scopeMode == Normal) {
                     var localVar = ctx.Proc?.GetLocalVariable(name);
                     if (localVar != null)
-                        return new Local(identifier.Location, localVar);
+                        return new Local(identifier.Location, localVar, localVar.ExplicitValueType);
                 }
 
                 var field = ctx.Type.GetVariable(name);

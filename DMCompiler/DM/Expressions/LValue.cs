@@ -72,11 +72,15 @@ internal sealed class Args(Location location) : LValue(location, DreamPath.List)
 }
 
 // Identifier of local variable
-internal sealed class Local(Location location, DMProc.LocalVariable localVar) : LValue(location, localVar.Type) {
+internal sealed class Local(Location location, DMProc.LocalVariable localVar, DMComplexValueType? valType) : LValue(location, localVar.Type) {
     public DMProc.LocalVariable LocalVar { get; } = localVar;
-
-    // TODO: non-const local var static typing
-    public override DMComplexValueType ValType => LocalVar.ExplicitValueType ?? DMValueType.Anything;
+    public override DMComplexValueType ValType {
+        get {
+            if (valType is not null) return valType.Value;
+            DMComplexValueType atomType = LocalVar.Type?.GetAtomType() ?? DMValueType.Anything;
+            return !atomType.IsAnything ? atomType | DMValueType.Null : (localVar.Type is null ? DMValueType.Anything : new DMComplexValueType(DMValueType.Path | DMValueType.Null, localVar.Type));
+        }
+    }
 
     public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
         if (LocalVar.IsParameter) {

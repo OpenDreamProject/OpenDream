@@ -385,7 +385,7 @@ internal static class DMExpressionBuilder {
                 if (CurrentScopeMode == ScopeMode.Normal) {
                     var localVar = proc?.GetLocalVariable(name);
                     if (localVar != null)
-                        return new Local(identifier.Location, localVar);
+                        return new Local(identifier.Location, localVar, localVar.ExplicitValueType);
 
                     var field = dmObject?.GetVariable(name);
                     if (field != null) {

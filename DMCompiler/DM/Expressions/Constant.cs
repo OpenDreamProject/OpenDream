@@ -361,7 +361,7 @@ internal sealed class ConstantPath(Location location, DMObject dmObject, DreamPa
         }
 
         // Any other path
-        if (DMObjectTree.TryGetTypeId(Value, out var typeId)) {
+        if (DMObjectTree.TryGetTypeId(path, out var typeId)) {
             pathInfo = (PathType.TypeReference, typeId);
             return true;
         } else {

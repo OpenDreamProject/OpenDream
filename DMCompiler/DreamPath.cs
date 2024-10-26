@@ -206,6 +206,10 @@ public struct DreamPath {
         }
     }
 
+    public DreamPath Combine(string pathString) {
+        return new DreamPath(PathString + "/" + pathString);
+    }
+
     public override string ToString() {
         return PathString;
     }

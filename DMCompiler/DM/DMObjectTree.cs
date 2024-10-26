@@ -159,7 +159,10 @@ internal static class DMObjectTree {
 
         DreamPath currentPath = path;
         while (true) {
-            bool foundType = _pathToTypeId.TryGetValue(currentPath.Combine(search), out var foundTypeId);
+            // If the search path has nothing lefthand of '.', we need to strip the operator before combining
+            DreamPath combinedPath = (!string.IsNullOrEmpty(search.PathString) && search.PathString[0] == '.') ? currentPath.Combine(search.PathString[1..]) : currentPath.Combine(search);
+
+            bool foundType = _pathToTypeId.TryGetValue(combinedPath, out var foundTypeId);
 
             // We're searching for a proc
             if (searchingProcName != null && foundType) {
@@ -171,7 +174,7 @@ internal static class DMObjectTree {
                     return new DreamPath("/proc/" + searchingProcName);
                 }
             } else if (foundType) { // We're searching for a type
-                return currentPath.Combine(search);
+                return combinedPath;
             }
 
             if (currentPath == DreamPath.Root) {

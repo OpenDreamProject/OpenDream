@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 using DMCompiler.Json;
+using JetBrains.Annotations;
 
 namespace DMDisassembler;
 
@@ -13,6 +15,7 @@ internal class Program {
     public static DMProc GlobalInitProc = null;
     public static List<DMProc> Procs = null;
     public static Dictionary<string, DMType> AllTypes = null;
+    public static List<DMType> TypesById = null;
 
     private static readonly string NoTypeSelectedMessage = "No type is selected";
 
@@ -52,6 +55,8 @@ internal class Program {
             }
         }
 
+        Console.WriteLine("DM Disassembler for OpenDream. Enter a command or \"help\" for more information.");
+
         bool acceptingCommands = true;
         while (acceptingCommands) {
             if (_selectedType != null) {
@@ -71,6 +76,7 @@ internal class Program {
 
             switch (command) {
                 case "quit":
+                case "exit":
                 case "q": acceptingCommands = false; break;
                 case "search": Search(split); break;
                 case "sel":
@@ -78,25 +84,108 @@ internal class Program {
                 case "list": List(split); break;
                 case "d":
                 case "decompile": Decompile(split); break;
+                case "stats": Stats(GetArg()); break;
                 case "test-all": TestAll(); break;
                 case "dump-all": DumpAll(); break;
-                case "help": PrintHelp(); break;
-                default: Console.WriteLine("Invalid command \"" + command + "\""); break;
+                case "help": {
+                    PrintHelp(GetArg());
+                    break;
+                }
+                default: Console.WriteLine($"Invalid command \"{command}\""); break;
+            }
+
+            [CanBeNull]
+            string GetArg() {
+                if (split.Length > 2) {
+                    Console.WriteLine($"Command \"{command}\" takes 0 or 1 arguments.");
+                }
+
+                return split.Length > 1 ? split[1] : null;
             }
         }
     }
 
-    private static void PrintHelp() {
-        Console.WriteLine("DM Disassembler for OpenDream");
-        Console.WriteLine("Commands and arguments:");
-        Console.WriteLine("help                      : Show this help");
-        Console.WriteLine("quit|q                    : Exits the disassembler");
-        Console.WriteLine("search type|proc [name]   : Search for a particular typepath or a proc on a selected type");
-        Console.WriteLine("select|sel                : Select a typepath to run further commands on");
-        Console.WriteLine("list procs|globals        : List all globals, or all procs on a selected type");
-        Console.WriteLine("decompile|d [name]        : Decompiles the proc on the selected type");
-        Console.WriteLine("dump-all                  : Decompiles every proc and writes the output to a file");
-        Console.WriteLine("test-all                  : Tries to decompile every single proc to check for issues with this disassembler; not for production use");
+    private static void PrintHelp([CanBeNull] string command) {
+        if (string.IsNullOrEmpty(command)) {
+            AllCommands();
+            return;
+        }
+
+        command = command.ToLower();
+
+        switch (command) {
+            case "stats": {
+                Console.WriteLine("Prints various statistics. Usage: stats [type]");
+                Console.WriteLine("Options for [type]:");
+                Console.WriteLine("procs-by-type         : Prints the number of proc declarations (not overrides) on each type in descending order");
+                break;
+            }
+            default: {
+                Console.WriteLine($"No additional help for \"{command}\"");
+                AllCommands();
+                break;
+            }
+        }
+
+        void AllCommands()
+        {
+            Console.WriteLine("DM Disassembler for OpenDream");
+            Console.WriteLine("Commands and arguments:");
+            Console.WriteLine("help [command]            : Show additional help for [command] if applicable");
+            Console.WriteLine("quit|q                    : Exits the disassembler");
+            Console.WriteLine("search type|proc [name]   : Search for a particular typepath or a proc on a selected type");
+            Console.WriteLine("select|sel                : Select a typepath to run further commands on");
+            Console.WriteLine("list procs|globals        : List all globals, or all procs on a selected type");
+            Console.WriteLine("decompile|d [name]        : Decompiles the proc on the selected type");
+            Console.WriteLine("stats [type]              : Prints various stats about the game. Use \"help stats\" for more info");
+            Console.WriteLine("dump-all                  : Decompiles every proc and writes the output to a file");
+            Console.WriteLine("test-all                  : Tries to decompile every single proc to check for issues with this disassembler; not for production use");
+        }
+    }
+
+    private static void Stats([CanBeNull] string statType) {
+        if (string.IsNullOrEmpty(statType)) {
+            PrintHelp("stats");
+            return;
+        }
+
+        switch (statType) {
+            case "procs-by-type": {
+                ProcsByType();
+                return;
+            }
+            default: {
+                Console.WriteLine($"Unknown stat \"{statType}\"");
+                PrintHelp("stats");
+                return;
+            }
+        }
+
+        void ProcsByType() {
+            Console.WriteLine("Counting all proc declarations (no overrides) by type. This may take a moment.");
+            Dictionary<int, int> TypeIdToProcCount = new Dictionary<int, int>();
+            foreach (DMProc proc in Procs) {
+                if(proc.IsOverride || proc.Name == "<init>") continue; // Don't count overrides or <init> procs
+                if (TypeIdToProcCount.TryGetValue(proc.OwningTypeId, out var count)) {
+                    TypeIdToProcCount[proc.OwningTypeId] = count + 1;
+                } else {
+                    TypeIdToProcCount[proc.OwningTypeId] = 1;
+                }
+            }
+
+            var sorted = TypeIdToProcCount.OrderByDescending(kvp => kvp.Value).ToList();
+            Console.WriteLine("Type: Proc Declarations");
+            for (int i = 0; i < sorted.Count; i++) {
+                var pair = sorted[i];
+
+                var type = TypesById[pair.Key];
+                if (pair.Key == 0) {
+                    Console.WriteLine($"<global>: {pair.Value}");
+                } else {
+                    Console.WriteLine($"{type.Path}: {pair.Value}");
+                }
+            }
+        }
     }
 
     private static void Search(string[] args) {
@@ -224,9 +313,12 @@ internal class Program {
 
     private static void LoadAllTypes() {
         AllTypes = new Dictionary<string, DMType>(CompiledJson.Types.Length);
+        TypesById = new List<DMType>(CompiledJson.Types.Length);
 
         foreach (DreamTypeJson json in CompiledJson.Types) {
-            AllTypes.Add(json.Path, new DMType(json));
+            var dmType = new DMType(json);
+            AllTypes.Add(json.Path, dmType);
+            TypesById.Add(dmType);
         }
 
         //Add global procs to the root type

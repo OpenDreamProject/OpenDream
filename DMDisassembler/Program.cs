@@ -97,7 +97,7 @@ internal class Program {
             [CanBeNull]
             string GetArg() {
                 if (split.Length > 2) {
-                    Console.WriteLine($"Command \"{command}\" takes 0 or 1 arguments.");
+                    Console.WriteLine($"Command \"{command}\" takes 0 or 1 arguments. Ignoring extra arguments.");
                 }
 
                 return split.Length > 1 ? split[1] : null;

@@ -163,17 +163,17 @@ internal class Program {
 
         void ProcsByType() {
             Console.WriteLine("Counting all proc declarations (no overrides) by type. This may take a moment.");
-            Dictionary<int, int> TypeIdToProcCount = new Dictionary<int, int>();
+            Dictionary<int, int> typeIdToProcCount = new Dictionary<int, int>();
             foreach (DMProc proc in Procs) {
                 if(proc.IsOverride || proc.Name == "<init>") continue; // Don't count overrides or <init> procs
-                if (TypeIdToProcCount.TryGetValue(proc.OwningTypeId, out var count)) {
-                    TypeIdToProcCount[proc.OwningTypeId] = count + 1;
+                if (typeIdToProcCount.TryGetValue(proc.OwningTypeId, out var count)) {
+                    typeIdToProcCount[proc.OwningTypeId] = count + 1;
                 } else {
-                    TypeIdToProcCount[proc.OwningTypeId] = 1;
+                    typeIdToProcCount[proc.OwningTypeId] = 1;
                 }
             }
 
-            var sorted = TypeIdToProcCount.OrderByDescending(kvp => kvp.Value).ToList();
+            var sorted = typeIdToProcCount.OrderByDescending(kvp => kvp.Value).ToList();
             Console.WriteLine("Type: Proc Declarations");
             for (int i = 0; i < sorted.Count; i++) {
                 var pair = sorted[i];

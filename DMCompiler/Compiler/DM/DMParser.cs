@@ -1723,7 +1723,7 @@ namespace DMCompiler.Compiler.DM {
             DMASTPath? path = Path();
 
             if (path != null) {
-                if (path.Path.PathString.StartsWith("/var")) {
+                if (path.Path.PathString.StartsWith("/var/")) {
                     Emit(WarningCode.ProcArgumentGlobal, $"Proc argument \"{path.Path.PathString}\" starting with \"/var/\" will create a global variable. Replace with \"{path.Path.PathString[1..]}\"");
                 }
 

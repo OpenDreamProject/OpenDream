@@ -74,12 +74,13 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         //if this debug assert fails, you've probably changed an icon appearance var and not updated its counterpart
         //this debug MUST pass. A number of things rely on these hashcodes being equivalent *on the server*.
         DebugTools.Assert(appearance.GetHashCode() == immutableAppearance.GetHashCode());
-        while(_TTLQueue.First is not null && _TTLQueue.First.Value.Expiry < DateTime.Now) {
-            _TTLQueueHashtable.Remove(_TTLQueue.First.Value.Appearance);
-            _TTLQueue.RemoveFirst();
-        }
 
         lock (_lock) {
+            while(_TTLQueue.First is not null && _TTLQueue.First.Value.Expiry < DateTime.Now) {
+                _TTLQueueHashtable.Remove(_TTLQueue.First.Value.Appearance);
+                _TTLQueue.RemoveFirst();
+            }
+
             if(_idToAppearance.TryGetValue(immutableAppearance.GetHashCode(), out var weakReference) && weakReference.TryGetTarget(out var originalImmutable)) {
                 if(_TTLQueueHashtable.TryGetValue(originalImmutable, out var linkedListNode)) { //if we already got it, reset its position in the queue
                     linkedListNode.ValueRef.Expiry = DateTime.Now.AddSeconds(_TTL);

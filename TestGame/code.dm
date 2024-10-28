@@ -12,17 +12,25 @@
 
 /obj/plane_master
 	appearance_flags = PLANE_MASTER
-	
+
 /obj/plane_master/turf
 	screen_loc = "1,1"
 	plane = TURF_PLANE
 
 	New()
-		src.filters = filter(type="displace", size=100, icon=icon('icons/displace.dmi',"lense"))					
+		src.filters = filter(type="displace", size=100, icon=icon('icons/displace.dmi',"lense"))
 
 /mob/verb/examine(atom/thing as obj|mob in world)
 	set category = null
 	usr << "This is [thing]. [thing.desc]"
+
+/mob/verb/poke(mob/someone as obj|mob in world)
+	set category = null
+	usr << "You poke [someone]!"
+	for(var/x in view(someone, 0))
+		usr << "They see: [x]"
+	for(var/obj/item/item in someone)
+		usr << "They have: [item]"
 
 /turf
 	icon = 'icons/turf.dmi'
@@ -45,8 +53,31 @@
 			icon = null
 		else
 			icon = 'icons/objects.dmi'
-		spawn(20)	
+		spawn(20)
 			toggleBlink()
+
+/obj/item/bandoleer
+	icon = 'icons/objects.dmi'
+	icon_state = "bandoleer"
+	layer = OBJ_LAYER
+
+	name = "Bandoleer"
+	desc = "Stylish and comes with a gun!"
+
+	New()
+		..()
+		contents += new /obj/item/gun
+
+/obj/item/gun
+	icon = 'icons/objects.dmi'
+	icon_state = "gun"
+	layer = OBJ_LAYER
+
+	name = "Testing Gun"
+	desc = "Non-functional, but it takes up space"
+
+	New()
+		..()
 
 /mob
 	icon = 'icons/mob.dmi'
@@ -61,6 +92,11 @@
 
 	New()
 		..()
+		contents += new /obj/item/bandoleer
+		var/obj/item/gun = new /obj/item/gun
+		gun.name = "Testing Gun Outer" // Keep it distinct
+		contents += gun
+
 		loc = locate(5, 5, 1)
 
 	Login()
@@ -118,12 +154,12 @@
 		set name = "Walk North"
 		usr << "Walking north. Use the 'Walk Stop' verb to cease."
 		walk(src, NORTH)
-		
+
 	verb/start_walk_rand()
 		set name = "Walk Randomly"
 		usr << "Walking randomly. Use the 'Walk Stop' verb to cease."
 		walk_rand(src)
-	
+
 	verb/stop_walk()
 		set name = "Walk Stop"
 		usr << "Walking stopped."
@@ -210,7 +246,7 @@
 				if("drop_shadow")
 					src.filters = filter(type="drop_shadow", size=2)
 				if("displace")
-					src.client.screen += new /obj/plane_master/turf 
+					src.client.screen += new /obj/plane_master/turf
 			usr << "Applied [selected] filter"
 
 	verb/toggle_see_invisibility()
@@ -225,7 +261,7 @@
 		var/image/i = image(icon = 'icons/hanoi.dmi', icon_state="8")
 		i.loc = src
 		i.override = 1
-		
+
 		src.client.images += i
 		usr << "override added"
 		for(var/turf/T in range(src, 2))
@@ -243,10 +279,10 @@
 		spawn(20)
 			src << "showing main window"
 			winset(src,"mainwindow","is-visible=true")
-			
+
 	verb/winget_text_verb(var/rawtext as command_text)
 		set name = "wingettextverb"
-		world << "recieved: [rawtext]"			
+		world << "recieved: [rawtext]"
 
 	verb/test_hot_reload_interface()
 		set category = "Test"

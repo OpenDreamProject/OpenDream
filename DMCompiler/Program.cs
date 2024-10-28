@@ -6,6 +6,7 @@ namespace DMCompiler;
 internal struct Argument {
     /// <summary> The text we found that's in the '--whatever' format. May be null if no such text was present.</summary>
     public string? Name;
+
     /// <summary> The value, either set in a '--whatever=whoever' format or just left by itself anonymously. May be null.</summary>
     public string? Value;
 }
@@ -17,7 +18,16 @@ internal static class Program {
             return;
         }
 
-        if (!DMCompiler.Compile(settings)) {
+        bool result;
+
+        if (settings.UseGarbageCollector) {
+            result = DMCompiler.Compile(settings);
+        } else {
+            GC.TryStartNoGCRegion(4831838208, true); // 4.5 GB just to be safe
+            result = DMCompiler.Compile(settings);
+        }
+
+        if (!result) {
             //Compile errors, exit with an error code
             Environment.Exit(1);
         }
@@ -91,6 +101,7 @@ internal static class Program {
                 case "dump-preprocessor": settings.DumpPreprocessor = true; break;
                 case "no-standard": settings.NoStandard = true; break;
                 case "verbose": settings.Verbose = true; break;
+                case "use-gc": settings.UseGarbageCollector = true; break;
                 case "skip-bad-args": break;
                 case "define":
                     var parts = arg.Value?.Split('=', 2); // Only split on the first = in case of stuff like "--define AAA=0==1"

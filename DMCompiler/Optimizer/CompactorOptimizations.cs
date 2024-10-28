@@ -25,8 +25,7 @@ internal sealed class PushNStrings : IBytecodeCompactor {
             count++;
         }
 
-        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(count + 1);
-        args.Add(new AnnotatedBytecodeInteger(count, new Location()));
+        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(count + 1) { new AnnotatedBytecodeInteger(count, new Location()) };
 
         for (int i = 0; i < count; i++) {
             AnnotatedBytecodeInstruction instruction = (AnnotatedBytecodeInstruction)(input[index + i]);
@@ -60,8 +59,7 @@ internal sealed class PushNFloats : IBytecodeCompactor {
             count++;
         }
 
-        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(count + 1);
-        args.Add(new AnnotatedBytecodeInteger(count, new Location()));
+        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(count + 1) { new AnnotatedBytecodeInteger(count, new Location()) };
 
         for (int i = 0; i < count; i++) {
             AnnotatedBytecodeInstruction instruction = (AnnotatedBytecodeInstruction)(input[index + i]);
@@ -95,8 +93,7 @@ internal sealed class PushNRef : IBytecodeCompactor {
             count++;
         }
 
-        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(count + 1);
-        args.Add(new AnnotatedBytecodeInteger(count, new Location()));
+        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(count + 1) { new AnnotatedBytecodeInteger(count, new Location()) };
 
         for (int i = 0; i < count; i++) {
             AnnotatedBytecodeInstruction instruction = (AnnotatedBytecodeInstruction)(input[index + i]);
@@ -183,8 +180,7 @@ internal sealed class PushNResources : IBytecodeCompactor {
             count++;
         }
 
-        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(count + 1);
-        args.Add(new AnnotatedBytecodeInteger(count, new Location()));
+        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(count + 1) { new AnnotatedBytecodeInteger(count, new Location()) };
 
         for (int i = 0; i < count; i++) {
             AnnotatedBytecodeInstruction instruction = (AnnotatedBytecodeInstruction)(input[index + i]);
@@ -233,8 +229,7 @@ internal sealed class CreateListNFloats : IListCompactor {
         AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
         int pushVal1 = firstInstruction.GetArg<AnnotatedBytecodeInteger>(0).Value;
 
-        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(pushVal1 + 1);
-        args.Add(new AnnotatedBytecodeInteger(pushVal1, new Location()));
+        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(pushVal1 + 1) { new AnnotatedBytecodeInteger(pushVal1, new Location()) };
         args.AddRange(firstInstruction.GetArgs()[1..(pushVal1+1)]);
 
         input.RemoveRange(index, 2);
@@ -274,8 +269,7 @@ internal sealed class CreateListNStrings : IListCompactor {
         AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
         int pushVal1 = firstInstruction.GetArg<AnnotatedBytecodeInteger>(0).Value;
 
-        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(pushVal1 + 1);
-        args.Add(new AnnotatedBytecodeInteger(pushVal1, new Location()));
+        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(pushVal1 + 1) { new AnnotatedBytecodeInteger(pushVal1, new Location()) };
         args.AddRange(firstInstruction.GetArgs()[1..(pushVal1+1)]);
 
         input.RemoveRange(index, 2);
@@ -315,8 +309,7 @@ internal sealed class CreateListNResources : IListCompactor {
         AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
         int pushVal1 = firstInstruction.GetArg<AnnotatedBytecodeInteger>(0).Value;
 
-        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(pushVal1 + 1);
-        args.Add(new AnnotatedBytecodeInteger(pushVal1, new Location()));
+        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(pushVal1 + 1) { new AnnotatedBytecodeInteger(pushVal1, new Location()) };
         args.AddRange(firstInstruction.GetArgs()[1..(pushVal1+1)]);
 
         input.RemoveRange(index, 2);
@@ -354,8 +347,7 @@ internal sealed class CreateListNRefs : IListCompactor {
         var firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
         int pushVal1 = firstInstruction.GetArg<AnnotatedBytecodeInteger>(0).Value;
 
-        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(1 + pushVal1);
-        args.Add(new AnnotatedBytecodeInteger(pushVal1, new Location()));
+        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(1 + pushVal1) { new AnnotatedBytecodeInteger(pushVal1, new Location()) };
         args.AddRange(firstInstruction.GetArgs()[1..(pushVal1+1)]);
 
         input.RemoveRange(index, 2);

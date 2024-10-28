@@ -263,6 +263,7 @@ internal sealed class IsTypeDirect : IPeepholeOptimization {
 }
 
 #region Constant Folding
+
 // PushFloat [constant]
 // PushFloat [constant]
 // Multiply
@@ -420,4 +421,5 @@ internal sealed class ConstFoldPower : IPeepholeOptimization {
             new AnnotatedBytecodeInstruction(DreamProcOpcode.PushFloat, 1, args));
     }
 }
+
 #endregion

@@ -43,6 +43,7 @@ internal interface IBytecodeCompactor : IOptimization;
 /// </summary>
 internal interface IListCompactor : IOptimization;
 
+// ReSharper disable once ClassNeverInstantiated.Global
 internal sealed class PeepholeOptimizer<T> where T : class, IOptimization {
     private class OptimizationTreeEntry {
         public T? Optimization;
@@ -60,7 +61,7 @@ internal sealed class PeepholeOptimizer<T> where T : class, IOptimization {
         var optimizationTypes = new List<Type>();
 
         foreach (var type in possibleTypes) {
-            if (typeof(T).IsAssignableFrom(type) && type.IsClass && !type.IsAbstract) {
+            if (typeof(T).IsAssignableFrom(type) && type is { IsClass: true, IsAbstract: false }) {
                 optimizationTypes.Add(type);
             }
         }

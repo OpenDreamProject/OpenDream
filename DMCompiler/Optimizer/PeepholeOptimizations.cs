@@ -776,14 +776,14 @@ internal sealed class ConstFoldPower : IPeepholeOptimization {
     }
 }
 
-// AppendNoPush [ref]
+// AssignNoPush [ref]
 // PushReferenceValue [ref]
 // -> Assign [ref]
 // These opcodes can be reduced to a single Assign as long as the [ref]s are the same
 internal sealed class AssignAndPushReferenceValue : IPeepholeOptimization {
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
-            DreamProcOpcode.AppendNoPush,
+            DreamProcOpcode.AssignNoPush,
             DreamProcOpcode.PushReferenceValue
         ];
     }

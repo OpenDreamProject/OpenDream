@@ -49,6 +49,7 @@ public enum WarningCode {
     FallbackBuiltinArgument = 2208, // A builtin (sin(), cos(), etc) with an invalid/fallback argument
     PointlessScopeOperator = 2209,
     PointlessPositionalArgument = 2210,
+    ProcArgumentGlobal = 2211, // Prepending "/" on a proc arg (e.g. "/proc/example(/var/foo)" makes the arg a global var. Ref https://www.byond.com/forum/post/2830750
     MalformedRange = 2300,
     InvalidRange = 2301,
     InvalidSetStatement = 2302,

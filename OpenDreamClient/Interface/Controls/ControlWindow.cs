@@ -336,7 +336,11 @@ public sealed class ControlWindow : InterfaceControl {
         switch (property) {
             case "size":
                 if (_myWindow.osWindow is {ClydeWindow: not null}) {
-                    _myWindow.osWindow.ClydeWindow.Size = new DMFPropertySize(value).Vector;
+                    var size = new DMFPropertySize(value);
+                    var uiScale = _myWindow.osWindow.UIScale;
+                    size.X = (int)(size.X * uiScale); // TODO: RT should probably do this itself
+                    size.Y = (int)(size.Y * uiScale);
+                    _myWindow.osWindow.ClydeWindow.Size = size.Vector;
                 }
 
                 return;

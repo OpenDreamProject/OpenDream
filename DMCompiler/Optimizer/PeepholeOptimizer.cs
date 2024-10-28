@@ -3,7 +3,10 @@ using DMCompiler.Bytecode;
 
 namespace DMCompiler.Optimizer;
 
-internal interface IPeepholeOptimization {
+/// <summary>
+/// Every interface that inherits IOptimization can be executed as a separate peephole optimizer pass
+/// </summary>
+internal interface IOptimization {
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes();
     public void Apply(List<IAnnotatedBytecode> input, int index);
 
@@ -25,9 +28,24 @@ internal interface IPeepholeOptimization {
     }
 }
 
-internal sealed class PeepholeOptimizer {
+/// <summary>
+/// First-pass peephole optimizations (e.g. const folding)
+/// </summary>
+internal interface IPeepholeOptimization : IOptimization;
+
+/// <summary>
+/// Next-pass bytecode compacting (e.g. PushNFloats and other PushN opcodes)
+/// </summary>
+internal interface IBytecodeCompactor : IOptimization;
+
+/// <summary>
+/// Final-pass list compacting (e.g. PushNFloats & CreateList -> CreateListNFloats)
+/// </summary>
+internal interface IListCompactor : IOptimization;
+
+internal sealed class PeepholeOptimizer<T> where T : class, IOptimization {
     private class OptimizationTreeEntry {
-        public IPeepholeOptimization? Optimization;
+        public T? Optimization;
         public Dictionary<DreamProcOpcode, OptimizationTreeEntry>? Children;
     }
 
@@ -38,19 +56,17 @@ internal sealed class PeepholeOptimizer {
 
     /// Setup <see cref="OptimizationTrees"/>
     static PeepholeOptimizer() {
-        var possibleTypes = typeof(PeepholeOptimizer).Assembly.GetTypes();
-        var optimizationTypes = new List<Type>(possibleTypes.Length);
+        var possibleTypes = typeof(T).Assembly.GetTypes();
+        var optimizationTypes = new List<Type>();
+
         foreach (var type in possibleTypes) {
-            if (typeof(IPeepholeOptimization).IsAssignableFrom(type)) {
+            if (typeof(T).IsAssignableFrom(type) && type.IsClass && !type.IsAbstract) {
                 optimizationTypes.Add(type);
             }
         }
 
         foreach (var optType in optimizationTypes) {
-            if (optType.IsInterface || optType.IsAbstract)
-                continue;
-
-            var opt = (IPeepholeOptimization)(Activator.CreateInstance(optType))!;
+            var opt = (T)(Activator.CreateInstance(optType)!);
             var opcodes = opt.GetOpcodes();
             if (opcodes.Length < 2) {
                 DMCompiler.ForcedError(Location.Internal, $"Peephole optimization {optType} must have at least 2 opcodes");
@@ -81,7 +97,7 @@ internal sealed class PeepholeOptimizer {
         }
     }
 
-    public static void RunPeephole(List<IAnnotatedBytecode> input) {
+    public static void RunOptimizations(List<IAnnotatedBytecode> input) {
         OptimizationTreeEntry? currentOpt = null;
         int optSize = 0;
 

@@ -11,7 +11,12 @@ public class BytecodeOptimizer {
         RemoveUnreferencedLabels(input);
         JoinAndForwardLabels(input);
         RemoveUnreferencedLabels(input);
-        PeepholeOptimizer.RunPeephole(input);
+
+        // The order of these passes matter, as later passes depend on opcodes created by prior passes
+        PeepholeOptimizer<IPeepholeOptimization>.RunOptimizations(input);
+        PeepholeOptimizer<IBytecodeCompactor>.RunOptimizations(input);
+        PeepholeOptimizer<IListCompactor>.RunOptimizations(input);
+
         return input;
     }
 

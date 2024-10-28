@@ -23,7 +23,7 @@ internal static class Program {
         if (settings.UseGarbageCollector) {
             result = DMCompiler.Compile(settings);
         } else {
-            GC.TryStartNoGCRegion(4831838208, true); // 4.5 GB just to be safe
+            GC.TryStartNoGCRegion(4500000000, true); // 4.5 GB just to be safe
             result = DMCompiler.Compile(settings);
         }
 

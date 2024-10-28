@@ -8,6 +8,8 @@ using Robust.Shared.Player;
 using Robust.Shared.Network;
 using System.Diagnostics;
 using Robust.Shared.Utility;
+using System.Collections;
+using Robust.Shared.Physics.Collision;
 
 namespace OpenDreamRuntime.Rendering;
 
@@ -18,6 +20,10 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     /// so you only need to hold the main appearance.
     /// </summary>
     private readonly Dictionary<int, WeakReference<ImmutableIconAppearance>> _idToAppearance = new();
+    private readonly LinkedList<AppearanceQueueNode> _TTLQueue = new();
+    private readonly Dictionary<ImmutableIconAppearance, LinkedListNode<AppearanceQueueNode>> _TTLQueueHashtable = new();
+    private readonly double _TTL = 60; //seconds
+
 
     public readonly ImmutableIconAppearance DefaultAppearance;
     [Dependency] private readonly IServerNetManager _networkManager = default!;
@@ -68,15 +74,30 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         //if this debug assert fails, you've probably changed an icon appearance var and not updated its counterpart
         //this debug MUST pass. A number of things rely on these hashcodes being equivalent *on the server*.
         DebugTools.Assert(appearance.GetHashCode() == immutableAppearance.GetHashCode());
+        while(_TTLQueue.First is not null && _TTLQueue.First.Value.Expiry < DateTime.Now) {
+            _TTLQueueHashtable.Remove(_TTLQueue.First.Value.Appearance);
+            _TTLQueue.RemoveFirst();
+        }
+
         lock (_lock) {
             if(_idToAppearance.TryGetValue(immutableAppearance.GetHashCode(), out var weakReference) && weakReference.TryGetTarget(out var originalImmutable)) {
+                if(_TTLQueueHashtable.TryGetValue(originalImmutable, out var linkedListNode)) { //if we already got it, reset its position in the queue
+                    linkedListNode.ValueRef.Expiry = DateTime.Now.AddSeconds(_TTL);
+                    _TTLQueue.Remove(linkedListNode);
+                    _TTLQueue.AddLast(linkedListNode);
+                } else { //else add it to the queue
+                    _TTLQueueHashtable.Add(originalImmutable, _TTLQueue.AddLast(new AppearanceQueueNode(originalImmutable, DateTime.Now.AddSeconds(_TTL))));
+                }
                 return originalImmutable;
             } else if (registerApearance) {
                 immutableAppearance.MarkRegistered(); //lets this appearance know it needs to do GC finaliser
                 _idToAppearance[immutableAppearance.GetHashCode()] = new(immutableAppearance);
                 _networkManager.ServerSendToAll(new MsgNewAppearance(immutableAppearance));
+                //we absolutely should not already have it, so just add it to the queue
+                _TTLQueueHashtable.Add(immutableAppearance, _TTLQueue.AddLast(new AppearanceQueueNode(immutableAppearance, DateTime.Now.AddSeconds(_TTL))));
                 return immutableAppearance;
             } else {
+                //don't bother for unregistered
                 return immutableAppearance;
             }
         }
@@ -114,5 +135,15 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         int appearanceId = AddAppearance(targetAppearance).GetHashCode();
 
         RaiseNetworkEvent(new AnimationEvent(entity, appearanceId, duration, easing, loop, flags, delay, chainAnim, turfId));
+    }
+}
+
+struct AppearanceQueueNode {
+    public ImmutableIconAppearance Appearance;
+    public DateTime Expiry;
+
+    public AppearanceQueueNode(ImmutableIconAppearance appearance, DateTime expiry) {
+        Appearance = appearance;
+        Expiry = expiry;
     }
 }

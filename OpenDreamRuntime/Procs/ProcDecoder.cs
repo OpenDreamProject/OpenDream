@@ -108,6 +108,7 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
             case DreamProcOpcode.OutputReference:
             case DreamProcOpcode.PushReferenceValue:
             case DreamProcOpcode.PopReference:
+            case DreamProcOpcode.AppendNoPush:
             case DreamProcOpcode.NullRef:
             case DreamProcOpcode.AssignNoPush:
             case DreamProcOpcode.ReturnReferenceValue:

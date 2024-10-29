@@ -24,21 +24,9 @@
 	set category = null
 	usr << "This is [thing]. [thing.desc]"
 
-/mob/verb/possess_ckey(mob/someone as obj|mob in world)
-	set category = null
-	someone.ckey = usr.ckey
-
-/mob/verb/possess_key(mob/someone as obj|mob in world)
-	set category = null
-	someone.key = usr.key
-
-/mob/verb/possess_mixed_ck(mob/someone as obj|mob in world)
+/mob/verb/possess_key(mob/someone as mob in world)
 	set category = null
 	someone.ckey = usr.key
-
-/mob/verb/possess_mixed_kc(mob/someone as obj|mob in world)
-	set category = null
-	someone.key = usr.ckey
 
 /turf
 	icon = 'icons/turf.dmi'

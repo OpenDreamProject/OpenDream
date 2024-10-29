@@ -201,7 +201,7 @@ internal sealed class DreamViewOverlay : Overlay {
                 current.ColorMatrixToApply = icon.Appearance.ColorMatrix;
             } else {
                 current.ColorToApply = parentIcon.ColorToApply * icon.Appearance.Color;
-                ColorMatrix.Multiply(ref parentIcon.ColorMatrixToApply, ref icon.Appearance.ColorMatrix, out current.ColorMatrixToApply);
+                ColorMatrix.Multiply(in parentIcon.ColorMatrixToApply, in icon.Appearance.ColorMatrix, out current.ColorMatrixToApply);
             }
 
             if ((icon.Appearance.AppearanceFlags & AppearanceFlags.ResetAlpha) != 0 || keepTogether) //RESET_ALPHA

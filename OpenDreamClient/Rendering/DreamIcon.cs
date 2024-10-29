@@ -32,7 +32,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
     }
 
     [ViewVariables]
-    public MutableIconAppearance? Appearance {
+    public ImmutableIconAppearance? Appearance {
         get => CalculateAnimatedAppearance();
         private set {
             if (_appearance?.Equals(value) is true)
@@ -43,7 +43,8 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
         }
     }
 
-    private MutableIconAppearance? _appearance;
+    private ImmutableIconAppearance? _appearance;
+    private AtomDirection _direction;
 
     // TODO: We could cache these per-appearance instead of per-atom
     public IRenderTexture? CachedTexture {
@@ -94,7 +95,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             frame = textureOverride;
         }
 
-        var canSkipFullRender = Appearance?.Filters.Count is 0 or null &&
+        var canSkipFullRender = Appearance?.Filters.Length is 0 or null &&
                                     iconMetaData.ColorToApply == Color.White &&
                                     iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity) &&
                                     iconMetaData.AlphaToApply.Equals(1.0f);
@@ -122,18 +123,18 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
         }
 
         appearanceSystem.LoadAppearance(appearanceId.Value, appearance => {
-            var mutableAppearance = appearanceSystem.GetSharedMutableInstance(appearanceId.Value);
             if (parentDir != null && appearance.InheritsDirection) {
-                mutableAppearance = new(mutableAppearance); // Clone the appearance so we don't modify the shared instance
-                mutableAppearance.Direction = parentDir.Value;
+                _direction = parentDir.Value;
+            } else {
+                _direction = appearance.Direction;
             }
 
-            Appearance = mutableAppearance;
+            Appearance = appearance;
         });
     }
 
     //three things to do here, chained animations, loops and parallel animations
-    public void StartAppearanceAnimation(MutableIconAppearance endingAppearance, TimeSpan duration, AnimationEasing easing, int loops, AnimationFlags flags, int delay, bool chainAnim) {
+    public void StartAppearanceAnimation(ImmutableIconAppearance endingAppearance, TimeSpan duration, AnimationEasing easing, int loops, AnimationFlags flags, int delay, bool chainAnim) {
         _appearance = CalculateAnimatedAppearance(); //Animation starts from the current animated appearance
         DateTime start = DateTime.Now;
         if(!chainAnim)
@@ -233,12 +234,12 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             DirtyTexture();
     }
 
-    private MutableIconAppearance? CalculateAnimatedAppearance() {
+    private ImmutableIconAppearance? CalculateAnimatedAppearance() {
         if (_appearanceAnimations == null || _appearance == null)
             return _appearance;
 
         _textureDirty = true; //if we have animations, we need to recalculate the texture
-        MutableIconAppearance appearance = new MutableIconAppearance(_appearance);
+        MutableIconAppearance appearance = _appearance.ToMutable();
         List<AppearanceAnimation>? toRemove = null;
         List<AppearanceAnimation>? toReAdd = null;
         for(int i = 0; i < _appearanceAnimations.Count; i++) {
@@ -296,7 +297,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
                     break;
             }
 
-            MutableIconAppearance endAppearance = animation.EndAppearance;
+            var endAppearance = animation.EndAppearance;
 
             //non-smooth animations
             /*
@@ -358,7 +359,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             }
 
             if (!endAppearance.ColorMatrix.Equals(_appearance.ColorMatrix)){
-                ColorMatrix.Interpolate(ref _appearance.ColorMatrix, ref endAppearance.ColorMatrix, factor, out appearance.ColorMatrix);
+                ColorMatrix.Interpolate(in _appearance.ColorMatrix, in endAppearance.ColorMatrix, factor, out appearance.ColorMatrix);
             }
 
 
@@ -452,7 +453,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
                 _appearanceAnimations.Add(animation);
             }
 
-        return appearance;
+        return new(appearance,appearanceSystem); //one of the very few times it's okay to do this. Double copy though, could probably be less memory churny in future.
     }
 
     private void UpdateIcon() {
@@ -553,10 +554,10 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
         CachedTexture = null;
     }
 
-    private struct AppearanceAnimation(DateTime start, TimeSpan duration, MutableIconAppearance endAppearance, AnimationEasing easing, AnimationFlags flags, int delay, bool lastInSequence) {
+    private struct AppearanceAnimation(DateTime start, TimeSpan duration, ImmutableIconAppearance endAppearance, AnimationEasing easing, AnimationFlags flags, int delay, bool lastInSequence) {
         public readonly DateTime Start = start;
         public readonly TimeSpan Duration = duration;
-        public readonly MutableIconAppearance EndAppearance = endAppearance;
+        public readonly ImmutableIconAppearance EndAppearance = endAppearance;
         public readonly AnimationEasing Easing = easing;
         public readonly AnimationFlags Flags = flags;
         public readonly int Delay = delay;

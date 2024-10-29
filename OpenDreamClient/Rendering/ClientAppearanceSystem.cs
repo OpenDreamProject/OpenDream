@@ -85,7 +85,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         if(e.Entity == NetEntity.Invalid && e.TurfId is not null) { //it's a turf or area
             if(_turfIcons.TryGetValue(e.TurfId.Value-1, out var turfIcon))
                 LoadAppearance(e.TargetAppearanceId, targetAppearance => {
-                    turfIcon.StartAppearanceAnimation(targetAppearance.ToMutable(), e.Duration, e.Easing, e.Loop, e.Flags, e.Delay, e.ChainAnim);
+                    turfIcon.StartAppearanceAnimation(targetAppearance, e.Duration, e.Easing, e.Loop, e.Flags, e.Delay, e.ChainAnim);
                 });
         } else { //image or movable
             EntityUid ent = _entityManager.GetEntity(e.Entity);
@@ -93,7 +93,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
                 return;
 
             LoadAppearance(e.TargetAppearanceId, targetAppearance => {
-                sprite.Icon.StartAppearanceAnimation(targetAppearance.ToMutable(), e.Duration, e.Easing, e.Loop, e.Flags, e.Delay, e.ChainAnim);
+                sprite.Icon.StartAppearanceAnimation(targetAppearance, e.Duration, e.Easing, e.Loop, e.Flags, e.Delay, e.ChainAnim);
             });
         }
     }

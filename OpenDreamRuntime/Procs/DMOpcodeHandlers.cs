@@ -743,6 +743,19 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus Append(DMProcState state) {
+            state.Push(AppendHelper(state));
+            return ProcStatus.Continue;
+        }
+
+        /// <summary>
+        /// Identical to <see cref="Append"/> except it never pushes the result to the stack
+        /// </summary>
+        public static ProcStatus AppendNoPush(DMProcState state) {
+            AppendHelper(state);
+            return ProcStatus.Continue;
+        }
+
+        private static DreamValue AppendHelper(DMProcState state) {
             DreamReference reference = state.ReadReference();
             DreamValue second = state.Pop();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
@@ -753,12 +766,10 @@ namespace OpenDreamRuntime.Procs {
             } else if (first.TryGetValueAsDreamObject(out var firstObj)) {
                 if (firstObj != null) {
                     state.PopReference(reference);
-                    state.Push(firstObj.OperatorAppend(second));
-
-                    return ProcStatus.Continue;
-                } else {
-                    result = second;
+                    return firstObj.OperatorAppend(second);
                 }
+
+                result = second;
             } else if (!second.IsNull) {
                 switch (first.Type) {
                     case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
@@ -775,8 +786,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             state.AssignReference(reference, result);
-            state.Push(result);
-            return ProcStatus.Continue;
+            return result;
         }
 
         public static ProcStatus Increment(DMProcState state) {
@@ -2877,7 +2887,7 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
-        public static ProcStatus AssignPop(DMProcState state) {
+        public static ProcStatus AssignNoPush(DMProcState state) {
             DreamReference reference = state.ReadReference();
             DreamValue value = state.Pop();
 

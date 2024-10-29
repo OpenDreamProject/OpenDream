@@ -93,7 +93,7 @@ internal sealed class PeepholeOptimizer {
 
             if (currentOpt.Optimization?.CheckPreconditions(input, i - optSize) is true) {
                 currentOpt.Optimization.Apply(input, i - optSize);
-                offset = (optSize + 1); // Run over the new opcodes for potential further optimization
+                offset = (optSize + 2); // Run over the new opcodes for potential further optimization
             } else {
                 // This chain of opcodes did not lead to a valid optimization.
                 // Start again from the opcode after the first.
@@ -108,6 +108,7 @@ internal sealed class PeepholeOptimizer {
             var bytecode = input[i];
             if (bytecode is not AnnotatedBytecodeInstruction instruction) {
                 i -= AttemptCurrentOpt(i);
+                i = Math.Max(i, 0);
                 continue;
             }
 
@@ -126,6 +127,7 @@ internal sealed class PeepholeOptimizer {
             }
 
             i -= AttemptCurrentOpt(i);
+            i = Math.Max(i, 0);
         }
 
         AttemptCurrentOpt(input.Count);

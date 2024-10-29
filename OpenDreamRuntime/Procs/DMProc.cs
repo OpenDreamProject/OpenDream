@@ -207,6 +207,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.Negate, DMOpcodeHandlers.Negate},
             {DreamProcOpcode.Modulus, DMOpcodeHandlers.Modulus},
             {DreamProcOpcode.Append, DMOpcodeHandlers.Append},
+            {DreamProcOpcode.AppendNoPush, DMOpcodeHandlers.AppendNoPush},
             {DreamProcOpcode.CreateRangeEnumerator, DMOpcodeHandlers.CreateRangeEnumerator},
             {DreamProcOpcode.Input, DMOpcodeHandlers.Input},
             {DreamProcOpcode.CompareLessThanOrEqual, DMOpcodeHandlers.CompareLessThanOrEqual},
@@ -304,7 +305,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.Rgb, DMOpcodeHandlers.Rgb},
             // Peephole optimizer opcode handlers
             {DreamProcOpcode.NullRef, DMOpcodeHandlers.NullRef},
-            {DreamProcOpcode.AssignPop, DMOpcodeHandlers.AssignPop},
+            {DreamProcOpcode.AssignNoPush, DMOpcodeHandlers.AssignNoPush},
             {DreamProcOpcode.PushRefAndDereferenceField, DMOpcodeHandlers.PushReferenceAndDereferenceField},
             {DreamProcOpcode.PushNRefs, DMOpcodeHandlers.PushNRefs},
             {DreamProcOpcode.PushNFloats, DMOpcodeHandlers.PushNFloats},

@@ -253,9 +253,10 @@ public enum DreamProcOpcode : byte {
     [OpcodeMetadata]
     Abs = 0x83,
     // Peephole optimization opcodes
-    //0x84
     [OpcodeMetadata(-1, OpcodeArgType.Reference)]
-    AssignPop = 0x85,
+    AppendNoPush = 0x84,
+    [OpcodeMetadata(-1, OpcodeArgType.Reference)]
+    AssignNoPush = 0x85,
     [OpcodeMetadata(1, OpcodeArgType.Reference, OpcodeArgType.String)]
     PushRefAndDereferenceField = 0x86,
     [OpcodeMetadata(true, 0, OpcodeArgType.Int)]

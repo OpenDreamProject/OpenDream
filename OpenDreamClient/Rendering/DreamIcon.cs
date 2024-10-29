@@ -122,8 +122,9 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
         }
 
         appearanceSystem.LoadAppearance(appearanceId.Value, appearance => {
-            var mutableAppearance = appearance.ToMutable();
+            var mutableAppearance = appearanceSystem.GetSharedMutableInstance(appearanceId.Value);
             if (parentDir != null && appearance.InheritsDirection) {
+                mutableAppearance = new(mutableAppearance); // Clone the appearance so we don't modify the shared instance
                 mutableAppearance.Direction = parentDir.Value;
             }
 

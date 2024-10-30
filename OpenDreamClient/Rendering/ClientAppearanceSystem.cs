@@ -12,7 +12,6 @@ namespace OpenDreamClient.Rendering;
 
 internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     private Dictionary<int, ImmutableIconAppearance> _appearances = new();
-    private Dictionary<int, MutableIconAppearance> _mutableAppearancesCache = new();
     private readonly Dictionary<int, List<Action<ImmutableIconAppearance>>> _appearanceLoadCallbacks = new();
     private readonly Dictionary<int, DreamIcon> _turfIcons = new();
     private readonly Dictionary<DreamFilter, ShaderInstance> _filterShaders = new();
@@ -25,7 +24,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     [Dependency] private readonly DMISpriteSystem _spriteSystem = default!;
 
     public override void Initialize() {
-        SubscribeNetworkEvent<RemoveAppearanceEvent>(e => {_appearances.Remove(e.AppearanceId); _mutableAppearancesCache.Remove(e.AppearanceId);});
+        SubscribeNetworkEvent<RemoveAppearanceEvent>(e => _appearances.Remove(e.AppearanceId));
         SubscribeNetworkEvent<AnimationEvent>(OnAnimation);
         SubscribeLocalEvent<DMISpriteComponent, WorldAABBEvent>(OnWorldAABB);
     }
@@ -209,20 +208,6 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         filter.Used = true;
         _filterShaders[filter] = instance;
         return instance;
-    }
-
-    /// <summary>
-    /// This method is used to get a mutable instance of an appearance that is shared between multiple entities. YOU SHOULD NOT EDIT THIS APPEARANCE WITHOUT COPYING IT FIRST.
-    /// The only purpose of this method is to reduce the amount of `ToMutable()` calls that are necessary.
-    /// </summary>
-    /// <param name="appearanceId"></param>
-    /// <returns></returns>
-    public MutableIconAppearance GetSharedMutableInstance(int appearanceId) {
-        if (!_mutableAppearancesCache.TryGetValue(appearanceId, out var mutableAppearance)) {
-            mutableAppearance = _appearances[appearanceId].ToMutable();
-            _mutableAppearancesCache.Add(appearanceId, mutableAppearance);
-        }
-        return mutableAppearance;
     }
 
     public override ImmutableIconAppearance MustGetAppearanceById(int appearanceId) {

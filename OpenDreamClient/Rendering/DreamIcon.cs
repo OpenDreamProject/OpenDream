@@ -90,7 +90,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
                 return CachedTexture.Texture;
 
             _textureDirty = false;
-            frame = DMI.GetState(Appearance.IconState)?.GetFrames(Appearance.Direction)[animationFrame];
+            frame = DMI.GetState(Appearance.IconState)?.GetFrames(_direction)[animationFrame];
         } else {
             frame = textureOverride;
         }
@@ -207,7 +207,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
         DMIParser.ParsedDMIState? dmiState = DMI.Description.GetStateOrDefault(Appearance.IconState);
         if(dmiState == null)
             return;
-        DMIParser.ParsedDMIFrame[] frames = dmiState.GetFrames(Appearance.Direction);
+        DMIParser.ParsedDMIFrame[] frames = dmiState.GetFrames(_direction);
 
         if (frames.Length <= 1) return;
 
@@ -478,7 +478,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
 
         Overlays.Clear();
         foreach (var overlayAppearance in Appearance.Overlays) {
-            DreamIcon overlay = new DreamIcon(renderTargetPool, gameTiming, clyde, appearanceSystem, overlayAppearance.GetHashCode(), Appearance.Direction);
+            DreamIcon overlay = new DreamIcon(renderTargetPool, gameTiming, clyde, appearanceSystem, overlayAppearance.GetHashCode(), _direction);
             overlay.SizeChanged += CheckSizeChange;
 
             Overlays.Add(overlay);
@@ -486,7 +486,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
 
         Underlays.Clear();
         foreach (var underlayAppearance in Appearance.Underlays) {
-            DreamIcon underlay = new DreamIcon(renderTargetPool, gameTiming, clyde, appearanceSystem, underlayAppearance.GetHashCode(), Appearance.Direction);
+            DreamIcon underlay = new DreamIcon(renderTargetPool, gameTiming, clyde, appearanceSystem, underlayAppearance.GetHashCode(), _direction);
             underlay.SizeChanged += CheckSizeChange;
 
             Underlays.Add(underlay);

@@ -44,6 +44,8 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
     }
 
     private ImmutableIconAppearance? _appearance;
+    //acts as a cache for the mutable appearance, so we don't have to ToMutable() every frame
+    private MutableIconAppearance? _animatedAppearance;
     private AtomDirection _direction;
 
     // TODO: We could cache these per-appearance instead of per-atom
@@ -235,11 +237,13 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
     }
 
     private ImmutableIconAppearance? CalculateAnimatedAppearance() {
-        if (_appearanceAnimations == null || _appearance == null)
+        if (_appearanceAnimations == null || _appearanceAnimations.Count == 0 || _appearance == null) {
+            _animatedAppearance = null; //null it if _appearanceAnimations is empty
             return _appearance;
+        }
 
         _textureDirty = true; //if we have animations, we need to recalculate the texture
-        MutableIconAppearance appearance = _appearance.ToMutable();
+        _animatedAppearance = _appearance.ToMutable();
         List<AppearanceAnimation>? toRemove = null;
         List<AppearanceAnimation>? toReAdd = null;
         for(int i = 0; i < _appearanceAnimations.Count; i++) {
@@ -310,16 +314,16 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             */
 
             if (endAppearance.Direction != _appearance.Direction) {
-                appearance.Direction = endAppearance.Direction;
+                _animatedAppearance.Direction = endAppearance.Direction;
             }
             if (endAppearance.Icon != _appearance.Icon) {
-                appearance.Icon = endAppearance.Icon;
+                _animatedAppearance.Icon = endAppearance.Icon;
             }
             if (endAppearance.IconState != _appearance.IconState) {
-                appearance.IconState = endAppearance.IconState;
+                _animatedAppearance.IconState = endAppearance.IconState;
             }
             if (endAppearance.Invisibility != _appearance.Invisibility) {
-                appearance.Invisibility = endAppearance.Invisibility;
+                _animatedAppearance.Invisibility = endAppearance.Invisibility;
             }
             /* TODO maptext
             if (endAppearance.MapText != _appearance.MapText) {
@@ -346,11 +350,11 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             */
 
             if (endAppearance.Alpha != _appearance.Alpha) {
-                appearance.Alpha = (byte)Math.Clamp(((1-factor) * _appearance.Alpha) + (factor * endAppearance.Alpha), 0, 255);
+                _animatedAppearance.Alpha = (byte)Math.Clamp(((1-factor) * _appearance.Alpha) + (factor * endAppearance.Alpha), 0, 255);
             }
 
             if (endAppearance.Color != _appearance.Color) {
-                appearance.Color = Color.FromSrgb(new Color(
+                _animatedAppearance.Color = Color.FromSrgb(new Color(
                     Math.Clamp(((1-factor) * _appearance.Color.R) + (factor * endAppearance.Color.R), 0, 1),
                     Math.Clamp(((1-factor) * _appearance.Color.G) + (factor * endAppearance.Color.G), 0, 1),
                     Math.Clamp(((1-factor) * _appearance.Color.B) + (factor * endAppearance.Color.B), 0, 1),
@@ -359,12 +363,12 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             }
 
             if (!endAppearance.ColorMatrix.Equals(_appearance.ColorMatrix)){
-                ColorMatrix.Interpolate(in _appearance.ColorMatrix, in endAppearance.ColorMatrix, factor, out appearance.ColorMatrix);
+                ColorMatrix.Interpolate(in _appearance.ColorMatrix, in endAppearance.ColorMatrix, factor, out _animatedAppearance.ColorMatrix);
             }
 
 
             if (endAppearance.GlideSize != _appearance.GlideSize) {
-                appearance.GlideSize = ((1-factor) * _appearance.GlideSize) + (factor * endAppearance.GlideSize);
+                _animatedAppearance.GlideSize = ((1-factor) * _appearance.GlideSize) + (factor * endAppearance.GlideSize);
             }
 
             /* TODO infraluminosity
@@ -374,7 +378,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             */
 
             if (endAppearance.Layer != _appearance.Layer) {
-                appearance.Layer = ((1-factor) * _appearance.Layer) + (factor * endAppearance.Layer);
+                _animatedAppearance.Layer = ((1-factor) * _appearance.Layer) + (factor * endAppearance.Layer);
             }
 
             /* TODO luminosity
@@ -402,26 +406,26 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             */
 
             if (endAppearance.PixelOffset != _appearance.PixelOffset) {
-                Vector2 startingOffset = appearance.PixelOffset;
+                Vector2 startingOffset = _appearance.PixelOffset;
                 Vector2 newPixelOffset = Vector2.Lerp(startingOffset, endAppearance.PixelOffset, 1.0f-factor);
 
-                appearance.PixelOffset = (Vector2i)newPixelOffset;
+                _animatedAppearance.PixelOffset = (Vector2i)newPixelOffset;
             }
 
             if (endAppearance.PixelOffset2 != _appearance.PixelOffset2) {
-                Vector2 startingOffset = appearance.PixelOffset2;
+                Vector2 startingOffset = _appearance.PixelOffset2;
                 Vector2 newPixelOffset = Vector2.Lerp(startingOffset, endAppearance.PixelOffset2, 1.0f-factor);
 
-                appearance.PixelOffset2 = (Vector2i)newPixelOffset;
+                _animatedAppearance.PixelOffset2 = (Vector2i)newPixelOffset;
             }
 
             if (!endAppearance.Transform.SequenceEqual(_appearance.Transform)) {
-                appearance.Transform[0] = (1.0f-factor)*_appearance.Transform[0] + (factor * endAppearance.Transform[0]);
-                appearance.Transform[1] = (1.0f-factor)*_appearance.Transform[1] + (factor * endAppearance.Transform[1]);
-                appearance.Transform[2] = (1.0f-factor)*_appearance.Transform[2] + (factor * endAppearance.Transform[2]);
-                appearance.Transform[3] = (1.0f-factor)*_appearance.Transform[3] + (factor * endAppearance.Transform[3]);
-                appearance.Transform[4] = (1.0f-factor)*_appearance.Transform[4] + (factor * endAppearance.Transform[4]);
-                appearance.Transform[5] = (1.0f-factor)*_appearance.Transform[5] + (factor * endAppearance.Transform[5]);
+                _animatedAppearance.Transform[0] = (1.0f-factor)*_appearance.Transform[0] + (factor * endAppearance.Transform[0]);
+                _animatedAppearance.Transform[1] = (1.0f-factor)*_appearance.Transform[1] + (factor * endAppearance.Transform[1]);
+                _animatedAppearance.Transform[2] = (1.0f-factor)*_appearance.Transform[2] + (factor * endAppearance.Transform[2]);
+                _animatedAppearance.Transform[3] = (1.0f-factor)*_appearance.Transform[3] + (factor * endAppearance.Transform[3]);
+                _animatedAppearance.Transform[4] = (1.0f-factor)*_appearance.Transform[4] + (factor * endAppearance.Transform[4]);
+                _animatedAppearance.Transform[5] = (1.0f-factor)*_appearance.Transform[5] + (factor * endAppearance.Transform[5]);
             }
 
             if (timeFactor >= 1f) {
@@ -453,7 +457,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
                 _appearanceAnimations.Add(animation);
             }
 
-        return new(appearance,appearanceSystem); //one of the very few times it's okay to do this. Double copy though, could probably be less memory churny in future.
+        return new(_animatedAppearance, null); //one of the very few times it's okay to do this.
     }
 
     private void UpdateIcon() {

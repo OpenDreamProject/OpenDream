@@ -18,7 +18,7 @@ public interface IDMFProperty {
     public string AsJson();
     public string AsJsonDM();
     public string AsRaw();
-    
+
     /// winget() calls do not act the same as embedded winget calls, and the default behaviour is some whacky combination of AsEscaped() and AsRaw(). This proc handles that. Fucking BYOND.
     public string AsSnowflake();
 }
@@ -41,15 +41,13 @@ raw
 */
 
 public struct DMFPropertyString(string value) : IDMFProperty {
-    public string? Value = value;
+    public string Value = value;
 
     public string AsArg() {
-        return Value != null ? "\""+AsEscaped()+"\"" : "\"\"";
+        return "\""+AsEscaped()+"\"";
     }
 
     public string AsEscaped() {
-        if(Value == null)
-            return "";
         return Value
             .Replace("\\", "\\\\")
             .Replace("\"", "\\\"");
@@ -60,10 +58,7 @@ public struct DMFPropertyString(string value) : IDMFProperty {
     }
 
     public string AsParams() {
-        if(Value == null)
-            return "";
-        else
-            return System.Web.HttpUtility.UrlEncode(Value);
+        return System.Web.HttpUtility.UrlEncode(Value);
     }
 
     public string AsJson() {
@@ -80,13 +75,13 @@ public struct DMFPropertyString(string value) : IDMFProperty {
     }
 
     public string AsRaw() {
-        return Value ?? "";
+        return Value;
     }
 
     public string AsSnowflake() {
         return AsRaw();
     }
-    
+
     public override string ToString() {
         return AsRaw();
     }
@@ -140,7 +135,7 @@ public struct DMFPropertyNum(float value) : IDMFProperty {
     public string AsSnowflake() {
         return AsRaw();
     }
-    
+
     public override string ToString() {
         return AsRaw();
     }
@@ -151,7 +146,7 @@ public struct DMFPropertyNum(float value) : IDMFProperty {
     }
 }
 
-public struct DMFPropertyVec2 : IDMFProperty {
+public struct DMFPropertyVec2 : IDMFProperty, IEquatable<DMFPropertyVec2> {
     public int X;
     public int Y;
     public char Delim = ',';
@@ -226,9 +221,21 @@ public struct DMFPropertyVec2 : IDMFProperty {
         DMFPropertyVec2 comparisonVec = new(comparison);
         return comparisonVec.X == X && comparisonVec.Y == Y;
     }
+
+    public bool Equals(DMFPropertyVec2 other) {
+        return X == other.X && Y == other.Y && Delim == other.Delim;
+    }
+
+    public override bool Equals(object? obj) {
+        return obj is DMFPropertyVec2 other && Equals(other);
+    }
+
+    public override int GetHashCode() {
+        return HashCode.Combine(X, Y, Delim);
+    }
 }
 
-public struct DMFPropertySize : IDMFProperty {
+public struct DMFPropertySize : IDMFProperty, IEquatable<DMFPropertySize> {
     private DMFPropertyVec2 _value;
     public int X {get => _value.X; set => _value.X = value;}
     public int Y {get => _value.Y; set => _value.Y = value;}
@@ -295,11 +302,23 @@ public struct DMFPropertySize : IDMFProperty {
         return _value.Equals(comparison);
     }
 
+    public bool Equals(DMFPropertySize other) {
+        return _value.Equals(other._value);
+    }
+
+    public override bool Equals(object? obj) {
+        return obj is DMFPropertySize other && Equals(other);
+    }
+
+    public override int GetHashCode() {
+        return _value.GetHashCode();
+    }
+
     public static bool operator ==(DMFPropertySize a, DMFPropertySize b) => a.Vector == b.Vector;
     public static bool operator !=(DMFPropertySize a, DMFPropertySize b) => a.Vector != b.Vector;
 }
 
-public struct DMFPropertyPos : IDMFProperty {
+public struct DMFPropertyPos : IDMFProperty, IEquatable<DMFPropertyPos> {
     private DMFPropertyVec2 _value;
     public int X => _value.X;
     public int Y => _value.Y;
@@ -364,6 +383,18 @@ public struct DMFPropertyPos : IDMFProperty {
 
     public bool Equals(string comparison) {
         return _value.Equals(comparison);
+    }
+
+    public bool Equals(DMFPropertyPos other) {
+        return _value.Equals(other._value);
+    }
+
+    public override bool Equals(object? obj) {
+        return obj is DMFPropertyPos other && Equals(other);
+    }
+
+    public override int GetHashCode() {
+        return _value.GetHashCode();
     }
 
     public static bool operator ==(DMFPropertyPos a, DMFPropertyPos b) => a.Vector == b.Vector;
@@ -479,7 +510,7 @@ public struct DMFPropertyBool(bool value) : IDMFProperty {
     public string AsSnowflake() {
         return Value ? "true" : "false";
     }
-    
+
     public override string ToString() {
         return AsRaw();
     }

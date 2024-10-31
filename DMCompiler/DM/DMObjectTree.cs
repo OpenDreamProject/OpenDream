@@ -13,11 +13,6 @@ internal static class DMObjectTree {
     //TODO: These don't belong in the object tree
     public static readonly List<DMVariable> Globals = new();
     public static readonly Dictionary<string, int> GlobalProcs = new();
-    /// <summary>
-    /// Used to keep track of when we see a /proc/foo() or whatever, so that duplicates or missing definitions can be discovered,
-    /// even as GlobalProcs keeps clobbering old global proc overrides/definitions.
-    /// </summary>
-    public static readonly HashSet<string> SeenGlobalProcDefinition = new();
     public static readonly List<string> StringTable = new();
     public static DMProc GlobalInitProc = default!; // Initialized by Reset() (called in the static initializer)
     public static readonly HashSet<string> Resources = new();
@@ -44,7 +39,6 @@ internal static class DMObjectTree {
 
         Globals.Clear();
         GlobalProcs.Clear();
-        SeenGlobalProcDefinition.Clear();
         StringTable.Clear();
         StringToStringId.Clear();
         Resources.Clear();
@@ -193,7 +187,11 @@ internal static class DMObjectTree {
     }
 
     public static void AddGlobalProc(DMProc proc) {
-        // Said in this way so it clobbers previous definitions of this global proc (the ..() stuff doesn't work with glob procs)
+        if (GlobalProcs.ContainsKey(proc.Name)) {
+            DMCompiler.Emit(WarningCode.DuplicateProcDefinition, proc.Location, $"Global proc {proc.Name} is already defined");
+            return;
+        }
+
         GlobalProcs[proc.Name] = proc.Id;
     }
 

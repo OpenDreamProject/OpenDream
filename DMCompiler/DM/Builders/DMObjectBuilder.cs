@@ -302,12 +302,7 @@ internal static class DMObjectBuilder {
                 DMCompiler.Emit(WarningCode.InvalidOverride, procDefinition.Location, $"Global procs cannot be overridden - '{procDefinition.Name}' override will be ignored");
                 //Continue processing the proc anyhoo, just don't add it.
             } else {
-                if (!DMObjectTree.SeenGlobalProcDefinition.Add(procName)) { // Add() is equivalent to Dictionary's TryAdd() for some reason
-                    DMCompiler.Emit(WarningCode.DuplicateProcDefinition, procDefinition.Location, $"Global proc {procDefinition.Name} is already defined");
-                    //Again, even though this is likely an error, process the statements anyways.
-                } else {
-                    DMObjectTree.AddGlobalProc(proc);
-                }
+                DMObjectTree.AddGlobalProc(proc);
             }
         } else {
             dmObject.AddProc(procName, proc);

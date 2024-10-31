@@ -365,10 +365,9 @@ namespace DMCompiler.DM.Builders {
             if (varDeclaration.Value != null) {
                 value = _exprBuilder.Create(varDeclaration.Value, varDeclaration.Type);
 
-                if (!varDeclaration.ValType.MatchesType(compiler, value.ValType)) {
+                if (!varDeclaration.ValType.MatchesType(compiler, value.ValType) && (!value.ValType.IsAnything || !compiler.Settings.SkipAnythingTypecheck))
                     compiler.Emit(WarningCode.InvalidVarType, varDeclaration.Location,
                         $"{varDeclaration.Name}: Invalid var value {value.ValType}, expected {varDeclaration.ValType}");
-                }
             } else {
                 value = new Null(varDeclaration.Location);
             }
@@ -382,7 +381,7 @@ namespace DMCompiler.DM.Builders {
 
                 successful = proc.TryAddLocalConstVariable(varDeclaration.Name, varDeclaration.Type, constValue);
             } else {
-                successful = proc.TryAddLocalVariable(varDeclaration.Name, varDeclaration.Type, varDeclaration.ValType);
+                successful = proc.TryAddLocalVariable(varDeclaration.Name, varDeclaration.Type, varDeclaration.ExplicitValType);
             }
 
             if (!successful) {
@@ -450,7 +449,7 @@ namespace DMCompiler.DM.Builders {
             proc.StartScope();
             {
                 foreach (var decl in FindVarDecls(statementFor.Expression1)) {
-                    ProcessStatementVarDeclaration(new DMASTProcStatementVarDeclaration(statementFor.Location, decl.DeclPath, null, DMValueType.Anything));
+                    ProcessStatementVarDeclaration(new DMASTProcStatementVarDeclaration(statementFor.Location, decl.DeclPath, null, null));
                 }
 
                 if (statementFor.Expression2 != null || statementFor.Expression3 != null) {
@@ -524,7 +523,10 @@ namespace DMCompiler.DM.Builders {
                             var list = _exprBuilder.Create(exprIn.RHS);
 
                             if (outputVar is Local outputLocal) {
-                                outputLocal.LocalVar.ExplicitValueType = statementFor.DMTypes;
+                                if (statementFor.DMTypes is not null)
+                                    outputLocal.LocalVar.ExplicitValueType = statementFor.DMTypes;
+                                else if (list.ValType.IsList && list.ValType.ListValueTypes is not null)
+                                    outputLocal.LocalVar.ExplicitValueType = list.ValType.ListValueTypes.NestedListKeyType;
                             if(outputLocal.LocalVar is DMProc.LocalConstVariable)
                                 compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, "Cannot change constant value");
                             } else if (outputVar is Field { IsConst: true })
@@ -962,7 +964,7 @@ namespace DMCompiler.DM.Builders {
             if (tryCatch.CatchParameter != null) {
                 var param = tryCatch.CatchParameter as DMASTProcStatementVarDeclaration;
 
-                if (!proc.TryAddLocalVariable(param.Name, param.Type, param.ValType)) {
+                if (!proc.TryAddLocalVariable(param.Name, param.Type, param.ExplicitValType)) {
                     compiler.Emit(WarningCode.DuplicateVariable, param.Location, $"Duplicate var {param.Name}");
                 }
 

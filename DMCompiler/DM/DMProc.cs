@@ -278,7 +278,7 @@ namespace DMCompiler.DM {
             return label;
         }
 
-        public bool TryAddLocalVariable(string name, DreamPath? type, DMComplexValueType valType) {
+        public bool TryAddLocalVariable(string name, DreamPath? type, DMComplexValueType? valType) {
             if (_parameters.ContainsKey(name)) //Parameters and local vars cannot share a name
                 return false;
 

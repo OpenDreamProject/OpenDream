@@ -240,7 +240,7 @@ internal sealed class ConstantPath(Location location, DMObject dmObject, DreamPa
     private readonly DMObject _dmObject = dmObject;
 
     public override DreamPath? Path => Value;
-    public override DMComplexValueType ValType => Value;
+    public override DMComplexValueType ValType => new DMComplexValueType(DMValueType.Path, Value);
 
     public enum PathType {
         TypeReference,

@@ -2762,7 +2762,16 @@ namespace DMCompiler.Compiler.DM {
         private DMValueType SingleAsType(out DreamPath? path, bool allowPath = false) {
             Token typeToken = Current();
 
-            if (!Check(new[] { TokenType.DM_Identifier, TokenType.DM_Null })) {
+            var inPath = false;
+            if (typeToken.Type is TokenType.DM_Identifier && typeToken.Text == "path") {
+                Advance();
+                if(Check(TokenType.DM_LeftParenthesis)) {
+                    inPath = true;
+                    Whitespace();
+                }
+            }
+
+            if (inPath || !Check(new[] { TokenType.DM_Identifier, TokenType.DM_Null })) {
                 // Proc return types
                 path = Path()?.Path;
                 if (allowPath) {
@@ -2770,11 +2779,15 @@ namespace DMCompiler.Compiler.DM {
                         DMCompiler.Emit(WarningCode.BadToken, typeToken.Location, "Expected value type or path");
                     }
 
-                    return DMValueType.Path;
+                    if (inPath) {
+                        Whitespace();
+                        ConsumeRightParenthesis();
+                    }
+                    return inPath ? DMValueType.Path : DMValueType.Instance;
                 }
 
                 DMCompiler.Emit(WarningCode.BadToken, typeToken.Location, "Expected value type");
-                return 0;
+                return DMValueType.Anything;
             }
 
             path = null;

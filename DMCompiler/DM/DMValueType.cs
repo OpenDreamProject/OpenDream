@@ -1,4 +1,4 @@
-﻿namespace DMCompiler.DM;
+namespace DMCompiler.DM;
 
 // If you are modifying this, you must also modify OpenDreamShared.Dream.DreamValueType !!
 // Unfortunately the client needs this and it can't reference DMCompiler due to the sandbox
@@ -23,11 +23,12 @@ public enum DMValueType {
     CommandText = 0x400,
     Sound = 0x800,
     Icon = 0x1000,
-    Path = 0x2000, // For proc return types
+    Instance = 0x2000, // For proc return types
+    Path = 0x4000,
 
     //Byond here be dragons
-    Unimplemented = 0x4000, // Marks that a method or property is not implemented. Throws a compiler warning if accessed.
-    CompiletimeReadonly = 0x8000, // Marks that a property can only ever be read from, never written to. This is a const-ier version of const, for certain standard values like list.type
+    Unimplemented = 0x8000, // Marks that a method or property is not implemented. Throws a compiler warning if accessed.
+    CompiletimeReadonly = 0x10000, // Marks that a property can only ever be read from, never written to. This is a const-ier version of const, for certain standard values like list.type
 }
 
 /// <summary>
@@ -38,9 +39,11 @@ public readonly struct DMComplexValueType {
     public readonly DreamPath? TypePath;
 
     public bool IsAnything => Type == DMValueType.Anything;
-    public bool IsPath => Type.HasFlag(DMValueType.Path);
+    public bool IsInstance => Type.HasFlag(DMValueType.Instance);
+    public bool HasPath => Type.HasFlag(DMValueType.Path) | Type.HasFlag(DMValueType.Instance);
     public bool IsUnimplemented { get; }
     public bool IsCompileTimeReadOnly { get; }
+    public bool IsList => IsInstance && TypePath == DreamPath.List;
 
     public DMComplexValueType(DMValueType type, DreamPath? typePath) {
         Type = type & ~(DMValueType.Unimplemented | DMValueType.CompiletimeReadonly); // Ignore these 2 types
@@ -48,8 +51,8 @@ public readonly struct DMComplexValueType {
         IsUnimplemented = type.HasFlag(DMValueType.Unimplemented);
         IsCompileTimeReadOnly = type.HasFlag(DMValueType.CompiletimeReadonly);
 
-        if (IsPath && TypePath == null)
-            throw new Exception("A Path value type must have a type-path");
+        if (HasPath && TypePath == null)
+            throw new Exception("A Path or Instance value type must have a type-path");
     }
 
     public bool MatchesType(DMValueType type) {
@@ -57,26 +60,59 @@ public readonly struct DMComplexValueType {
     }
 
     public bool MatchesType(DMComplexValueType type) {
-        if (IsPath && type.IsPath) {
+        // Exclude checking path and null here; primitives only.
+        if (MatchesType(type.Type & ~(DMValueType.Path|DMValueType.Instance|DMValueType.Null)))
+            return true;
+        // If we have a /icon, we have an icon; if we have a /obj, we have an obj; etc.
+        if (IsInstance) {
+            if (type.MatchesType(TypePath!.Value.GetAtomType())) {
+                return true;
+            }
+            var theirPath = type.AsPath();
+            if (theirPath is not null) {
+                var theirObject = DMObjectTree.GetDMObject(theirPath!.Value, false);
+                if (theirObject?.IsSubtypeOf(TypePath!.Value) is true) {
+                    return true;
+                }
+            }
+        }
+        if (type.IsInstance && MatchesType(type.TypePath!.Value.GetAtomType())) {
+            return true;
+        }
+        if (HasPath && type.HasPath) {
             var dmObject = DMObjectTree.GetDMObject(type.TypePath!.Value, false);
 
             // Allow subtypes
-            if (dmObject?.IsSubtypeOf(TypePath!.Value) is true)
-                return true;
+            if (dmObject?.IsSubtypeOf(TypePath!.Value) is false) {
+                var ourObject = DMObjectTree.GetDMObject(TypePath!.Value, false);
+                return ourObject?.IsSubtypeOf(type.TypePath!.Value) ?? false;
+            }
         }
-
         return MatchesType(type.Type);
     }
 
     public override string ToString() {
         var types = Type.ToString().ToLowerInvariant();
 
-        return $"\"{(IsPath ? types + ", " + TypePath!.Value : types)}\"";
+        return $"\"{(HasPath ? types + $", {TypePath!.Value}{((IsList && ListValueTypes is not null) ? $"({ListValueTypes})" : "")}" : types)}\"";
     }
 
     public static implicit operator DMComplexValueType(DMValueType type) => new(type, null);
-    public static implicit operator DMComplexValueType(DreamPath path) => new(DMValueType.Path, path);
+    public static implicit operator DMComplexValueType(DreamPath path) => new(DMValueType.Instance, path);
 
     public static DMComplexValueType operator |(DMComplexValueType type1, DMValueType type2) =>
         new(type1.Type | type2, type1.TypePath);
+    public DreamPath? AsPath() {
+        return (HasPath ? TypePath : null) ?? (Type & ~DMValueType.Null) switch {
+            DMValueType.Mob => DreamPath.Mob,
+            DMValueType.Icon => DreamPath.Icon,
+            DMValueType.Obj => DreamPath.Obj,
+            DMValueType.Turf => DreamPath.Turf,
+            DMValueType.Area => DreamPath.Area,
+            DMValueType.Obj | DMValueType.Mob => DreamPath.Movable,
+            DMValueType.Area | DMValueType.Turf | DMValueType.Obj | DMValueType.Mob => DreamPath.Atom,
+            DMValueType.Sound => DreamPath.Sound,
+            _ => null
+        };
+    }
 }

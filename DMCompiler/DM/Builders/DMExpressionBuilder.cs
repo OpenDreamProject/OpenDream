@@ -780,7 +780,7 @@ internal static class DMExpressionBuilder {
                                 $"Type {prevPath.Value} does not have a proc named \"{field}\"");
 
                         var returnTypes = fromObject.GetProcReturnTypes(field) ?? DMValueType.Anything;
-                        nextPath = returnTypes.IsPath ? returnTypes.TypePath : returnTypes.AsPath();
+                        nextPath = returnTypes.HasPath ? returnTypes.TypePath : returnTypes.AsPath();
                     }
 
                     operation = new Dereference.CallOperation {

@@ -48,7 +48,12 @@ internal sealed class New(Location location, DMExpression expr, ArgumentList arg
     public override bool PathIsFuzzy => Path == null;
     public override DMComplexValueType ValType {
         get {
-            return !expr.ValType.IsAnything ? (expr.ValType.IsPath ? expr.ValType.TypePath!.Value.GetAtomType() : expr.ValType) : (Path?.GetAtomType() ?? DMValueType.Anything);
+            var exprType = expr.ValType;
+            if (exprType.IsAnything)
+                return Path is not null ? new DMComplexValueType(DMValueType.Instance, Path) : DMValueType.Anything;
+            if (exprType.HasPath && exprType.Type.HasFlag(DMValueType.Path))
+                return exprType.TypePath is not null ? new DMComplexValueType(DMValueType.Instance, exprType.TypePath) : DMValueType.Anything;
+            return exprType;
         }
     }
 
@@ -63,12 +68,7 @@ internal sealed class New(Location location, DMExpression expr, ArgumentList arg
 // new /x/y/z (...)
 internal sealed class NewPath(Location location, ConstantPath targetPath, ArgumentList arguments) : DMExpression(location) {
     public override DreamPath? Path => targetPath.Value;
-    public override DMComplexValueType ValType {
-        get {
-            var atomType = Path?.GetAtomType() ?? DMValueType.Anything;
-            return atomType switch { DMValueType.Anything => new DMComplexValueType(DMValueType.Path, Path), _ => atomType };
-        }
-    }
+    public override DMComplexValueType ValType => Path is not null ? new DMComplexValueType(DMValueType.Instance | DMValueType.Null, Path) : DMValueType.Anything;
 
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         if (!targetPath.TryResolvePath(out var pathInfo)) {
@@ -138,7 +138,7 @@ internal sealed class LocateInferred(Location location, DreamPath path, DMExpres
 // locate(x)
 internal sealed class Locate(Location location, DMExpression path, DMExpression? container) : DMExpression(location) {
     public override bool PathIsFuzzy => true;
-    public override DMComplexValueType ValType => path.Path?.GetAtomType() ?? DMValueType.Anything;
+    public override DMComplexValueType ValType => path.Path is not null ? new DMComplexValueType(DMValueType.Instance | DMValueType.Null, path.Path) : DMValueType.Anything;
 
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         path.EmitPushValue(dmObject, proc);

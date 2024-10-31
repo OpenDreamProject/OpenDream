@@ -83,7 +83,7 @@ internal class Dereference : LValue {
             type = operation switch {
                 FieldOperation fieldOperation => dmObject.GetVariable(fieldOperation.Identifier)?.ValType ?? DMValueType.Anything,
                 IndexOperation indexOperation => type.ListValueTypes is null ? DMValueType.Anything : (indexOperation.Index.ValType.Type.HasFlag(DMValueType.Num) ? type.ListValueTypes.NestedListKeyType : type.ListValueTypes.NestedListValType ?? type.ListValueTypes.NestedListKeyType) | DMValueType.Null, // TODO: Keys of assoc lists
-                CallOperation callOperation => dmObject.GetProcReturnTypes(callOperation.Identifier) ?? DMValueType.Anything,
+                CallOperation callOperation => dmObject.GetProcReturnTypes(callOperation.Identifier, callOperation.Parameters) ?? DMValueType.Anything,
                 _ => throw new InvalidOperationException("Unimplemented dereference operation")
             };
         }
@@ -322,8 +322,8 @@ internal class Dereference : LValue {
 
 // expression::identifier
 // Same as initial(expression?.identifier) except this keeps its type
-internal sealed class ScopeReference(DMObjectTree objectTree, Location location, DMExpression expression, string identifier, DMVariable dmVar)
-    : Initial(location, new Dereference(objectTree, location, dmVar.Type, expression, // Just a little hacky
+internal sealed class ScopeReference(DMCompiler compiler, Location location, DMExpression expression, string identifier, DMVariable dmVar)
+    : Initial(location, new Dereference(compiler.DMObjectTree, location, dmVar.Type, expression, // Just a little hacky
         [
             new Dereference.FieldOperation {
                 Identifier = identifier,
@@ -335,7 +335,7 @@ internal sealed class ScopeReference(DMObjectTree objectTree, Location location,
     public override DreamPath? Path => Expression.Path;
     public override DMComplexValueType ValType {
         get {
-            TryAsConstant(out var constant);
+            TryAsConstant(compiler, out var constant);
             return constant is not null ? constant.ValType : dmVar.ValType;
         }
     }

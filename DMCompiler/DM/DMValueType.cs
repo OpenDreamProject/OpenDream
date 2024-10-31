@@ -1,4 +1,4 @@
-namespace DMCompiler.DM;
+﻿namespace DMCompiler.DM;
 
 // If you are modifying this, you must also modify OpenDreamShared.Dream.DreamValueType !!
 // Unfortunately the client needs this and it can't reference DMCompiler due to the sandbox
@@ -38,6 +38,12 @@ public enum DMValueType {
 public readonly struct DMComplexValueType {
     public readonly DMValueType Type;
     public readonly DreamPath? TypePath;
+    /// <summary>
+    /// The indices of the proc parameters used to infer proc return types.
+    /// The resulting type is the union of all the parameter types with `this.Type`.
+    /// If two or more of those types have paths, their common ancestor is used.
+    /// </summary>
+    public readonly (int, bool)[]? ParameterIndices;
 
     public bool IsAnything => Type == DMValueType.Anything;
     public bool IsInstance => Type.HasFlag(DMValueType.Instance);
@@ -62,9 +68,16 @@ public readonly struct DMComplexValueType {
             throw new Exception("A Path or Instance value type must have a type-path");
     }
 
-    public DMComplexValueType(DMValueType type, DreamPath? typePath, DMListValueTypes? listValueTypes) : this(type, typePath) {
+    public DMComplexValueType(DMValueType type, DreamPath? typePath, (int, bool)[]? parameterIndices) : this(type, typePath) {
+        ParameterIndices = parameterIndices;
+    }
+
+    public DMComplexValueType(DMValueType type, DreamPath? typePath, (int, bool)[]? parameterIndices, DMListValueTypes? listValueTypes) : this(type, typePath, parameterIndices) {
         ListValueTypes = listValueTypes;
     }
+
+    public DMComplexValueType(DMValueType type, DreamPath? typePath, DMListValueTypes? listValueTypes) : this(type, typePath, null, listValueTypes) { }
+
     public bool MatchesType(DMValueType type) {
         return IsAnything || (Type & type) != 0;
     }

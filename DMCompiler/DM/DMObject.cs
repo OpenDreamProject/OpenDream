@@ -97,16 +97,21 @@ internal sealed class DMObject(DMCompiler compiler, int id, DreamPath path, DMOb
     }
 
     public DMComplexValueType? GetProcReturnTypes(string name) {
+
+        return GetProcReturnTypes(name, null);
+    }
+
+    public DMComplexValueType? GetProcReturnTypes(string name, ArgumentList? arguments) {
         if (this == compiler.DMObjectTree.Root && compiler.DMObjectTree.TryGetGlobalProc(name, out var globalProc))
-            return globalProc.RawReturnTypes;
+            return globalProc.GetParameterValueTypes(arguments);
         if (GetProcs(name) is not { } procs)
-            return Parent?.GetProcReturnTypes(name);
+            return Parent?.GetProcReturnTypes(name, arguments);
 
         var proc = compiler.DMObjectTree.AllProcs[procs[0]];
         if ((proc.Attributes & ProcAttributes.IsOverride) != 0)
-            return Parent?.GetProcReturnTypes(name) ?? DMValueType.Anything;
+            return Parent?.GetProcReturnTypes(name, arguments) ?? DMValueType.Anything;
 
-        return proc.RawReturnTypes;
+        return proc.GetParameterValueTypes(arguments);
     }
 
     public void AddVerb(DMProc verb) {

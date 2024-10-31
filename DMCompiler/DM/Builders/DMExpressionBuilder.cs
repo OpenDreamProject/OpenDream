@@ -701,7 +701,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
             if (variable == null)
                 return UnknownIdentifier(location, bIdentifier);
 
-            return new ScopeReference(ObjectTree, location, expression, bIdentifier, variable);
+            return new ScopeReference(Compiler, location, expression, bIdentifier, variable);
         }
     }
 
@@ -1033,7 +1033,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                         if (!fromObject.HasProc(field))
                             return UnknownIdentifier(callOperation.Location, field);
 
-                        var returnTypes = fromObject.GetProcReturnTypes(field) ?? DMValueType.Anything;
+                        var returnTypes = fromObject.GetProcReturnTypes(field, argumentList) ?? DMValueType.Anything;
                         nextPath = returnTypes.HasPath ? returnTypes.TypePath : returnTypes.AsPath();
                         if (!returnTypes.HasPath & nextPath.HasValue) {
                             var thePath = nextPath!.Value;

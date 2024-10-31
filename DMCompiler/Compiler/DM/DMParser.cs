@@ -242,9 +242,9 @@ namespace DMCompiler.Compiler.DM {
                 Whitespace();
 
                 // Proc return type
-                var types = AsComplexTypes();
+                var types = AsComplexTypes(parameters);
 
-                DMASTProcBlockInner? procBlock = ProcBlock();
+                DMASTProcBlockInner? procBlock = ProcBlock(parameters);
                 if (procBlock is null) {
                     DMASTProcStatement? procStatement = ProcStatement();
 
@@ -571,12 +571,12 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        private DMASTProcBlockInner? ProcBlock() {
+        private DMASTProcBlockInner? ProcBlock(List<DMASTDefinitionParameter>? procParameters = null) {
             Token beforeBlockToken = Current();
             bool hasNewline = Newline();
 
-            DMASTProcBlockInner? procBlock = BracedProcBlock();
-            procBlock ??= IndentedProcBlock();
+            DMASTProcBlockInner? procBlock = BracedProcBlock(procParameters);
+            procBlock ??= IndentedProcBlock(procParameters);
 
             if (procBlock == null && hasNewline) {
                 ReuseToken(beforeBlockToken);
@@ -585,7 +585,7 @@ namespace DMCompiler.Compiler.DM {
             return procBlock;
         }
 
-        private DMASTProcBlockInner? BracedProcBlock() {
+        private DMASTProcBlockInner? BracedProcBlock(List<DMASTDefinitionParameter>? procParameters = null) {
             var loc = Current().Location;
             if (Check(TokenType.DM_LeftCurlyBracket)) {
                 DMASTProcBlockInner? block;
@@ -593,7 +593,7 @@ namespace DMCompiler.Compiler.DM {
                 Whitespace();
                 Newline();
                 if (Current().Type == TokenType.DM_Indent) {
-                    block = IndentedProcBlock();
+                    block = IndentedProcBlock(procParameters);
                     Newline();
                     Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
                 } else {
@@ -625,14 +625,14 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        private DMASTProcBlockInner? IndentedProcBlock() {
+        private DMASTProcBlockInner? IndentedProcBlock(List<DMASTDefinitionParameter>? procParameters = null) {
             var loc = Current().Location;
             if (Check(TokenType.DM_Indent)) {
                 List<DMASTProcStatement> statements = new();
                 List<DMASTProcStatement> setStatements = new(); // set statements are weird and must be held separately.
 
                 do {
-                    (List<DMASTProcStatement>? statements, List<DMASTProcStatement>? setStatements) blockInner = ProcBlockInner();
+                    (List<DMASTProcStatement>? statements, List<DMASTProcStatement>? setStatements) blockInner = ProcBlockInner(procParameters);
                     if (blockInner.statements is not null)
                         statements.AddRange(blockInner.statements);
                     if (blockInner.setStatements is not null)
@@ -653,14 +653,14 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        private (List<DMASTProcStatement>?, List<DMASTProcStatement>?) ProcBlockInner() {
+        private (List<DMASTProcStatement>?, List<DMASTProcStatement>?) ProcBlockInner(List<DMASTDefinitionParameter>? procParameters = null) {
             List<DMASTProcStatement> procStatements = new();
             List<DMASTProcStatement> setStatements = new(); // We have to store them separately because they're evaluated first
 
             DMASTProcStatement? statement;
             do {
                 Whitespace();
-                statement = ProcStatement();
+                statement = ProcStatement(procParameters);
 
                 if (statement is not null) {
                     Whitespace();
@@ -675,7 +675,7 @@ namespace DMCompiler.Compiler.DM {
             return (procStatements.Count > 0 ? procStatements : null, setStatements.Count > 0 ? setStatements : null);
         }
 
-        private DMASTProcStatement? ProcStatement() {
+        private DMASTProcStatement? ProcStatement(List<DMASTDefinitionParameter>? procParameters = null) {
             var loc = Current().Location;
 
             if (Current().Type == TokenType.DM_Semicolon) { // A lone semicolon creates a "null statement" (like C)
@@ -790,21 +790,21 @@ namespace DMCompiler.Compiler.DM {
                 return new DMASTProcStatementExpression(loc, expression);
             } else {
                 DMASTProcStatement? procStatement = Current().Type switch {
-                    TokenType.DM_If => If(),
+                    TokenType.DM_If => If(procParameters),
                     TokenType.DM_Return => Return(),
-                    TokenType.DM_For => For(),
+                    TokenType.DM_For => For(procParameters),
                     TokenType.DM_Set => Set(),
-                    TokenType.DM_Switch => Switch(),
+                    TokenType.DM_Switch => Switch(procParameters),
                     TokenType.DM_Continue => Continue(),
                     TokenType.DM_Break => Break(),
-                    TokenType.DM_Spawn => Spawn(),
-                    TokenType.DM_While => While(),
-                    TokenType.DM_Do => DoWhile(),
+                    TokenType.DM_Spawn => Spawn(procParameters),
+                    TokenType.DM_While => While(procParameters),
+                    TokenType.DM_Do => DoWhile(procParameters),
                     TokenType.DM_Throw => Throw(),
                     TokenType.DM_Del => Del(),
-                    TokenType.DM_Try => TryCatch(),
+                    TokenType.DM_Try => TryCatch(procParameters),
                     TokenType.DM_Goto => Goto(),
-                    TokenType.DM_Slash or TokenType.DM_Var => ProcVarDeclaration(),
+                    TokenType.DM_Slash or TokenType.DM_Var => ProcVarDeclaration(procParameters),
                     _ => null
                 };
 
@@ -816,7 +816,7 @@ namespace DMCompiler.Compiler.DM {
             }
         }
 
-        private DMASTProcStatement? ProcVarDeclaration(bool allowMultiple = true) {
+        private DMASTProcStatement? ProcVarDeclaration(List<DMASTDefinitionParameter>? procParameters = null, bool allowMultiple = true) {
             Token firstToken = Current();
             bool wasSlash = Check(TokenType.DM_Slash);
 
@@ -827,7 +827,7 @@ namespace DMCompiler.Compiler.DM {
                 }
 
                 Whitespace(); // We have to consume whitespace here since "var foo = 1" (for example) is valid DM code.
-                DMASTProcStatementVarDeclaration[]? vars = ProcVarEnd(allowMultiple);
+                DMASTProcStatementVarDeclaration[]? vars = ProcVarEnd(procParameters, allowMultiple);
                 if (vars == null) {
                     Emit(WarningCode.InvalidVarDefinition, "Expected a var declaration");
                     return new DMASTInvalidProcStatement(firstToken.Location);
@@ -846,7 +846,7 @@ namespace DMCompiler.Compiler.DM {
         /// <summary>
         /// <see langword="WARNING:"/> This proc calls itself recursively.
         /// </summary>
-        private DMASTProcStatementVarDeclaration[]? ProcVarBlock(DMASTPath? varPath) {
+        private DMASTProcStatementVarDeclaration[]? ProcVarBlock(List<DMASTDefinitionParameter>? procParameters, DMASTPath? varPath) {
             Token newlineToken = Current();
             bool hasNewline = Newline();
 
@@ -854,7 +854,7 @@ namespace DMCompiler.Compiler.DM {
                 List<DMASTProcStatementVarDeclaration> varDeclarations = new();
 
                 while (!Check(TokenType.DM_Dedent)) {
-                    DMASTProcStatementVarDeclaration[]? varDecl = ProcVarEnd(true, path: varPath);
+                    DMASTProcStatementVarDeclaration[]? varDecl = ProcVarEnd(procParameters, true, path: varPath);
                     if (varDecl != null) {
                         varDeclarations.AddRange(varDecl);
                     } else {
@@ -875,7 +875,7 @@ namespace DMCompiler.Compiler.DM {
                 List<DMASTProcStatementVarDeclaration> varDeclarations = new();
                 TokenType type = isIndented ? TokenType.DM_Dedent : TokenType.DM_RightCurlyBracket;
                 while (!Check(type)) {
-                    DMASTProcStatementVarDeclaration[]? varDecl = ProcVarEnd(true, path: varPath);
+                    DMASTProcStatementVarDeclaration[]? varDecl = ProcVarEnd(procParameters, true, path: varPath);
                     Delimiter();
                     Whitespace();
                     if (varDecl == null) {
@@ -901,12 +901,12 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        private DMASTProcStatementVarDeclaration[]? ProcVarEnd(bool allowMultiple, DMASTPath? path = null) {
+        private DMASTProcStatementVarDeclaration[]? ProcVarEnd(List<DMASTDefinitionParameter>? procParameters, bool allowMultiple, DMASTPath? path = null) {
             var loc = Current().Location;
             DMASTPath? varPath = Path();
 
             if (allowMultiple) {
-                DMASTProcStatementVarDeclaration[]? block = ProcVarBlock(varPath);
+                DMASTProcStatementVarDeclaration[]? block = ProcVarBlock(procParameters, varPath);
                 if (block != null) return block;
             }
 
@@ -928,7 +928,7 @@ namespace DMCompiler.Compiler.DM {
                     RequireExpression(ref value);
                 }
 
-                var valType = AsComplexTypes() ?? DMValueType.Anything;
+                var valType = AsComplexTypes(procParameters);
 
                 varDeclarations.Add(new DMASTProcStatementVarDeclaration(loc, varPath, value, valType));
                 if (allowMultiple && Check(TokenType.DM_Comma)) {
@@ -1113,7 +1113,7 @@ namespace DMCompiler.Compiler.DM {
             return sets[0];
         }
 
-        private DMASTProcStatementSpawn Spawn() {
+        private DMASTProcStatementSpawn Spawn(List<DMASTDefinitionParameter>? procParameters = null) {
             var loc = Current().Location;
             Advance();
 
@@ -1136,9 +1136,9 @@ namespace DMCompiler.Compiler.DM {
 
             Newline();
 
-            DMASTProcBlockInner? body = ProcBlock();
+            DMASTProcBlockInner? body = ProcBlock(procParameters);
             if (body == null) {
-                DMASTProcStatement? statement = ProcStatement();
+                DMASTProcStatement? statement = ProcStatement(procParameters);
 
                 if (statement != null) {
                     body = new DMASTProcBlockInner(loc, statement);
@@ -1151,7 +1151,7 @@ namespace DMCompiler.Compiler.DM {
             return new DMASTProcStatementSpawn(loc, delay ?? new DMASTConstantInteger(loc, 0), body);
         }
 
-        private DMASTProcStatementIf If() {
+        private DMASTProcStatementIf If(List<DMASTDefinitionParameter>? procParameters = null) {
             var loc = Current().Location;
             Advance();
 
@@ -1173,7 +1173,7 @@ namespace DMCompiler.Compiler.DM {
 
             Whitespace();
 
-            DMASTProcStatement? procStatement = ProcStatement();
+            DMASTProcStatement? procStatement = ProcStatement(procParameters);
             DMASTProcBlockInner? elseBody = null;
             DMASTProcBlockInner? body = (procStatement != null)
                 ? new DMASTProcBlockInner(loc, procStatement)
@@ -1187,11 +1187,11 @@ namespace DMCompiler.Compiler.DM {
                 Whitespace();
                 Check(TokenType.DM_Colon);
                 Whitespace();
-                procStatement = ProcStatement();
+                procStatement = ProcStatement(procParameters);
 
                 elseBody = (procStatement != null)
                     ? new DMASTProcBlockInner(loc, procStatement)
-                    : ProcBlock();
+                    : ProcBlock(procParameters);
                 elseBody ??= new DMASTProcBlockInner(loc);
             } else if (newLineAfterIf) {
                 ReuseToken(afterIfBody);
@@ -1200,7 +1200,7 @@ namespace DMCompiler.Compiler.DM {
             return new DMASTProcStatementIf(loc, condition, body, elseBody);
         }
 
-        private DMASTProcStatement For() {
+        private DMASTProcStatement For(List<DMASTDefinitionParameter>? procParameters = null) {
             var loc = Current().Location;
             Advance();
 
@@ -1213,7 +1213,7 @@ namespace DMCompiler.Compiler.DM {
                     Emit(WarningCode.ExtraToken, loc, "Extra token at end of proc statement");
                 }
 
-                return new DMASTProcStatementInfLoop(loc, GetForBody(loc));
+                return new DMASTProcStatementInfLoop(loc, GetForBody(loc, procParameters));
             }
 
             _allowVarDeclExpression = true;
@@ -1237,7 +1237,7 @@ namespace DMCompiler.Compiler.DM {
                         Emit(WarningCode.ExtraToken, loc, "Extra token at end of proc statement");
                     }
 
-                    return new DMASTProcStatementFor(loc, new DMASTExpressionInRange(loc, assign.LHS, assign.RHS, endRange, step), null, null, dmTypes, GetForBody(loc));
+                    return new DMASTProcStatementFor(loc, new DMASTExpressionInRange(loc, assign.LHS, assign.RHS, endRange, step), null, null, dmTypes, GetForBody(loc, procParameters));
                 } else {
                     Emit(WarningCode.BadExpression, "Expected = before to in for");
                     return new DMASTInvalidProcStatement(loc);
@@ -1253,7 +1253,7 @@ namespace DMCompiler.Compiler.DM {
                     Emit(WarningCode.ExtraToken, loc, "Extra token at end of proc statement");
                 }
 
-                return new DMASTProcStatementFor(loc, new DMASTExpressionIn(loc, expr1, listExpr), null, null, dmTypes, GetForBody(loc));
+                return new DMASTProcStatementFor(loc, new DMASTExpressionIn(loc, expr1, listExpr), null, null, dmTypes, GetForBody(loc, procParameters));
             }
 
             if (!Check(ForSeparatorTypes)) {
@@ -1262,7 +1262,7 @@ namespace DMCompiler.Compiler.DM {
                     Emit(WarningCode.ExtraToken, loc, "Extra token at end of proc statement");
                 }
 
-                return new DMASTProcStatementFor(loc, expr1, null, null, dmTypes, GetForBody(loc));
+                return new DMASTProcStatementFor(loc, expr1, null, null, dmTypes, GetForBody(loc, procParameters));
             }
 
             if (Check(TokenType.DM_RightParenthesis)) {
@@ -1270,7 +1270,7 @@ namespace DMCompiler.Compiler.DM {
                     Emit(WarningCode.ExtraToken, loc, "Extra token at end of proc statement");
                 }
 
-                return new DMASTProcStatementFor(loc, expr1, null, null, dmTypes, GetForBody(loc));
+                return new DMASTProcStatementFor(loc, expr1, null, null, dmTypes, GetForBody(loc, procParameters));
             }
 
             Whitespace();
@@ -1289,7 +1289,7 @@ namespace DMCompiler.Compiler.DM {
                     Emit(WarningCode.ExtraToken, loc, "Extra token at end of proc statement");
                 }
 
-                return new DMASTProcStatementFor(loc, expr1, expr2, null, dmTypes, GetForBody(loc));
+                return new DMASTProcStatementFor(loc, expr1, expr2, null, dmTypes, GetForBody(loc, procParameters));
             }
 
             if (Check(TokenType.DM_RightParenthesis)) {
@@ -1297,7 +1297,7 @@ namespace DMCompiler.Compiler.DM {
                     Emit(WarningCode.ExtraToken, loc, "Extra token at end of proc statement");
                 }
 
-                return new DMASTProcStatementFor(loc, expr1, expr2, null, dmTypes, GetForBody(loc));
+                return new DMASTProcStatementFor(loc, expr1, expr2, null, dmTypes, GetForBody(loc, procParameters));
             }
 
             Whitespace();
@@ -1315,20 +1315,20 @@ namespace DMCompiler.Compiler.DM {
                 Emit(WarningCode.ExtraToken, loc, "Extra token at end of proc statement");
             }
 
-            return new DMASTProcStatementFor(loc, expr1, expr2, expr3, dmTypes, GetForBody(loc));
+            return new DMASTProcStatementFor(loc, expr1, expr2, expr3, dmTypes, GetForBody(loc, procParameters));
 
-            DMASTProcBlockInner GetForBody(Location forLocation) {
+            DMASTProcBlockInner GetForBody(Location forLocation, List<DMASTDefinitionParameter>? procParameters = null) {
                 Whitespace();
                 Newline();
 
-                DMASTProcBlockInner? body = ProcBlock();
+                DMASTProcBlockInner? body = ProcBlock(procParameters);
                 if (body == null) {
                     var loc = Current().Location;
                     DMASTProcStatement? statement;
                     if (Check(TokenType.DM_Semicolon)) {
                         statement = new DMASTProcStatementExpression(loc, new DMASTConstantNull(loc));
                     } else {
-                        statement = ProcStatement();
+                        statement = ProcStatement(procParameters);
                         if (statement == null) {
                             Compiler.Emit(WarningCode.MissingBody, forLocation, "Expected body or statement");
                             statement = new DMASTInvalidProcStatement(loc);
@@ -1342,7 +1342,7 @@ namespace DMCompiler.Compiler.DM {
             }
         }
 
-        private DMASTProcStatement While() {
+        private DMASTProcStatement While(List<DMASTDefinitionParameter>? procParameters = null) {
             var loc = Current().Location;
             Advance();
 
@@ -1354,10 +1354,10 @@ namespace DMCompiler.Compiler.DM {
             ConsumeRightParenthesis();
             Check(TokenType.DM_Semicolon);
             Whitespace();
-            DMASTProcBlockInner? body = ProcBlock();
+            DMASTProcBlockInner? body = ProcBlock(procParameters);
 
             if (body == null) {
-                DMASTProcStatement? statement = ProcStatement();
+                DMASTProcStatement? statement = ProcStatement(procParameters);
 
                 //Loops without a body are valid DM
                 statement ??= new DMASTProcStatementContinue(loc);
@@ -1372,15 +1372,15 @@ namespace DMCompiler.Compiler.DM {
             return new DMASTProcStatementWhile(loc, conditional, body);
         }
 
-        private DMASTProcStatementDoWhile DoWhile() {
+        private DMASTProcStatementDoWhile DoWhile(List<DMASTDefinitionParameter>? procParameters = null) {
             var loc = Current().Location;
             Advance();
 
             Whitespace();
-            DMASTProcBlockInner? body = ProcBlock();
+            DMASTProcBlockInner? body = ProcBlock(procParameters);
 
             if (body == null) {
-                DMASTProcStatement? statement = ProcStatement();
+                DMASTProcStatement? statement = ProcStatement(procParameters);
                 if (statement is null) { // This is consistently fatal in BYOND
                     Emit(WarningCode.MissingBody, "Expected statement - do-while requires a non-empty block");
                     //For the sake of argument, add a statement (avoids repetitive warning emissions down the line :^) )
@@ -1404,7 +1404,7 @@ namespace DMCompiler.Compiler.DM {
             return new DMASTProcStatementDoWhile(loc, conditional, body);
         }
 
-        private DMASTProcStatementSwitch Switch() {
+        private DMASTProcStatementSwitch Switch(List<DMASTDefinitionParameter>? procParameters = null) {
             var loc = Current().Location;
             Advance();
 
@@ -1416,7 +1416,7 @@ namespace DMCompiler.Compiler.DM {
             ConsumeRightParenthesis();
             Whitespace();
 
-            DMASTProcStatementSwitch.SwitchCase[]? switchCases = SwitchCases();
+            DMASTProcStatementSwitch.SwitchCase[]? switchCases = SwitchCases(procParameters);
             if (switchCases == null) {
                 switchCases = [];
                 Emit(WarningCode.MissingBody, "Expected switch cases");
@@ -1425,11 +1425,11 @@ namespace DMCompiler.Compiler.DM {
             return new DMASTProcStatementSwitch(loc, value, switchCases);
         }
 
-        private DMASTProcStatementSwitch.SwitchCase[]? SwitchCases() {
+        private DMASTProcStatementSwitch.SwitchCase[]? SwitchCases(List<DMASTDefinitionParameter>? procParameters = null) {
             Token beforeSwitchBlock = Current();
             bool hasNewline = Newline();
 
-            DMASTProcStatementSwitch.SwitchCase[]? switchCases = BracedSwitchInner() ?? IndentedSwitchInner();
+            DMASTProcStatementSwitch.SwitchCase[]? switchCases = BracedSwitchInner(procParameters) ?? IndentedSwitchInner(procParameters);
 
             if (switchCases == null && hasNewline) {
                 ReuseToken(beforeSwitchBlock);
@@ -1438,12 +1438,12 @@ namespace DMCompiler.Compiler.DM {
             return switchCases;
         }
 
-        private DMASTProcStatementSwitch.SwitchCase[]? BracedSwitchInner() {
+        private DMASTProcStatementSwitch.SwitchCase[]? BracedSwitchInner(List<DMASTDefinitionParameter>? procParameters = null) {
             if (Check(TokenType.DM_LeftCurlyBracket)) {
                 Whitespace();
                 Newline();
                 bool isIndented = Check(TokenType.DM_Indent);
-                DMASTProcStatementSwitch.SwitchCase[] switchInner = SwitchInner();
+                DMASTProcStatementSwitch.SwitchCase[] switchInner = SwitchInner(procParameters);
                 if (isIndented) Check(TokenType.DM_Dedent);
                 Newline();
                 Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
@@ -1454,9 +1454,9 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        private DMASTProcStatementSwitch.SwitchCase[]? IndentedSwitchInner() {
+        private DMASTProcStatementSwitch.SwitchCase[]? IndentedSwitchInner(List<DMASTDefinitionParameter>? procParameters = null) {
             if (Check(TokenType.DM_Indent)) {
-                DMASTProcStatementSwitch.SwitchCase[] switchInner = SwitchInner();
+                DMASTProcStatementSwitch.SwitchCase[] switchInner = SwitchInner(procParameters);
                 Consume(TokenType.DM_Dedent, "Expected \"if\" or \"else\"");
 
                 return switchInner;
@@ -1465,21 +1465,21 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        private DMASTProcStatementSwitch.SwitchCase[] SwitchInner() {
+        private DMASTProcStatementSwitch.SwitchCase[] SwitchInner(List<DMASTDefinitionParameter>? procParameters = null) {
             List<DMASTProcStatementSwitch.SwitchCase> switchCases = new();
-            DMASTProcStatementSwitch.SwitchCase? switchCase = SwitchCase();
+            DMASTProcStatementSwitch.SwitchCase? switchCase = SwitchCase(procParameters);
 
             while (switchCase is not null) {
                 switchCases.Add(switchCase);
                 Newline();
                 Whitespace();
-                switchCase = SwitchCase();
+                switchCase = SwitchCase(procParameters);
             }
 
             return switchCases.ToArray();
         }
 
-        private DMASTProcStatementSwitch.SwitchCase? SwitchCase() {
+        private DMASTProcStatementSwitch.SwitchCase? SwitchCase(List<DMASTDefinitionParameter>? procParameters = null) {
             if (Check(TokenType.DM_If)) {
                 List<DMASTExpression> expressions = new();
 
@@ -1516,10 +1516,10 @@ namespace DMCompiler.Compiler.DM {
                 Whitespace();
                 ConsumeRightParenthesis();
                 Whitespace();
-                DMASTProcBlockInner? body = ProcBlock();
+                DMASTProcBlockInner? body = ProcBlock(procParameters);
 
                 if (body == null) {
-                    DMASTProcStatement? statement = ProcStatement();
+                    DMASTProcStatement? statement = ProcStatement(procParameters);
 
                     body = (statement != null)
                         ? new DMASTProcBlockInner(statement.Location, statement)
@@ -1537,10 +1537,10 @@ namespace DMCompiler.Compiler.DM {
                         "Expected \"if\" or \"else\" - \"else if\" is ambiguous as a switch case and may cause unintended flow");
                 }
 
-                DMASTProcBlockInner? body = ProcBlock();
+                DMASTProcBlockInner? body = ProcBlock(procParameters);
 
                 if (body == null) {
-                    DMASTProcStatement? statement = ProcStatement();
+                    DMASTProcStatement? statement = ProcStatement(procParameters);
 
                     body = (statement != null)
                         ? new DMASTProcBlockInner(loc, statement)
@@ -1553,15 +1553,15 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        private DMASTProcStatementTryCatch TryCatch() {
+        private DMASTProcStatementTryCatch TryCatch(List<DMASTDefinitionParameter>? procParameters = null) {
             var loc = Current().Location;
             Advance();
 
             Whitespace();
 
-            DMASTProcBlockInner? tryBody = ProcBlock();
+            DMASTProcBlockInner? tryBody = ProcBlock(procParameters);
             if (tryBody == null) {
-                DMASTProcStatement? statement = ProcStatement();
+                DMASTProcStatement? statement = ProcStatement(procParameters);
                 if (statement == null) {
                     statement = new DMASTInvalidProcStatement(loc);
                     Emit(WarningCode.MissingBody, "Expected body or statement");
@@ -1579,15 +1579,15 @@ namespace DMCompiler.Compiler.DM {
             DMASTProcStatement? parameter = null;
             if (Check(TokenType.DM_LeftParenthesis)) {
                 BracketWhitespace();
-                parameter = ProcVarDeclaration(allowMultiple: false);
+                parameter = ProcVarDeclaration(procParameters, allowMultiple: false);
                 BracketWhitespace();
                 ConsumeRightParenthesis();
                 Whitespace();
             }
 
-            DMASTProcBlockInner? catchBody = ProcBlock();
+            DMASTProcBlockInner? catchBody = ProcBlock(procParameters);
             if (catchBody == null) {
-                DMASTProcStatement? statement = ProcStatement();
+                DMASTProcStatement? statement = ProcStatement(procParameters);
 
                 if (statement != null) catchBody = new DMASTProcBlockInner(loc, statement);
             }
@@ -2756,7 +2756,7 @@ namespace DMCompiler.Compiler.DM {
 
             do {
                 Whitespace();
-                type |= SingleAsType(out _, out _);
+                type |= SingleAsType(out _, out _, out _);
                 Whitespace();
             } while (Check(TokenType.DM_Bar));
 
@@ -2769,14 +2769,15 @@ namespace DMCompiler.Compiler.DM {
 
         /// <summary>
         /// AsTypes(), but can handle more complex types such as type paths
+        /// If procParameters is non-null, allow as params[1] and as params[foo] syntax
         /// </summary>
-        private DMComplexValueType? AsComplexTypes() {
+        private DMComplexValueType? AsComplexTypes(List<DMASTDefinitionParameter>? procParameters = null) {
             if (!AsTypesStart(out var parenthetical))
                 return null;
             if (parenthetical && Check(TokenType.DM_RightParenthesis)) // as ()
                 return DMValueType.Anything; // TODO: BYOND doesn't allow this for proc return types
 
-            var outType = UnionComplexTypes();
+            var outType = UnionComplexTypes(procParameters);
 
             if (parenthetical) {
                 ConsumeRightParenthesis();
@@ -2785,16 +2786,20 @@ namespace DMCompiler.Compiler.DM {
             return outType;
         }
 
-        private DMComplexValueType? UnionComplexTypes() {
+        private DMComplexValueType? UnionComplexTypes(List<DMASTDefinitionParameter>? procParameters = null) {
             DMValueType type = DMValueType.Anything;
             DreamPath? path = null;
+            List<(int, bool)> paramIndices = new List<(int, bool)>();
             DMListValueTypes? outListTypes = null;
 
             do {
                 Whitespace();
-                type |= SingleAsType(out var pathType, out var listTypes, allowPath: true);
+                type |= SingleAsType(out var pathType, out var param, out var listTypes, allowPath: true, procParameters: procParameters);
                 Whitespace();
 
+                if (param.paramIndex is not null) {
+                    paramIndices.Add((param.paramIndex.Value, param.upcasted));
+                }
                 if (pathType is not null) {
                     if (path is null)
                         path = pathType;
@@ -2816,7 +2821,7 @@ namespace DMCompiler.Compiler.DM {
                 }
 
             } while (Check(TokenType.DM_Bar));
-            return new(type, path, outListTypes);
+            return new(type, path, paramIndices.Count > 0 ? paramIndices.ToArray() : null, outListTypes);
         }
 
         private bool AsTypesStart(out bool parenthetical) {
@@ -2830,9 +2835,10 @@ namespace DMCompiler.Compiler.DM {
             return false;
         }
 
-        private DMValueType SingleAsType(out DreamPath? path, out DMListValueTypes? listTypes, bool allowPath = false) {
+        private DMValueType SingleAsType(out DreamPath? path, out (int? paramIndex, bool upcasted) outParam, out DMListValueTypes? listTypes, bool allowPath = false, List<DMASTDefinitionParameter>? procParameters = null) {
             Token typeToken = Current();
 
+            outParam = (null, false);
             listTypes = null;
 
             var inPath = false;
@@ -2858,12 +2864,12 @@ namespace DMCompiler.Compiler.DM {
                     } else if (path == DreamPath.List) {
                         // check for list types
                         if (Check(TokenType.DM_LeftParenthesis)) {
-                            DMComplexValueType? nestedKeyType = UnionComplexTypes();
+                            DMComplexValueType? nestedKeyType = UnionComplexTypes(procParameters);
                             if (nestedKeyType is null)
                                 Compiler.Emit(WarningCode.BadToken, CurrentLoc, "Expected value type or path");
                             DMComplexValueType? nestedValType = null;
                             if (Check(TokenType.DM_Comma)) { // Value
-                                nestedValType = UnionComplexTypes();
+                                nestedValType = UnionComplexTypes(procParameters);
                             }
                             ConsumeRightParenthesis();
                             listTypes = new(nestedKeyType!.Value, nestedValType);
@@ -2894,7 +2900,49 @@ namespace DMCompiler.Compiler.DM {
                 case "command_text": return DMValueType.CommandText;
                 case "sound": return DMValueType.Sound;
                 case "icon": return DMValueType.Icon;
-                case "path": return DMValueType.Path;
+                case "params":
+                    if (procParameters is null) {
+                        Emit(WarningCode.BadToken, typeToken.Location, "Cannot use 'as params' outside of a proc or its return type");
+                    }
+                    if (Check(TokenType.DM_LeftBracket)) {
+                        Whitespace();
+                        // Check for an identifier first
+                        Token paramToken = Current();
+                        switch (paramToken.Type) {
+                            case TokenType.DM_Identifier:
+                                outParam.paramIndex = procParameters?.FindIndex(x => x.Name == paramToken.Text);
+                                if (outParam.paramIndex < 0) {
+                                    outParam.paramIndex = null;
+                                }
+                                break;
+                            case TokenType.DM_Integer:
+                                outParam.paramIndex = paramToken.ValueAsInt();
+                                if (procParameters is null || (outParam.paramIndex is not null && outParam.paramIndex >= procParameters.Count)) {
+                                    Emit(WarningCode.BadToken, paramToken.Location, $"Parameter index out of range ({outParam.paramIndex} >= {procParameters?.Count ?? 0})");
+                                    outParam.paramIndex = null;
+                                }
+                                break;
+                            default:
+                                Emit(WarningCode.BadToken, paramToken.Location, $"Unrecognized parameter {paramToken.PrintableText}, expected parameter identifier or index");
+                                break;
+                        }
+                        Advance();
+                        Whitespace();
+                        // Allow recasting a path to an instance with the instance keyword, here and only here
+                        if(AsTypesStart(out var parenthetical)) {
+                            Token nextToken = Current();
+                            if (nextToken.Type is not TokenType.DM_Identifier || nextToken.Text != "instance")
+                                Emit(WarningCode.BadToken, nextToken.Location, $"Expected 'as instance', got 'as {nextToken.PrintableText}'");
+                            else
+                                outParam.upcasted = true;
+                            Advance();
+                            if (parenthetical)
+                                ConsumeRightParenthesis();
+                        }
+                        ConsumeRightBracket();
+                    }
+                    path = null;
+                    return DMValueType.Anything;
                 case "opendream_unimplemented": return DMValueType.Unimplemented;
                 case "opendream_compiletimereadonly": return DMValueType.CompiletimeReadonly;
                 case "opendream_noconstfold": return DMValueType.NoConstFold;

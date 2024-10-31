@@ -100,10 +100,10 @@ internal sealed class ProcCall(DMCompiler compiler, Location location, DMExpress
                 return valType;
             switch (target) {
                 case Proc procTarget:
-                    return procTarget.dmObject.GetProcReturnTypes(procTarget.Identifier) ?? DMValueType.Anything;
+                    return procTarget.dmObject.GetProcReturnTypes(procTarget.Identifier, arguments) ?? DMValueType.Anything;
                 case GlobalProc procTarget:
                     if(compiler.DMObjectTree.TryGetGlobalProc(procTarget.Proc.Name, out var globalProc))
-                        return globalProc.RawReturnTypes ?? DMValueType.Anything;
+                        return globalProc.GetParameterValueTypes(arguments);
                     return DMValueType.Anything;
             }
             return target.ValType;

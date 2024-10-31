@@ -7,12 +7,12 @@ using Robust.Client.UserInterface.Controls;
 namespace OpenDreamClient.Interface;
 
 internal sealed class BrowsePopup {
-    public event Action Closed;
+    public event Action? Closed;
 
-    public ControlBrowser Browser;
-    public ControlWindow WindowElement;
+    public readonly ControlBrowser Browser;
+    public readonly ControlWindow WindowElement;
 
-    private OSWindow _window;
+    private readonly OSWindow _window;
 
     public BrowsePopup(
         string name,

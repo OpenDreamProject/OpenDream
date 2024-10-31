@@ -1,17 +1,17 @@
-/var/world/world = /world as /world // Set to /world to suppress issues with Typemaker
+/var/world/world = /world as /world|path(/world)
 
 //These procs should be in alphabetical order, as in DreamProcNativeRoot.cs
 proc/alert(Usr = usr, Message, Title, Button1 = "Ok", Button2, Button3) as text
 proc/animate(Object, time, loop, easing, flags, delay, pixel_x, pixel_y, pixel_z, maptext, maptext_width, maptext_height, maptext_x, maptext_y, dir, alpha, transform, color, luminosity, infra_luminosity, layer, glide_size, icon, icon_state, invisibility, suffix) as null
-proc/ascii2text(N) as text
-proc/block(atom/Start, atom/End, StartZ, EndX=Start, EndY=End, EndZ=StartZ) as /list
-proc/ceil(A) as num
-proc/ckey(Key) as text|null
+proc/ascii2text(N as num|null) as text
+proc/block(atom/Start, atom/End, StartZ, EndX=Start, EndY=End, EndZ=StartZ) as /list(/turf)
+proc/ceil(A as num|null) as num
+proc/ckey(Key as text|null) as text|null
 proc/ckeyEx(Text) as text|null
 proc/clamp(Value, Low, High) as /list|num|null
 proc/cmptext(T1) as num
-proc/copytext(T, Start = 1, End = 0) as text|null
-proc/copytext_char(T,Start=1,End=0) as text|null
+proc/copytext(T as text|null, Start = 1, End = 0) as text|null
+proc/copytext_char(T as text|null,Start=1,End=0) as text|null
 proc/CRASH(msg) as null
 proc/fcopy(Src, Dst) as num
 proc/fcopy_rsc(File) as num|null
@@ -20,10 +20,10 @@ proc/fexists(File) as num
 proc/file(Path)
 proc/file2text(File) as text|null
 proc/filter(type, ...)
-proc/findtext(Haystack, Needle, Start = 1, End = 0) as num
-proc/findtextEx(Haystack, Needle, Start = 1, End = 0) as num
-proc/findlasttext(Haystack, Needle, Start = 1, End = 0) as num
-proc/findlasttextEx(Haystack, Needle, Start = 1, End = 0) as num
+proc/findtext(Haystack as text|null, Needle as text|/regex|null, Start = 1, End = 0) as num
+proc/findtextEx(Haystack as text|null, Needle as text|/regex|null, Start = 1, End = 0) as num
+proc/findlasttext(Haystack as text|null, Needle as text|/regex|null, Start = 1, End = 0) as num
+proc/findlasttextEx(Haystack as text|null, Needle as text|/regex|null, Start = 1, End = 0) as num
 proc/flick(Icon, Object)
 proc/flist(Path) as /list
 proc/floor(A) as num
@@ -63,25 +63,25 @@ proc/noise_hash(...) as num
 	set opendream_unimplemented = 1
 	return 0.5
 proc/nonspantext(Haystack, Needles, Start = 1) as num
-proc/num2text(N, A, B) as text
+proc/num2text(N as num|null, A, B) as text
 proc/orange(Dist = 5, Center = usr) as /list|null // NOTE: Not sure if return types have BYOND parity
 proc/oview(Dist = 5, Center = usr) as /list
 proc/oviewers(Depth = 5, Center = usr) as /list
 proc/ohearers(Depth = world.view, Center = usr) as /list
-proc/params2list(Params) as /list
-proc/rand(L, H) as num
+proc/params2list(Params) as /list(text)
+proc/rand(L as num, H as num) as num
 proc/rand_seed(Seed) as null
 proc/range(Dist, Center) as /list|null // NOTE: Not sure if return types have BYOND parity
 proc/ref(Object) as text
-proc/replacetext(Haystack, Needle, Replacement, Start = 1, End = 0) as text|null
-proc/replacetextEx(Haystack, Needle, Replacement, Start = 1, End = 0) as text|null
+proc/replacetext(Haystack as text|null, Needle as text|/regex|null, Replacement, Start = 1, End = 0) as text|null
+proc/replacetextEx(Haystack as text|null, Needle as text|/regex|null, Replacement, Start = 1, End = 0) as text|null
 proc/rgb(R, G, B, A, space) as text|null
 proc/rgb2num(color, space = COLORSPACE_RGB) as /list
-proc/roll(ndice = 1, sides) as num
-proc/round(A, B) as num
+proc/roll(ndice = 1 as num|text, sides as num|null) as num
+proc/round(A as num|null, B as num|null) as num
 proc/sha1(input) as text|null
 proc/shutdown(Addr,Natural = 0)
-proc/sleep(Delay)
+proc/sleep(Delay as num|null)
 proc/sorttext(T1, T2) as num
 proc/sorttextEx(T1, T2) as num
 proc/sound(file, repeat = 0, wait, channel, volume)
@@ -89,17 +89,17 @@ proc/spantext(Haystack,Needles,Start=1) as num
 proc/spantext_char(Haystack,Needles,Start=1) as num
 proc/splicetext(Text, Start = 1, End = 0, Insert = "") as text|null
 proc/splicetext_char(Text, Start = 1, End = 0, Insert = "") as text|null
-proc/splittext(Text, Delimiter) as /list
+proc/splittext(Text, Delimiter) as /list(text)
 proc/stat(Name, Value)
 proc/statpanel(Panel, Name, Value)
-proc/text2ascii(T, pos = 1) as text
-proc/text2ascii_char(T, pos = 1) as text
+proc/text2ascii(T as text|null, pos = 1) as num
+proc/text2ascii_char(T as text|null, pos = 1) as num
 proc/text2file(Text, File)
 proc/text2num(T, radix = 10) as num|null
-proc/text2path(T)
+proc/text2path(T as text|null) as null|path(/datum)|path(/world) // todo: allow path(/)
 proc/time2text(timestamp, format) as text
 proc/trimtext(Text) as text|null
-proc/trunc(n) as num
+proc/trunc(n as num|null) as num
 proc/turn(Dir, Angle)
 proc/typesof(Item1) as /list
 proc/uppertext(T as text) as text
@@ -142,18 +142,18 @@ proc/winset(player, control_id, params)
 #include "Types\Atoms\Turf.dm"
 #include "UnsortedAdditions.dm"
 
-proc/replacetextEx_char(Haystack as text, Needle, Replacement, Start = 1, End = 0) as text
+proc/replacetextEx_char(Haystack as text, Needle, Replacement, Start = 1 as num, End = 0 as num) as text
 	set opendream_unimplemented = TRUE
 	return Haystack
 
-/proc/step(atom/movable/Ref, var/Dir as num|null, var/Speed=0) as num
+/proc/step(atom/movable/Ref, var/Dir as num|null, var/Speed=0 as num) as num
 	//TODO: Speed = step_size if Speed is 0
 	return Ref.Move(get_step(Ref, Dir), Dir)
 
-/proc/step_away(atom/movable/Ref, /atom/Trg, Max=5, Speed=0) as num
+/proc/step_away(atom/movable/Ref, atom/Trg, Max=5 as num, Speed=0 as num) as num
     return Ref.Move(get_step_away(Ref, Trg, Max), turn(get_dir(Ref, Trg), 180))
 
-/proc/step_to(atom/movable/Ref, atom/Trg, Min = 0, Speed = 0) as num
+/proc/step_to(atom/movable/Ref, atom/Trg, Min = 0 as num, Speed = 0 as num) as num
 	//TODO: Consider obstacles
 
 	var/dist = get_dist(Ref, Trg)
@@ -162,15 +162,15 @@ proc/replacetextEx_char(Haystack as text, Needle, Replacement, Start = 1, End = 
 	var/step_dir = get_dir(Ref, Trg) as num
 	return step(Ref, step_dir, Speed)
 
-/proc/get_step_to(Ref, Trg, Min=0)
+/proc/get_step_to(Ref, Trg, Min=0 as num)
 	set opendream_unimplemented = TRUE
 	CRASH("/get_step_to() is not implemented")
 
-/proc/get_steps_to(Ref, Trg, Min=0) as /list
+/proc/get_steps_to(Ref, Trg, Min=0 as num) as /list
 	set opendream_unimplemented = TRUE
 	CRASH("/get_steps_to() is not implemented")
 
-/proc/walk_away(Ref,Trg,Max=5,Lag=0,Speed=0)
+/proc/walk_away(Ref,Trg,Max=5 as num,Lag=0 as num,Speed=0 as num)
 	set opendream_unimplemented = TRUE
 	CRASH("/walk_away() is not implemented")
 
@@ -182,12 +182,12 @@ proc/get_dist(atom/Loc1, atom/Loc2) as num
 	var/distY = Loc2.y - Loc1.y
 	return round(sqrt(distX ** 2 + distY ** 2))
 
-proc/get_step_towards(atom/movable/Ref, /atom/Trg)
+proc/get_step_towards(atom/movable/Ref, atom/Trg)
 	var/dir = get_dir(Ref, Trg)
 
 	return get_step(Ref, dir)
 
-proc/get_step_away(atom/movable/Ref, /atom/Trg, Max = 5)
+proc/get_step_away(atom/movable/Ref, atom/Trg, Max = 5 as num)
 	var/dir = turn(get_dir(Ref, Trg), 180)
 
 	return get_step(Ref, dir)
@@ -198,7 +198,7 @@ proc/get_step_rand(atom/movable/Ref)
 
 	return get_step(Ref, dir)
 
-proc/step_towards(atom/movable/Ref as obj|mob, /atom/Trg, Speed) as num
+proc/step_towards(atom/movable/Ref, atom/Trg, Speed) as num
 	return Ref.Move(get_step_towards(Ref, Trg), get_dir(Ref, Trg))
 
 proc/step_rand(atom/movable/Ref, Speed=0)

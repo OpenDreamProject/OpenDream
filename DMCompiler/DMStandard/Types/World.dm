@@ -4,9 +4,9 @@
 
 	var/log = null
 
-	var/area = /area as /area
-	var/turf = /turf as /turf
-	var/mob = /mob as /mob
+	var/area = /area as path(/area)
+	var/turf = /turf as path(/turf)
+	var/mob = /mob as path(/mob)
 
 	var/name = "OpenDream World"
 	var/time

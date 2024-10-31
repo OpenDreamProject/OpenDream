@@ -185,13 +185,13 @@ namespace DMCompiler.DM {
                             argumentType = DMValueType.Anything;
                         } else {
                             _compiler.DMObjectTree.TryGetDMObject(typePath, out var type);
-                            argumentType = type?.GetDMValueType() ?? DMValueType.Anything;
+                            argumentType = type?.Path.GetAtomType(_compiler) ?? DMValueType.Anything;
                         }
                     }
 
                     arguments.Add(new ProcArgumentJson {
                         Name = parameter.Name,
-                        Type = argumentType.Type
+                        Type = argumentType.Type & ~(DMValueType.Instance|DMValueType.Path)
                     });
                 }
             }

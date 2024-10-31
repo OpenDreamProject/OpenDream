@@ -73,7 +73,8 @@ internal class Dereference : LValue {
         while (!type.IsAnything && i < _operations.Length) {
             var operation = _operations[i++];
 
-            if (type.TypePath is null || !objectTree.TryGetDMObject(type.TypePath.Value, out var dmObject)) {
+            var typePath = type.TypePath ?? type.AsPath();
+            if (typePath is null || !objectTree.TryGetDMObject(typePath.Value, out var dmObject)) {
                 // We're dereferencing something without a type-path, this could be anything
                 type = DMValueType.Anything;
                 break;

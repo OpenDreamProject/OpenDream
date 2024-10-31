@@ -61,7 +61,16 @@ internal sealed class Arglist(Location location, DMExpression expr) : DMExpressi
 internal sealed class New(DMCompiler compiler, Location location, DMExpression expr, ArgumentList arguments) : DMExpression(location) {
     public override DreamPath? Path => expr.Path;
     public override bool PathIsFuzzy => Path == null;
-    public override DMComplexValueType ValType => !expr.ValType.IsAnything ? (expr.ValType.IsPath ? expr.ValType.TypePath!.Value.GetAtomType(compiler) : expr.ValType) : (Path?.GetAtomType(compiler) ?? DMValueType.Anything);
+    public override DMComplexValueType ValType {
+        get {
+            var exprType = expr.ValType;
+            if (exprType.IsAnything)
+                return Path is not null ? new DMComplexValueType(DMValueType.Instance, Path) : DMValueType.Anything;
+            if (exprType.HasPath && exprType.Type.HasFlag(DMValueType.Path))
+                return exprType.TypePath is not null ? new DMComplexValueType(DMValueType.Instance, exprType.TypePath) : DMValueType.Anything;
+            return exprType;
+        }
+    }
 
     public override void EmitPushValue(ExpressionContext ctx) {
         var argumentInfo = arguments.EmitArguments(ctx, null);
@@ -72,14 +81,9 @@ internal sealed class New(DMCompiler compiler, Location location, DMExpression e
 }
 
 // new /x/y/z (...)
-internal sealed class NewPath(DMCompiler compiler, Location location, IConstantPath create, ArgumentList arguments) : DMExpression(location) {
+internal sealed class NewPath(Location location, IConstantPath create, ArgumentList arguments) : DMExpression(location) {
     public override DreamPath? Path => (create is ConstantTypeReference typeReference) ? typeReference.Path : null;
-    public override DMComplexValueType ValType {
-        get {
-            var atomType = Path?.GetAtomType(compiler) ?? DMValueType.Anything;
-            return atomType switch { DMValueType.Anything => new DMComplexValueType(DMValueType.Path, Path), _ => atomType };
-        }
-    }
+    public override DMComplexValueType ValType => Path is not null ? new DMComplexValueType(DMValueType.Instance | DMValueType.Null, Path) : DMValueType.Anything;
 
     public override void EmitPushValue(ExpressionContext ctx) {
         DMCallArgumentsType argumentsType;
@@ -137,9 +141,9 @@ internal sealed class LocateInferred(DMCompiler compiler, Location location, Dre
 }
 
 // locate(x)
-internal sealed class Locate(DMCompiler compiler, Location location, DMExpression path, DMExpression? container) : DMExpression(location) {
+internal sealed class Locate(Location location, DMExpression path, DMExpression? container) : DMExpression(location) {
     public override bool PathIsFuzzy => true;
-    public override DMComplexValueType ValType => path.Path?.GetAtomType(compiler) ?? DMValueType.Anything;
+    public override DMComplexValueType ValType => path.Path is not null ? new DMComplexValueType(DMValueType.Instance | DMValueType.Null, path.Path) : DMValueType.Anything;
 
     public override void EmitPushValue(ExpressionContext ctx) {
         path.EmitPushValue(ctx);

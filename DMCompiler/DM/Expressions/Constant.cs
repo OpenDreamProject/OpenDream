@@ -240,7 +240,7 @@ internal class ConstantTypeReference(Location location, DMObject dmObject) : Con
     public DMObject Value { get; } = dmObject;
 
     public override DreamPath? Path => Value.Path;
-    public override DMComplexValueType ValType => Value.Path;
+    public override DMComplexValueType ValType => new DMComplexValueType(DMValueType.Path, Path);
 
     public override void EmitPushValue(ExpressionContext ctx) {
         ctx.Proc.PushType(Value.Id);

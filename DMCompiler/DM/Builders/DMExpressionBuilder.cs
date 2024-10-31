@@ -284,7 +284,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                     break;
                 }
 
-                result = new NewPath(Compiler, newPath.Location, path,
+                result = new NewPath(newPath.Location, path,
                     BuildArgumentList(newPath.Location, newPath.Parameters, inferredPath));
                 break;
             case DMASTNewExpr newExpr:
@@ -305,7 +305,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                     break;
                 }
 
-                result = new NewPath(Compiler, newInferred.Location, inferredType,
+                result = new NewPath(newInferred.Location, inferredType,
                     BuildArgumentList(newInferred.Location, newInferred.Parameters, inferredPath));
                 break;
             case DMASTPreIncrement preIncrement:
@@ -1034,7 +1034,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                             return UnknownIdentifier(callOperation.Location, field);
 
                         var returnTypes = fromObject.GetProcReturnTypes(field) ?? DMValueType.Anything;
-                        nextPath = returnTypes.IsPath ? returnTypes.TypePath : returnTypes.AsPath();
+                        nextPath = returnTypes.HasPath ? returnTypes.TypePath : returnTypes.AsPath();
                     }
 
                     operation = new Dereference.CallOperation {
@@ -1071,7 +1071,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
         }
 
         var pathExpr = BuildExpression(locate.Expression, inferredPath);
-        return new Locate(Compiler, locate.Location, pathExpr, container);
+        return new Locate(locate.Location, pathExpr, container);
     }
 
     private DMExpression BuildImplicitAsType(DMASTImplicitAsType asType, DreamPath? inferredPath) {

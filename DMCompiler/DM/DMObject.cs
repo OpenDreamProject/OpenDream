@@ -1,4 +1,4 @@
-﻿using DMCompiler.Bytecode;
+using DMCompiler.Bytecode;
 using DMCompiler.Compiler;
 using DMCompiler.Json;
 
@@ -217,14 +217,12 @@ internal sealed class DMObject {
         return Parent != null && Parent.IsSubtypeOf(path);
     }
 
-    public DMValueType GetDMValueType() {
-        if (IsSubtypeOf(DreamPath.Mob))
-            return DMValueType.Mob;
-        if (IsSubtypeOf(DreamPath.Obj))
-            return DMValueType.Obj;
-        if (IsSubtypeOf(DreamPath.Area))
-            return DMValueType.Area;
-
-        return DMValueType.Anything;
+    public DreamPath GetLastCommonAncestor(DMObject other) {
+        if(other.IsSubtypeOf(Path)) {
+            return Path;
+        } else if(IsSubtypeOf(other.Path)) {
+            return other.Path;
+        }
+        return Parent?.GetLastCommonAncestor(other) ?? DreamPath.Root;
     }
 }

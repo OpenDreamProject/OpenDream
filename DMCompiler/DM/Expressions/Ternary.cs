@@ -17,13 +17,13 @@ internal sealed class Ternary : DMExpression {
 
         if (b.ValType.TypePath != null && c.ValType.TypePath != null && b.ValType.TypePath != c.ValType.TypePath) {
             DMCompiler.Emit(WarningCode.LostTypeInfo, Location,
-                $"Ternary has type paths {b.ValType.TypePath} and {c.ValType.TypePath} but a value can only have one type path. Using {b.ValType.TypePath}.");
+                $"Ternary has type paths {b.ValType.TypePath} and {c.ValType.TypePath} but a value can only have one type path. Using their common ancestor, {b.ValType.TypePath.Value.GetLastCommonAncestor(c.ValType.TypePath.Value)}.");
         }
 
         if (b.ValType.IsAnything || c.ValType.IsAnything)
             ValType = DMValueType.Anything;
         else
-            ValType = new(b.ValType.Type | c.ValType.Type, b.ValType.TypePath ?? c.ValType.TypePath);
+            ValType = b.ValType | c.ValType;
     }
 
     public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {

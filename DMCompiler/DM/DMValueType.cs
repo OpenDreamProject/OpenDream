@@ -102,6 +102,17 @@ public readonly struct DMComplexValueType {
 
     public static DMComplexValueType operator |(DMComplexValueType type1, DMValueType type2) =>
         new(type1.Type | type2, type1.TypePath);
+
+    public static DMComplexValueType operator |(DMComplexValueType type1, DMComplexValueType type2) {
+        if (type2.TypePath is null) {
+            return type1 | type2.Type;
+        } else if (type1.TypePath is null) {
+            return type2 | type1.Type;
+        }
+        // Take the common ancestor of both types
+        return new(type1.Type | type2.Type, type1.TypePath.Value.GetLastCommonAncestor(type2.TypePath.Value));
+    }
+
     public DreamPath? AsPath() {
         return (HasPath ? TypePath : null) ?? (Type & ~DMValueType.Null) switch {
             DMValueType.Mob => DreamPath.Mob,

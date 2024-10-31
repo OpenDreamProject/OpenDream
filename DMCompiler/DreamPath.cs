@@ -265,4 +265,12 @@ public struct DreamPath {
 
         Elements = _elements[..writeIdx];
     }
+
+    public DreamPath GetLastCommonAncestor(DreamPath other) {
+        var thisObject = DMObjectTree.GetDMObject(this, true);
+        var otherObject = DMObjectTree.GetDMObject(other, true);
+        if (thisObject is null || otherObject is null)
+            return Root;
+        return thisObject.GetLastCommonAncestor(otherObject);
+    }
 }

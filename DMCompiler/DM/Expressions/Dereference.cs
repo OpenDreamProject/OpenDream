@@ -333,6 +333,12 @@ internal sealed class ScopeReference(DMObjectTree objectTree, Location location,
         ])
     ) {
     public override DreamPath? Path => Expression.Path;
+    public override DMComplexValueType ValType {
+        get {
+            TryAsConstant(out var constant);
+            return constant is not null ? constant.ValType : dmVar.ValType;
+        }
+    }
 
     public override string GetNameof(ExpressionContext ctx) => dmVar.Name;
 

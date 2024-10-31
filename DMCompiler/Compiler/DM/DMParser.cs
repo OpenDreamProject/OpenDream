@@ -2703,7 +2703,7 @@ namespace DMCompiler.Compiler.DM {
 
             do {
                 Whitespace();
-                type |= SingleAsType(out _);
+                type |= SingleAsType(out _, out _);
                 Whitespace();
             } while (Check(TokenType.DM_Bar));
 
@@ -2723,12 +2723,23 @@ namespace DMCompiler.Compiler.DM {
             if (parenthetical && Check(TokenType.DM_RightParenthesis)) // as ()
                 return DMValueType.Anything; // TODO: BYOND doesn't allow this for proc return types
 
+            var outType = UnionComplexTypes();
+
+            if (parenthetical) {
+                ConsumeRightParenthesis();
+            }
+
+            return outType;
+        }
+
+        private DMComplexValueType? UnionComplexTypes() {
             DMValueType type = DMValueType.Anything;
             DreamPath? path = null;
+            DMListValueTypes? outListTypes = null;
 
             do {
                 Whitespace();
-                type |= SingleAsType(out var pathType, allowPath: true);
+                type |= SingleAsType(out var pathType, out var listTypes, allowPath: true);
                 Whitespace();
 
                 if (pathType is not null) {
@@ -2743,15 +2754,16 @@ namespace DMCompiler.Compiler.DM {
                         }
                     }
                 }
+                if (listTypes is not null) {
+                    if (outListTypes is null)
+                        outListTypes = listTypes;
+                    else {
+                        outListTypes |= listTypes;
+                    }
                 }
 
             } while (Check(TokenType.DM_Bar));
-
-            if (parenthetical) {
-                ConsumeRightParenthesis();
-            }
-
-            return new(type, path);
+            return new(type, path, outListTypes);
         }
 
         private bool AsTypesStart(out bool parenthetical) {
@@ -2765,8 +2777,10 @@ namespace DMCompiler.Compiler.DM {
             return false;
         }
 
-        private DMValueType SingleAsType(out DreamPath? path, bool allowPath = false) {
+        private DMValueType SingleAsType(out DreamPath? path, out DMListValueTypes? listTypes, bool allowPath = false) {
             Token typeToken = Current();
+
+            listTypes = null;
 
             var inPath = false;
             if (typeToken.Type is TokenType.DM_Identifier && typeToken.Text == "path") {
@@ -2788,7 +2802,22 @@ namespace DMCompiler.Compiler.DM {
                     if (inPath) {
                         Whitespace();
                         ConsumeRightParenthesis();
+                    } else if (path == DreamPath.List) {
+                        // check for list types
+                        if (Check(TokenType.DM_LeftParenthesis)) {
+                            DMComplexValueType? nestedKeyType = UnionComplexTypes();
+                            if (nestedKeyType is null)
+                                DMCompiler.Emit(WarningCode.BadToken, CurrentLoc, "Expected value type or path");
+                            DMComplexValueType? nestedValType = null;
+                            if (Check(TokenType.DM_Comma)) { // Value
+                                nestedValType = UnionComplexTypes();
+                            }
+                            ConsumeRightParenthesis();
+                            listTypes = new(nestedKeyType!.Value, nestedValType);
+                            return DMValueType.Instance;
+                        }
                     }
+
                     return inPath ? DMValueType.Path : DMValueType.Instance;
                 }
 

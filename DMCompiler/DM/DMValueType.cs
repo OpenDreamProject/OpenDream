@@ -44,6 +44,12 @@ public readonly struct DMComplexValueType {
     public bool IsUnimplemented { get; }
     public bool IsCompileTimeReadOnly { get; }
     public bool IsList => IsInstance && TypePath == DreamPath.List;
+    /// <summary>
+    /// A pointer to a class wrapping the key and value DMComplexValueTypes for a list.
+    /// This cannot be a struct because that would create a cycle in the struct representation.
+    /// Sorry about the heap allocation.
+    /// </summary>
+    public readonly DMListValueTypes? ListValueTypes;
 
     public DMComplexValueType(DMValueType type, DreamPath? typePath) {
         Type = type & ~(DMValueType.Unimplemented | DMValueType.CompiletimeReadonly); // Ignore these 2 types
@@ -55,6 +61,9 @@ public readonly struct DMComplexValueType {
             throw new Exception("A Path or Instance value type must have a type-path");
     }
 
+    public DMComplexValueType(DMValueType type, DreamPath? typePath, DMListValueTypes? listValueTypes) : this(type, typePath) {
+        ListValueTypes = listValueTypes;
+    }
     public bool MatchesType(DMValueType type) {
         return IsAnything || (Type & type) != 0;
     }
@@ -86,6 +95,19 @@ public readonly struct DMComplexValueType {
             if (dmObject?.IsSubtypeOf(TypePath!.Value) is false) {
                 var ourObject = DMObjectTree.GetDMObject(TypePath!.Value, false);
                 return ourObject?.IsSubtypeOf(type.TypePath!.Value) ?? false;
+            }
+            // If ListValueTypes is non-null, we do more advanced checks.
+            if (TypePath!.Value == DreamPath.List && ListValueTypes is not null && type.ListValueTypes is not null) {
+                // Have to do an actual match check here. This can get expensive, but thankfully it's pretty rare.
+                if (!ListValueTypes.NestedListKeyType.MatchesType(type.ListValueTypes!.NestedListKeyType))
+                    return false;
+                // If we're assoc (have value types rather than just keys), then the other list must match as well.
+                if (ListValueTypes?.NestedListValType is not null) {
+                    if (type.ListValueTypes!.NestedListValType is not null && !ListValueTypes.NestedListValType!.Value.MatchesType(type.ListValueTypes!.NestedListValType.Value))
+                        return false;
+                    if (type.ListValueTypes!.NestedListValType is null && !ListValueTypes.NestedListValType!.Value.MatchesType(DMValueType.Null))
+                        return false;
+                }
             }
         }
         return MatchesType(type.Type);
@@ -125,5 +147,18 @@ public readonly struct DMComplexValueType {
             DMValueType.Sound => DreamPath.Sound,
             _ => null
         };
+    }
+}
+
+public class DMListValueTypes(DMComplexValueType nestedListKeyType, DMComplexValueType? nestedListValType) {
+    public DMComplexValueType NestedListKeyType => nestedListKeyType;
+    public DMComplexValueType? NestedListValType => nestedListValType;
+    public static DMListValueTypes operator |(DMListValueTypes type1, DMListValueTypes type2) {
+        return new(type1.NestedListKeyType | type2.NestedListKeyType, type1.NestedListValType | type2.NestedListValType);
+    }
+    public override string ToString() {
+        if (NestedListValType is not null)
+            return $"{NestedListKeyType} = {NestedListValType}";
+        return NestedListKeyType.ToString();
     }
 }

@@ -205,6 +205,22 @@ internal sealed class Pick(Location location, Pick.PickValue[] values) : DMExpre
         public readonly DMExpression Value = value;
     }
 
+    public override DMComplexValueType ValType {
+        get {
+            if (values.Length == 1) {
+                var firstValType = values[0].Value.ValType;
+                if (firstValType.IsList) {
+                    return firstValType.ListValueTypes?.NestedListKeyType ?? DMValueType.Anything;
+                }
+            }
+            DMComplexValueType accumValues = DMValueType.Anything;
+            foreach(PickValue pickVal in values) {
+                accumValues |= pickVal.Value.ValType;
+            }
+            return accumValues;
+        }
+    }
+
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         bool weighted = false;
         foreach (PickValue pickValue in values) {
@@ -377,7 +393,19 @@ internal sealed class List : DMExpression {
     private readonly bool _isAssociative;
 
     public override bool PathIsFuzzy => true;
-    public override DMComplexValueType ValType => DreamPath.List;
+    public override DMComplexValueType ValType {
+        get {
+            DMComplexValueType keyTypes = DMValueType.Anything;
+            DMComplexValueType valTypes = DMValueType.Anything;
+            foreach((DMExpression? key, DMExpression val) in _values) {
+                // why did I do it like this
+                valTypes |= val.ValType;
+                if(key is not null)
+                    keyTypes |= key.ValType;
+            }
+            return new DMComplexValueType(DMValueType.Instance, DreamPath.List, !(keyTypes.IsAnything && valTypes.IsAnything) ? (_isAssociative ? new DMListValueTypes(keyTypes, valTypes) : new DMListValueTypes(valTypes, null)) : null);
+        }
+    }
 
     public List(Location location, (DMExpression? Key, DMExpression Value)[] values) : base(location) {
         _values = values;

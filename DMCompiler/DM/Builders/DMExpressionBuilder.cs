@@ -64,7 +64,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
             case DMASTStringFormat stringFormat: result = BuildStringFormat(stringFormat, inferredPath); break;
             case DMASTIdentifier identifier: result = BuildIdentifier(identifier, inferredPath); break;
             case DMASTScopeIdentifier globalIdentifier: result = BuildScopeIdentifier(globalIdentifier, inferredPath); break;
-            case DMASTCallableSelf: result = new ProcSelf(expression.Location, ctx.Proc.ReturnTypes); break;
+            case DMASTCallableSelf: result = new ProcSelf(expression.Location, ctx.Proc.RawReturnTypes); break;
             case DMASTCallableSuper: result = new ProcSuper(expression.Location, ctx.Type.GetProcReturnTypes(ctx.Proc.Name)); break;
             case DMASTCallableProcIdentifier procIdentifier: result = BuildCallableProcIdentifier(procIdentifier, ctx.Type); break;
             case DMASTProcCall procCall: result = BuildProcCall(procCall, inferredPath); break;
@@ -615,7 +615,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                     return UnknownReference(location, $"No global proc named \"{bIdentifier}\" exists");
 
                 var arguments = BuildArgumentList(location, scopeIdentifier.CallArguments, inferredPath);
-                return new ProcCall(location, new GlobalProc(location, globalProc), arguments, DMValueType.Anything);
+                return new ProcCall(Compiler, location, new GlobalProc(location, globalProc), arguments, DMValueType.Anything);
             }
 
             // ::vars, special case
@@ -715,7 +715,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
         }
 
         if (dmObject.HasProc(procIdentifier.Identifier)) {
-            return new Proc(procIdentifier.Location, procIdentifier.Identifier);
+            return new Proc(procIdentifier.Location, procIdentifier.Identifier, dmObject);
         }
 
         if (ObjectTree.TryGetGlobalProc(procIdentifier.Identifier, out var globalProc)) {
@@ -752,10 +752,10 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
         if (target is Proc targetProc) { // GlobalProc handles returnType itself
             var returnType = targetProc.GetReturnType(ctx.Type);
 
-            return new ProcCall(procCall.Location, target, args, returnType);
+            return new ProcCall(Compiler, procCall.Location, target, args, returnType);
         }
 
-        return new ProcCall(procCall.Location, target, args, DMValueType.Anything);
+        return new ProcCall(Compiler, procCall.Location, target, args, DMValueType.Anything);
     }
 
     private ArgumentList BuildArgumentList(Location location, DMASTCallParameter[]? arguments, DreamPath? inferredPath = null) {
@@ -885,7 +885,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                         var argumentList = BuildArgumentList(deref.Expression.Location, callOperation.Parameters, inferredPath);
 
                         var globalProcExpr = new GlobalProc(expr.Location, globalProc);
-                        expr = new ProcCall(expr.Location, globalProcExpr, argumentList, DMValueType.Anything);
+                        expr = new ProcCall(Compiler, expr.Location, globalProcExpr, argumentList, DMValueType.Anything);
                         break;
 
                     case DMASTDereference.FieldOperation:
@@ -1035,6 +1035,11 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
 
                         var returnTypes = fromObject.GetProcReturnTypes(field) ?? DMValueType.Anything;
                         nextPath = returnTypes.HasPath ? returnTypes.TypePath : returnTypes.AsPath();
+                        if (!returnTypes.HasPath & nextPath.HasValue) {
+                            var thePath = nextPath!.Value;
+                            thePath.Type = DreamPath.PathType.UpwardSearch;
+                            nextPath = thePath;
+                        }
                     }
 
                     operation = new Dereference.CallOperation {

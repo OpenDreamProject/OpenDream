@@ -5,7 +5,10 @@ using DMCompiler.Compiler;
 namespace DMCompiler.DM.Expressions;
 
 // x() (only the identifier)
-internal sealed class Proc(Location location, string identifier) : DMExpression(location) {
+internal sealed class Proc(Location location, string identifier, DMObject theObject) : DMExpression(location) {
+    public DMObject dmObject => theObject;
+    public string Identifier => identifier;
+    public override DMComplexValueType ValType => GetReturnType(theObject);
     public override void EmitPushValue(ExpressionContext ctx) {
         ctx.Compiler.Emit(WarningCode.BadExpression, Location, "attempt to use proc as value");
         ctx.Proc.Error();
@@ -57,8 +60,8 @@ internal sealed class GlobalProc(Location location, DMProc globalProc) : DMExpre
 /// . <br/>
 /// This is an LValue _and_ a proc!
 /// </summary>
-internal sealed class ProcSelf(Location location, DMComplexValueType valType) : LValue(location, null) {
-    public override DMComplexValueType ValType => valType;
+internal sealed class ProcSelf(Location location, DMComplexValueType? valType) : LValue(location, null) {
+    public override DMComplexValueType ValType => valType ?? DMValueType.Anything;
 
     public override DMReference EmitReference(ExpressionContext ctx, string endLabel,
         ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
@@ -88,10 +91,24 @@ internal sealed class ProcSuper(Location location, DMComplexValueType? valType) 
 }
 
 // x(y, z, ...)
-internal sealed class ProcCall(Location location, DMExpression target, ArgumentList arguments, DMComplexValueType valType)
+internal sealed class ProcCall(DMCompiler compiler, Location location, DMExpression target, ArgumentList arguments, DMComplexValueType valType)
     : DMExpression(location) {
     public override bool PathIsFuzzy => Path == null;
-    public override DMComplexValueType ValType => valType.IsAnything ? target.ValType : valType;
+    public override DMComplexValueType ValType {
+        get {
+            if (!valType.IsAnything)
+                return valType;
+            switch (target) {
+                case Proc procTarget:
+                    return procTarget.dmObject.GetProcReturnTypes(procTarget.Identifier) ?? DMValueType.Anything;
+                case GlobalProc procTarget:
+                    if(compiler.DMObjectTree.TryGetGlobalProc(procTarget.Proc.Name, out var globalProc))
+                        return globalProc.RawReturnTypes ?? DMValueType.Anything;
+                    return DMValueType.Anything;
+            }
+            return target.ValType;
+        }
+    }
 
     public (DMObject? ProcOwner, DMProc? Proc) GetTargetProc(DMCompiler compiler, DMObject dmObject) {
         return target switch {

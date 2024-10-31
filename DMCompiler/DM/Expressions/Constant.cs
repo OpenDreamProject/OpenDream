@@ -336,8 +336,9 @@ internal sealed class ConstantPath(Location location, DMObject dmObject, DreamPa
         if (procIndex != -1) {
             DreamPath withoutProcElement = path.RemoveElement(procIndex);
             DreamPath ownerPath = withoutProcElement.FromElements(0, -2);
-            DMObject owner = DMObjectTree.GetDMObject(ownerPath, createIfNonexistent: false);
             string procName = path.LastElement;
+
+            DMObjectTree.TryGetDMObject(ownerPath, out var owner);
 
             int? procId;
             if (owner == DMObjectTree.Root && DMObjectTree.TryGetGlobalProc(procName, out var globalProc)) {

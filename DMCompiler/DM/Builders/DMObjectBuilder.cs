@@ -140,7 +140,7 @@ internal static class DMObjectBuilder {
                 break;
 
             case DMASTObjectVarDefinition varDefinition:
-                var dmObject = DMObjectTree.GetDMObject(varDefinition.ObjectPath)!;
+                var dmObject = DMObjectTree.GetOrCreateDMObject(varDefinition.ObjectPath)!;
 
                 if (varDefinition.IsGlobal) {
                     // var/static/list/L[1][2][3] and list() both come first in global init order
@@ -162,13 +162,13 @@ internal static class DMObjectBuilder {
                         break; // Ignore it
                     }
 
-                    var parentType = DMObjectTree.GetDMObject(parentTypePath.Value.Path);
+                    var parentType = DMObjectTree.GetOrCreateDMObject(parentTypePath.Value.Path);
 
-                    DMObjectTree.GetDMObject(varOverride.ObjectPath)!.Parent = parentType;
+                    DMObjectTree.GetOrCreateDMObject(varOverride.ObjectPath).Parent = parentType;
                     break;
                 }
 
-                VarOverrides.Add((DMObjectTree.GetDMObject(varOverride.ObjectPath)!, varOverride));
+                VarOverrides.Add((DMObjectTree.GetOrCreateDMObject(varOverride.ObjectPath), varOverride));
                 break;
             case DMASTProcDefinition procDefinition:
                 if (procDefinition.Body != null) {
@@ -186,7 +186,7 @@ internal static class DMObjectBuilder {
                 break;
             case DMASTMultipleObjectVarDefinitions multipleVarDefinitions: {
                 foreach (DMASTObjectVarDefinition varDefinition in multipleVarDefinitions.VarDefinitions) {
-                    VarDefinitions.Add((DMObjectTree.GetDMObject(varDefinition.ObjectPath)!, varDefinition));
+                    VarDefinitions.Add((DMObjectTree.GetOrCreateDMObject(varDefinition.ObjectPath), varDefinition));
                 }
 
                 break;
@@ -200,7 +200,7 @@ internal static class DMObjectBuilder {
     private static void ProcessObjectDefinition(DMASTObjectDefinition objectDefinition) {
         DMCompiler.VerbosePrint($"Generating {objectDefinition.Path}");
 
-        DMObject? newCurrentObject = DMObjectTree.GetDMObject(objectDefinition.Path);
+        DMObject newCurrentObject = DMObjectTree.GetOrCreateDMObject(objectDefinition.Path);
         if (objectDefinition.InnerBlock != null) ProcessBlockInner(objectDefinition.InnerBlock, newCurrentObject);
     }
 
@@ -284,7 +284,7 @@ internal static class DMObjectBuilder {
 
     private static void ProcessProcDefinition(DMASTProcDefinition procDefinition, DMObject? currentObject) {
         string procName = procDefinition.Name;
-        DMObject dmObject = DMObjectTree.GetDMObject(currentObject.Path.Combine(procDefinition.ObjectPath));
+        DMObject dmObject = DMObjectTree.GetOrCreateDMObject(currentObject.Path.Combine(procDefinition.ObjectPath));
         bool hasProc = dmObject.HasProc(procName); // Trying to avoid calling this several times since it's recursive and maybe slow
         if (!procDefinition.IsOverride && hasProc) { // If this is a define and we already had a proc somehow
             if(!dmObject.HasProcNoInheritance(procName)) { // If we're inheriting this proc (so making a new define for it at our level is stupid)

@@ -182,8 +182,7 @@ namespace DMCompiler.DM {
                         if (parameter.Type is not { } typePath) {
                             argumentType = DMValueType.Anything;
                         } else {
-                            var type = DMObjectTree.GetDMObject(typePath, false);
-
+                            DMObjectTree.TryGetDMObject(typePath, out var type);
                             argumentType = type?.GetDMValueType() ?? DMValueType.Anything;
                         }
                     }

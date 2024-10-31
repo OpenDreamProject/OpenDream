@@ -482,8 +482,7 @@ internal static class DMExpressionBuilder {
             return BadExpression(WarningCode.BadExpression, expression.Location,
                 $"Identifier \"{expression.GetNameof(dmObject)}\" does not have a type");
 
-        var owner = DMObjectTree.GetDMObject(expression.Path.Value, createIfNonexistent: false);
-        if (owner == null) {
+        if (!DMObjectTree.TryGetDMObject(expression.Path.Value, out var owner)) {
             if (expression is ConstantPath path && path.TryResolvePath(out var pathInfo) &&
                 pathInfo.Value.Type == ConstantPath.PathType.ProcReference) {
                 if (bIdentifier == "name")
@@ -694,8 +693,7 @@ internal static class DMExpressionBuilder {
                             throw new UnknownIdentifierException(deref.Location, field);
                         }
 
-                        DMObject? fromObject = DMObjectTree.GetDMObject(prevPath.Value, false);
-                        if (fromObject == null)
+                        if (!DMObjectTree.TryGetDMObject(prevPath.Value, out var fromObject))
                             return BadExpression(WarningCode.ItemDoesntExist, fieldOperation.Location,
                                 $"Type {prevPath.Value} does not exist");
 
@@ -769,8 +767,7 @@ internal static class DMExpressionBuilder {
                             throw new UnknownIdentifierException(deref.Location, field);
                         }
 
-                        DMObject? fromObject = DMObjectTree.GetDMObject(prevPath.Value, false);
-                        if (fromObject == null)
+                        if (!DMObjectTree.TryGetDMObject(prevPath.Value, out var fromObject))
                             return BadExpression(WarningCode.ItemDoesntExist, callOperation.Location,
                                 $"Type {prevPath.Value} does not exist");
 

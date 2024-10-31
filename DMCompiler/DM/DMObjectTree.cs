@@ -17,7 +17,7 @@ internal static class DMObjectTree {
     public static DMProc GlobalInitProc = default!; // Initialized by Reset() (called in the static initializer)
     public static readonly HashSet<string> Resources = new();
 
-    public static DMObject Root => GetDMObject(DreamPath.Root)!;
+    public static DMObject Root => GetOrCreateDMObject(DreamPath.Root)!;
 
     private static readonly Dictionary<string, int> StringToStringId = new();
     private static readonly List<(int GlobalId, DMExpression Value)> _globalInitAssigns = new();
@@ -78,15 +78,13 @@ internal static class DMObjectTree {
         return AllProcs[targetProc];
     }
 
-    public static DMObject? GetDMObject(DreamPath path, bool createIfNonexistent = true) {
-        if (_pathToTypeId.TryGetValue(path, out int typeId)) {
-            return AllObjects[typeId];
-        }
-        if (!createIfNonexistent) return null;
+    public static DMObject GetOrCreateDMObject(DreamPath path) {
+        if (TryGetDMObject(path, out var dmObject))
+            return dmObject;
 
         DMObject? parent = null;
         if (path.Elements.Length > 1) {
-            parent = GetDMObject(path.FromElements(0, -2)); // Create all parent classes as dummies, if we're being dummy-created too
+            parent = GetOrCreateDMObject(path.FromElements(0, -2)); // Create all parent classes as dummies, if we're being dummy-created too
         } else if (path.Elements.Length == 1) {
             switch (path.LastElement) {
                 case "client":
@@ -94,10 +92,10 @@ internal static class DMObjectTree {
                 case "list":
                 case "savefile":
                 case "world":
-                    parent = GetDMObject(DreamPath.Root);
+                    parent = GetOrCreateDMObject(DreamPath.Root);
                     break;
                 default:
-                    parent = GetDMObject(DMCompiler.Settings.NoStandard ? DreamPath.Root : DreamPath.Datum);
+                    parent = GetOrCreateDMObject(DMCompiler.Settings.NoStandard ? DreamPath.Root : DreamPath.Datum);
                     break;
             }
         }
@@ -105,10 +103,20 @@ internal static class DMObjectTree {
         if (path != DreamPath.Root && parent == null) // Parent SHOULD NOT be null here! (unless we're root lol)
             throw new Exception($"Type {path} did not have a parent");
 
-        DMObject dmObject = new DMObject(_dmObjectIdCounter++, path, parent);
+        dmObject = new DMObject(_dmObjectIdCounter++, path, parent);
         AllObjects.Add(dmObject);
         _pathToTypeId[path] = dmObject.Id;
         return dmObject;
+    }
+
+    public static bool TryGetDMObject(DreamPath path, [NotNullWhen(true)] out DMObject? dmObject) {
+        if (_pathToTypeId.TryGetValue(path, out int typeId)) {
+            dmObject = AllObjects[typeId];
+            return true;
+        }
+
+        dmObject = null;
+        return false;
     }
 
     public static bool TryGetGlobalProc(string name, [NotNullWhen(true)] out DMProc? proc) {

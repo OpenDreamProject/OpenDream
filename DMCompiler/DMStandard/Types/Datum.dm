@@ -1,5 +1,5 @@
 ﻿/datum
-	var/tmp/type as opendream_compiletimereadonly
+	var/tmp/type as path(/datum)|opendream_compiletimereadonly
 	var/tmp/parent_type
 
 	var/tmp/list/vars as opendream_compiletimereadonly

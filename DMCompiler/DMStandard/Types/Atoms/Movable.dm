@@ -1,9 +1,9 @@
 ﻿/atom/movable
-	var/screen_loc
+	var/screen_loc as text|null
 
 	var/animate_movement = FORWARD_STEPS as opendream_unimplemented
 	var/list/locs = null as opendream_unimplemented
-	var/glide_size = 0
+	var/glide_size = 0 as num
 	var/step_size as opendream_unimplemented
 	var/tmp/bound_x as opendream_unimplemented
 	var/tmp/bound_y as opendream_unimplemented

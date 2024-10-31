@@ -58,7 +58,7 @@ internal sealed class Arglist(Location location, DMExpression expr) : DMExpressi
 }
 
 // new x (...)
-internal sealed class New(DMCompiler compiler, Location location, DMExpression expr, ArgumentList arguments) : DMExpression(location) {
+internal sealed class New(Location location, DMExpression expr, ArgumentList arguments) : DMExpression(location) {
     public override DreamPath? Path => expr.Path;
     public override bool PathIsFuzzy => Path == null;
     public override DMComplexValueType ValType {

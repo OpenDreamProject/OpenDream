@@ -2784,12 +2784,17 @@ namespace DMCompiler.Compiler.DM {
                 type |= SingleAsType(out var pathType, allowPath: true);
                 Whitespace();
 
-                if (pathType != null) {
-                    if (path == null)
+                if (pathType is not null) {
+                    if (path is null)
                         path = pathType;
-                    else
-                        Compiler.Emit(WarningCode.LostTypeInfo, CurrentLoc,
-                            $"Only one type path can be used, ignoring {pathType}");
+                    else {
+                        var newPath = path.Value.GetLastCommonAncestor(compiler, pathType.Value);
+                        if (newPath != path) {
+                            Compiler.Emit(WarningCode.LostTypeInfo, CurrentLoc,
+                                $"Only one type path can be used, using last common ancestor {newPath}");
+                            path = newPath;
+                        }
+                    }
                 }
 
             } while (Check(TokenType.DM_Bar));

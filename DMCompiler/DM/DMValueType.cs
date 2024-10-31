@@ -103,6 +103,7 @@ public readonly struct DMComplexValueType {
 
     public static DMComplexValueType operator |(DMComplexValueType type1, DMValueType type2) =>
         new(type1.Type | type2, type1.TypePath);
+
     public DreamPath? AsPath() {
         return (HasPath ? TypePath : null) ?? (Type & ~DMValueType.Null) switch {
             DMValueType.Mob => DreamPath.Mob,

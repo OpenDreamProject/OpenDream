@@ -3,10 +3,10 @@ using System.Diagnostics.CodeAnalysis;
 namespace DMCompiler.DM.Expressions;
 
 // x ? y : z
-internal sealed class Ternary(Location location, DMExpression a, DMExpression b, DMExpression c)
+internal sealed class Ternary(DMCompiler compiler, Location location, DMExpression a, DMExpression b, DMExpression c)
     : DMExpression(location) {
     public override bool PathIsFuzzy => true;
-    public override DMComplexValueType ValType { get; } = (b.ValType.IsAnything || c.ValType.IsAnything) ? DMValueType.Anything : new DMComplexValueType(b.ValType.Type | c.ValType.Type, b.ValType.TypePath ?? c.ValType.TypePath);
+    public override DMComplexValueType ValType { get; } = (b.ValType.IsAnything || c.ValType.IsAnything) ? DMValueType.Anything : new DMComplexValueType(b.ValType.Type | c.ValType.Type, (b.ValType.HasPath && c.ValType.HasPath && b.ValType.TypePath != c.ValType.TypePath) ? b.ValType.TypePath!.Value.GetLastCommonAncestor(compiler, c.ValType.TypePath!.Value) : b.ValType.TypePath ?? c.ValType.TypePath ?? null);
 
     public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
         if (!a.TryAsConstant(compiler, out var constant1)) {

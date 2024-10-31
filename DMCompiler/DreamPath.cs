@@ -264,4 +264,12 @@ public struct DreamPath {
 
         Elements = _elements[..writeIdx];
     }
+
+    public DreamPath GetLastCommonAncestor(DMCompiler compiler, DreamPath other) {
+        var thisObject = compiler.DMObjectTree.GetOrCreateDMObject(this);
+        var otherObject = compiler.DMObjectTree.GetOrCreateDMObject(other);
+        if (thisObject is null || otherObject is null)
+            return Root;
+        return thisObject.GetLastCommonAncestor(otherObject);
+    }
 }

@@ -272,10 +272,10 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
 
                 if (b.ValType.TypePath != null && c.ValType.TypePath != null && b.ValType.TypePath != c.ValType.TypePath) {
                     Compiler.Emit(WarningCode.LostTypeInfo, ternary.Location,
-                        $"Ternary has type paths {b.ValType.TypePath} and {c.ValType.TypePath} but a value can only have one type path. Using {b.ValType.TypePath}.");
+                        $"Ternary has type paths {b.ValType.TypePath} and {c.ValType.TypePath} but a value can only have one type path. Using their common ancestor, {b.ValType.TypePath.Value.GetLastCommonAncestor(Compiler, c.ValType.TypePath.Value)}.");
                 }
 
-                result = new Ternary(ternary.Location, a, b, c);
+                result = new Ternary(Compiler, ternary.Location, a, b, c);
                 break;
             case DMASTNewPath newPath:
                 if (BuildExpression(newPath.Path, inferredPath) is not IConstantPath path) {
@@ -288,7 +288,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                     BuildArgumentList(newPath.Location, newPath.Parameters, inferredPath));
                 break;
             case DMASTNewExpr newExpr:
-                result = new New(Compiler, newExpr.Location,
+                result = new New(newExpr.Location,
                     BuildExpression(newExpr.Expression, inferredPath),
                     BuildArgumentList(newExpr.Location, newExpr.Parameters, inferredPath));
                 break;

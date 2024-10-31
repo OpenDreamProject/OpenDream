@@ -6,7 +6,7 @@ namespace DMCompiler.DM.Expressions;
 internal sealed class Ternary(DMCompiler compiler, Location location, DMExpression a, DMExpression b, DMExpression c)
     : DMExpression(location) {
     public override bool PathIsFuzzy => true;
-    public override DMComplexValueType ValType { get; } = (b.ValType.IsAnything || c.ValType.IsAnything) ? DMValueType.Anything : new DMComplexValueType(b.ValType.Type | c.ValType.Type, (b.ValType.HasPath && c.ValType.HasPath && b.ValType.TypePath != c.ValType.TypePath) ? b.ValType.TypePath!.Value.GetLastCommonAncestor(compiler, c.ValType.TypePath!.Value) : b.ValType.TypePath ?? c.ValType.TypePath ?? null);
+    public override DMComplexValueType ValType { get; } = (b.ValType.IsAnything || c.ValType.IsAnything) ? DMValueType.Anything : DMComplexValueType.MergeComplexValueTypes(compiler, b.ValType, c.ValType);
 
     public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
         if (!a.TryAsConstant(compiler, out var constant1)) {

@@ -203,10 +203,26 @@ internal sealed class Rgb(Location location, ArgumentList arguments) : DMExpress
 // pick(prob(50);x, prob(200);y)
 // pick(50;x, 200;y)
 // pick(x, y)
-internal sealed class Pick(Location location, Pick.PickValue[] values) : DMExpression(location) {
+internal sealed class Pick(DMCompiler compiler, Location location, Pick.PickValue[] values) : DMExpression(location) {
     public struct PickValue(DMExpression? weight, DMExpression value) {
         public readonly DMExpression? Weight = weight;
         public readonly DMExpression Value = value;
+    }
+
+    public override DMComplexValueType ValType {
+        get {
+            if (values.Length == 1) {
+                var firstValType = values[0].Value.ValType;
+                if (firstValType.IsList) {
+                    return firstValType.ListValueTypes?.NestedListKeyType ?? DMValueType.Anything;
+                }
+            }
+            DMComplexValueType accumValues = DMValueType.Anything;
+            foreach(PickValue pickVal in values) {
+                accumValues = DMComplexValueType.MergeComplexValueTypes(compiler, accumValues, pickVal.Value.ValType);
+            }
+            return accumValues;
+        }
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
@@ -405,9 +421,10 @@ internal sealed class List : DMExpression {
     private readonly bool _isAssociative;
 
     public override bool PathIsFuzzy => true;
-    public override DMComplexValueType ValType => DreamPath.List;
+    private DMComplexValueType? _valType;
+    public override DMComplexValueType ValType => _valType ?? DMValueType.Anything;
 
-    public List(Location location, (DMExpression? Key, DMExpression Value)[] values) : base(location) {
+    public List(DMCompiler compiler, Location location, (DMExpression? Key, DMExpression Value)[] values) : base(location) {
         _values = values;
 
         _isAssociative = false;
@@ -417,6 +434,15 @@ internal sealed class List : DMExpression {
                 break;
             }
         }
+        DMComplexValueType keyTypes = DMValueType.Anything;
+        DMComplexValueType valTypes = DMValueType.Anything;
+        foreach((DMExpression? key, DMExpression val) in _values) {
+            // why did I do it like this
+            valTypes = DMComplexValueType.MergeComplexValueTypes(compiler, valTypes, val.ValType);
+            if(key is not null)
+                keyTypes = DMComplexValueType.MergeComplexValueTypes(compiler, keyTypes, key.ValType);
+        }
+        _valType = new DMComplexValueType(DMValueType.Instance, DreamPath.List, !(keyTypes.IsAnything && valTypes.IsAnything) ? (_isAssociative ? new DMListValueTypes(keyTypes, valTypes) : new DMListValueTypes(valTypes, null)) : null);
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {

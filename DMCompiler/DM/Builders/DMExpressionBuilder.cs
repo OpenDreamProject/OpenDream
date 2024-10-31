@@ -1108,7 +1108,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
             }
         }
 
-        return new List(list.Location, values);
+        return new List(Compiler, list.Location, values);
     }
 
     private DMExpression BuildDimensionalList(DMASTDimensionalList list, DreamPath? inferredPath) {
@@ -1214,7 +1214,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
             pickValues[i] = new Pick.PickValue(weight, value);
         }
 
-        return new Pick(pick.Location, pickValues);
+        return new Pick(Compiler, pick.Location, pickValues);
     }
 
     private DMExpression BuildLog(DMASTLog log, DreamPath? inferredPath) {

@@ -83,7 +83,7 @@ internal class Dereference : LValue {
             type = operation switch {
                 FieldOperation fieldOperation => dmObject.GetVariable(fieldOperation.Identifier)?.ValType ?? DMValueType.Anything,
                 IndexOperation indexOperation => type.ListValueTypes is null ? DMValueType.Anything : (indexOperation.Index.ValType.Type.HasFlag(DMValueType.Num) ? type.ListValueTypes.NestedListKeyType : type.ListValueTypes.NestedListValType ?? type.ListValueTypes.NestedListKeyType) | DMValueType.Null, // TODO: Keys of assoc lists
-                CallOperation callOperation => dmObject.GetProcReturnTypes(callOperation.Identifier) ?? DMValueType.Anything,
+                CallOperation callOperation => dmObject.GetProcReturnTypes(callOperation.Identifier, callOperation.Parameters) ?? DMValueType.Anything,
                 _ => throw new InvalidOperationException("Unimplemented dereference operation")
             };
         }

@@ -779,7 +779,7 @@ internal static class DMExpressionBuilder {
                             return BadExpression(WarningCode.ItemDoesntExist, callOperation.Location,
                                 $"Type {prevPath.Value} does not have a proc named \"{field}\"");
 
-                        var returnTypes = fromObject.GetProcReturnTypes(field) ?? DMValueType.Anything;
+                        var returnTypes = fromObject.GetProcReturnTypes(field, argumentList) ?? DMValueType.Anything;
                         nextPath = returnTypes.HasPath ? returnTypes.TypePath : returnTypes.AsPath();
                         if (!returnTypes.HasPath & nextPath.HasValue) {
                             var thePath = nextPath!.Value;

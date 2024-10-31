@@ -72,7 +72,7 @@ internal sealed class GlobalProc(Location location, string name) : DMExpression(
 /// This is an LValue _and_ a proc!
 /// </summary>
 internal sealed class ProcSelf(Location location, DreamPath? path, DMProc proc) : LValue(location, path) {
-    public override DMComplexValueType ValType => proc.RawReturnTypes;
+    public override DMComplexValueType ValType => proc.GetParameterValueTypes(null);
 
     public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
         return DMReference.Self;
@@ -110,10 +110,10 @@ internal sealed class ProcCall(Location location, DMExpression target, ArgumentL
                 return valType;
             switch (target) {
                 case Proc procTarget:
-                    return procTarget.dmObject.GetProcReturnTypes(procTarget.Identifier) ?? DMValueType.Anything;
+                    return procTarget.dmObject.GetProcReturnTypes(procTarget.Identifier, arguments) ?? DMValueType.Anything;
                 case GlobalProc procTarget:
                     if(DMObjectTree.TryGetGlobalProc(procTarget.Identifier, out var globalProc))
-                        return globalProc.RawReturnTypes ?? DMValueType.Anything;
+                        return globalProc.GetParameterValueTypes(arguments);
                     return DMValueType.Anything;
             }
             return target.ValType;

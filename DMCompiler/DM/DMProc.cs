@@ -318,6 +318,52 @@ namespace DMCompiler.DM {
             return local.IsParameter ? DMReference.CreateArgument(local.Id) : DMReference.CreateLocal(local.Id);
         }
 
+        public DMProc GetBaseProc(DMObject? dmObject = null) {
+            if (dmObject == null) dmObject = _dmObject;
+            if (dmObject == DMObjectTree.Root && DMObjectTree.TryGetGlobalProc(Name, out var globalProc))
+                return globalProc;
+            if (dmObject.GetProcs(Name) is not { } procs)
+                return dmObject.Parent is not null ? GetBaseProc(dmObject.Parent) : this;
+
+            var proc = DMObjectTree.AllProcs[procs[0]];
+            if ((proc.Attributes & ProcAttributes.IsOverride) != 0)
+                return dmObject.Parent is not null ? GetBaseProc(dmObject.Parent) : this;
+
+            return proc;
+        }
+
+        public DMComplexValueType GetParameterValueTypes(ArgumentList? arguments) {
+            return GetParameterValueTypes(RawReturnTypes, arguments);
+        }
+
+        public DMComplexValueType GetParameterValueTypes(DMComplexValueType? baseType, ArgumentList? arguments) {
+            if (baseType?.ParameterIndices is null) {
+                return baseType ?? DMValueType.Anything;
+            }
+            DMComplexValueType returnType = baseType ?? DMValueType.Anything;
+            foreach ((int parameterIndex, bool upcasted) in baseType!.Value.ParameterIndices) {
+                DMComplexValueType intermediateType = DMValueType.Anything;
+                if (arguments is null || parameterIndex >= arguments.Expressions.Length) {
+                    if (!TryGetParameterAtIndex(parameterIndex, out var parameter)) {
+                        DMCompiler.Emit(WarningCode.BadArgument, Location, $"Unable to find argument with index {parameterIndex}");
+                        continue;
+                    }
+                    intermediateType = parameter.ExplicitValueType ?? DMValueType.Anything;
+                } else if (arguments is not null) {
+                    intermediateType = arguments.Expressions[parameterIndex].Expr.ValType;
+                }
+                if (upcasted) {
+                    if (!intermediateType.HasPath || (intermediateType.Type & ~(DMValueType.Path|DMValueType.Null)) != DMValueType.Anything) {
+                        DMCompiler.Emit(WarningCode.InvalidVarType, arguments?.Location ?? Location, "Expected an exclusively path (or null) typed parameter");
+                    } else {
+                        intermediateType = new DMComplexValueType(intermediateType.Type & ~DMValueType.Path | DMValueType.Instance, intermediateType.TypePath);
+                    }
+                }
+                returnType |= intermediateType;
+        }
+            return returnType;
+        }
+
         public void Error() {
             WriteOpcode(DreamProcOpcode.Error);
         }

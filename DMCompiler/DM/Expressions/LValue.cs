@@ -76,9 +76,11 @@ internal sealed class Local(Location location, DMProc.LocalVariable localVar, DM
     public DMProc.LocalVariable LocalVar { get; } = localVar;
     public override DMComplexValueType ValType {
         get {
+            //todo: allow local variables to be param-typed again
+            // WITHOUT having to pass procParameters through the whole parser chain
+            //if (valType is not null) return proc.GetBaseProc().GetParameterValueTypes(valType.Value, null);
             if (valType is not null) return valType.Value;
-            DMComplexValueType atomType = LocalVar.Type?.GetAtomType() ?? DMValueType.Anything;
-            return !atomType.IsAnything ? atomType | DMValueType.Null : (localVar.Type is null ? DMValueType.Anything : new DMComplexValueType(DMValueType.Path | DMValueType.Null, localVar.Type));
+            return LocalVar.Type is not null ? new DMComplexValueType(DMValueType.Instance | DMValueType.Path | DMValueType.Null, LocalVar.Type) : DMValueType.Anything;
         }
     }
 

@@ -367,8 +367,9 @@ namespace DMCompiler.DM.Builders {
                 value = DMExpression.Create(dmObject, proc, varDeclaration.Value, varDeclaration.Type);
 
                 if (!varDeclaration.ValType.MatchesType(value.ValType)) {
-                    DMCompiler.Emit(WarningCode.InvalidVarType, varDeclaration.Location,
-                        $"{varDeclaration.Name}: Invalid var value {value.ValType}, expected {varDeclaration.ValType}");
+                    if(!value.ValType.IsAnything || !DMCompiler.Settings.SkipAnythingTypecheck)
+                        DMCompiler.Emit(WarningCode.InvalidVarType, varDeclaration.Location,
+                            $"{varDeclaration.Name}: Invalid var value {value.ValType}, expected {varDeclaration.ValType}");
                 }
             } else {
                 value = new Null(varDeclaration.Location);
@@ -383,7 +384,7 @@ namespace DMCompiler.DM.Builders {
 
                 successful = proc.TryAddLocalConstVariable(varDeclaration.Name, varDeclaration.Type, constValue);
             } else {
-                successful = proc.TryAddLocalVariable(varDeclaration.Name, varDeclaration.Type, varDeclaration.ValType);
+                successful = proc.TryAddLocalVariable(varDeclaration.Name, varDeclaration.Type, varDeclaration.ExplicitValType);
             }
 
             if (!successful) {
@@ -451,7 +452,7 @@ namespace DMCompiler.DM.Builders {
             proc.StartScope();
             {
                 foreach (var decl in FindVarDecls(statementFor.Expression1)) {
-                    ProcessStatementVarDeclaration(new DMASTProcStatementVarDeclaration(statementFor.Location, decl.DeclPath, null, DMValueType.Anything));
+                    ProcessStatementVarDeclaration(new DMASTProcStatementVarDeclaration(statementFor.Location, decl.DeclPath, null, null));
                 }
 
                 if (statementFor.Expression2 != null || statementFor.Expression3 != null) {
@@ -521,7 +522,10 @@ namespace DMCompiler.DM.Builders {
                             var list = DMExpression.Create(dmObject, proc, exprIn.RHS);
 
                             if (outputVar is Local outputLocal) {
-                                outputLocal.LocalVar.ExplicitValueType = statementFor.DMTypes;
+                                if (statementFor.DMTypes is not null)
+                                    outputLocal.LocalVar.ExplicitValueType = statementFor.DMTypes;
+                                else if (list.ValType.IsList && list.ValType.ListValueTypes is not null)
+                                    outputLocal.LocalVar.ExplicitValueType = list.ValType.ListValueTypes.NestedListKeyType;
                             }
 
                             ProcessStatementForList(list, outputVar, statementFor.DMTypes, statementFor.Body);
@@ -949,7 +953,7 @@ namespace DMCompiler.DM.Builders {
             if (tryCatch.CatchParameter != null) {
                 var param = tryCatch.CatchParameter as DMASTProcStatementVarDeclaration;
 
-                if (!proc.TryAddLocalVariable(param.Name, param.Type, param.ValType)) {
+                if (!proc.TryAddLocalVariable(param.Name, param.Type, param.ExplicitValType)) {
                     DMCompiler.Emit(WarningCode.DuplicateVariable, param.Location, $"Duplicate var {param.Name}");
                 }
 

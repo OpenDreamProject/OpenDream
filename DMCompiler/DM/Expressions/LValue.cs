@@ -72,7 +72,7 @@ internal sealed class Args(Location location) : LValue(location, DreamPath.List)
 }
 
 // Identifier of local variable
-internal sealed class Local(Location location, DMProc.LocalVariable localVar, DMComplexValueType? valType) : LValue(location, localVar.Type) {
+internal sealed class Local(Location location, DMProc.LocalVariable localVar, DMProc proc, DMComplexValueType? valType) : LValue(location, localVar.Type) {
     public DMProc.LocalVariable LocalVar { get; } = localVar;
     public override DMComplexValueType ValType {
         get {

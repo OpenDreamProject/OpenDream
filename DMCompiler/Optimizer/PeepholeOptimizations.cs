@@ -853,6 +853,8 @@ internal sealed class AppendAndPushReferenceValue : IPeepholeOptimization {
 
         input.RemoveRange(index, 2);
         input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.Append, [appendTarget]));
+    }
+}
 
 // PushFloat [constant]
 // PushFloat [constant]

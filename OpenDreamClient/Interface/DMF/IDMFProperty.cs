@@ -40,8 +40,8 @@ raw
     Does not change the value's text representation in any way; assumes it's already formatted correctly for the purpose. This is similar to as arg but does no escaping and no quotes.
 */
 
-public struct DMFPropertyString(string value) : IDMFProperty {
-    public string Value = value;
+public struct DMFPropertyString(string? value) : IDMFProperty {
+    public string Value = value ?? string.Empty;
 
     public string AsArg() {
         return "\""+AsEscaped()+"\"";

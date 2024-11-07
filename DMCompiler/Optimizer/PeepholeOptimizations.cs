@@ -422,4 +422,56 @@ internal sealed class ConstFoldPower : IPeepholeOptimization {
     }
 }
 
+// PushFloat [constant]
+// PushFloat [constant]
+// BitshiftLeft
+// -> PushFloat [result]
+internal sealed class ConstFoldBitshiftLeft : IPeepholeOptimization {
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.PushFloat,
+            DreamProcOpcode.PushFloat,
+            DreamProcOpcode.BitShiftLeft,
+        ];
+    }
+
+    public void Apply(List<IAnnotatedBytecode> input, int index) {
+        var firstInstruction = IPeepholeOptimization.GetInstructionAndValue(input[index], out var pushVal1);
+        IPeepholeOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
+
+        // At runtime, given "A << B" we pop B then A
+        // In the peephole optimizer, index is "A", index+1 is "B"
+        var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(((int)pushVal1 << (int)pushVal2), firstInstruction.Location)};
+
+        IPeepholeOptimization.ReplaceInstructions(input, index, 3,
+            new AnnotatedBytecodeInstruction(DreamProcOpcode.PushFloat, 1, args));
+    }
+}
+
+// PushFloat [constant]
+// PushFloat [constant]
+// BitshiftRight
+// -> PushFloat [result]
+internal sealed class ConstFoldBitshiftRight : IPeepholeOptimization {
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.PushFloat,
+            DreamProcOpcode.PushFloat,
+            DreamProcOpcode.BitShiftRight,
+        ];
+    }
+
+    public void Apply(List<IAnnotatedBytecode> input, int index) {
+        var firstInstruction = IPeepholeOptimization.GetInstructionAndValue(input[index], out var pushVal1);
+        IPeepholeOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
+
+        // At runtime, given "A >> B" we pop B then A
+        // In the peephole optimizer, index is "A", index+1 is "B"
+        var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(((int)pushVal1 >> (int)pushVal2), firstInstruction.Location)};
+
+        IPeepholeOptimization.ReplaceInstructions(input, index, 3,
+            new AnnotatedBytecodeInstruction(DreamProcOpcode.PushFloat, 1, args));
+    }
+}
+
 #endregion

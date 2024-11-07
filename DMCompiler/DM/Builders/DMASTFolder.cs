@@ -219,20 +219,6 @@ public class DMASTFolder {
 
                 break;
             }
-            case DMASTLeftShift leftShift: {
-                if (leftShift is { LHS: DMASTConstantInteger lhsInt, RHS: DMASTConstantInteger rhsInt }) {
-                    return new DMASTConstantInteger(expression.Location, lhsInt.Value << rhsInt.Value);
-                }
-
-                break;
-            }
-            case DMASTRightShift rightShift: {
-                if (rightShift is { LHS: DMASTConstantInteger lhsInt, RHS: DMASTConstantInteger rhsInt }) {
-                    return new DMASTConstantInteger(expression.Location, lhsInt.Value >> rhsInt.Value);
-                }
-
-                break;
-            }
             case DMASTBinaryAnd binaryAnd: {
                 if (binaryAnd is { LHS: DMASTConstantInteger lhsInt, RHS: DMASTConstantInteger rhsInt }) {
                     return new DMASTConstantInteger(expression.Location, lhsInt.Value & rhsInt.Value);

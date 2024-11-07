@@ -1,5 +1,7 @@
 using DMCompiler.Bytecode;
 
+// ReSharper disable UnusedType.Global
+
 namespace DMCompiler.Optimizer;
 
 #region BytecodeCompactors
@@ -8,7 +10,9 @@ namespace DMCompiler.Optimizer;
 // ...
 // PushString [string]
 // -> PushNStrings [count] [string] ... [string]
-internal sealed class PushNStrings : IBytecodeCompactor {
+internal sealed class PushNStrings : IOptimization {
+    public OptPass OptimizationPass => OptPass.BytecodeCompactor;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushString,
@@ -42,7 +46,9 @@ internal sealed class PushNStrings : IBytecodeCompactor {
 // ...
 // PushFloat [float]
 // -> PushNFloats [count] [float] ... [float]
-internal sealed class PushNFloats : IBytecodeCompactor {
+internal sealed class PushNFloats : IOptimization {
+    public OptPass OptimizationPass => OptPass.BytecodeCompactor;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushFloat,
@@ -76,7 +82,9 @@ internal sealed class PushNFloats : IBytecodeCompactor {
 // ...
 // PushReferenceValue [ref]
 // -> PushNRef [count] [ref] ... [ref]
-internal sealed class PushNRef : IBytecodeCompactor {
+internal sealed class PushNRef : IOptimization {
+    public OptPass OptimizationPass => OptPass.BytecodeCompactor;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushReferenceValue,
@@ -111,7 +119,9 @@ internal sealed class PushNRef : IBytecodeCompactor {
 // -> PushStringFloat [string] [float]
 // or if there's multiple
 // -> PushNOfStringFloat [count] [string] [float] ... [string] [float]
-internal sealed class PushStringFloat : IBytecodeCompactor {
+internal sealed class PushStringFloat : IOptimization {
+    public OptPass OptimizationPass => OptPass.BytecodeCompactor;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushString,
@@ -164,7 +174,9 @@ internal sealed class PushStringFloat : IBytecodeCompactor {
 // ...
 // PushResource [resource]
 // -> PushNResources [count] [resource] ... [resource]
-internal sealed class PushNResources : IBytecodeCompactor {
+internal sealed class PushNResources : IOptimization {
+    public OptPass OptimizationPass => OptPass.BytecodeCompactor;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushResource,
@@ -200,7 +212,9 @@ internal sealed class PushNResources : IBytecodeCompactor {
 // PushNFloats [count] [float] ... [float]
 // CreateList [count]
 // -> CreateListNFloats [count] [float] ... [float]
-internal sealed class CreateListNFloats : IListCompactor {
+internal sealed class CreateListNFloats : IOptimization {
+    public OptPass OptimizationPass => OptPass.ListCompactor;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushNFloats,
@@ -240,7 +254,9 @@ internal sealed class CreateListNFloats : IListCompactor {
 // PushNStrings [count] [string] ... [string]
 // CreateList [count]
 // -> CreateListNStrings [count] [string] ... [string]
-internal sealed class CreateListNStrings : IListCompactor {
+internal sealed class CreateListNStrings : IOptimization {
+    public OptPass OptimizationPass => OptPass.ListCompactor;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushNStrings,
@@ -280,7 +296,9 @@ internal sealed class CreateListNStrings : IListCompactor {
 // PushNResources [count] [resource] ... [resource]
 // CreateList [count]
 // -> CreateListNResources [count] [resource] ... [resource]
-internal sealed class CreateListNResources : IListCompactor {
+internal sealed class CreateListNResources : IOptimization {
+    public OptPass OptimizationPass => OptPass.ListCompactor;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushNResources,
@@ -320,7 +338,9 @@ internal sealed class CreateListNResources : IListCompactor {
 // PushNRefs [count] [ref] ... [ref]
 // CreateList [count]
 // -> CreateListNRefs [count] [ref] ... [ref]
-internal sealed class CreateListNRefs : IListCompactor {
+internal sealed class CreateListNRefs : IOptimization {
+    public OptPass OptimizationPass => OptPass.ListCompactor;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushNRefs,

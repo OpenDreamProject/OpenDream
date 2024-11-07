@@ -1,11 +1,15 @@
 using DMCompiler.Bytecode;
 
+// ReSharper disable UnusedType.Global
+
 namespace DMCompiler.Optimizer;
 
 // Append [ref]
 // Pop
 // -> AppendNoPush [ref]
-internal sealed class AppendNoPush : IPeepholeOptimization {
+internal sealed class AppendNoPush : IOptimization {
+    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.Append,
@@ -29,7 +33,9 @@ internal sealed class AppendNoPush : IPeepholeOptimization {
 // Assign [ref]
 // Pop
 // -> AssignNoPush [ref]
-internal sealed class AssignNoPush : IPeepholeOptimization {
+internal sealed class AssignNoPush : IOptimization {
+    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.Assign,
@@ -53,7 +59,9 @@ internal sealed class AssignNoPush : IPeepholeOptimization {
 // PushNull
 // AssignNoPush [ref]
 // -> AssignNull [ref]
-internal sealed class AssignNull : IPeepholeOptimization {
+internal sealed class AssignNull : IOptimization {
+    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushNull,
@@ -82,7 +90,9 @@ internal sealed class AssignNull : IPeepholeOptimization {
 // PushReferenceValue [ref]
 // DereferenceField [field]
 // -> PushRefAndDereferenceField [ref, field]
-internal sealed class PushField : IPeepholeOptimization {
+internal sealed class PushField : IOptimization {
+    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushReferenceValue,
@@ -109,7 +119,9 @@ internal sealed class PushField : IPeepholeOptimization {
 // PushReferenceValue [ref]
 // Return
 // -> ReturnReferenceValue [ref]
-internal class ReturnReferenceValue : IPeepholeOptimization {
+internal class ReturnReferenceValue : IOptimization {
+    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushReferenceValue,
@@ -128,7 +140,9 @@ internal class ReturnReferenceValue : IPeepholeOptimization {
 // PushFloat [float]
 // Return
 // -> ReturnFloat [float]
-internal class ReturnFloat : IPeepholeOptimization {
+internal class ReturnFloat : IOptimization {
+    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushFloat,
@@ -137,8 +151,8 @@ internal class ReturnFloat : IPeepholeOptimization {
     }
 
     public void Apply(List<IAnnotatedBytecode> input, int index) {
-        var firstInstruction = IPeepholeOptimization.GetInstructionAndValue(input[index], out var pushVal);
-        IPeepholeOptimization.ReplaceInstructions(input, index, 2,
+        var firstInstruction = IOptimization.GetInstructionAndValue(input[index], out var pushVal);
+        IOptimization.ReplaceInstructions(input, index, 2,
             new AnnotatedBytecodeInstruction(DreamProcOpcode.ReturnFloat, [new AnnotatedBytecodeFloat(pushVal, firstInstruction.Location)]));
     }
 }
@@ -146,7 +160,9 @@ internal class ReturnFloat : IPeepholeOptimization {
 // PushReferenceValue [ref]
 // JumpIfFalse [label]
 // -> JumpIfReferenceFalse [ref] [label]
-internal sealed class JumpIfReferenceFalse : IPeepholeOptimization {
+internal sealed class JumpIfReferenceFalse : IOptimization {
+    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushReferenceValue,
@@ -173,7 +189,9 @@ internal sealed class JumpIfReferenceFalse : IPeepholeOptimization {
 // PushFloat [float]
 // SwitchCase [label]
 // -> SwitchOnFloat [float] [label]
-internal sealed class SwitchOnFloat : IPeepholeOptimization {
+internal sealed class SwitchOnFloat : IOptimization {
+    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushFloat,
@@ -199,7 +217,9 @@ internal sealed class SwitchOnFloat : IPeepholeOptimization {
 // PushString [string]
 // SwitchCase [label]
 // -> SwitchOnString [string] [label]
-internal sealed class SwitchOnString : IPeepholeOptimization {
+internal sealed class SwitchOnString : IOptimization {
+    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushString,
@@ -225,7 +245,9 @@ internal sealed class SwitchOnString : IPeepholeOptimization {
 // Jump [label1]
 // Jump [label2] <- Dead code
 // -> Jump [label1]
-internal sealed class RemoveJumpFollowedByJump : IPeepholeOptimization {
+internal sealed class RemoveJumpFollowedByJump : IOptimization {
+    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.Jump,
@@ -241,7 +263,9 @@ internal sealed class RemoveJumpFollowedByJump : IPeepholeOptimization {
 // PushType [type]
 // IsType
 // -> IsTypeDirect [type]
-internal sealed class IsTypeDirect : IPeepholeOptimization {
+internal sealed class IsTypeDirect : IOptimization {
+    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushType,
@@ -268,7 +292,9 @@ internal sealed class IsTypeDirect : IPeepholeOptimization {
 // PushFloat [constant]
 // Multiply
 // -> PushFloat [result]
-internal sealed class ConstFoldMultiply : IPeepholeOptimization {
+internal sealed class ConstFoldMultiply : IOptimization {
+    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushFloat,
@@ -278,13 +304,13 @@ internal sealed class ConstFoldMultiply : IPeepholeOptimization {
     }
 
     public void Apply(List<IAnnotatedBytecode> input, int index) {
-        var firstInstruction = IPeepholeOptimization.GetInstructionAndValue(input[index], out var pushVal1);
+        var firstInstruction = IOptimization.GetInstructionAndValue(input[index], out var pushVal1);
 
-        IPeepholeOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
+        IOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
 
         var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(pushVal1 * pushVal2, firstInstruction.Location)};
 
-        IPeepholeOptimization.ReplaceInstructions(input, index, 3,
+        IOptimization.ReplaceInstructions(input, index, 3,
             new AnnotatedBytecodeInstruction(DreamProcOpcode.PushFloat, 1, args));
     }
 }
@@ -293,7 +319,9 @@ internal sealed class ConstFoldMultiply : IPeepholeOptimization {
 // PushFloat [constant]
 // Divide
 // -> PushFloat [result]
-internal sealed class ConstFoldDivide : IPeepholeOptimization {
+internal sealed class ConstFoldDivide : IOptimization {
+    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushFloat,
@@ -303,15 +331,15 @@ internal sealed class ConstFoldDivide : IPeepholeOptimization {
     }
 
     public void Apply(List<IAnnotatedBytecode> input, int index) {
-        var firstInstruction = IPeepholeOptimization.GetInstructionAndValue(input[index], out var pushVal1);
+        var firstInstruction = IOptimization.GetInstructionAndValue(input[index], out var pushVal1);
 
-        IPeepholeOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
+        IOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
 
         // At runtime, given "A / B" we pop B then A
         // In the peephole optimizer, index is "A", index+1 is "B"
         var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(pushVal1 / pushVal2, firstInstruction.Location)};
 
-        IPeepholeOptimization.ReplaceInstructions(input, index, 3,
+        IOptimization.ReplaceInstructions(input, index, 3,
             new AnnotatedBytecodeInstruction(DreamProcOpcode.PushFloat, 1, args));
     }
 }
@@ -320,7 +348,9 @@ internal sealed class ConstFoldDivide : IPeepholeOptimization {
 // PushFloat [constant]
 // Add
 // -> PushFloat [result]
-internal sealed class ConstFoldAdd : IPeepholeOptimization {
+internal sealed class ConstFoldAdd : IOptimization {
+    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushFloat,
@@ -330,13 +360,13 @@ internal sealed class ConstFoldAdd : IPeepholeOptimization {
     }
 
     public void Apply(List<IAnnotatedBytecode> input, int index) {
-        var firstInstruction = IPeepholeOptimization.GetInstructionAndValue(input[index], out var pushVal1);
+        var firstInstruction = IOptimization.GetInstructionAndValue(input[index], out var pushVal1);
 
-        IPeepholeOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
+        IOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
 
         var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(pushVal1 + pushVal2, firstInstruction.Location)};
 
-        IPeepholeOptimization.ReplaceInstructions(input, index, 3,
+        IOptimization.ReplaceInstructions(input, index, 3,
             new AnnotatedBytecodeInstruction(DreamProcOpcode.PushFloat, 1, args));
     }
 }
@@ -345,7 +375,9 @@ internal sealed class ConstFoldAdd : IPeepholeOptimization {
 // PushFloat [constant]
 // Subtract
 // -> PushFloat [result]
-internal sealed class ConstFoldSubtract : IPeepholeOptimization {
+internal sealed class ConstFoldSubtract : IOptimization {
+    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushFloat,
@@ -355,15 +387,15 @@ internal sealed class ConstFoldSubtract : IPeepholeOptimization {
     }
 
     public void Apply(List<IAnnotatedBytecode> input, int index) {
-        var firstInstruction = IPeepholeOptimization.GetInstructionAndValue(input[index], out var pushVal1);
+        var firstInstruction = IOptimization.GetInstructionAndValue(input[index], out var pushVal1);
 
-        IPeepholeOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
+        IOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
 
         // At runtime, given "A - B" we pop B then A
         // In the peephole optimizer, index is "A", index+1 is "B"
         var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(pushVal1 - pushVal2, firstInstruction.Location)};
 
-        IPeepholeOptimization.ReplaceInstructions(input, index, 3,
+        IOptimization.ReplaceInstructions(input, index, 3,
             new AnnotatedBytecodeInstruction(DreamProcOpcode.PushFloat, 1, args));
     }
 }
@@ -372,7 +404,9 @@ internal sealed class ConstFoldSubtract : IPeepholeOptimization {
 // PushFloat [constant]
 // Modulus
 // -> PushFloat [result]
-internal sealed class ConstFoldModulus : IPeepholeOptimization {
+internal sealed class ConstFoldModulus : IOptimization {
+    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushFloat,
@@ -382,15 +416,15 @@ internal sealed class ConstFoldModulus : IPeepholeOptimization {
     }
 
     public void Apply(List<IAnnotatedBytecode> input, int index) {
-        var firstInstruction = IPeepholeOptimization.GetInstructionAndValue(input[index], out var pushVal1);
+        var firstInstruction = IOptimization.GetInstructionAndValue(input[index], out var pushVal1);
 
-        IPeepholeOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
+        IOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
 
         // At runtime, given "A % B" we pop B then A
         // In the peephole optimizer, index is "A", index+1 is "B"
         var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat((int)pushVal1 % (int)pushVal2, firstInstruction.Location)};
 
-        IPeepholeOptimization.ReplaceInstructions(input, index, 3,
+        IOptimization.ReplaceInstructions(input, index, 3,
             new AnnotatedBytecodeInstruction(DreamProcOpcode.PushFloat, 1, args));
     }
 }
@@ -399,7 +433,9 @@ internal sealed class ConstFoldModulus : IPeepholeOptimization {
 // PushFloat [constant]
 // Power
 // -> PushFloat [result]
-internal sealed class ConstFoldPower : IPeepholeOptimization {
+internal sealed class ConstFoldPower : IOptimization {
+    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushFloat,
@@ -409,15 +445,15 @@ internal sealed class ConstFoldPower : IPeepholeOptimization {
     }
 
     public void Apply(List<IAnnotatedBytecode> input, int index) {
-        var firstInstruction = IPeepholeOptimization.GetInstructionAndValue(input[index], out var pushVal1);
+        var firstInstruction = IOptimization.GetInstructionAndValue(input[index], out var pushVal1);
 
-        IPeepholeOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
+        IOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
 
         // At runtime, given "A ** B" we pop B then A
         // In the peephole optimizer, index is "A", index+1 is "B"
         var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(MathF.Pow(pushVal1, pushVal2), firstInstruction.Location)};
 
-        IPeepholeOptimization.ReplaceInstructions(input, index, 3,
+        IOptimization.ReplaceInstructions(input, index, 3,
             new AnnotatedBytecodeInstruction(DreamProcOpcode.PushFloat, 1, args));
     }
 }
@@ -426,7 +462,9 @@ internal sealed class ConstFoldPower : IPeepholeOptimization {
 // PushFloat [constant]
 // BitshiftLeft
 // -> PushFloat [result]
-internal sealed class ConstFoldBitshiftLeft : IPeepholeOptimization {
+internal sealed class ConstFoldBitshiftLeft : IOptimization {
+    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushFloat,
@@ -436,14 +474,14 @@ internal sealed class ConstFoldBitshiftLeft : IPeepholeOptimization {
     }
 
     public void Apply(List<IAnnotatedBytecode> input, int index) {
-        var firstInstruction = IPeepholeOptimization.GetInstructionAndValue(input[index], out var pushVal1);
-        IPeepholeOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
+        var firstInstruction = IOptimization.GetInstructionAndValue(input[index], out var pushVal1);
+        IOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
 
         // At runtime, given "A << B" we pop B then A
         // In the peephole optimizer, index is "A", index+1 is "B"
         var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(((int)pushVal1 << (int)pushVal2), firstInstruction.Location)};
 
-        IPeepholeOptimization.ReplaceInstructions(input, index, 3,
+        IOptimization.ReplaceInstructions(input, index, 3,
             new AnnotatedBytecodeInstruction(DreamProcOpcode.PushFloat, 1, args));
     }
 }
@@ -452,7 +490,9 @@ internal sealed class ConstFoldBitshiftLeft : IPeepholeOptimization {
 // PushFloat [constant]
 // BitshiftRight
 // -> PushFloat [result]
-internal sealed class ConstFoldBitshiftRight : IPeepholeOptimization {
+internal sealed class ConstFoldBitshiftRight : IOptimization {
+    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushFloat,
@@ -462,14 +502,14 @@ internal sealed class ConstFoldBitshiftRight : IPeepholeOptimization {
     }
 
     public void Apply(List<IAnnotatedBytecode> input, int index) {
-        var firstInstruction = IPeepholeOptimization.GetInstructionAndValue(input[index], out var pushVal1);
-        IPeepholeOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
+        var firstInstruction = IOptimization.GetInstructionAndValue(input[index], out var pushVal1);
+        IOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
 
         // At runtime, given "A >> B" we pop B then A
         // In the peephole optimizer, index is "A", index+1 is "B"
         var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(((int)pushVal1 >> (int)pushVal2), firstInstruction.Location)};
 
-        IPeepholeOptimization.ReplaceInstructions(input, index, 3,
+        IOptimization.ReplaceInstructions(input, index, 3,
             new AnnotatedBytecodeInstruction(DreamProcOpcode.PushFloat, 1, args));
     }
 }

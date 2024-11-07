@@ -41,7 +41,7 @@ raw
 */
 
 public struct DMFPropertyString(string value) : IDMFProperty {
-    public string Value = value;
+    public string Value = value ?? string.Empty;
 
     public string AsArg() {
         return "\""+AsEscaped()+"\"";

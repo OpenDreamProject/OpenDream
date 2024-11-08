@@ -79,7 +79,10 @@ public readonly struct DMComplexValueType {
     public DMComplexValueType(DMValueType type, DreamPath? typePath, DMListValueTypes? listValueTypes) : this(type, typePath, null, listValueTypes) { }
 
     public bool MatchesType(DMValueType type) {
-        return IsAnything || (Type & type) != 0;
+        if (IsAnything || (Type & type) != 0) return true;
+        if ((type & (DMValueType.Text | DMValueType.Message)) != 0 && (Type & (DMValueType.Text | DMValueType.Message)) != 0) return true;
+        if ((type & (DMValueType.Text | DMValueType.Color)) != 0 && (Type & (DMValueType.Text | DMValueType.Color)) != 0) return true;
+        return false;
     }
 
     internal bool MatchesType(DMCompiler compiler, DMComplexValueType type) {
@@ -99,6 +102,12 @@ public readonly struct DMComplexValueType {
                 }
             }
         }
+        // special case for color and lists:
+        if (type.Type.HasFlag(DMValueType.Color) && IsList && ListValueTypes?.NestedListKeyType.Type == DMValueType.Num && ListValueTypes.NestedListValType is null)
+            return true;
+        // probably only one of these is correct but i can't be assed to figure out which
+        if (Type.HasFlag(DMValueType.Color) && type.IsList && type.ListValueTypes?.NestedListKeyType.Type == DMValueType.Num && type.ListValueTypes.NestedListValType is null)
+            return true;
         if (type.IsInstance && MatchesType(type.TypePath!.Value.GetAtomType(compiler))) {
             return true;
         }

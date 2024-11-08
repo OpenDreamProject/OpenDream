@@ -17,7 +17,7 @@
 
 	proc/Bump(atom/Obstacle)
 
-	proc/Move(atom/NewLoc, Dir=0) as num
+	proc/Move(atom/NewLoc, Dir=0 as num)
 		if (isnull(NewLoc) || loc == NewLoc)
 			return FALSE
 
@@ -57,5 +57,4 @@
 				newarea.Entered(src, oldloc)
 
 			return TRUE
-		else
-			return FALSE
+		return FALSE

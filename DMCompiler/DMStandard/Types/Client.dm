@@ -88,7 +88,7 @@
 	proc/MeasureText(text, style, width=0)
 		set opendream_unimplemented = TRUE
 
-	proc/Move(loc, dir)
+	proc/Move(loc, dir as num)
 		mob.Move(loc, dir)
 
 	proc/North()

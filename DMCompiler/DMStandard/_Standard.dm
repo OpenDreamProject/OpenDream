@@ -75,7 +75,7 @@ proc/range(Dist, Center) as /list|null // NOTE: Not sure if return types have BY
 proc/ref(Object) as text
 proc/replacetext(Haystack as text|null, Needle as text|/regex|null, Replacement, Start = 1, End = 0) as text|null
 proc/replacetextEx(Haystack as text|null, Needle as text|/regex|null, Replacement, Start = 1, End = 0) as text|null
-proc/rgb(R, G, B, A, space) as text|null
+proc/rgb(R, G, B, A, space) as color|null
 proc/rgb2num(color, space = COLORSPACE_RGB) as /list
 proc/roll(ndice = 1 as num|text, sides as num|null) as num
 proc/round(A as num|null, B as num|null) as num
@@ -100,8 +100,8 @@ proc/text2path(T as text|null) as null|path(/datum)|path(/world) // todo: allow 
 proc/time2text(timestamp, format) as text
 proc/trimtext(Text) as text|null
 proc/trunc(n as num|null) as num
-proc/turn(Dir, Angle)
-proc/typesof(Item1) as /list
+proc/turn(Dir as null|num|/matrix|icon, Angle as num) as null|num|/matrix|icon
+proc/typesof(Item1 as text|path(/datum)|path(/proc)|/list(text|path(/datum)|path(/proc))) as /list(path(/datum)|path(/proc))
 proc/uppertext(T as text) as text
 proc/url_decode(UrlText) as text
 proc/url_encode(PlainText, format = 0) as text
@@ -157,7 +157,7 @@ proc/replacetextEx_char(Haystack as text, Needle, Replacement, Start = 1 as num,
 	//TODO: Consider obstacles
 
 	var/dist = get_dist(Ref, Trg)
-	if (dist <= Min) return
+	if (dist <= Min) return 0
 
 	var/step_dir = get_dir(Ref, Trg) as num
 	return step(Ref, step_dir, Speed)
@@ -166,7 +166,7 @@ proc/replacetextEx_char(Haystack as text, Needle, Replacement, Start = 1 as num,
 	set opendream_unimplemented = TRUE
 	CRASH("/get_step_to() is not implemented")
 
-/proc/get_steps_to(Ref, Trg, Min=0 as num) as /list
+/proc/get_steps_to(Ref, Trg, Min=0 as num)
 	set opendream_unimplemented = TRUE
 	CRASH("/get_steps_to() is not implemented")
 
@@ -208,9 +208,7 @@ proc/step_rand(atom/movable/Ref, Speed=0)
 proc/jointext(list/List as /list|text, Glue as text|null, Start = 1 as num, End = 0 as num) as text
 	if(islist(List))
 		return List.Join(Glue, Start, End)
-	if(istext(List))
-		return List
-	CRASH("jointext was passed a non-list, non-text value")
+	return List
 
 proc/lentext(T) as num
 	return length(T)

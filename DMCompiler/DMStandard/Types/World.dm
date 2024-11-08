@@ -9,15 +9,15 @@
 	var/mob = /mob as path(/mob)
 
 	var/name = "OpenDream World"
-	var/time
-	var/timezone = 0
-	var/timeofday
-	var/realtime
-	var/tick_lag = 1
-	var/cpu = 0 as opendream_unimplemented
-	var/fps = 10
+	var/time as num
+	var/timezone = 0 as num
+	var/timeofday as num
+	var/realtime as num
+	var/tick_lag = 1 as num
+	var/cpu = 0 as opendream_unimplemented|num
+	var/fps = 10 as num
 	var/tick_usage
-	var/loop_checks = 0 as opendream_unimplemented
+	var/loop_checks = 0 as opendream_unimplemented|num
 
 	var/maxx = null as num|null
 	var/maxy = null as num|null
@@ -32,7 +32,7 @@
 	var/version = 0 as opendream_unimplemented
 
 	var/address
-	var/port = 0 as opendream_compiletimereadonly
+	var/port = 0 as opendream_compiletimereadonly|num
 	var/internet_address = "127.0.0.1" as opendream_unimplemented
 	var/url as opendream_unimplemented
 	var/visibility = 0 as opendream_unimplemented
@@ -40,7 +40,7 @@
 	var/process
 	var/list/params = null
 
-	var/sleep_offline = 0
+	var/sleep_offline = 0 as num
 
 	var/const/system_type as opendream_noconstfold
 

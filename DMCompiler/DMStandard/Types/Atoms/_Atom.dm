@@ -32,7 +32,10 @@
 	var/layer = 2.0 as num
 	var/plane = 0 as num
 	var/alpha = 255 as num
-	var/color = "#FFFFFF"
+	// currently we coerce text (hex string) and list(num) (color matrix) to the color type
+	// in the future this should probably be colorstring|colormatrix|null or something
+	// or 'as color' could be a shorthand for that
+	var/color = "#FFFFFF" as color|null
 	var/invisibility = 0 as num
 	var/mouse_opacity = 1 as num
 	var/infra_luminosity = 0 as num|opendream_unimplemented

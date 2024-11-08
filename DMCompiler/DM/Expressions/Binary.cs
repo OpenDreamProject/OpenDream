@@ -564,6 +564,7 @@ internal abstract class AssignmentBinaryOp(Location location, DMExpression lhs, 
 // x = y
 internal sealed class Assignment(Location location, DMExpression lhs, DMExpression rhs) : AssignmentBinaryOp(location, lhs, rhs) {
     public override DreamPath? Path => LHS.Path;
+    public override DMComplexValueType ValType => RHS.ValType;
 
     protected override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
         RHS.EmitPushValue(dmObject, proc);
@@ -591,6 +592,7 @@ internal sealed class AssignmentInto(Location location, DMExpression lhs, DMExpr
 
 // x += y
 internal sealed class Append(Location location, DMExpression lhs, DMExpression rhs) : AssignmentBinaryOp(location, lhs, rhs) {
+    public override DMComplexValueType ValType => LHS.ValType.Type == DMValueType.Null ? RHS.ValType : RHS.ValType;
     protected override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
         RHS.EmitPushValue(dmObject, proc);
         proc.Append(reference);

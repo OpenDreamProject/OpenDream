@@ -72,6 +72,7 @@ internal sealed class NewPath(Location location, ConstantPath targetPath, Argume
 
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         if (!targetPath.TryResolvePath(out var pathInfo)) {
+            DMCompiler.Emit(WarningCode.BadExpression, Location, "Invalid path to new /datum()");
             proc.PushNull();
             return;
         }
@@ -188,6 +189,7 @@ internal sealed class Gradient(Location location, ArgumentList arguments) : DMEx
 /// rgb(x, y, z, space)
 /// rgb(x, y, z, a, space)
 internal sealed class Rgb(Location location, ArgumentList arguments) : DMExpression(location) {
+    public override DMComplexValueType ValType => DMValueType.Color;
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         DMObjectTree.TryGetGlobalProc("rgb", out var dmProc);
         var argInfo = arguments.EmitArguments(dmObject, proc, dmProc);

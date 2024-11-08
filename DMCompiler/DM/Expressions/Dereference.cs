@@ -36,6 +36,18 @@ internal class Dereference : LValue {
         /// The index expression. (eg. x[expr])
         /// </summary>
         public required DMExpression Index { get; init; }
+        public DMComplexValueType UnnestValType(DMListValueTypes? listValueTypes) {
+            if (listValueTypes is null) return DMValueType.Anything;
+            if (listValueTypes.NestedListValType is null) return listValueTypes.NestedListKeyType | DMValueType.Null;
+            return Index.ValType.Type switch {
+                // if Index.ValType is only null, we return null
+                DMValueType.Null => DMValueType.Null,
+                // if it's only num, return key
+                DMValueType.Num => listValueTypes.NestedListKeyType,
+                // else, return valtype|null
+                _ => listValueTypes.NestedListValType.Value | DMValueType.Null
+            };
+        }
     }
 
     public sealed class CallOperation : NamedOperation {
@@ -82,7 +94,7 @@ internal class Dereference : LValue {
 
             type = operation switch {
                 FieldOperation fieldOperation => dmObject.GetVariable(fieldOperation.Identifier)?.ValType ?? DMValueType.Anything,
-                IndexOperation indexOperation => type.ListValueTypes is null ? DMValueType.Anything : (indexOperation.Index.ValType.Type.HasFlag(DMValueType.Num) ? type.ListValueTypes.NestedListKeyType : type.ListValueTypes.NestedListValType ?? type.ListValueTypes.NestedListKeyType) | DMValueType.Null, // TODO: Keys of assoc lists
+                IndexOperation indexOperation => indexOperation.UnnestValType(type.ListValueTypes), // TODO: Keys of assoc lists
                 CallOperation callOperation => dmObject.GetProcReturnTypes(callOperation.Identifier, callOperation.Parameters) ?? DMValueType.Anything,
                 _ => throw new InvalidOperationException("Unimplemented dereference operation")
             };

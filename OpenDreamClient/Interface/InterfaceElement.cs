@@ -42,7 +42,9 @@ public class InterfaceElement {
 
             MappingDataNode newNode = original.Merge(node);
 
-            ElementDescriptor = (ElementDescriptor)serializationManager.Read(ElementDescriptor.GetType(), newNode);
+            var descriptor = serializationManager.Read(ElementDescriptor.GetType(), newNode);
+            if(descriptor is null) throw new NullReferenceException(); // We're in a try/catch anyway, just play it safe
+            ElementDescriptor = (ElementDescriptor)descriptor;
             UpdateElementDescriptor();
         } catch (Exception e) {
             Logger.GetSawmill("opendream.interface").Error($"Error while populating values of \"{Id}\": {e}");

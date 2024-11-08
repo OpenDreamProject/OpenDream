@@ -929,6 +929,10 @@ namespace DMCompiler.Compiler.DM {
                 }
 
                 var valType = AsComplexTypes(procParameters);
+                // the != DMValueType.Null check is a hacky workaround for Anything|Null being equal to just Null
+                if (valType is null && value.GetUnwrapped() is DMASTInput input && input.Types != DMValueType.Null) {
+                    valType = input.Types;
+                }
 
                 varDeclarations.Add(new DMASTProcStatementVarDeclaration(loc, varPath, value, valType));
                 if (allowMultiple && Check(TokenType.DM_Comma)) {

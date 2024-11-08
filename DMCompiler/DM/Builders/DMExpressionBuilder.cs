@@ -46,6 +46,11 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
         expr.EmitPushValue(ctx);
     }
 
+    public void Emit(DMASTExpression expression, out DMExpression returnedExpr, DreamPath? inferredPath = null) {
+        returnedExpr = Create(expression, inferredPath);
+        returnedExpr.EmitPushValue(ctx);
+    }
+
     public bool TryConstant(DMASTExpression expression, out Constant? constant) {
         var expr = Create(expression);
         return expr.TryAsConstant(Compiler, out constant);

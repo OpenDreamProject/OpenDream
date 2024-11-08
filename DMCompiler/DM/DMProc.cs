@@ -137,10 +137,13 @@ namespace DMCompiler.DM {
         }
 
         public void ValidateReturnType(DMExpression expr) {
-            var type = expr.ValType;
+            ValidateReturnType(expr.ValType, expr, expr.Location);
+        }
+
+        public void ValidateReturnType(DMComplexValueType type, DMExpression? expr, Location location) {
             var returnTypes = _dmObject.GetProcReturnTypes(Name)!.Value;
             if ((returnTypes.Type & (DMValueType.Color | DMValueType.File | DMValueType.Message)) != 0) {
-                DMCompiler.Emit(WarningCode.UnsupportedTypeCheck, expr.Location, "color, message, and file return types are currently unsupported.");
+                DMCompiler.Emit(WarningCode.UnsupportedTypeCheck, location, "color, message, and file return types are currently unsupported.");
                 return;
             }
 
@@ -152,17 +155,19 @@ namespace DMCompiler.DM {
 
                 switch (expr) {
                     case ProcCall:
-                        DMCompiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Called proc does not have a return type set, expected {ReturnTypes}.");
+                        DMCompiler.Emit(WarningCode.InvalidReturnType, location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Called proc does not have a return type set, expected {ReturnTypes}.");
                         break;
                     case Local:
-                        DMCompiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type of non-constant expression, expected {ReturnTypes}. Consider making this variable constant or adding an explicit \"as {ReturnTypes}\"");
+                        DMCompiler.Emit(WarningCode.InvalidReturnType, location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type of non-constant expression, expected {ReturnTypes}. Consider making this variable constant or adding an explicit \"as {ReturnTypes}\"");
+                        break;
+                    case null:
                         break;
                     default:
-                        DMCompiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type of expression \"{expr}\", expected {ReturnTypes}. Consider reporting this as a bug on OpenDream's GitHub.");
+                        DMCompiler.Emit(WarningCode.InvalidReturnType, location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type of expression \"{expr}\", expected {ReturnTypes}. Consider reporting this as a bug on OpenDream's GitHub.");
                         break;
                 }
             } else if (!ReturnTypes.MatchesType(type)) { // We could determine the return types but they don't match
-                DMCompiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{splitter}{Name}(): Invalid return type {type}, expected {ReturnTypes}");
+                DMCompiler.Emit(WarningCode.InvalidReturnType, location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{splitter}{Name}(): Invalid return type {type}, expected {ReturnTypes}");
             }
         }
 
@@ -353,10 +358,15 @@ namespace DMCompiler.DM {
                     intermediateType = arguments.Expressions[parameterIndex].Expr.ValType;
                 }
                 if (upcasted) {
-                    if (!intermediateType.HasPath || (intermediateType.Type & ~(DMValueType.Path|DMValueType.Null)) != DMValueType.Anything) {
-                        DMCompiler.Emit(WarningCode.InvalidVarType, arguments?.Location ?? Location, "Expected an exclusively path (or null) typed parameter");
+                    if (intermediateType.HasPath) {
+                        if (intermediateType.Type.HasFlag(~(DMValueType.Path | DMValueType.Null)))
+                            DMCompiler.Emit(WarningCode.InvalidVarType, arguments?.Location ?? Location, "Expected an exclusively path (or null) typed parameter");
+                        else
+                            intermediateType = new DMComplexValueType((intermediateType.Type & DMValueType.Null) | DMValueType.Instance, intermediateType.TypePath);
+                    } else if (DMCompiler.Settings.SkipAnythingTypecheck && intermediateType.IsAnything) {
+                        //pass
                     } else {
-                        intermediateType = new DMComplexValueType(intermediateType.Type & ~DMValueType.Path | DMValueType.Instance, intermediateType.TypePath);
+                        DMCompiler.Emit(WarningCode.InvalidVarType, arguments?.Location ?? Location, "Expected a path (or path|null) typed parameter");
                     }
                 }
                 returnType |= intermediateType;

@@ -162,6 +162,8 @@ internal sealed class Resource : Constant {
             ".bmp" => DMValueType.Icon,
             ".gif" => DMValueType.Icon,
             ".ogg" => DMValueType.Sound,
+            ".wav" => DMValueType.Sound,
+            ".mid" => DMValueType.Sound,
             _ => DMValueType.File
         };
     }

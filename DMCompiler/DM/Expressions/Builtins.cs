@@ -192,6 +192,7 @@ internal sealed class Gradient(Location location, ArgumentList arguments) : DMEx
 /// rgb(x, y, z, space)
 /// rgb(x, y, z, a, space)
 internal sealed class Rgb(Location location, ArgumentList arguments) : DMExpression(location) {
+    public override DMComplexValueType ValType => DMValueType.Color;
     public override void EmitPushValue(ExpressionContext ctx) {
         ctx.ObjectTree.TryGetGlobalProc("rgb", out var dmProc);
         var argInfo = arguments.EmitArguments(ctx, dmProc);

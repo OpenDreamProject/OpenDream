@@ -99,8 +99,8 @@ internal sealed class ArgumentList {
 
         int idx = 0;
         foreach(var arg in arguments) {
-            var value = DMExpression.Create(dmObject, proc, arg.Value, inferredPath);
-            var key = (arg.Key != null) ? DMExpression.Create(dmObject, proc, arg.Key, inferredPath) : null;
+            var value = proc.Compiler.DMExpression.Create(dmObject, proc, arg.Value, inferredPath);
+            var key = (arg.Key != null) ? proc.Compiler.DMExpression.Create(dmObject, proc, arg.Key, inferredPath) : null;
             int argIndex = idx++;
             string? name = null;
 

@@ -62,7 +62,7 @@ namespace DMCompiler.DM {
             }
         }
 
-        public required DMCompiler Compiler;
+        public DMCompiler Compiler;
 
         public string Name => _astDefinition?.Name ?? "<init>";
         public List<string> Parameters = new();
@@ -186,7 +186,7 @@ namespace DMCompiler.DM {
                         if (parameter.Type is not { } typePath) {
                             argumentType = DMValueType.Anything;
                         } else {
-                            var type = DMObjectTree.GetDMObject(typePath, false);
+                            var type = Compiler.DMObjectTree.GetDMObject(typePath, false);
 
                             argumentType = type?.GetDMValueType() ?? DMValueType.Anything;
                         }
@@ -234,7 +234,7 @@ namespace DMCompiler.DM {
         }
 
         public DMVariable CreateGlobalVariable(DreamPath? type, string name, bool isConst, out int id) {
-            id = DMObjectTree.CreateGlobal(out DMVariable global, type, name, isConst, DMValueType.Anything);
+            id = Compiler.DMObjectTree.CreateGlobal(out DMVariable global, type, name, isConst, DMValueType.Anything);
 
             GlobalVariables[name] = id;
             return global;
@@ -337,7 +337,7 @@ namespace DMCompiler.DM {
 
             // Only write the source file if it has changed
             if (_lastSourceFile != sourceFile) {
-                sourceInfo.File = DMObjectTree.AddString(sourceFile);
+                sourceInfo.File = Compiler.DMObjectTree.AddString(sourceFile);
             } else if (_sourceInfo.Count > 0 && sourceInfo.Line == _sourceInfo[^1].Line) {
                 // Don't need to write this source info if it's the same source & line as the last
                 return;
@@ -431,7 +431,7 @@ namespace DMCompiler.DM {
             // TODO This seems like a bad way to handle background, doesn't it?
 
             if ((Attributes & ProcAttributes.Background) == ProcAttributes.Background) {
-                if (!DMObjectTree.TryGetGlobalProc("sleep", out var sleepProc)) {
+                if (!Compiler.DMObjectTree.TryGetGlobalProc("sleep", out var sleepProc)) {
                     Compiler.Emit(WarningCode.ItemDoesntExist, Location, "Cannot do a background sleep without a sleep proc");
                     return;
                 }

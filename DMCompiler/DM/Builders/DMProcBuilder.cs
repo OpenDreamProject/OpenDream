@@ -619,7 +619,7 @@ namespace DMCompiler.DM.Builders {
 
             list.EmitPushValue(dmObject, proc);
             if (implicitTypeCheck != null) {
-                if (DMObjectTree.TryGetTypeId(implicitTypeCheck.Value, out var filterTypeId)) {
+                if (Compiler.DMObjectTree.TryGetTypeId(implicitTypeCheck.Value, out var filterTypeId)) {
                     // Create an enumerator that will do the implicit istype() for us
                     proc.CreateFilteredListEnumerator(filterTypeId, implicitTypeCheck.Value);
                 } else {
@@ -659,7 +659,7 @@ namespace DMCompiler.DM.Builders {
                 return;
             }
 
-            if (DMObjectTree.TryGetTypeId(type.Value, out var typeId)) {
+            if (Compiler.DMObjectTree.TryGetTypeId(type.Value, out var typeId)) {
                 proc.PushType(typeId);
                 proc.CreateTypeEnumerator();
             } else {

@@ -57,7 +57,7 @@ internal class AnnotatedBytecodeSerializer(DMCompiler compiler) {
     private void SerializeInstruction(AnnotatedBytecodeInstruction instruction) {
         _bytecodeWriter ??= new BinaryWriter(Bytecode);
         if (instruction.Location.Line != null && (_location == null || instruction.Location.Line != _location?.Line)) {
-            int sourceFileId = DMObjectTree.AddString(instruction.Location.SourceFile);
+            int sourceFileId = instruction.Compiler.DMObjectTree.AddString(instruction.Location.SourceFile);
             if (_lastFileId != sourceFileId) {
                 _lastFileId = sourceFileId;
                 SourceInfo.Add(new SourceInfoJson {

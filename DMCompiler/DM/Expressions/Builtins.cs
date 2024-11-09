@@ -72,13 +72,13 @@ internal sealed class NewPath(DMCompiler compiler,  Location location, ConstantP
 
         switch (pathInfo.Value.Type) {
             case ConstantPath.PathType.TypeReference:
-                var newProc = DMObjectTree.GetNewProc(pathInfo.Value.Id);
+                var newProc = Compiler.DMObjectTree.GetNewProc(pathInfo.Value.Id);
 
                 (argumentsType, stackSize) = arguments.EmitArguments(dmObject, proc, newProc);
                 proc.PushType(pathInfo.Value.Id);
                 break;
             case ConstantPath.PathType.ProcReference: // "new /proc/new_verb(Destination)" is a thing
-                (argumentsType, stackSize) = arguments.EmitArguments(dmObject, proc, DMObjectTree.AllProcs[pathInfo.Value.Id]);
+                (argumentsType, stackSize) = arguments.EmitArguments(dmObject, proc, Compiler.DMObjectTree.AllProcs[pathInfo.Value.Id]);
                 proc.PushProc(pathInfo.Value.Id);
                 break;
             case ConstantPath.PathType.ProcStub:
@@ -101,7 +101,7 @@ internal sealed class LocateInferred(DMCompiler compiler,  Location location, Dr
     public override DMComplexValueType ValType => path;
 
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        if (!DMObjectTree.TryGetTypeId(path, out var typeId)) {
+        if (!Compiler.DMObjectTree.TryGetTypeId(path, out var typeId)) {
             compiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {path} does not exist");
 
             return;
@@ -166,7 +166,7 @@ internal sealed class LocateCoordinates(DMCompiler compiler,  Location location,
 // gradient(Item1, Item2, ..., index)
 internal sealed class Gradient(DMCompiler compiler,  Location location, ArgumentList arguments) : DMExpression(compiler, location) {
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        DMObjectTree.TryGetGlobalProc("gradient", out var dmProc);
+        Compiler.DMObjectTree.TryGetGlobalProc("gradient", out var dmProc);
         var argInfo = arguments.EmitArguments(dmObject, proc, dmProc);
 
         proc.Gradient(argInfo.Type, argInfo.StackSize);
@@ -179,7 +179,7 @@ internal sealed class Gradient(DMCompiler compiler,  Location location, Argument
 /// rgb(x, y, z, a, space)
 internal sealed class Rgb(DMCompiler compiler,  Location location, ArgumentList arguments) : DMExpression(compiler, location) {
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        DMObjectTree.TryGetGlobalProc("rgb", out var dmProc);
+        Compiler.DMObjectTree.TryGetGlobalProc("rgb", out var dmProc);
         var argInfo = arguments.EmitArguments(dmObject, proc, dmProc);
 
         proc.Rgb(argInfo.Type, argInfo.StackSize);
@@ -303,7 +303,7 @@ internal sealed class IsTypeInferred(DMCompiler compiler,  Location location, DM
     public override DMComplexValueType ValType => DMValueType.Num;
 
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        if (!DMObjectTree.TryGetTypeId(path, out var typeId)) {
+        if (!Compiler.DMObjectTree.TryGetTypeId(path, out var typeId)) {
             compiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {path} does not exist");
 
             return;
@@ -438,7 +438,7 @@ internal sealed class DimensionalList(DMCompiler compiler,  Location location, D
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         // This basically emits new /list(1, 2, 3)
 
-        if (!DMObjectTree.TryGetTypeId(DreamPath.List, out var listTypeId)) {
+        if (!Compiler.DMObjectTree.TryGetTypeId(DreamPath.List, out var listTypeId)) {
             compiler.Emit(WarningCode.ItemDoesntExist, Location, "Could not get type ID of /list");
             return;
         }

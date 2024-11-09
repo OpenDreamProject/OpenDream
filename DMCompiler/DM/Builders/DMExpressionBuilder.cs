@@ -333,7 +333,7 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
                         $"Cannot do an upward path search on {pathExpr}");
 
                 DreamPath path = expr.Value;
-                DreamPath? foundPath = DMObjectTree.UpwardSearch(path, upwardSearch.Search.Path);
+                DreamPath? foundPath = Compiler.DMObjectTree.UpwardSearch(path, upwardSearch.Search.Path);
                 if (foundPath == null)
                     return BadExpression(WarningCode.ItemDoesntExist, constant.Location,
                         $"Could not find path {path}.{upwardSearch.Search.Path}");
@@ -398,7 +398,7 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
                     var globalId = proc?.GetGlobalVariableId(name) ?? dmObject?.GetGlobalVariableId(name);
 
                     if (globalId != null) {
-                        var globalVar = DMObjectTree.Globals[globalId.Value];
+                        var globalVar = Compiler.DMObjectTree.Globals[globalId.Value];
                         var global = new GlobalField(Compiler, identifier.Location, globalVar.Type, globalId.Value, globalVar.ValType);
                         return global;
                     }
@@ -427,7 +427,7 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
 
         if (scopeIdentifier.Expression == null) { // ::A, shorthand for global.A
             if (scopeIdentifier.IsProcRef) { // ::A(), global proc ref
-                if (!DMObjectTree.TryGetGlobalProc(bIdentifier, out _))
+                if (!Compiler.DMObjectTree.TryGetGlobalProc(bIdentifier, out _))
                     return BadExpression(WarningCode.ItemDoesntExist, location,
                         $"No global proc named \"{bIdentifier}\" exists");
 
@@ -440,13 +440,13 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
                 return new GlobalVars(Compiler, location);
 
             // ::A, global var ref
-            var globalId = DMObjectTree.Root.GetGlobalVariableId(bIdentifier);
+            var globalId = Compiler.DMObjectTree.Root.GetGlobalVariableId(bIdentifier);
             if (globalId == null)
                 throw new UnknownIdentifierException(location, bIdentifier);
 
-            var globalVar = DMObjectTree.Globals[globalId.Value];
+            var globalVar = Compiler.DMObjectTree.Globals [globalId.Value];
             return new GlobalField(Compiler, location,
-                DMObjectTree.Globals[globalId.Value].Type,
+                Compiler.DMObjectTree.Globals[globalId.Value].Type,
                 globalId.Value,
                 globalVar.ValType);
         }
@@ -483,7 +483,7 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
             return BadExpression(WarningCode.BadExpression, expression.Location,
                 $"Identifier \"{expression.GetNameof(dmObject)}\" does not have a type");
 
-        var owner = DMObjectTree.GetDMObject(expression.Path.Value, createIfNonexistent: false);
+        var owner = Compiler.DMObjectTree.GetDMObject(expression.Path.Value, createIfNonexistent: false);
         if (owner == null) {
             if (expression is ConstantPath path && path.TryResolvePath(out var pathInfo) &&
                 pathInfo.Value.Type == ConstantPath.PathType.ProcReference) {
@@ -504,14 +504,14 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
                 return BadExpression(WarningCode.ItemDoesntExist, location,
                     $"Type {owner.Path} does not have a proc named \"{bIdentifier}\"");
 
-            var referencedProc = DMObjectTree.AllProcs[procs[^1]];
+            var referencedProc = Compiler.DMObjectTree.AllProcs[procs[^1]];
             return new ConstantProcReference(compiler, location, referencedProc);
         } else { // A::B
             var globalVarId = owner.GetGlobalVariableId(bIdentifier);
             if (globalVarId != null) {
                 // B is a var.
                 // This is the only case a ScopeIdentifier can be an LValue.
-                var globalVar = DMObjectTree.Globals[globalVarId.Value];
+                var globalVar = Compiler.DMObjectTree.Globals [globalVarId.Value];
                 return new GlobalField(Compiler, location, globalVar.Type, globalVarId.Value, globalVar.ValType);
             }
 
@@ -528,7 +528,7 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
             return new GlobalProc(compiler, procIdentifier.Location, procIdentifier.Identifier);
         if (dmObject.HasProc(procIdentifier.Identifier))
             return new Proc(compiler, procIdentifier.Location, procIdentifier.Identifier);
-        if (DMObjectTree.TryGetGlobalProc(procIdentifier.Identifier, out _))
+        if (Compiler.DMObjectTree.TryGetGlobalProc(procIdentifier.Identifier, out _))
             return new GlobalProc(compiler, procIdentifier.Location, procIdentifier.Identifier);
 
         return BadExpression(WarningCode.ItemDoesntExist, procIdentifier.Location,
@@ -655,7 +655,7 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
                             throw new UnknownIdentifierException(deref.Location, $"global.{namedOperation.Identifier}");
                         }
 
-                        var property = DMObjectTree.Globals[globalId.Value];
+                        var property = Compiler.DMObjectTree.Globals [globalId.Value];
                         expr = new GlobalField(Compiler, expr.Location, property.Type, globalId.Value, property.ValType);
 
                         prevPath = property.Type;
@@ -695,7 +695,7 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
                             throw new UnknownIdentifierException(deref.Location, field);
                         }
 
-                        DMObject? fromObject = DMObjectTree.GetDMObject(prevPath.Value, false);
+                        DMObject? fromObject = Compiler.DMObjectTree.GetDMObject(prevPath.Value, false);
                         if (fromObject == null)
                             return BadExpression(WarningCode.ItemDoesntExist, fieldOperation.Location,
                                 $"Type {prevPath.Value} does not exist");
@@ -707,7 +707,7 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
                         }
 
                         if (property == null && fromObject.GetGlobalVariableId(field) is { } globalId) {
-                            property = DMObjectTree.Globals[globalId];
+                            property = Compiler.DMObjectTree.Globals [globalId];
 
                             expr = new GlobalField(Compiler, expr.Location, property.Type, globalId, property.ValType);
 
@@ -770,7 +770,7 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
                             throw new UnknownIdentifierException(deref.Location, field);
                         }
 
-                        DMObject? fromObject = DMObjectTree.GetDMObject(prevPath.Value, false);
+                        DMObject? fromObject = Compiler.DMObjectTree.GetDMObject(prevPath.Value, false);
                         if (fromObject == null)
                             return BadExpression(WarningCode.ItemDoesntExist, callOperation.Location,
                                 $"Type {prevPath.Value} does not exist");

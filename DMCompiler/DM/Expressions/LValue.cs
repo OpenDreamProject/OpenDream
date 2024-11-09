@@ -158,12 +158,12 @@ internal sealed class GlobalField(DMCompiler compiler, Location location, DreamP
     }
 
     public override string GetNameof(DMObject dmObject) {
-        DMVariable global = DMObjectTree.Globals[Id];
+        DMVariable global = Compiler.DMObjectTree.Globals[Id];
         return global.Name;
     }
 
     public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-        DMVariable global = DMObjectTree.Globals[Id];
+        DMVariable global = Compiler.DMObjectTree.Globals[Id];
         if (global.IsConst) {
             return global.Value.TryAsConstant(out constant);
         }

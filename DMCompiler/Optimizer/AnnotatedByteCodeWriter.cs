@@ -127,7 +127,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
         }
 
         _requiredArgs.Pop();
-        int stringId = DMObjectTree.AddString(value);
+        int stringId = Compiler.DMObjectTree.AddString(value);
         _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeString(Compiler, stringId, location));
     }
 
@@ -258,7 +258,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
         }
 
         _requiredArgs.Pop();
-        int stringId = DMObjectTree.AddString(value);
+        int stringId = Compiler.DMObjectTree.AddString(value);
         _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeResource(Compiler, stringId, location));
     }
 
@@ -342,7 +342,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
                 break;
 
             case DMReference.Type.Field:
-                int fieldId = DMObjectTree.AddString(reference.Name);
+                int fieldId = Compiler.DMObjectTree.AddString(reference.Name);
                 _annotatedBytecode[^1]
                     .AddArg(new AnnotatedBytecodeReference(Compiler, reference.RefType, fieldId, location));
                 ResizeStack(affectStack ? -1 : 0);
@@ -350,7 +350,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
 
             case DMReference.Type.SrcProc:
             case DMReference.Type.SrcField:
-                fieldId = DMObjectTree.AddString(reference.Name);
+                fieldId = Compiler.DMObjectTree.AddString(reference.Name);
                 _annotatedBytecode[^1]
                     .AddArg(new AnnotatedBytecodeReference(Compiler, reference.RefType, fieldId, location));
                 break;

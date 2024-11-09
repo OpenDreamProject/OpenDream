@@ -15,7 +15,7 @@ internal class DMObjectBuilder(DMCompiler compiler) {
     private int _firstProcGlobal = -1;
 
     public void Reset() {
-        DMObjectTree.Reset(); // Blank the object tree
+        Compiler.DMObjectTree.Reset(); // Blank the object tree
         Compiler.DMExpressionBuilder.ScopeOperatorEnabled = false;
 
         VarDefinitions.Clear();
@@ -55,7 +55,7 @@ internal class DMObjectBuilder(DMCompiler compiler) {
                         DMExpression expression = Compiler.DMExpression.Create(procStatic.DMObject, procStatic.Proc,
                             procStatic.VarDecl.Value, procStatic.VarDecl.Type);
 
-                        DMObjectTree.AddGlobalInitAssign(procStatic.Id, expression);
+                        Compiler.DMObjectTree.AddGlobalInitAssign(procStatic.Id, expression);
                     } catch (UnknownIdentifierException e) {
                         // For step 6
                         lateProcVarDefs.Add((procStatic.DMObject, procStatic.Proc, procStatic.VarDecl, procStatic.Id, e));
@@ -112,20 +112,20 @@ internal class DMObjectBuilder(DMCompiler compiler) {
         }
 
         // Step 7: Create each types' initialization proc (initializes vars that aren't constants)
-        foreach (DMObject dmObject in DMObjectTree.AllObjects) {
+        foreach (DMObject dmObject in Compiler.DMObjectTree.AllObjects) {
             dmObject.CreateInitializationProc();
         }
 
         // Step 8: Compile every proc
-        foreach (DMProc proc in DMObjectTree.AllProcs)
+        foreach (DMProc proc in Compiler.DMObjectTree.AllProcs)
             proc.Compile();
 
         // Step 9: Create & Compile the global init proc (initializes global vars)
-        DMObjectTree.CreateGlobalInitProc();
+        Compiler.DMObjectTree.CreateGlobalInitProc();
     }
 
     private void ProcessFile(DMASTFile file) {
-        ProcessBlockInner(file.BlockInner, DMObjectTree.Root);
+        ProcessBlockInner(file.BlockInner, Compiler.DMObjectTree.Root);
     }
 
     private void ProcessBlockInner(DMASTBlockInner blockInner, DMObject? currentObject) {
@@ -141,7 +141,7 @@ internal class DMObjectBuilder(DMCompiler compiler) {
                 break;
 
             case DMASTObjectVarDefinition varDefinition:
-                var dmObject = DMObjectTree.GetDMObject(varDefinition.ObjectPath)!;
+                var dmObject = Compiler.DMObjectTree.GetDMObject(varDefinition.ObjectPath)!;
 
                 if (varDefinition.IsGlobal) {
                     // var/static/list/L[1][2][3] and list() both come first in global init order
@@ -163,13 +163,13 @@ internal class DMObjectBuilder(DMCompiler compiler) {
                         break; // Ignore it
                     }
 
-                    var parentType = DMObjectTree.GetDMObject(parentTypePath.Value.Path);
+                    var parentType = Compiler.DMObjectTree.GetDMObject(parentTypePath.Value.Path);
 
-                    DMObjectTree.GetDMObject(varOverride.ObjectPath)!.Parent = parentType;
+                    Compiler.DMObjectTree.GetDMObject(varOverride.ObjectPath)!.Parent = parentType;
                     break;
                 }
 
-                VarOverrides.Add((DMObjectTree.GetDMObject(varOverride.ObjectPath)!, varOverride));
+                VarOverrides.Add((Compiler.DMObjectTree.GetDMObject(varOverride.ObjectPath)!, varOverride));
                 break;
             case DMASTProcDefinition procDefinition:
                 if (procDefinition.Body != null) {
@@ -187,7 +187,7 @@ internal class DMObjectBuilder(DMCompiler compiler) {
                 break;
             case DMASTMultipleObjectVarDefinitions multipleVarDefinitions: {
                 foreach (DMASTObjectVarDefinition varDefinition in multipleVarDefinitions.VarDefinitions) {
-                    VarDefinitions.Add((DMObjectTree.GetDMObject(varDefinition.ObjectPath)!, varDefinition));
+                    VarDefinitions.Add((Compiler.DMObjectTree.GetDMObject(varDefinition.ObjectPath)!, varDefinition));
                 }
 
                 break;
@@ -201,7 +201,7 @@ internal class DMObjectBuilder(DMCompiler compiler) {
     private void ProcessObjectDefinition(DMASTObjectDefinition objectDefinition) {
         Compiler.VerbosePrint($"Generating {objectDefinition.Path}");
 
-        DMObject? newCurrentObject = DMObjectTree.GetDMObject(objectDefinition.Path);
+        DMObject? newCurrentObject = Compiler.DMObjectTree.GetDMObject(objectDefinition.Path);
         if (objectDefinition.InnerBlock != null) ProcessBlockInner(objectDefinition.InnerBlock, newCurrentObject);
     }
 
@@ -229,7 +229,7 @@ internal class DMObjectBuilder(DMCompiler compiler) {
                 Compiler.DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Static; // FirstPassStatic is not used for object vars
 
             // TODO: no, bad. instance field declarations should have a proc assigned to them.
-            expression = Compiler.DMExpression.Create(varObject, varDefinition.IsGlobal ? DMObjectTree.GlobalInitProc : null,
+            expression = Compiler.DMExpression.Create(varObject, varDefinition.IsGlobal ? Compiler.DMObjectTree.GlobalInitProc : null,
                 varDefinition.Value, varDefinition.Type);
         } finally {
             Compiler.DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Normal;
@@ -285,7 +285,7 @@ internal class DMObjectBuilder(DMCompiler compiler) {
 
     private void ProcessProcDefinition(DMASTProcDefinition procDefinition, DMObject? currentObject) {
         string procName = procDefinition.Name;
-        DMObject dmObject = DMObjectTree.GetDMObject(currentObject.Path.Combine(procDefinition.ObjectPath));
+        DMObject dmObject = Compiler.DMObjectTree.GetDMObject(currentObject.Path.Combine(procDefinition.ObjectPath));
         bool hasProc = dmObject.HasProc(procName); // Trying to avoid calling this several times since it's recursive and maybe slow
         if (!procDefinition.IsOverride && hasProc) { // If this is a define and we already had a proc somehow
             if(!dmObject.HasProcNoInheritance(procName)) { // If we're inheriting this proc (so making a new define for it at our level is stupid)
@@ -295,7 +295,7 @@ internal class DMObjectBuilder(DMCompiler compiler) {
             //Otherwise, it's ok
         }
 
-        DMProc proc = DMObjectTree.CreateDMProc(dmObject, procDefinition);
+        DMProc proc = Compiler.DMObjectTree.CreateDMProc(dmObject, procDefinition);
         proc.IsVerb = procDefinition.IsVerb;
 
         if (procDefinition.ObjectPath == DreamPath.Root) {
@@ -303,11 +303,11 @@ internal class DMObjectBuilder(DMCompiler compiler) {
                 Compiler.Emit(WarningCode.InvalidOverride, procDefinition.Location, $"Global procs cannot be overridden - '{procDefinition.Name}' override will be ignored");
                 //Continue processing the proc anyhoo, just don't add it.
             } else {
-                if (!DMObjectTree.SeenGlobalProcDefinition.Add(procName)) { // Add() is equivalent to Dictionary's TryAdd() for some reason
+                if (!Compiler.DMObjectTree.SeenGlobalProcDefinition.Add(procName)) { // Add() is equivalent to Dictionary's TryAdd() for some reason
                     Compiler.Emit(WarningCode.DuplicateProcDefinition, procDefinition.Location, $"Global proc {procDefinition.Name} is already defined");
                     //Again, even though this is likely an error, process the statements anyways.
                 } else {
-                    DMObjectTree.AddGlobalProc(proc);
+                    Compiler.DMObjectTree.AddGlobalProc(proc);
                 }
             }
         } else {
@@ -407,7 +407,7 @@ internal class DMObjectBuilder(DMCompiler compiler) {
             if (variable.IsGlobal)
                 Compiler.DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Static;
 
-            DMExpression expression = Compiler.DMExpression.Create(currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, variable.Type);
+            DMExpression expression = Compiler.DMExpression.Create(currentObject, variable.IsGlobal ? Compiler.DMObjectTree.GlobalInitProc : null, value, variable.Type);
 
             SetVariableValue(currentObject, ref variable, value.Location, expression, true);
         } finally {
@@ -486,7 +486,7 @@ internal class DMObjectBuilder(DMCompiler compiler) {
                 return;
             }
 
-            DMObjectTree.AddGlobalInitAssign(globalId.Value, expression);
+            Compiler.DMObjectTree.AddGlobalInitAssign(globalId.Value, expression);
         } else {
             var initLoc = expression.Location;
             var field = new Field(compiler, initLoc, variable, variable.ValType);
@@ -525,7 +525,7 @@ internal class DMObjectBuilder(DMCompiler compiler) {
                     DMExpression expression =
                         Compiler.DMExpression.Create(varDef.Item1, varDef.Item2, varDecl.Value!, varDecl.Type);
 
-                    DMObjectTree.AddGlobalInitAssign(varDef.Item4, expression);
+                    Compiler.DMObjectTree.AddGlobalInitAssign(varDef.Item4, expression);
 
                     // Success! Remove this one from the list
                     lateProcVarDefs.RemoveAt(i--);

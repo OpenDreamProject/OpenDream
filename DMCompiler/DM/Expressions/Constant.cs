@@ -154,7 +154,7 @@ internal sealed class Resource : Constant {
         // Compile-time resources always use forward slashes
         _filePath = _filePath.Replace('\\', '/');
 
-        DMObjectTree.Resources.Add(_filePath);
+        Compiler.DMObjectTree.Resources.Add(_filePath);
     }
 
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -254,7 +254,7 @@ internal sealed class ConstantPath(DMCompiler compiler, Location location, DMObj
                 break;
             case PathType.ProcStub:
             case PathType.VerbStub:
-                var type = DMObjectTree.AllObjects[pathInfo.Value.Id].Path.PathString;
+                var type = Compiler.DMObjectTree.AllObjects[pathInfo.Value.Id].Path.PathString;
 
                 // /datum/proc and /datum/verb just compile down to strings lmao
                 proc.PushString($"{type}/{(pathInfo.Value.Type == PathType.ProcStub ? "proc" : "verb")}");
@@ -276,7 +276,7 @@ internal sealed class ConstantPath(DMCompiler compiler, Location location, DMObj
         }
 
         if (pathInfo.Value.Type is PathType.ProcStub or PathType.VerbStub) {
-            var type = DMObjectTree.AllObjects[pathInfo.Value.Id].Path.PathString;
+            var type = Compiler.DMObjectTree.AllObjects[pathInfo.Value.Id].Path.PathString;
 
             json = $"{type}/{(pathInfo.Value.Type == PathType.ProcStub ? "proc" : "verb")}";
             return true;
@@ -301,7 +301,7 @@ internal sealed class ConstantPath(DMCompiler compiler, Location location, DMObj
 
         // An upward search with no left-hand side
         if (Value.Type == DreamPath.PathType.UpwardSearch) {
-            DreamPath? foundPath = DMObjectTree.UpwardSearch(_dmObject.Path, path);
+            DreamPath? foundPath = Compiler.DMObjectTree.UpwardSearch(_dmObject.Path, path);
             if (foundPath == null) {
                 compiler.Emit(WarningCode.ItemDoesntExist, Location, $"Could not find path {path}");
 
@@ -315,7 +315,7 @@ internal sealed class ConstantPath(DMCompiler compiler, Location location, DMObj
         // /datum/proc and /datum/verb
         if (Value.LastElement is "proc" or "verb") {
             DreamPath typePath = Value.FromElements(0, -2);
-            if (!DMObjectTree.TryGetTypeId(typePath, out var ownerId)) {
+            if (!Compiler.DMObjectTree.TryGetTypeId(typePath, out var ownerId)) {
                 compiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {typePath} does not exist");
 
                 pathInfo = null;
@@ -336,11 +336,11 @@ internal sealed class ConstantPath(DMCompiler compiler, Location location, DMObj
         if (procIndex != -1) {
             DreamPath withoutProcElement = path.RemoveElement(procIndex);
             DreamPath ownerPath = withoutProcElement.FromElements(0, -2);
-            DMObject owner = DMObjectTree.GetDMObject(ownerPath, createIfNonexistent: false);
+            DMObject owner = Compiler.DMObjectTree.GetDMObject(ownerPath, createIfNonexistent: false);
             string procName = path.LastElement;
 
             int? procId;
-            if (owner == DMObjectTree.Root && DMObjectTree.TryGetGlobalProc(procName, out var globalProc)) {
+            if (owner == Compiler.DMObjectTree.Root && Compiler.DMObjectTree.TryGetGlobalProc(procName, out var globalProc)) {
                 procId = globalProc.Id;
             } else {
                 var procs = owner.GetProcs(procName);
@@ -361,7 +361,7 @@ internal sealed class ConstantPath(DMCompiler compiler, Location location, DMObj
         }
 
         // Any other path
-        if (DMObjectTree.TryGetTypeId(Value, out var typeId)) {
+        if (Compiler.DMObjectTree.TryGetTypeId(Value, out var typeId)) {
             pathInfo = (PathType.TypeReference, typeId);
             return true;
         } else {

@@ -14,7 +14,7 @@ internal sealed class Proc(DMCompiler compiler, Location location, string identi
     public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
         if (dmObject.HasProc(identifier)) {
             return DMReference.CreateSrcProc(identifier);
-        } else if (DMObjectTree.TryGetGlobalProc(identifier, out var globalProc)) {
+        } else if (Compiler.DMObjectTree.TryGetGlobalProc(identifier, out var globalProc)) {
             return DMReference.CreateGlobalProc(globalProc.Id);
         }
 
@@ -25,7 +25,7 @@ internal sealed class Proc(DMCompiler compiler, Location location, string identi
 
     public DMProc? GetProc(DMObject dmObject) {
         var procId = dmObject.GetProcs(identifier)?[^1];
-        return procId is null ? null : DMObjectTree.AllProcs[procId.Value];
+        return procId is null ? null : Compiler.DMObjectTree.AllProcs[procId.Value];
     }
 
     public DMComplexValueType GetReturnType(DMObject dmObject) {
@@ -54,9 +54,9 @@ internal sealed class GlobalProc(DMCompiler compiler, Location location, string 
     }
 
     public DMProc GetProc() {
-        if (!DMObjectTree.TryGetGlobalProc(name, out var globalProc)) {
+        if (!Compiler.DMObjectTree.TryGetGlobalProc(name, out var globalProc)) {
             compiler.Emit(WarningCode.ItemDoesntExist, Location, $"No global proc named \"{name}\"");
-            return DMObjectTree.GlobalInitProc; // Just give this, who cares
+            return Compiler.DMObjectTree.GlobalInitProc; // Just give this, who cares
         }
 
         return globalProc;

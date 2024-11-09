@@ -29,10 +29,12 @@ internal class DMCompiler {
     private readonly List<string> _resourceDirectories = new();
     private DateTime _compileStartTime;
 
+    public DMObjectTree DMObjectTree;
     public DMExpressionBuilder DMExpressionBuilder;
     public DMExpression DMExpression;
 
     public bool Compile(DMCompilerSettings settings) {
+        DMObjectTree = new(this);
         DMExpressionBuilder = new DMExpressionBuilder(this);
         DMExpression = new BadExpression(this, Location.Internal); // TODO: Wow this sucks
         ErrorCount = 0;

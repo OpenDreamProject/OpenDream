@@ -73,7 +73,7 @@ internal class Dereference : LValue {
         while (!type.IsAnything && i < _operations.Length) {
             var operation = _operations[i++];
 
-            if (type.TypePath is null || DMObjectTree.GetDMObject(type.TypePath.Value, false) is not { } dmObject) {
+            if (type.TypePath is null || Compiler.DMObjectTree.GetDMObject(type.TypePath.Value, false) is not { } dmObject) {
                 // We're dereferencing something without a type-path, this could be anything
                 type = DMValueType.Anything;
                 break;
@@ -115,7 +115,7 @@ internal class Dereference : LValue {
 
             case IndexOperation indexOperation:
                 if (NestedPath is not null) {
-                    var obj = DMObjectTree.GetDMObject(NestedPath.Value, false);
+                    var obj = Compiler.DMObjectTree.GetDMObject(NestedPath.Value, false);
                     if (obj is not null && obj.IsSubtypeOf(DreamPath.Datum) && !obj.HasProc("operator[]")) {
                         Compiler.Emit(WarningCode.InvalidIndexOperation, Location, "Invalid index operation. datum[] index operations are not valid starting in BYOND 515.1641");
                     }
@@ -171,7 +171,7 @@ internal class Dereference : LValue {
 
             case IndexOperation indexOperation:
                 if (NestedPath is not null) {
-                    var obj = DMObjectTree.GetDMObject(NestedPath.Value, false);
+                    var obj = Compiler.DMObjectTree.GetDMObject(NestedPath.Value, false);
                     if (obj is not null && obj.IsSubtypeOf(DreamPath.Datum) && !obj.HasProc("operator[]=")) {
                         Compiler.Emit(WarningCode.InvalidIndexOperation, Location, "Invalid index operation. datum[] index operations are not valid starting in BYOND 515.1641");
                     }
@@ -299,7 +299,7 @@ internal class Dereference : LValue {
         var operation = _operations[^1];
 
         if (operation is FieldOperation fieldOperation && prevPath is not null) {
-            var obj = DMObjectTree.GetDMObject(prevPath.Value);
+            var obj = Compiler.DMObjectTree.GetDMObject(prevPath.Value);
             var variable = obj!.GetVariable(fieldOperation.Identifier);
             if (variable != null) {
                 if (variable.IsConst)

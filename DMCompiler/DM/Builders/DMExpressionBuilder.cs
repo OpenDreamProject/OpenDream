@@ -6,7 +6,7 @@ using String = DMCompiler.DM.Expressions.String;
 
 namespace DMCompiler.DM.Builders;
 
-public class DMExpressionBuilder(DMCompiler compiler) {
+internal class DMExpressionBuilder(DMCompiler compiler) {
     public DMCompiler Compiler => compiler;
     public enum ScopeMode {
         /// All in-scope procs and vars available
@@ -214,7 +214,7 @@ public class DMExpressionBuilder(DMCompiler compiler) {
                 if (inferredPath is null)
                     return BadExpression(WarningCode.BadExpression, newInferred.Location, "Could not infer a type");
 
-                return new NewPath(Compiler, newInferred.Location, new ConstantPath(newInferred.Location, dmObject, inferredPath.Value),
+                return new NewPath(Compiler, newInferred.Location, new ConstantPath(compiler, newInferred.Location, dmObject, inferredPath.Value),
                     new ArgumentList(newInferred.Location, dmObject, proc, newInferred.Parameters, inferredPath));
             case DMASTPreIncrement preIncrement:
                 return new PreIncrement(preIncrement.Location, BuildExpression(preIncrement.Value, dmObject, proc, inferredPath));
@@ -242,7 +242,7 @@ public class DMExpressionBuilder(DMCompiler compiler) {
                 return new IsSaved(Compiler, isSaved.Location, BuildExpression(isSaved.Value, dmObject, proc, inferredPath));
             case DMASTIsType isType: {
                 if (isType.RHS is DMASTIdentifier { Identifier: "__IMPLIED_TYPE__" }) {
-                    var expr = DMExpression.Create(dmObject, proc, isType.LHS, inferredPath);
+                    var expr  = compiler.DMExpression.Create(dmObject, proc, isType.LHS, inferredPath);
                     if (expr.Path is null)
                         return BadExpression(WarningCode.BadExpression, isType.Location, "A type could not be inferred!");
 
@@ -320,14 +320,14 @@ public class DMExpressionBuilder(DMCompiler compiler) {
 
     private DMExpression BuildConstant(DMASTExpressionConstant constant, DMObject dmObject, DMProc proc) {
         switch (constant) {
-            case DMASTConstantNull: return new Null(constant.Location);
-            case DMASTConstantInteger constInt: return new Number(constant.Location, constInt.Value);
-            case DMASTConstantFloat constFloat: return new Number(constant.Location, constFloat.Value);
-            case DMASTConstantString constString: return new String(constant.Location, constString.Value);
-            case DMASTConstantResource constResource: return new Resource(constant.Location, constResource.Path);
-            case DMASTConstantPath constPath: return new ConstantPath(constant.Location, dmObject, constPath.Value.Path);
+            case DMASTConstantNull: return new Null(compiler, constant.Location);
+            case DMASTConstantInteger constInt: return new Number(compiler, constant.Location, constInt.Value);
+            case DMASTConstantFloat constFloat: return new Number(compiler, constant.Location, constFloat.Value);
+            case DMASTConstantString constString: return new String(compiler, constant.Location, constString.Value);
+            case DMASTConstantResource constResource: return new Resource(compiler, constant.Location, constResource.Path);
+            case DMASTConstantPath constPath: return new ConstantPath(compiler, constant.Location, dmObject, constPath.Value.Path);
             case DMASTUpwardPathSearch upwardSearch:
-                DMExpression.TryConstant(dmObject, proc, upwardSearch.Path, out var pathExpr);
+                compiler.DMExpression.TryConstant(dmObject, proc, upwardSearch.Path, out var pathExpr);
                 if (pathExpr is not ConstantPath expr)
                     return BadExpression(WarningCode.BadExpression, constant.Location,
                         $"Cannot do an upward path search on {pathExpr}");
@@ -338,7 +338,7 @@ public class DMExpressionBuilder(DMCompiler compiler) {
                     return BadExpression(WarningCode.ItemDoesntExist, constant.Location,
                         $"Could not find path {path}.{upwardSearch.Search.Path}");
 
-                return new ConstantPath(constant.Location, dmObject, foundPath.Value);
+                return new ConstantPath(compiler, constant.Location, dmObject, foundPath.Value);
         }
 
         throw new ArgumentException($"Invalid constant {constant}", nameof(constant));
@@ -351,9 +351,9 @@ public class DMExpressionBuilder(DMCompiler compiler) {
             var interpolatedValue = stringFormat.InterpolatedValues[i];
 
             if (interpolatedValue == null) {
-                expressions[i] = new Null(stringFormat.Location);
+                expressions[i] = new Null(compiler, stringFormat.Location);
             } else {
-                expressions[i] = DMExpression.Create(dmObject, proc, interpolatedValue, inferredPath);
+                expressions[i]  = compiler.DMExpression.Create(dmObject, proc, interpolatedValue, inferredPath);
             }
         }
 
@@ -377,9 +377,9 @@ public class DMExpressionBuilder(DMCompiler compiler) {
                     return BadExpression(WarningCode.BadExpression, identifier.Location,
                         "__IMPLIED_TYPE__ cannot be used here, there is no type being implied");
 
-                return new ConstantPath(identifier.Location, dmObject, inferredPath.Value);
+                return new ConstantPath(compiler, identifier.Location, dmObject, inferredPath.Value);
             case "__PROC__": // The saner alternative to "....."
-                return new ConstantProcReference(identifier.Location, proc);
+                return new ConstantProcReference(compiler, identifier.Location, proc);
             case "global":
                 return new Global(identifier.Location);
             default: {
@@ -470,12 +470,12 @@ public class DMExpressionBuilder(DMCompiler compiler) {
                     return BadExpression(WarningCode.ItemDoesntExist, identifier.Location,
                         $"Type {dmObject.Path} does not have a parent");
 
-                expression = new ConstantPath(location, dmObject, dmObject.Parent.Path);
+                expression = new ConstantPath(compiler, location, dmObject, dmObject.Parent.Path);
             } else { // "type"
-                expression = new ConstantPath(location, dmObject, dmObject.Path);
+                expression = new ConstantPath(compiler, location, dmObject, dmObject.Path);
             }
         } else {
-            expression = DMExpression.Create(dmObject, proc, scopeIdentifier.Expression, inferredPath);
+            expression  = compiler.DMExpression.Create(dmObject, proc, scopeIdentifier.Expression, inferredPath);
         }
 
         // A must have a type
@@ -488,7 +488,7 @@ public class DMExpressionBuilder(DMCompiler compiler) {
             if (expression is ConstantPath path && path.TryResolvePath(out var pathInfo) &&
                 pathInfo.Value.Type == ConstantPath.PathType.ProcReference) {
                 if (bIdentifier == "name")
-                    return new String(expression.Location, path.Path!.Value.LastElement!);
+                    return new String(compiler, expression.Location, path.Path!.Value.LastElement!);
 
                 return BadExpression(WarningCode.PointlessScopeOperator, expression.Location,
                     "scope operator returns null on proc variables other than \"name\"");
@@ -505,7 +505,7 @@ public class DMExpressionBuilder(DMCompiler compiler) {
                     $"Type {owner.Path} does not have a proc named \"{bIdentifier}\"");
 
             var referencedProc = DMObjectTree.AllProcs[procs[^1]];
-            return new ConstantProcReference(location, referencedProc);
+            return new ConstantProcReference(compiler, location, referencedProc);
         } else { // A::B
             var globalVarId = owner.GetGlobalVariableId(bIdentifier);
             if (globalVarId != null) {
@@ -552,11 +552,11 @@ public class DMExpressionBuilder(DMCompiler compiler) {
                     break;
             }
 
-            var expr = DMExpression.Create(dmObject, proc, procCall.Parameters[0].Value, inferredPath);
+            var expr  = compiler.DMExpression.Create(dmObject, proc, procCall.Parameters[0].Value, inferredPath);
             return new Arglist(Compiler, procCall.Location, expr);
         }
 
-        var target = DMExpression.Create(dmObject, proc, (DMASTExpression)procCall.Callable, inferredPath);
+        var target  = compiler.DMExpression.Create(dmObject, proc, (DMASTExpression)procCall.Callable, inferredPath);
         var args = new ArgumentList(procCall.Location, dmObject, proc, procCall.Parameters);
         if (target is Proc targetProc) { // GlobalProc handles returnType itself
             var returnType = targetProc.GetReturnType(dmObject);
@@ -568,8 +568,8 @@ public class DMExpressionBuilder(DMCompiler compiler) {
     }
 
     private DMExpression BuildAssign(DMASTAssign assign, DMObject dmObject, DMProc proc, DreamPath? inferredPath) {
-        var lhs = DMExpression.Create(dmObject, proc, assign.LHS, inferredPath);
-        var rhs = DMExpression.Create(dmObject, proc, assign.RHS, lhs.NestedPath);
+        var lhs  = compiler.DMExpression.Create(dmObject, proc, assign.LHS, inferredPath);
+        var rhs  = compiler.DMExpression.Create(dmObject, proc, assign.RHS, lhs.NestedPath);
         if(lhs.TryAsConstant(out _)) {
             Compiler.Emit(WarningCode.WriteToConstant, assign.LHS.Location, "Cannot write to const var");
         }
@@ -578,8 +578,8 @@ public class DMExpressionBuilder(DMCompiler compiler) {
     }
 
     private DMExpression BuildAssignInto(DMASTAssignInto assign, DMObject dmObject, DMProc proc, DreamPath? inferredPath) {
-        var lhs = DMExpression.Create(dmObject, proc, assign.LHS, inferredPath);
-        var rhs = DMExpression.Create(dmObject, proc, assign.RHS, lhs.NestedPath);
+        var lhs  = compiler.DMExpression.Create(dmObject, proc, assign.LHS, inferredPath);
+        var rhs  = compiler.DMExpression.Create(dmObject, proc, assign.RHS, lhs.NestedPath);
         if(lhs.TryAsConstant(out _)) {
             Compiler.Emit(WarningCode.WriteToConstant, assign.LHS.Location, "Cannot write to const var");
         }
@@ -588,8 +588,8 @@ public class DMExpressionBuilder(DMCompiler compiler) {
     }
 
     private DMExpression BuildEqual(DMASTEqual equal, DMObject dmObject, DMProc proc, DreamPath? inferredPath) {
-        var lhs = DMExpression.Create(dmObject, proc, equal.LHS, inferredPath);
-        var rhs = DMExpression.Create(dmObject, proc, equal.RHS, inferredPath);
+        var lhs  = compiler.DMExpression.Create(dmObject, proc, equal.LHS, inferredPath);
+        var rhs  = compiler.DMExpression.Create(dmObject, proc, equal.RHS, inferredPath);
 
         // (x == null) can be changed to isnull(x) which compiles down to an opcode
         // TODO: Bytecode optimizations instead
@@ -600,8 +600,8 @@ public class DMExpressionBuilder(DMCompiler compiler) {
     }
 
     private DMExpression BuildNotEqual(DMASTNotEqual notEqual, DMObject dmObject, DMProc proc, DreamPath? inferredPath) {
-        var lhs = DMExpression.Create(dmObject, proc, notEqual.LHS, inferredPath);
-        var rhs = DMExpression.Create(dmObject, proc, notEqual.RHS, inferredPath);
+        var lhs  = compiler.DMExpression.Create(dmObject, proc, notEqual.LHS, inferredPath);
+        var rhs  = compiler.DMExpression.Create(dmObject, proc, notEqual.RHS, inferredPath);
 
         // (x != null) can be changed to !isnull(x) which compiles down to two opcodes
         // TODO: Bytecode optimizations instead
@@ -616,7 +616,7 @@ public class DMExpressionBuilder(DMCompiler compiler) {
 
         // The base expression and list of operations to perform on it
         // These may be redefined if we encounter a global access mid-operation
-        var expr = DMExpression.Create(dmObject, proc, deref.Expression, inferredPath);
+        var expr  = compiler.DMExpression.Create(dmObject, proc, deref.Expression, inferredPath);
         var operations = new Dereference.Operation[deref.Operations.Length];
         int astOperationOffset = 0;
 
@@ -675,7 +675,7 @@ public class DMExpressionBuilder(DMCompiler compiler) {
             } else {
                  Compiler.Emit(WarningCode.BadExpression, firstOperation.Location,
                     "Invalid dereference operation performed on global");
-                expr = new Null(firstOperation.Location);
+                expr = new Null(compiler, firstOperation.Location);
             }
         }
 
@@ -753,7 +753,7 @@ public class DMExpressionBuilder(DMCompiler compiler) {
                     operation = new Dereference.IndexOperation {
                         // var/type1/result = new /type2()[new()] changes the inferred new to "new /type1()"
                         // L[new()] = new() uses the type of L however
-                        Index = DMExpression.Create(dmObject, proc, indexOperation.Index, inferredPath ?? prevPath),
+                        Index  = compiler.DMExpression.Create(dmObject, proc, indexOperation.Index, inferredPath ?? prevPath),
                         Safe = indexOperation.Safe,
                         Path = prevPath
                     };
@@ -803,7 +803,7 @@ public class DMExpressionBuilder(DMCompiler compiler) {
     }
 
     private DMExpression BuildLocate(DMASTLocate locate, DMObject dmObject, DMProc proc, DreamPath? inferredPath) {
-        var container = locate.Container != null ? DMExpression.Create(dmObject, proc, locate.Container, inferredPath) : null;
+        var container = locate.Container != null ? compiler.DMExpression.Create(dmObject, proc, locate.Container, inferredPath) : null;
 
         if (locate.Expression == null) {
             if (inferredPath == null)
@@ -812,12 +812,12 @@ public class DMExpressionBuilder(DMCompiler compiler) {
             return new LocateInferred(Compiler, locate.Location, inferredPath.Value, container);
         }
 
-        var pathExpr = DMExpression.Create(dmObject, proc, locate.Expression, inferredPath);
+        var pathExpr  = compiler.DMExpression.Create(dmObject, proc, locate.Expression, inferredPath);
         return new Locate(Compiler, locate.Location, pathExpr, container);
     }
 
     private DMExpression BuildImplicitIsType(DMASTImplicitIsType isType, DMObject dmObject, DMProc proc, DreamPath? inferredPath) {
-        var expr = DMExpression.Create(dmObject, proc, isType.Value, inferredPath);
+        var expr  = compiler.DMExpression.Create(dmObject, proc, isType.Value, inferredPath);
 
         if (expr.Path is null)
             return BadExpression(WarningCode.BadExpression, isType.Location, "An inferred istype requires a type!");
@@ -833,8 +833,8 @@ public class DMExpressionBuilder(DMCompiler compiler) {
 
             for (int i = 0; i < list.Values.Length; i++) {
                 DMASTCallParameter value = list.Values[i];
-                DMExpression? key = (value.Key != null) ? DMExpression.Create(dmObject, proc, value.Key) : null;
-                DMExpression listValue = DMExpression.Create(dmObject, proc, value.Value);
+                DMExpression? key = (value.Key != null) ? compiler.DMExpression.Create(dmObject, proc, value.Key) : null;
+                DMExpression listValue  = compiler.DMExpression.Create(dmObject, proc, value.Value);
 
                 values[i] = (key, listValue);
             }
@@ -846,7 +846,7 @@ public class DMExpressionBuilder(DMCompiler compiler) {
     private DMExpression BuildDimensionalList(DMASTDimensionalList list, DMObject dmObject, DMProc proc, DreamPath? inferredPath) {
         var sizes = new DMExpression[list.Sizes.Count];
         for (int i = 0; i < sizes.Length; i++) {
-            var sizeExpr = DMExpression.Create(dmObject, proc, list.Sizes[i], inferredPath);
+            var sizeExpr  = compiler.DMExpression.Create(dmObject, proc, list.Sizes[i], inferredPath);
 
             sizes[i] = sizeExpr;
         }
@@ -858,7 +858,7 @@ public class DMExpressionBuilder(DMCompiler compiler) {
     private DMExpression BuildNameof(DMASTNameof nameof, DMObject dmObject, DMProc proc, DreamPath? inferredPath) {
         var expr = BuildExpression(nameof.Value, dmObject, proc, inferredPath);
         if (expr.GetNameof(dmObject) is { } name) {
-            return new String(nameof.Location, name);
+            return new String(compiler, nameof.Location, name);
         }
 
         return BadExpression(WarningCode.BadArgument, nameof.Location, "nameof() requires a var, proc reference, or type path");
@@ -873,7 +873,7 @@ public class DMExpressionBuilder(DMCompiler compiler) {
                 return BadExpression(WarningCode.InvalidArgumentKey, parameter.Location,
                     "newlist() does not take named arguments");
 
-            expressions[i] = DMExpression.Create(dmObject, proc, parameter.Value, inferredPath);
+            expressions[i]  = compiler.DMExpression.Create(dmObject, proc, parameter.Value, inferredPath);
         }
 
         return new NewList(Compiler, newList.Location, expressions);
@@ -889,7 +889,7 @@ public class DMExpressionBuilder(DMCompiler compiler) {
             if(parameter.Key != null)
                  Compiler.Emit(WarningCode.InvalidArgumentKey, parameter.Location, "addtext() does not take named arguments");
 
-            expArr[i] = DMExpression.Create(dmObject,proc, parameter.Value, inferredPath);
+            expArr[i]  = compiler.DMExpression.Create(dmObject,proc, parameter.Value, inferredPath);
         }
 
         return new AddText(Compiler, addText.Location, expArr);
@@ -905,12 +905,12 @@ public class DMExpressionBuilder(DMCompiler compiler) {
                     "input() does not take named arguments");
             }
 
-            arguments[i] = DMExpression.Create(dmObject, proc, parameter.Value);
+            arguments[i]  = compiler.DMExpression.Create(dmObject, proc, parameter.Value);
         }
 
         DMExpression? list = null;
         if (input.List != null) {
-            list = DMExpression.Create(dmObject, proc, input.List);
+            list  = compiler.DMExpression.Create(dmObject, proc, input.List);
 
             DMValueType objectTypes = DMValueType.Null |DMValueType.Obj | DMValueType.Mob | DMValueType.Turf |
                                       DMValueType.Area;
@@ -937,8 +937,8 @@ public class DMExpressionBuilder(DMCompiler compiler) {
 
         for (int i = 0; i < pickValues.Length; i++) {
             DMASTPick.PickValue pickValue = pick.Values[i];
-            DMExpression? weight = (pickValue.Weight != null) ? DMExpression.Create(dmObject, proc, pickValue.Weight) : null;
-            DMExpression value = DMExpression.Create(dmObject, proc, pickValue.Value);
+            DMExpression? weight = (pickValue.Weight != null) ? compiler.DMExpression.Create(dmObject, proc, pickValue.Weight) : null;
+            DMExpression value  = compiler.DMExpression.Create(dmObject, proc, pickValue.Value);
 
             if (weight is Prob prob) // pick(prob(50);x, prob(200);y) format
                 weight = prob.P;
@@ -950,11 +950,11 @@ public class DMExpressionBuilder(DMCompiler compiler) {
     }
 
     private DMExpression BuildLog(DMASTLog log, DMObject dmObject, DMProc proc, DreamPath? inferredPath) {
-        var expr = DMExpression.Create(dmObject, proc, log.Expression, inferredPath);
+        var expr  = compiler.DMExpression.Create(dmObject, proc, log.Expression, inferredPath);
         DMExpression? baseExpr = null;
 
         if (log.BaseExpression != null) {
-            baseExpr = DMExpression.Create(dmObject, proc, log.BaseExpression, inferredPath);
+            baseExpr  = compiler.DMExpression.Create(dmObject, proc, log.BaseExpression, inferredPath);
         }
 
         return new Log(Compiler, log.Location, expr, baseExpr);
@@ -968,17 +968,17 @@ public class DMExpressionBuilder(DMCompiler compiler) {
                  Compiler.Emit(WarningCode.InvalidArgumentCount, call.Location, "Too many arguments for call()");
                 goto case 2; // Fallthrough!
             case 2: {
-                var a = DMExpression.Create(dmObject, proc, call.CallParameters[0].Value, inferredPath);
-                var b = DMExpression.Create(dmObject, proc, call.CallParameters[1].Value, inferredPath);
+                var a  = compiler.DMExpression.Create(dmObject, proc, call.CallParameters[0].Value, inferredPath);
+                var b  = compiler.DMExpression.Create(dmObject, proc, call.CallParameters[1].Value, inferredPath);
                 return new CallStatement(Compiler, call.Location, a, b, procArgs);
             }
             case 1: {
-                var a = DMExpression.Create(dmObject, proc, call.CallParameters[0].Value, inferredPath);
+                var a  = compiler.DMExpression.Create(dmObject, proc, call.CallParameters[0].Value, inferredPath);
                 return new CallStatement(Compiler, call.Location, a, procArgs);
             }
             case 0:
                  Compiler.Emit(WarningCode.InvalidArgumentCount, call.Location, "Not enough arguments for call()");
-                return new CallStatement(Compiler, call.Location, new Null(Location.Internal), procArgs);
+                return new CallStatement(Compiler, call.Location, new Null(compiler, Location.Internal), procArgs);
         }
     }
 

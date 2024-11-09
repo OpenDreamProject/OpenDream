@@ -2,7 +2,7 @@
 
 namespace DMCompiler.Compiler;
 
-public class Lexer<SourceType> {
+internal class Lexer<SourceType> {
     public DMCompiler Compiler;
     public Location CurrentLocation { get; protected set; }
     public string SourceName { get; protected set; }
@@ -66,7 +66,7 @@ public class Lexer<SourceType> {
     }
 }
 
-public class TextLexer : Lexer<char> {
+internal class TextLexer : Lexer<char> {
     protected string _source;
     protected int _currentPosition = 0;
 
@@ -114,7 +114,7 @@ public class TextLexer : Lexer<char> {
     }
 }
 
-public class TokenLexer : Lexer<Token> {
+internal class TokenLexer : Lexer<Token> {
     public TokenLexer(DMCompiler compiler, string sourceName, IEnumerable<Token> source) : base(compiler, sourceName, source) {
         Advance();
     }

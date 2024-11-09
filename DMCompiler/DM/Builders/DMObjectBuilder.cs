@@ -523,7 +523,7 @@ internal class DMObjectBuilder(DMCompiler compiler) {
                 try {
                     Compiler.DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Static;
                     DMExpression expression =
-                        DMExpression.Create(varDef.Item1, varDef.Item2, varDecl.Value!, varDecl.Type);
+                        Compiler.DMExpression.Create(varDef.Item1, varDef.Item2, varDecl.Value!, varDecl.Type);
 
                     DMObjectTree.AddGlobalInitAssign(varDef.Item4, expression);
 

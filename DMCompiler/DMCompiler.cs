@@ -13,12 +13,13 @@ using System.Text.Json.Serialization;
 using DMCompiler.Compiler;
 using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM.Builders;
+using DMCompiler.DM.Expressions;
 using DMCompiler.Json;
 
 namespace DMCompiler;
 
 //TODO: Make this not a static class
-public class DMCompiler {
+internal class DMCompiler {
     public int ErrorCount;
     public int WarningCount;
     public HashSet<WarningCode> UniqueEmissions = new();
@@ -30,9 +31,11 @@ public class DMCompiler {
     private DateTime _compileStartTime;
 
     public DMExpressionBuilder DMExpressionBuilder;
+    public DMExpression DMExpression;
 
     public bool Compile(DMCompilerSettings settings) {
         DMExpressionBuilder = new DMExpressionBuilder(this);
+        DMExpression = new BadExpression(this, Location.Internal); // TODO: Wow this sucks
         ErrorCount = 0;
         WarningCount = 0;
         UniqueEmissions.Clear();

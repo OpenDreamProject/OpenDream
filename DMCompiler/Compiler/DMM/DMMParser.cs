@@ -72,7 +72,7 @@ internal sealed class DMMParser(DMLexer lexer, int zOffset) : DMParser(lexer) {
                         }
 
                         if (!varOverride.ObjectPath.Equals(DreamPath.Root)) Compiler.ForcedError(statement.Location, $"Invalid var name '{varOverride.VarName}' in DMM on type {objectType.Path}");
-                        DMExpression value = DMExpression.Create(DMObjectTree.GetDMObject(objectType.Path, false), null, varOverride.Value);
+                        DMExpression value = lexer.Compiler.DMExpression.Create(DMObjectTree.GetDMObject(objectType.Path, false), null, varOverride.Value);
                         if (!value.TryAsJsonRepresentation(out var valueJson)) Compiler.ForcedError(statement.Location, $"Failed to serialize value to json ({value})");
 
                         if(!mapObject.AddVarOverride(varOverride.VarName, valueJson)) {

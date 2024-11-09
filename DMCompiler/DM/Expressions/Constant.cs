@@ -6,7 +6,7 @@ using DMCompiler.Json;
 
 namespace DMCompiler.DM.Expressions;
 
-internal abstract class Constant(Location location) : DMExpression(location) {
+internal abstract class Constant(DMCompiler compiler, Location location) : DMExpression(compiler, location) {
     public sealed override bool TryAsConstant(out Constant constant) {
         constant = this;
         return true;
@@ -16,7 +16,7 @@ internal abstract class Constant(Location location) : DMExpression(location) {
 }
 
 // null
-internal sealed class Null(Location location) : Constant(location) {
+internal sealed class Null(DMCompiler compiler, Location location) : Constant(compiler, location) {
     public override DMComplexValueType ValType => DMValueType.Null;
 
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -37,11 +37,11 @@ internal sealed class Number : Constant {
 
     public override DMComplexValueType ValType => DMValueType.Num;
 
-    public Number(Location location, int value) : base(location) {
+    public Number(DMCompiler compiler, Location location, int value) : base(compiler, location) {
         Value = value;
     }
 
-    public Number(Location location, float value) : base(location) {
+    public Number(DMCompiler compiler, Location location, float value) : base(compiler, location) {
         Value = value;
     }
 
@@ -70,7 +70,7 @@ internal sealed class Number : Constant {
 }
 
 // "abc"
-internal sealed class String(Location location, string value) : Constant(location) {
+internal sealed class String(DMCompiler compiler, Location location, string value) : Constant(compiler, location) {
     public string Value { get; } = value;
 
     public override DMComplexValueType ValType => DMValueType.Text;
@@ -102,12 +102,12 @@ internal sealed class Resource : Constant {
     private readonly string _filePath;
     private bool _isAmbiguous;
 
-    public Resource(Location location, string filePath) : base(location) {
+    public Resource(DMCompiler compiler, Location location, string filePath) : base(compiler, location) {
         // Treat backslashes as forward slashes on Linux
         // Also remove "." and ".." from the directory path
         filePath = System.IO.Path.GetRelativePath(".", filePath.Replace('\\', '/'));
 
-        var outputDir = System.IO.Path.GetDirectoryName(DMCompiler.Settings.Files?[0]) ?? "/";
+        var outputDir = System.IO.Path.GetDirectoryName(compiler.Settings.Files?[0]) ?? "/";
         if (string.IsNullOrEmpty(outputDir))
             outputDir = "./";
 
@@ -117,7 +117,7 @@ internal sealed class Resource : Constant {
         var fileDir = System.IO.Path.GetDirectoryName(filePath) ?? string.Empty;
 
         // Search every defined FILE_DIR
-        foreach (string resourceDir in DMCompiler.ResourceDirectories) {
+        foreach (string resourceDir in compiler.ResourceDirectories) {
             var directory = FindDirectory(resourceDir, fileDir);
 
             if (directory != null) {
@@ -142,11 +142,11 @@ internal sealed class Resource : Constant {
             _filePath = System.IO.Path.GetRelativePath(outputDir, finalFilePath);
 
             if (_isAmbiguous) {
-                DMCompiler.Emit(WarningCode.AmbiguousResourcePath, Location,
+                compiler.Emit(WarningCode.AmbiguousResourcePath, Location,
                     $"Resource {filePath} has multiple case-insensitive matches, using {_filePath}");
             }
         } else {
-            DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Cannot find file '{filePath}'");
+            compiler.Emit(WarningCode.ItemDoesntExist, Location, $"Cannot find file '{filePath}'");
             _filePath = filePath;
         }
 
@@ -221,7 +221,7 @@ internal sealed class Resource : Constant {
 
 // /a/b/c
 // no, this can't be called "Path" because of CS0542
-internal sealed class ConstantPath(Location location, DMObject dmObject, DreamPath value) : Constant(location) {
+internal sealed class ConstantPath(DMCompiler compiler, Location location, DMObject dmObject, DreamPath value) : Constant(compiler, location) {
     public DreamPath Value { get; } = value;
 
     /// <summary>
@@ -260,7 +260,7 @@ internal sealed class ConstantPath(Location location, DMObject dmObject, DreamPa
                 proc.PushString($"{type}/{(pathInfo.Value.Type == PathType.ProcStub ? "proc" : "verb")}");
                 break;
             default:
-                DMCompiler.ForcedError(Location, $"Invalid PathType {pathInfo.Value.Type}");
+                compiler.ForcedError(Location, $"Invalid PathType {pathInfo.Value.Type}");
                 break;
         }
     }
@@ -303,7 +303,7 @@ internal sealed class ConstantPath(Location location, DMObject dmObject, DreamPa
         if (Value.Type == DreamPath.PathType.UpwardSearch) {
             DreamPath? foundPath = DMObjectTree.UpwardSearch(_dmObject.Path, path);
             if (foundPath == null) {
-                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Could not find path {path}");
+                compiler.Emit(WarningCode.ItemDoesntExist, Location, $"Could not find path {path}");
 
                 pathInfo = null;
                 return false;
@@ -316,7 +316,7 @@ internal sealed class ConstantPath(Location location, DMObject dmObject, DreamPa
         if (Value.LastElement is "proc" or "verb") {
             DreamPath typePath = Value.FromElements(0, -2);
             if (!DMObjectTree.TryGetTypeId(typePath, out var ownerId)) {
-                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {typePath} does not exist");
+                compiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {typePath} does not exist");
 
                 pathInfo = null;
                 return false;
@@ -349,7 +349,7 @@ internal sealed class ConstantPath(Location location, DMObject dmObject, DreamPa
             }
 
             if (procId == null) {
-                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location,
+                compiler.Emit(WarningCode.ItemDoesntExist, Location,
                     $"Type {ownerPath} does not have a proc named {procName}");
 
                 pathInfo = null;
@@ -365,7 +365,7 @@ internal sealed class ConstantPath(Location location, DMObject dmObject, DreamPa
             pathInfo = (PathType.TypeReference, typeId);
             return true;
         } else {
-            DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {Value} does not exist");
+            compiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {Value} does not exist");
 
             pathInfo = null;
             return false;
@@ -377,7 +377,7 @@ internal sealed class ConstantPath(Location location, DMObject dmObject, DreamPa
 /// <summary>
 /// A reference to a proc
 /// </summary>
-internal sealed class ConstantProcReference(Location location, DMProc referencedProc) : Constant(location) {
+internal sealed class ConstantProcReference(DMCompiler compiler, Location location, DMProc referencedProc) : Constant(compiler, location) {
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         proc.PushProc(referencedProc.Id);
     }

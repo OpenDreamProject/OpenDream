@@ -4,7 +4,7 @@ using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM;
 
 namespace DMCompiler.Compiler.DM {
-    public partial class DMParser(DMLexer lexer) : Parser<Token>(lexer) {
+    internal partial class DMParser(DMLexer lexer) : Parser<Token>(lexer) {
         protected Location CurrentLoc => Current().Location;
         protected DreamPath CurrentPath = DreamPath.Root;
 

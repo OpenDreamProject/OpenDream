@@ -4,7 +4,7 @@ using DMCompiler.Compiler;
 
 namespace DMCompiler.DM.Expressions;
 
-internal abstract class BinaryOp(Location location, DMExpression lhs, DMExpression rhs) : DMExpression(location) {
+internal abstract class BinaryOp(Location location, DMExpression lhs, DMExpression rhs) : DMExpression(lhs.Compiler, location) {
     protected DMExpression LHS { get; } = lhs;
     protected DMExpression RHS { get; } = rhs;
 
@@ -22,9 +22,9 @@ internal sealed class Add(Location location, DMExpression lhs, DMExpression rhs)
         }
 
         if (lhs is Number lhsNum && rhs is Number rhsNum) {
-            constant = new Number(Location, lhsNum.Value + rhsNum.Value);
+            constant = new Number(lhs.Compiler, Location, lhsNum.Value + rhsNum.Value);
         } else if (lhs is String lhsString && rhs is String rhsString) {
-            constant = new String(Location, lhsString.Value + rhsString.Value);
+            constant = new String(lhs.Compiler, Location, lhsString.Value + rhsString.Value);
         } else {
             constant = null;
             return false;
@@ -49,7 +49,7 @@ internal sealed class Subtract(Location location, DMExpression lhs, DMExpression
         }
 
         if (lhs is Number lhsNum && rhs is Number rhsNum) {
-            constant = new Number(Location, lhsNum.Value - rhsNum.Value);
+            constant = new Number(lhsNum.Compiler, Location, lhsNum.Value - rhsNum.Value);
         } else {
             constant = null;
             return false;
@@ -74,7 +74,7 @@ internal sealed class Multiply(Location location, DMExpression lhs, DMExpression
         }
 
         if (lhs is Number lhsNum && rhs is Number rhsNum) {
-            constant = new Number(Location, lhsNum.Value * rhsNum.Value);
+            constant = new Number(lhs.Compiler, Location, lhsNum.Value * rhsNum.Value);
         } else {
             constant = null;
             return false;
@@ -99,7 +99,7 @@ internal sealed class Divide(Location location, DMExpression lhs, DMExpression r
         }
 
         if (lhs is Number lhsNum && rhs is Number rhsNum) {
-            constant = new Number(Location, lhsNum.Value / rhsNum.Value);
+            constant = new Number(lhs.Compiler, Location, lhsNum.Value / rhsNum.Value);
         } else {
             constant = null;
             return false;
@@ -124,7 +124,7 @@ internal sealed class Modulo(Location location, DMExpression lhs, DMExpression r
         }
 
         if (lhs is Number lhsNum && rhs is Number rhsNum) {
-            constant = new Number(Location, lhsNum.Value % rhsNum.Value);
+            constant = new Number(lhs.Compiler, Location, lhsNum.Value % rhsNum.Value);
         } else {
             constant = null;
             return false;
@@ -152,7 +152,7 @@ internal sealed class ModuloModulo(Location location, DMExpression lhs, DMExpres
             // BYOND docs say that A %% B is equivalent to B * fract(A/B)
             var fraction = lhsNum.Value / rhsNum.Value;
             fraction -= MathF.Truncate(fraction);
-            constant = new Number(Location, fraction * rhsNum.Value);
+            constant = new Number(lhs.Compiler, Location, fraction * rhsNum.Value);
         } else {
             constant = null;
             return false;
@@ -177,7 +177,7 @@ internal sealed class Power(Location location, DMExpression lhs, DMExpression rh
         }
 
         if (lhs is Number lhsNum && rhs is Number rhsNum) {
-            constant = new Number(Location, MathF.Pow(lhsNum.Value, rhsNum.Value));
+            constant = new Number(lhsNum.Compiler, Location, MathF.Pow(lhsNum.Value, rhsNum.Value));
         } else {
             constant = null;
             return false;
@@ -202,7 +202,7 @@ internal sealed class LeftShift(Location location, DMExpression lhs, DMExpressio
         }
 
         if (lhs is Number lhsNum && rhs is Number rhsNum) {
-            constant = new Number(Location, ((int)lhsNum.Value) << ((int)rhsNum.Value));
+            constant = new Number(lhsNum.Compiler, Location, ((int)lhsNum.Value) << ((int)rhsNum.Value));
         } else {
             constant = null;
             return false;
@@ -227,7 +227,7 @@ internal sealed class RightShift(Location location, DMExpression lhs, DMExpressi
         }
 
         if (lhs is Number lhsNum && rhs is Number rhsNum) {
-            constant = new Number(Location, ((int)lhsNum.Value) >> ((int)rhsNum.Value));
+            constant = new Number(lhsNum.Compiler, Location, ((int)lhsNum.Value) >> ((int)rhsNum.Value));
         } else {
             constant = null;
             return false;
@@ -254,7 +254,7 @@ internal sealed class BinaryAnd(Location location, DMExpression lhs, DMExpressio
         }
 
         if (lhs is Number lhsNum && rhs is Number rhsNum) {
-            constant = new Number(Location, ((int)lhsNum.Value) & ((int)rhsNum.Value));
+            constant = new Number(lhsNum.Compiler, Location, ((int)lhsNum.Value) & ((int)rhsNum.Value));
         } else {
             constant = null;
             return false;
@@ -279,7 +279,7 @@ internal sealed class BinaryXor(Location location, DMExpression lhs, DMExpressio
         }
 
         if (lhs is Number lhsNum && rhs is Number rhsNum) {
-            constant = new Number(Location, ((int)lhsNum.Value) ^ ((int)rhsNum.Value));
+            constant = new Number(lhsNum.Compiler, Location, ((int)lhsNum.Value) ^ ((int)rhsNum.Value));
         } else {
             constant = null;
             return false;
@@ -304,7 +304,7 @@ internal sealed class BinaryOr(Location location, DMExpression lhs, DMExpression
         }
 
         if (lhs is Number lhsNum && rhs is Number rhsNum) {
-            constant = new Number(Location, ((int)lhsNum.Value) | ((int)rhsNum.Value));
+            constant = new Number(lhsNum.Compiler, Location, ((int)lhsNum.Value) | ((int)rhsNum.Value));
         } else {
             constant = null;
             return false;
@@ -365,9 +365,9 @@ internal sealed class GreaterThan(Location location, DMExpression lhs, DMExpress
         }
 
         if (lhs is Null && rhs is Number rhsNum1) {
-            constant = new Number(Location, (0 > rhsNum1.Value) ? 1 : 0);
+            constant = new Number(lhs.Compiler, Location, (0 > rhsNum1.Value) ? 1 : 0);
         } else if (lhs is Number lhsNum && rhs is Number rhsNum2) {
-            constant = new Number(Location, (lhsNum.Value > rhsNum2.Value) ? 1 : 0);
+            constant = new Number(lhs.Compiler, Location, (lhsNum.Value > rhsNum2.Value) ? 1 : 0);
         } else {
             constant = null;
             return false;
@@ -398,9 +398,9 @@ internal sealed class GreaterThanOrEqual(Location location, DMExpression lhs, DM
         }
 
         if (lhs is Null && rhs is Number rhsNum1) {
-            constant = new Number(Location, (0 >= rhsNum1.Value) ? 1 : 0);
+            constant = new Number(lhs.Compiler, Location, (0 >= rhsNum1.Value) ? 1 : 0);
         } else if (lhs is Number lhsNum && rhs is Number rhsNum2) {
-            constant = new Number(Location, (lhsNum.Value >= rhsNum2.Value) ? 1 : 0);
+            constant = new Number(lhs.Compiler, Location, (lhsNum.Value >= rhsNum2.Value) ? 1 : 0);
         } else {
             constant = null;
             return false;
@@ -426,9 +426,9 @@ internal sealed class LessThan(Location location, DMExpression lhs, DMExpression
         }
 
         if (lhs is Null && rhs is Number rhsNum1) {
-            constant = new Number(Location, (0 < rhsNum1.Value) ? 1 : 0);
+            constant = new Number(lhs.Compiler, Location, (0 < rhsNum1.Value) ? 1 : 0);
         } else if (lhs is Number lhsNum && rhs is Number rhsNum2) {
-            constant = new Number(Location, (lhsNum.Value < rhsNum2.Value) ? 1 : 0);
+            constant = new Number(lhs.Compiler, Location, (lhsNum.Value < rhsNum2.Value) ? 1 : 0);
         } else {
             constant = null;
             return false;
@@ -453,9 +453,9 @@ internal sealed class LessThanOrEqual(Location location, DMExpression lhs, DMExp
         }
 
         if (lhs is Null && rhs is Number rhsNum1) {
-            constant = new Number(Location, (0 <= rhsNum1.Value) ? 1 : 0);
+            constant = new Number(lhs.Compiler, Location, (0 <= rhsNum1.Value) ? 1 : 0);
         } else if (lhs is Number lhsNum && rhs is Number rhsNum2) {
-            constant = new Number(Location, (lhsNum.Value <= rhsNum2.Value) ? 1 : 0);
+            constant = new Number(lhs.Compiler, Location, (lhsNum.Value <= rhsNum2.Value) ? 1 : 0);
         } else {
             constant = null;
             return false;
@@ -560,10 +560,10 @@ internal sealed class Assignment(Location location, DMExpression lhs, DMExpressi
         proc.Assign(reference);
 
         if (!LHS.ValType.MatchesType(RHS.ValType) && !LHS.ValType.IsUnimplemented) {
-            if (DMCompiler.Settings.SkipAnythingTypecheck && RHS.ValType.IsAnything)
+            if (LHS.Compiler.Settings.SkipAnythingTypecheck && RHS.ValType.IsAnything)
                 return;
 
-            DMCompiler.Emit(WarningCode.InvalidVarType, Location,
+            LHS.Compiler.Emit(WarningCode.InvalidVarType, Location,
                 $"Invalid var type {RHS.ValType}, expected {LHS.ValType}");
         }
     }

@@ -1,12 +1,12 @@
 namespace DMCompiler.Compiler;
 
-public class Parser<SourceType> {
+internal class Parser<SourceType> {
     public DMCompiler Compiler;
     protected Lexer<SourceType> _lexer;
     private Token _currentToken;
     private readonly Stack<Token> _tokenStack = new(1);
 
-    protected Parser(Lexer<SourceType> lexer) {
+    internal Parser(Lexer<SourceType> lexer) {
         Compiler = lexer.Compiler;
         _lexer = lexer;
 

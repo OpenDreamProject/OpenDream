@@ -54,7 +54,7 @@ internal class Dereference : LValue {
     private readonly Operation[] _operations;
 
     public Dereference(Location location, DreamPath? path, DMExpression expression, Operation[] operations)
-        : base(location, null) {
+        : base(expression.Compiler, location, null) {
         Expression = expression;
         Path = path;
         _operations = operations;
@@ -117,7 +117,7 @@ internal class Dereference : LValue {
                 if (NestedPath is not null) {
                     var obj = DMObjectTree.GetDMObject(NestedPath.Value, false);
                     if (obj is not null && obj.IsSubtypeOf(DreamPath.Datum) && !obj.HasProc("operator[]")) {
-                        DMCompiler.Emit(WarningCode.InvalidIndexOperation, Location, "Invalid index operation. datum[] index operations are not valid starting in BYOND 515.1641");
+                        Compiler.Emit(WarningCode.InvalidIndexOperation, Location, "Invalid index operation. datum[] index operations are not valid starting in BYOND 515.1641");
                     }
                 }
 
@@ -173,7 +173,7 @@ internal class Dereference : LValue {
                 if (NestedPath is not null) {
                     var obj = DMObjectTree.GetDMObject(NestedPath.Value, false);
                     if (obj is not null && obj.IsSubtypeOf(DreamPath.Datum) && !obj.HasProc("operator[]=")) {
-                        DMCompiler.Emit(WarningCode.InvalidIndexOperation, Location, "Invalid index operation. datum[] index operations are not valid starting in BYOND 515.1641");
+                        Compiler.Emit(WarningCode.InvalidIndexOperation, Location, "Invalid index operation. datum[] index operations are not valid starting in BYOND 515.1641");
                     }
                 }
 
@@ -185,7 +185,7 @@ internal class Dereference : LValue {
                 return DMReference.ListIndex;
 
             case CallOperation:
-                DMCompiler.Emit(WarningCode.BadExpression, Location,
+                Compiler.Emit(WarningCode.BadExpression, Location,
                     "Expected field or index as reference, got proc call result");
                 return default;
 
@@ -229,7 +229,7 @@ internal class Dereference : LValue {
                 break;
 
             case CallOperation:
-                DMCompiler.Emit(WarningCode.BadExpression, Location,
+                Compiler.Emit(WarningCode.BadExpression, Location,
                     "Expected field or index for initial(), got proc call result");
                 break;
 
@@ -275,7 +275,7 @@ internal class Dereference : LValue {
                 break;
 
             case CallOperation:
-                DMCompiler.Emit(WarningCode.BadExpression, Location,
+                Compiler.Emit(WarningCode.BadExpression, Location,
                     "Expected field or index for issaved(), got proc call result");
                 break;
 
@@ -319,7 +319,7 @@ internal class Dereference : LValue {
 // expression::identifier
 // Same as initial(expression?.identifier) except this keeps its type
 internal sealed class ScopeReference(Location location, DMExpression expression, string identifier, DMVariable dmVar)
-    : Initial(location, new Dereference(location, dmVar.Type, expression, // Just a little hacky
+    : Initial(expression.Compiler, location, new Dereference(location, dmVar.Type, expression, // Just a little hacky
         [
             new Dereference.FieldOperation {
                 Identifier = identifier,

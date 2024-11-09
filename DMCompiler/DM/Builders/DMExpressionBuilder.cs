@@ -33,7 +33,7 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
             case DMASTStringFormat stringFormat: return BuildStringFormat(stringFormat, dmObject, proc, inferredPath);
             case DMASTIdentifier identifier: return BuildIdentifier(identifier, dmObject, proc, inferredPath);
             case DMASTScopeIdentifier globalIdentifier: return BuildScopeIdentifier(globalIdentifier, dmObject, proc, inferredPath);
-            case DMASTCallableSelf: return new ProcSelf(expression.Location, null, proc);
+            case DMASTCallableSelf: return new ProcSelf(compiler, expression.Location, null, proc);
             case DMASTCallableSuper: return new ProcSuper(compiler, expression.Location, dmObject, proc);
             case DMASTCallableProcIdentifier procIdentifier: return BuildCallableProcIdentifier(procIdentifier, dmObject);
             case DMASTProcCall procCall: return BuildProcCall(procCall, dmObject, proc, inferredPath);
@@ -365,11 +365,11 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
 
         switch (name) {
             case "src":
-                return new Src(identifier.Location, dmObject.Path);
+                return new Src(Compiler, identifier.Location, dmObject.Path);
             case "usr":
-                return new Usr(identifier.Location);
+                return new Usr(Compiler, identifier.Location);
             case "args":
-                return new Args(identifier.Location);
+                return new Args(Compiler, identifier.Location);
             case "__TYPE__":
                 return new ProcOwnerType(Compiler, identifier.Location, dmObject);
             case "__IMPLIED_TYPE__":
@@ -381,16 +381,16 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
             case "__PROC__": // The saner alternative to "....."
                 return new ConstantProcReference(compiler, identifier.Location, proc);
             case "global":
-                return new Global(identifier.Location);
+                return new Global(Compiler, identifier.Location);
             default: {
                 if (CurrentScopeMode == ScopeMode.Normal) {
                     var localVar = proc?.GetLocalVariable(name);
                     if (localVar != null)
-                        return new Local(identifier.Location, localVar);
+                        return new Local(Compiler, identifier.Location, localVar);
 
                     var field = dmObject?.GetVariable(name);
                     if (field != null) {
-                        return new Field(identifier.Location, field, field.ValType);
+                        return new Field(Compiler, identifier.Location, field, field.ValType);
                     }
                 }
 
@@ -399,14 +399,14 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
 
                     if (globalId != null) {
                         var globalVar = DMObjectTree.Globals[globalId.Value];
-                        var global = new GlobalField(identifier.Location, globalVar.Type, globalId.Value, globalVar.ValType);
+                        var global = new GlobalField(Compiler, identifier.Location, globalVar.Type, globalId.Value, globalVar.ValType);
                         return global;
                     }
 
                     var field = dmObject?.GetVariable(name);
                     if (field != null) {
                         if (field.IsConst)
-                            return new Field(identifier.Location, field, field.ValType);
+                            return new Field(Compiler, identifier.Location, field, field.ValType);
 
                         return BadExpression(WarningCode.BadExpression, identifier.Location,
                             "Var \"{name}\" cannot be used in this context");
@@ -437,7 +437,7 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
 
             // ::vars, special case
             if (bIdentifier == "vars")
-                return new GlobalVars(location);
+                return new GlobalVars(Compiler, location);
 
             // ::A, global var ref
             var globalId = DMObjectTree.Root.GetGlobalVariableId(bIdentifier);
@@ -445,7 +445,7 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
                 throw new UnknownIdentifierException(location, bIdentifier);
 
             var globalVar = DMObjectTree.Globals[globalId.Value];
-            return new GlobalField(location,
+            return new GlobalField(Compiler, location,
                 DMObjectTree.Globals[globalId.Value].Type,
                 globalId.Value,
                 globalVar.ValType);
@@ -512,7 +512,7 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
                 // B is a var.
                 // This is the only case a ScopeIdentifier can be an LValue.
                 var globalVar = DMObjectTree.Globals[globalVarId.Value];
-                return new GlobalField(location, globalVar.Type, globalVarId.Value, globalVar.ValType);
+                return new GlobalField(Compiler, location, globalVar.Type, globalVarId.Value, globalVar.ValType);
             }
 
             var variable = owner.GetVariable(bIdentifier);
@@ -645,7 +645,7 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
                     case DMASTDereference.FieldOperation:
                         // global.vars
                         if (namedOperation is { Identifier: "vars" }) {
-                            expr = new GlobalVars(expr.Location);
+                            expr = new GlobalVars(Compiler, expr.Location);
                             break;
                         }
 
@@ -656,7 +656,7 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
                         }
 
                         var property = DMObjectTree.Globals[globalId.Value];
-                        expr = new GlobalField(expr.Location, property.Type, globalId.Value, property.ValType);
+                        expr = new GlobalField(Compiler, expr.Location, property.Type, globalId.Value, property.ValType);
 
                         prevPath = property.Type;
                         pathIsFuzzy = false;
@@ -709,7 +709,7 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
                         if (property == null && fromObject.GetGlobalVariableId(field) is { } globalId) {
                             property = DMObjectTree.Globals[globalId];
 
-                            expr = new GlobalField(expr.Location, property.Type, globalId, property.ValType);
+                            expr = new GlobalField(Compiler, expr.Location, property.Type, globalId, property.ValType);
 
                             var newOperationCount = operations.Length - i - 1;
                             if (newOperationCount == 0) {

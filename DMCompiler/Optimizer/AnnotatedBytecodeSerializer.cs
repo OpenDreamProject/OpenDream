@@ -8,7 +8,7 @@ namespace DMCompiler.Optimizer;
 
 internal class AnnotatedBytecodeSerializer(DMCompiler compiler) {
     private readonly List<LocalVariableJson> _localVariables = new();
-    private BinaryWriter _bytecodeWriter;
+    private BinaryWriter? _bytecodeWriter;
     private Dictionary<string, int> _labels = new();
     private List<(long Position, string LabelName)> _unresolvedLabels = new();
     private int _lastFileId = -1;
@@ -18,11 +18,8 @@ internal class AnnotatedBytecodeSerializer(DMCompiler compiler) {
 
     public List<SourceInfoJson> SourceInfo = new();
 
-    public AnnotatedBytecodeSerializer() {
-        _bytecodeWriter = new BinaryWriter(Bytecode);
-    }
-
     public byte[]? Serialize(List<IAnnotatedBytecode> annotatedBytecode) {
+        _bytecodeWriter ??= new BinaryWriter(Bytecode);
         foreach (IAnnotatedBytecode bytecodeChunk in annotatedBytecode) {
             if (bytecodeChunk is AnnotatedBytecodeInstruction instruction) {
                 SerializeInstruction(instruction);
@@ -58,6 +55,7 @@ internal class AnnotatedBytecodeSerializer(DMCompiler compiler) {
     }
 
     private void SerializeInstruction(AnnotatedBytecodeInstruction instruction) {
+        _bytecodeWriter ??= new BinaryWriter(Bytecode);
         if (instruction.Location.Line != null && (_location == null || instruction.Location.Line != _location?.Line)) {
             int sourceFileId = DMObjectTree.AddString(instruction.Location.SourceFile);
             if (_lastFileId != sourceFileId) {
@@ -149,6 +147,7 @@ internal class AnnotatedBytecodeSerializer(DMCompiler compiler) {
     }
 
     private void ResolveLabels() {
+        _bytecodeWriter ??= new BinaryWriter(Bytecode);
         foreach ((long position, string labelName) in _unresolvedLabels) {
             if (_labels.TryGetValue(labelName, out int labelPosition)) {
                 _bytecodeWriter.Seek((int)position, SeekOrigin.Begin);
@@ -164,6 +163,7 @@ internal class AnnotatedBytecodeSerializer(DMCompiler compiler) {
     }
 
     public void WriteReference(AnnotatedBytecodeReference reference) {
+        _bytecodeWriter ??= new BinaryWriter(Bytecode);
         _bytecodeWriter.Write((byte)reference.RefType);
         switch (reference.RefType) {
             case DMReference.Type.Argument:

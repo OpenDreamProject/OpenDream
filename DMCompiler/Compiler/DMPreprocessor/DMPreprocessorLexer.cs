@@ -10,6 +10,7 @@ namespace DMCompiler.Compiler.DMPreprocessor;
 /// taking in raw text and outputting vague tokens descriptive enough for the preprocessor to run on them.
 /// </summary>
 internal sealed class DMPreprocessorLexer {
+    public readonly DMCompiler Compiler;
     private static readonly StringBuilder TokenTextBuilder = new();
 
     public readonly string IncludeDirectory;
@@ -20,7 +21,8 @@ internal sealed class DMPreprocessorLexer {
     private int _currentLine = 1, _currentColumn;
     private readonly Queue<Token> _pendingTokenQueue = new(); // TODO: Possible to remove this?
 
-    public DMPreprocessorLexer(string includeDirectory, string file, string source) {
+    public DMPreprocessorLexer(DMCompiler compiler, string includeDirectory, string file, string source) {
+        Compiler = compiler;
         IncludeDirectory = includeDirectory;
         File = file;
 
@@ -28,7 +30,8 @@ internal sealed class DMPreprocessorLexer {
         Advance();
     }
 
-    public DMPreprocessorLexer(string includeDirectory, string file) {
+    public DMPreprocessorLexer(DMCompiler compiler, string includeDirectory, string file) {
+        Compiler = compiler;
         IncludeDirectory = includeDirectory;
         File = file;
 
@@ -388,7 +391,7 @@ internal sealed class DMPreprocessorLexer {
 
                 string macroAttempt = text.ToLower();
                 if (TryMacroKeyword(macroAttempt, out var attemptKeyword)) { // if they mis-capitalized the keyword
-                    DMCompiler.Emit(WarningCode.MiscapitalizedDirective, attemptKeyword.Value.Location,
+                    Compiler.Emit(WarningCode.MiscapitalizedDirective, attemptKeyword.Value.Location,
                         $"#{text} is not a valid macro keyword. Did you mean '#{macroAttempt}'?");
                 }
 

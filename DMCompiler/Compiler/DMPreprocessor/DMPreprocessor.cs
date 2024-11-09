@@ -179,7 +179,7 @@ internal sealed class DMPreprocessor(DMCompiler compiler, bool enableDirectives)
     }
 
     public void DefineMacro(string key, string value) {
-        var lexer = new DMPreprocessorLexer(null, "<command line>", value);
+        var lexer = new DMPreprocessorLexer(Compiler, null, "<command line>", value);
         var list = new List<Token>();
 
         while (lexer.NextToken() is { Type: not TokenType.EndOfFile } token) {
@@ -239,7 +239,7 @@ internal sealed class DMPreprocessor(DMCompiler compiler, bool enableDirectives)
     public void PreprocessFile(string includeDir, string file) {
         file = file.Replace('\\', '/');
 
-        _lexerStack.Push(new DMPreprocessorLexer(includeDir, file));
+        _lexerStack.Push(new DMPreprocessorLexer(Compiler, includeDir, file));
     }
 
     private bool VerifyDirectiveUsage(Token token) {

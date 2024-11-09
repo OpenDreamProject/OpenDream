@@ -489,7 +489,7 @@ internal class DMObjectBuilder(DMCompiler compiler) {
             DMObjectTree.AddGlobalInitAssign(globalId.Value, expression);
         } else {
             var initLoc = expression.Location;
-            var field = new Field(initLoc, variable, variable.ValType);
+            var field = new Field(compiler, initLoc, variable, variable.ValType);
             var assign = new Assignment(initLoc, field, expression);
 
             currentObject.InitializationProcExpressions.Add(assign);

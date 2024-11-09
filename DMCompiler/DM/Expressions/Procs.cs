@@ -67,7 +67,7 @@ internal sealed class GlobalProc(DMCompiler compiler, Location location, string 
 /// . <br/>
 /// This is an LValue _and_ a proc!
 /// </summary>
-internal sealed class ProcSelf(Location location, DreamPath? path, DMProc proc) : LValue(location, path) {
+internal sealed class ProcSelf(DMCompiler compiler, Location location, DreamPath? path, DMProc proc) : LValue(compiler, location, path) {
     public override DMComplexValueType ValType => proc.ReturnTypes;
 
     public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {

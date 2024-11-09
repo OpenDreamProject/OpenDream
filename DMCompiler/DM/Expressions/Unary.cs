@@ -13,7 +13,7 @@ internal sealed class Negate(Location location, DMExpression expr) : UnaryOp(loc
         if (!Expr.TryAsConstant(out constant) || constant is not Number number)
             return false;
 
-        constant = new Number(Location, -number.Value);
+        constant = new Number(expr.Compiler, Location, -number.Value);
         return true;
     }
 
@@ -28,7 +28,7 @@ internal sealed class Not(Location location, DMExpression expr) : UnaryOp(locati
     public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
         if (!Expr.TryAsConstant(out constant)) return false;
 
-        constant = new Number(Location, constant.IsTruthy() ? 0 : 1);
+        constant = new Number(expr.Compiler, Location, constant.IsTruthy() ? 0 : 1);
         return true;
     }
 
@@ -44,7 +44,7 @@ internal sealed class BinaryNot(Location location, DMExpression expr) : UnaryOp(
         if (!Expr.TryAsConstant(out constant) || constant is not Number constantNum)
             return false;
 
-        constant = new Number(Location, ~(int)constantNum.Value);
+        constant = new Number(expr.Compiler, Location, ~(int)constantNum.Value);
         return true;
     }
 

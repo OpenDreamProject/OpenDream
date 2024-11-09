@@ -12,6 +12,7 @@ namespace DMCompiler.Compiler.DMPreprocessor;
 /// </summary>
 internal sealed class DMPreprocessor(DMCompiler compiler, bool enableDirectives) : IEnumerable<Token> {
     public DMCompiler Compiler = compiler;
+    private readonly DMPreprocessorParser _dmPreprocessorParser = new(compiler);
     public readonly List<string> IncludedMaps = new(8);
     public string? IncludedInterface;
 
@@ -502,7 +503,7 @@ internal sealed class DMPreprocessor(DMCompiler compiler, bool enableDirectives)
             HandleDegenerateIf();
             return;
         }
-        float? expr = DMPreprocessorParser.ExpressionFromTokens(tokens, _defines);
+        float? expr = _dmPreprocessorParser.ExpressionFromTokens(tokens, _defines);
         if(expr is null) {
             Compiler.Emit(WarningCode.BadDirective, ifToken.Location, "Expression is invalid");
             HandleDegenerateIf();

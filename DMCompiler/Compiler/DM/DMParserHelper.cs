@@ -70,12 +70,12 @@ internal partial class DMParser {
     /// <returns><see langword="true"/> if error occurs.</returns>
     private bool CheckInterpolation(Location loc, bool hasSeenNonRefInterpolation, List<DMASTExpression?>? interpolationValues, string mack) {
         if (interpolationValues == null || interpolationValues.Count == 0) {
-            DMCompiler.Emit(WarningCode.MissingInterpolatedExpression, loc, $"Macro \"\\{mack}\" requires preceding interpolated expression");
+            Compiler.Emit(WarningCode.MissingInterpolatedExpression, loc, $"Macro \"\\{mack}\" requires preceding interpolated expression");
             return true;
         }
 
         if(!hasSeenNonRefInterpolation) { // More elaborate error for a more elaborate situation
-            DMCompiler.Emit(WarningCode.MissingInterpolatedExpression, loc, $"Macro \"\\{mack}\" requires preceding interpolated expression that is not a reference");
+            Compiler.Emit(WarningCode.MissingInterpolatedExpression, loc, $"Macro \"\\{mack}\" requires preceding interpolated expression that is not a reference");
             return true;
         }
 
@@ -339,7 +339,7 @@ internal partial class DMParser {
             switch (currentToken.Type) {
                 case TokenType.DM_ConstantString: // Constant singular piece of string, return here
                     if (usedPrefixMacro != null) // FIXME: \the should not compiletime here, instead becoming a tab character followed by "he", when in parity mode
-                        DMCompiler.Emit(WarningCode.MissingInterpolatedExpression, tokenLoc,
+                        Compiler.Emit(WarningCode.MissingInterpolatedExpression, tokenLoc,
                             $"Macro \"\\{usedPrefixMacro}\" requires interpolated expression");
 
                     return new DMASTConstantString(currentToken.Location, stringBuilder.ToString());
@@ -353,12 +353,12 @@ internal partial class DMParser {
                     } else {
                         var interpolatedExpression = Expression();
                         if (interpolatedExpression == null)
-                            DMCompiler.Emit(WarningCode.MissingExpression, Current().Location,
+                            Compiler.Emit(WarningCode.MissingExpression, Current().Location,
                                 "Expected an embedded expression");
 
                         // The next token should be the next piece of the string, error if not
                         if (Current().Type is not TokenType.DM_StringMiddle and not TokenType.DM_StringEnd) {
-                            DMCompiler.Emit(WarningCode.BadExpression, Current().Location,
+                            Compiler.Emit(WarningCode.BadExpression, Current().Location,
                                 "Expected end of the embedded expression");
 
                             while (Current().Type is not TokenType.DM_StringMiddle and not TokenType.DM_StringEnd
@@ -375,7 +375,7 @@ internal partial class DMParser {
                     break;
                 case TokenType.DM_StringEnd: // End of a string with interpolated values, return here
                     if(currentInterpolationType != StringFormatEncoder.InterpolationDefault) { // this implies a prefix tried to modify a [] that never ended up existing after it
-                        DMCompiler.Emit(WarningCode.MissingInterpolatedExpression, tokenLoc,
+                        Compiler.Emit(WarningCode.MissingInterpolatedExpression, tokenLoc,
                             $"Macro \"\\{usedPrefixMacro}\" must precede an interpolated expression");
                     }
 

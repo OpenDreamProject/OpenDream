@@ -165,7 +165,7 @@ namespace DMCompiler.DM {
                         Compiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type of expression \"{expr}\", expected {ReturnTypes}. Consider reporting this as a bug on OpenDream's GitHub.");
                         break;
                 }
-            } else if (!ReturnTypes.MatchesType(type)) { // We could determine the return types but they don't match
+            } else if (!ReturnTypes.MatchesType(Compiler, type)) { // We could determine the return types but they don't match
                 Compiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{splitter}{Name}(): Invalid return type {type}, expected {ReturnTypes}");
             }
         }

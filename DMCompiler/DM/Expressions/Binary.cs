@@ -559,7 +559,7 @@ internal sealed class Assignment(Location location, DMExpression lhs, DMExpressi
         RHS.EmitPushValue(dmObject, proc);
         proc.Assign(reference);
 
-        if (!LHS.ValType.MatchesType(RHS.ValType) && !LHS.ValType.IsUnimplemented) {
+        if (!LHS.ValType.MatchesType(Compiler, RHS.ValType) && !LHS.ValType.IsUnimplemented) {
             if (LHS.Compiler.Settings.SkipAnythingTypecheck && RHS.ValType.IsAnything)
                 return;
 

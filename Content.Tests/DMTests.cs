@@ -18,6 +18,7 @@ public sealed partial class DMTests : ContentUnitTest {
     private const string TestProject = "DMProject";
     private const string InitializeEnvironment = "./environment.dme";
     private const string TestsDirectory = "Tests";
+    private DMCompiler.DMCompiler _dmCompiler;
 
     [Dependency] private readonly DreamManager _dreamMan = default!;
     [Dependency] private readonly DreamObjectTree _objectTree = default!;
@@ -37,6 +38,7 @@ public sealed partial class DMTests : ContentUnitTest {
 
     [OneTimeSetUp]
     public void OneTimeSetup() {
+        _dmCompiler = new DMCompiler.DMCompiler();
         IoCManager.InjectDependencies(this);
         _taskManager.Initialize();
         Compile(InitializeEnvironment);
@@ -44,8 +46,8 @@ public sealed partial class DMTests : ContentUnitTest {
         _dreamMan.OnException += OnException;
     }
 
-    private static string? Compile(string sourceFile) {
-        bool successfulCompile = DMCompiler.DMCompiler.Compile(new() {
+    private string? Compile(string sourceFile) {
+        bool successfulCompile = _dmCompiler.Compile(new() {
             Files = new() { sourceFile }
         });
 
@@ -67,7 +69,7 @@ public sealed partial class DMTests : ContentUnitTest {
             string? compiledFile = Compile(Path.Join(initialDirectory, TestsDirectory, sourceFile));
             if (testFlags.HasFlag(DMTestFlags.CompileError)) {
                 Assert.That(errorCode == -1, Is.False, "Expected an error code");
-                Assert.That(DMCompiler.DMCompiler.UniqueEmissions.Contains((WarningCode)errorCode), Is.True, $"Expected error code \"{errorCode}\" was not found");
+                Assert.That(_dmCompiler.UniqueEmissions.Contains((WarningCode)errorCode), Is.True, $"Expected error code \"{errorCode}\" was not found");
                 Assert.That(compiledFile, Is.Null, "Expected an error during DM compilation");
 
                 Cleanup(compiledFile);

@@ -417,7 +417,7 @@ internal class DMObjectBuilder(DMCompiler compiler) {
 
     private void SetVariableValue(DMObject currentObject, ref DMVariable variable, Location location, DMExpression expression, bool isOverride = false) {
         // Typechecking
-        if (!variable.ValType.MatchesType(expression.ValType) && !variable.ValType.IsUnimplemented) {
+        if (!variable.ValType.MatchesType(Compiler, expression.ValType) && !variable.ValType.IsUnimplemented) {
             if (expression is Null && !isOverride) {
                 Compiler.Emit(WarningCode.ImplicitNullType, expression.Location, $"{currentObject.Path.ToString()}.{variable.Name}: Variable is null but not explicitly typed as nullable, append \"|null\" to \"as\". Implicitly treating as nullable.");
                 variable.ValType |= DMValueType.Null;

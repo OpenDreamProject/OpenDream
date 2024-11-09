@@ -56,9 +56,9 @@ public readonly struct DMComplexValueType {
         return IsAnything || (Type & type) != 0;
     }
 
-    public bool MatchesType(DMComplexValueType type) {
+    internal bool MatchesType(DMCompiler compiler, DMComplexValueType type) {
         if (IsPath && type.IsPath) {
-            var dmObject = DMObjectTree.GetDMObject(type.TypePath!.Value, false);
+            var dmObject = compiler.DMObjectTree.GetDMObject(type.TypePath!.Value, false);
 
             // Allow subtypes
             if (dmObject?.IsSubtypeOf(TypePath!.Value) is true)

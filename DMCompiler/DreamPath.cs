@@ -94,8 +94,8 @@ public struct DreamPath {
         Normalize(true);
     }
 
-    public DMValueType GetAtomType() {
-        var dmType = DMObjectTree.GetDMObject(this, false);
+    internal DMValueType GetAtomType(DMCompiler compiler) {
+        var dmType = compiler.DMObjectTree.GetDMObject(this, false);
         if (dmType is null)
             return DMValueType.Anything;
 

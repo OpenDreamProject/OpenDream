@@ -203,7 +203,7 @@ internal sealed class ArgumentList {
 
         DMComplexValueType paramType = param.ExplicitValueType ?? DMValueType.Anything;
 
-        if (!expr.ValType.IsAnything && !paramType.MatchesType(expr.ValType)) {
+        if (!expr.ValType.IsAnything && !paramType.MatchesType(expr.Compiler, expr.ValType)) {
             expr.Compiler.Emit(WarningCode.InvalidVarType, expr.Location,
                 $"{targetProc.Name}(...) argument \"{param.Name}\": Invalid var value type {expr.ValType}, expected {paramType}");
         }

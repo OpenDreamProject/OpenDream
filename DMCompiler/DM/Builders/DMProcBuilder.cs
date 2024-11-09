@@ -368,7 +368,7 @@ namespace DMCompiler.DM.Builders {
             if (varDeclaration.Value != null) {
                 value = Compiler.DMExpression.Create(dmObject, proc, varDeclaration.Value, varDeclaration.Type);
 
-                if (!varDeclaration.ValType.MatchesType(value.ValType)) {
+                if (!varDeclaration.ValType.MatchesType(Compiler, value.ValType)) {
                     Compiler.Emit(WarningCode.InvalidVarType, varDeclaration.Location,
                         $"{varDeclaration.Name}: Invalid var value {value.ValType}, expected {varDeclaration.ValType}");
                 }

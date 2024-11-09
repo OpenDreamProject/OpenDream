@@ -46,7 +46,7 @@ internal sealed class Arglist(DMCompiler compiler, Location location, DMExpressi
 // new x (...)
 internal sealed class New(DMCompiler compiler, Location location, DMExpression expr, ArgumentList arguments) : DMExpression(compiler, location) {
     public override bool PathIsFuzzy => Path == null;
-    public override DMComplexValueType ValType => !expr.ValType.IsAnything ? expr.ValType : (Path?.GetAtomType() ?? DMValueType.Anything);
+    public override DMComplexValueType ValType => !expr.ValType.IsAnything ? expr.ValType : (Path?.GetAtomType(compiler) ?? DMValueType.Anything);
 
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         var argumentInfo = arguments.EmitArguments(dmObject, proc, null);
@@ -59,7 +59,7 @@ internal sealed class New(DMCompiler compiler, Location location, DMExpression e
 // new /x/y/z (...)
 internal sealed class NewPath(DMCompiler compiler,  Location location, ConstantPath targetPath, ArgumentList arguments) : DMExpression(compiler, location) {
     public override DreamPath? Path => targetPath.Value;
-    public override DMComplexValueType ValType => targetPath.Value.GetAtomType();
+    public override DMComplexValueType ValType => targetPath.Value.GetAtomType(compiler);
 
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         if (!targetPath.TryResolvePath(out var pathInfo)) {

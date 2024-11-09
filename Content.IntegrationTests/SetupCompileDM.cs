@@ -15,7 +15,8 @@ public sealed class SetupCompileDm {
 
     [OneTimeSetUp]
     public void Compile() {
-        bool successfulCompile = DMCompiler.DMCompiler.Compile(new() {
+        DMCompiler.DMCompiler compiler = new();
+        bool successfulCompile = compiler.Compile(new() {
             Files = new() { DmEnvironment }
         });
 

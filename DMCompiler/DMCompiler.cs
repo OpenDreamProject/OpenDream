@@ -7,6 +7,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -15,6 +16,9 @@ using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM.Builders;
 using DMCompiler.DM.Expressions;
 using DMCompiler.Json;
+
+[assembly: InternalsVisibleTo("Content.Tests")]
+[assembly: InternalsVisibleTo("Content.IntegrationTests")]
 
 namespace DMCompiler;
 

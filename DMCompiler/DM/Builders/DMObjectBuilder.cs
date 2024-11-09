@@ -52,7 +52,7 @@ internal class DMObjectBuilder(DMCompiler compiler) {
 
                     try {
                         Compiler.DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.FirstPassStatic;
-                        DMExpression expression = DMExpression.Create(procStatic.DMObject, procStatic.Proc,
+                        DMExpression expression = Compiler.DMExpression.Create(procStatic.DMObject, procStatic.Proc,
                             procStatic.VarDecl.Value, procStatic.VarDecl.Type);
 
                         DMObjectTree.AddGlobalInitAssign(procStatic.Id, expression);
@@ -229,7 +229,7 @@ internal class DMObjectBuilder(DMCompiler compiler) {
                 Compiler.DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Static; // FirstPassStatic is not used for object vars
 
             // TODO: no, bad. instance field declarations should have a proc assigned to them.
-            expression = DMExpression.Create(varObject, varDefinition.IsGlobal ? DMObjectTree.GlobalInitProc : null,
+            expression = Compiler.DMExpression.Create(varObject, varDefinition.IsGlobal ? DMObjectTree.GlobalInitProc : null,
                 varDefinition.Value, varDefinition.Type);
         } finally {
             Compiler.DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Normal;
@@ -319,7 +319,7 @@ internal class DMObjectBuilder(DMCompiler compiler) {
                 // TODO multiple var definitions.
                 if (stmt is DMASTProcStatementVarDeclaration varDeclaration && varDeclaration.IsGlobal) {
                     DMVariable variable = proc.CreateGlobalVariable(varDeclaration.Type, varDeclaration.Name, varDeclaration.IsConst, out var globalId);
-                    variable.Value = new Expressions.Null(varDeclaration.Location);
+                    variable.Value = new Expressions.Null(Compiler, varDeclaration.Location);
 
                     StaticProcVars.Add((dmObject, proc, globalId, varDeclaration));
                 }
@@ -407,7 +407,7 @@ internal class DMObjectBuilder(DMCompiler compiler) {
             if (variable.IsGlobal)
                 Compiler.DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Static;
 
-            DMExpression expression = DMExpression.Create(currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, variable.Type);
+            DMExpression expression = Compiler.DMExpression.Create(currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, variable.Type);
 
             SetVariableValue(currentObject, ref variable, value.Location, expression, true);
         } finally {
@@ -443,7 +443,7 @@ internal class DMObjectBuilder(DMCompiler compiler) {
             return;
         }
 
-        variable = variable.WriteToValue(new Expressions.Null(Location.Internal));
+        variable = variable.WriteToValue(new Expressions.Null(Compiler, Location.Internal));
         EmitInitializationAssign(currentObject, variable, expression);
     }
 

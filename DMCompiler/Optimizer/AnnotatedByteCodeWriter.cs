@@ -8,7 +8,8 @@ namespace DMCompiler.Optimizer;
  * Provides a wrapper about BinaryWriter that stores information about the bytecode
  * for optimization and debugging.
  */
-internal class AnnotatedByteCodeWriter {
+internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
+    public DMCompiler Compiler = compiler;
     private readonly List<IAnnotatedBytecode>
         _annotatedBytecode = new(250); // 1/6th of max size for bytecode in tgstation
 
@@ -34,7 +35,7 @@ internal class AnnotatedByteCodeWriter {
     public void WriteOpcode(DreamProcOpcode opcode, Location location) {
         _location = location;
         if (_requiredArgs.Count > 0) {
-            DMCompiler.ForcedError(location, "Expected argument");
+            Compiler.ForcedError(location, "Expected argument");
         }
 
         var metadata = OpcodeMetadataCache.GetMetadata(opcode);
@@ -62,7 +63,7 @@ internal class AnnotatedByteCodeWriter {
     public void WriteFloat(float val, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.Float) {
-            DMCompiler.ForcedError(location, "Expected floating argument");
+            Compiler.ForcedError(location, "Expected floating argument");
         }
 
         _requiredArgs.Pop();
@@ -77,7 +78,7 @@ internal class AnnotatedByteCodeWriter {
     public void WriteArgumentType(DMCallArgumentsType argType, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.ArgType) {
-            DMCompiler.ForcedError(location, "Expected argument type argument");
+            Compiler.ForcedError(location, "Expected argument type argument");
         }
 
         _requiredArgs.Pop();
@@ -92,7 +93,7 @@ internal class AnnotatedByteCodeWriter {
     public void WriteStackDelta(int delta, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.StackDelta) {
-            DMCompiler.ForcedError(location, "Expected stack delta argument");
+            Compiler.ForcedError(location, "Expected stack delta argument");
         }
 
         _requiredArgs.Pop();
@@ -106,7 +107,7 @@ internal class AnnotatedByteCodeWriter {
     /// <param name="location">The location of the type in the source code</param>
     public void WriteType(DMValueType type, Location location) {
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.TypeId) {
-            DMCompiler.ForcedError(location, "Expected type argument");
+            Compiler.ForcedError(location, "Expected type argument");
         }
 
         _requiredArgs.Pop();
@@ -122,7 +123,7 @@ internal class AnnotatedByteCodeWriter {
     public void WriteString(string value, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.String) {
-            DMCompiler.ForcedError(location, "Expected string argument");
+            Compiler.ForcedError(location, "Expected string argument");
         }
 
         _requiredArgs.Pop();
@@ -142,7 +143,7 @@ internal class AnnotatedByteCodeWriter {
         _location = location;
 
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.FilterId) {
-            DMCompiler.ForcedError(location, "Expected filter argument");
+            Compiler.ForcedError(location, "Expected filter argument");
         }
 
         _requiredArgs.Pop();
@@ -158,11 +159,11 @@ internal class AnnotatedByteCodeWriter {
     public void WriteListSize(int value, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.ListSize) {
-            DMCompiler.ForcedError(location, "Expected list size argument");
+            Compiler.ForcedError(location, "Expected list size argument");
         }
 
         if (value < 0) {
-            DMCompiler.ForcedError(location, "List size cannot be negative");
+            Compiler.ForcedError(location, "List size cannot be negative");
         }
 
         _requiredArgs.Pop();
@@ -177,7 +178,7 @@ internal class AnnotatedByteCodeWriter {
     public void WriteLabel(string s, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Pop() != OpcodeArgType.Label) {
-            DMCompiler.ForcedError(location, "Expected label argument");
+            Compiler.ForcedError(location, "Expected label argument");
         }
 
         _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeLabel(s, location));
@@ -239,7 +240,7 @@ internal class AnnotatedByteCodeWriter {
         _maxStackSize = Math.Max(_currentStackSize, _maxStackSize);
         if (_currentStackSize < 0 && !_negativeStackSizeError) {
             _negativeStackSizeError = true;
-            DMCompiler.ForcedError(_location, "Negative stack size");
+            Compiler.ForcedError(_location, "Negative stack size");
         }
     }
 
@@ -253,7 +254,7 @@ internal class AnnotatedByteCodeWriter {
     public void WriteResource(string value, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.Resource) {
-            DMCompiler.ForcedError(location, "Expected resource argument");
+            Compiler.ForcedError(location, "Expected resource argument");
         }
 
         _requiredArgs.Pop();
@@ -264,7 +265,7 @@ internal class AnnotatedByteCodeWriter {
     public void WriteTypeId(int typeId, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.TypeId) {
-            DMCompiler.ForcedError(location, "Expected TypeID argument");
+            Compiler.ForcedError(location, "Expected TypeID argument");
         }
 
         _requiredArgs.Pop();
@@ -274,7 +275,7 @@ internal class AnnotatedByteCodeWriter {
     public void WriteProcId(int procId, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.ProcId) {
-            DMCompiler.ForcedError(location, "Expected ProcID argument");
+            Compiler.ForcedError(location, "Expected ProcID argument");
         }
 
         _requiredArgs.Pop();
@@ -284,7 +285,7 @@ internal class AnnotatedByteCodeWriter {
     public void WriteEnumeratorId(int enumeratorId, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.EnumeratorId) {
-            DMCompiler.ForcedError(location, "Expected EnumeratorID argument");
+            Compiler.ForcedError(location, "Expected EnumeratorID argument");
         }
 
         _requiredArgs.Pop();
@@ -294,7 +295,7 @@ internal class AnnotatedByteCodeWriter {
     public void WriteFormatCount(int formatCount, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.FormatCount) {
-            DMCompiler.ForcedError(location, "Expected format count argument");
+            Compiler.ForcedError(location, "Expected format count argument");
         }
 
         _requiredArgs.Pop();
@@ -304,7 +305,7 @@ internal class AnnotatedByteCodeWriter {
     public void WritePickCount(int count, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.PickCount) {
-            DMCompiler.ForcedError(location, "Expected pick count argument");
+            Compiler.ForcedError(location, "Expected pick count argument");
         }
 
         _requiredArgs.Pop();
@@ -314,7 +315,7 @@ internal class AnnotatedByteCodeWriter {
     public void WriteConcatCount(int count, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.ConcatCount) {
-            DMCompiler.ForcedError(location, "Expected concat count argument");
+            Compiler.ForcedError(location, "Expected concat count argument");
         }
 
         _requiredArgs.Pop();
@@ -324,7 +325,7 @@ internal class AnnotatedByteCodeWriter {
     public void WriteReference(DMReference reference, Location location, bool affectStack = true) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Pop() != OpcodeArgType.Reference) {
-            DMCompiler.ForcedError(location, "Expected reference argument");
+            Compiler.ForcedError(location, "Expected reference argument");
         }
 
         switch (reference.RefType) {
@@ -369,7 +370,7 @@ internal class AnnotatedByteCodeWriter {
                 break;
 
             default:
-                DMCompiler.ForcedError(_location, $"Encountered unknown reference type {reference.RefType}");
+                Compiler.ForcedError(_location, $"Encountered unknown reference type {reference.RefType}");
                 break;
         }
     }

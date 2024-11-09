@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace DMCompiler.Optimizer;
 
 public class BytecodeOptimizer {
-    public List<IAnnotatedBytecode> Optimize(List<IAnnotatedBytecode> input) {
+    internal List<IAnnotatedBytecode> Optimize(List<IAnnotatedBytecode> input) {
         if (input.Count == 0) {
             return input;
         }
@@ -63,7 +63,7 @@ public class BytecodeOptimizer {
                         List<IAnnotatedBytecode> args = instruction.GetArgs();
                         for (int j = 0; j < args.Count; j++) {
                             if (args[j] is AnnotatedBytecodeLabel argLabel) {
-                                args[j] = new AnnotatedBytecodeLabel(labelAliases[argLabel.LabelName],
+                                args[j] = new AnnotatedBytecodeLabel(argLabel.Compiler, labelAliases[argLabel.LabelName],
                                     argLabel.Location);
                             }
                         }

@@ -4,7 +4,7 @@ using DMCompiler.Compiler;
 
 namespace DMCompiler.DM.Expressions;
 
-internal abstract class LValue(Location location, DreamPath? path) : DMExpression(location) {
+internal abstract class LValue(DMCompiler compiler, Location location, DreamPath? path) : DMExpression(compiler, location) {
     public override DreamPath? Path { get; } = path;
 
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -26,21 +26,21 @@ internal abstract class LValue(Location location, DreamPath? path) : DMExpressio
     }
 
     public virtual void EmitPushInitial(DMObject dmObject, DMProc proc) {
-        DMCompiler.Emit(WarningCode.BadExpression, Location, $"Can't get initial value of {this}");
+        Compiler.Emit(WarningCode.BadExpression, Location, $"Can't get initial value of {this}");
         proc.Error();
     }
 }
 
 // global
-internal class Global(Location location) : LValue(location, null) {
+internal class Global(DMCompiler compiler, Location location) : LValue(compiler, location, null) {
     public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
-        DMCompiler.Emit(WarningCode.BadExpression, Location, "attempt to use `global` as a reference");
+        Compiler.Emit(WarningCode.BadExpression, Location, "attempt to use `global` as a reference");
         return DMReference.Invalid;
     }
 }
 
 // src
-internal sealed class Src(Location location, DreamPath? path) : LValue(location, path) {
+internal sealed class Src(DMCompiler compiler, Location location, DreamPath? path) : LValue(compiler, location, path) {
     public override DMComplexValueType ValType => DMValueType.Anything;
 
     public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
@@ -51,7 +51,7 @@ internal sealed class Src(Location location, DreamPath? path) : LValue(location,
 }
 
 // usr
-internal sealed class Usr(Location location) : LValue(location, DreamPath.Mob) {
+internal sealed class Usr(DMCompiler compiler, Location location) : LValue(compiler, location, DreamPath.Mob) {
     //According to the docs, Usr is a mob. But it will get set to null by coders to clear refs.
     public override DMComplexValueType ValType => (DMValueType.Mob | DMValueType.Null);
 
@@ -63,7 +63,7 @@ internal sealed class Usr(Location location) : LValue(location, DreamPath.Mob) {
 }
 
 // args
-internal sealed class Args(Location location) : LValue(location, DreamPath.List) {
+internal sealed class Args(DMCompiler compiler, Location location) : LValue(compiler, location, DreamPath.List) {
     public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
         return DMReference.Args;
     }
@@ -72,7 +72,7 @@ internal sealed class Args(Location location) : LValue(location, DreamPath.List)
 }
 
 // Identifier of local variable
-internal sealed class Local(Location location, DMProc.LocalVariable localVar) : LValue(location, localVar.Type) {
+internal sealed class Local(DMCompiler compiler, Location location, DMProc.LocalVariable localVar) : LValue(compiler, location, localVar.Type) {
     public DMProc.LocalVariable LocalVar { get; } = localVar;
 
     // TODO: non-const local var static typing
@@ -98,7 +98,7 @@ internal sealed class Local(Location location, DMProc.LocalVariable localVar) : 
 
     public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
         // This happens silently in BYOND
-        DMCompiler.Emit(WarningCode.PointlessBuiltinCall, Location, "calling initial() on a local variable returns the current value");
+        Compiler.Emit(WarningCode.PointlessBuiltinCall, Location, "calling initial() on a local variable returns the current value");
         EmitPushValue(dmObject, proc);
     }
 
@@ -106,7 +106,7 @@ internal sealed class Local(Location location, DMProc.LocalVariable localVar) : 
 }
 
 // Identifier of field
-internal sealed class Field(Location location, DMVariable variable, DMComplexValueType valType) : LValue(location, variable.Type) {
+internal sealed class Field(DMCompiler compiler, Location location, DMVariable variable, DMComplexValueType valType) : LValue(compiler, location, variable.Type) {
     public override DMComplexValueType ValType => valType;
 
     public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
@@ -142,7 +142,7 @@ internal sealed class Field(Location location, DMVariable variable, DMComplexVal
 }
 
 // Id of global field
-internal sealed class GlobalField(Location location, DreamPath? path, int id,  DMComplexValueType valType) : LValue(location, path) {
+internal sealed class GlobalField(DMCompiler compiler, Location location, DreamPath? path, int id,  DMComplexValueType valType) : LValue(compiler, location, path) {
     private int Id { get; } = id;
 
     public override DMComplexValueType ValType => valType;
@@ -153,7 +153,7 @@ internal sealed class GlobalField(Location location, DreamPath? path, int id,  D
 
     public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
         // This happens silently in BYOND
-        DMCompiler.Emit(WarningCode.PointlessBuiltinCall, Location, "calling initial() on a global returns the current value");
+        Compiler.Emit(WarningCode.PointlessBuiltinCall, Location, "calling initial() on a global returns the current value");
         EmitPushValue(dmObject, proc);
     }
 
@@ -173,7 +173,7 @@ internal sealed class GlobalField(Location location, DreamPath? path, int id,  D
     }
 }
 
-internal sealed class GlobalVars(Location location) : LValue(location, null) {
+internal sealed class GlobalVars(DMCompiler compiler, Location location) : LValue(compiler, location, null) {
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         proc.PushGlobalVars();
     }

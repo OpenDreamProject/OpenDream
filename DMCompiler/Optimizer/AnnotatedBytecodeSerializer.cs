@@ -6,7 +6,7 @@ using DMCompiler.Json;
 
 namespace DMCompiler.Optimizer;
 
-internal class AnnotatedBytecodeSerializer {
+internal class AnnotatedBytecodeSerializer(DMCompiler compiler) {
     private readonly List<LocalVariableJson> _localVariables = new();
     private BinaryWriter _bytecodeWriter;
     private Dictionary<string, int> _labels = new();
@@ -154,7 +154,7 @@ internal class AnnotatedBytecodeSerializer {
                 _bytecodeWriter.Seek((int)position, SeekOrigin.Begin);
                 _bytecodeWriter.Write((int)labelPosition);
             } else {
-                DMCompiler.Emit(WarningCode.BadLabel, Location.Internal,
+                compiler.Emit(WarningCode.BadLabel, Location.Internal,
                     "Label \"" + labelName + "\" could not be resolved");
             }
         }
@@ -195,7 +195,7 @@ internal class AnnotatedBytecodeSerializer {
                 break;
 
             default:
-                DMCompiler.ForcedError(_location ?? Location.Unknown, $"Encountered unknown reference type {reference.RefType}");
+                compiler.ForcedError(_location ?? Location.Unknown, $"Encountered unknown reference type {reference.RefType}");
                 break;
         }
     }

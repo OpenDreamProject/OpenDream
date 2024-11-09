@@ -41,7 +41,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
         var metadata = OpcodeMetadataCache.GetMetadata(opcode);
         // Goal here is to maintain correspondence between the raw bytecode and the annotated bytecode such that
         // the annotated bytecode can be used to generate the raw bytecode again.
-        _annotatedBytecode.Add(new AnnotatedBytecodeInstruction(opcode, metadata.StackDelta, location));
+        _annotatedBytecode.Add(new AnnotatedBytecodeInstruction(Compiler, opcode, metadata.StackDelta, location));
 
         ResizeStack(metadata.StackDelta);
 
@@ -67,7 +67,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
         }
 
         _requiredArgs.Pop();
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeFloat(val, location));
+        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeFloat(Compiler, val, location));
     }
 
     /// <summary>
@@ -82,7 +82,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
         }
 
         _requiredArgs.Pop();
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeArgumentType(argType, location));
+        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeArgumentType(Compiler, argType, location));
     }
 
     /// <summary>
@@ -97,7 +97,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
         }
 
         _requiredArgs.Pop();
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeStackDelta(delta, location));
+        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeStackDelta(Compiler, delta, location));
     }
 
     /// <summary>
@@ -112,7 +112,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
 
         _requiredArgs.Pop();
 
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeType(type, location));
+        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeType(Compiler, type, location));
     }
 
     /// <summary>
@@ -128,7 +128,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
 
         _requiredArgs.Pop();
         int stringId = DMObjectTree.AddString(value);
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeString(stringId, location));
+        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeString(Compiler, stringId, location));
     }
 
     /// <summary>
@@ -148,7 +148,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
 
         _requiredArgs.Pop();
 
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeFilter(filterTypeId, filterPath, location));
+        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeFilter(Compiler, filterTypeId, filterPath, location));
     }
 
     /// <summary>
@@ -167,7 +167,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
         }
 
         _requiredArgs.Pop();
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeListSize(value, location));
+        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeListSize(Compiler, value, location));
     }
 
     /// <summary>
@@ -181,7 +181,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
             Compiler.ForcedError(location, "Expected label argument");
         }
 
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeLabel(s, location));
+        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeLabel(Compiler, s, location));
         _unresolvedLabelsInAnnotatedBytecode.Add((_annotatedBytecode.Count - 1, s));
     }
 
@@ -192,7 +192,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
 
             // Failed to find the label in the given context
             if (label == null) {
-                DMCompiler.Emit(
+                Compiler.Emit(
                     WarningCode.ItemDoesntExist,
                     reference.Location,
                     $"Label \"{reference.Identifier}\" unreachable from scope or does not exist"
@@ -259,7 +259,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
 
         _requiredArgs.Pop();
         int stringId = DMObjectTree.AddString(value);
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeResource(stringId, location));
+        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeResource(Compiler, stringId, location));
     }
 
     public void WriteTypeId(int typeId, Location location) {
@@ -269,7 +269,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
         }
 
         _requiredArgs.Pop();
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeTypeId(typeId, location));
+        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeTypeId(Compiler, typeId, location));
     }
 
     public void WriteProcId(int procId, Location location) {
@@ -279,7 +279,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
         }
 
         _requiredArgs.Pop();
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeProcId(procId, location));
+        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeProcId(Compiler, procId, location));
     }
 
     public void WriteEnumeratorId(int enumeratorId, Location location) {
@@ -289,7 +289,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
         }
 
         _requiredArgs.Pop();
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeEnumeratorId(enumeratorId, location));
+        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeEnumeratorId(Compiler, enumeratorId, location));
     }
 
     public void WriteFormatCount(int formatCount, Location location) {
@@ -299,7 +299,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
         }
 
         _requiredArgs.Pop();
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeFormatCount(formatCount, location));
+        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeFormatCount(Compiler, formatCount, location));
     }
 
     public void WritePickCount(int count, Location location) {
@@ -309,7 +309,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
         }
 
         _requiredArgs.Pop();
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodePickCount(count, location));
+        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodePickCount(Compiler, count, location));
     }
 
     public void WriteConcatCount(int count, Location location) {
@@ -319,7 +319,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
         }
 
         _requiredArgs.Pop();
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeConcatCount(count, location));
+        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeConcatCount(Compiler, count, location));
     }
 
     public void WriteReference(DMReference reference, Location location, bool affectStack = true) {
@@ -332,19 +332,19 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
             case DMReference.Type.Argument:
             case DMReference.Type.Local:
                 _annotatedBytecode[^1]
-                    .AddArg(new AnnotatedBytecodeReference(reference.RefType, reference.Index, location));
+                    .AddArg(new AnnotatedBytecodeReference(Compiler, reference.RefType, reference.Index, location));
                 break;
 
             case DMReference.Type.Global:
             case DMReference.Type.GlobalProc:
                 _annotatedBytecode[^1]
-                    .AddArg(new AnnotatedBytecodeReference(reference.RefType, reference.Index, location));
+                    .AddArg(new AnnotatedBytecodeReference(Compiler, reference.RefType, reference.Index, location));
                 break;
 
             case DMReference.Type.Field:
                 int fieldId = DMObjectTree.AddString(reference.Name);
                 _annotatedBytecode[^1]
-                    .AddArg(new AnnotatedBytecodeReference(reference.RefType, fieldId, location));
+                    .AddArg(new AnnotatedBytecodeReference(Compiler, reference.RefType, fieldId, location));
                 ResizeStack(affectStack ? -1 : 0);
                 break;
 
@@ -352,11 +352,11 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
             case DMReference.Type.SrcField:
                 fieldId = DMObjectTree.AddString(reference.Name);
                 _annotatedBytecode[^1]
-                    .AddArg(new AnnotatedBytecodeReference(reference.RefType, fieldId, location));
+                    .AddArg(new AnnotatedBytecodeReference(Compiler, reference.RefType, fieldId, location));
                 break;
 
             case DMReference.Type.ListIndex:
-                _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeReference(reference.RefType, location));
+                _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeReference(Compiler, reference.RefType, location));
                 ResizeStack(affectStack ? -2 : 0);
                 break;
 
@@ -366,7 +366,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
             case DMReference.Type.Args:
             case DMReference.Type.Usr:
             case DMReference.Type.Invalid:
-                _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeReference(reference.RefType, location));
+                _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeReference(Compiler, reference.RefType, location));
                 break;
 
             default:
@@ -381,12 +381,12 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
 
     public void AddLabel(string name) {
         _labels.Add(name, _annotatedBytecode.Count);
-        _annotatedBytecode.Add(new AnnotatedBytecodeLabel(name, _location));
+        _annotatedBytecode.Add(new AnnotatedBytecodeLabel(Compiler, name, _location));
     }
 
     public void AddLabel(string name, int position) {
         _labels.Add(name, position);
-        _annotatedBytecode.Insert(position, new AnnotatedBytecodeLabel(name, _location));
+        _annotatedBytecode.Insert(position, new AnnotatedBytecodeLabel(Compiler, name, _location));
     }
 
     public bool LabelExists(string name) {
@@ -398,10 +398,10 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
     }
 
     public void WriteLocalVariable(string name, Location writerLocation) {
-        _annotatedBytecode.Add(new AnnotatedBytecodeVariable(name, writerLocation));
+        _annotatedBytecode.Add(new AnnotatedBytecodeVariable(Compiler, name, writerLocation));
     }
 
     public void WriteLocalVariableDealloc(int amount, Location writerLocation) {
-        _annotatedBytecode.Add(new AnnotatedBytecodeVariable(amount, writerLocation));
+        _annotatedBytecode.Add(new AnnotatedBytecodeVariable(Compiler, amount, writerLocation));
     }
 }

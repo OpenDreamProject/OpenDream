@@ -34,7 +34,7 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
             case DMASTIdentifier identifier: return BuildIdentifier(identifier, dmObject, proc, inferredPath);
             case DMASTScopeIdentifier globalIdentifier: return BuildScopeIdentifier(globalIdentifier, dmObject, proc, inferredPath);
             case DMASTCallableSelf: return new ProcSelf(expression.Location, null, proc);
-            case DMASTCallableSuper: return new ProcSuper(expression.Location, dmObject, proc);
+            case DMASTCallableSuper: return new ProcSuper(compiler, expression.Location, dmObject, proc);
             case DMASTCallableProcIdentifier procIdentifier: return BuildCallableProcIdentifier(procIdentifier, dmObject);
             case DMASTProcCall procCall: return BuildProcCall(procCall, dmObject, proc, inferredPath);
             case DMASTAssign assign: return BuildAssign(assign, dmObject, proc, inferredPath);
@@ -432,7 +432,7 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
                         $"No global proc named \"{bIdentifier}\" exists");
 
                 var arguments = new ArgumentList(location, dmObject, proc, scopeIdentifier.CallArguments, inferredPath);
-                return new ProcCall(location, new GlobalProc(location, bIdentifier), arguments, DMValueType.Anything);
+                return new ProcCall(location, new GlobalProc(compiler, location, bIdentifier), arguments, DMValueType.Anything);
             }
 
             // ::vars, special case
@@ -525,11 +525,11 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
 
     private DMExpression BuildCallableProcIdentifier(DMASTCallableProcIdentifier procIdentifier, DMObject dmObject) {
         if (CurrentScopeMode is ScopeMode.Static or ScopeMode.FirstPassStatic)
-            return new GlobalProc(procIdentifier.Location, procIdentifier.Identifier);
+            return new GlobalProc(compiler, procIdentifier.Location, procIdentifier.Identifier);
         if (dmObject.HasProc(procIdentifier.Identifier))
-            return new Proc(procIdentifier.Location, procIdentifier.Identifier);
+            return new Proc(compiler, procIdentifier.Location, procIdentifier.Identifier);
         if (DMObjectTree.TryGetGlobalProc(procIdentifier.Identifier, out _))
-            return new GlobalProc(procIdentifier.Location, procIdentifier.Identifier);
+            return new GlobalProc(compiler, procIdentifier.Location, procIdentifier.Identifier);
 
         return BadExpression(WarningCode.ItemDoesntExist, procIdentifier.Location,
             $"Type {dmObject.Path} does not have a proc named \"{procIdentifier.Identifier}\"");
@@ -638,7 +638,7 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
                         ArgumentList argumentList = new(deref.Expression.Location, dmObject, proc,
                             callOperation.Parameters);
 
-                        var globalProc = new GlobalProc(expr.Location, callOperation.Identifier);
+                        var globalProc = new GlobalProc(compiler, expr.Location, callOperation.Identifier);
                         expr = new ProcCall(expr.Location, globalProc, argumentList, DMValueType.Anything);
                         break;
 

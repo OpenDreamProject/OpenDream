@@ -18,7 +18,6 @@ using DMCompiler.Json;
 
 namespace DMCompiler;
 
-//TODO: Make this not a static class
 internal class DMCompiler {
     public int ErrorCount;
     public int WarningCount;

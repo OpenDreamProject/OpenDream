@@ -5,9 +5,9 @@ using DMCompiler.Compiler;
 namespace DMCompiler.DM.Expressions;
 
 // x() (only the identifier)
-internal sealed class Proc(Location location, string identifier) : DMExpression(location) {
+internal sealed class Proc(DMCompiler compiler, Location location, string identifier) : DMExpression(compiler, location) {
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        DMCompiler.Emit(WarningCode.BadExpression, Location, "attempt to use proc as value");
+        compiler.Emit(WarningCode.BadExpression, Location, "attempt to use proc as value");
         proc.Error();
     }
 
@@ -18,7 +18,7 @@ internal sealed class Proc(Location location, string identifier) : DMExpression(
             return DMReference.CreateGlobalProc(globalProc.Id);
         }
 
-        DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {dmObject.Path} does not have a proc named \"{identifier}\"");
+        compiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {dmObject.Path} does not have a proc named \"{identifier}\"");
         //Just... pretend there is one for the sake of argument.
         return DMReference.CreateSrcProc(identifier);
     }
@@ -37,7 +37,7 @@ internal sealed class Proc(Location location, string identifier) : DMExpression(
 /// This doesn't actually contain the GlobalProc itself;
 /// this is just a hopped-up string that we eventually deference to get the real global proc during compilation.
 /// </remarks>
-internal sealed class GlobalProc(Location location, string name) : DMExpression(location) {
+internal sealed class GlobalProc(DMCompiler compiler, Location location, string name) : DMExpression(compiler, location) {
     public override DMComplexValueType ValType => GetProc().ReturnTypes;
 
     public override string ToString() {
@@ -45,7 +45,7 @@ internal sealed class GlobalProc(Location location, string name) : DMExpression(
     }
 
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        DMCompiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"{name}\" as value");
+        compiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"{name}\" as value");
     }
 
     public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
@@ -55,7 +55,7 @@ internal sealed class GlobalProc(Location location, string name) : DMExpression(
 
     public DMProc GetProc() {
         if (!DMObjectTree.TryGetGlobalProc(name, out var globalProc)) {
-            DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"No global proc named \"{name}\"");
+            compiler.Emit(WarningCode.ItemDoesntExist, Location, $"No global proc named \"{name}\"");
             return DMObjectTree.GlobalInitProc; // Just give this, who cares
         }
 
@@ -76,18 +76,18 @@ internal sealed class ProcSelf(Location location, DreamPath? path, DMProc proc) 
 }
 
 // ..
-internal sealed class ProcSuper(Location location, DMObject _dmObject, DMProc _proc) : DMExpression(location) {
+internal sealed class ProcSuper(DMCompiler compiler, Location location, DMObject _dmObject, DMProc _proc) : DMExpression(compiler, location) {
     public override DMComplexValueType ValType => _dmObject.GetProcReturnTypes(_proc.Name) ?? DMValueType.Anything;
 
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        DMCompiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"..\" as value");
+        compiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"..\" as value");
     }
 
     public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
         if ((proc.Attributes & ProcAttributes.IsOverride) != ProcAttributes.IsOverride) {
             // Don't emit if lateral proc overrides exist
             if (dmObject.GetProcs(proc.Name)!.Count == 1) {
-                DMCompiler.Emit(WarningCode.PointlessParentCall, Location,
+                compiler.Emit(WarningCode.PointlessParentCall, Location,
                     "Calling parents via ..() in a proc definition does nothing");
             }
         }
@@ -118,7 +118,7 @@ internal sealed class ProcCall(Location location, DMExpression target, ArgumentL
         (DMObject? procOwner, DMProc? targetProc) = GetTargetProc(dmObject);
         DoCompileTimeLinting(procOwner, targetProc);
         if ((targetProc?.Attributes & ProcAttributes.Unimplemented) == ProcAttributes.Unimplemented) {
-            DMCompiler.UnimplementedWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}.{targetProc.Name}() is not implemented");
+            targetProc!.Compiler.UnimplementedWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}.{targetProc.Name}() is not implemented");
         }
 
         string endLabel = proc.NewLabelName();
@@ -158,7 +158,7 @@ internal sealed class ProcCall(Location location, DMExpression target, ArgumentL
                         var lastArg = arguments.Expressions.Last().Expr;
                         if(lastArg.TryAsConstant(out var constant)) {
                             if(constant is not Number opcodeNumber) {
-                                DMCompiler.Emit(WarningCode.SuspiciousMatrixCall, arguments.Location,
+                                targetProc.Compiler.Emit(WarningCode.SuspiciousMatrixCall, arguments.Location,
                                     "Arguments for matrix() are invalid - either opcode is invalid or not enough arguments");
                                 break;
                             }
@@ -170,17 +170,17 @@ internal sealed class ProcCall(Location location, DMExpression target, ArgumentL
                                 //NOTE: This still does let some certain weird opcodes through,
                                 //like a MODIFY with no other operation present.
                                 //Not sure if that is a parity behaviour or not!
-                                DMCompiler.Emit(WarningCode.SuspiciousMatrixCall, arguments.Location,
+                                targetProc.Compiler.Emit(WarningCode.SuspiciousMatrixCall, arguments.Location,
                                     "Arguments for matrix() are invalid - either opcode is invalid or not enough arguments");
                             }
                         }
                         break;
                     case 5: // BYOND always runtimes but DOES compile, here
-                        DMCompiler.Emit(WarningCode.SuspiciousMatrixCall, arguments.Location,
+                        targetProc.Compiler.Emit(WarningCode.SuspiciousMatrixCall, arguments.Location,
                             $"Calling matrix() with 5 arguments will always error when called at runtime");
                         break;
                     default: // BYOND always compiletimes here
-                        DMCompiler.Emit(WarningCode.InvalidArgumentCount, arguments.Location,
+                        targetProc.Compiler.Emit(WarningCode.InvalidArgumentCount, arguments.Location,
                             $"Too many arguments to matrix() - got {arguments.Length} arguments, expecting 6 or less");
                         break;
 
@@ -191,7 +191,7 @@ internal sealed class ProcCall(Location location, DMExpression target, ArgumentL
 
     public override bool TryAsJsonRepresentation(out object? json) {
         json = null;
-        DMCompiler.UnimplementedWarning(Location, $"DMM overrides for expression {GetType()} are not implemented");
+        target.Compiler.UnimplementedWarning(Location, $"DMM overrides for expression {GetType()} are not implemented");
         return true; //TODO
     }
 }

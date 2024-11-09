@@ -98,11 +98,12 @@ namespace DMCompiler.DM {
         public DMComplexValueType ReturnTypes => _dmObject.GetProcReturnTypes(Name) ?? DMValueType.Anything;
 
         public long Position => AnnotatedBytecode.Position;
-        public AnnotatedByteCodeWriter AnnotatedBytecode = new();
+        public readonly AnnotatedByteCodeWriter AnnotatedBytecode;
 
         private Location _writerLocation;
 
         public DMProc(DMCompiler compiler, int id, DMObject dmObject, DMASTProcDefinition? astDefinition) {
+            AnnotatedBytecode = new(compiler);
             Compiler = compiler;
             Id = id;
             _dmObject = dmObject;
@@ -171,7 +172,7 @@ namespace DMCompiler.DM {
 
         public ProcDefinitionJson GetJsonRepresentation() {
             var optimizer = new BytecodeOptimizer();
-            var serializer = new AnnotatedBytecodeSerializer();
+            var serializer = new AnnotatedBytecodeSerializer(Compiler);
 
             optimizer.Optimize(AnnotatedBytecode.GetAnnotatedBytecode());
 

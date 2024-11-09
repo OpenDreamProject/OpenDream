@@ -212,7 +212,7 @@ internal sealed class Pick(DMCompiler compiler,  Location location, Pick.PickVal
             compiler.Emit(WarningCode.PickWeightedSyntax, Location, "Use of weighted pick() syntax");
 
             foreach (PickValue pickValue in values) {
-                DMExpression weight = pickValue.Weight ?? DMExpression.Create(dmObject, proc, new DMASTConstantInteger(Location, 100)); //Default of 100
+                DMExpression weight = pickValue.Weight ?? compiler.DMExpression.Create(dmObject, proc, new DMASTConstantInteger(Location, 100)); //Default of 100
 
                 weight.EmitPushValue(dmObject, proc);
                 pickValue.Value.EmitPushValue(dmObject, proc);
@@ -579,7 +579,7 @@ internal sealed class Sin(DMCompiler compiler,  Location location, DMExpression 
                 "Invalid value treated as 0, sin(0) will always be 0");
         }
 
-        constant = new Number(Location, SharedOperations.Sin(x));
+        constant = new Number(compiler, Location, SharedOperations.Sin(x));
         return true;
     }
 
@@ -604,7 +604,7 @@ internal sealed class Cos(DMCompiler compiler,  Location location, DMExpression 
                 "Invalid value treated as 0, cos(0) will always be 1");
         }
 
-        constant = new Number(Location, SharedOperations.Cos(x));
+        constant = new Number(compiler, Location, SharedOperations.Cos(x));
         return true;
     }
 
@@ -629,7 +629,7 @@ internal sealed class Tan(DMCompiler compiler,  Location location, DMExpression 
                 "Invalid value treated as 0, tan(0) will always be 0");
         }
 
-        constant = new Number(Location, SharedOperations.Tan(x));
+        constant = new Number(compiler, Location, SharedOperations.Tan(x));
         return true;
     }
 
@@ -659,7 +659,7 @@ internal sealed class ArcSin(DMCompiler compiler,  Location location, DMExpressi
             x = 0;
         }
 
-        constant = new Number(Location, SharedOperations.ArcSin(x));
+        constant = new Number(compiler, Location, SharedOperations.ArcSin(x));
         return true;
     }
 
@@ -689,7 +689,7 @@ internal sealed class ArcCos(DMCompiler compiler,  Location location, DMExpressi
             x = 0;
         }
 
-        constant = new Number(Location, SharedOperations.ArcCos(x));
+        constant = new Number(compiler, Location, SharedOperations.ArcCos(x));
         return true;
     }
 
@@ -714,7 +714,7 @@ internal sealed class ArcTan(DMCompiler compiler,  Location location, DMExpressi
                 "Invalid value treated as 0, arctan(0) will always be 0");
         }
 
-        constant = new Number(Location, SharedOperations.ArcTan(a));
+        constant = new Number(compiler, Location, SharedOperations.ArcTan(a));
         return true;
     }
 
@@ -743,7 +743,7 @@ internal sealed class ArcTan2(DMCompiler compiler,  Location location, DMExpress
             compiler.Emit(WarningCode.FallbackBuiltinArgument, xExpr.Location, "Invalid y value treated as 0");
         }
 
-        constant = new Number(Location, SharedOperations.ArcTan(x, y));
+        constant = new Number(compiler, Location, SharedOperations.ArcTan(x, y));
         return true;
     }
 
@@ -774,7 +774,7 @@ internal sealed class Sqrt(DMCompiler compiler,  Location location, DMExpression
                 $"Cannot get the square root of a negative number ({a})");
         }
 
-        constant = new Number(Location, SharedOperations.Sqrt(a));
+        constant = new Number(compiler, Location, SharedOperations.Sqrt(a));
         return true;
     }
 
@@ -801,7 +801,7 @@ internal sealed class Log(DMCompiler compiler,  Location location, DMExpression 
         }
 
         if (baseExpr == null) {
-            constant = new Number(Location, SharedOperations.Log(value));
+            constant = new Number(compiler, Location, SharedOperations.Log(value));
             return true;
         }
 
@@ -816,7 +816,7 @@ internal sealed class Log(DMCompiler compiler,  Location location, DMExpression 
                 "Invalid base, must be a number greater than 0");
         }
 
-        constant = new Number(Location, SharedOperations.Log(value, baseValue));
+        constant = new Number(compiler, Location, SharedOperations.Log(value, baseValue));
         return true;
     }
 
@@ -846,7 +846,7 @@ internal sealed class Abs(DMCompiler compiler,  Location location, DMExpression 
                 "Invalid value treated as 0, abs(0) will always be 0");
         }
 
-        constant = new Number(Location, SharedOperations.Abs(a));
+        constant = new Number(compiler, Location, SharedOperations.Abs(a));
         return true;
     }
 

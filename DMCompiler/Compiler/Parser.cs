@@ -1,11 +1,13 @@
 namespace DMCompiler.Compiler;
 
 public class Parser<SourceType> {
+    public DMCompiler Compiler;
     protected Lexer<SourceType> _lexer;
     private Token _currentToken;
     private readonly Stack<Token> _tokenStack = new(1);
 
     protected Parser(Lexer<SourceType> lexer) {
+        Compiler = lexer.Compiler;
         _lexer = lexer;
 
         Advance();
@@ -94,12 +96,12 @@ public class Parser<SourceType> {
     /// </remarks>
     protected void Warning(string message, Token? token = null) {
         token ??= _currentToken;
-        DMCompiler.ForcedWarning(token.Value.Location, message);
+        Compiler.ForcedWarning(token.Value.Location, message);
     }
 
     /// <returns> True if this will raise an error, false if not. You can use this return value to help improve error emission around this (depending on how permissive we're being)</returns>
     protected bool Emit(WarningCode code, Location location, string message) {
-        return DMCompiler.Emit(code, location, message);
+        return Compiler.Emit(code, location, message);
     }
 
     protected bool Emit(WarningCode code, string message) {

@@ -98,7 +98,7 @@ internal sealed class ProcSuper(Location location, DMObject _dmObject, DMProc _p
 
 // x(y, z, ...)
 internal sealed class ProcCall(Location location, DMExpression target, ArgumentList arguments, DMComplexValueType valType)
-    : DMExpression(location) {
+    : DMExpression(target.Compiler, location) {
     public override bool PathIsFuzzy => Path == null;
     public override DMComplexValueType ValType => valType.IsAnything ? target.ValType : valType;
 

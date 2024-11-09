@@ -6,22 +6,23 @@ using DMCompiler.DM.Builders;
 
 namespace DMCompiler.DM;
 
-internal abstract class DMExpression(Location location) {
+internal abstract class DMExpression(DMCompiler compiler, Location location) {
+    public DMCompiler Compiler = compiler;
     public Location Location = location;
 
     public virtual DMComplexValueType ValType => DMValueType.Anything;
 
     // TODO: proc and dmObject can be null, address nullability contract
-    public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
-        return DMExpressionBuilder.BuildExpression(expression, dmObject, proc, inferredPath);
+    public DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
+        return Compiler.DMExpressionBuilder.BuildExpression(expression, dmObject, proc, inferredPath);
     }
 
-    public static void Emit(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
+    public void Emit(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
         var expr = Create(dmObject, proc, expression, inferredPath);
         expr.EmitPushValue(dmObject, proc);
     }
 
-    public static bool TryConstant(DMObject dmObject, DMProc proc, DMASTExpression expression, out Expressions.Constant? constant) {
+    public bool TryConstant(DMObject dmObject, DMProc proc, DMASTExpression expression, out Expressions.Constant? constant) {
         var expr = Create(dmObject, proc, expression);
         return expr.TryAsConstant(out constant);
     }
@@ -56,7 +57,7 @@ internal abstract class DMExpression(Location location) {
     // May throw if this expression is unable to be referenced
     // The emitted code will jump to endLabel after pushing `null` to the stack in the event of a short-circuit
     public virtual DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
-        DMCompiler.Emit(WarningCode.BadExpression, Location, "attempt to reference r-value");
+        Compiler.Emit(WarningCode.BadExpression, Location, "attempt to reference r-value");
         return DMReference.Invalid;
     }
 
@@ -112,7 +113,7 @@ internal sealed class ArgumentList {
                     var newIdx = (int)keyNum.Value - 1;
 
                     if (newIdx == argIndex) {
-                        DMCompiler.Emit(WarningCode.PointlessPositionalArgument, key.Location,
+                        keyNum.Compiler.Emit(WarningCode.PointlessPositionalArgument, key.Location,
                             $"The argument at index {argIndex + 1} is a positional argument with a redundant index (\"{argIndex + 1} = value\" at argument {argIndex + 1}). This does not function like a named argument and is likely a mistake.");
                     }
 
@@ -126,7 +127,7 @@ internal sealed class ArgumentList {
 
                 default:
                     if (key != null) {
-                        DMCompiler.Emit(WarningCode.InvalidArgumentKey, key.Location, "Invalid argument key");
+                        key.Compiler.Emit(WarningCode.InvalidArgumentKey, key.Location, "Invalid argument key");
                     }
 
                     break;
@@ -146,7 +147,7 @@ internal sealed class ArgumentList {
 
         if (Expressions[0].Expr is Expressions.Arglist arglist) {
             if (Expressions[0].Name != null)
-                DMCompiler.Emit(WarningCode.BadArgument, arglist.Location, "arglist cannot be a named argument");
+                arglist.Compiler.Emit(WarningCode.BadArgument, arglist.Location, "arglist cannot be a named argument");
 
             arglist.EmitPushArglist(dmObject, proc);
             return (DMCallArgumentsType.FromArgumentList, 1);
@@ -175,8 +176,8 @@ internal sealed class ArgumentList {
         return (_isKeyed ? DMCallArgumentsType.FromStackKeyed : DMCallArgumentsType.FromStack, stackCount);
     }
 
-    private static void VerifyArgType(DMProc targetProc, int index, string? name, DMExpression expr) {
-        // TODO: See if the static typechecking can be improved
+    private  void VerifyArgType(DMProc targetProc, int index, string? name, DMExpression expr) {
+        // TODO: See if the  typechecking can be improved
         // Also right now we don't care if the arg is Anything
         // TODO: Make a separate "UnsetStaticType" pragma for whether we should care if it's Anything
         // TODO: We currently silently avoid typechecking "call()()" and "new" args (NewPath is handled)
@@ -193,7 +194,7 @@ internal sealed class ArgumentList {
         if (param == null) {
             // TODO: Remove this check once variadic args are properly supported
             if (targetProc.Name != "animate" && index < targetProc.Parameters.Count) {
-                DMCompiler.Emit(WarningCode.InvalidVarType, expr.Location,
+                expr.Compiler.Emit(WarningCode.InvalidVarType, expr.Location,
                     $"{targetProc.Name}(...): Unknown argument {(name is null ? $"at index {index}" : $"\"{name}\"")}, typechecking failed");
             }
 
@@ -203,7 +204,7 @@ internal sealed class ArgumentList {
         DMComplexValueType paramType = param.ExplicitValueType ?? DMValueType.Anything;
 
         if (!expr.ValType.IsAnything && !paramType.MatchesType(expr.ValType)) {
-            DMCompiler.Emit(WarningCode.InvalidVarType, expr.Location,
+            expr.Compiler.Emit(WarningCode.InvalidVarType, expr.Location,
                 $"{targetProc.Name}(...) argument \"{param.Name}\": Invalid var value type {expr.ValType}, expected {paramType}");
         }
     }

@@ -12,12 +12,13 @@ internal struct Argument {
 
 internal static class Program {
     private static void Main(string[] args) {
-        if (!TryParseArguments(args, out DMCompilerSettings settings)) {
+        DMCompiler compiler = new DMCompiler();
+        if (!TryParseArguments(compiler, args, out DMCompilerSettings settings)) {
             Environment.Exit(1);
             return;
         }
 
-        if (!DMCompiler.Compile(settings)) {
+        if (!compiler.Compile(settings)) {
             //Compile errors, exit with an error code
             Environment.Exit(1);
         }
@@ -74,7 +75,7 @@ internal static class Program {
         Console.WriteLine("--pragma-config [file].dm : Configure the error/warning/notice/ignore level of compiler messages");
     }
 
-    private static bool TryParseArguments(string[] args, out DMCompilerSettings settings) {
+    private static bool TryParseArguments(DMCompiler compiler, string[] args, out DMCompilerSettings settings) {
         settings = new DMCompilerSettings {
             Files = new List<string>()
         };
@@ -108,7 +109,7 @@ internal static class Program {
                 case "pragma-config": {
                     if(arg.Value is null || !HasValidDMExtension(arg.Value)) {
                         if(skipBad) {
-                            DMCompiler.ForcedWarning($"Compiler arg 'pragma-config' requires filename of valid DM file, skipping");
+                            compiler.ForcedWarning($"Compiler arg 'pragma-config' requires filename of valid DM file, skipping");
                             continue;
                         }
                         Console.WriteLine("Compiler arg 'pragma-config' requires filename of valid DM file");
@@ -120,7 +121,7 @@ internal static class Program {
                 case "version": {
                     if(arg.Value is null) {
                         if(skipBad) {
-                            DMCompiler.ForcedWarning("Compiler arg 'version' requires a full BYOND build (e.g. --version=514.1584), skipping");
+                            compiler.ForcedWarning("Compiler arg 'version' requires a full BYOND build (e.g. --version=514.1584), skipping");
                             continue;
                         }
                         Console.WriteLine("Compiler arg 'version' requires a full BYOND build (e.g. --version=514.1584)");
@@ -130,7 +131,7 @@ internal static class Program {
                     var split = arg.Value.Split('.', StringSplitOptions.RemoveEmptyEntries);
                     if (split.Length != 2 || !int.TryParse(split[0], out _) || !int.TryParse(split[1], out _)) { // We want to make sure that they *are* ints but the preprocessor takes strings
                         if(skipBad) {
-                            DMCompiler.ForcedWarning("Compiler arg 'version' requires a full BYOND build (e.g. --version=514.1584), skipping");
+                            compiler.ForcedWarning("Compiler arg 'version' requires a full BYOND build (e.g. --version=514.1584), skipping");
                             continue;
                         }
                         Console.WriteLine("Compiler arg 'version' requires a full BYOND build (e.g. --version=514.1584)");
@@ -149,7 +150,7 @@ internal static class Program {
                         break;
                     }
                     if (skipBad) {
-                        DMCompiler.ForcedWarning($"Invalid compiler arg '{arg.Value}', skipping");
+                        compiler.ForcedWarning($"Invalid compiler arg '{arg.Value}', skipping");
                     } else {
                         Console.WriteLine($"Invalid arg '{arg}'");
                         return false;
@@ -159,7 +160,7 @@ internal static class Program {
                 }
                 default: {
                     if (skipBad) {
-                        DMCompiler.ForcedWarning($"Unknown compiler arg '{arg.Name}', skipping");
+                        compiler.ForcedWarning($"Unknown compiler arg '{arg.Name}', skipping");
                         break;
                     }
 

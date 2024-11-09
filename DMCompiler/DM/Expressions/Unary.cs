@@ -3,7 +3,7 @@ using DMCompiler.Bytecode;
 
 namespace DMCompiler.DM.Expressions;
 
-internal abstract class UnaryOp(Location location, DMExpression expr) : DMExpression(location) {
+internal abstract class UnaryOp(Location location, DMExpression expr) : DMExpression(expr.Compiler, location) {
     protected DMExpression Expr { get; } = expr;
 }
 
@@ -101,7 +101,7 @@ internal sealed class PostDecrement(Location location, DMExpression expr) : Assi
 internal sealed class PointerRef(Location location, DMExpression expr) : UnaryOp(location, expr) {
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         Expr.EmitPushValue(dmObject, proc);
-        DMCompiler.UnimplementedWarning(Location, "Pointers are currently unimplemented and identifiers will be treated as normal variables.");
+        Compiler.UnimplementedWarning(Location, "Pointers are currently unimplemented and identifiers will be treated as normal variables.");
     }
 
     public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
@@ -113,7 +113,7 @@ internal sealed class PointerRef(Location location, DMExpression expr) : UnaryOp
 internal sealed class PointerDeref(Location location, DMExpression expr) : UnaryOp(location, expr) {
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         Expr.EmitPushValue(dmObject, proc);
-        DMCompiler.UnimplementedWarning(Location, "Pointers are currently unimplemented and identifiers will be treated as normal variables.");
+        Compiler.UnimplementedWarning(Location, "Pointers are currently unimplemented and identifiers will be treated as normal variables.");
     }
 
     public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {

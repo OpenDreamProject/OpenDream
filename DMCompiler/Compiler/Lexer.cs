@@ -3,6 +3,7 @@
 namespace DMCompiler.Compiler;
 
 public class Lexer<SourceType> {
+    public DMCompiler Compiler;
     public Location CurrentLocation { get; protected set; }
     public string SourceName { get; protected set; }
     public IEnumerable<SourceType> Source { get; protected set; }
@@ -13,7 +14,8 @@ public class Lexer<SourceType> {
     private readonly IEnumerator<SourceType> _sourceEnumerator;
     private SourceType _current;
 
-    protected Lexer(string sourceName, IEnumerable<SourceType> source) {
+    protected Lexer(DMCompiler compiler, string sourceName, IEnumerable<SourceType> source) {
+        Compiler = compiler;
         CurrentLocation = new Location(sourceName, 1, 0);
         SourceName = sourceName;
         Source = source;
@@ -68,7 +70,7 @@ public class TextLexer : Lexer<char> {
     protected string _source;
     protected int _currentPosition = 0;
 
-    public TextLexer(string sourceName, string source) : base(sourceName, source) {
+    public TextLexer(DMCompiler compiler, string sourceName, string source) : base(compiler, sourceName, source) {
         _source = source;
 
         Advance();
@@ -113,7 +115,7 @@ public class TextLexer : Lexer<char> {
 }
 
 public class TokenLexer : Lexer<Token> {
-    public TokenLexer(string sourceName, IEnumerable<Token> source) : base(sourceName, source) {
+    public TokenLexer(DMCompiler compiler, string sourceName, IEnumerable<Token> source) : base(compiler, sourceName, source) {
         Advance();
     }
 

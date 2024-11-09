@@ -37,7 +37,7 @@ internal sealed class PeepholeOptimizer {
     private static readonly Dictionary<DreamProcOpcode, OptimizationTreeEntry> OptimizationTrees = new();
 
     /// Setup <see cref="OptimizationTrees"/>
-    static PeepholeOptimizer() {
+    private PeepholeOptimizer(DMCompiler compiler) {
         var possibleTypes = typeof(PeepholeOptimizer).Assembly.GetTypes();
         var optimizationTypes = new List<Type>(possibleTypes.Length);
         foreach (var type in possibleTypes) {
@@ -53,7 +53,7 @@ internal sealed class PeepholeOptimizer {
             var opt = (IPeepholeOptimization)(Activator.CreateInstance(optType))!;
             var opcodes = opt.GetOpcodes();
             if (opcodes.Length < 2) {
-                DMCompiler.ForcedError(Location.Internal, $"Peephole optimization {optType} must have at least 2 opcodes");
+                compiler.ForcedError(Location.Internal, $"Peephole optimization {optType} must have at least 2 opcodes");
                 continue;
             }
 

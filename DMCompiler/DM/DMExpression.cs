@@ -81,6 +81,7 @@ internal abstract class DMExpression(DMCompiler compiler, Location location) {
 // (a, b, c, ...)
 // This isn't an expression, it's just a helper class for working with argument lists
 internal sealed class ArgumentList {
+    public readonly DMCompiler Compiler;
     public readonly (string? Name, DMExpression Expr)[] Expressions;
     public int Length => Expressions.Length;
     public Location Location;
@@ -88,7 +89,8 @@ internal sealed class ArgumentList {
     // Whether or not this has named arguments
     private readonly bool _isKeyed;
 
-    public ArgumentList(Location location, DMObject dmObject, DMProc proc, DMASTCallParameter[]? arguments, DreamPath? inferredPath = null) {
+    public ArgumentList(DMCompiler compiler, Location location, DMObject dmObject, DMProc proc, DMASTCallParameter[]? arguments, DreamPath? inferredPath = null) {
+        Compiler = compiler;
         Location = location;
         if (arguments == null) {
             Expressions = Array.Empty<(string?, DMExpression)>();
@@ -99,8 +101,8 @@ internal sealed class ArgumentList {
 
         int idx = 0;
         foreach(var arg in arguments) {
-            var value = proc.Compiler.DMExpression.Create(dmObject, proc, arg.Value, inferredPath);
-            var key = (arg.Key != null) ? proc.Compiler.DMExpression.Create(dmObject, proc, arg.Key, inferredPath) : null;
+            var value = Compiler.DMExpression.Create(dmObject, proc, arg.Value, inferredPath);
+            var key = (arg.Key != null) ? Compiler.DMExpression.Create(dmObject, proc, arg.Key, inferredPath) : null;
             int argIndex = idx++;
             string? name = null;
 
@@ -113,7 +115,7 @@ internal sealed class ArgumentList {
                     var newIdx = (int)keyNum.Value - 1;
 
                     if (newIdx == argIndex) {
-                        keyNum.Compiler.Emit(WarningCode.PointlessPositionalArgument, key.Location,
+                        compiler.Emit(WarningCode.PointlessPositionalArgument, key.Location,
                             $"The argument at index {argIndex + 1} is a positional argument with a redundant index (\"{argIndex + 1} = value\" at argument {argIndex + 1}). This does not function like a named argument and is likely a mistake.");
                     }
 
@@ -127,7 +129,7 @@ internal sealed class ArgumentList {
 
                 default:
                     if (key != null) {
-                        key.Compiler.Emit(WarningCode.InvalidArgumentKey, key.Location, "Invalid argument key");
+                        Compiler.Emit(WarningCode.InvalidArgumentKey, key.Location, "Invalid argument key");
                     }
 
                     break;
@@ -147,7 +149,7 @@ internal sealed class ArgumentList {
 
         if (Expressions[0].Expr is Expressions.Arglist arglist) {
             if (Expressions[0].Name != null)
-                arglist.Compiler.Emit(WarningCode.BadArgument, arglist.Location, "arglist cannot be a named argument");
+                Compiler.Emit(WarningCode.BadArgument, arglist.Location, "arglist cannot be a named argument");
 
             arglist.EmitPushArglist(dmObject, proc);
             return (DMCallArgumentsType.FromArgumentList, 1);
@@ -194,7 +196,7 @@ internal sealed class ArgumentList {
         if (param == null) {
             // TODO: Remove this check once variadic args are properly supported
             if (targetProc.Name != "animate" && index < targetProc.Parameters.Count) {
-                expr.Compiler.Emit(WarningCode.InvalidVarType, expr.Location,
+                Compiler.Emit(WarningCode.InvalidVarType, expr.Location,
                     $"{targetProc.Name}(...): Unknown argument {(name is null ? $"at index {index}" : $"\"{name}\"")}, typechecking failed");
             }
 
@@ -203,8 +205,8 @@ internal sealed class ArgumentList {
 
         DMComplexValueType paramType = param.ExplicitValueType ?? DMValueType.Anything;
 
-        if (!expr.ValType.IsAnything && !paramType.MatchesType(expr.Compiler, expr.ValType)) {
-            expr.Compiler.Emit(WarningCode.InvalidVarType, expr.Location,
+        if (!expr.ValType.IsAnything && !paramType.MatchesType(Compiler, expr.ValType)) {
+            Compiler.Emit(WarningCode.InvalidVarType, expr.Location,
                 $"{targetProc.Name}(...) argument \"{param.Name}\": Invalid var value type {expr.ValType}, expected {paramType}");
         }
     }

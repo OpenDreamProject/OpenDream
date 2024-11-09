@@ -205,17 +205,17 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
                         "Expected a path expression");
 
                 return new NewPath(Compiler, newPath.Location, path,
-                    new ArgumentList(newPath.Location, dmObject, proc, newPath.Parameters, inferredPath));
+                    new ArgumentList(Compiler, newPath.Location, dmObject, proc, newPath.Parameters, inferredPath));
             case DMASTNewExpr newExpr:
                 return new New(Compiler, newExpr.Location,
                     BuildExpression(newExpr.Expression, dmObject, proc, inferredPath),
-                    new ArgumentList(newExpr.Location, dmObject, proc, newExpr.Parameters, inferredPath));
+                    new ArgumentList(Compiler, newExpr.Location, dmObject, proc, newExpr.Parameters, inferredPath));
             case DMASTNewInferred newInferred:
                 if (inferredPath is null)
                     return BadExpression(WarningCode.BadExpression, newInferred.Location, "Could not infer a type");
 
                 return new NewPath(Compiler, newInferred.Location, new ConstantPath(compiler, newInferred.Location, dmObject, inferredPath.Value),
-                    new ArgumentList(newInferred.Location, dmObject, proc, newInferred.Parameters, inferredPath));
+                    new ArgumentList(Compiler, newInferred.Location, dmObject, proc, newInferred.Parameters, inferredPath));
             case DMASTPreIncrement preIncrement:
                 return new PreIncrement(preIncrement.Location, BuildExpression(preIncrement.Value, dmObject, proc, inferredPath));
             case DMASTPostIncrement postIncrement:
@@ -230,9 +230,9 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
                 return new PointerDeref(pointerDeref.Location, BuildExpression(pointerDeref.Value, dmObject, proc, inferredPath));
             case DMASTGradient gradient:
                 return new Gradient(Compiler, gradient.Location,
-                    new ArgumentList(gradient.Location, dmObject, proc, gradient.Parameters));
+                    new ArgumentList(Compiler, gradient.Location, dmObject, proc, gradient.Parameters));
             case DMASTRgb rgb:
-                return new Rgb(Compiler, rgb.Location, new ArgumentList(rgb.Location, dmObject, proc, rgb.Parameters));
+                return new Rgb(Compiler, rgb.Location, new ArgumentList(Compiler, rgb.Location, dmObject, proc, rgb.Parameters));
             case DMASTLocateCoordinates locateCoordinates:
                 return new LocateCoordinates(Compiler, locateCoordinates.Location,
                     BuildExpression(locateCoordinates.X, dmObject, proc, inferredPath),
@@ -431,7 +431,7 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
                     return BadExpression(WarningCode.ItemDoesntExist, location,
                         $"No global proc named \"{bIdentifier}\" exists");
 
-                var arguments = new ArgumentList(location, dmObject, proc, scopeIdentifier.CallArguments, inferredPath);
+                var arguments = new ArgumentList(Compiler, location, dmObject, proc, scopeIdentifier.CallArguments, inferredPath);
                 return new ProcCall(location, new GlobalProc(compiler, location, bIdentifier), arguments, DMValueType.Anything);
             }
 
@@ -557,7 +557,7 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
         }
 
         var target  = compiler.DMExpression.Create(dmObject, proc, (DMASTExpression)procCall.Callable, inferredPath);
-        var args = new ArgumentList(procCall.Location, dmObject, proc, procCall.Parameters);
+        var args = new ArgumentList(Compiler, procCall.Location, dmObject, proc, procCall.Parameters);
         if (target is Proc targetProc) { // GlobalProc handles returnType itself
             var returnType = targetProc.GetReturnType(dmObject);
 
@@ -635,7 +635,7 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
                 switch (namedOperation) {
                     // global.f()
                     case DMASTDereference.CallOperation callOperation:
-                        ArgumentList argumentList = new(deref.Expression.Location, dmObject, proc,
+                        ArgumentList argumentList = new(Compiler, deref.Expression.Location, dmObject, proc,
                             callOperation.Parameters);
 
                         var globalProc = new GlobalProc(compiler, expr.Location, callOperation.Identifier);
@@ -763,7 +763,7 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
 
                 case DMASTDereference.CallOperation callOperation: {
                     var field = callOperation.Identifier;
-                    ArgumentList argumentList = new(deref.Expression.Location, dmObject, proc, callOperation.Parameters);
+                    ArgumentList argumentList = new(Compiler, deref.Expression.Location, dmObject, proc, callOperation.Parameters);
 
                     if (!callOperation.NoSearch && !pathIsFuzzy) {
                         if (prevPath == null) {
@@ -961,7 +961,7 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
     }
 
     private DMExpression BuildCall(DMASTCall call, DMObject dmObject, DMProc proc, DreamPath? inferredPath) {
-        var procArgs = new ArgumentList(call.Location, dmObject, proc, call.ProcParameters, inferredPath);
+        var procArgs = new ArgumentList(Compiler, call.Location, dmObject, proc, call.ProcParameters, inferredPath);
 
         switch (call.CallParameters.Length) {
             default:

@@ -165,14 +165,22 @@ internal static partial class DMCodeTree {
         }
 
         private bool AlreadyExists(DMObject dmObject) {
+            // "type" and "tag" can only be defined in DMStandard
+            if (VarName is "type" or "tag" && !varDef.Location.InDMStandard) {
+                DMCompiler.Emit(WarningCode.InvalidVarDefinition, varDef.Location,
+                    $"Cannot redefine built-in var \"{VarName}\"");
+                return true;
+            }
+
             //DMObjects store two bundles of variables; the statics in GlobalVariables and the non-statics in Variables.
             if (dmObject.HasGlobalVariable(VarName)) {
                 DMCompiler.Emit(WarningCode.InvalidVarDefinition, varDef.Location,
                     $"Duplicate definition of static var \"{VarName}\"");
                 return true;
             } else if (dmObject.HasLocalVariable(VarName)) {
-                DMCompiler.Emit(WarningCode.InvalidVarDefinition, varDef.Location,
-                    $"Duplicate definition of var \"{VarName}\"");
+                if (!varDef.Location.InDMStandard) // Duplicate instance vars are not an error in DMStandard
+                    DMCompiler.Emit(WarningCode.InvalidVarDefinition, varDef.Location,
+                        $"Duplicate definition of var \"{VarName}\"");
                 return true;
             } else if (IsStatic && VarName == "vars" && dmObject == DMObjectTree.Root) {
                 DMCompiler.Emit(WarningCode.InvalidVarDefinition, varDef.Location, "Duplicate definition of global.vars");

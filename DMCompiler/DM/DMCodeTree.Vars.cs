@@ -105,8 +105,12 @@ internal static partial class DMCodeTree {
                 return;
             if (!DMObjectTree.TryGetDMObject(owner, out var dmObject))
                 return;
-            if (AlreadyExists(dmObject))
+
+            if (AlreadyExists(dmObject)) {
+                _defined = true;
+                WaitingNodes.Remove(this);
                 return;
+            }
 
             if (IsStatic) {
                 HandleGlobalVar(dmObject);
@@ -163,15 +167,15 @@ internal static partial class DMCodeTree {
         private bool AlreadyExists(DMObject dmObject) {
             //DMObjects store two bundles of variables; the statics in GlobalVariables and the non-statics in Variables.
             if (dmObject.HasGlobalVariable(VarName)) {
-                DMCompiler.Emit(WarningCode.DuplicateVariable, varDef.Location,
+                DMCompiler.Emit(WarningCode.InvalidVarDefinition, varDef.Location,
                     $"Duplicate definition of static var \"{VarName}\"");
                 return true;
             } else if (dmObject.HasLocalVariable(VarName)) {
-                DMCompiler.Emit(WarningCode.DuplicateVariable, varDef.Location,
+                DMCompiler.Emit(WarningCode.InvalidVarDefinition, varDef.Location,
                     $"Duplicate definition of var \"{VarName}\"");
                 return true;
             } else if (IsStatic && VarName == "vars" && dmObject == DMObjectTree.Root) {
-                DMCompiler.Emit(WarningCode.DuplicateVariable, varDef.Location, "Duplicate definition of global.vars");
+                DMCompiler.Emit(WarningCode.InvalidVarDefinition, varDef.Location, "Duplicate definition of global.vars");
                 return true;
             }
 

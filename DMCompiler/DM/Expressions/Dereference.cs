@@ -330,12 +330,11 @@ internal sealed class ScopeReference(Location location, DMExpression expression,
     public override string GetNameof(DMObject dmObject) => dmVar.Name;
 
     public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-        if (expression is not ConstantPath || dmVar.Value is not Constant varValue) {
+        if (expression is not IConstantPath) {
             constant = null;
             return false;
         }
 
-        constant = varValue;
-        return true;
+        return dmVar.Value!.TryAsConstant(out constant);
     }
 }

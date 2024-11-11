@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using DMCompiler.Bytecode;
 using DMCompiler.Compiler;
 using DMCompiler.Compiler.DM.AST;
 using DMCompiler.Json;
@@ -14,13 +13,11 @@ internal static class DMObjectTree {
     public static readonly List<DMVariable> Globals = new();
     public static readonly Dictionary<string, int> GlobalProcs = new();
     public static readonly List<string> StringTable = new();
-    public static DMProc GlobalInitProc = default!; // Initialized by Reset() (called in the static initializer)
     public static readonly HashSet<string> Resources = new();
 
-    public static DMObject Root => GetOrCreateDMObject(DreamPath.Root)!;
+    public static DMObject Root => GetOrCreateDMObject(DreamPath.Root);
 
     private static readonly Dictionary<string, int> StringToStringId = new();
-    private static readonly List<(int GlobalId, DMExpression Value)> _globalInitAssigns = new();
 
     private static readonly Dictionary<DreamPath, int> _pathToTypeId = new();
     private static int _dmObjectIdCounter;
@@ -43,11 +40,9 @@ internal static class DMObjectTree {
         StringToStringId.Clear();
         Resources.Clear();
 
-        _globalInitAssigns.Clear();
         _pathToTypeId.Clear();
         _dmObjectIdCounter = 0;
         _dmProcIdCounter = 0;
-        GlobalInitProc = new(-1, Root, null);
     }
 
     public static int AddString(string value) {
@@ -72,10 +67,14 @@ internal static class DMObjectTree {
     /// Returns the "New()" DMProc for a given object type ID
     /// </summary>
     /// <returns></returns>
-    public static DMProc GetNewProc(int id) {
+    public static DMProc? GetNewProc(int id) {
         var obj = AllObjects[id];
-        var targetProc = obj!.GetProcs("New")[0];
-        return AllProcs[targetProc];
+        var procs = obj.GetProcs("New");
+
+        if (procs != null)
+            return AllProcs[procs[0]];
+        else
+            return null;
     }
 
     public static DMObject GetOrCreateDMObject(DreamPath path) {
@@ -201,23 +200,6 @@ internal static class DMObjectTree {
         }
 
         GlobalProcs[proc.Name] = proc.Id;
-    }
-
-    public static void AddGlobalInitAssign(int globalId, DMExpression value) {
-        _globalInitAssigns.Add( (globalId, value) );
-    }
-
-    public static void CreateGlobalInitProc() {
-        if (_globalInitAssigns.Count == 0) return;
-
-        foreach (var assign in _globalInitAssigns) {
-            GlobalInitProc.DebugSource(assign.Value.Location);
-
-            assign.Value.EmitPushValue(Root, GlobalInitProc);
-            GlobalInitProc.Assign(DMReference.CreateGlobal(assign.GlobalId));
-        }
-
-        GlobalInitProc.ResolveLabels();
     }
 
     public static (DreamTypeJson[], ProcDefinitionJson[]) CreateJsonRepresentation() {

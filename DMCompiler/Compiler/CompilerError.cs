@@ -116,10 +116,3 @@ public struct CompilerEmission {
         _ => "",
     };
 }
-
-// TODO: Find a nicer way to do this
-public sealed class UnknownIdentifierException(Location location, string identifier)
-    : Exception($"Unknown identifier \"{identifier}\" - This message should not be seen") {
-    public readonly Location Location = location;
-    public readonly string Identifier = identifier;
-}

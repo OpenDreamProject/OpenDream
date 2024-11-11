@@ -219,180 +219,84 @@ internal sealed class Resource : Constant {
     }
 }
 
-// /a/b/c
-// no, this can't be called "Path" because of CS0542
-internal sealed class ConstantPath(Location location, DMObject dmObject, DreamPath value) : Constant(location) {
-    public DreamPath Value { get; } = value;
+internal interface IConstantPath {
+    public DreamPath? Path { get; }
+}
 
-    /// <summary>
-    /// The DMObject this expression resides in. Used for path searches.
-    /// </summary>
-    private readonly DMObject _dmObject = dmObject;
+/// <summary>
+/// A reference to a type
+/// <code>/a/b/c</code>
+/// </summary>
+internal class ConstantTypeReference(Location location, DMObject dmObject) : Constant(location), IConstantPath {
+    public DMObject Value { get; } = dmObject;
 
-    public override DreamPath? Path => Value;
-    public override DMComplexValueType ValType => Value;
-
-    public enum PathType {
-        TypeReference,
-        ProcReference,
-        ProcStub,
-        VerbStub
-    }
+    public override DreamPath? Path => Value.Path;
+    public override DMComplexValueType ValType => Value.Path;
 
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        if (!TryResolvePath(out var pathInfo)) {
-            proc.PushNull();
-            return;
-        }
-
-        switch (pathInfo.Value.Type) {
-            case PathType.TypeReference:
-                proc.PushType(pathInfo.Value.Id);
-                break;
-            case PathType.ProcReference:
-                proc.PushProc(pathInfo.Value.Id);
-                break;
-            case PathType.ProcStub:
-            case PathType.VerbStub:
-                var type = DMObjectTree.AllObjects[pathInfo.Value.Id].Path.PathString;
-
-                // /datum/proc and /datum/verb just compile down to strings lmao
-                proc.PushString($"{type}/{(pathInfo.Value.Type == PathType.ProcStub ? "proc" : "verb")}");
-                break;
-            default:
-                DMCompiler.ForcedError(Location, $"Invalid PathType {pathInfo.Value.Type}");
-                break;
-        }
+        proc.PushType(Value.Id);
     }
 
-    public override string? GetNameof(DMObject dmObject) => Value.LastElement;
+    public override string? GetNameof(DMObject dmObject) => Value.Path.LastElement;
 
     public override bool IsTruthy() => true;
 
     public override bool TryAsJsonRepresentation(out object? json) {
-        if (!TryResolvePath(out var pathInfo)) {
-            json = null;
-            return false;
-        }
-
-        if (pathInfo.Value.Type is PathType.ProcStub or PathType.VerbStub) {
-            var type = DMObjectTree.AllObjects[pathInfo.Value.Id].Path.PathString;
-
-            json = $"{type}/{(pathInfo.Value.Type == PathType.ProcStub ? "proc" : "verb")}";
-            return true;
-        }
-
-        JsonVariableType jsonType = pathInfo.Value.Type switch {
-            PathType.TypeReference => JsonVariableType.Type,
-            PathType.ProcReference => JsonVariableType.Proc,
-            _ => throw new UnreachableException()
-        };
-
-        json = new Dictionary<string, object>() {
-            { "type", jsonType },
-            { "value", pathInfo.Value.Id }
+        json = new Dictionary<string, object> {
+            { "type", JsonVariableType.Type },
+            { "value", Value.Id }
         };
 
         return true;
     }
-
-    public bool TryResolvePath([NotNullWhen(true)] out (PathType Type, int Id)? pathInfo) {
-        DreamPath path = Value;
-
-        // An upward search with no left-hand side
-        if (Value.Type == DreamPath.PathType.UpwardSearch) {
-            DreamPath? foundPath = DMObjectTree.UpwardSearch(_dmObject.Path, path);
-            if (foundPath == null) {
-                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Could not find path {path}");
-
-                pathInfo = null;
-                return false;
-            }
-
-            path = foundPath.Value;
-        }
-
-        // /datum/proc and /datum/verb
-        if (Value.LastElement is "proc" or "verb") {
-            DreamPath typePath = Value.FromElements(0, -2);
-            if (!DMObjectTree.TryGetTypeId(typePath, out var ownerId)) {
-                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {typePath} does not exist");
-
-                pathInfo = null;
-                return false;
-            }
-
-            pathInfo = Value.LastElement switch {
-                "proc" => (PathType.ProcStub, ownerId),
-                "verb" => (PathType.VerbStub, ownerId),
-                _ => throw new InvalidOperationException($"Last element of {Value} is not \"proc\" or \"verb\"")
-            };
-            return true;
-        }
-
-        // /datum/proc/foo
-        int procIndex = path.FindElement("proc");
-        if (procIndex == -1) procIndex = path.FindElement("verb");
-        if (procIndex != -1) {
-            DreamPath withoutProcElement = path.RemoveElement(procIndex);
-            DreamPath ownerPath = withoutProcElement.FromElements(0, -2);
-            string procName = path.LastElement;
-
-            DMObjectTree.TryGetDMObject(ownerPath, out var owner);
-
-            int? procId;
-            if (owner == DMObjectTree.Root && DMObjectTree.TryGetGlobalProc(procName, out var globalProc)) {
-                procId = globalProc.Id;
-            } else {
-                var procs = owner.GetProcs(procName);
-
-                procId = procs?[^1];
-            }
-
-            if (procId == null) {
-                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location,
-                    $"Type {ownerPath} does not have a proc named {procName}");
-
-                pathInfo = null;
-                return false;
-            }
-
-            pathInfo = (PathType.ProcReference, procId.Value);
-            return true;
-        }
-
-        // Any other path
-        if (DMObjectTree.TryGetTypeId(Value, out var typeId)) {
-            pathInfo = (PathType.TypeReference, typeId);
-            return true;
-        } else {
-            DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {Value} does not exist");
-
-            pathInfo = null;
-            return false;
-        }
-    }
 }
 
-// TODO: Use this instead of ConstantPath for procs
 /// <summary>
 /// A reference to a proc
+/// <code>/datum/proc/foo</code>
 /// </summary>
-internal sealed class ConstantProcReference(Location location, DMProc referencedProc) : Constant(location) {
+internal sealed class ConstantProcReference(Location location, DreamPath path, DMProc referencedProc) : Constant(location), IConstantPath {
+    public DMProc Value { get; } = referencedProc;
+
+    public override DreamPath? Path => path;
+
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        proc.PushProc(referencedProc.Id);
+        proc.PushProc(Value.Id);
     }
 
-    public override string GetNameof(DMObject dmObject) => referencedProc.Name;
+    public override string GetNameof(DMObject dmObject) => Value.Name;
 
     public override bool IsTruthy() => true;
 
     public override bool TryAsJsonRepresentation(out object? json) {
         json = new Dictionary<string, object> {
             { "type", JsonVariableType.Proc },
-            { "value", referencedProc.Id }
+            { "value", Value.Id }
         };
 
+        return true;
+    }
+}
+
+/// <summary>
+/// A generic reference to all of a type's procs or verbs
+/// <code>/datum/proc</code>
+/// </summary>
+internal sealed class ConstantProcStub(Location location, DMObject onObject, bool isVerb) : Constant(location), IConstantPath {
+    private readonly string _str =
+        $"{(onObject.Path == DreamPath.Root ? string.Empty : onObject.Path.PathString)}/{(isVerb ? "verb" : "proc")}";
+
+    public override DreamPath? Path => onObject.Path.AddToPath(isVerb ? "verb" : "proc");
+
+    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+        // /datum/proc and /datum/verb just compile down to strings lmao
+        proc.PushString(_str);
+    }
+
+    public override bool IsTruthy() => true;
+
+    public override bool TryAsJsonRepresentation(out object? json) {
+        json = _str;
         return true;
     }
 }

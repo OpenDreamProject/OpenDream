@@ -11,7 +11,7 @@
 	var/tag
 	var/const/type = /client
 
-	var/mob/mob as /mob|null
+	var/mob/mob // TODO: as /mob|null
 	var/atom/eye
 	var/lazy_eye = 0 as opendream_unimplemented
 	var/perspective = MOB_PERSPECTIVE

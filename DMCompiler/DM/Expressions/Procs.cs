@@ -33,33 +33,21 @@ internal sealed class Proc(Location location, string identifier) : DMExpression(
     }
 }
 
-/// <remarks>
-/// This doesn't actually contain the GlobalProc itself;
-/// this is just a hopped-up string that we eventually deference to get the real global proc during compilation.
-/// </remarks>
-internal sealed class GlobalProc(Location location, string name) : DMExpression(location) {
-    public override DMComplexValueType ValType => GetProc().ReturnTypes;
+internal sealed class GlobalProc(Location location, DMProc proc) : DMExpression(location) {
+    public override DMComplexValueType ValType => Proc.ReturnTypes;
+
+    public DMProc Proc => proc;
 
     public override string ToString() {
-        return $"{name}()";
+        return $"{proc.Name}()";
     }
 
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        DMCompiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"{name}\" as value");
+        DMCompiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"{this}\" as value");
     }
 
-    public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
-        DMProc globalProc = GetProc();
-        return DMReference.CreateGlobalProc(globalProc.Id);
-    }
-
-    public DMProc GetProc() {
-        if (!DMObjectTree.TryGetGlobalProc(name, out var globalProc)) {
-            DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"No global proc named \"{name}\"");
-            return DMObjectTree.GlobalInitProc; // Just give this, who cares
-        }
-
-        return globalProc;
+    public override DMReference EmitReference(DMObject dmObject, DMProc callingProc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+        return DMReference.CreateGlobalProc(Proc.Id);
     }
 }
 
@@ -105,7 +93,7 @@ internal sealed class ProcCall(Location location, DMExpression target, ArgumentL
     public (DMObject? ProcOwner, DMProc? Proc) GetTargetProc(DMObject dmObject) {
         return target switch {
             Proc procTarget => (dmObject, procTarget.GetProc(dmObject)),
-            GlobalProc procTarget => (null, procTarget.GetProc()),
+            GlobalProc procTarget => (null, procTarget.Proc),
             _ => (null, null)
         };
     }
@@ -162,6 +150,7 @@ internal sealed class ProcCall(Location location, DMExpression target, ArgumentL
                                     "Arguments for matrix() are invalid - either opcode is invalid or not enough arguments");
                                 break;
                             }
+
                             //Note that it is possible for the numeric value to not be an opcode itself,
                             //but the call is still valid.
                             //This is because of MATRIX_MODIFY; things like MATRIX_INVERT | MATRIX_MODIFY are okay!
@@ -174,6 +163,7 @@ internal sealed class ProcCall(Location location, DMExpression target, ArgumentL
                                     "Arguments for matrix() are invalid - either opcode is invalid or not enough arguments");
                             }
                         }
+
                         break;
                     case 5: // BYOND always runtimes but DOES compile, here
                         DMCompiler.Emit(WarningCode.SuspiciousMatrixCall, arguments.Location,
@@ -183,7 +173,6 @@ internal sealed class ProcCall(Location location, DMExpression target, ArgumentL
                         DMCompiler.Emit(WarningCode.InvalidArgumentCount, arguments.Location,
                             $"Too many arguments to matrix() - got {arguments.Length} arguments, expecting 6 or less");
                         break;
-
                 }
             }
         }

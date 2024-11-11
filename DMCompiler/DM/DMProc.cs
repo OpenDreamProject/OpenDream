@@ -63,10 +63,10 @@ namespace DMCompiler.DM {
         }
 
         public string Name => _astDefinition?.Name ?? "<init>";
+        public bool IsVerb => _astDefinition?.IsVerb ?? false;
         public List<string> Parameters = new();
         public Location Location;
         public ProcAttributes Attributes;
-        public bool IsVerb = false;
         public readonly int Id;
         public readonly Dictionary<string, int> GlobalVariables = new();
 
@@ -228,11 +228,8 @@ namespace DMCompiler.DM {
             }
         }
 
-        public DMVariable CreateGlobalVariable(DreamPath? type, string name, bool isConst, out int id) {
-            id = DMObjectTree.CreateGlobal(out DMVariable global, type, name, isConst, DMValueType.Anything);
-
-            GlobalVariables[name] = id;
-            return global;
+        public void AddGlobalVariable(DMVariable global, int id) {
+            GlobalVariables[global.Name] = id;
         }
 
         public int? GetGlobalVariableId(string name) {
@@ -398,6 +395,12 @@ namespace DMCompiler.DM {
             ResizeStack(-(size - 1)); //Shrinks by the size of the list, grows by 1
             WriteOpcode(DreamProcOpcode.CreateList);
             WriteListSize(size);
+        }
+
+        public void CreateMultidimensionalList(int dimensionCount) {
+            ResizeStack(-(dimensionCount - 1)); // Pops the amount of dimensions, then pushes the list
+            WriteOpcode(DreamProcOpcode.CreateMultidimensionalList);
+            WriteListSize(dimensionCount);
         }
 
         public void CreateAssociativeList(int size) {

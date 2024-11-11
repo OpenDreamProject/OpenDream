@@ -15,15 +15,13 @@ internal sealed class DMObject(int id, DreamPath path, DMObject? parent) {
     public readonly Dictionary<string, List<int>> Procs = new();
     public readonly Dictionary<string, DMVariable> Variables = new();
     public readonly Dictionary<string, int> GlobalVariables = new();
-    public readonly List<DMExpression> InitializationProcExpressions = new();
-    public HashSet<string> TmpVariables = new();
+    public readonly Dictionary<string, DMVariable> VariableOverrides = new();
+    public readonly HashSet<string> TmpVariables = new();
+    public readonly HashSet<string> ConstVariables = new();
     public int? InitializationProc;
 
-    /// <summary> It's OK if the override var is not literally the exact same object as what it overrides. </summary>
-    public readonly Dictionary<string, DMVariable> VariableOverrides = new();
-
     /// <summary>A list of var and verb initializations implicitly done before the user's New() is called.</summary>
-    public HashSet<string> ConstVariables = new();
+    public readonly List<DMExpression> InitializationProcExpressions = new();
 
     public bool IsRoot => Path == DreamPath.Root;
 
@@ -120,29 +118,19 @@ internal sealed class DMObject(int id, DreamPath path, DMObject? parent) {
     public void AddVariable(DMVariable variable) {
         Variables[variable.Name] = variable;
 
-        if (variable.IsConst) {
-            ConstVariables ??= new HashSet<string>();
+        if (variable.IsConst)
             ConstVariables.Add(variable.Name);
-        }
-
-        if (variable.IsTmp) {
-            TmpVariables ??= new HashSet<string>();
+        if (variable.IsTmp)
             TmpVariables.Add(variable.Name);
-        }
     }
 
     public void AddGlobalVariable(DMVariable global, int id) {
         GlobalVariables[global.Name] = id;
 
-        if (global.IsConst) {
-            ConstVariables ??= new HashSet<string>();
+        if (global.IsConst)
             ConstVariables.Add(global.Name);
-        }
-
-        if (global.IsTmp) {
-            TmpVariables ??= new HashSet<string>();
+        if (global.IsTmp)
             TmpVariables.Add(global.Name);
-        }
     }
 
     /// <summary>
@@ -224,7 +212,7 @@ internal sealed class DMObject(int id, DreamPath path, DMObject? parent) {
         }
 
         if (Procs.Count > 0) {
-            typeJson.Procs = new List<List<int>>(Procs.Values);
+            typeJson.Procs = [..Procs.Values];
         }
 
         if (_verbs != null) {

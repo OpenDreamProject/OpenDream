@@ -482,7 +482,6 @@ internal static class DMExpressionBuilder {
             return new ConstantProcStub(location, stubOfType, path.LastElement is "verb");
         }
 
-
         // /datum
         if (DMObjectTree.TryGetDMObject(path, out var referencing)) {
             return new ConstantTypeReference(location, referencing);

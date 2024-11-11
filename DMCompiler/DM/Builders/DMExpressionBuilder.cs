@@ -909,9 +909,8 @@ internal static class DMExpressionBuilder {
                     if (!fieldOperation.NoSearch && !pathIsFuzzy) {
                         if (prevPath == null)
                             return UnknownIdentifier(deref.Location, field);
-
                         if (!DMObjectTree.TryGetDMObject(prevPath.Value, out var fromObject))
-                            return BadExpression(WarningCode.ItemDoesntExist, fieldOperation.Location,
+                            return UnknownReference(fieldOperation.Location,
                                 $"Type {prevPath.Value} does not exist");
 
                         property = fromObject.GetVariable(field);
@@ -982,9 +981,7 @@ internal static class DMExpressionBuilder {
                         }
 
                         if (!DMObjectTree.TryGetDMObject(prevPath.Value, out var fromObject))
-                            return BadExpression(WarningCode.ItemDoesntExist, callOperation.Location,
-                                $"Type {prevPath.Value} does not exist");
-
+                            return UnknownReference(callOperation.Location, $"Type {prevPath.Value} does not exist");
                         if (!fromObject.HasProc(field))
                             return UnknownIdentifier(callOperation.Location, field);
                     }

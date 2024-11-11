@@ -219,6 +219,7 @@ public sealed class MutableIconAppearance : IEquatable<MutableIconAppearance>{
         hashCode.Add(Layer);
         hashCode.Add(Invisibility);
         hashCode.Add(Opacity);
+        hashCode.Add(Override);
         hashCode.Add(MouseOpacity);
         hashCode.Add(Alpha);
         hashCode.Add(GlideSize);

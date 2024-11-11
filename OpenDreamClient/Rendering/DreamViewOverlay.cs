@@ -316,9 +316,10 @@ internal sealed class DreamViewOverlay : Overlay {
                     continue;
                 if(sprite.Icon.Appearance == null)
                     continue;
-                if(sprite.Icon.Appearance.Override)
+                if(sprite.Icon.Appearance.Override) {
                     current.MainIcon = sprite.Icon;
-                else
+                    current.Position = current.Position + (sprite.Icon.Appearance.TotalPixelOffset / (float)EyeManager.PixelsPerMeter);
+                } else
                     ProcessIconComponents(sprite.Icon, current.Position, uid, isScreen, ref tieBreaker, result, current);
             }
         }

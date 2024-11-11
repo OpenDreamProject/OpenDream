@@ -203,6 +203,7 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
         hashCode.Add(Layer);
         hashCode.Add(Invisibility);
         hashCode.Add(Opacity);
+        hashCode.Add(Override);
         hashCode.Add(MouseOpacity);
         hashCode.Add(Alpha);
         hashCode.Add(GlideSize);

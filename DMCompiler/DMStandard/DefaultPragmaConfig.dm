@@ -29,6 +29,7 @@
 #pragma DanglingVarType warning
 #pragma MissingInterpolatedExpression warning
 #pragma AmbiguousResourcePath warning
+#pragma AmbiguousProcPath warning
 #pragma SuspiciousSwitchCase warning
 #pragma PointlessPositionalArgument warning
 #pragma ProcArgumentGlobal warning // Ref BYOND issue https://www.byond.com/forum/post/2830750

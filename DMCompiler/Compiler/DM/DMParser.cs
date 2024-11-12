@@ -2375,10 +2375,15 @@ namespace DMCompiler.Compiler.DM {
                     DMASTDereference.Operation operation;
 
                     switch (token.Type) {
+                        case TokenType.DM_Colon:
+                            DMCompiler.Emit(WarningCode.RuntimeSearchOperator, token.Location, "Runtime search operator ':' should be avoided; prefer typecasting and using '.' instead");
+                            goto case TokenType.DM_QuestionPeriod;
+                        case TokenType.DM_QuestionColon:
+                            DMCompiler.Emit(WarningCode.RuntimeSearchOperator, token.Location, "Runtime search operator '?:' should be avoided; prefer typecasting and using '?.' instead");
+                            goto case TokenType.DM_QuestionPeriod;
                         case TokenType.DM_Period:
                         case TokenType.DM_QuestionPeriod:
-                        case TokenType.DM_Colon:
-                        case TokenType.DM_QuestionColon: {
+                         {
                             var identifier = Identifier();
 
                             if (identifier == null) {

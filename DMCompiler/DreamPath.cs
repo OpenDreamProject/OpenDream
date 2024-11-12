@@ -107,6 +107,14 @@ public struct DreamPath {
             return DMValueType.Turf;
         if (dmType.IsSubtypeOf(Area))
             return DMValueType.Area;
+        if (dmType.IsSubtypeOf(Movable))
+            return DMValueType.Mob | DMValueType.Obj;
+        if (dmType.IsSubtypeOf(Atom))
+            return DMValueType.Area | DMValueType.Turf | DMValueType.Obj | DMValueType.Mob;
+        if (dmType.IsSubtypeOf(Icon))
+            return DMValueType.Icon;
+        if (dmType.IsSubtypeOf(Sound))
+            return DMValueType.Sound;
 
         return DMValueType.Anything;
     }
@@ -256,5 +264,13 @@ public struct DreamPath {
         }
 
         Elements = _elements[..writeIdx];
+    }
+
+    public DreamPath GetLastCommonAncestor(DreamPath other) {
+        var thisObject = DMObjectTree.GetDMObject(this, true);
+        var otherObject = DMObjectTree.GetDMObject(other, true);
+        if (thisObject is null || otherObject is null)
+            return Root;
+        return thisObject.GetLastCommonAncestor(otherObject);
     }
 }

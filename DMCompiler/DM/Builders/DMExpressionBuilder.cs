@@ -385,7 +385,7 @@ internal static class DMExpressionBuilder {
                 if (CurrentScopeMode == ScopeMode.Normal) {
                     var localVar = proc?.GetLocalVariable(name);
                     if (localVar != null)
-                        return new Local(identifier.Location, localVar);
+                        return new Local(identifier.Location, localVar, proc!, localVar.ExplicitValueType);
 
                     var field = dmObject?.GetVariable(name);
                     if (field != null) {
@@ -526,7 +526,7 @@ internal static class DMExpressionBuilder {
         if (CurrentScopeMode is ScopeMode.Static or ScopeMode.FirstPassStatic)
             return new GlobalProc(procIdentifier.Location, procIdentifier.Identifier);
         if (dmObject.HasProc(procIdentifier.Identifier))
-            return new Proc(procIdentifier.Location, procIdentifier.Identifier);
+            return new Proc(procIdentifier.Location, procIdentifier.Identifier, dmObject);
         if (DMObjectTree.TryGetGlobalProc(procIdentifier.Identifier, out _))
             return new GlobalProc(procIdentifier.Location, procIdentifier.Identifier);
 
@@ -763,6 +763,7 @@ internal static class DMExpressionBuilder {
                 case DMASTDereference.CallOperation callOperation: {
                     var field = callOperation.Identifier;
                     ArgumentList argumentList = new(deref.Expression.Location, dmObject, proc, callOperation.Parameters);
+                    DreamPath? nextPath = null;
 
                     if (!callOperation.NoSearch && !pathIsFuzzy) {
                         if (prevPath == null) {
@@ -777,16 +778,25 @@ internal static class DMExpressionBuilder {
                         if (!fromObject.HasProc(field))
                             return BadExpression(WarningCode.ItemDoesntExist, callOperation.Location,
                                 $"Type {prevPath.Value} does not have a proc named \"{field}\"");
+
+                        var returnTypes = fromObject.GetProcReturnTypes(field, argumentList) ?? DMValueType.Anything;
+                        nextPath = returnTypes.HasPath ? returnTypes.TypePath : returnTypes.AsPath();
+                        if (!returnTypes.HasPath & nextPath.HasValue) {
+                            var thePath = nextPath!.Value;
+                            thePath.Type = DreamPath.PathType.UpwardSearch;
+                            nextPath = thePath;
+                        }
                     }
 
                     operation = new Dereference.CallOperation {
                         Parameters = argumentList,
                         Safe = callOperation.Safe,
                         Identifier = field,
-                        Path = null
+                        Path = prevPath
                     };
-                    prevPath = null;
-                    pathIsFuzzy = true;
+                    prevPath = nextPath;
+                    if(prevPath is null)
+                        pathIsFuzzy = true;
                     break;
                 }
 

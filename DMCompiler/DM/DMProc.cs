@@ -137,10 +137,13 @@ namespace DMCompiler.DM {
         }
 
         public void ValidateReturnType(DMExpression expr) {
-            var type = expr.ValType;
+            ValidateReturnType(expr.ValType, expr, expr.Location);
+        }
+
+        public void ValidateReturnType(DMComplexValueType type, DMExpression? expr, Location location) {
             var returnTypes = _dmObject.GetProcReturnTypes(Name)!.Value;
             if ((returnTypes.Type & (DMValueType.Color | DMValueType.File | DMValueType.Message)) != 0) {
-                DMCompiler.Emit(WarningCode.UnsupportedTypeCheck, expr.Location, "color, message, and file return types are currently unsupported.");
+                DMCompiler.Emit(WarningCode.UnsupportedTypeCheck, location, "color, message, and file return types are currently unsupported.");
                 return;
             }
 
@@ -152,17 +155,19 @@ namespace DMCompiler.DM {
 
                 switch (expr) {
                     case ProcCall:
-                        DMCompiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Called proc does not have a return type set, expected {ReturnTypes}.");
+                        DMCompiler.Emit(WarningCode.InvalidReturnType, location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Called proc does not have a return type set, expected {ReturnTypes}.");
                         break;
                     case Local:
-                        DMCompiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type of non-constant expression, expected {ReturnTypes}. Consider making this variable constant or adding an explicit \"as {ReturnTypes}\"");
+                        DMCompiler.Emit(WarningCode.InvalidReturnType, location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type of non-constant expression, expected {ReturnTypes}. Consider making this variable constant or adding an explicit \"as {ReturnTypes}\"");
+                        break;
+                    case null:
                         break;
                     default:
-                        DMCompiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type of expression \"{expr}\", expected {ReturnTypes}. Consider reporting this as a bug on OpenDream's GitHub.");
+                        DMCompiler.Emit(WarningCode.InvalidReturnType, location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type of expression \"{expr}\", expected {ReturnTypes}. Consider reporting this as a bug on OpenDream's GitHub.");
                         break;
                 }
             } else if (!ReturnTypes.MatchesType(type)) { // We could determine the return types but they don't match
-                DMCompiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{splitter}{Name}(): Invalid return type {type}, expected {ReturnTypes}");
+                DMCompiler.Emit(WarningCode.InvalidReturnType, location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{splitter}{Name}(): Invalid return type {type}, expected {ReturnTypes}");
             }
         }
 
@@ -184,13 +189,13 @@ namespace DMCompiler.DM {
                         } else {
                             var type = DMObjectTree.GetDMObject(typePath, false);
 
-                            argumentType = type?.GetDMValueType() ?? DMValueType.Anything;
+                            argumentType = type?.Path.GetAtomType() ?? DMValueType.Anything;
                         }
                     }
 
                     arguments.Add(new ProcArgumentJson {
                         Name = parameter.Name,
-                        Type = argumentType.Type
+                        Type = argumentType.Type & ~(DMValueType.Instance|DMValueType.Path)
                     });
                 }
             }
@@ -230,7 +235,7 @@ namespace DMCompiler.DM {
         }
 
         public DMVariable CreateGlobalVariable(DreamPath? type, string name, bool isConst, out int id) {
-            id = DMObjectTree.CreateGlobal(out DMVariable global, type, name, isConst, DMValueType.Anything);
+            id = DMObjectTree.CreateGlobal(out DMVariable global, type, name, isConst, null);
 
             GlobalVariables[name] = id;
             return global;
@@ -280,7 +285,7 @@ namespace DMCompiler.DM {
             return label;
         }
 
-        public bool TryAddLocalVariable(string name, DreamPath? type, DMComplexValueType valType) {
+        public bool TryAddLocalVariable(string name, DreamPath? type, DMComplexValueType? valType) {
             if (_parameters.ContainsKey(name)) //Parameters and local vars cannot share a name
                 return false;
 
@@ -316,6 +321,57 @@ namespace DMCompiler.DM {
             LocalVariable? local = GetLocalVariable(name);
 
             return local.IsParameter ? DMReference.CreateArgument(local.Id) : DMReference.CreateLocal(local.Id);
+        }
+
+        public DMProc GetBaseProc(DMObject? dmObject = null) {
+            if (dmObject == null) dmObject = _dmObject;
+            if (dmObject == DMObjectTree.Root && DMObjectTree.TryGetGlobalProc(Name, out var globalProc))
+                return globalProc;
+            if (dmObject.GetProcs(Name) is not { } procs)
+                return dmObject.Parent is not null ? GetBaseProc(dmObject.Parent) : this;
+
+            var proc = DMObjectTree.AllProcs[procs[0]];
+            if ((proc.Attributes & ProcAttributes.IsOverride) != 0)
+                return dmObject.Parent is not null ? GetBaseProc(dmObject.Parent) : this;
+
+            return proc;
+        }
+
+        public DMComplexValueType GetParameterValueTypes(ArgumentList? arguments) {
+            return GetParameterValueTypes(RawReturnTypes, arguments);
+        }
+
+        public DMComplexValueType GetParameterValueTypes(DMComplexValueType? baseType, ArgumentList? arguments) {
+            if (baseType?.ParameterIndices is null) {
+                return baseType ?? DMValueType.Anything;
+            }
+            DMComplexValueType returnType = baseType ?? DMValueType.Anything;
+            foreach ((int parameterIndex, bool upcasted) in baseType!.Value.ParameterIndices) {
+                DMComplexValueType intermediateType = DMValueType.Anything;
+                if (arguments is null || parameterIndex >= arguments.Expressions.Length) {
+                    if (!TryGetParameterAtIndex(parameterIndex, out var parameter)) {
+                        DMCompiler.Emit(WarningCode.BadArgument, Location, $"Unable to find argument with index {parameterIndex}");
+                        continue;
+                    }
+                    intermediateType = parameter.ExplicitValueType ?? DMValueType.Anything;
+                } else if (arguments is not null) {
+                    intermediateType = arguments.Expressions[parameterIndex].Expr.ValType;
+                }
+                if (upcasted) {
+                    if (intermediateType.HasPath) {
+                        if (intermediateType.Type.HasFlag(~(DMValueType.Path | DMValueType.Null)))
+                            DMCompiler.Emit(WarningCode.InvalidVarType, arguments?.Location ?? Location, "Expected an exclusively path (or null) typed parameter");
+                        else
+                            intermediateType = new DMComplexValueType((intermediateType.Type & DMValueType.Null) | DMValueType.Instance, intermediateType.TypePath);
+                    } else if (DMCompiler.Settings.SkipAnythingTypecheck && intermediateType.IsAnything) {
+                        //pass
+                    } else {
+                        DMCompiler.Emit(WarningCode.InvalidVarType, arguments?.Location ?? Location, "Expected a path (or path|null) typed parameter");
+                    }
+                }
+                returnType |= intermediateType;
+        }
+            return returnType;
         }
 
         public void Error() {

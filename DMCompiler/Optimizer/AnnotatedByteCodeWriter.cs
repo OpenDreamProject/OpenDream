@@ -363,6 +363,7 @@ internal class AnnotatedByteCodeWriter {
             case DMReference.Type.Src:
             case DMReference.Type.Self:
             case DMReference.Type.Args:
+            case DMReference.Type.World:
             case DMReference.Type.Usr:
             case DMReference.Type.Invalid:
                 _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeReference(reference.RefType, location));

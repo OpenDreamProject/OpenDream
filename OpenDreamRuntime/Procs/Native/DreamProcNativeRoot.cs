@@ -2048,16 +2048,16 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("Replacement", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
     [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
-    public static async Task<DreamValue> NativeProc_replacetext(AsyncNativeProc.State state) {
-        DreamValue haystack = state.GetArgument(0, "Haystack");
-        DreamValue needle = state.GetArgument(1, "Needle");
-        DreamValue replacementArg = state.GetArgument(2, "Replacement");
-        state.GetArgument(3, "Start").TryGetValueAsInteger(out var start); //1-indexed
-        int end = state.GetArgument(4, "End").GetValueAsInteger(); //1-indexed
+    public static DreamValue NativeProc_replacetext(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        DreamValue haystack = bundle.GetArgument(0, "Haystack");
+        DreamValue needle = bundle.GetArgument(1, "Needle");
+        DreamValue replacementArg = bundle.GetArgument(2, "Replacement");
+        bundle.GetArgument(3, "Start").TryGetValueAsInteger(out var start); //1-indexed
+        int end = bundle.GetArgument(4, "End").GetValueAsInteger(); //1-indexed
 
         if (needle.TryGetValueAsDreamObject<DreamObjectRegex>(out var regexObject)) {
             // According to the docs, this is the same as /regex.Replace()
-            return await DreamProcNativeRegex.RegexReplace(state, regexObject, haystack, replacementArg, start, end);
+            return DreamProcNativeRegex.RegexReplace(regexObject, haystack, replacementArg, start, end);
         }
 
         if (!haystack.TryGetValueAsString(out var text)) {

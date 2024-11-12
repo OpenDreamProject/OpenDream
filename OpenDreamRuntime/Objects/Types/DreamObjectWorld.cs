@@ -100,6 +100,15 @@ public sealed class DreamObjectWorld : DreamObject {
         _server.Shutdown("world was deleted");
     }
 
+    ~DreamObjectWorld() {
+        if (this != DreamManager.WorldInstance) {
+            Deleted = true;
+            return;
+        }
+
+        Delete(true);
+    }
+
     protected override bool TryGetVar(string varName, out DreamValue value) {
         switch (varName) {
             case "log":

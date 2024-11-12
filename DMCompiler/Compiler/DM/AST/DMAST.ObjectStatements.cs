@@ -65,10 +65,7 @@ public sealed class DMASTObjectVarDefinition(
 
     private readonly ObjVarDeclInfo _varDecl = new(path);
 
-    public bool IsStatic => _varDecl.IsStatic;
-
-    // TODO: Standardize our phrasing in the codebase. Are we calling these Statics or Globals?
-    public bool IsGlobal => _varDecl.IsStatic;
+    public bool IsStatic => _varDecl.IsStatic || IsConst;
 
     public bool IsConst => _varDecl.IsConst;
     public bool IsTmp => _varDecl.IsTmp;

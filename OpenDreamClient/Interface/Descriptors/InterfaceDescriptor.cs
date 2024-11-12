@@ -38,7 +38,7 @@ public partial class ElementDescriptor {
         init => _id = value;
     }
 
-    public DMFPropertyString Name => new(_name.Value ?? Id.AsRaw());
+    public DMFPropertyString Name => new(_name.Value);
 
     public DMFPropertyString Type {
         get => _type;

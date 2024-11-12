@@ -71,6 +71,15 @@ internal sealed class Args(Location location) : LValue(location, DreamPath.List)
     public override string GetNameof(DMObject dmObject) => "args";
 }
 
+// world
+internal sealed class World(Location location) : LValue(location, DreamPath.World) {
+    public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+        return DMReference.World;
+    }
+
+    public override string GetNameof(DMObject dmObject) => "world";
+}
+
 // Identifier of local variable
 internal sealed class Local(Location location, DMProc.LocalVariable localVar) : LValue(location, localVar.Type) {
     public DMProc.LocalVariable LocalVar { get; } = localVar;

@@ -20,7 +20,7 @@ internal static class DMExpressionBuilder {
 
     // TODO: Remove these terrible global flags
     public static ScopeMode CurrentScopeMode = ScopeMode.Normal;
-    public static bool ScopeOperatorEnabled = false; // Enabled after the first pass of the code tree
+    public static bool ScopeOperatorEnabled = false; // Enabled on the last pass of the code tree
     public static UnknownReference? EncounteredUnknownReference;
 
     /// <remarks>Don't use DMExpression.Create() inside this or anything it calls! It resets EncounteredUnknownReference</remarks>

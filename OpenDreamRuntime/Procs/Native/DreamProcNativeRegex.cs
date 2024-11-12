@@ -53,11 +53,12 @@ namespace OpenDreamRuntime.Procs.Native {
                 if (dreamRegex.IsGlobal) {
                     dreamRegex.SetVariable("next", DreamValue.Null);
                 }
+
                 return new DreamValue(0);
             }
         }
 
-        public static async Task<DreamValue> RegexReplace(AsyncNativeProc.State state, DreamObject regexInstance, DreamValue haystack, DreamValue replace, int start, int end) {
+        public static DreamValue RegexReplace(DreamObject regexInstance, DreamValue haystack, DreamValue replace, int start, int end) {
             DreamObjectRegex regex = (DreamObjectRegex)regexInstance;
 
             if (!haystack.TryGetValueAsString(out var haystackString)) {
@@ -68,7 +69,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if (end != 0) haystackSubstring = haystackString.Substring(0, end - start);
 
             if (replace.TryGetValueAsProc(out DreamProc? replaceProc)) {
-                return await DoProcReplace(state, replaceProc);
+                return DoProcReplace(replaceProc);
             }
 
             if (replace.TryGetValueAsString(out var replaceString)) {
@@ -77,7 +78,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             throw new ArgumentException("Replacement argument must be a string or a proc");
 
-            async Task<DreamValue> DoProcReplace(AsyncNativeProc.State state, DreamProc proc) {
+            DreamValue DoProcReplace(DreamProc proc) {
                 var currentStart = Math.Max(start - 1, 0);
                 var currentHaystack = haystackSubstring;
                 while (currentStart < currentHaystack.Length) {
@@ -90,7 +91,10 @@ namespace OpenDreamRuntime.Procs.Native {
                         args[i] = new DreamValue(groups[i].Value);
                     }
 
-                    var result = await state.CallNoWait(proc, null, null, args);
+                    // TODO: src is the regex string
+                    // TODO: We need to add this to our current thread instead of spawning a new one
+                    // TODO: This call needs to immediately die upon sleeping
+                    var result = proc.Spawn(null, new(args));
 
                     var replacement = result.Stringify();
                     currentHaystack = regex.Regex.Replace(currentHaystack, replacement, 1, currentStart);
@@ -131,13 +135,13 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("replacement", Type = DreamValue.DreamValueTypeFlag.String | DreamValue.DreamValueTypeFlag.DreamProc)]
         [DreamProcParameter("start", DefaultValue = 1, Type = DreamValue.DreamValueTypeFlag.Float)] // BYOND docs say these are uppercase, they're not
         [DreamProcParameter("end", DefaultValue = 0, Type = DreamValue.DreamValueTypeFlag.Float)]
-        public static async Task<DreamValue> NativeProc_Replace(AsyncNativeProc.State state) {
-            DreamValue haystack = state.GetArgument(0, "haystack");
-            DreamValue replacement = state.GetArgument(1, "replacement");
-            int start = state.GetArgument(2, "start").GetValueAsInteger();
-            int end = state.GetArgument(3, "end").GetValueAsInteger();
+        public static DreamValue NativeProc_Replace(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+            DreamValue haystack = bundle.GetArgument(0, "haystack");
+            DreamValue replacement = bundle.GetArgument(1, "replacement");
+            int start = bundle.GetArgument(2, "start").GetValueAsInteger();
+            int end = bundle.GetArgument(3, "end").GetValueAsInteger();
 
-            return await RegexReplace(state, state.Src, haystack, replacement, start, end);
+            return RegexReplace(src, haystack, replacement, start, end);
         }
 
         private static int GetNext(DreamObject regexInstance, DreamValue startParam, bool isGlobal, string haystackString) {

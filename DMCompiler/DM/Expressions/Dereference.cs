@@ -73,7 +73,7 @@ internal class Dereference : LValue {
         while (!type.IsAnything && i < _operations.Length) {
             var operation = _operations[i++];
 
-            if (type.TypePath is null || DMObjectTree.GetDMObject(type.TypePath.Value, false) is not { } dmObject) {
+            if (type.TypePath is null || !DMObjectTree.TryGetDMObject(type.TypePath.Value, out var dmObject)) {
                 // We're dereferencing something without a type-path, this could be anything
                 type = DMValueType.Anything;
                 break;
@@ -115,8 +115,7 @@ internal class Dereference : LValue {
 
             case IndexOperation indexOperation:
                 if (NestedPath is not null) {
-                    var obj = DMObjectTree.GetDMObject(NestedPath.Value, false);
-                    if (obj is not null && obj.IsSubtypeOf(DreamPath.Datum) && !obj.HasProc("operator[]")) {
+                    if (DMObjectTree.TryGetDMObject(NestedPath.Value, out var obj) && obj.IsSubtypeOf(DreamPath.Datum) && !obj.HasProc("operator[]")) {
                         DMCompiler.Emit(WarningCode.InvalidIndexOperation, Location, "Invalid index operation. datum[] index operations are not valid starting in BYOND 515.1641");
                     }
                 }
@@ -171,8 +170,7 @@ internal class Dereference : LValue {
 
             case IndexOperation indexOperation:
                 if (NestedPath is not null) {
-                    var obj = DMObjectTree.GetDMObject(NestedPath.Value, false);
-                    if (obj is not null && obj.IsSubtypeOf(DreamPath.Datum) && !obj.HasProc("operator[]=")) {
+                    if (DMObjectTree.TryGetDMObject(NestedPath.Value, out var obj) && obj.IsSubtypeOf(DreamPath.Datum) && !obj.HasProc("operator[]=")) {
                         DMCompiler.Emit(WarningCode.InvalidIndexOperation, Location, "Invalid index operation. datum[] index operations are not valid starting in BYOND 515.1641");
                     }
                 }
@@ -298,9 +296,8 @@ internal class Dereference : LValue {
 
         var operation = _operations[^1];
 
-        if (operation is FieldOperation fieldOperation && prevPath is not null) {
-            var obj = DMObjectTree.GetDMObject(prevPath.Value);
-            var variable = obj!.GetVariable(fieldOperation.Identifier);
+        if (operation is FieldOperation fieldOperation && prevPath is not null && DMObjectTree.TryGetDMObject(prevPath.Value, out var obj)) {
+            var variable = obj.GetVariable(fieldOperation.Identifier);
             if (variable != null) {
                 if (variable.IsConst)
                     return variable.Value.TryAsConstant(out constant);
@@ -333,12 +330,11 @@ internal sealed class ScopeReference(Location location, DMExpression expression,
     public override string GetNameof(DMObject dmObject) => dmVar.Name;
 
     public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-        if (expression is not ConstantPath || dmVar.Value is not Constant varValue) {
+        if (expression is not IConstantPath) {
             constant = null;
             return false;
         }
 
-        constant = varValue;
-        return true;
+        return dmVar.Value!.TryAsConstant(out constant);
     }
 }

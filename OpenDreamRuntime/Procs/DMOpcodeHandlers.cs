@@ -46,7 +46,6 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
-
         public static ProcStatus CreateList(DMProcState state) {
             int size = state.ReadInt();
             var list = state.Proc.ObjectTree.CreateList(size);
@@ -55,6 +54,17 @@ namespace OpenDreamRuntime.Procs {
                 list.AddValue(value);
             }
 
+            state.Push(new DreamValue(list));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus CreateMultidimensionalList(DMProcState state) {
+            var dimensionCount = state.ReadInt();
+            var list = state.Proc.ObjectTree.CreateList();
+            var dimensionSizes = state.PopCount(dimensionCount);
+
+            // Same as new /list(1, 2, 3)
+            list.Initialize(new(dimensionSizes));
             state.Push(new DreamValue(list));
             return ProcStatus.Continue;
         }

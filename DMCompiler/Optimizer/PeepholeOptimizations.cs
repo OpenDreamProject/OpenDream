@@ -289,6 +289,83 @@ internal sealed class IsTypeDirect : IOptimization {
 #region Constant Folding
 
 // PushFloat [constant]
+// BitNot
+// -> PushFloat [result]
+internal sealed class ConstFoldBitNot : IPeepholeOptimization {
+    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
+
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.PushFloat,
+            DreamProcOpcode.BitNot
+        ];
+    }
+
+    public void Apply(List<IAnnotatedBytecode> input, int index) {
+        var firstInstruction = IPeepholeOptimization.GetInstructionAndValue(input[index], out var pushVal1);
+
+        var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(((~(int)pushVal1) & 0xFFFFFF), firstInstruction.Location)};
+
+        IPeepholeOptimization.ReplaceInstructions(input, index, 2,
+            new AnnotatedBytecodeInstruction(DreamProcOpcode.PushFloat, 1, args));
+    }
+}
+
+// PushFloat [constant]
+// PushFloat [constant]
+// BitOr
+// -> PushFloat [result]
+internal sealed class ConstFoldBitOr : IPeepholeOptimization {
+    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
+
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.PushFloat,
+            DreamProcOpcode.PushFloat,
+            DreamProcOpcode.BitOr,
+        ];
+    }
+
+    public void Apply(List<IAnnotatedBytecode> input, int index) {
+        var firstInstruction = IPeepholeOptimization.GetInstructionAndValue(input[index], out var pushVal1);
+
+        IPeepholeOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
+
+        var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(((int)pushVal1 | (int)pushVal2), firstInstruction.Location)};
+
+        IPeepholeOptimization.ReplaceInstructions(input, index, 3,
+            new AnnotatedBytecodeInstruction(DreamProcOpcode.PushFloat, 1, args));
+    }
+}
+
+// PushFloat [constant]
+// PushFloat [constant]
+// BitAnd
+// -> PushFloat [result]
+internal sealed class ConstFoldBitAnd : IPeepholeOptimization {
+    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
+
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.PushFloat,
+            DreamProcOpcode.PushFloat,
+            DreamProcOpcode.BitAnd,
+        ];
+    }
+
+    public void Apply(List<IAnnotatedBytecode> input, int index) {
+        var firstInstruction = IPeepholeOptimization.GetInstructionAndValue(input[index], out var pushVal1);
+
+        IPeepholeOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
+
+        var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(((int)pushVal1 & (int)pushVal2), firstInstruction.Location)};
+
+        IPeepholeOptimization.ReplaceInstructions(input, index, 3,
+            new AnnotatedBytecodeInstruction(DreamProcOpcode.PushFloat, 1, args));
+    }
+}
+
+// PushFloat [constant]
 // PushFloat [constant]
 // Multiply
 // -> PushFloat [result]

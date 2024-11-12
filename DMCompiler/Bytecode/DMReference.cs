@@ -7,6 +7,7 @@ public struct DMReference {
     public static readonly DMReference Self = new() { RefType = Type.Self };
     public static readonly DMReference Usr = new() { RefType = Type.Usr };
     public static readonly DMReference Args = new() { RefType = Type.Args };
+    public static readonly DMReference World = new() { RefType = Type.World };
     public static readonly DMReference SuperProc = new() { RefType = Type.SuperProc };
     public static readonly DMReference ListIndex = new() { RefType = Type.ListIndex };
     public static readonly DMReference Invalid = new() { RefType = Type.Invalid };
@@ -16,6 +17,7 @@ public struct DMReference {
         Self,
         Usr,
         Args,
+        World,
         SuperProc,
         ListIndex,
         Argument,

@@ -1,7 +1,6 @@
 using DMCompiler.Bytecode;
 using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Compiler;
-using DMCompiler.Compiler.DM.AST;
 using DMCompiler.Json;
 
 namespace DMCompiler.DM.Expressions;
@@ -16,6 +15,21 @@ internal sealed class BadExpression(Location location) : DMExpression(location) 
         // But in the runtime we say it's a compiler bug because the compiler should never have output it
         proc.PushString("Encountered a bad expression (compiler bug!)");
         proc.Throw();
+    }
+}
+
+internal sealed class UnknownReference(Location location, string message) : DMExpression(location) {
+    public string Message => message;
+
+    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+        // It's normal to have this expression exist when there's out-of-order definitions in the code
+        // But in the runtime we say it's a compiler bug because the compiler should never have output it
+        proc.PushString("Encountered an unknown reference expression (compiler bug!)");
+        proc.Throw();
+    }
+
+    public void EmitCompilerError() {
+        DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, message);
     }
 }
 
@@ -57,37 +71,28 @@ internal sealed class New(Location location, DMExpression expr, ArgumentList arg
 }
 
 // new /x/y/z (...)
-internal sealed class NewPath(Location location, ConstantPath targetPath, ArgumentList arguments) : DMExpression(location) {
-    public override DreamPath? Path => targetPath.Value;
-    public override DMComplexValueType ValType => targetPath.Value.GetAtomType();
+internal sealed class NewPath(Location location, IConstantPath create, ArgumentList arguments) : DMExpression(location) {
+    public override DreamPath? Path => (create is ConstantTypeReference typeReference) ? typeReference.Path : null;
+    public override DMComplexValueType ValType => Path?.GetAtomType() ?? DMValueType.Anything;
 
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        if (!targetPath.TryResolvePath(out var pathInfo)) {
-            proc.PushNull();
-            return;
-        }
-
         DMCallArgumentsType argumentsType;
         int stackSize;
 
-        switch (pathInfo.Value.Type) {
-            case ConstantPath.PathType.TypeReference:
-                var newProc = DMObjectTree.GetNewProc(pathInfo.Value.Id);
+        switch (create) {
+            case ConstantTypeReference typeReference:
+                // TODO: This might give us null depending on how definition order goes
+                var newProc = DMObjectTree.GetNewProc(typeReference.Value.Id);
 
                 (argumentsType, stackSize) = arguments.EmitArguments(dmObject, proc, newProc);
-                proc.PushType(pathInfo.Value.Id);
+                proc.PushType(typeReference.Value.Id);
                 break;
-            case ConstantPath.PathType.ProcReference: // "new /proc/new_verb(Destination)" is a thing
-                (argumentsType, stackSize) = arguments.EmitArguments(dmObject, proc, DMObjectTree.AllProcs[pathInfo.Value.Id]);
-                proc.PushProc(pathInfo.Value.Id);
+            case ConstantProcReference procReference: // "new /proc/new_verb(Destination)" is a thing
+                (argumentsType, stackSize) = arguments.EmitArguments(dmObject, proc, DMObjectTree.AllProcs[procReference.Value.Id]);
+                proc.PushProc(procReference.Value.Id);
                 break;
-            case ConstantPath.PathType.ProcStub:
-            case ConstantPath.PathType.VerbStub:
-                DMCompiler.Emit(WarningCode.BadExpression, Location, "Cannot use \"new\" with a proc stub");
-                proc.PushNull();
-                return;
             default:
-                DMCompiler.Emit(WarningCode.BadExpression, Location, "Invalid path info type");
+                DMCompiler.Emit(WarningCode.BadExpression, Location, $"Cannot instantiate {create}");
                 proc.PushNull();
                 return;
         }
@@ -118,8 +123,7 @@ internal sealed class LocateInferred(Location location, DreamPath path, DMExpres
                 return;
             }
 
-            DMReference world = DMReference.CreateGlobal(dmObject.GetGlobalVariableId("world").Value);
-            proc.PushReferenceValue(world);
+            proc.PushReferenceValue(DMReference.World);
         }
 
         proc.Locate();
@@ -142,8 +146,7 @@ internal sealed class Locate(Location location, DMExpression path, DMExpression?
                 return;
             }
 
-            DMReference world = DMReference.CreateGlobal(dmObject.GetGlobalVariableId("world").Value);
-            proc.PushReferenceValue(world);
+            proc.PushReferenceValue(DMReference.World);
         }
 
         proc.Locate();
@@ -212,7 +215,7 @@ internal sealed class Pick(Location location, Pick.PickValue[] values) : DMExpre
             DMCompiler.Emit(WarningCode.PickWeightedSyntax, Location, "Use of weighted pick() syntax");
 
             foreach (PickValue pickValue in values) {
-                DMExpression weight = pickValue.Weight ?? DMExpression.Create(dmObject, proc, new DMASTConstantInteger(Location, 100)); //Default of 100
+                DMExpression weight = pickValue.Weight ?? new Number(Location.Internal, 100); //Default of 100
 
                 weight.EmitPushValue(dmObject, proc);
                 pickValue.Value.EmitPushValue(dmObject, proc);
@@ -436,19 +439,12 @@ internal sealed class List : DMExpression {
 // Value of var/list/L[1][2][3]
 internal sealed class DimensionalList(Location location, DMExpression[] sizes) : DMExpression(location) {
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        // This basically emits new /list(1, 2, 3)
-
-        if (!DMObjectTree.TryGetTypeId(DreamPath.List, out var listTypeId)) {
-            DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, "Could not get type ID of /list");
-            return;
-        }
-
         foreach (var size in sizes) {
             size.EmitPushValue(dmObject, proc);
         }
 
-        proc.PushType(listTypeId);
-        proc.CreateObject(DMCallArgumentsType.FromStack, sizes.Length);
+        // Should be equivalent to new /list(1, 2, 3)
+        proc.CreateMultidimensionalList(sizes.Length);
     }
 }
 

@@ -444,7 +444,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             }
 
             default: {
-                string[] argsRaw = fullCommand.Split(' ', 2, StringSplitOptions.TrimEntries);
+                string[] argsRaw = fullCommand!.Split(' ', 2, StringSplitOptions.TrimEntries);
                 string command = argsRaw[0].ToLowerInvariant(); // Case-insensitive
 
                 if (!_entitySystemManager.TryGetEntitySystem(out ClientVerbSystem? verbSystem))

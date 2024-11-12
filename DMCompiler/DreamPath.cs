@@ -95,8 +95,7 @@ public struct DreamPath {
     }
 
     public DMValueType GetAtomType() {
-        var dmType = DMObjectTree.GetDMObject(this, false);
-        if (dmType is null)
+        if (!DMObjectTree.TryGetDMObject(this, out var dmType))
             return DMValueType.Anything;
 
         if (dmType.IsSubtypeOf(Obj))

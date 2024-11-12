@@ -18,7 +18,7 @@ public sealed class DMPreprocessor(bool enableDirectives) : IEnumerable<Token> {
     private readonly Stack<DMPreprocessorLexer> _lexerStack =  new(8); // Capacity Note: TG peaks at 4 at time of writing
 
     private readonly Stack<Token> _bufferedWhitespace = new();
-    private bool _currentLineContainsNonWhitespace = false;
+    private bool _currentLineContainsNonWhitespace;
     private bool _canUseDirective = true;
     private readonly HashSet<string> _includedFiles = new(5120); // Capacity Note: TG peaks at 4860 at time of writing
     private readonly Stack<Token> _unprocessedTokens = new(8192); // Capacity Note: TG peaks at 6802 at time of writing
@@ -29,12 +29,14 @@ public sealed class DMPreprocessor(bool enableDirectives) : IEnumerable<Token> {
         { "DM_VERSION", new DMMacroVersion() },
         { "DM_BUILD", new DMMacroBuild() }
     };
+
     /// <summary>
     /// This stores previous evaluations of if-directives that have yet to find their #endif.<br/>
     /// We do this so that we can A.) Detect whether an #else or #endif is valid and B.) Remember what to do when we find that #else.
     /// A null value indicates the last directive found was an #else that's waiting for an #endif.
     /// </summary>
     private readonly Stack<bool?> _lastIfEvaluations = new(16);
+
     private Location _lastSeenIf = Location.Unknown; // used by the errors emitted for when the above var isn't empty at exit
 
     public IEnumerator<Token> GetEnumerator() {
@@ -83,6 +85,7 @@ public sealed class DMPreprocessor(bool enableDirectives) : IEnumerable<Token> {
                     if (!_currentLineContainsNonWhitespace) {
                         _bufferedWhitespace.Clear();
                     }
+
                     HandleIncludeDirective(token);
                     break;
                 case TokenType.DM_Preproc_Define:
@@ -167,6 +170,7 @@ public sealed class DMPreprocessor(bool enableDirectives) : IEnumerable<Token> {
                     break;
             }
         }
+
         if(_lastIfEvaluations.Any())
             DMCompiler.Emit(WarningCode.BadDirective, _lastSeenIf, $"Missing {_lastIfEvaluations.Count} #endif directive{(_lastIfEvaluations.Count != 1 ? 's' : "")}");
         DMCompiler.CheckAllPragmasWereSet();
@@ -189,7 +193,7 @@ public sealed class DMPreprocessor(bool enableDirectives) : IEnumerable<Token> {
 
     // NB: Pushes files to a stack, so call in reverse order if you are
     // including multiple files.
-    public void IncludeFile(string includeDir, string file, Location? includedFrom = null) {
+    public void IncludeFile(string includeDir, string file, bool isDMStandard, Location? includedFrom = null) {
         string filePath = Path.Combine(includeDir, file);
         filePath = filePath.Replace('\\', Path.DirectorySeparatorChar);
 
@@ -229,15 +233,15 @@ public sealed class DMPreprocessor(bool enableDirectives) : IEnumerable<Token> {
                 DMCompiler.UnimplementedWarning(includedFrom ?? Location.Internal, "DMS files are not supported");
                 break;
             default:
-                PreprocessFile(includeDir, file);
+                PreprocessFile(includeDir, file, isDMStandard);
                 break;
         }
     }
 
-    public void PreprocessFile(string includeDir, string file) {
+    public void PreprocessFile(string includeDir, string file, bool isDMStandard) {
         file = file.Replace('\\', '/');
 
-        _lexerStack.Push(new DMPreprocessorLexer(includeDir, file));
+        _lexerStack.Push(new DMPreprocessorLexer(includeDir, file, isDMStandard));
     }
 
     private bool VerifyDirectiveUsage(Token token) {
@@ -268,7 +272,7 @@ public sealed class DMPreprocessor(bool enableDirectives) : IEnumerable<Token> {
         string file = Path.Combine(Path.GetDirectoryName(currentLexer.File.Replace('\\', Path.DirectorySeparatorChar)), includedFileToken.ValueAsString());
         string directory = currentLexer.IncludeDirectory;
 
-        IncludeFile(directory, file, includedFrom: includeToken.Location);
+        IncludeFile(directory, file, includeToken.Location.InDMStandard, includedFrom: includeToken.Location);
     }
 
     private void HandleDefineDirective(Token defineToken) {

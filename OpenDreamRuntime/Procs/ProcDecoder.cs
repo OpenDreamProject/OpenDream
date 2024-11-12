@@ -56,6 +56,7 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
             case DMReference.Type.Self: return DMReference.Self;
             case DMReference.Type.Usr: return DMReference.Usr;
             case DMReference.Type.Args: return DMReference.Args;
+            case DMReference.Type.World: return DMReference.World;
             case DMReference.Type.SuperProc: return DMReference.SuperProc;
             case DMReference.Type.ListIndex: return DMReference.ListIndex;
             default: throw new Exception($"Invalid reference type {refType}");
@@ -108,6 +109,8 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
             case DreamProcOpcode.OutputReference:
             case DreamProcOpcode.PushReferenceValue:
             case DreamProcOpcode.PopReference:
+            case DreamProcOpcode.AppendNoPush:
+            case DreamProcOpcode.NullRef:
             case DreamProcOpcode.AssignNoPush:
             case DreamProcOpcode.ReturnReferenceValue:
                 return (opcode, ReadReference());
@@ -200,6 +203,19 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
                 }
 
                 return (opcode, values);
+            }
+
+            case DreamProcOpcode.PushNOfStringFloats: {
+                var count = ReadInt();
+                var strings = new string[count];
+                var floats = new float[count];
+
+                for (int i = 0; i < count; i++) {
+                    strings[i] = ReadString();
+                    floats[i] = ReadFloat();
+                }
+
+                return (opcode, strings, floats);
             }
 
             case DreamProcOpcode.CreateListNResources:
@@ -327,6 +343,19 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
                     text.Append('\'');
                     text.Append(value);
                     text.Append("' ");
+                }
+
+                break;
+            }
+
+            case (DreamProcOpcode.PushNOfStringFloats, string[] strings, float[] floats): {
+                // The length of both arrays are equal
+                for (var index = 0; index < strings.Length; index++) {
+                    text.Append($"\"{strings[index]}\"");
+                    text.Append(' ');
+                    text.Append(floats[index]);
+                    if(index + 1 < strings.Length) // Don't leave a trailing space
+                        text.Append(' ');
                 }
 
                 break;

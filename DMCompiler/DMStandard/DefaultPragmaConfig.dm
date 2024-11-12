@@ -31,6 +31,7 @@
 #pragma AmbiguousResourcePath warning
 #pragma SuspiciousSwitchCase warning
 #pragma PointlessPositionalArgument warning
+#pragma ProcArgumentGlobal warning // Ref BYOND issue https://www.byond.com/forum/post/2830750
 // NOTE: The next few pragmas are for OpenDream's experimental type checker
 // This feature is still in development, elevating these pragmas outside of local testing is discouraged
 // An RFC to finalize this feature is coming soon(TM)
@@ -50,3 +51,4 @@
 #pragma AssignmentInConditional warning 
 #pragma PickWeightedSyntax disabled
 #pragma AmbiguousInOrder warning
+#pragma RuntimeSearchOperator disabled

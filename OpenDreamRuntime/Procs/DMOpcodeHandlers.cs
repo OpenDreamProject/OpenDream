@@ -46,7 +46,6 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
-
         public static ProcStatus CreateList(DMProcState state) {
             int size = state.ReadInt();
             var list = state.Proc.ObjectTree.CreateList(size);
@@ -55,6 +54,17 @@ namespace OpenDreamRuntime.Procs {
                 list.AddValue(value);
             }
 
+            state.Push(new DreamValue(list));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus CreateMultidimensionalList(DMProcState state) {
+            var dimensionCount = state.ReadInt();
+            var list = state.Proc.ObjectTree.CreateList();
+            var dimensionSizes = state.PopCount(dimensionCount);
+
+            // Same as new /list(1, 2, 3)
+            list.Initialize(new(dimensionSizes));
             state.Push(new DreamValue(list));
             return ProcStatus.Continue;
         }
@@ -743,6 +753,19 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus Append(DMProcState state) {
+            state.Push(AppendHelper(state));
+            return ProcStatus.Continue;
+        }
+
+        /// <summary>
+        /// Identical to <see cref="Append"/> except it never pushes the result to the stack
+        /// </summary>
+        public static ProcStatus AppendNoPush(DMProcState state) {
+            AppendHelper(state);
+            return ProcStatus.Continue;
+        }
+
+        private static DreamValue AppendHelper(DMProcState state) {
             DreamReference reference = state.ReadReference();
             DreamValue second = state.Pop();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
@@ -753,12 +776,10 @@ namespace OpenDreamRuntime.Procs {
             } else if (first.TryGetValueAsDreamObject(out var firstObj)) {
                 if (firstObj != null) {
                     state.PopReference(reference);
-                    state.Push(firstObj.OperatorAppend(second));
-
-                    return ProcStatus.Continue;
-                } else {
-                    result = second;
+                    return firstObj.OperatorAppend(second);
                 }
+
+                result = second;
             } else if (!second.IsNull) {
                 switch (first.Type) {
                     case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
@@ -775,8 +796,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             state.AssignReference(reference, result);
-            state.Push(result);
-            return ProcStatus.Continue;
+            return result;
         }
 
         public static ProcStatus Increment(DMProcState state) {

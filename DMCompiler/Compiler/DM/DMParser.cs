@@ -1723,6 +1723,10 @@ namespace DMCompiler.Compiler.DM {
             DMASTPath? path = Path();
 
             if (path != null) {
+                if (path.Path.PathString.StartsWith("/var/")) {
+                    Emit(WarningCode.ProcArgumentGlobal, $"Proc argument \"{path.Path.PathString}\" starting with \"/var/\" will create a global variable. Replace with \"{path.Path.PathString[1..]}\"");
+                }
+
                 var loc = Current().Location;
                 Whitespace();
 
@@ -1738,8 +1742,8 @@ namespace DMCompiler.Compiler.DM {
                 }
 
                 var type = AsComplexTypes();
-                var dmType = DMObjectTree.GetDMObject(path.Path, false);
-                if (type is {Type: not DMValueType.Anything } && (value is null or DMASTConstantNull) && (dmType?.IsSubtypeOf(DreamPath.Datum) ?? false)) {
+                DMObjectTree.TryGetDMObject(path.Path, out var dmType);
+                if (type is { Type: not DMValueType.Anything } && (value is null or DMASTConstantNull) && (dmType?.IsSubtypeOf(DreamPath.Datum) ?? false)) {
                     DMCompiler.Emit(WarningCode.ImplicitNullType, loc, $"Variable \"{path.Path}\" is null but not a subtype of atom nor explicitly typed as nullable, append \"|null\" to \"as\". It will implicitly be treated as nullable.");
                     type |= DMValueType.Null;
                 }
@@ -2371,10 +2375,15 @@ namespace DMCompiler.Compiler.DM {
                     DMASTDereference.Operation operation;
 
                     switch (token.Type) {
+                        case TokenType.DM_Colon:
+                            DMCompiler.Emit(WarningCode.RuntimeSearchOperator, token.Location, "Runtime search operator ':' should be avoided; prefer typecasting and using '.' instead");
+                            goto case TokenType.DM_QuestionPeriod;
+                        case TokenType.DM_QuestionColon:
+                            DMCompiler.Emit(WarningCode.RuntimeSearchOperator, token.Location, "Runtime search operator '?:' should be avoided; prefer typecasting and using '?.' instead");
+                            goto case TokenType.DM_QuestionPeriod;
                         case TokenType.DM_Period:
                         case TokenType.DM_QuestionPeriod:
-                        case TokenType.DM_Colon:
-                        case TokenType.DM_QuestionColon: {
+                         {
                             var identifier = Identifier();
 
                             if (identifier == null) {

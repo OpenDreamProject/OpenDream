@@ -95,7 +95,8 @@ public enum DreamProcOpcode : byte {
     CreateObject = 0x2E,
     [OpcodeMetadata(-1, OpcodeArgType.Label)]
     BooleanOr = 0x2F, // Shrinks the stack by 1 or 0. Assume 1.
-    //0x30
+    [OpcodeMetadata(0, OpcodeArgType.ListSize)]
+    CreateMultidimensionalList = 0x30,
     [OpcodeMetadata(-1)]
     CompareGreaterThanOrEqual = 0x31,
     [OpcodeMetadata(-1, OpcodeArgType.Label)]
@@ -253,7 +254,8 @@ public enum DreamProcOpcode : byte {
     [OpcodeMetadata]
     Abs = 0x83,
     // Peephole optimization opcodes
-    //0x84
+    [OpcodeMetadata(-1, OpcodeArgType.Reference)]
+    AppendNoPush = 0x84,
     [OpcodeMetadata(-1, OpcodeArgType.Reference)]
     AssignNoPush = 0x85,
     [OpcodeMetadata(1, OpcodeArgType.Reference, OpcodeArgType.String)]

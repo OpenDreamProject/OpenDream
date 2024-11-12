@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Compiler;
 using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM.Builders;
+using DMCompiler.DM.Expressions;
 
 namespace DMCompiler.DM;
 
@@ -13,6 +14,15 @@ internal abstract class DMExpression(Location location) {
 
     // TODO: proc and dmObject can be null, address nullability contract
     public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
+        var expr = CreateIgnoreUnknownReference(dmObject, proc, expression, inferredPath);
+        if (expr is UnknownReference unknownRef)
+            unknownRef.EmitCompilerError();
+
+        return expr;
+    }
+
+    public static DMExpression CreateIgnoreUnknownReference(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
+        DMExpressionBuilder.EncounteredUnknownReference = null;
         return DMExpressionBuilder.BuildExpression(expression, dmObject, proc, inferredPath);
     }
 
@@ -79,72 +89,17 @@ internal abstract class DMExpression(Location location) {
 
 // (a, b, c, ...)
 // This isn't an expression, it's just a helper class for working with argument lists
-internal sealed class ArgumentList {
-    public readonly (string? Name, DMExpression Expr)[] Expressions;
+internal sealed class ArgumentList(Location location, (string? Name, DMExpression Expr)[] expressions, bool isKeyed) {
+    public readonly (string? Name, DMExpression Expr)[] Expressions = expressions;
     public int Length => Expressions.Length;
-    public Location Location;
-
-    // Whether or not this has named arguments
-    private readonly bool _isKeyed;
-
-    public ArgumentList(Location location, DMObject dmObject, DMProc proc, DMASTCallParameter[]? arguments, DreamPath? inferredPath = null) {
-        Location = location;
-        if (arguments == null) {
-            Expressions = Array.Empty<(string?, DMExpression)>();
-            return;
-        }
-
-        Expressions = new (string?, DMExpression)[arguments.Length];
-
-        int idx = 0;
-        foreach(var arg in arguments) {
-            var value = DMExpression.Create(dmObject, proc, arg.Value, inferredPath);
-            var key = (arg.Key != null) ? DMExpression.Create(dmObject, proc, arg.Key, inferredPath) : null;
-            int argIndex = idx++;
-            string? name = null;
-
-            switch (key) {
-                case Expressions.String keyStr:
-                    name = keyStr.Value;
-                    break;
-                case Expressions.Number keyNum:
-                    //Replaces an ordered argument
-                    var newIdx = (int)keyNum.Value - 1;
-
-                    if (newIdx == argIndex) {
-                        DMCompiler.Emit(WarningCode.PointlessPositionalArgument, key.Location,
-                            $"The argument at index {argIndex + 1} is a positional argument with a redundant index (\"{argIndex + 1} = value\" at argument {argIndex + 1}). This does not function like a named argument and is likely a mistake.");
-                    }
-
-                    argIndex = newIdx;
-                    break;
-                case Expressions.Resource _:
-                case Expressions.ConstantPath _:
-                    //The key becomes the value
-                    value = key;
-                    break;
-
-                default:
-                    if (key != null) {
-                        DMCompiler.Emit(WarningCode.InvalidArgumentKey, key.Location, "Invalid argument key");
-                    }
-
-                    break;
-            }
-
-            if (name != null)
-                _isKeyed = true;
-
-            Expressions[argIndex] = (name, value);
-        }
-    }
+    public Location Location = location;
 
     public (DMCallArgumentsType Type, int StackSize) EmitArguments(DMObject dmObject, DMProc proc, DMProc? targetProc) {
         if (Expressions.Length == 0) {
             return (DMCallArgumentsType.None, 0);
         }
 
-        if (Expressions[0].Expr is Expressions.Arglist arglist) {
+        if (Expressions[0].Expr is Arglist arglist) {
             if (Expressions[0].Name != null)
                 DMCompiler.Emit(WarningCode.BadArgument, arglist.Location, "arglist cannot be a named argument");
 
@@ -160,7 +115,7 @@ internal sealed class ArgumentList {
             if (targetProc != null)
                 VerifyArgType(targetProc, index, name, expr);
 
-            if (_isKeyed) {
+            if (isKeyed) {
                 if (name != null) {
                     proc.PushString(name);
                 } else {
@@ -169,10 +124,10 @@ internal sealed class ArgumentList {
             }
 
             expr.EmitPushValue(dmObject, proc);
-            stackCount += _isKeyed ? 2 : 1;
+            stackCount += isKeyed ? 2 : 1;
         }
 
-        return (_isKeyed ? DMCallArgumentsType.FromStackKeyed : DMCallArgumentsType.FromStack, stackCount);
+        return (isKeyed ? DMCallArgumentsType.FromStackKeyed : DMCallArgumentsType.FromStack, stackCount);
     }
 
     private static void VerifyArgType(DMProc targetProc, int index, string? name, DMExpression expr) {

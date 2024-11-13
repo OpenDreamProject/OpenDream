@@ -20,8 +20,8 @@ proc/file2text(File) as text|null
 proc/filter(type, ...)
 proc/findtext(Haystack, Needle, Start = 1, End = 0) as num
 proc/findtextEx(Haystack, Needle, Start = 1, End = 0) as num
-proc/findlasttext(Haystack, Needle, Start = 1, End = 0) as num
-proc/findlasttextEx(Haystack, Needle, Start = 1, End = 0) as num
+proc/findlasttext(Haystack, Needle, Start = 0, End = 1) as num
+proc/findlasttextEx(Haystack, Needle, Start = 0, End = 1) as num
 proc/flick(Icon, Object)
 proc/flist(Path) as /list
 proc/floor(A) as num

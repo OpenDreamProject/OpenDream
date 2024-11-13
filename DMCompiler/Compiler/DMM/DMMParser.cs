@@ -55,8 +55,7 @@ internal sealed class DMMParser(DMLexer lexer, int zOffset) : DMParser(lexer) {
             CellDefinitionJson cellDefinition = new CellDefinitionJson(currentToken.ValueAsString());
             DMASTPath? objectType = Path();
             while (objectType != null) {
-                var type = Compiler.DMObjectTree.GetDMObject(objectType.Path, createIfNonexistent: false);
-                if (type == null && _skippedTypes.Add(objectType.Path)) {
+                if (!Compiler.DMObjectTree.TryGetDMObject(objectType.Path, out var type) && _skippedTypes.Add(objectType.Path)) {
                     Warning($"Skipping type '{objectType.Path}'");
                 }
 
@@ -71,9 +70,13 @@ internal sealed class DMMParser(DMLexer lexer, int zOffset) : DMParser(lexer) {
                             break;
                         }
 
-                        if (!varOverride.ObjectPath.Equals(DreamPath.Root)) Compiler.ForcedError(statement.Location, $"Invalid var name '{varOverride.VarName}' in DMM on type {objectType.Path}");
-                        DMExpression value = lexer.Compiler.DMExpression.Create(Compiler.DMObjectTree.GetDMObject(objectType.Path, false), null, varOverride.Value);
-                        if (!value.TryAsJsonRepresentation(out var valueJson)) Compiler.ForcedError(statement.Location, $"Failed to serialize value to json ({value})");
+                        if (!varOverride.ObjectPath.Equals(DreamPath.Root))
+                            Compiler.ForcedError(statement.Location, $"Invalid var name '{varOverride.VarName}' in DMM on type {objectType.Path}");
+
+                        Compiler.DMObjectTree.TryGetDMObject(objectType.Path, out var dmObject);
+                        DMExpression value = Compiler.DMExpression.Create(dmObject, null, varOverride.Value);
+                        if (!value.TryAsJsonRepresentation(out var valueJson))
+                            Compiler.ForcedError(statement.Location, $"Failed to serialize value to json ({value})");
 
                         if(!mapObject.AddVarOverride(varOverride.VarName, valueJson)) {
                             Compiler.ForcedWarning(statement.Location, $"Duplicate var override '{varOverride.VarName}' in DMM on type {objectType.Path}");

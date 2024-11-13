@@ -48,7 +48,7 @@ public sealed partial class DMTests : ContentUnitTest {
 
     private string? Compile(string sourceFile) {
         bool successfulCompile = _dmCompiler.Compile(new() {
-            Files = new() { sourceFile }
+            Files = [sourceFile]
         });
 
         return successfulCompile ? Path.ChangeExtension(sourceFile, "json") : null;

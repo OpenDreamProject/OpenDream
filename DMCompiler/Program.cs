@@ -6,6 +6,7 @@ namespace DMCompiler;
 internal struct Argument {
     /// <summary> The text we found that's in the '--whatever' format. May be null if no such text was present.</summary>
     public string? Name;
+
     /// <summary> The value, either set in a '--whatever=whoever' format or just left by itself anonymously. May be null.</summary>
     public string? Value;
 }
@@ -35,6 +36,7 @@ internal static class Program {
                 retArgs.Add(new Argument { Value = firstString });
                 continue;
             }
+
             firstString = firstString.TrimStart('-');
             var split = firstString.Split('=');
             if(split.Length == 1) { // If it's a name-only argument
@@ -44,9 +46,11 @@ internal static class Program {
                         retArgs.Add(new Argument {Name = firstString, Value = args[i] });
                     }
                 }
+
                 retArgs.Add(new Argument { Name = firstString });
                 continue;
             }
+
             retArgs.Add(new Argument { Name = split[0], Value = split[1] });
         }
 
@@ -92,6 +96,7 @@ internal static class Program {
                 case "dump-preprocessor": settings.DumpPreprocessor = true; break;
                 case "no-standard": settings.NoStandard = true; break;
                 case "verbose": settings.Verbose = true; break;
+                case "print-code-tree": settings.PrintCodeTree = true; break;
                 case "skip-bad-args": break;
                 case "define":
                     var parts = arg.Value?.Split('=', 2); // Only split on the first = in case of stuff like "--define AAA=0==1"
@@ -99,6 +104,7 @@ internal static class Program {
                         Console.WriteLine("Compiler arg 'define' requires macro identifier for definition directive");
                         return false;
                     }
+
                     settings.MacroDefines ??= new Dictionary<string, string>();
                     settings.MacroDefines[parts[0]] = parts.Length > 1 ? parts[1] : "";
                     break;
@@ -112,9 +118,11 @@ internal static class Program {
                             compiler.ForcedWarning($"Compiler arg 'pragma-config' requires filename of valid DM file, skipping");
                             continue;
                         }
+
                         Console.WriteLine("Compiler arg 'pragma-config' requires filename of valid DM file");
                         return false;
                     }
+
                     settings.PragmaFileOverride = arg.Value;
                     break;
                 }
@@ -124,6 +132,7 @@ internal static class Program {
                             compiler.ForcedWarning("Compiler arg 'version' requires a full BYOND build (e.g. --version=514.1584), skipping");
                             continue;
                         }
+
                         Console.WriteLine("Compiler arg 'version' requires a full BYOND build (e.g. --version=514.1584)");
                         return false;
                     }
@@ -134,6 +143,7 @@ internal static class Program {
                             compiler.ForcedWarning("Compiler arg 'version' requires a full BYOND build (e.g. --version=514.1584), skipping");
                             continue;
                         }
+
                         Console.WriteLine("Compiler arg 'version' requires a full BYOND build (e.g. --version=514.1584)");
                         return false;
                     }
@@ -149,6 +159,7 @@ internal static class Program {
                         settings.Files.Add(arg.Value);
                         break;
                     }
+
                     if (skipBad) {
                         compiler.ForcedWarning($"Invalid compiler arg '{arg.Value}', skipping");
                     } else {
@@ -164,7 +175,7 @@ internal static class Program {
                         break;
                     }
 
-                    Console.WriteLine($"Unknown arg '{arg}'");
+                    Console.WriteLine($"Unknown arg '{arg.Name}'");
                     return false;
                 }
             }

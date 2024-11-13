@@ -57,11 +57,7 @@ namespace DMCompiler.DM.Builders {
             foreach (var stmt in block.SetStatements) {
                 Debug.Assert(stmt.IsAggregateOr<DMASTProcStatementSet>(), "Non-set statements were located in the block's SetStatements array! This is a bug.");
 
-                try {
-                    ProcessStatement(stmt);
-                } catch (UnknownIdentifierException e) {
-                    Compiler.Emit(WarningCode.ItemDoesntExist, e.Location, $"Unknown identifier \"{e.Identifier}\"");
-                }
+                ProcessStatement(stmt);
             }
 
             if(!silenceEmptyBlockWarning && block.Statements.Length == 0) { // If this block has no real statements
@@ -78,12 +74,7 @@ namespace DMCompiler.DM.Builders {
 
             foreach (DMASTProcStatement statement in block.Statements) {
                 proc.DebugSource(statement.Location);
-
-                try {
-                    ProcessStatement(statement);
-                } catch (UnknownIdentifierException e) {
-                    Compiler.Emit(WarningCode.ItemDoesntExist, e.Location, $"Unknown identifier \"{e.Identifier}\"");
-                }
+                ProcessStatement(statement);
             }
         }
 

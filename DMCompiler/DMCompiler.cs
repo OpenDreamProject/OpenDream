@@ -121,7 +121,7 @@ internal class DMCompiler {
                 string includeDir = Path.GetDirectoryName(files[i]);
                 string fileName = Path.GetFileName(files[i]);
 
-                preproc.IncludeFile(includeDir, fileName);
+                preproc.IncludeFile(includeDir, fileName, false);
             }
 
             string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
@@ -129,7 +129,7 @@ internal class DMCompiler {
 
             // Push DMStandard to the top of the stack, prioritizing it.
             if (!Settings.NoStandard) {
-                preproc.IncludeFile(dmStandardDirectory, "_Standard.dm");
+                preproc.IncludeFile(dmStandardDirectory, "_Standard.dm", true);
             }
 
             // Push the pragma config file to the tippy-top of the stack, super-duper prioritizing it, since it governs some compiler behaviour.
@@ -148,7 +148,7 @@ internal class DMCompiler {
                 return null;
             }
 
-            preproc.IncludeFile(pragmaDirectory,pragmaName);
+            preproc.IncludeFile(pragmaDirectory, pragmaName, true);
             return preproc;
         }
 
@@ -180,8 +180,8 @@ internal class DMCompiler {
         VerbosePrint("Constant folding");
         astSimplifier.FoldAst(astFile);
 
-        DMObjectBuilder dmObjectBuilder = new DMObjectBuilder(this);
-        dmObjectBuilder.BuildObjectTree(astFile);
+        DMCodeTreeBuilder dmCodeTreeBuilder = new(this);
+        dmCodeTreeBuilder.BuildCodeTree(astFile);
 
         return ErrorCount == 0;
     }
@@ -265,7 +265,7 @@ internal class DMCompiler {
             VerbosePrint($"Converting map {mapPath}");
 
             DMPreprocessor preprocessor = new DMPreprocessor(compiler, false);
-            preprocessor.PreprocessFile(Path.GetDirectoryName(mapPath), Path.GetFileName(mapPath));
+            preprocessor.PreprocessFile(Path.GetDirectoryName(mapPath), Path.GetFileName(mapPath), false);
 
             DMLexer lexer = new DMLexer(this, mapPath, preprocessor);
             DMMParser parser = new DMMParser(lexer, zOffset);
@@ -292,8 +292,8 @@ internal class DMCompiler {
             Procs = jsonRep.Item2
         };
 
-        if (DMObjectTree.GlobalInitProc.AnnotatedBytecode.GetLength() > 0)
-            compiledDream.GlobalInitProc = DMObjectTree.GlobalInitProc.GetJsonRepresentation();
+        if (DMCodeTree.GlobalInitProc.AnnotatedBytecode.GetLength() > 0)
+            compiledDream.GlobalInitProc = DMCodeTree.GlobalInitProc.GetJsonRepresentation();
 
         if (DMObjectTree.Globals.Count > 0) {
             GlobalListJson globalListJson = new GlobalListJson {
@@ -384,6 +384,7 @@ public struct DMCompilerSettings {
     public bool DumpPreprocessor = false;
     public bool NoStandard = false;
     public bool Verbose = false;
+    public bool PrintCodeTree = false;
     public Dictionary<string, string>? MacroDefines = null;
     /// <summary> A user-provided pragma config file, if one was provided. </summary>
     public string? PragmaFileOverride = null;

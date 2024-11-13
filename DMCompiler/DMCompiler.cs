@@ -22,7 +22,7 @@ using DMCompiler.Json;
 
 namespace DMCompiler;
 
-internal class DMCompiler {
+public class DMCompiler {
     public int ErrorCount;
     public int WarningCount;
     public HashSet<WarningCode> UniqueEmissions = new();
@@ -33,9 +33,9 @@ internal class DMCompiler {
     private readonly List<string> _resourceDirectories = new();
     private DateTime _compileStartTime;
 
-    public DMObjectTree DMObjectTree;
-    public DMExpressionBuilder DMExpressionBuilder;
-    public DMExpression DMExpression;
+    internal DMObjectTree DMObjectTree;
+    internal DMExpressionBuilder DMExpressionBuilder;
+    internal DMExpression DMExpression;
 
     public bool Compile(DMCompilerSettings settings) {
         DMObjectTree = new(this);

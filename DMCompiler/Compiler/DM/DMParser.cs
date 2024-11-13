@@ -2376,10 +2376,10 @@ namespace DMCompiler.Compiler.DM {
 
                     switch (token.Type) {
                         case TokenType.DM_Colon:
-                            DMCompiler.Emit(WarningCode.RuntimeSearchOperator, token.Location, "Runtime search operator ':' should be avoided; prefer typecasting and using '.' instead");
+                            Compiler.Emit(WarningCode.RuntimeSearchOperator, token.Location, "Runtime search operator ':' should be avoided; prefer typecasting and using '.' instead");
                             goto case TokenType.DM_QuestionPeriod;
                         case TokenType.DM_QuestionColon:
-                            DMCompiler.Emit(WarningCode.RuntimeSearchOperator, token.Location, "Runtime search operator '?:' should be avoided; prefer typecasting and using '?.' instead");
+                            Compiler.Emit(WarningCode.RuntimeSearchOperator, token.Location, "Runtime search operator '?:' should be avoided; prefer typecasting and using '?.' instead");
                             goto case TokenType.DM_QuestionPeriod;
                         case TokenType.DM_Period:
                         case TokenType.DM_QuestionPeriod:

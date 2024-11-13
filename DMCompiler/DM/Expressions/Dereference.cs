@@ -125,7 +125,7 @@ internal class Dereference : LValue {
                 break;
 
             case CallOperation callOperation:
-                var (argumentsType, argumentStackSize) = callOperation.Parameters.EmitArguments(dmObject, proc, null);
+                var (argumentsType, argumentStackSize) = callOperation.Parameters.EmitArguments(Compiler, dmObject, proc, null);
                 proc.DereferenceCall(callOperation.Identifier, argumentsType, argumentStackSize);
                 break;
 

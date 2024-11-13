@@ -96,7 +96,7 @@ internal class DMObjectTree {
                     parent = GetOrCreateDMObject(DreamPath.Root);
                     break;
                 default:
-                    parent = GetOrCreateDMObject(DMCompiler.Settings.NoStandard ? DreamPath.Root : DreamPath.Datum);
+                    parent = GetOrCreateDMObject(Compiler.Settings.NoStandard ? DreamPath.Root : DreamPath.Datum);
                     break;
             }
         }
@@ -120,7 +120,7 @@ internal class DMObjectTree {
         return false;
     }
 
-    public static bool TryGetGlobalProc(string name, [NotNullWhen(true)] out DMProc? proc) {
+    public bool TryGetGlobalProc(string name, [NotNullWhen(true)] out DMProc? proc) {
         if (!GlobalProcs.TryGetValue(name, out var id)) {
             proc = null;
             return false;
@@ -197,7 +197,7 @@ internal class DMObjectTree {
 
     public void AddGlobalProc(DMProc proc) {
         if (GlobalProcs.ContainsKey(proc.Name)) {
-            DMCompiler.Emit(WarningCode.DuplicateProcDefinition, proc.Location, $"Global proc {proc.Name} is already defined");
+            Compiler.Emit(WarningCode.DuplicateProcDefinition, proc.Location, $"Global proc {proc.Name} is already defined");
             return;
         }
 

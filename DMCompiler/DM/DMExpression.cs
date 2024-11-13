@@ -95,14 +95,14 @@ internal sealed class ArgumentList(Location location, (string? Name, DMExpressio
     public int Length => Expressions.Length;
     public Location Location = location;
 
-    public (DMCallArgumentsType Type, int StackSize) EmitArguments(DMObject dmObject, DMProc proc, DMProc? targetProc) {
+    public (DMCallArgumentsType Type, int StackSize) EmitArguments(DMCompiler compiler, DMObject dmObject, DMProc proc, DMProc? targetProc) {
         if (Expressions.Length == 0) {
             return (DMCallArgumentsType.None, 0);
         }
 
         if (Expressions[0].Expr is Arglist arglist) {
             if (Expressions[0].Name != null)
-                Compiler.Emit(WarningCode.BadArgument, arglist.Location, "arglist cannot be a named argument");
+                compiler.Emit(WarningCode.BadArgument, arglist.Location, "arglist cannot be a named argument");
 
             arglist.EmitPushArglist(dmObject, proc);
             return (DMCallArgumentsType.FromArgumentList, 1);
@@ -114,7 +114,7 @@ internal sealed class ArgumentList(Location location, (string? Name, DMExpressio
             (string? name, DMExpression expr) = Expressions[index];
 
             if (targetProc != null)
-                VerifyArgType(targetProc, index, name, expr);
+                VerifyArgType(compiler, targetProc, index, name, expr);
 
             if (isKeyed) {
                 if (name != null) {
@@ -131,7 +131,7 @@ internal sealed class ArgumentList(Location location, (string? Name, DMExpressio
         return (isKeyed ? DMCallArgumentsType.FromStackKeyed : DMCallArgumentsType.FromStack, stackCount);
     }
 
-    private  void VerifyArgType(DMProc targetProc, int index, string? name, DMExpression expr) {
+    private void VerifyArgType(DMCompiler compiler, DMProc targetProc, int index, string? name, DMExpression expr) {
         // TODO: See if the  typechecking can be improved
         // Also right now we don't care if the arg is Anything
         // TODO: Make a separate "UnsetStaticType" pragma for whether we should care if it's Anything
@@ -149,7 +149,7 @@ internal sealed class ArgumentList(Location location, (string? Name, DMExpressio
         if (param == null) {
             // TODO: Remove this check once variadic args are properly supported
             if (targetProc.Name != "animate" && index < targetProc.Parameters.Count) {
-                Compiler.Emit(WarningCode.InvalidVarType, expr.Location,
+                compiler.Emit(WarningCode.InvalidVarType, expr.Location,
                     $"{targetProc.Name}(...): Unknown argument {(name is null ? $"at index {index}" : $"\"{name}\"")}, typechecking failed");
             }
 
@@ -158,8 +158,8 @@ internal sealed class ArgumentList(Location location, (string? Name, DMExpressio
 
         DMComplexValueType paramType = param.ExplicitValueType ?? DMValueType.Anything;
 
-        if (!expr.ValType.IsAnything && !paramType.MatchesType(Compiler, expr.ValType)) {
-            Compiler.Emit(WarningCode.InvalidVarType, expr.Location,
+        if (!expr.ValType.IsAnything && !paramType.MatchesType(compiler, expr.ValType)) {
+            compiler.Emit(WarningCode.InvalidVarType, expr.Location,
                 $"{targetProc.Name}(...) argument \"{param.Name}\": Invalid var value type {expr.ValType}, expected {paramType}");
         }
     }

@@ -72,7 +72,7 @@ internal sealed class Args(DMCompiler compiler, Location location) : LValue(comp
 }
 
 // world
-internal sealed class World(Location location) : LValue(location, DreamPath.World) {
+internal sealed class World(DMCompiler compiler, Location location) : LValue(compiler, location, DreamPath.World) {
     public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
         return DMReference.World;
     }

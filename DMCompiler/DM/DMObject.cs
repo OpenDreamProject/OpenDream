@@ -109,7 +109,7 @@ internal sealed class DMObject(DMCompiler compiler, int id, DreamPath path, DMOb
     }
 
     public void AddVerb(DMProc verb) {
-        if (!DMCompiler.Settings.NoStandard && !IsSubtypeOf(DreamPath.Atom) && !IsSubtypeOf(DreamPath.Client))
+        if (!Compiler.Settings.NoStandard && !IsSubtypeOf(DreamPath.Atom) && !IsSubtypeOf(DreamPath.Client))
             return;
 
         _verbs ??= [];

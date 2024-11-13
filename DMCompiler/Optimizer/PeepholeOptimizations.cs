@@ -633,10 +633,10 @@ internal sealed class ConstFoldBitNot : IPeepholeOptimization {
     public void Apply(List<IAnnotatedBytecode> input, int index) {
         var firstInstruction = IPeepholeOptimization.GetInstructionAndValue(input[index], out var pushVal1);
 
-        var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(((~(int)pushVal1) & 0xFFFFFF), firstInstruction.Location)};
+        var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(firstInstruction.Compiler, ((~(int)pushVal1) & 0xFFFFFF), firstInstruction.Location)};
 
         IPeepholeOptimization.ReplaceInstructions(input, index, 2,
-            new AnnotatedBytecodeInstruction(DreamProcOpcode.PushFloat, 1, args));
+            new AnnotatedBytecodeInstruction(firstInstruction.Compiler, DreamProcOpcode.PushFloat, 1, args));
     }
 }
 
@@ -658,10 +658,10 @@ internal sealed class ConstFoldBitOr : IPeepholeOptimization {
 
         IPeepholeOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
 
-        var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(((int)pushVal1 | (int)pushVal2), firstInstruction.Location)};
+        var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(firstInstruction.Compiler, ((int)pushVal1 | (int)pushVal2), firstInstruction.Location)};
 
         IPeepholeOptimization.ReplaceInstructions(input, index, 3,
-            new AnnotatedBytecodeInstruction(DreamProcOpcode.PushFloat, 1, args));
+            new AnnotatedBytecodeInstruction(firstInstruction.Compiler, DreamProcOpcode.PushFloat, 1, args));
     }
 }
 
@@ -683,10 +683,10 @@ internal sealed class ConstFoldBitAnd : IPeepholeOptimization {
 
         IPeepholeOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
 
-        var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(((int)pushVal1 & (int)pushVal2), firstInstruction.Location)};
+        var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(firstInstruction.Compiler, ((int)pushVal1 & (int)pushVal2), firstInstruction.Location)};
 
         IPeepholeOptimization.ReplaceInstructions(input, index, 3,
-            new AnnotatedBytecodeInstruction(DreamProcOpcode.PushFloat, 1, args));
+            new AnnotatedBytecodeInstruction(firstInstruction.Compiler, DreamProcOpcode.PushFloat, 1, args));
     }
 }
 

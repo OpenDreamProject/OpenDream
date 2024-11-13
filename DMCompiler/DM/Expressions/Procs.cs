@@ -117,7 +117,7 @@ internal sealed class ProcCall(Location location, DMExpression target, ArgumentL
             argumentsType = DMCallArgumentsType.FromProcArguments;
             argumentStackSize = 0;
         } else {
-            (argumentsType, argumentStackSize) = arguments.EmitArguments(dmObject, proc, targetProc);
+            (argumentsType, argumentStackSize) = arguments.EmitArguments(Compiler, dmObject, proc, targetProc);
         }
 
         DMReference procRef = target.EmitReference(dmObject, proc, endLabel);

@@ -227,7 +227,7 @@ internal interface IConstantPath {
 /// A reference to a type
 /// <code>/a/b/c</code>
 /// </summary>
-internal class ConstantTypeReference(Location location, DMObject dmObject) : Constant(location), IConstantPath {
+internal class ConstantTypeReference(DMCompiler compiler, Location location, DMObject dmObject) : Constant(compiler, location), IConstantPath {
     public DMObject Value { get; } = dmObject;
 
     public override DreamPath? Path => Value.Path;
@@ -282,7 +282,7 @@ internal sealed class ConstantProcReference(DMCompiler compiler, Location locati
 /// A generic reference to all of a type's procs or verbs
 /// <code>/datum/proc</code>
 /// </summary>
-internal sealed class ConstantProcStub(Location location, DMObject onObject, bool isVerb) : Constant(location), IConstantPath {
+internal sealed class ConstantProcStub(DMCompiler compiler, Location location, DMObject onObject, bool isVerb) : Constant(compiler, location), IConstantPath {
     private readonly string _str =
         $"{(onObject.Path == DreamPath.Root ? string.Empty : onObject.Path.PathString)}/{(isVerb ? "verb" : "proc")}";
 

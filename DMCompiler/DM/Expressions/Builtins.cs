@@ -18,7 +18,7 @@ internal sealed class BadExpression(DMCompiler compiler, Location location) : DM
     }
 }
 
-internal sealed class UnknownReference(Location location, string message) : DMExpression(location) {
+internal sealed class UnknownReference(DMCompiler compiler, Location location, string message) : DMExpression(compiler, location) {
     public string Message => message;
 
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -29,7 +29,7 @@ internal sealed class UnknownReference(Location location, string message) : DMEx
     }
 
     public void EmitCompilerError() {
-        DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, message);
+        Compiler.Emit(WarningCode.ItemDoesntExist, Location, message);
     }
 }
 
@@ -63,7 +63,7 @@ internal sealed class New(DMCompiler compiler, Location location, DMExpression e
     public override DMComplexValueType ValType => !expr.ValType.IsAnything ? expr.ValType : (Path?.GetAtomType(compiler) ?? DMValueType.Anything);
 
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        var argumentInfo = arguments.EmitArguments(dmObject, proc, null);
+        var argumentInfo = arguments.EmitArguments(Compiler, dmObject, proc, null);
 
         expr.EmitPushValue(dmObject, proc);
         proc.CreateObject(argumentInfo.Type, argumentInfo.StackSize);
@@ -84,11 +84,11 @@ internal sealed class NewPath(DMCompiler compiler,  Location location, IConstant
                 // TODO: This might give us null depending on how definition order goes
                 var newProc = Compiler.DMObjectTree.GetNewProc(typeReference.Value.Id);
 
-                (argumentsType, stackSize) = arguments.EmitArguments(dmObject, proc, newProc);
+                (argumentsType, stackSize) = arguments.EmitArguments(Compiler, dmObject, proc, newProc);
                 proc.PushType(typeReference.Value.Id);
                 break;
             case ConstantProcReference procReference: // "new /proc/new_verb(Destination)" is a thing
-                (argumentsType, stackSize) = arguments.EmitArguments(dmObject, proc, Compiler.DMObjectTree.AllProcs[procReference.Value.Id]);
+                (argumentsType, stackSize) = arguments.EmitArguments(Compiler, dmObject, proc, Compiler.DMObjectTree.AllProcs[procReference.Value.Id]);
                 proc.PushProc(procReference.Value.Id);
                 break;
             default:
@@ -170,7 +170,7 @@ internal sealed class LocateCoordinates(DMCompiler compiler,  Location location,
 internal sealed class Gradient(DMCompiler compiler,  Location location, ArgumentList arguments) : DMExpression(compiler, location) {
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         Compiler.DMObjectTree.TryGetGlobalProc("gradient", out var dmProc);
-        var argInfo = arguments.EmitArguments(dmObject, proc, dmProc);
+        var argInfo = arguments.EmitArguments(Compiler, dmObject, proc, dmProc);
 
         proc.Gradient(argInfo.Type, argInfo.StackSize);
     }
@@ -183,7 +183,7 @@ internal sealed class Gradient(DMCompiler compiler,  Location location, Argument
 internal sealed class Rgb(DMCompiler compiler,  Location location, ArgumentList arguments) : DMExpression(compiler, location) {
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         Compiler.DMObjectTree.TryGetGlobalProc("rgb", out var dmProc);
-        var argInfo = arguments.EmitArguments(dmObject, proc, dmProc);
+        var argInfo = arguments.EmitArguments(Compiler, dmObject, proc, dmProc);
 
         proc.Rgb(argInfo.Type, argInfo.StackSize);
     }
@@ -215,7 +215,7 @@ internal sealed class Pick(DMCompiler compiler,  Location location, Pick.PickVal
             compiler.Emit(WarningCode.PickWeightedSyntax, Location, "Use of weighted pick() syntax");
 
             foreach (PickValue pickValue in values) {
-                DMExpression weight = pickValue.Weight ?? new Number(Location.Internal, 100); //Default of 100
+                DMExpression weight = pickValue.Weight ?? new Number(Compiler, Location.Internal, 100); //Default of 100
 
                 weight.EmitPushValue(dmObject, proc);
                 pickValue.Value.EmitPushValue(dmObject, proc);
@@ -527,7 +527,7 @@ internal sealed class CallStatement : DMExpression {
     }
 
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        var argumentInfo = _procArgs.EmitArguments(dmObject, proc, null);
+        var argumentInfo = _procArgs.EmitArguments(Compiler, dmObject, proc, null);
 
         _b?.EmitPushValue(dmObject, proc);
         _a.EmitPushValue(dmObject, proc);

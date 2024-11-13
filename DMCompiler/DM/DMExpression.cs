@@ -22,7 +22,7 @@ internal abstract class DMExpression(DMCompiler compiler, Location location) {
         return expr;
     }
 
-    public static DMExpression CreateIgnoreUnknownReference(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
+    public DMExpression CreateIgnoreUnknownReference(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
         DMExpressionBuilder.EncounteredUnknownReference = null;
         return Compiler.DMExpressionBuilder.BuildExpression(expression, dmObject, proc, inferredPath);
     }

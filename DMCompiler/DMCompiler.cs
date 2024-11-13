@@ -33,14 +33,19 @@ public class DMCompiler {
     private readonly List<string> _resourceDirectories = new();
     private DateTime _compileStartTime;
 
-    internal DMObjectTree DMObjectTree;
-    internal DMExpressionBuilder DMExpressionBuilder;
-    internal DMExpression DMExpression;
+    internal readonly DMCodeTree DMCodeTree;
+    internal readonly DMObjectTree DMObjectTree;
+    internal readonly DMExpressionBuilder DMExpressionBuilder;
+    internal readonly DMExpression DMExpression;
+
+    public DMCompiler() {
+        DMCodeTree = new(this);
+        DMObjectTree = new(this);
+        DMExpressionBuilder = new(this);
+        DMExpression = new BadExpression(this, Location.Internal); // TODO: Wow this sucks
+    }
 
     public bool Compile(DMCompilerSettings settings) {
-        DMObjectTree = new(this);
-        DMExpressionBuilder = new DMExpressionBuilder(this);
-        DMExpression = new BadExpression(this, Location.Internal); // TODO: Wow this sucks
         ErrorCount = 0;
         WarningCount = 0;
         UniqueEmissions.Clear();

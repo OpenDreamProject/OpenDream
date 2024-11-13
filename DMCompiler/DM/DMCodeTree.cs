@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Compiler;
-using DMCompiler.DM.Builders;
 
 namespace DMCompiler.DM;
 
@@ -10,7 +9,7 @@ namespace DMCompiler.DM;
 /// </summary>
 // TODO: "/var" vs "var" has a different init order (same for procs)
 // TODO: Path elements like /static and /global are grouped together
-internal static partial class DMCodeTree {
+internal partial class DMCodeTree(DMCompiler compiler) {
     private interface INode;
 
     private class TypeNode(string name) : INode {
@@ -42,26 +41,26 @@ internal static partial class DMCodeTree {
         private bool _defined;
         private ProcsNode? _procs;
 
-        public void DefineType() {
+        public void DefineType(DMCompiler compiler) {
             if (_defined)
                 return;
 
             DMObject? explicitParent = null;
             if (ParentTypes.TryGetValue(type, out var parentType) &&
-                !DMObjectTree.TryGetDMObject(parentType, out explicitParent))
+                !compiler.DMObjectTree.TryGetDMObject(parentType, out explicitParent))
                 return; // Parent type isn't ready yet
 
             _defined = true;
             WaitingNodes.Remove(this);
 
-            var dmObject = DMObjectTree.GetOrCreateDMObject(type);
+            var dmObject = compiler.DMObjectTree.GetOrCreateDMObject(type);
             if (explicitParent != null) {
                 dmObject.Parent = explicitParent;
                 ParentTypes.Remove(type);
             }
 
             if (NewProcs.Remove(type, out var newProcNode))
-                newProcNode.DefineProc();
+                newProcNode.DefineProc(compiler);
         }
 
         public ProcsNode AddProcsNode() {
@@ -84,39 +83,41 @@ internal static partial class DMCodeTree {
     private static ObjectNode? _dmStandardRoot;
     private static int _currentPass;
 
-    public static void Reset() {
+    private DMObjectTree ObjectTree => compiler.DMObjectTree;
+
+    public void Reset() {
         // Yep, not _dmStandardRoot
         // They get switched in FinishDMStandard()
         _root = new("/ (DMStandard)", DreamPath.Root);
 
-        GlobalInitProc = new DMProc(-1, DMObjectTree.Root, null);
+        GlobalInitProc = new DMProc(compiler, -1, ObjectTree.Root, null);
         _dmStandardRoot = null;
         _currentPass = 0;
         WaitingNodes.Clear();
         ParentTypes.Clear();
         NewProcs.Clear();
 
-        DMObjectTree.Reset();
+        ObjectTree.Reset();
     }
 
-    public static void DefineEverything() {
+    public void DefineEverything() {
         if (_dmStandardRoot == null)
             FinishDMStandard();
 
-        static void Pass(ObjectNode root) {
+        void Pass(ObjectNode root) {
             foreach (var node in TraverseNodes(root)) {
                 if (node is ObjectNode objectNode) {
-                    objectNode.DefineType();
+                    objectNode.DefineType(compiler);
                 } else if (node is ProcNode procNode) {
-                    procNode.DefineProc();
+                    procNode.DefineProc(compiler);
                 } else if (node is VarNode varNode) {
-                    varNode.TryDefineVar();
+                    varNode.TryDefineVar(compiler);
                 }
             }
         }
 
         // Pass 0
-        DMExpressionBuilder.ScopeOperatorEnabled = false;
+        compiler.DMExpressionBuilder.ScopeOperatorEnabled = false;
         Pass(_root);
         Pass(_dmStandardRoot!);
 
@@ -130,7 +131,7 @@ internal static partial class DMCodeTree {
         } while (WaitingNodes.Count < lastCount && WaitingNodes.Count > 0);
 
         // Scope operator pass
-        DMExpressionBuilder.ScopeOperatorEnabled = true;
+        compiler.DMExpressionBuilder.ScopeOperatorEnabled = true;
         Pass(_root);
         Pass(_dmStandardRoot!);
 
@@ -141,23 +142,23 @@ internal static partial class DMCodeTree {
             if (varNode.LastError == null)
                 continue;
 
-            DMCompiler.Emit(WarningCode.ItemDoesntExist, varNode.LastError.Location,
+            compiler.Emit(WarningCode.ItemDoesntExist, varNode.LastError.Location,
                 varNode.LastError.Message);
         }
 
         GlobalInitProc.ResolveLabels();
     }
 
-    public static void FinishDMStandard() {
+    public void FinishDMStandard() {
         _dmStandardRoot = _root;
         _root = new("/", DreamPath.Root);
     }
 
-    public static void AddType(DreamPath type) {
+    public void AddType(DreamPath type) {
         GetDMObjectNode(type); // Add it to our tree
     }
 
-    public static DreamPath? UpwardSearch(DMObject start, DreamPath search) {
+    public DreamPath? UpwardSearch(DMObject start, DreamPath search) {
         var currentPath = start.Path;
 
         search.Type = DreamPath.PathType.Relative;
@@ -185,13 +186,13 @@ internal static partial class DMCodeTree {
         }
     }
 
-    public static void Print() {
+    public void Print() {
         PrintNode(_root);
         if (_dmStandardRoot != null)
             PrintNode(_dmStandardRoot);
     }
 
-    private static void PrintNode(INode node, int level = 0) {
+    private void PrintNode(INode node, int level = 0) {
         if (node is TypeNode typeNode) {
             Console.Write(new string('\t', level));
             Console.WriteLine(typeNode);
@@ -205,7 +206,7 @@ internal static partial class DMCodeTree {
         }
     }
 
-    private static ObjectNode GetDMObjectNode(DreamPath path) {
+    private ObjectNode GetDMObjectNode(DreamPath path) {
         var node = _root;
 
         for (int i = 0; i < path.Elements.Length; i++) {
@@ -213,7 +214,7 @@ internal static partial class DMCodeTree {
             if (!node.TryGetChild(element, out var childNode)) {
                 var creating = path.FromElements(0, i + 1);
 
-                DMCompiler.VerbosePrint($"Adding {creating} to the code tree");
+                compiler.VerbosePrint($"Adding {creating} to the code tree");
                 childNode = new ObjectNode(element, creating);
                 node.Children.Add(childNode);
                 WaitingNodes.Add(childNode);
@@ -228,7 +229,7 @@ internal static partial class DMCodeTree {
         return node;
     }
 
-    private static IEnumerable<INode> TraverseNodes(TypeNode from) {
+    private IEnumerable<INode> TraverseNodes(TypeNode from) {
         yield return from;
 
         foreach (var child in from.Children) {

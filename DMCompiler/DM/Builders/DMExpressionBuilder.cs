@@ -468,7 +468,7 @@ internal class DMExpressionBuilder(DMCompiler compiler) {
     private DMExpression BuildPath(Location location, DMObject dmObject, DreamPath path) {
         // An upward search with no left-hand side
         if (path.Type == DreamPath.PathType.UpwardSearch) {
-            DreamPath? foundPath = DMCodeTree.UpwardSearch(dmObject, path);
+            DreamPath? foundPath = compiler.DMCodeTree.UpwardSearch(dmObject, path);
             if (foundPath == null)
                 return UnknownReference(location, $"Could not find path {path}");
 

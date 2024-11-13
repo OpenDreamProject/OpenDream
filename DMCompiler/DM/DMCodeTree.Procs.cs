@@ -3,7 +3,7 @@ using DMCompiler.Compiler.DM.AST;
 
 namespace DMCompiler.DM;
 
-internal static partial class DMCodeTree {
+internal partial class DMCodeTree {
     private class ProcsNode() : TypeNode("proc");
 
     private class ProcNode(DreamPath owner, DMASTProcDefinition procDef) : TypeNode(procDef.Name) {
@@ -12,10 +12,10 @@ internal static partial class DMCodeTree {
 
         private bool _defined;
 
-        public void DefineProc() {
+        public void DefineProc(DMCompiler compiler) {
             if (_defined)
                 return;
-            if (!DMObjectTree.TryGetDMObject(owner, out var dmObject))
+            if (!compiler.DMObjectTree.TryGetDMObject(owner, out var dmObject))
                 return;
 
             _defined = true;
@@ -23,24 +23,24 @@ internal static partial class DMCodeTree {
 
             bool hasProc = dmObject.HasProc(ProcName);
             if (hasProc && !IsOverride && !dmObject.OwnsProc(ProcName) && !procDef.Location.InDMStandard) {
-                DMCompiler.Emit(WarningCode.DuplicateProcDefinition, procDef.Location,
+                compiler.Emit(WarningCode.DuplicateProcDefinition, procDef.Location,
                     $"Type {owner} already inherits a proc named \"{ProcName}\" and cannot redefine it");
                 return; // TODO: Maybe fallthrough since this error is a little pedantic?
             }
 
-            DMProc proc = DMObjectTree.CreateDMProc(dmObject, procDef);
+            DMProc proc = compiler.DMObjectTree.CreateDMProc(dmObject, procDef);
 
-            if (dmObject == DMObjectTree.Root) { // Doesn't belong to a type, this is a global proc
+            if (dmObject == compiler.DMObjectTree.Root) { // Doesn't belong to a type, this is a global proc
                 if(IsOverride) {
-                    DMCompiler.Emit(WarningCode.InvalidOverride, procDef.Location,
+                    compiler.Emit(WarningCode.InvalidOverride, procDef.Location,
                         $"Global procs cannot be overridden - '{ProcName}' override will be ignored");
                     //Continue processing the proc anyhoo, just don't add it.
                 } else {
-                    DMCompiler.VerbosePrint($"Adding global proc {procDef.Name}() on pass {_currentPass}");
-                    DMObjectTree.AddGlobalProc(proc);
+                    compiler.VerbosePrint($"Adding global proc {procDef.Name}() on pass {_currentPass}");
+                    compiler.DMObjectTree.AddGlobalProc(proc);
                 }
             } else {
-                DMCompiler.VerbosePrint($"Adding proc {procDef.Name}() to {dmObject.Path} on pass {_currentPass}");
+                compiler.VerbosePrint($"Adding proc {procDef.Name}() to {dmObject.Path} on pass {_currentPass}");
                 dmObject.AddProc(proc, forceFirst: procDef.Location.InDMStandard);
             }
 
@@ -105,7 +105,7 @@ internal static partial class DMCodeTree {
         }
     }
 
-    public static void AddProc(DreamPath owner, DMASTProcDefinition procDef) {
+    public void AddProc(DreamPath owner, DMASTProcDefinition procDef) {
         var node = GetDMObjectNode(owner);
         var procNode = new ProcNode(owner, procDef);
 

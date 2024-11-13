@@ -2,12 +2,14 @@ using DMCompiler.Compiler.DM.AST;
 
 namespace DMCompiler.DM.Builders;
 
-internal static class DMCodeTreeBuilder {
+internal class DMCodeTreeBuilder(DMCompiler compiler) {
     private static DMASTFile _astFile = default!;
     private static bool _leftDMStandard;
 
-    public static void BuildCodeTree(DMASTFile astFile) {
-        DMCodeTree.Reset();
+    private DMCodeTree CodeTree => compiler.DMCodeTree;
+
+    public void BuildCodeTree(DMASTFile astFile) {
+        CodeTree.Reset();
         _leftDMStandard = false;
         _astFile = astFile;
 
@@ -15,65 +17,65 @@ internal static class DMCodeTreeBuilder {
         ProcessFile();
 
         // Now define everything in the code tree
-        DMCodeTree.DefineEverything();
-        if (DMCompiler.Settings.PrintCodeTree)
-            DMCodeTree.Print();
+        CodeTree.DefineEverything();
+        if (compiler.Settings.PrintCodeTree)
+            CodeTree.Print();
 
         // Create each types' initialization proc (initializes vars that aren't constants)
-        foreach (DMObject dmObject in DMObjectTree.AllObjects)
+        foreach (DMObject dmObject in compiler.DMObjectTree.AllObjects)
             dmObject.CreateInitializationProc();
 
         // Compile every proc
-        foreach (DMProc proc in DMObjectTree.AllProcs)
+        foreach (DMProc proc in compiler.DMObjectTree.AllProcs)
             proc.Compile();
     }
 
-    private static void ProcessFile() {
+    private void ProcessFile() {
         ProcessBlockInner(_astFile.BlockInner, DreamPath.Root);
     }
 
-    private static void ProcessBlockInner(DMASTBlockInner blockInner, DreamPath currentType) {
+    private void ProcessBlockInner(DMASTBlockInner blockInner, DreamPath currentType) {
         foreach (DMASTStatement statement in blockInner.Statements) {
             ProcessStatement(statement, currentType);
         }
     }
 
-    private static void ProcessStatement(DMASTStatement statement, DreamPath currentType) {
+    private void ProcessStatement(DMASTStatement statement, DreamPath currentType) {
         if (!_leftDMStandard && !statement.Location.InDMStandard) {
             _leftDMStandard = true;
-            DMCodeTree.FinishDMStandard();
+            CodeTree.FinishDMStandard();
         }
 
         switch (statement) {
             case DMASTObjectDefinition objectDefinition:
-                DMCodeTree.AddType(objectDefinition.Path);
+                CodeTree.AddType(objectDefinition.Path);
                 if (objectDefinition.InnerBlock != null)
                     ProcessBlockInner(objectDefinition.InnerBlock, objectDefinition.Path);
                 break;
             case DMASTObjectVarDefinition varDefinition:
-                DMCodeTree.AddType(varDefinition.ObjectPath);
-                DMCodeTree.AddObjectVar(varDefinition.ObjectPath, varDefinition);
+                CodeTree.AddType(varDefinition.ObjectPath);
+                CodeTree.AddObjectVar(varDefinition.ObjectPath, varDefinition);
                 break;
             case DMASTObjectVarOverride varOverride:
-                DMCodeTree.AddType(varOverride.ObjectPath);
-                DMCodeTree.AddObjectVarOverride(varOverride.ObjectPath, varOverride);
+                CodeTree.AddType(varOverride.ObjectPath);
+                CodeTree.AddObjectVarOverride(varOverride.ObjectPath, varOverride);
                 break;
             case DMASTProcDefinition procDefinition:
                 var procOwner = currentType.Combine(procDefinition.ObjectPath);
 
-                DMCodeTree.AddType(procOwner);
-                DMCodeTree.AddProc(procOwner, procDefinition);
+                CodeTree.AddType(procOwner);
+                CodeTree.AddProc(procOwner, procDefinition);
                 break;
             case DMASTMultipleObjectVarDefinitions multipleVarDefinitions: {
                 foreach (DMASTObjectVarDefinition varDefinition in multipleVarDefinitions.VarDefinitions) {
-                    DMCodeTree.AddType(varDefinition.ObjectPath);
-                    DMCodeTree.AddObjectVar(varDefinition.ObjectPath, varDefinition);
+                    CodeTree.AddType(varDefinition.ObjectPath);
+                    CodeTree.AddObjectVar(varDefinition.ObjectPath, varDefinition);
                 }
 
                 break;
             }
             default:
-                DMCompiler.ForcedError(statement.Location, $"Invalid object statement {statement.GetType()}");
+                compiler.ForcedError(statement.Location, $"Invalid object statement {statement.GetType()}");
                 break;
         }
     }

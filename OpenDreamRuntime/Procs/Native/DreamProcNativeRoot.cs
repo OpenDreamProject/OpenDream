@@ -2955,7 +2955,7 @@ internal static class DreamProcNativeRoot {
                         addingProcs = type.ObjectDefinition.Procs.Values;
                     } else if (typeString.EndsWith("/verb")) {
                         type = bundle.ObjectTree.GetTreeEntry(typeString.Substring(0, typeString.Length - 5));
-                        addingProcs = type.ObjectDefinition.Verbs;
+                        addingProcs = type.ObjectDefinition.Verbs ?? Enumerable.Empty<int>();
                     } else {
                         type = bundle.ObjectTree.GetTreeEntry(typeString);
                     }

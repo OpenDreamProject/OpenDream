@@ -1,6 +1,6 @@
-﻿using DMCompiler.DM;
-using DMCompiler.Compiler.DM;
+﻿using DMCompiler.Compiler.DM;
 using DMCompiler.Compiler.DM.AST;
+using DMCompiler.DM.Builders;
 using DMCompiler.Json;
 
 namespace DMCompiler.Compiler.DMM;
@@ -74,7 +74,8 @@ internal sealed class DMMParser(DMLexer lexer, int zOffset) : DMParser(lexer) {
                             Compiler.ForcedError(statement.Location, $"Invalid var name '{varOverride.VarName}' in DMM on type {objectType.Path}");
 
                         Compiler.DMObjectTree.TryGetDMObject(objectType.Path, out var dmObject);
-                        DMExpression value = Compiler.DMExpressionBuilder.Create(dmObject, null, varOverride.Value);
+                        var exprBuilder = new DMExpressionBuilder(new(Compiler, dmObject, null));
+                        var value = exprBuilder.Create(varOverride.Value);
                         if (!value.TryAsJsonRepresentation(Compiler, out var valueJson))
                             Compiler.ForcedError(statement.Location, $"Failed to serialize value to json ({value})");
 

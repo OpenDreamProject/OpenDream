@@ -17,9 +17,9 @@ internal sealed class Negate(Location location, DMExpression expr) : UnaryOp(loc
         return true;
     }
 
-    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
-        Expr.EmitPushValue(compiler, dmObject, proc);
-        proc.Negate();
+    public override void EmitPushValue(ExpressionContext ctx) {
+        Expr.EmitPushValue(ctx);
+        ctx.Proc.Negate();
     }
 }
 
@@ -32,9 +32,9 @@ internal sealed class Not(Location location, DMExpression expr) : UnaryOp(locati
         return true;
     }
 
-    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
-        Expr.EmitPushValue(compiler, dmObject, proc);
-        proc.Not();
+    public override void EmitPushValue(ExpressionContext ctx) {
+        Expr.EmitPushValue(ctx);
+        ctx.Proc.Not();
     }
 }
 
@@ -48,22 +48,22 @@ internal sealed class BinaryNot(Location location, DMExpression expr) : UnaryOp(
         return true;
     }
 
-    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
-        Expr.EmitPushValue(compiler, dmObject, proc);
-        proc.BinaryNot();
+    public override void EmitPushValue(ExpressionContext ctx) {
+        Expr.EmitPushValue(ctx);
+        ctx.Proc.BinaryNot();
     }
 }
 
 internal abstract class AssignmentUnaryOp(Location location, DMExpression expr) : UnaryOp(location, expr) {
     protected abstract void EmitOp(DMProc proc, DMReference reference);
 
-    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
-        string endLabel = proc.NewLabelName();
+    public override void EmitPushValue(ExpressionContext ctx) {
+        string endLabel = ctx.Proc.NewLabelName();
 
-        DMReference reference = Expr.EmitReference(compiler, dmObject, proc, endLabel);
-        EmitOp(proc, reference);
+        DMReference reference = Expr.EmitReference(ctx, endLabel);
+        EmitOp(ctx.Proc, reference);
 
-        proc.AddLabel(endLabel);
+        ctx.Proc.AddLabel(endLabel);
     }
 }
 
@@ -99,24 +99,26 @@ internal sealed class PostDecrement(Location location, DMExpression expr) : Assi
 
 // &x
 internal sealed class PointerRef(Location location, DMExpression expr) : UnaryOp(location, expr) {
-    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
-        Expr.EmitPushValue(compiler, dmObject, proc);
-        compiler.UnimplementedWarning(Location, "Pointers are currently unimplemented and identifiers will be treated as normal variables.");
+    public override void EmitPushValue(ExpressionContext ctx) {
+        Expr.EmitPushValue(ctx);
+        ctx.Compiler.UnimplementedWarning(Location, "Pointers are currently unimplemented and identifiers will be treated as normal variables.");
     }
 
-    public override DMReference EmitReference(DMCompiler compiler, DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
-        return Expr.EmitReference(compiler, dmObject, proc, endLabel, shortCircuitMode);
+    public override DMReference EmitReference(ExpressionContext ctx, string endLabel,
+        ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+        return Expr.EmitReference(ctx, endLabel, shortCircuitMode);
     }
 }
 
 // *x
 internal sealed class PointerDeref(Location location, DMExpression expr) : UnaryOp(location, expr) {
-    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
-        Expr.EmitPushValue(compiler, dmObject, proc);
-        compiler.UnimplementedWarning(Location, "Pointers are currently unimplemented and identifiers will be treated as normal variables.");
+    public override void EmitPushValue(ExpressionContext ctx) {
+        Expr.EmitPushValue(ctx);
+        ctx.Compiler.UnimplementedWarning(Location, "Pointers are currently unimplemented and identifiers will be treated as normal variables.");
     }
 
-    public override DMReference EmitReference(DMCompiler compiler, DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
-        return Expr.EmitReference(compiler, dmObject, proc, endLabel, shortCircuitMode);
+    public override DMReference EmitReference(ExpressionContext ctx, string endLabel,
+        ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+        return Expr.EmitReference(ctx, endLabel, shortCircuitMode);
     }
 }

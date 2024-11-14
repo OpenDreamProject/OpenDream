@@ -18,13 +18,13 @@ internal abstract class Constant(Location location) : DMExpression(location) {
 internal sealed class Null(Location location) : Constant(location) {
     public override DMComplexValueType ValType => DMValueType.Null;
 
-    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
-        proc.PushNull();
+    public override void EmitPushValue(ExpressionContext ctx) {
+        ctx.Proc.PushNull();
     }
 
     public override bool IsTruthy() => false;
 
-    public override bool TryAsJsonRepresentation(DMCompiler compiler1, out Object? json) {
+    public override bool TryAsJsonRepresentation(DMCompiler compiler1, out object? json) {
         json = null;
         return true;
     }
@@ -44,13 +44,13 @@ internal sealed class Number : Constant {
         Value = value;
     }
 
-    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
-        proc.PushFloat(Value);
+    public override void EmitPushValue(ExpressionContext ctx) {
+        ctx.Proc.PushFloat(Value);
     }
 
     public override bool IsTruthy() => Value != 0;
 
-    public override bool TryAsJsonRepresentation(DMCompiler compiler, out Object? json) {
+    public override bool TryAsJsonRepresentation(DMCompiler compiler, out object? json) {
         // Positive/Negative infinity cannot be represented in JSON and need a special value
         if (float.IsPositiveInfinity(Value)) {
             json = new Dictionary<string, JsonVariableType>() {
@@ -74,13 +74,13 @@ internal sealed class String(Location location, string value) : Constant(locatio
 
     public override DMComplexValueType ValType => DMValueType.Text;
 
-    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
-        proc.PushString(Value);
+    public override void EmitPushValue(ExpressionContext ctx) {
+        ctx.Proc.PushString(Value);
     }
 
     public override bool IsTruthy() => Value.Length != 0;
 
-    public override bool TryAsJsonRepresentation(DMCompiler compiler1, out Object? json) {
+    public override bool TryAsJsonRepresentation(DMCompiler compiler1, out object? json) {
         json = Value;
         return true;
     }
@@ -156,13 +156,13 @@ internal sealed class Resource : Constant {
         compiler.DMObjectTree.Resources.Add(_filePath);
     }
 
-    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
-        proc.PushResource(_filePath);
+    public override void EmitPushValue(ExpressionContext ctx) {
+        ctx.Proc.PushResource(_filePath);
     }
 
     public override bool IsTruthy() => true;
 
-    public override bool TryAsJsonRepresentation(DMCompiler compiler, out Object? json) {
+    public override bool TryAsJsonRepresentation(DMCompiler compiler, out object? json) {
         json = new Dictionary<string, object>() {
             { "type", JsonVariableType.Resource },
             { "resourcePath", _filePath }
@@ -232,15 +232,15 @@ internal class ConstantTypeReference(Location location, DMObject dmObject) : Con
     public override DreamPath? Path => Value.Path;
     public override DMComplexValueType ValType => Value.Path;
 
-    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
-        proc.PushType(Value.Id);
+    public override void EmitPushValue(ExpressionContext ctx) {
+        ctx.Proc.PushType(Value.Id);
     }
 
-    public override string? GetNameof(DMCompiler compiler, DMObject dmObject) => Value.Path.LastElement;
+    public override string? GetNameof(ExpressionContext ctx) => Value.Path.LastElement;
 
     public override bool IsTruthy() => true;
 
-    public override bool TryAsJsonRepresentation(DMCompiler compiler1, out Object? json) {
+    public override bool TryAsJsonRepresentation(DMCompiler compiler1, out object? json) {
         json = new Dictionary<string, object> {
             { "type", JsonVariableType.Type },
             { "value", Value.Id }
@@ -259,15 +259,15 @@ internal sealed class ConstantProcReference(Location location, DreamPath path, D
 
     public override DreamPath? Path => path;
 
-    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
-        proc.PushProc(Value.Id);
+    public override void EmitPushValue(ExpressionContext ctx) {
+        ctx.Proc.PushProc(Value.Id);
     }
 
-    public override string? GetNameof(DMCompiler compiler, DMObject dmObject) => Value.Name;
+    public override string GetNameof(ExpressionContext ctx) => Value.Name;
 
     public override bool IsTruthy() => true;
 
-    public override bool TryAsJsonRepresentation(DMCompiler compiler1, out Object? json) {
+    public override bool TryAsJsonRepresentation(DMCompiler compiler1, out object? json) {
         json = new Dictionary<string, object> {
             { "type", JsonVariableType.Proc },
             { "value", Value.Id }
@@ -287,14 +287,14 @@ internal sealed class ConstantProcStub(Location location, DMObject onObject, boo
 
     public override DreamPath? Path => onObject.Path.AddToPath(isVerb ? "verb" : "proc");
 
-    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+    public override void EmitPushValue(ExpressionContext ctx) {
         // /datum/proc and /datum/verb just compile down to strings lmao
-        proc.PushString(_str);
+        ctx.Proc.PushString(_str);
     }
 
     public override bool IsTruthy() => true;
 
-    public override bool TryAsJsonRepresentation(DMCompiler compiler1, out Object? json) {
+    public override bool TryAsJsonRepresentation(DMCompiler compiler1, out object? json) {
         json = _str;
         return true;
     }

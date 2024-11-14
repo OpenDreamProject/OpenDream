@@ -103,30 +103,30 @@ internal class Dereference : LValue {
         }
     }
 
-    private void EmitOperation(DMCompiler compiler, DMObject dmObject, DMProc proc, Operation operation, string endLabel, ShortCircuitMode shortCircuitMode) {
+    private void EmitOperation(ExpressionContext ctx, Operation operation, string endLabel, ShortCircuitMode shortCircuitMode) {
         if (operation.Safe) {
-            ShortCircuitHandler(proc, endLabel, shortCircuitMode);
+            ShortCircuitHandler(ctx.Proc, endLabel, shortCircuitMode);
         }
 
         switch (operation) {
             case FieldOperation fieldOperation:
-                proc.DereferenceField(fieldOperation.Identifier);
+                ctx.Proc.DereferenceField(fieldOperation.Identifier);
                 break;
 
             case IndexOperation indexOperation:
                 if (NestedPath is not null) {
-                    if (compiler.DMObjectTree.TryGetDMObject(NestedPath.Value, out var obj) && obj.IsSubtypeOf(DreamPath.Datum) && !obj.HasProc("operator[]")) {
-                        compiler.Emit(WarningCode.InvalidIndexOperation, Location, "Invalid index operation. datum[] index operations are not valid starting in BYOND 515.1641");
+                    if (ctx.Compiler.DMObjectTree.TryGetDMObject(NestedPath.Value, out var obj) && obj.IsSubtypeOf(DreamPath.Datum) && !obj.HasProc("operator[]")) {
+                        ctx.Compiler.Emit(WarningCode.InvalidIndexOperation, Location, "Invalid index operation. datum[] index operations are not valid starting in BYOND 515.1641");
                     }
                 }
 
-                indexOperation.Index.EmitPushValue(compiler, dmObject, proc);
-                proc.DereferenceIndex();
+                indexOperation.Index.EmitPushValue(ctx);
+                ctx.Proc.DereferenceIndex();
                 break;
 
             case CallOperation callOperation:
-                var (argumentsType, argumentStackSize) = callOperation.Parameters.EmitArguments(compiler, dmObject, proc, null);
-                proc.DereferenceCall(callOperation.Identifier, argumentsType, argumentStackSize);
+                var (argumentsType, argumentStackSize) = callOperation.Parameters.EmitArguments(ctx, null);
+                ctx.Proc.DereferenceCall(callOperation.Identifier, argumentsType, argumentStackSize);
                 break;
 
         default:
@@ -134,28 +134,29 @@ internal class Dereference : LValue {
         }
     }
 
-    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
-        string endLabel = proc.NewLabelName();
+    public override void EmitPushValue(ExpressionContext ctx) {
+        string endLabel = ctx.Proc.NewLabelName();
 
-        _expression.EmitPushValue(compiler, dmObject, proc);
+        _expression.EmitPushValue(ctx);
 
         foreach (var operation in _operations) {
-            EmitOperation(compiler, dmObject, proc, operation, endLabel, ShortCircuitMode.KeepNull);
+            EmitOperation(ctx, operation, endLabel, ShortCircuitMode.KeepNull);
         }
 
-        proc.AddLabel(endLabel);
+        ctx.Proc.AddLabel(endLabel);
     }
 
     public override bool CanReferenceShortCircuit() {
         return _operations.Any(operation => operation.Safe);
     }
 
-    public override DMReference EmitReference(DMCompiler compiler, DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
-        _expression.EmitPushValue(compiler, dmObject, proc);
+    public override DMReference EmitReference(ExpressionContext ctx, string endLabel,
+        ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+        _expression.EmitPushValue(ctx);
 
         // Perform all except for our last operation
         for (int i = 0; i < _operations.Length - 1; i++) {
-            EmitOperation(compiler, dmObject, proc, _operations[i], endLabel, shortCircuitMode);
+            EmitOperation(ctx, _operations[i], endLabel, shortCircuitMode);
         }
 
         var operation = _operations[^1];
@@ -163,27 +164,27 @@ internal class Dereference : LValue {
         switch (operation) {
             case FieldOperation fieldOperation:
                 if (fieldOperation.Safe) {
-                    ShortCircuitHandler(proc, endLabel, shortCircuitMode);
+                    ShortCircuitHandler(ctx.Proc, endLabel, shortCircuitMode);
                 }
 
                 return DMReference.CreateField(fieldOperation.Identifier);
 
             case IndexOperation indexOperation:
                 if (NestedPath is not null) {
-                    if (compiler.DMObjectTree.TryGetDMObject(NestedPath.Value, out var obj) && obj.IsSubtypeOf(DreamPath.Datum) && !obj.HasProc("operator[]=")) {
-                        compiler.Emit(WarningCode.InvalidIndexOperation, Location, "Invalid index operation. datum[] index operations are not valid starting in BYOND 515.1641");
+                    if (ctx.Compiler.DMObjectTree.TryGetDMObject(NestedPath.Value, out var obj) && obj.IsSubtypeOf(DreamPath.Datum) && !obj.HasProc("operator[]=")) {
+                        ctx.Compiler.Emit(WarningCode.InvalidIndexOperation, Location, "Invalid index operation. datum[] index operations are not valid starting in BYOND 515.1641");
                     }
                 }
 
                 if (indexOperation.Safe) {
-                    ShortCircuitHandler(proc, endLabel, shortCircuitMode);
+                    ShortCircuitHandler(ctx.Proc, endLabel, shortCircuitMode);
                 }
 
-                indexOperation.Index.EmitPushValue(compiler, dmObject, proc);
+                indexOperation.Index.EmitPushValue(ctx);
                 return DMReference.ListIndex;
 
             case CallOperation:
-                compiler.Emit(WarningCode.BadExpression, Location,
+                ctx.Compiler.Emit(WarningCode.BadExpression, Location,
                     "Expected field or index as reference, got proc call result");
                 return default;
 
@@ -192,19 +193,19 @@ internal class Dereference : LValue {
         }
     }
 
-    public override void EmitPushInitial(DMCompiler compiler, DMObject dmObject, DMProc proc) {
-        string endLabel = proc.NewLabelName();
+    public override void EmitPushInitial(ExpressionContext ctx) {
+        string endLabel = ctx.Proc.NewLabelName();
 
         if (_expression is LValue exprLValue) {
             // We don't want this instead pushing the constant value if it's const
-            exprLValue.EmitPushValueNoConstant(compiler, dmObject, proc);
+            exprLValue.EmitPushValueNoConstant(ctx);
         } else {
-            _expression.EmitPushValue(compiler, dmObject, proc);
+            _expression.EmitPushValue(ctx);
         }
 
         // Perform all except for our last operation
         for (int i = 0; i < _operations.Length - 1; i++) {
-            EmitOperation(compiler, dmObject, proc, _operations[i], endLabel, ShortCircuitMode.KeepNull);
+            EmitOperation(ctx, _operations[i], endLabel, ShortCircuitMode.KeepNull);
         }
 
         var operation = _operations[^1];
@@ -212,24 +213,24 @@ internal class Dereference : LValue {
         switch (operation) {
             case FieldOperation fieldOperation:
                 if (fieldOperation.Safe) {
-                    proc.JumpIfNullNoPop(endLabel);
+                    ctx.Proc.JumpIfNullNoPop(endLabel);
                 }
 
-                proc.PushString(fieldOperation.Identifier);
-                proc.Initial();
+                ctx.Proc.PushString(fieldOperation.Identifier);
+                ctx.Proc.Initial();
                 break;
 
             case IndexOperation indexOperation:
                 if (indexOperation.Safe) {
-                    proc.JumpIfNullNoPop(endLabel);
+                    ctx.Proc.JumpIfNullNoPop(endLabel);
                 }
 
-                indexOperation.Index.EmitPushValue(compiler, dmObject, proc);
-                proc.Initial();
+                indexOperation.Index.EmitPushValue(ctx);
+                ctx.Proc.Initial();
                 break;
 
             case CallOperation:
-                compiler.Emit(WarningCode.BadExpression, Location,
+                ctx.Compiler.Emit(WarningCode.BadExpression, Location,
                     "Expected field or index for initial(), got proc call result");
                 break;
 
@@ -237,22 +238,22 @@ internal class Dereference : LValue {
                 throw new InvalidOperationException("Unimplemented dereference operation");
         }
 
-        proc.AddLabel(endLabel);
+        ctx.Proc.AddLabel(endLabel);
     }
 
-    public void EmitPushIsSaved(DMCompiler compiler, DMObject dmObject, DMProc proc) {
-        string endLabel = proc.NewLabelName();
+    public void EmitPushIsSaved(ExpressionContext ctx) {
+        string endLabel = ctx.Proc.NewLabelName();
 
         if (_expression is LValue exprLValue) {
             // We don't want this instead pushing the constant value if it's const
-            exprLValue.EmitPushValueNoConstant(compiler, dmObject, proc);
+            exprLValue.EmitPushValueNoConstant(ctx);
         } else {
-            _expression.EmitPushValue(compiler, dmObject, proc);
+            _expression.EmitPushValue(ctx);
         }
 
         // Perform all except for our last operation
         for (int i = 0; i < _operations.Length - 1; i++) {
-            EmitOperation(compiler, dmObject, proc, _operations[i], endLabel, ShortCircuitMode.KeepNull);
+            EmitOperation(ctx, _operations[i], endLabel, ShortCircuitMode.KeepNull);
         }
 
         var operation = _operations[^1];
@@ -260,24 +261,24 @@ internal class Dereference : LValue {
         switch (operation) {
             case FieldOperation fieldOperation:
                 if (fieldOperation.Safe) {
-                    proc.JumpIfNullNoPop(endLabel);
+                    ctx.Proc.JumpIfNullNoPop(endLabel);
                 }
 
-                proc.PushString(fieldOperation.Identifier);
-                proc.IsSaved();
+                ctx.Proc.PushString(fieldOperation.Identifier);
+                ctx.Proc.IsSaved();
                 break;
 
             case IndexOperation indexOperation:
                 if (indexOperation.Safe) {
-                    proc.JumpIfNullNoPop(endLabel);
+                    ctx.Proc.JumpIfNullNoPop(endLabel);
                 }
 
-                indexOperation.Index.EmitPushValue(compiler, dmObject, proc);
-                proc.IsSaved();
+                indexOperation.Index.EmitPushValue(ctx);
+                ctx.Proc.IsSaved();
                 break;
 
             case CallOperation:
-                compiler.Emit(WarningCode.BadExpression, Location,
+                ctx.Compiler.Emit(WarningCode.BadExpression, Location,
                     "Expected field or index for issaved(), got proc call result");
                 break;
 
@@ -285,11 +286,11 @@ internal class Dereference : LValue {
                 throw new InvalidOperationException("Unimplemented dereference operation");
         }
 
-        proc.AddLabel(endLabel);
+        ctx.Proc.AddLabel(endLabel);
     }
 
     // BYOND says the nameof is invalid if the chain is not purely field operations
-    public override string? GetNameof(DMCompiler compiler, DMObject dmObject) {
+    public override string? GetNameof(ExpressionContext ctx) {
         return _operations.All(op => op is FieldOperation)
             ? ((FieldOperation)_operations[^1]).Identifier
             : null;
@@ -331,7 +332,7 @@ internal sealed class ScopeReference(DMObjectTree objectTree, Location location,
     ) {
     public override DreamPath? Path => Expression.Path;
 
-    public override string? GetNameof(DMCompiler compiler, DMObject dmObject) => dmVar.Name;
+    public override string GetNameof(ExpressionContext ctx) => dmVar.Name;
 
     public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
         if (expression is not IConstantPath) {

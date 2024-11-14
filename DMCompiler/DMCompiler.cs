@@ -34,12 +34,10 @@ public class DMCompiler {
 
     internal readonly DMCodeTree DMCodeTree;
     internal readonly DMObjectTree DMObjectTree;
-    internal readonly DMExpressionBuilder DMExpressionBuilder;
 
     public DMCompiler() {
         DMCodeTree = new(this);
         DMObjectTree = new(this);
-        DMExpressionBuilder = new(this);
     }
 
     public bool Compile(DMCompilerSettings settings) {

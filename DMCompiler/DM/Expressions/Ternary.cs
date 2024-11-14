@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using DMCompiler.Compiler;
 
 namespace DMCompiler.DM.Expressions;
 
@@ -22,26 +21,26 @@ internal sealed class Ternary(Location location, DMExpression a, DMExpression b,
         return c.TryAsConstant(compiler, out constant);
     }
 
-    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
-        string cLabel = proc.NewLabelName();
-        string endLabel = proc.NewLabelName();
+    public override void EmitPushValue(ExpressionContext ctx) {
+        string cLabel = ctx.Proc.NewLabelName();
+        string endLabel = ctx.Proc.NewLabelName();
 
-        a.EmitPushValue(compiler, dmObject, proc);
-        proc.JumpIfFalse(cLabel);
-        b.EmitPushValue(compiler, dmObject, proc);
-        proc.Jump(endLabel);
-        proc.AddLabel(cLabel);
-        c.EmitPushValue(compiler, dmObject, proc);
-        proc.AddLabel(endLabel);
+        a.EmitPushValue(ctx);
+        ctx.Proc.JumpIfFalse(cLabel);
+        b.EmitPushValue(ctx);
+        ctx.Proc.Jump(endLabel);
+        ctx.Proc.AddLabel(cLabel);
+        c.EmitPushValue(ctx);
+        ctx.Proc.AddLabel(endLabel);
     }
 }
 
 // var in x to y
 internal sealed class InRange(Location location, DMExpression var, DMExpression start, DMExpression end) : DMExpression(location) {
-    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
-        var.EmitPushValue(compiler, dmObject, proc);
-        start.EmitPushValue(compiler, dmObject, proc);
-        end.EmitPushValue(compiler, dmObject, proc);
-        proc.IsInRange();
+    public override void EmitPushValue(ExpressionContext ctx) {
+        var.EmitPushValue(ctx);
+        start.EmitPushValue(ctx);
+        end.EmitPushValue(ctx);
+        ctx.Proc.IsInRange();
     }
 }

@@ -168,7 +168,7 @@ internal sealed class DMObject(DMCompiler compiler, int id, DreamPath path, DMOb
 
         foreach (DMExpression expression in InitializationProcExpressions) {
             init.DebugSource(expression.Location);
-            expression.EmitPushValue(Compiler, this, init);
+            expression.EmitPushValue(new(Compiler, this, init));
         }
     }
 

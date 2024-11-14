@@ -24,7 +24,7 @@ internal abstract class DMExpression(Location location) {
 
     // Emits code that pushes the result of this expression to the proc's stack
     // May throw if this expression is unable to be pushed to the stack
-    public abstract void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc);
+    public abstract void EmitPushValue(ExpressionContext ctx);
 
     public enum ShortCircuitMode {
         // If a dereference is short-circuited due to a null conditional, the short-circuit label should be jumped to with null NOT on top of the stack
@@ -39,8 +39,8 @@ internal abstract class DMExpression(Location location) {
     // Emits a reference that is to be used in an opcode that assigns/gets a value
     // May throw if this expression is unable to be referenced
     // The emitted code will jump to endLabel after pushing `null` to the stack in the event of a short-circuit
-    public virtual DMReference EmitReference(DMCompiler compiler, DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
-        compiler.Emit(WarningCode.BadExpression, Location, "attempt to reference r-value");
+    public virtual DMReference EmitReference(ExpressionContext ctx, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+        ctx.Compiler.Emit(WarningCode.BadExpression, Location, "attempt to reference r-value");
         return DMReference.Invalid;
     }
 
@@ -48,7 +48,7 @@ internal abstract class DMExpression(Location location) {
     /// Gets the canonical name of the expression if it exists.
     /// </summary>
     /// <returns>The name of the expression, or <c>null</c> if it does not have one.</returns>
-    public virtual string? GetNameof(DMCompiler compiler, DMObject dmObject) => null;
+    public virtual string? GetNameof(ExpressionContext ctx) => null;
 
     /// <summary>
     /// Determines whether the expression returns an ambiguous path.
@@ -68,16 +68,16 @@ internal sealed class ArgumentList(Location location, (string? Name, DMExpressio
     public int Length => Expressions.Length;
     public Location Location = location;
 
-    public (DMCallArgumentsType Type, int StackSize) EmitArguments(DMCompiler compiler, DMObject dmObject, DMProc proc, DMProc? targetProc) {
+    public (DMCallArgumentsType Type, int StackSize) EmitArguments(ExpressionContext ctx, DMProc? targetProc) {
         if (Expressions.Length == 0) {
             return (DMCallArgumentsType.None, 0);
         }
 
         if (Expressions[0].Expr is Arglist arglist) {
             if (Expressions[0].Name != null)
-                compiler.Emit(WarningCode.BadArgument, arglist.Location, "arglist cannot be a named argument");
+                ctx.Compiler.Emit(WarningCode.BadArgument, arglist.Location, "arglist cannot be a named argument");
 
-            arglist.EmitPushArglist(compiler, dmObject, proc);
+            arglist.EmitPushArglist(ctx);
             return (DMCallArgumentsType.FromArgumentList, 1);
         }
 
@@ -87,17 +87,17 @@ internal sealed class ArgumentList(Location location, (string? Name, DMExpressio
             (string? name, DMExpression expr) = Expressions[index];
 
             if (targetProc != null)
-                VerifyArgType(compiler, targetProc, index, name, expr);
+                VerifyArgType(ctx.Compiler, targetProc, index, name, expr);
 
             if (isKeyed) {
                 if (name != null) {
-                    proc.PushString(name);
+                    ctx.Proc.PushString(name);
                 } else {
-                    proc.PushNull();
+                    ctx.Proc.PushNull();
                 }
             }
 
-            expr.EmitPushValue(compiler, dmObject, proc);
+            expr.EmitPushValue(ctx);
             stackCount += isKeyed ? 2 : 1;
         }
 
@@ -136,4 +136,12 @@ internal sealed class ArgumentList(Location location, (string? Name, DMExpressio
                 $"{targetProc.Name}(...) argument \"{param.Name}\": Invalid var value type {expr.ValType}, expected {paramType}");
         }
     }
+}
+
+internal struct ExpressionContext(DMCompiler compiler, DMObject type, DMProc proc) {
+    public DMCompiler Compiler = compiler;
+    public DMObject Type = type;
+    public DMProc Proc = proc;
+
+    public DMObjectTree ObjectTree => Compiler.DMObjectTree;
 }

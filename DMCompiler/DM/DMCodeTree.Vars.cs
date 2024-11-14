@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Bytecode;
 using DMCompiler.Compiler;
 using DMCompiler.Compiler.DM.AST;
+using DMCompiler.DM.Builders;
 using DMCompiler.DM.Expressions;
 using ScopeMode = DMCompiler.DM.Builders.DMExpressionBuilder.ScopeMode;
 
@@ -15,22 +16,18 @@ internal partial class DMCodeTree {
 
         public abstract void TryDefineVar(DMCompiler compiler);
 
-        protected bool TryBuildValue(DMCompiler compiler, DMASTExpression ast, DreamPath? inferredType, DMObject dmObject, DMProc? proc,
+        protected bool TryBuildValue(ExpressionContext ctx, DMASTExpression ast, DreamPath? inferredType,
             ScopeMode scope, [NotNullWhen(true)] out DMExpression? value) {
-            try {
-                compiler.DMExpressionBuilder.CurrentScopeMode = scope;
+            var exprBuilder = new DMExpressionBuilder(ctx, scope);
 
-                value = compiler.DMExpressionBuilder.CreateIgnoreUnknownReference(dmObject, proc, ast, inferredType);
-                if (value is UnknownReference unknownRef) {
-                    LastError = unknownRef;
-                    value = null;
-                    return false;
-                }
-
-                return true;
-            } finally {
-                compiler.DMExpressionBuilder.CurrentScopeMode = ScopeMode.Normal;
+            value = exprBuilder.CreateIgnoreUnknownReference(ast, inferredType);
+            if (value is UnknownReference unknownRef) {
+                LastError = unknownRef;
+                value = null;
+                return false;
             }
+
+            return true;
         }
 
         protected void SetVariableValue(DMCompiler compiler, DMObject dmObject, DMVariable variable, DMExpression value, bool isOverride) {
@@ -124,7 +121,7 @@ internal partial class DMCodeTree {
 
         private void HandleGlobalVar(DMCompiler compiler, DMObject dmObject) {
             var scope = IsFirstPass ? ScopeMode.FirstPassStatic : ScopeMode.Static;
-            if (!TryBuildValue(compiler, varDef.Value, varDef.Type, dmObject, GlobalInitProc, scope, out var value))
+            if (!TryBuildValue(new(compiler, dmObject, GlobalInitProc), varDef.Value, varDef.Type, scope, out var value))
                 return;
 
             int globalId = compiler.DMObjectTree.CreateGlobal(out DMVariable global, varDef.Type, VarName, varDef.IsConst,
@@ -147,12 +144,12 @@ internal partial class DMCodeTree {
             // Initialize its value in the global init proc
             compiler.VerbosePrint($"Adding {dmObject.Path}/var/static/{global.Name} to global init on pass {_currentPass}");
             GlobalInitProc.DebugSource(value.Location);
-            value.EmitPushValue(compiler, dmObject, GlobalInitProc);
+            value.EmitPushValue(new(compiler, dmObject, GlobalInitProc));
             GlobalInitProc.Assign(DMReference.CreateGlobal(globalId));
         }
 
         private void HandleInstanceVar(DMCompiler compiler, DMObject dmObject) {
-            if (!TryBuildValue(compiler, varDef.Value, varDef.Type, dmObject, null, ScopeMode.Normal, out var value))
+            if (!TryBuildValue(new(compiler, dmObject, null), varDef.Value, varDef.Type, ScopeMode.Normal, out var value))
                 return;
 
             var variable = new DMVariable(varDef.Type, VarName, false, varDef.IsConst, varDef.IsTmp, varDef.ValType);
@@ -230,7 +227,7 @@ internal partial class DMCodeTree {
 
             variable = new DMVariable(variable);
 
-            if (!TryBuildValue(compiler, varOverride.Value, variable.Type, dmObject, null, ScopeMode.Normal, out var value))
+            if (!TryBuildValue(new(compiler, dmObject, null), varOverride.Value, variable.Type, ScopeMode.Normal, out var value))
                 return;
 
             if (VarName == "tag" && dmObject.IsSubtypeOf(DreamPath.Datum) && !compiler.Settings.NoStandard)
@@ -241,11 +238,7 @@ internal partial class DMCodeTree {
             _finished = true;
             WaitingNodes.Remove(this);
 
-            try {
-                SetVariableValue(compiler, dmObject, variable, value, true);
-            } finally {
-                compiler.DMExpressionBuilder.CurrentScopeMode = ScopeMode.Normal;
-            }
+            SetVariableValue(compiler, dmObject, variable, value, true);
         }
 
         public override string ToString() {
@@ -265,7 +258,7 @@ internal partial class DMCodeTree {
             DMExpression? value = null;
             if (varDecl.Value != null) {
                 var scope = IsFirstPass ? ScopeMode.FirstPassStatic : ScopeMode.Static;
-                if (!TryBuildValue(compiler, varDecl.Value, varDecl.Type, dmObject, proc, scope, out value))
+                if (!TryBuildValue(new(compiler, dmObject, proc), varDecl.Value, varDecl.Type, scope, out value))
                     return;
             }
 
@@ -281,7 +274,7 @@ internal partial class DMCodeTree {
                 // Initialize its value in the global init proc
                 compiler.VerbosePrint($"Adding {dmObject.Path}/proc/{proc.Name}/var/static/{global.Name} to global init on pass {_currentPass}");
                 GlobalInitProc.DebugSource(value.Location);
-                value.EmitPushValue(compiler, dmObject, GlobalInitProc);
+                value.EmitPushValue(new(compiler, dmObject, GlobalInitProc));
                 GlobalInitProc.Assign(DMReference.CreateGlobal(globalId));
             }
         }

@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Compiler;
+using DMCompiler.DM.Builders;
 
 namespace DMCompiler.DM;
 
@@ -117,7 +118,7 @@ internal partial class DMCodeTree(DMCompiler compiler) {
         }
 
         // Pass 0
-        compiler.DMExpressionBuilder.ScopeOperatorEnabled = false;
+        DMExpressionBuilder.ScopeOperatorEnabled = false;
         Pass(_root);
         Pass(_dmStandardRoot!);
 
@@ -131,7 +132,7 @@ internal partial class DMCodeTree(DMCompiler compiler) {
         } while (WaitingNodes.Count < lastCount && WaitingNodes.Count > 0);
 
         // Scope operator pass
-        compiler.DMExpressionBuilder.ScopeOperatorEnabled = true;
+        DMExpressionBuilder.ScopeOperatorEnabled = true;
         Pass(_root);
         Pass(_dmStandardRoot!);
 

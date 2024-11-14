@@ -20,7 +20,7 @@ internal sealed class DMPreprocessorLexer {
     private readonly bool _isDMStandard;
     private char _current;
     private int _currentLine = 1, _currentColumn;
-    private int _beforeReadLine = 1, _beforeReadColumn;
+    private int _previousLine = 1, _previousColumn;
     private readonly Queue<Token> _pendingTokenQueue = new(); // TODO: Possible to remove this?
 
     public DMPreprocessorLexer(DMCompiler compiler, string includeDirectory, string file, string source) {
@@ -62,8 +62,8 @@ internal sealed class DMPreprocessorLexer {
 
         char c = GetCurrent();
 
-        _beforeReadLine = _currentLine;
-        _beforeReadColumn = _currentColumn;
+        _previousLine = _currentLine;
+        _previousColumn = _currentColumn;
 
         switch (c) {
             case '\0':
@@ -371,7 +371,7 @@ internal sealed class DMPreprocessorLexer {
                     LexString(true) :
                     CreateToken(TokenType.DM_Preproc_Punctuator, c);
             case '#': {
-                bool isConcat = (Advance() == '#');
+                bool isConcat = Advance() == '#';
                 if (isConcat) Advance();
 
                 // Whitespace after '#' is ignored
@@ -448,7 +448,7 @@ internal sealed class DMPreprocessorLexer {
                 }
 
                 Advance();
-                return CreateToken(TokenType.Error, string.Empty, $"Unknown character: {c.ToString()}");
+                return CreateToken(TokenType.Error, string.Empty, $"Unknown character: {c}");
             }
         }
     }
@@ -623,7 +623,7 @@ internal sealed class DMPreprocessorLexer {
                 goto case '\n';
             case '\n':
                 _currentLine++;
-                _currentColumn = 0;
+                _currentColumn = 0; // Because Advance will bump this to 1 and any position reads will happen next NextToken() call
 
                 if (c == '\n') // This line could have ended with only \r
                     Advance();
@@ -645,7 +645,7 @@ internal sealed class DMPreprocessorLexer {
 
         if (value == -1) {
             _current = '\0';
-        }  else {
+        } else {
             _currentColumn++;
             _current = (char)value;
         }
@@ -660,11 +660,11 @@ internal sealed class DMPreprocessorLexer {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private Token CreateToken(TokenType type, string text, object? value = null) {
-        return new Token(type, text, new Location(File, _beforeReadLine, _beforeReadColumn, _isDMStandard), value);
+        return new Token(type, text, new Location(File, _previousLine, _previousColumn, _isDMStandard), value);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private Token CreateToken(TokenType type, char text, object? value = null) {
-        return new Token(type, text.ToString(), new Location(File, _beforeReadLine, _beforeReadColumn, _isDMStandard), value);
+        return new Token(type, text.ToString(), new Location(File, _previousLine, _previousColumn, _isDMStandard), value);
     }
 }

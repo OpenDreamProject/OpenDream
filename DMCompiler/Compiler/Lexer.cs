@@ -4,8 +4,10 @@ namespace DMCompiler.Compiler;
 
 internal class Lexer<TSourceType> {
     public Location CurrentLocation { get; protected set; }
-    public IEnumerable<TSourceType> Source { get; }
-    public bool AtEndOfSource { get; private set; }
+    public Location PreviousLocation { get; protected set; }
+    public string SourceName { get; protected set; }
+    public IEnumerable<TSourceType> Source { get; protected set; }
+    public bool AtEndOfSource { get; protected set; } = false;
 
     protected Queue<Token> _pendingTokenQueue = new();
 
@@ -14,6 +16,8 @@ internal class Lexer<TSourceType> {
 
     protected Lexer(string sourceName, IEnumerable<TSourceType> source) {
         CurrentLocation = new Location(sourceName, 1, 0);
+        PreviousLocation = CurrentLocation;
+        SourceName = sourceName;
         Source = source;
         if (source == null)
             throw new FileNotFoundException("Source file could not be read: " + sourceName);
@@ -39,8 +43,13 @@ internal class Lexer<TSourceType> {
         return CreateToken(TokenType.Unknown, GetCurrent()?.ToString() ?? string.Empty);
     }
 
+    protected Token CreateToken(TokenType type, string text, Location location, object? value = null) {
+        var token = new Token(type, text, location, value);
+        return token;
+    }
+
     protected Token CreateToken(TokenType type, string text, object? value = null) {
-        return new Token(type, text, CurrentLocation, value);
+        return CreateToken(type, text, PreviousLocation, value);
     }
 
     protected Token CreateToken(TokenType type, char text, object? value = null) {
@@ -51,7 +60,10 @@ internal class Lexer<TSourceType> {
         return _current;
     }
 
+    /// <remarks>Call before CreateToken to make sure the location is correct</remarks>
     protected virtual TSourceType Advance() {
+        PreviousLocation = CurrentLocation;
+
         if (_sourceEnumerator.MoveNext()) {
             _current = _sourceEnumerator.Current;
         } else {

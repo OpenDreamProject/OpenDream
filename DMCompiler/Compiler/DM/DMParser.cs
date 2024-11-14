@@ -337,7 +337,7 @@ namespace DMCompiler.Compiler.DM {
             }
 
             //Empty object definition
-            Compiler.VerbosePrint($"Parsed object {CurrentPath}");
+            Compiler.VerbosePrint($"Parsed object {CurrentPath} - empty");
             return new DMASTObjectDefinition(loc, CurrentPath, null);
         }
 
@@ -1787,10 +1787,10 @@ namespace DMCompiler.Compiler.DM {
         }
 
         private DMASTExpression? ExpressionIn() {
+            var loc = Current().Location; // Don't check this inside, as Check() will advance and point at next token instead
             DMASTExpression? value = ExpressionAssign();
 
             while (value != null && Check(TokenType.DM_In)) {
-                var loc = Current().Location;
 
                 Whitespace();
                 DMASTExpression? list = ExpressionAssign();
@@ -2191,7 +2191,7 @@ namespace DMCompiler.Compiler.DM {
                 if (inner is null) {
                     inner = new DMASTVoid(loc);
                 } else {
-                    inner = new DMASTExpressionWrapped(inner.Location, inner);
+                    inner = new DMASTExpressionWrapped(loc, inner);
                 }
 
                 return inner;

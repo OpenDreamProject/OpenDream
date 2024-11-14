@@ -351,7 +351,7 @@ namespace DMCompiler.DM.Builders {
         }
 
         /// <remarks>
-        /// Global/static var declarations are handled by <see cref="DMCodeTree.ProcGlobalVarNode">
+        /// Global/static var declarations are handled by <see cref="DMCodeTree.ProcGlobalVarNode" />
         /// </remarks>
         public void ProcessStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration) {
             if (varDeclaration.IsGlobal) { return; }

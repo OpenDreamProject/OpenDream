@@ -174,7 +174,8 @@ public class DreamList : DreamObject {
                 _associativeValues.Remove(_values[i - 1]);
         }
 
-        _values.RemoveRange(start - 1, end - start);
+        if (end > start)
+            _values.RemoveRange(start - 1, end - start);
     }
 
     public void Insert(int index, DreamValue value) {

@@ -14,7 +14,6 @@ using System.Text.Json.Serialization;
 using DMCompiler.Compiler;
 using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM.Builders;
-using DMCompiler.DM.Expressions;
 using DMCompiler.Json;
 
 [assembly: InternalsVisibleTo("Content.Tests")]
@@ -36,13 +35,11 @@ public class DMCompiler {
     internal readonly DMCodeTree DMCodeTree;
     internal readonly DMObjectTree DMObjectTree;
     internal readonly DMExpressionBuilder DMExpressionBuilder;
-    internal readonly DMExpression DMExpression;
 
     public DMCompiler() {
         DMCodeTree = new(this);
         DMObjectTree = new(this);
         DMExpressionBuilder = new(this);
-        DMExpression = new BadExpression(this, Location.Internal); // TODO: Wow this sucks
     }
 
     public bool Compile(DMCompilerSettings settings) {
@@ -316,7 +313,7 @@ public class DMCompiler {
                 DMVariable global = DMObjectTree.Globals[i];
                 globalListJson.Names.Add(global.Name);
 
-                if (!global.TryAsJsonRepresentation(out var globalJson))
+                if (!global.TryAsJsonRepresentation(this, out var globalJson))
                     ForcedError(global.Value.Location, $"Failed to serialize global {global.Name}");
 
                 if (globalJson != null) {

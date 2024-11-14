@@ -1,57 +1,30 @@
 using DMCompiler.Bytecode;
 using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Compiler;
-using DMCompiler.Compiler.DM.AST;
-using DMCompiler.DM.Builders;
 using DMCompiler.DM.Expressions;
 
 namespace DMCompiler.DM;
 
-internal abstract class DMExpression(DMCompiler compiler, Location location) {
-    public DMCompiler Compiler = compiler;
+internal abstract class DMExpression(Location location) {
     public Location Location = location;
 
     public virtual DMComplexValueType ValType => DMValueType.Anything;
 
-    // TODO: proc and dmObject can be null, address nullability contract
-    public DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
-        var expr = CreateIgnoreUnknownReference(dmObject, proc, expression, inferredPath);
-        if (expr is UnknownReference unknownRef)
-            unknownRef.EmitCompilerError();
-
-        return expr;
-    }
-
-    public DMExpression CreateIgnoreUnknownReference(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
-        DMExpressionBuilder.EncounteredUnknownReference = null;
-        return Compiler.DMExpressionBuilder.BuildExpression(expression, dmObject, proc, inferredPath);
-    }
-
-    public void Emit(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
-        var expr = Create(dmObject, proc, expression, inferredPath);
-        expr.EmitPushValue(dmObject, proc);
-    }
-
-    public bool TryConstant(DMObject dmObject, DMProc proc, DMASTExpression expression, out Expressions.Constant? constant) {
-        var expr = Create(dmObject, proc, expression);
-        return expr.TryAsConstant(out constant);
-    }
-
     // Attempt to convert this expression into a Constant expression
-    public virtual bool TryAsConstant([NotNullWhen(true)] out Expressions.Constant? constant) {
+    public virtual bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
         constant = null;
         return false;
     }
 
     // Attempt to create a json-serializable version of this expression
-    public virtual bool TryAsJsonRepresentation(out object? json) {
+    public virtual bool TryAsJsonRepresentation(DMCompiler compiler, out object? json) {
         json = null;
         return false;
     }
 
     // Emits code that pushes the result of this expression to the proc's stack
     // May throw if this expression is unable to be pushed to the stack
-    public abstract void EmitPushValue(DMObject dmObject, DMProc proc);
+    public abstract void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc);
 
     public enum ShortCircuitMode {
         // If a dereference is short-circuited due to a null conditional, the short-circuit label should be jumped to with null NOT on top of the stack
@@ -66,8 +39,8 @@ internal abstract class DMExpression(DMCompiler compiler, Location location) {
     // Emits a reference that is to be used in an opcode that assigns/gets a value
     // May throw if this expression is unable to be referenced
     // The emitted code will jump to endLabel after pushing `null` to the stack in the event of a short-circuit
-    public virtual DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
-        Compiler.Emit(WarningCode.BadExpression, Location, "attempt to reference r-value");
+    public virtual DMReference EmitReference(DMCompiler compiler, DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+        compiler.Emit(WarningCode.BadExpression, Location, "attempt to reference r-value");
         return DMReference.Invalid;
     }
 
@@ -75,7 +48,7 @@ internal abstract class DMExpression(DMCompiler compiler, Location location) {
     /// Gets the canonical name of the expression if it exists.
     /// </summary>
     /// <returns>The name of the expression, or <c>null</c> if it does not have one.</returns>
-    public virtual string? GetNameof(DMObject dmObject) => null;
+    public virtual string? GetNameof(DMCompiler compiler, DMObject dmObject) => null;
 
     /// <summary>
     /// Determines whether the expression returns an ambiguous path.
@@ -104,7 +77,7 @@ internal sealed class ArgumentList(Location location, (string? Name, DMExpressio
             if (Expressions[0].Name != null)
                 compiler.Emit(WarningCode.BadArgument, arglist.Location, "arglist cannot be a named argument");
 
-            arglist.EmitPushArglist(dmObject, proc);
+            arglist.EmitPushArglist(compiler, dmObject, proc);
             return (DMCallArgumentsType.FromArgumentList, 1);
         }
 
@@ -124,7 +97,7 @@ internal sealed class ArgumentList(Location location, (string? Name, DMExpressio
                 }
             }
 
-            expr.EmitPushValue(dmObject, proc);
+            expr.EmitPushValue(compiler, dmObject, proc);
             stackCount += isKeyed ? 2 : 1;
         }
 

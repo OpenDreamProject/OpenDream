@@ -20,7 +20,7 @@ internal partial class DMCodeTree {
             try {
                 compiler.DMExpressionBuilder.CurrentScopeMode = scope;
 
-                value = compiler.DMExpression.CreateIgnoreUnknownReference(dmObject, proc, ast, inferredType);
+                value = compiler.DMExpressionBuilder.CreateIgnoreUnknownReference(dmObject, proc, ast, inferredType);
                 if (value is UnknownReference unknownRef) {
                     LastError = unknownRef;
                     value = null;
@@ -44,7 +44,7 @@ internal partial class DMCodeTree {
                 }
             }
 
-            if (value.TryAsConstant(out var constant)) {
+            if (value.TryAsConstant(compiler, out var constant)) {
                 variable.Value = constant;
                 return;
             } else if (variable.IsConst) {
@@ -52,25 +52,25 @@ internal partial class DMCodeTree {
                 return;
             }
 
-            if (!IsValidRightHandSide(dmObject, value)) {
+            if (!IsValidRightHandSide(compiler, dmObject, value)) {
                 compiler.Emit(WarningCode.BadExpression, value.Location,
                     $"Invalid initial value for \"{variable.Name}\"");
                 return;
             }
 
             var initLoc = value.Location;
-            var field = new Field(compiler, initLoc, variable, variable.ValType);
+            var field = new Field(initLoc, variable, variable.ValType);
             var assign = new Assignment(initLoc, field, value);
 
-            variable.Value = new Null(compiler, Location.Internal);
+            variable.Value = new Null(Location.Internal);
             dmObject.InitializationProcExpressions.Add(assign);
         }
 
         /// <returns>Whether the given value can be used as an instance variable's initial value</returns>
-        private bool IsValidRightHandSide(DMObject dmObject, DMExpression value) {
+        private bool IsValidRightHandSide(DMCompiler compiler, DMObject dmObject, DMExpression value) {
             return value switch {
                 //TODO: A better way of handling procs evaluated at compile time
-                ProcCall procCall => procCall.GetTargetProc(dmObject).Proc?.Name switch {
+                ProcCall procCall => procCall.GetTargetProc(compiler, dmObject).Proc?.Name switch {
                     "generator" => true,
                     "matrix" => true,
                     "icon" => true,
@@ -134,12 +134,12 @@ internal partial class DMCodeTree {
             _defined = true;
             WaitingNodes.Remove(this);
 
-            if (value.TryAsConstant(out var constant)) {
+            if (value.TryAsConstant(compiler, out var constant)) {
                 global.Value = constant;
                 return;
             } else if (!global.IsConst) {
                 // Starts out as null, gets initialized by the global init proc
-                global.Value = new Null(compiler, Location.Internal);
+                global.Value = new Null(Location.Internal);
             } else {
                 compiler.Emit(WarningCode.HardConstContext, value.Location, "Constant initializer required");
             }
@@ -147,7 +147,7 @@ internal partial class DMCodeTree {
             // Initialize its value in the global init proc
             compiler.VerbosePrint($"Adding {dmObject.Path}/var/static/{global.Name} to global init on pass {_currentPass}");
             GlobalInitProc.DebugSource(value.Location);
-            value.EmitPushValue(dmObject, GlobalInitProc);
+            value.EmitPushValue(compiler, dmObject, GlobalInitProc);
             GlobalInitProc.Assign(DMReference.CreateGlobal(globalId));
         }
 
@@ -272,7 +272,7 @@ internal partial class DMCodeTree {
             int globalId = compiler.DMObjectTree.CreateGlobal(out DMVariable global, varDecl.Type, varDecl.Name, varDecl.IsConst,
                 varDecl.ValType);
 
-            global.Value = new Null(compiler, Location.Internal);
+            global.Value = new Null(Location.Internal);
             proc.AddGlobalVariable(global, globalId);
             _defined = true;
             WaitingNodes.Remove(this);
@@ -281,7 +281,7 @@ internal partial class DMCodeTree {
                 // Initialize its value in the global init proc
                 compiler.VerbosePrint($"Adding {dmObject.Path}/proc/{proc.Name}/var/static/{global.Name} to global init on pass {_currentPass}");
                 GlobalInitProc.DebugSource(value.Location);
-                value.EmitPushValue(dmObject, GlobalInitProc);
+                value.EmitPushValue(compiler, dmObject, GlobalInitProc);
                 GlobalInitProc.Assign(DMReference.CreateGlobal(globalId));
             }
         }

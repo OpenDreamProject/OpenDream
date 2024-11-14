@@ -3,65 +3,65 @@ using DMCompiler.Bytecode;
 
 namespace DMCompiler.DM.Expressions;
 
-internal abstract class UnaryOp(Location location, DMExpression expr) : DMExpression(expr.Compiler, location) {
+internal abstract class UnaryOp(Location location, DMExpression expr) : DMExpression(location) {
     protected DMExpression Expr { get; } = expr;
 }
 
 // -x
 internal sealed class Negate(Location location, DMExpression expr) : UnaryOp(location, expr) {
-    public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-        if (!Expr.TryAsConstant(out constant) || constant is not Number number)
+    public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
+        if (!Expr.TryAsConstant(compiler, out constant) || constant is not Number number)
             return false;
 
-        constant = new Number(expr.Compiler, Location, -number.Value);
+        constant = new Number(Location, -number.Value);
         return true;
     }
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        Expr.EmitPushValue(dmObject, proc);
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        Expr.EmitPushValue(compiler, dmObject, proc);
         proc.Negate();
     }
 }
 
 // !x
 internal sealed class Not(Location location, DMExpression expr) : UnaryOp(location, expr) {
-    public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-        if (!Expr.TryAsConstant(out constant)) return false;
+    public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
+        if (!Expr.TryAsConstant(compiler, out constant)) return false;
 
-        constant = new Number(expr.Compiler, Location, constant.IsTruthy() ? 0 : 1);
+        constant = new Number(Location, constant.IsTruthy() ? 0 : 1);
         return true;
     }
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        Expr.EmitPushValue(dmObject, proc);
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        Expr.EmitPushValue(compiler, dmObject, proc);
         proc.Not();
     }
 }
 
 // ~x
 internal sealed class BinaryNot(Location location, DMExpression expr) : UnaryOp(location, expr) {
-    public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-        if (!Expr.TryAsConstant(out constant) || constant is not Number constantNum)
+    public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
+        if (!Expr.TryAsConstant(compiler, out constant) || constant is not Number constantNum)
             return false;
 
-        constant = new Number(expr.Compiler, Location, ~(int)constantNum.Value);
+        constant = new Number(Location, ~(int)constantNum.Value);
         return true;
     }
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        Expr.EmitPushValue(dmObject, proc);
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        Expr.EmitPushValue(compiler, dmObject, proc);
         proc.BinaryNot();
     }
 }
 
 internal abstract class AssignmentUnaryOp(Location location, DMExpression expr) : UnaryOp(location, expr) {
-    protected abstract void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel);
+    protected abstract void EmitOp(DMProc proc, DMReference reference);
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
         string endLabel = proc.NewLabelName();
 
-        DMReference reference = Expr.EmitReference(dmObject, proc, endLabel);
-        EmitOp(dmObject, proc, reference, endLabel);
+        DMReference reference = Expr.EmitReference(compiler, dmObject, proc, endLabel);
+        EmitOp(proc, reference);
 
         proc.AddLabel(endLabel);
     }
@@ -69,7 +69,7 @@ internal abstract class AssignmentUnaryOp(Location location, DMExpression expr) 
 
 // ++x
 internal sealed class PreIncrement(Location location, DMExpression expr) : AssignmentUnaryOp(location, expr) {
-    protected override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
+    protected override void EmitOp(DMProc proc, DMReference reference) {
         proc.PushFloat(1);
         proc.Append(reference);
     }
@@ -77,14 +77,14 @@ internal sealed class PreIncrement(Location location, DMExpression expr) : Assig
 
 // x++
 internal sealed class PostIncrement(Location location, DMExpression expr) : AssignmentUnaryOp(location, expr) {
-    protected override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
+    protected override void EmitOp(DMProc proc, DMReference reference) {
         proc.Increment(reference);
     }
 }
 
 // --x
 internal sealed class PreDecrement(Location location, DMExpression expr) : AssignmentUnaryOp(location, expr) {
-    protected override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
+    protected override void EmitOp(DMProc proc, DMReference reference) {
         proc.PushFloat(1);
         proc.Remove(reference);
     }
@@ -92,31 +92,31 @@ internal sealed class PreDecrement(Location location, DMExpression expr) : Assig
 
 // x--
 internal sealed class PostDecrement(Location location, DMExpression expr) : AssignmentUnaryOp(location, expr) {
-    protected override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
+    protected override void EmitOp(DMProc proc, DMReference reference) {
         proc.Decrement(reference);
     }
 }
 
 // &x
 internal sealed class PointerRef(Location location, DMExpression expr) : UnaryOp(location, expr) {
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        Expr.EmitPushValue(dmObject, proc);
-        Compiler.UnimplementedWarning(Location, "Pointers are currently unimplemented and identifiers will be treated as normal variables.");
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        Expr.EmitPushValue(compiler, dmObject, proc);
+        compiler.UnimplementedWarning(Location, "Pointers are currently unimplemented and identifiers will be treated as normal variables.");
     }
 
-    public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
-        return Expr.EmitReference(dmObject, proc, endLabel, shortCircuitMode);
+    public override DMReference EmitReference(DMCompiler compiler, DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+        return Expr.EmitReference(compiler, dmObject, proc, endLabel, shortCircuitMode);
     }
 }
 
 // *x
 internal sealed class PointerDeref(Location location, DMExpression expr) : UnaryOp(location, expr) {
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        Expr.EmitPushValue(dmObject, proc);
-        Compiler.UnimplementedWarning(Location, "Pointers are currently unimplemented and identifiers will be treated as normal variables.");
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        Expr.EmitPushValue(compiler, dmObject, proc);
+        compiler.UnimplementedWarning(Location, "Pointers are currently unimplemented and identifiers will be treated as normal variables.");
     }
 
-    public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
-        return Expr.EmitReference(dmObject, proc, endLabel, shortCircuitMode);
+    public override DMReference EmitReference(DMCompiler compiler, DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+        return Expr.EmitReference(compiler, dmObject, proc, endLabel, shortCircuitMode);
     }
 }

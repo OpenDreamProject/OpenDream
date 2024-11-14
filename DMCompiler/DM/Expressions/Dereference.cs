@@ -45,17 +45,17 @@ internal class Dereference : LValue {
         public required ArgumentList Parameters { get; init; }
     }
 
-    public readonly DMExpression Expression;
     public override DreamPath? Path { get; }
     public override DreamPath? NestedPath { get; }
     public override bool PathIsFuzzy => Path == null;
     public override DMComplexValueType ValType { get; }
 
+    private readonly DMExpression _expression;
     private readonly Operation[] _operations;
 
-    public Dereference(Location location, DreamPath? path, DMExpression expression, Operation[] operations)
-        : base(expression.Compiler, location, null) {
-        Expression = expression;
+    public Dereference(DMObjectTree objectTree, Location location, DreamPath? path, DMExpression expression, Operation[] operations)
+        : base(location, null) {
+        _expression = expression;
         Path = path;
         _operations = operations;
 
@@ -64,16 +64,16 @@ internal class Dereference : LValue {
         }
 
         NestedPath = _operations[^1].Path;
-        ValType = DetermineValType();
+        ValType = DetermineValType(objectTree);
     }
 
-    private DMComplexValueType DetermineValType() {
-        var type = Expression.ValType;
+    private DMComplexValueType DetermineValType(DMObjectTree objectTree) {
+        var type = _expression.ValType;
         var i = 0;
         while (!type.IsAnything && i < _operations.Length) {
             var operation = _operations[i++];
 
-            if (type.TypePath is null || !Compiler.DMObjectTree.TryGetDMObject(type.TypePath.Value, out var dmObject)) {
+            if (type.TypePath is null || !objectTree.TryGetDMObject(type.TypePath.Value, out var dmObject)) {
                 // We're dereferencing something without a type-path, this could be anything
                 type = DMValueType.Anything;
                 break;
@@ -103,7 +103,7 @@ internal class Dereference : LValue {
         }
     }
 
-    private void EmitOperation(DMObject dmObject, DMProc proc, Operation operation, string endLabel, ShortCircuitMode shortCircuitMode) {
+    private void EmitOperation(DMCompiler compiler, DMObject dmObject, DMProc proc, Operation operation, string endLabel, ShortCircuitMode shortCircuitMode) {
         if (operation.Safe) {
             ShortCircuitHandler(proc, endLabel, shortCircuitMode);
         }
@@ -115,17 +115,17 @@ internal class Dereference : LValue {
 
             case IndexOperation indexOperation:
                 if (NestedPath is not null) {
-                    if (Compiler.DMObjectTree.TryGetDMObject(NestedPath.Value, out var obj) && obj.IsSubtypeOf(DreamPath.Datum) && !obj.HasProc("operator[]")) {
-                        Compiler.Emit(WarningCode.InvalidIndexOperation, Location, "Invalid index operation. datum[] index operations are not valid starting in BYOND 515.1641");
+                    if (compiler.DMObjectTree.TryGetDMObject(NestedPath.Value, out var obj) && obj.IsSubtypeOf(DreamPath.Datum) && !obj.HasProc("operator[]")) {
+                        compiler.Emit(WarningCode.InvalidIndexOperation, Location, "Invalid index operation. datum[] index operations are not valid starting in BYOND 515.1641");
                     }
                 }
 
-                indexOperation.Index.EmitPushValue(dmObject, proc);
+                indexOperation.Index.EmitPushValue(compiler, dmObject, proc);
                 proc.DereferenceIndex();
                 break;
 
             case CallOperation callOperation:
-                var (argumentsType, argumentStackSize) = callOperation.Parameters.EmitArguments(Compiler, dmObject, proc, null);
+                var (argumentsType, argumentStackSize) = callOperation.Parameters.EmitArguments(compiler, dmObject, proc, null);
                 proc.DereferenceCall(callOperation.Identifier, argumentsType, argumentStackSize);
                 break;
 
@@ -134,13 +134,13 @@ internal class Dereference : LValue {
         }
     }
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
         string endLabel = proc.NewLabelName();
 
-        Expression.EmitPushValue(dmObject, proc);
+        _expression.EmitPushValue(compiler, dmObject, proc);
 
         foreach (var operation in _operations) {
-            EmitOperation(dmObject, proc, operation, endLabel, ShortCircuitMode.KeepNull);
+            EmitOperation(compiler, dmObject, proc, operation, endLabel, ShortCircuitMode.KeepNull);
         }
 
         proc.AddLabel(endLabel);
@@ -150,12 +150,12 @@ internal class Dereference : LValue {
         return _operations.Any(operation => operation.Safe);
     }
 
-    public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
-        Expression.EmitPushValue(dmObject, proc);
+    public override DMReference EmitReference(DMCompiler compiler, DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+        _expression.EmitPushValue(compiler, dmObject, proc);
 
         // Perform all except for our last operation
         for (int i = 0; i < _operations.Length - 1; i++) {
-            EmitOperation(dmObject, proc, _operations[i], endLabel, shortCircuitMode);
+            EmitOperation(compiler, dmObject, proc, _operations[i], endLabel, shortCircuitMode);
         }
 
         var operation = _operations[^1];
@@ -170,8 +170,8 @@ internal class Dereference : LValue {
 
             case IndexOperation indexOperation:
                 if (NestedPath is not null) {
-                    if (Compiler.DMObjectTree.TryGetDMObject(NestedPath.Value, out var obj) && obj.IsSubtypeOf(DreamPath.Datum) && !obj.HasProc("operator[]=")) {
-                        Compiler.Emit(WarningCode.InvalidIndexOperation, Location, "Invalid index operation. datum[] index operations are not valid starting in BYOND 515.1641");
+                    if (compiler.DMObjectTree.TryGetDMObject(NestedPath.Value, out var obj) && obj.IsSubtypeOf(DreamPath.Datum) && !obj.HasProc("operator[]=")) {
+                        compiler.Emit(WarningCode.InvalidIndexOperation, Location, "Invalid index operation. datum[] index operations are not valid starting in BYOND 515.1641");
                     }
                 }
 
@@ -179,11 +179,11 @@ internal class Dereference : LValue {
                     ShortCircuitHandler(proc, endLabel, shortCircuitMode);
                 }
 
-                indexOperation.Index.EmitPushValue(dmObject, proc);
+                indexOperation.Index.EmitPushValue(compiler, dmObject, proc);
                 return DMReference.ListIndex;
 
             case CallOperation:
-                Compiler.Emit(WarningCode.BadExpression, Location,
+                compiler.Emit(WarningCode.BadExpression, Location,
                     "Expected field or index as reference, got proc call result");
                 return default;
 
@@ -192,19 +192,19 @@ internal class Dereference : LValue {
         }
     }
 
-    public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
+    public override void EmitPushInitial(DMCompiler compiler, DMObject dmObject, DMProc proc) {
         string endLabel = proc.NewLabelName();
 
-        if (Expression is LValue exprLValue) {
+        if (_expression is LValue exprLValue) {
             // We don't want this instead pushing the constant value if it's const
-            exprLValue.EmitPushValueNoConstant(dmObject, proc);
+            exprLValue.EmitPushValueNoConstant(compiler, dmObject, proc);
         } else {
-            Expression.EmitPushValue(dmObject, proc);
+            _expression.EmitPushValue(compiler, dmObject, proc);
         }
 
         // Perform all except for our last operation
         for (int i = 0; i < _operations.Length - 1; i++) {
-            EmitOperation(dmObject, proc, _operations[i], endLabel, ShortCircuitMode.KeepNull);
+            EmitOperation(compiler, dmObject, proc, _operations[i], endLabel, ShortCircuitMode.KeepNull);
         }
 
         var operation = _operations[^1];
@@ -214,6 +214,7 @@ internal class Dereference : LValue {
                 if (fieldOperation.Safe) {
                     proc.JumpIfNullNoPop(endLabel);
                 }
+
                 proc.PushString(fieldOperation.Identifier);
                 proc.Initial();
                 break;
@@ -222,12 +223,13 @@ internal class Dereference : LValue {
                 if (indexOperation.Safe) {
                     proc.JumpIfNullNoPop(endLabel);
                 }
-                indexOperation.Index.EmitPushValue(dmObject, proc);
+
+                indexOperation.Index.EmitPushValue(compiler, dmObject, proc);
                 proc.Initial();
                 break;
 
             case CallOperation:
-                Compiler.Emit(WarningCode.BadExpression, Location,
+                compiler.Emit(WarningCode.BadExpression, Location,
                     "Expected field or index for initial(), got proc call result");
                 break;
 
@@ -238,19 +240,19 @@ internal class Dereference : LValue {
         proc.AddLabel(endLabel);
     }
 
-    public void EmitPushIsSaved(DMObject dmObject, DMProc proc) {
+    public void EmitPushIsSaved(DMCompiler compiler, DMObject dmObject, DMProc proc) {
         string endLabel = proc.NewLabelName();
 
-        if (Expression is LValue exprLValue) {
+        if (_expression is LValue exprLValue) {
             // We don't want this instead pushing the constant value if it's const
-            exprLValue.EmitPushValueNoConstant(dmObject, proc);
+            exprLValue.EmitPushValueNoConstant(compiler, dmObject, proc);
         } else {
-            Expression.EmitPushValue(dmObject, proc);
+            _expression.EmitPushValue(compiler, dmObject, proc);
         }
 
         // Perform all except for our last operation
         for (int i = 0; i < _operations.Length - 1; i++) {
-            EmitOperation(dmObject, proc, _operations[i], endLabel, ShortCircuitMode.KeepNull);
+            EmitOperation(compiler, dmObject, proc, _operations[i], endLabel, ShortCircuitMode.KeepNull);
         }
 
         var operation = _operations[^1];
@@ -260,6 +262,7 @@ internal class Dereference : LValue {
                 if (fieldOperation.Safe) {
                     proc.JumpIfNullNoPop(endLabel);
                 }
+
                 proc.PushString(fieldOperation.Identifier);
                 proc.IsSaved();
                 break;
@@ -268,12 +271,13 @@ internal class Dereference : LValue {
                 if (indexOperation.Safe) {
                     proc.JumpIfNullNoPop(endLabel);
                 }
-                indexOperation.Index.EmitPushValue(dmObject, proc);
+
+                indexOperation.Index.EmitPushValue(compiler, dmObject, proc);
                 proc.IsSaved();
                 break;
 
             case CallOperation:
-                Compiler.Emit(WarningCode.BadExpression, Location,
+                compiler.Emit(WarningCode.BadExpression, Location,
                     "Expected field or index for issaved(), got proc call result");
                 break;
 
@@ -285,24 +289,24 @@ internal class Dereference : LValue {
     }
 
     // BYOND says the nameof is invalid if the chain is not purely field operations
-    public override string? GetNameof(DMObject dmObject) {
+    public override string? GetNameof(DMCompiler compiler, DMObject dmObject) {
         return _operations.All(op => op is FieldOperation)
             ? ((FieldOperation)_operations[^1]).Identifier
             : null;
     }
 
-    public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-        var prevPath = _operations.Length == 1 ? Expression.Path : _operations[^2].Path;
+    public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
+        var prevPath = _operations.Length == 1 ? _expression.Path : _operations[^2].Path;
 
         var operation = _operations[^1];
 
-        if (operation is FieldOperation fieldOperation && prevPath is not null && Compiler.DMObjectTree.TryGetDMObject(prevPath.Value, out var obj)) {
+        if (operation is FieldOperation fieldOperation && prevPath is not null && compiler.DMObjectTree.TryGetDMObject(prevPath.Value, out var obj)) {
             var variable = obj.GetVariable(fieldOperation.Identifier);
             if (variable != null) {
                 if (variable.IsConst)
-                    return variable.Value.TryAsConstant(out constant);
+                    return variable.Value.TryAsConstant(compiler, out constant);
                 if (variable.ValType.IsCompileTimeReadOnly) {
-                    variable.Value.TryAsConstant(out constant!);
+                    variable.Value.TryAsConstant(compiler, out constant!);
                     return true; // MUST be true.
                 }
             }
@@ -315,8 +319,8 @@ internal class Dereference : LValue {
 
 // expression::identifier
 // Same as initial(expression?.identifier) except this keeps its type
-internal sealed class ScopeReference(Location location, DMExpression expression, string identifier, DMVariable dmVar)
-    : Initial(expression.Compiler, location, new Dereference(location, dmVar.Type, expression, // Just a little hacky
+internal sealed class ScopeReference(DMObjectTree objectTree, Location location, DMExpression expression, string identifier, DMVariable dmVar)
+    : Initial(location, new Dereference(objectTree, location, dmVar.Type, expression, // Just a little hacky
         [
             new Dereference.FieldOperation {
                 Identifier = identifier,
@@ -327,14 +331,14 @@ internal sealed class ScopeReference(Location location, DMExpression expression,
     ) {
     public override DreamPath? Path => Expression.Path;
 
-    public override string GetNameof(DMObject dmObject) => dmVar.Name;
+    public override string? GetNameof(DMCompiler compiler, DMObject dmObject) => dmVar.Name;
 
-    public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
+    public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
         if (expression is not IConstantPath) {
             constant = null;
             return false;
         }
 
-        return dmVar.Value!.TryAsConstant(out constant);
+        return dmVar.Value!.TryAsConstant(compiler, out constant);
     }
 }

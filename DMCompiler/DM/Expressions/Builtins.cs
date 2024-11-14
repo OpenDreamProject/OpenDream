@@ -9,8 +9,8 @@ namespace DMCompiler.DM.Expressions;
 /// Used when there was an error generating an expression
 /// </summary>
 /// <remarks>Emit an error code before creating!</remarks>
-internal sealed class BadExpression(DMCompiler compiler, Location location) : DMExpression(compiler, location) {
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+internal sealed class BadExpression(Location location) : DMExpression(location) {
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
         // It's normal to have this expression exist when there are errors in the code
         // But in the runtime we say it's a compiler bug because the compiler should never have output it
         proc.PushString("Encountered a bad expression (compiler bug!)");
@@ -18,28 +18,28 @@ internal sealed class BadExpression(DMCompiler compiler, Location location) : DM
     }
 }
 
-internal sealed class UnknownReference(DMCompiler compiler, Location location, string message) : DMExpression(compiler, location) {
+internal sealed class UnknownReference(Location location, string message) : DMExpression(location) {
     public string Message => message;
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
         // It's normal to have this expression exist when there's out-of-order definitions in the code
         // But in the runtime we say it's a compiler bug because the compiler should never have output it
         proc.PushString("Encountered an unknown reference expression (compiler bug!)");
         proc.Throw();
     }
 
-    public void EmitCompilerError() {
-        Compiler.Emit(WarningCode.ItemDoesntExist, Location, message);
+    public void EmitCompilerError(DMCompiler compiler) {
+        compiler.Emit(WarningCode.ItemDoesntExist, Location, message);
     }
 }
 
 // "abc[d]"
-internal sealed class StringFormat(DMCompiler compiler, Location location, string value, DMExpression[] expressions) : DMExpression(compiler, location) {
+internal sealed class StringFormat(Location location, string value, DMExpression[] expressions) : DMExpression(location) {
     public override DMComplexValueType ValType => DMValueType.Text;
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
         foreach (DMExpression expression in expressions) {
-            expression.EmitPushValue(dmObject, proc);
+            expression.EmitPushValue(compiler, dmObject, proc);
         }
 
         proc.FormatString(value);
@@ -47,48 +47,49 @@ internal sealed class StringFormat(DMCompiler compiler, Location location, strin
 }
 
 // arglist(...)
-internal sealed class Arglist(DMCompiler compiler, Location location, DMExpression expr) : DMExpression(compiler, location) {
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+internal sealed class Arglist(Location location, DMExpression expr) : DMExpression(location) {
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
         compiler.Emit(WarningCode.BadExpression, Location, "invalid use of arglist");
     }
 
-    public void EmitPushArglist(DMObject dmObject, DMProc proc) {
-        expr.EmitPushValue(dmObject, proc);
+    public void EmitPushArglist(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        expr.EmitPushValue(compiler, dmObject, proc);
     }
 }
 
 // new x (...)
-internal sealed class New(DMCompiler compiler, Location location, DMExpression expr, ArgumentList arguments) : DMExpression(compiler, location) {
+internal sealed class New(DMCompiler compiler, Location location, DMExpression expr, ArgumentList arguments) : DMExpression(location) {
+    public override DreamPath? Path => expr.Path;
     public override bool PathIsFuzzy => Path == null;
     public override DMComplexValueType ValType => !expr.ValType.IsAnything ? expr.ValType : (Path?.GetAtomType(compiler) ?? DMValueType.Anything);
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        var argumentInfo = arguments.EmitArguments(Compiler, dmObject, proc, null);
+    public override void EmitPushValue(DMCompiler compiler1, DMObject dmObject, DMProc proc) {
+        var argumentInfo = arguments.EmitArguments(compiler, dmObject, proc, null);
 
-        expr.EmitPushValue(dmObject, proc);
+        expr.EmitPushValue(compiler, dmObject, proc);
         proc.CreateObject(argumentInfo.Type, argumentInfo.StackSize);
     }
 }
 
 // new /x/y/z (...)
-internal sealed class NewPath(DMCompiler compiler,  Location location, IConstantPath create, ArgumentList arguments) : DMExpression(compiler, location) {
+internal sealed class NewPath(DMCompiler compiler, Location location, IConstantPath create, ArgumentList arguments) : DMExpression(location) {
     public override DreamPath? Path => (create is ConstantTypeReference typeReference) ? typeReference.Path : null;
     public override DMComplexValueType ValType => Path?.GetAtomType(compiler) ?? DMValueType.Anything;
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+    public override void EmitPushValue(DMCompiler compiler1, DMObject dmObject, DMProc proc) {
         DMCallArgumentsType argumentsType;
         int stackSize;
 
         switch (create) {
             case ConstantTypeReference typeReference:
                 // TODO: This might give us null depending on how definition order goes
-                var newProc = Compiler.DMObjectTree.GetNewProc(typeReference.Value.Id);
+                var newProc = compiler.DMObjectTree.GetNewProc(typeReference.Value.Id);
 
-                (argumentsType, stackSize) = arguments.EmitArguments(Compiler, dmObject, proc, newProc);
+                (argumentsType, stackSize) = arguments.EmitArguments(compiler, dmObject, proc, newProc);
                 proc.PushType(typeReference.Value.Id);
                 break;
             case ConstantProcReference procReference: // "new /proc/new_verb(Destination)" is a thing
-                (argumentsType, stackSize) = arguments.EmitArguments(Compiler, dmObject, proc, Compiler.DMObjectTree.AllProcs[procReference.Value.Id]);
+                (argumentsType, stackSize) = arguments.EmitArguments(compiler, dmObject, proc, compiler.DMObjectTree.AllProcs[procReference.Value.Id]);
                 proc.PushProc(procReference.Value.Id);
                 break;
             default:
@@ -102,11 +103,11 @@ internal sealed class NewPath(DMCompiler compiler,  Location location, IConstant
 }
 
 // locate()
-internal sealed class LocateInferred(DMCompiler compiler,  Location location, DreamPath path, DMExpression? container) : DMExpression(compiler, location) {
+internal sealed class LocateInferred(Location location, DreamPath path, DMExpression? container) : DMExpression(location) {
     public override DMComplexValueType ValType => path;
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        if (!Compiler.DMObjectTree.TryGetTypeId(path, out var typeId)) {
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        if (!compiler.DMObjectTree.TryGetTypeId(path, out var typeId)) {
             compiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {path} does not exist");
 
             return;
@@ -115,7 +116,7 @@ internal sealed class LocateInferred(DMCompiler compiler,  Location location, Dr
         proc.PushType(typeId);
 
         if (container != null) {
-            container.EmitPushValue(dmObject, proc);
+            container.EmitPushValue(compiler, dmObject, proc);
         } else {
             if (compiler.Settings.NoStandard) {
                 compiler.Emit(WarningCode.BadExpression, Location, "Implicit locate() container is not available with --no-standard");
@@ -131,14 +132,14 @@ internal sealed class LocateInferred(DMCompiler compiler,  Location location, Dr
 }
 
 // locate(x)
-internal sealed class Locate(DMCompiler compiler,  Location location, DMExpression path, DMExpression? container) : DMExpression(compiler, location) {
+internal sealed class Locate(Location location, DMExpression path, DMExpression? container) : DMExpression(location) {
     public override bool PathIsFuzzy => true;
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        path.EmitPushValue(dmObject, proc);
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        path.EmitPushValue(compiler, dmObject, proc);
 
         if (container != null) {
-            container.EmitPushValue(dmObject, proc);
+            container.EmitPushValue(compiler, dmObject, proc);
         } else {
             if (compiler.Settings.NoStandard) {
                 compiler.Emit(WarningCode.BadExpression, Location, "Implicit locate() container is not available with --no-standard");
@@ -154,23 +155,23 @@ internal sealed class Locate(DMCompiler compiler,  Location location, DMExpressi
 }
 
 // locate(x, y, z)
-internal sealed class LocateCoordinates(DMCompiler compiler,  Location location, DMExpression x, DMExpression y, DMExpression z) : DMExpression(compiler, location) {
+internal sealed class LocateCoordinates(Location location, DMExpression x, DMExpression y, DMExpression z) : DMExpression(location) {
     public override DMComplexValueType ValType => DMValueType.Turf;
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        x.EmitPushValue(dmObject, proc);
-        y.EmitPushValue(dmObject, proc);
-        z.EmitPushValue(dmObject, proc);
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        x.EmitPushValue(compiler, dmObject, proc);
+        y.EmitPushValue(compiler, dmObject, proc);
+        z.EmitPushValue(compiler, dmObject, proc);
         proc.LocateCoordinates();
     }
 }
 
 // gradient(Gradient, index)
 // gradient(Item1, Item2, ..., index)
-internal sealed class Gradient(DMCompiler compiler,  Location location, ArgumentList arguments) : DMExpression(compiler, location) {
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        Compiler.DMObjectTree.TryGetGlobalProc("gradient", out var dmProc);
-        var argInfo = arguments.EmitArguments(Compiler, dmObject, proc, dmProc);
+internal sealed class Gradient(Location location, ArgumentList arguments) : DMExpression(location) {
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        compiler.DMObjectTree.TryGetGlobalProc("gradient", out var dmProc);
+        var argInfo = arguments.EmitArguments(compiler, dmObject, proc, dmProc);
 
         proc.Gradient(argInfo.Type, argInfo.StackSize);
     }
@@ -180,10 +181,10 @@ internal sealed class Gradient(DMCompiler compiler,  Location location, Argument
 /// rgb(R, G, B, A)
 /// rgb(x, y, z, space)
 /// rgb(x, y, z, a, space)
-internal sealed class Rgb(DMCompiler compiler,  Location location, ArgumentList arguments) : DMExpression(compiler, location) {
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        Compiler.DMObjectTree.TryGetGlobalProc("rgb", out var dmProc);
-        var argInfo = arguments.EmitArguments(Compiler, dmObject, proc, dmProc);
+internal sealed class Rgb(Location location, ArgumentList arguments) : DMExpression(location) {
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        compiler.DMObjectTree.TryGetGlobalProc("rgb", out var dmProc);
+        var argInfo = arguments.EmitArguments(compiler, dmObject, proc, dmProc);
 
         proc.Rgb(argInfo.Type, argInfo.StackSize);
     }
@@ -192,13 +193,13 @@ internal sealed class Rgb(DMCompiler compiler,  Location location, ArgumentList 
 // pick(prob(50);x, prob(200);y)
 // pick(50;x, 200;y)
 // pick(x, y)
-internal sealed class Pick(DMCompiler compiler,  Location location, Pick.PickValue[] values) : DMExpression(compiler, location) {
+internal sealed class Pick(Location location, Pick.PickValue[] values) : DMExpression(location) {
     public struct PickValue(DMExpression? weight, DMExpression value) {
         public readonly DMExpression? Weight = weight;
         public readonly DMExpression Value = value;
     }
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
         bool weighted = false;
         foreach (PickValue pickValue in values) {
             if (pickValue.Weight != null) {
@@ -215,10 +216,10 @@ internal sealed class Pick(DMCompiler compiler,  Location location, Pick.PickVal
             compiler.Emit(WarningCode.PickWeightedSyntax, Location, "Use of weighted pick() syntax");
 
             foreach (PickValue pickValue in values) {
-                DMExpression weight = pickValue.Weight ?? new Number(Compiler, Location.Internal, 100); //Default of 100
+                DMExpression weight = pickValue.Weight ?? new Number(Location.Internal, 100); //Default of 100
 
-                weight.EmitPushValue(dmObject, proc);
-                pickValue.Value.EmitPushValue(dmObject, proc);
+                weight.EmitPushValue(compiler, dmObject, proc);
+                pickValue.Value.EmitPushValue(compiler, dmObject, proc);
             }
 
             proc.PickWeighted(values.Length);
@@ -227,9 +228,9 @@ internal sealed class Pick(DMCompiler compiler,  Location location, Pick.PickVal
                 if (pickValue.Value is Arglist args) {
                     // This will just push a list which pick() accepts
                     // Really hacky and won't verify that the value is actually a list
-                    args.EmitPushArglist(dmObject, proc);
+                    args.EmitPushArglist(compiler, dmObject, proc);
                 } else {
-                    pickValue.Value.EmitPushValue(dmObject, proc);
+                    pickValue.Value.EmitPushValue(compiler, dmObject, proc);
                 }
             }
 
@@ -240,15 +241,15 @@ internal sealed class Pick(DMCompiler compiler,  Location location, Pick.PickVal
 
 // addtext(...)
 // https://www.byond.com/docs/ref/#/proc/addtext
-internal sealed class AddText(DMCompiler compiler,  Location location, DMExpression[] paras) : DMExpression(compiler, location) {
+internal sealed class AddText(Location location, DMExpression[] paras) : DMExpression(location) {
     public override DMComplexValueType ValType => DMValueType.Text;
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
         //We don't have to do any checking of our parameters since that was already done by VisitAddText(), hopefully. :)
 
         //Push addtext()'s arguments
         foreach (DMExpression parameter in paras) {
-            parameter.EmitPushValue(dmObject, proc);
+            parameter.EmitPushValue(compiler, dmObject, proc);
         }
 
         proc.MassConcatenation(paras.Length);
@@ -256,25 +257,25 @@ internal sealed class AddText(DMCompiler compiler,  Location location, DMExpress
 }
 
 // prob(P)
-internal sealed class Prob(DMCompiler compiler,  Location location, DMExpression p) : DMExpression(compiler, location) {
+internal sealed class Prob(Location location, DMExpression p) : DMExpression(location) {
     public readonly DMExpression P = p;
 
     public override DMComplexValueType ValType => DMValueType.Num;
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        P.EmitPushValue(dmObject, proc);
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        P.EmitPushValue(compiler, dmObject, proc);
         proc.Prob();
     }
 }
 
 // issaved(x)
-internal sealed class IsSaved(DMCompiler compiler,  Location location, DMExpression expr) : DMExpression(compiler, location) {
+internal sealed class IsSaved(Location location, DMExpression expr) : DMExpression(location) {
     public override DMComplexValueType ValType => DMValueType.Num;
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
         switch (expr) {
             case Dereference deref:
-                deref.EmitPushIsSaved(dmObject, proc);
+                deref.EmitPushIsSaved(compiler, dmObject, proc);
                 return;
             case Field field:
                 field.EmitPushIsSaved(proc);
@@ -291,73 +292,73 @@ internal sealed class IsSaved(DMCompiler compiler,  Location location, DMExpress
 }
 
 // istype(x, y)
-internal sealed class IsType(DMCompiler compiler,  Location location, DMExpression expr, DMExpression path) : DMExpression(compiler, location) {
+internal sealed class IsType(Location location, DMExpression expr, DMExpression path) : DMExpression(location) {
     public override DMComplexValueType ValType => DMValueType.Num;
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        expr.EmitPushValue(dmObject, proc);
-        path.EmitPushValue(dmObject, proc);
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        expr.EmitPushValue(compiler, dmObject, proc);
+        path.EmitPushValue(compiler, dmObject, proc);
         proc.IsType();
     }
 }
 
 // istype(x)
-internal sealed class IsTypeInferred(DMCompiler compiler,  Location location, DMExpression expr, DreamPath path) : DMExpression(compiler, location) {
+internal sealed class IsTypeInferred(Location location, DMExpression expr, DreamPath path) : DMExpression(location) {
     public override DMComplexValueType ValType => DMValueType.Num;
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        if (!Compiler.DMObjectTree.TryGetTypeId(path, out var typeId)) {
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        if (!compiler.DMObjectTree.TryGetTypeId(path, out var typeId)) {
             compiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {path} does not exist");
 
             return;
         }
 
-        expr.EmitPushValue(dmObject, proc);
+        expr.EmitPushValue(compiler, dmObject, proc);
         proc.PushType(typeId);
         proc.IsType();
     }
 }
 
 // isnull(x)
-internal sealed class IsNull(DMCompiler compiler,  Location location, DMExpression value) : DMExpression(compiler, location) {
+internal sealed class IsNull(Location location, DMExpression value) : DMExpression(location) {
     public override bool PathIsFuzzy => true;
     public override DMComplexValueType ValType => DMValueType.Num;
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        value.EmitPushValue(dmObject, proc);
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        value.EmitPushValue(compiler, dmObject, proc);
         proc.IsNull();
     }
 }
 
 // length(x)
-internal sealed class Length(DMCompiler compiler,  Location location, DMExpression value) : DMExpression(compiler, location) {
+internal sealed class Length(Location location, DMExpression value) : DMExpression(location) {
     public override bool PathIsFuzzy => true;
     public override DMComplexValueType ValType => DMValueType.Num;
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        value.EmitPushValue(dmObject, proc);
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        value.EmitPushValue(compiler, dmObject, proc);
         proc.Length();
     }
 }
 
 // get_step(ref, dir)
-internal sealed class GetStep(DMCompiler compiler,  Location location, DMExpression refValue, DMExpression dir) : DMExpression(compiler, location) {
+internal sealed class GetStep(Location location, DMExpression refValue, DMExpression dir) : DMExpression(location) {
     public override bool PathIsFuzzy => true;
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        refValue.EmitPushValue(dmObject, proc);
-        dir.EmitPushValue(dmObject, proc);
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        refValue.EmitPushValue(compiler, dmObject, proc);
+        dir.EmitPushValue(compiler, dmObject, proc);
         proc.GetStep();
     }
 }
 
 // get_dir(loc1, loc2)
-internal sealed class GetDir(DMCompiler compiler,  Location location, DMExpression loc1, DMExpression loc2) : DMExpression(compiler, location) {
+internal sealed class GetDir(Location location, DMExpression loc1, DMExpression loc2) : DMExpression(location) {
     public override bool PathIsFuzzy => true;
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        loc1.EmitPushValue(dmObject, proc);
-        loc2.EmitPushValue(dmObject, proc);
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        loc1.EmitPushValue(compiler, dmObject, proc);
+        loc2.EmitPushValue(compiler, dmObject, proc);
         proc.GetDir();
     }
 }
@@ -370,7 +371,7 @@ internal sealed class List : DMExpression {
     public override bool PathIsFuzzy => true;
     public override DMComplexValueType ValType => DreamPath.List;
 
-    public List(DMCompiler compiler,  Location location, (DMExpression? Key, DMExpression Value)[] values) : base(compiler, location) {
+    public List(Location location, (DMExpression? Key, DMExpression Value)[] values) : base(location) {
         _values = values;
 
         _isAssociative = false;
@@ -382,17 +383,17 @@ internal sealed class List : DMExpression {
         }
     }
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
         foreach (var value in _values) {
             if (_isAssociative) {
                 if (value.Key == null) {
                     proc.PushNull();
                 } else {
-                    value.Key.EmitPushValue(dmObject, proc);
+                    value.Key.EmitPushValue(compiler, dmObject, proc);
                 }
             }
 
-            value.Value.EmitPushValue(dmObject, proc);
+            value.Value.EmitPushValue(compiler, dmObject, proc);
         }
 
         if (_isAssociative) {
@@ -402,18 +403,18 @@ internal sealed class List : DMExpression {
         }
     }
 
-    public override bool TryAsJsonRepresentation(out object? json) {
+    public override bool TryAsJsonRepresentation(DMCompiler compiler, out object? json) {
         List<object?> values = new();
 
         foreach (var value in _values) {
-            if (!value.Value.TryAsJsonRepresentation(out var jsonValue)) {
+            if (!value.Value.TryAsJsonRepresentation(compiler, out var jsonValue)) {
                 json = null;
                 return false;
             }
 
             if (value.Key != null) {
                 // Null key is not supported here
-                if (!value.Key.TryAsJsonRepresentation(out var jsonKey) || jsonKey == null) {
+                if (!value.Key.TryAsJsonRepresentation(compiler, out var jsonKey) || jsonKey == null) {
                     json = null;
                     return false;
                 }
@@ -437,10 +438,10 @@ internal sealed class List : DMExpression {
 }
 
 // Value of var/list/L[1][2][3]
-internal sealed class DimensionalList(DMCompiler compiler,  Location location, DMExpression[] sizes) : DMExpression(compiler, location) {
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+internal sealed class DimensionalList(Location location, DMExpression[] sizes) : DMExpression(location) {
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
         foreach (var size in sizes) {
-            size.EmitPushValue(dmObject, proc);
+            size.EmitPushValue(compiler, dmObject, proc);
         }
 
         // Should be equivalent to new /list(1, 2, 3)
@@ -449,19 +450,19 @@ internal sealed class DimensionalList(DMCompiler compiler,  Location location, D
 }
 
 // newlist(...)
-internal sealed class NewList(DMCompiler compiler,  Location location, DMExpression[] parameters) : DMExpression(compiler, location) {
+internal sealed class NewList(Location location, DMExpression[] parameters) : DMExpression(location) {
     public override DMComplexValueType ValType => DreamPath.List;
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
         foreach (DMExpression parameter in parameters) {
-            parameter.EmitPushValue(dmObject, proc);
+            parameter.EmitPushValue(compiler, dmObject, proc);
             proc.CreateObject(DMCallArgumentsType.None, 0);
         }
 
         proc.CreateList(parameters.Length);
     }
 
-    public override bool TryAsJsonRepresentation(out object? json) {
+    public override bool TryAsJsonRepresentation(DMCompiler compiler, out object? json) {
         json = null;
         compiler.UnimplementedWarning(Location, "DMM overrides for newlist() are not implemented");
         return true; //TODO
@@ -469,15 +470,15 @@ internal sealed class NewList(DMCompiler compiler,  Location location, DMExpress
 }
 
 // input(...)
-internal sealed class Input(DMCompiler compiler,  Location location, DMExpression[] arguments, DMValueType types, DMExpression? list)
-    : DMExpression(compiler, location) {
+internal sealed class Input(Location location, DMExpression[] arguments, DMValueType types, DMExpression? list)
+    : DMExpression(location) {
     public override DMComplexValueType ValType => types;
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
         // Push input's four arguments, pushing null for the missing ones
         for (int i = 3; i >= 0; i--) {
             if (i < arguments.Length) {
-                arguments[i].EmitPushValue(dmObject, proc);
+                arguments[i].EmitPushValue(compiler, dmObject, proc);
             } else {
                 proc.PushNull();
             }
@@ -485,7 +486,7 @@ internal sealed class Input(DMCompiler compiler,  Location location, DMExpressio
 
         // The list of values to be selected from (or null for none)
         if (list != null) {
-            list.EmitPushValue(dmObject, proc);
+            list.EmitPushValue(compiler, dmObject, proc);
         } else {
             proc.PushNull();
         }
@@ -495,12 +496,12 @@ internal sealed class Input(DMCompiler compiler,  Location location, DMExpressio
 }
 
 // initial(x)
-internal class Initial(DMCompiler compiler,  Location location, DMExpression expr) : DMExpression(compiler, location) {
+internal class Initial(Location location, DMExpression expr) : DMExpression(location) {
     protected DMExpression Expression { get; } = expr;
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
         if (Expression is LValue lValue) {
-            lValue.EmitPushInitial(dmObject, proc);
+            lValue.EmitPushInitial(compiler, dmObject, proc);
             return;
         }
 
@@ -515,33 +516,33 @@ internal sealed class CallStatement : DMExpression {
     private readonly DMExpression? _b; // ProcName, FuncName
     private readonly ArgumentList _procArgs;
 
-    public CallStatement(DMCompiler compiler,  Location location, DMExpression a, ArgumentList procArgs) : base(compiler, location) {
+    public CallStatement(Location location, DMExpression a, ArgumentList procArgs) : base(location) {
         _a = a;
         _procArgs = procArgs;
     }
 
-    public CallStatement(DMCompiler compiler,  Location location, DMExpression a, DMExpression b, ArgumentList procArgs) : base(compiler, location) {
+    public CallStatement(Location location, DMExpression a, DMExpression b, ArgumentList procArgs) : base(location) {
         _a = a;
         _b = b;
         _procArgs = procArgs;
     }
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        var argumentInfo = _procArgs.EmitArguments(Compiler, dmObject, proc, null);
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        var argumentInfo = _procArgs.EmitArguments(compiler, dmObject, proc, null);
 
-        _b?.EmitPushValue(dmObject, proc);
-        _a.EmitPushValue(dmObject, proc);
+        _b?.EmitPushValue(compiler, dmObject, proc);
+        _a.EmitPushValue(compiler, dmObject, proc);
         proc.CallStatement(argumentInfo.Type, argumentInfo.StackSize);
     }
 }
 
 // __TYPE__
-internal sealed class ProcOwnerType(DMCompiler compiler,  Location location, DMObject owner) : DMExpression(compiler, location) {
+internal sealed class ProcOwnerType(Location location, DMObject owner) : DMExpression(location) {
     private DreamPath? OwnerPath => owner.Path == DreamPath.Root ? null : owner.Path;
 
     public override DMComplexValueType ValType => (OwnerPath != null) ? OwnerPath.Value : DMValueType.Null;
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
         // BYOND returns null if this is called in a global proc
         if (dmObject.Path == DreamPath.Root) {
             proc.PushNull();
@@ -550,7 +551,7 @@ internal sealed class ProcOwnerType(DMCompiler compiler,  Location location, DMO
         }
     }
 
-    public override string? GetNameof(DMObject dmObject) {
+    public override string? GetNameof(DMCompiler compiler, DMObject dmObject) {
         if (dmObject.Path.LastElement != null) {
             return dmObject.Path.LastElement;
         }
@@ -560,11 +561,11 @@ internal sealed class ProcOwnerType(DMCompiler compiler,  Location location, DMO
     }
 }
 
-internal sealed class Sin(DMCompiler compiler,  Location location, DMExpression expr) : DMExpression(compiler, location) {
+internal sealed class Sin(Location location, DMExpression expr) : DMExpression(location) {
     public override DMComplexValueType ValType => DMValueType.Num;
 
-    public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-        if (!expr.TryAsConstant(out constant)) {
+    public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
+        if (!expr.TryAsConstant(compiler, out constant)) {
             constant = null;
             return false;
         }
@@ -575,21 +576,21 @@ internal sealed class Sin(DMCompiler compiler,  Location location, DMExpression 
                 "Invalid value treated as 0, sin(0) will always be 0");
         }
 
-        constant = new Number(compiler, Location, SharedOperations.Sin(x));
+        constant = new Number(Location, SharedOperations.Sin(x));
         return true;
     }
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        expr.EmitPushValue(dmObject, proc);
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        expr.EmitPushValue(compiler, dmObject, proc);
         proc.Sin();
     }
 }
 
-internal sealed class Cos(DMCompiler compiler,  Location location, DMExpression expr) : DMExpression(compiler, location) {
+internal sealed class Cos(Location location, DMExpression expr) : DMExpression(location) {
     public override DMComplexValueType ValType => DMValueType.Num;
 
-    public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-        if (!expr.TryAsConstant(out constant)) {
+    public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
+        if (!expr.TryAsConstant(compiler, out constant)) {
             constant = null;
             return false;
         }
@@ -600,21 +601,21 @@ internal sealed class Cos(DMCompiler compiler,  Location location, DMExpression 
                 "Invalid value treated as 0, cos(0) will always be 1");
         }
 
-        constant = new Number(compiler, Location, SharedOperations.Cos(x));
+        constant = new Number(Location, SharedOperations.Cos(x));
         return true;
     }
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        expr.EmitPushValue(dmObject, proc);
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        expr.EmitPushValue(compiler, dmObject, proc);
         proc.Cos();
     }
 }
 
-internal sealed class Tan(DMCompiler compiler,  Location location, DMExpression expr) : DMExpression(compiler, location) {
+internal sealed class Tan(Location location, DMExpression expr) : DMExpression(location) {
     public override DMComplexValueType ValType => DMValueType.Num;
 
-    public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-        if (!expr.TryAsConstant(out constant)) {
+    public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
+        if (!expr.TryAsConstant(compiler, out constant)) {
             constant = null;
             return false;
         }
@@ -625,21 +626,21 @@ internal sealed class Tan(DMCompiler compiler,  Location location, DMExpression 
                 "Invalid value treated as 0, tan(0) will always be 0");
         }
 
-        constant = new Number(compiler, Location, SharedOperations.Tan(x));
+        constant = new Number(Location, SharedOperations.Tan(x));
         return true;
     }
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        expr.EmitPushValue(dmObject, proc);
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        expr.EmitPushValue(compiler, dmObject, proc);
         proc.Tan();
     }
 }
 
-internal sealed class ArcSin(DMCompiler compiler,  Location location, DMExpression expr) : DMExpression(compiler, location) {
+internal sealed class ArcSin(Location location, DMExpression expr) : DMExpression(location) {
     public override DMComplexValueType ValType => DMValueType.Num;
 
-    public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-        if (!expr.TryAsConstant(out constant)) {
+    public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
+        if (!expr.TryAsConstant(compiler, out constant)) {
             constant = null;
             return false;
         }
@@ -655,21 +656,21 @@ internal sealed class ArcSin(DMCompiler compiler,  Location location, DMExpressi
             x = 0;
         }
 
-        constant = new Number(compiler, Location, SharedOperations.ArcSin(x));
+        constant = new Number(Location, SharedOperations.ArcSin(x));
         return true;
     }
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        expr.EmitPushValue(dmObject, proc);
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        expr.EmitPushValue(compiler, dmObject, proc);
         proc.ArcSin();
     }
 }
 
-internal sealed class ArcCos(DMCompiler compiler,  Location location, DMExpression expr) : DMExpression(compiler, location) {
+internal sealed class ArcCos(Location location, DMExpression expr) : DMExpression(location) {
     public override DMComplexValueType ValType => DMValueType.Num;
 
-    public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-        if (!expr.TryAsConstant(out constant)) {
+    public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
+        if (!expr.TryAsConstant(compiler, out constant)) {
             constant = null;
             return false;
         }
@@ -685,21 +686,21 @@ internal sealed class ArcCos(DMCompiler compiler,  Location location, DMExpressi
             x = 0;
         }
 
-        constant = new Number(compiler, Location, SharedOperations.ArcCos(x));
+        constant = new Number(Location, SharedOperations.ArcCos(x));
         return true;
     }
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        expr.EmitPushValue(dmObject, proc);
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        expr.EmitPushValue(compiler, dmObject, proc);
         proc.ArcCos();
     }
 }
 
-internal sealed class ArcTan(DMCompiler compiler,  Location location, DMExpression expr) : DMExpression(compiler, location) {
+internal sealed class ArcTan(Location location, DMExpression expr) : DMExpression(location) {
     public override DMComplexValueType ValType => DMValueType.Num;
 
-    public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-        if (!expr.TryAsConstant(out constant)) {
+    public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
+        if (!expr.TryAsConstant(compiler, out constant)) {
             constant = null;
             return false;
         }
@@ -710,21 +711,21 @@ internal sealed class ArcTan(DMCompiler compiler,  Location location, DMExpressi
                 "Invalid value treated as 0, arctan(0) will always be 0");
         }
 
-        constant = new Number(compiler, Location, SharedOperations.ArcTan(a));
+        constant = new Number(Location, SharedOperations.ArcTan(a));
         return true;
     }
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        expr.EmitPushValue(dmObject, proc);
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        expr.EmitPushValue(compiler, dmObject, proc);
         proc.ArcTan();
     }
 }
 
-internal sealed class ArcTan2(DMCompiler compiler,  Location location, DMExpression xExpr, DMExpression yExpr) : DMExpression(compiler, location) {
+internal sealed class ArcTan2(Location location, DMExpression xExpr, DMExpression yExpr) : DMExpression(location) {
     public override DMComplexValueType ValType => DMValueType.Num;
 
-    public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-        if (!xExpr.TryAsConstant(out var xConst) || !yExpr.TryAsConstant(out var yConst)) {
+    public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
+        if (!xExpr.TryAsConstant(compiler, out var xConst) || !yExpr.TryAsConstant(compiler, out var yConst)) {
             constant = null;
             return false;
         }
@@ -739,22 +740,22 @@ internal sealed class ArcTan2(DMCompiler compiler,  Location location, DMExpress
             compiler.Emit(WarningCode.FallbackBuiltinArgument, xExpr.Location, "Invalid y value treated as 0");
         }
 
-        constant = new Number(compiler, Location, SharedOperations.ArcTan(x, y));
+        constant = new Number(Location, SharedOperations.ArcTan(x, y));
         return true;
     }
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        xExpr.EmitPushValue(dmObject, proc);
-        yExpr.EmitPushValue(dmObject, proc);
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        xExpr.EmitPushValue(compiler, dmObject, proc);
+        yExpr.EmitPushValue(compiler, dmObject, proc);
         proc.ArcTan2();
     }
 }
 
-internal sealed class Sqrt(DMCompiler compiler,  Location location, DMExpression expr) : DMExpression(compiler, location) {
+internal sealed class Sqrt(Location location, DMExpression expr) : DMExpression(location) {
     public override DMComplexValueType ValType => DMValueType.Num;
 
-    public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-        if (!expr.TryAsConstant(out constant)) {
+    public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
+        if (!expr.TryAsConstant(compiler, out constant)) {
             constant = null;
             return false;
         }
@@ -770,22 +771,22 @@ internal sealed class Sqrt(DMCompiler compiler,  Location location, DMExpression
                 $"Cannot get the square root of a negative number ({a})");
         }
 
-        constant = new Number(compiler, Location, SharedOperations.Sqrt(a));
+        constant = new Number(Location, SharedOperations.Sqrt(a));
         return true;
     }
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        expr.EmitPushValue(dmObject, proc);
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        expr.EmitPushValue(compiler, dmObject, proc);
         proc.Sqrt();
     }
 }
 
-internal sealed class Log(DMCompiler compiler,  Location location, DMExpression expr, DMExpression? baseExpr)
-    : DMExpression(compiler, location) {
+internal sealed class Log(Location location, DMExpression expr, DMExpression? baseExpr)
+    : DMExpression(location) {
     public override DMComplexValueType ValType => DMValueType.Num;
 
-    public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-        if (!expr.TryAsConstant(out constant)) {
+    public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
+        if (!expr.TryAsConstant(compiler, out constant)) {
             constant = null;
             return false;
         }
@@ -797,11 +798,11 @@ internal sealed class Log(DMCompiler compiler,  Location location, DMExpression 
         }
 
         if (baseExpr == null) {
-            constant = new Number(compiler, Location, SharedOperations.Log(value));
+            constant = new Number(Location, SharedOperations.Log(value));
             return true;
         }
 
-        if (!baseExpr.TryAsConstant(out var baseConstant)) {
+        if (!baseExpr.TryAsConstant(compiler, out var baseConstant)) {
             constant = null;
             return false;
         }
@@ -812,26 +813,26 @@ internal sealed class Log(DMCompiler compiler,  Location location, DMExpression 
                 "Invalid base, must be a number greater than 0");
         }
 
-        constant = new Number(compiler, Location, SharedOperations.Log(value, baseValue));
+        constant = new Number(Location, SharedOperations.Log(value, baseValue));
         return true;
     }
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        expr.EmitPushValue(dmObject, proc);
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        expr.EmitPushValue(compiler, dmObject, proc);
         if (baseExpr == null) {
             proc.LogE();
         } else {
-            baseExpr.EmitPushValue(dmObject, proc);
+            baseExpr.EmitPushValue(compiler, dmObject, proc);
             proc.Log();
         }
     }
 }
 
-internal sealed class Abs(DMCompiler compiler,  Location location, DMExpression expr) : DMExpression(compiler, location) {
+internal sealed class Abs(Location location, DMExpression expr) : DMExpression(location) {
     public override DMComplexValueType ValType => DMValueType.Num;
 
-    public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-        if (!expr.TryAsConstant(out constant)) {
+    public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
+        if (!expr.TryAsConstant(compiler, out constant)) {
             constant = null;
             return false;
         }
@@ -842,12 +843,12 @@ internal sealed class Abs(DMCompiler compiler,  Location location, DMExpression 
                 "Invalid value treated as 0, abs(0) will always be 0");
         }
 
-        constant = new Number(compiler, Location, SharedOperations.Abs(a));
+        constant = new Number(Location, SharedOperations.Abs(a));
         return true;
     }
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        expr.EmitPushValue(dmObject, proc);
+    public override void EmitPushValue(DMCompiler compiler, DMObject dmObject, DMProc proc) {
+        expr.EmitPushValue(compiler, dmObject, proc);
         proc.Abs();
     }
 }

@@ -168,7 +168,7 @@ internal sealed class DMObject(DMCompiler compiler, int id, DreamPath path, DMOb
 
         foreach (DMExpression expression in InitializationProcExpressions) {
             init.DebugSource(expression.Location);
-            expression.EmitPushValue(this, init);
+            expression.EmitPushValue(Compiler, this, init);
         }
     }
 
@@ -182,14 +182,14 @@ internal sealed class DMObject(DMCompiler compiler, int id, DreamPath path, DMOb
             typeJson.Variables = new Dictionary<string, object>();
 
             foreach (KeyValuePair<string, DMVariable> variable in Variables) {
-                if (!variable.Value.TryAsJsonRepresentation(out var valueJson))
+                if (!variable.Value.TryAsJsonRepresentation(Compiler, out var valueJson))
                     throw new Exception($"Failed to serialize {Path}.{variable.Key}");
 
                 typeJson.Variables.Add(variable.Key, valueJson);
             }
 
             foreach (KeyValuePair<string, DMVariable> variable in VariableOverrides) {
-                if (!variable.Value.TryAsJsonRepresentation(out var valueJson))
+                if (!variable.Value.TryAsJsonRepresentation(Compiler, out var valueJson))
                     throw new Exception($"Failed to serialize {Path}.{variable.Key}");
 
                 typeJson.Variables[variable.Key] = valueJson;

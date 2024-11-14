@@ -74,8 +74,8 @@ internal sealed class DMMParser(DMLexer lexer, int zOffset) : DMParser(lexer) {
                             Compiler.ForcedError(statement.Location, $"Invalid var name '{varOverride.VarName}' in DMM on type {objectType.Path}");
 
                         Compiler.DMObjectTree.TryGetDMObject(objectType.Path, out var dmObject);
-                        DMExpression value = Compiler.DMExpression.Create(dmObject, null, varOverride.Value);
-                        if (!value.TryAsJsonRepresentation(out var valueJson))
+                        DMExpression value = Compiler.DMExpressionBuilder.Create(dmObject, null, varOverride.Value);
+                        if (!value.TryAsJsonRepresentation(Compiler, out var valueJson))
                             Compiler.ForcedError(statement.Location, $"Failed to serialize value to json ({value})");
 
                         if(!mapObject.AddVarOverride(varOverride.VarName, valueJson)) {

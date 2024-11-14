@@ -156,10 +156,10 @@ internal static class DreamProcNativeRoot {
                 return DreamValue.Null;
             chainAnim = true;
         }
+        bundle.LastAnimatedObject = new DreamValue(obj);
         if(obj.IsSubtypeOf(bundle.ObjectTree.Filter)) {//TODO animate filters
             return DreamValue.Null;
         }
-        bundle.LastAnimatedObject = new DreamValue(obj);
         // TODO: Is this the correct behavior for invalid time?
         if (!bundle.GetArgument(1, "time").TryGetValueAsFloat(out float time))
             return DreamValue.Null;

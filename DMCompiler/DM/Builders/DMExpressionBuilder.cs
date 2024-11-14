@@ -554,13 +554,16 @@ internal static class DMExpressionBuilder {
                 }
 
                 var field = dmObject.GetVariable(name);
-                if (field != null) {
+                if (field != null && CurrentScopeMode == ScopeMode.Normal) {
                     return new Field(identifier.Location, field, field.ValType);
                 }
 
                 var globalId = proc?.GetGlobalVariableId(name) ?? dmObject.GetGlobalVariableId(name);
 
                 if (globalId != null) {
+                    if (field is not null)
+                        DMCompiler.Emit(WarningCode.AmbiguousVarStatic, identifier.Location, $"Static var definition can not reference instance variable \"{name}\" but a global exists");
+
                     var globalVar = DMObjectTree.Globals[globalId.Value];
                     var global = new GlobalField(identifier.Location, globalVar.Type, globalId.Value, globalVar.ValType);
                     return global;

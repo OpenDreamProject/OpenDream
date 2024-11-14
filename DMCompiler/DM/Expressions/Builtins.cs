@@ -83,7 +83,7 @@ internal sealed class NewPath(DMCompiler compiler, Location location, IConstantP
         switch (create) {
             case ConstantTypeReference typeReference:
                 // ctx: This might give us null depending on how definition order goes
-                var newProc = ctx.Compiler.DMObjectTree.GetNewProc(typeReference.Value.Id);
+                var newProc = ctx.ObjectTree.GetNewProc(typeReference.Value.Id);
 
                 (argumentsType, stackSize) = arguments.EmitArguments(ctx, newProc);
                 ctx.Proc.PushType(typeReference.Value.Id);
@@ -107,7 +107,7 @@ internal sealed class LocateInferred(Location location, DreamPath path, DMExpres
     public override DMComplexValueType ValType => path;
 
     public override void EmitPushValue(ExpressionContext ctx) {
-        if (!ctx.Compiler.DMObjectTree.TryGetTypeId(path, out var typeId)) {
+        if (!ctx.ObjectTree.TryGetTypeId(path, out var typeId)) {
             ctx.Compiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {path} does not exist");
 
             return;
@@ -170,7 +170,7 @@ internal sealed class LocateCoordinates(Location location, DMExpression x, DMExp
 // gradient(Item1, Item2, ..., index)
 internal sealed class Gradient(Location location, ArgumentList arguments) : DMExpression(location) {
     public override void EmitPushValue(ExpressionContext ctx) {
-        ctx.Compiler.DMObjectTree.TryGetGlobalProc("gradient", out var dmProc);
+        ctx.ObjectTree.TryGetGlobalProc("gradient", out var dmProc);
         var argInfo = arguments.EmitArguments(ctx, dmProc);
 
         ctx.Proc.Gradient(argInfo.Type, argInfo.StackSize);
@@ -183,7 +183,7 @@ internal sealed class Gradient(Location location, ArgumentList arguments) : DMEx
 /// rgb(x, y, z, a, space)
 internal sealed class Rgb(Location location, ArgumentList arguments) : DMExpression(location) {
     public override void EmitPushValue(ExpressionContext ctx) {
-        ctx.Compiler.DMObjectTree.TryGetGlobalProc("rgb", out var dmProc);
+        ctx.ObjectTree.TryGetGlobalProc("rgb", out var dmProc);
         var argInfo = arguments.EmitArguments(ctx, dmProc);
 
         ctx.Proc.Rgb(argInfo.Type, argInfo.StackSize);
@@ -307,7 +307,7 @@ internal sealed class IsTypeInferred(Location location, DMExpression expr, Dream
     public override DMComplexValueType ValType => DMValueType.Num;
 
     public override void EmitPushValue(ExpressionContext ctx) {
-        if (!ctx.Compiler.DMObjectTree.TryGetTypeId(path, out var typeId)) {
+        if (!ctx.ObjectTree.TryGetTypeId(path, out var typeId)) {
             ctx.Compiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {path} does not exist");
 
             return;

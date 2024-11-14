@@ -698,7 +698,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
             if (variable == null)
                 return UnknownIdentifier(location, bIdentifier);
 
-            return new ScopeReference(ctx.Compiler.DMObjectTree, location, expression, bIdentifier, variable);
+            return new ScopeReference(ctx.ObjectTree, location, expression, bIdentifier, variable);
         }
     }
 
@@ -1030,7 +1030,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
         }
 
         // The final value in prevPath is our expression's path!
-        return new Dereference(ctx.Compiler.DMObjectTree, deref.Location, prevPath, expr, operations);
+        return new Dereference(ctx.ObjectTree, deref.Location, prevPath, expr, operations);
     }
 
     private DMExpression BuildLocate(DMASTLocate locate, DreamPath? inferredPath) {

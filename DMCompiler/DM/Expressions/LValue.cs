@@ -175,7 +175,7 @@ internal sealed class GlobalField(Location location, DreamPath? path, int id,  D
     }
 
     public override string GetNameof(ExpressionContext ctx) {
-        DMVariable global = ctx.Compiler.DMObjectTree.Globals[Id];
+        DMVariable global = ctx.ObjectTree.Globals[Id];
         return global.Name;
     }
 

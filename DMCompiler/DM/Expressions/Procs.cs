@@ -15,7 +15,7 @@ internal sealed class Proc(Location location, string identifier) : DMExpression(
         ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
         if (ctx.Type.HasProc(identifier)) {
             return DMReference.CreateSrcProc(identifier);
-        } else if (ctx.Compiler.DMObjectTree.TryGetGlobalProc(identifier, out var globalProc)) {
+        } else if (ctx.ObjectTree.TryGetGlobalProc(identifier, out var globalProc)) {
             return DMReference.CreateGlobalProc(globalProc.Id);
         }
 

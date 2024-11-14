@@ -2419,7 +2419,19 @@ namespace OpenDreamRuntime.Procs {
                 foreach (var connection in state.DreamManager.Connections) {
                     connection.OutputControl(message, control);
                 }
+            } else if (receiver is DreamList list) {
+                // Output to every mob in the left-hand list.
+                foreach (var entry in list.GetValues()) {
+                    if (entry.TryGetValueAsDreamObject(out var entryObj)) {
+                        if (entryObj is DreamObjectMob entryMob) {
+                            entryMob.Connection?.OutputControl(message, control);
+                        } else if (entryObj is DreamObjectClient entryClient) {
+                            entryClient.Connection.OutputControl(message, control);
+                        }
+                    }
+                }
             } else {
+                // TODO: BYOND's behavior is to ignore rather than throw here
                 throw new Exception($"Invalid output() recipient: {receiver}");
             }
 

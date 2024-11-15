@@ -416,6 +416,7 @@ internal sealed class DreamListVars(DreamObjectDefinition listDef, DreamObject d
             if (DreamObject.TryGetVariable(varName, out var objectVar)) {
                 return objectVar;
             }
+            
             throw new Exception($"Cannot get value of undefined var \"{key}\" on type {DreamObject.ObjectDefinition.Type}");
         } else {
             throw new Exception($"Invalid var index {key}");

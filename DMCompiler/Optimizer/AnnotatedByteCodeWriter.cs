@@ -8,7 +8,7 @@ namespace DMCompiler.Optimizer;
  * Provides a wrapper about BinaryWriter that stores information about the bytecode
  * for optimization and debugging.
  */
-internal class AnnotatedByteCodeWriter {
+internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
     private readonly List<IAnnotatedBytecode>
         _annotatedBytecode = new(250); // 1/6th of max size for bytecode in tgstation
 
@@ -34,7 +34,7 @@ internal class AnnotatedByteCodeWriter {
     public void WriteOpcode(DreamProcOpcode opcode, Location location) {
         _location = location;
         if (_requiredArgs.Count > 0) {
-            DMCompiler.ForcedError(location, "Expected argument");
+            compiler.ForcedError(location, "Expected argument");
         }
 
         var metadata = OpcodeMetadataCache.GetMetadata(opcode);
@@ -62,11 +62,11 @@ internal class AnnotatedByteCodeWriter {
     public void WriteFloat(float val, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.Float) {
-            DMCompiler.ForcedError(location, "Expected floating argument");
+            compiler.ForcedError(location, "Expected floating argument");
         }
 
         _requiredArgs.Pop();
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeFloat(val, location));
+        _annotatedBytecode[^1].AddArg(compiler, new AnnotatedBytecodeFloat(val, location));
     }
 
     /// <summary>
@@ -77,11 +77,11 @@ internal class AnnotatedByteCodeWriter {
     public void WriteArgumentType(DMCallArgumentsType argType, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.ArgType) {
-            DMCompiler.ForcedError(location, "Expected argument type argument");
+            compiler.ForcedError(location, "Expected argument type argument");
         }
 
         _requiredArgs.Pop();
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeArgumentType(argType, location));
+        _annotatedBytecode[^1].AddArg(compiler, new AnnotatedBytecodeArgumentType(argType, location));
     }
 
     /// <summary>
@@ -92,11 +92,11 @@ internal class AnnotatedByteCodeWriter {
     public void WriteStackDelta(int delta, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.StackDelta) {
-            DMCompiler.ForcedError(location, "Expected stack delta argument");
+            compiler.ForcedError(location, "Expected stack delta argument");
         }
 
         _requiredArgs.Pop();
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeStackDelta(delta, location));
+        _annotatedBytecode[^1].AddArg(compiler, new AnnotatedBytecodeStackDelta(delta, location));
     }
 
     /// <summary>
@@ -106,12 +106,12 @@ internal class AnnotatedByteCodeWriter {
     /// <param name="location">The location of the type in the source code</param>
     public void WriteType(DMValueType type, Location location) {
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.TypeId) {
-            DMCompiler.ForcedError(location, "Expected type argument");
+            compiler.ForcedError(location, "Expected type argument");
         }
 
         _requiredArgs.Pop();
 
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeType(type, location));
+        _annotatedBytecode[^1].AddArg(compiler, new AnnotatedBytecodeType(type, location));
     }
 
     /// <summary>
@@ -122,12 +122,12 @@ internal class AnnotatedByteCodeWriter {
     public void WriteString(string value, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.String) {
-            DMCompiler.ForcedError(location, "Expected string argument");
+            compiler.ForcedError(location, "Expected string argument");
         }
 
         _requiredArgs.Pop();
-        int stringId = DMObjectTree.AddString(value);
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeString(stringId, location));
+        int stringId = compiler.DMObjectTree.AddString(value);
+        _annotatedBytecode[^1].AddArg(compiler, new AnnotatedBytecodeString(stringId, location));
     }
 
     /// <summary>
@@ -142,12 +142,12 @@ internal class AnnotatedByteCodeWriter {
         _location = location;
 
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.FilterId) {
-            DMCompiler.ForcedError(location, "Expected filter argument");
+            compiler.ForcedError(location, "Expected filter argument");
         }
 
         _requiredArgs.Pop();
 
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeFilter(filterTypeId, filterPath, location));
+        _annotatedBytecode[^1].AddArg(compiler, new AnnotatedBytecodeFilter(filterTypeId, filterPath, location));
     }
 
     /// <summary>
@@ -158,15 +158,15 @@ internal class AnnotatedByteCodeWriter {
     public void WriteListSize(int value, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.ListSize) {
-            DMCompiler.ForcedError(location, "Expected list size argument");
+            compiler.ForcedError(location, "Expected list size argument");
         }
 
         if (value < 0) {
-            DMCompiler.ForcedError(location, "List size cannot be negative");
+            compiler.ForcedError(location, "List size cannot be negative");
         }
 
         _requiredArgs.Pop();
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeListSize(value, location));
+        _annotatedBytecode[^1].AddArg(compiler, new AnnotatedBytecodeListSize(value, location));
     }
 
     /// <summary>
@@ -177,10 +177,10 @@ internal class AnnotatedByteCodeWriter {
     public void WriteLabel(string s, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Pop() != OpcodeArgType.Label) {
-            DMCompiler.ForcedError(location, "Expected label argument");
+            compiler.ForcedError(location, "Expected label argument");
         }
 
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeLabel(s, location));
+        _annotatedBytecode[^1].AddArg(compiler, new AnnotatedBytecodeLabel(s, location));
         _unresolvedLabelsInAnnotatedBytecode.Add((_annotatedBytecode.Count - 1, s));
     }
 
@@ -191,7 +191,7 @@ internal class AnnotatedByteCodeWriter {
 
             // Failed to find the label in the given context
             if (label == null) {
-                DMCompiler.Emit(
+                compiler.Emit(
                     WarningCode.ItemDoesntExist,
                     reference.Location,
                     $"Label \"{reference.Identifier}\" unreachable from scope or does not exist"
@@ -199,7 +199,7 @@ internal class AnnotatedByteCodeWriter {
                 // Not cleaning away the placeholder will emit another compiler error
                 // let's not do that
                 _unresolvedLabelsInAnnotatedBytecode.RemoveAt(
-                    _unresolvedLabelsInAnnotatedBytecode.FindIndex(((long Position, string LabelName) o) =>
+                    _unresolvedLabelsInAnnotatedBytecode.FindIndex(o =>
                         o.LabelName == reference.Placeholder)
                 );
                 continue;
@@ -239,7 +239,7 @@ internal class AnnotatedByteCodeWriter {
         _maxStackSize = Math.Max(_currentStackSize, _maxStackSize);
         if (_currentStackSize < 0 && !_negativeStackSizeError) {
             _negativeStackSizeError = true;
-            DMCompiler.ForcedError(_location, "Negative stack size");
+            compiler.ForcedError(_location, "Negative stack size");
         }
     }
 
@@ -253,109 +253,109 @@ internal class AnnotatedByteCodeWriter {
     public void WriteResource(string value, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.Resource) {
-            DMCompiler.ForcedError(location, "Expected resource argument");
+            compiler.ForcedError(location, "Expected resource argument");
         }
 
         _requiredArgs.Pop();
-        int stringId = DMObjectTree.AddString(value);
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeResource(stringId, location));
+        int stringId = compiler.DMObjectTree.AddString(value);
+        _annotatedBytecode[^1].AddArg(compiler, new AnnotatedBytecodeResource(stringId, location));
     }
 
     public void WriteTypeId(int typeId, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.TypeId) {
-            DMCompiler.ForcedError(location, "Expected TypeID argument");
+            compiler.ForcedError(location, "Expected TypeID argument");
         }
 
         _requiredArgs.Pop();
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeTypeId(typeId, location));
+        _annotatedBytecode[^1].AddArg(compiler, new AnnotatedBytecodeTypeId(typeId, location));
     }
 
     public void WriteProcId(int procId, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.ProcId) {
-            DMCompiler.ForcedError(location, "Expected ProcID argument");
+            compiler.ForcedError(location, "Expected ProcID argument");
         }
 
         _requiredArgs.Pop();
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeProcId(procId, location));
+        _annotatedBytecode[^1].AddArg(compiler, new AnnotatedBytecodeProcId(procId, location));
     }
 
     public void WriteEnumeratorId(int enumeratorId, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.EnumeratorId) {
-            DMCompiler.ForcedError(location, "Expected EnumeratorID argument");
+            compiler.ForcedError(location, "Expected EnumeratorID argument");
         }
 
         _requiredArgs.Pop();
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeEnumeratorId(enumeratorId, location));
+        _annotatedBytecode[^1].AddArg(compiler, new AnnotatedBytecodeEnumeratorId(enumeratorId, location));
     }
 
     public void WriteFormatCount(int formatCount, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.FormatCount) {
-            DMCompiler.ForcedError(location, "Expected format count argument");
+            compiler.ForcedError(location, "Expected format count argument");
         }
 
         _requiredArgs.Pop();
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeFormatCount(formatCount, location));
+        _annotatedBytecode[^1].AddArg(compiler, new AnnotatedBytecodeFormatCount(formatCount, location));
     }
 
     public void WritePickCount(int count, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.PickCount) {
-            DMCompiler.ForcedError(location, "Expected pick count argument");
+            compiler.ForcedError(location, "Expected pick count argument");
         }
 
         _requiredArgs.Pop();
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodePickCount(count, location));
+        _annotatedBytecode[^1].AddArg(compiler, new AnnotatedBytecodePickCount(count, location));
     }
 
     public void WriteConcatCount(int count, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.ConcatCount) {
-            DMCompiler.ForcedError(location, "Expected concat count argument");
+            compiler.ForcedError(location, "Expected concat count argument");
         }
 
         _requiredArgs.Pop();
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeConcatCount(count, location));
+        _annotatedBytecode[^1].AddArg(compiler, new AnnotatedBytecodeConcatCount(count, location));
     }
 
     public void WriteReference(DMReference reference, Location location, bool affectStack = true) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Pop() != OpcodeArgType.Reference) {
-            DMCompiler.ForcedError(location, "Expected reference argument");
+            compiler.ForcedError(location, "Expected reference argument");
         }
 
         switch (reference.RefType) {
             case DMReference.Type.Argument:
             case DMReference.Type.Local:
                 _annotatedBytecode[^1]
-                    .AddArg(new AnnotatedBytecodeReference(reference.RefType, reference.Index, location));
+                    .AddArg(compiler, new AnnotatedBytecodeReference(reference.RefType, reference.Index, location));
                 break;
 
             case DMReference.Type.Global:
             case DMReference.Type.GlobalProc:
                 _annotatedBytecode[^1]
-                    .AddArg(new AnnotatedBytecodeReference(reference.RefType, reference.Index, location));
+                    .AddArg(compiler, new AnnotatedBytecodeReference(reference.RefType, reference.Index, location));
                 break;
 
             case DMReference.Type.Field:
-                int fieldId = DMObjectTree.AddString(reference.Name);
+                int fieldId = compiler.DMObjectTree.AddString(reference.Name);
                 _annotatedBytecode[^1]
-                    .AddArg(new AnnotatedBytecodeReference(reference.RefType, fieldId, location));
+                    .AddArg(compiler, new AnnotatedBytecodeReference(reference.RefType, fieldId, location));
                 ResizeStack(affectStack ? -1 : 0);
                 break;
 
             case DMReference.Type.SrcProc:
             case DMReference.Type.SrcField:
-                fieldId = DMObjectTree.AddString(reference.Name);
+                fieldId = compiler.DMObjectTree.AddString(reference.Name);
                 _annotatedBytecode[^1]
-                    .AddArg(new AnnotatedBytecodeReference(reference.RefType, fieldId, location));
+                    .AddArg(compiler, new AnnotatedBytecodeReference(reference.RefType, fieldId, location));
                 break;
 
             case DMReference.Type.ListIndex:
-                _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeReference(reference.RefType, location));
+                _annotatedBytecode[^1].AddArg(compiler, new AnnotatedBytecodeReference(reference.RefType, location));
                 ResizeStack(affectStack ? -2 : 0);
                 break;
 
@@ -366,11 +366,11 @@ internal class AnnotatedByteCodeWriter {
             case DMReference.Type.World:
             case DMReference.Type.Usr:
             case DMReference.Type.Invalid:
-                _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeReference(reference.RefType, location));
+                _annotatedBytecode[^1].AddArg(compiler, new AnnotatedBytecodeReference(reference.RefType, location));
                 break;
 
             default:
-                DMCompiler.ForcedError(_location, $"Encountered unknown reference type {reference.RefType}");
+                compiler.ForcedError(_location, $"Encountered unknown reference type {reference.RefType}");
                 break;
         }
     }

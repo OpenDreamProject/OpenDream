@@ -4,8 +4,8 @@ using DMCompiler.DM;
 
 namespace DMCompiler.Optimizer;
 
-public interface IAnnotatedBytecode {
-    public void AddArg(IAnnotatedBytecode arg);
+internal interface IAnnotatedBytecode {
+    public void AddArg(DMCompiler compiler, IAnnotatedBytecode arg);
     void SetLocation(IAnnotatedBytecode location);
     void SetLocation(Location location);
     public Location GetLocation();
@@ -108,7 +108,7 @@ internal sealed class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
         }
     }
 
-    public void AddArg(IAnnotatedBytecode arg) {
+    public void AddArg(DMCompiler compiler, IAnnotatedBytecode arg) {
         _args.Add(arg);
     }
 
@@ -157,8 +157,8 @@ internal sealed class AnnotatedBytecodeVariable : IAnnotatedBytecode {
         Location = location;
     }
 
-    public void AddArg(IAnnotatedBytecode arg) {
-        DMCompiler.ForcedError(Location, "Cannot add args to a variable");
+    public void AddArg(DMCompiler compiler, IAnnotatedBytecode arg) {
+        compiler.ForcedError(Location, "Cannot add args to a variable");
     }
 
     public void SetLocation(IAnnotatedBytecode loc) {
@@ -174,17 +174,12 @@ internal sealed class AnnotatedBytecodeVariable : IAnnotatedBytecode {
     }
 }
 
-internal sealed class AnnotatedBytecodeInteger : IAnnotatedBytecode {
-    public Location Location;
-    public int Value;
+internal sealed class AnnotatedBytecodeInteger(int value, Location location) : IAnnotatedBytecode {
+    public Location Location = location;
+    public int Value = value;
 
-    public AnnotatedBytecodeInteger(int value, Location location) {
-        Value = value;
-        Location = location;
-    }
-
-    public void AddArg(IAnnotatedBytecode arg) {
-        DMCompiler.ForcedError(Location, "Cannot add args to an integer");
+    public void AddArg(DMCompiler compiler, IAnnotatedBytecode arg) {
+        compiler.ForcedError(Location, "Cannot add args to an integer");
     }
 
     public void SetLocation(IAnnotatedBytecode loc) {
@@ -200,17 +195,12 @@ internal sealed class AnnotatedBytecodeInteger : IAnnotatedBytecode {
     }
 }
 
-internal sealed class AnnotatedBytecodeFloat : IAnnotatedBytecode {
-    public Location Location;
-    public float Value;
+internal sealed class AnnotatedBytecodeFloat(float value, Location location) : IAnnotatedBytecode {
+    public Location Location = location;
+    public float Value = value;
 
-    public AnnotatedBytecodeFloat(float value, Location location) {
-        Value = value;
-        Location = location;
-    }
-
-    public void AddArg(IAnnotatedBytecode arg) {
-        DMCompiler.ForcedError(Location, "Cannot add args to a float");
+    public void AddArg(DMCompiler compiler, IAnnotatedBytecode arg) {
+        compiler.ForcedError(Location, "Cannot add args to a float");
     }
 
     public void SetLocation(IAnnotatedBytecode loc) {
@@ -226,17 +216,12 @@ internal sealed class AnnotatedBytecodeFloat : IAnnotatedBytecode {
     }
 }
 
-internal sealed class AnnotatedBytecodeString : IAnnotatedBytecode {
-    public int Id;
-    public Location Location;
+internal sealed class AnnotatedBytecodeString(int id, Location location) : IAnnotatedBytecode {
+    public int Id = id;
+    public Location Location = location;
 
-    public AnnotatedBytecodeString(int id, Location location) {
-        Id = id;
-        Location = location;
-    }
-
-    public void AddArg(IAnnotatedBytecode arg) {
-        DMCompiler.ForcedError(Location, "Cannot add args to a string");
+    public void AddArg(DMCompiler compiler, IAnnotatedBytecode arg) {
+        compiler.ForcedError(Location, "Cannot add args to a string");
     }
 
     public void SetLocation(IAnnotatedBytecode loc) {
@@ -252,17 +237,12 @@ internal sealed class AnnotatedBytecodeString : IAnnotatedBytecode {
     }
 }
 
-internal sealed class AnnotatedBytecodeArgumentType : IAnnotatedBytecode {
-    public Location Location;
-    public DMCallArgumentsType Value;
+internal sealed class AnnotatedBytecodeArgumentType(DMCallArgumentsType value, Location location) : IAnnotatedBytecode {
+    public Location Location = location;
+    public DMCallArgumentsType Value = value;
 
-    public AnnotatedBytecodeArgumentType(DMCallArgumentsType value, Location location) {
-        Value = value;
-        Location = location;
-    }
-
-    public void AddArg(IAnnotatedBytecode arg) {
-        DMCompiler.ForcedError(Location, "Cannot add args to an argument type");
+    public void AddArg(DMCompiler compiler, IAnnotatedBytecode arg) {
+        compiler.ForcedError(Location, "Cannot add args to an argument type");
     }
 
     public void SetLocation(IAnnotatedBytecode loc) {
@@ -278,17 +258,12 @@ internal sealed class AnnotatedBytecodeArgumentType : IAnnotatedBytecode {
     }
 }
 
-internal sealed class AnnotatedBytecodeType : IAnnotatedBytecode {
-    public Location Location;
-    public DMValueType Value;
+internal sealed class AnnotatedBytecodeType(DMValueType value, Location location) : IAnnotatedBytecode {
+    public Location Location = location;
+    public DMValueType Value = value;
 
-    public AnnotatedBytecodeType(DMValueType value, Location location) {
-        Value = value;
-        Location = location;
-    }
-
-    public void AddArg(IAnnotatedBytecode arg) {
-        DMCompiler.ForcedError(Location, "Cannot add args to a type");
+    public void AddArg(DMCompiler compiler, IAnnotatedBytecode arg) {
+        compiler.ForcedError(Location, "Cannot add args to a type");
     }
 
     public void SetLocation(IAnnotatedBytecode loc) {
@@ -304,17 +279,12 @@ internal sealed class AnnotatedBytecodeType : IAnnotatedBytecode {
     }
 }
 
-internal sealed class AnnotatedBytecodeTypeId : IAnnotatedBytecode {
-    public Location Location;
-    public int TypeId;
+internal sealed class AnnotatedBytecodeTypeId(int typeId, Location location) : IAnnotatedBytecode {
+    public Location Location = location;
+    public int TypeId = typeId;
 
-    public AnnotatedBytecodeTypeId(int typeId, Location location) {
-        TypeId = typeId;
-        Location = location;
-    }
-
-    public void AddArg(IAnnotatedBytecode arg) {
-        DMCompiler.ForcedError(Location, "Cannot add args to a type");
+    public void AddArg(DMCompiler compiler, IAnnotatedBytecode arg) {
+        compiler.ForcedError(Location, "Cannot add args to a type");
     }
 
     public void SetLocation(IAnnotatedBytecode loc) {
@@ -334,8 +304,8 @@ internal sealed class AnnotatedBytecodeProcId(int procId, Location location) : I
     public Location Location = location;
     public int ProcId = procId;
 
-    public void AddArg(IAnnotatedBytecode arg) {
-        DMCompiler.ForcedError(Location, "Cannot add args to a type");
+    public void AddArg(DMCompiler compiler, IAnnotatedBytecode arg) {
+        compiler.ForcedError(Location, "Cannot add args to a type");
     }
 
     public void SetLocation(IAnnotatedBytecode loc) {
@@ -355,8 +325,8 @@ internal sealed class AnnotatedBytecodeEnumeratorId(int enumeratorId, Location l
     public Location Location = location;
     public int EnumeratorId = enumeratorId;
 
-    public void AddArg(IAnnotatedBytecode arg) {
-        DMCompiler.ForcedError(Location, "Cannot add args to a type");
+    public void AddArg(DMCompiler compiler, IAnnotatedBytecode arg) {
+        compiler.ForcedError(Location, "Cannot add args to a type");
     }
 
     public void SetLocation(IAnnotatedBytecode loc) {
@@ -372,17 +342,12 @@ internal sealed class AnnotatedBytecodeEnumeratorId(int enumeratorId, Location l
     }
 }
 
-internal sealed class AnnotatedBytecodeFormatCount : IAnnotatedBytecode {
-    public int Count;
-    public Location Location;
+internal sealed class AnnotatedBytecodeFormatCount(int count, Location location) : IAnnotatedBytecode {
+    public int Count = count;
+    public Location Location = location;
 
-    public AnnotatedBytecodeFormatCount(int count, Location location) {
-        Count = count;
-        Location = location;
-    }
-
-    public void AddArg(IAnnotatedBytecode arg) {
-        DMCompiler.ForcedError(Location, "Cannot add args to a format count");
+    public void AddArg(DMCompiler compiler, IAnnotatedBytecode arg) {
+        compiler.ForcedError(Location, "Cannot add args to a format count");
     }
 
     public void SetLocation(IAnnotatedBytecode loc) {
@@ -398,17 +363,12 @@ internal sealed class AnnotatedBytecodeFormatCount : IAnnotatedBytecode {
     }
 }
 
-internal sealed class AnnotatedBytecodeStackDelta : IAnnotatedBytecode {
-    public int Delta;
-    public Location Location;
+internal sealed class AnnotatedBytecodeStackDelta(int delta, Location location) : IAnnotatedBytecode {
+    public int Delta = delta;
+    public Location Location = location;
 
-    public AnnotatedBytecodeStackDelta(int delta, Location location) {
-        Delta = delta;
-        Location = location;
-    }
-
-    public void AddArg(IAnnotatedBytecode arg) {
-        DMCompiler.ForcedError(Location, "Cannot add args to a stack delta");
+    public void AddArg(DMCompiler compiler, IAnnotatedBytecode arg) {
+        compiler.ForcedError(Location, "Cannot add args to a stack delta");
     }
 
     public void SetLocation(IAnnotatedBytecode loc) {
@@ -424,17 +384,12 @@ internal sealed class AnnotatedBytecodeStackDelta : IAnnotatedBytecode {
     }
 }
 
-internal sealed class AnnotatedBytecodeListSize : IAnnotatedBytecode {
-    public Location Location;
-    public int Size;
+internal sealed class AnnotatedBytecodeListSize(int size, Location location) : IAnnotatedBytecode {
+    public Location Location = location;
+    public int Size = size;
 
-    public AnnotatedBytecodeListSize(int size, Location location) {
-        Size = size;
-        Location = location;
-    }
-
-    public void AddArg(IAnnotatedBytecode arg) {
-        DMCompiler.ForcedError(Location, "Cannot add args to a list size");
+    public void AddArg(DMCompiler compiler, IAnnotatedBytecode arg) {
+        compiler.ForcedError(Location, "Cannot add args to a list size");
     }
 
     public void SetLocation(IAnnotatedBytecode loc) {
@@ -450,17 +405,12 @@ internal sealed class AnnotatedBytecodeListSize : IAnnotatedBytecode {
     }
 }
 
-internal sealed class AnnotatedBytecodePickCount : IAnnotatedBytecode {
-    public int Count;
-    public Location Location;
+internal sealed class AnnotatedBytecodePickCount(int count, Location location) : IAnnotatedBytecode {
+    public int Count = count;
+    public Location Location = location;
 
-    public AnnotatedBytecodePickCount(int count, Location location) {
-        Count = count;
-        Location = location;
-    }
-
-    public void AddArg(IAnnotatedBytecode arg) {
-        DMCompiler.ForcedError(Location, "Cannot add args to a pick count");
+    public void AddArg(DMCompiler compiler, IAnnotatedBytecode arg) {
+        compiler.ForcedError(Location, "Cannot add args to a pick count");
     }
 
     public void SetLocation(IAnnotatedBytecode loc) {
@@ -476,17 +426,12 @@ internal sealed class AnnotatedBytecodePickCount : IAnnotatedBytecode {
     }
 }
 
-internal sealed class AnnotatedBytecodeConcatCount : IAnnotatedBytecode {
-    public int Count;
-    public Location Location;
+internal sealed class AnnotatedBytecodeConcatCount(int count, Location location) : IAnnotatedBytecode {
+    public int Count = count;
+    public Location Location = location;
 
-    public AnnotatedBytecodeConcatCount(int count, Location location) {
-        Count = count;
-        Location = location;
-    }
-
-    public void AddArg(IAnnotatedBytecode arg) {
-        DMCompiler.ForcedError(Location, "Cannot add args to a concat count");
+    public void AddArg(DMCompiler compiler, IAnnotatedBytecode arg) {
+        compiler.ForcedError(Location, "Cannot add args to a concat count");
     }
 
     public void SetLocation(IAnnotatedBytecode loc) {
@@ -502,17 +447,12 @@ internal sealed class AnnotatedBytecodeConcatCount : IAnnotatedBytecode {
     }
 }
 
-internal sealed class AnnotatedBytecodeResource : IAnnotatedBytecode {
-    public Location Location;
-    public int ResourceId;
+internal sealed class AnnotatedBytecodeResource(int rid, Location location) : IAnnotatedBytecode {
+    public Location Location = location;
+    public int ResourceId = rid;
 
-    public AnnotatedBytecodeResource(int rid, Location location) {
-        ResourceId = rid;
-        Location = location;
-    }
-
-    public void AddArg(IAnnotatedBytecode arg) {
-        DMCompiler.ForcedError(Location, "Cannot add args to a resource");
+    public void AddArg(DMCompiler compiler, IAnnotatedBytecode arg) {
+        compiler.ForcedError(Location, "Cannot add args to a resource");
     }
 
     public void SetLocation(IAnnotatedBytecode loc) {
@@ -528,17 +468,12 @@ internal sealed class AnnotatedBytecodeResource : IAnnotatedBytecode {
     }
 }
 
-internal sealed class AnnotatedBytecodeLabel : IAnnotatedBytecode {
-    public string LabelName;
-    public Location Location;
+internal sealed class AnnotatedBytecodeLabel(string labelName, Location location) : IAnnotatedBytecode {
+    public string LabelName = labelName;
+    public Location Location = location;
 
-    public AnnotatedBytecodeLabel(string labelName, Location location) {
-        LabelName = labelName;
-        Location = location;
-    }
-
-    public void AddArg(IAnnotatedBytecode arg) {
-        DMCompiler.ForcedError(Location, "Cannot add args to a label");
+    public void AddArg(DMCompiler compiler, IAnnotatedBytecode arg) {
+        compiler.ForcedError(Location, "Cannot add args to a label");
     }
 
     public void SetLocation(IAnnotatedBytecode loc) {
@@ -554,19 +489,14 @@ internal sealed class AnnotatedBytecodeLabel : IAnnotatedBytecode {
     }
 }
 
-internal sealed class AnnotatedBytecodeFilter : IAnnotatedBytecode {
-    public DreamPath FilterPath;
-    public int FilterTypeId;
-    public Location Location;
+internal sealed class AnnotatedBytecodeFilter(int filterTypeId, DreamPath filterPath, Location location)
+    : IAnnotatedBytecode {
+    public DreamPath FilterPath = filterPath;
+    public int FilterTypeId = filterTypeId;
+    public Location Location = location;
 
-    public AnnotatedBytecodeFilter(int filterTypeId, DreamPath filterPath, Location location) {
-        FilterTypeId = filterTypeId;
-        FilterPath = filterPath;
-        Location = location;
-    }
-
-    public void AddArg(IAnnotatedBytecode arg) {
-        DMCompiler.ForcedError(Location, "Cannot add args to a filter");
+    public void AddArg(DMCompiler compiler, IAnnotatedBytecode arg) {
+        compiler.ForcedError(Location, "Cannot add args to a filter");
     }
 
     public void SetLocation(IAnnotatedBytecode loc) {
@@ -582,24 +512,17 @@ internal sealed class AnnotatedBytecodeFilter : IAnnotatedBytecode {
     }
 }
 
-internal sealed class AnnotatedBytecodeReference : IAnnotatedBytecode {
-    public int Index;
-    public Location Location;
-    public DMReference.Type RefType;
+internal sealed class AnnotatedBytecodeReference(DMReference.Type refType, int index, Location location)
+    : IAnnotatedBytecode {
+    public int Index = index;
+    public Location Location = location;
+    public DMReference.Type RefType = refType;
 
-    public AnnotatedBytecodeReference(DMReference.Type refType, int index, Location location) {
-        RefType = refType;
-        Index = index;
-        Location = location;
+    public AnnotatedBytecodeReference(DMReference.Type refType, Location location) : this(refType, 0, location) {
     }
 
-    public AnnotatedBytecodeReference(DMReference.Type refType, Location location) {
-        RefType = refType;
-        Location = location;
-    }
-
-    public void AddArg(IAnnotatedBytecode arg) {
-        DMCompiler.ForcedError(Location, "Cannot add args to a reference");
+    public void AddArg(DMCompiler compiler, IAnnotatedBytecode arg) {
+        compiler.ForcedError(Location, "Cannot add args to a reference");
     }
 
     public void SetLocation(IAnnotatedBytecode loc) {

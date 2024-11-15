@@ -44,7 +44,7 @@ internal partial class DMParser {
             }
 
             if (Current().Type == TokenType.EndOfFile) break;
-        } while (((DMLexer)_lexer).CurrentIndentation() != 0);
+        } while (((DMLexer)Lexer).CurrentIndentation() != 0);
 
         Delimiter();
     }
@@ -53,7 +53,7 @@ internal partial class DMParser {
         // A missing right parenthesis has to subtract 1 from the lexer's bracket nesting counter
         // To keep indentation working correctly
         if (!Check(TokenType.DM_RightParenthesis)) {
-            ((DMLexer)_lexer).BracketNesting--;
+            ((DMLexer)Lexer).BracketNesting--;
             Emit(WarningCode.BadToken, "Expected ')'");
         }
     }
@@ -61,7 +61,7 @@ internal partial class DMParser {
     private void ConsumeRightBracket() {
         // Similar to ConsumeRightParenthesis()
         if (!Check(TokenType.DM_RightBracket)) {
-            ((DMLexer)_lexer).BracketNesting--;
+            ((DMLexer)Lexer).BracketNesting--;
             Emit(WarningCode.BadToken, "Expected ']'");
         }
     }

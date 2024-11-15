@@ -5,7 +5,7 @@ namespace DMCompiler.Optimizer;
 
 internal interface IPeepholeOptimization {
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes();
-    public void Apply(List<IAnnotatedBytecode> input, int index);
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index);
 
     public bool CheckPreconditions(List<IAnnotatedBytecode> input, int index) {
         return true;
@@ -81,7 +81,7 @@ internal sealed class PeepholeOptimizer {
         }
     }
 
-    public static void RunPeephole(List<IAnnotatedBytecode> input) {
+    public static void RunPeephole(DMCompiler compiler, List<IAnnotatedBytecode> input) {
         OptimizationTreeEntry? currentOpt = null;
         int optSize = 0;
 
@@ -92,7 +92,7 @@ internal sealed class PeepholeOptimizer {
             int offset;
 
             if (currentOpt.Optimization?.CheckPreconditions(input, i - optSize) is true) {
-                currentOpt.Optimization.Apply(input, i - optSize);
+                currentOpt.Optimization.Apply(compiler, input, i - optSize);
                 offset = (optSize + 2); // Run over the new opcodes for potential further optimization
             } else {
                 // This chain of opcodes did not lead to a valid optimization.

@@ -26,7 +26,6 @@ Constant ::= Integer | Float | Null
 /// held separate from DMParser because of slightly different behaviour, far simpler implementation, and (<see langword="TODO"/>) possible statelessness.
 /// </summary>
 internal class DMPreprocessorParser(DMCompiler compiler) {
-    public DMCompiler Compiler = compiler;
     private List<Token>? _tokens;
     private Dictionary<string, DMMacro>? _defines;
     private int _tokenIndex;
@@ -75,7 +74,7 @@ internal class DMPreprocessorParser(DMCompiler compiler) {
     }
 
     private void Error(string msg) {
-        Compiler.Emit(WarningCode.BadDirective, Current().Location, msg);
+        compiler.Emit(WarningCode.BadDirective, Current().Location, msg);
     }
 
     private float? Expression() {
@@ -307,7 +306,7 @@ internal class DMPreprocessorParser(DMCompiler compiler) {
 
                     Advance();
                     if (!Check(TokenType.DM_RightParenthesis)) {
-                        Compiler.Emit(WarningCode.DefinedMissingParen, token.Location,
+                        compiler.Emit(WarningCode.DefinedMissingParen, token.Location,
                             "Expected ')' to end defined() expression");
                         //Electing to not return a degenerate value here since "defined(x" actually isn't an ambiguous grammar; we can figure out what they meant.
                     }
@@ -329,13 +328,13 @@ internal class DMPreprocessorParser(DMCompiler compiler) {
 
                     Advance();
                     if (!Check(TokenType.DM_RightParenthesis)) {
-                        Compiler.Emit(WarningCode.DefinedMissingParen, token.Location,
+                        compiler.Emit(WarningCode.DefinedMissingParen, token.Location,
                             "Expected ')' to end fexists() expression");
                     }
 
                     var filePath = Path.GetRelativePath(".", fExistsInner.ValueAsString().Replace('\\', '/'));
 
-                    var outputDir = Path.Combine(Path.GetDirectoryName(Compiler.Settings.Files?[0]) ?? "/", Path.GetDirectoryName(fExistsInner.Location.SourceFile) ?? "/");
+                    var outputDir = Path.Combine(Path.GetDirectoryName(compiler.Settings.Files?[0]) ?? "/", Path.GetDirectoryName(fExistsInner.Location.SourceFile) ?? "/");
                     if (string.IsNullOrEmpty(outputDir))
                         outputDir = "./";
 

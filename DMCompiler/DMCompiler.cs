@@ -168,8 +168,8 @@ public class DMCompiler {
     }
 
     private bool Compile(IEnumerable<Token> preprocessedTokens) {
-        DMLexer dmLexer = new DMLexer(this, null, preprocessedTokens);
-        DMParser dmParser = new DMParser(dmLexer);
+        DMLexer dmLexer = new DMLexer(null, preprocessedTokens);
+        DMParser dmParser = new DMParser(this, dmLexer);
 
         VerbosePrint("Parsing");
         DMASTFile astFile = dmParser.File();
@@ -265,8 +265,8 @@ public class DMCompiler {
             DMPreprocessor preprocessor = new DMPreprocessor(compiler, false);
             preprocessor.PreprocessFile(Path.GetDirectoryName(mapPath), Path.GetFileName(mapPath), false);
 
-            DMLexer lexer = new DMLexer(this, mapPath, preprocessor);
-            DMMParser parser = new DMMParser(lexer, zOffset);
+            DMLexer lexer = new DMLexer(mapPath, preprocessor);
+            DMMParser parser = new DMMParser(this, lexer, zOffset);
             DreamMapJson map = parser.ParseMap();
 
             zOffset = Math.Max(zOffset + 1, map.MaxZ);

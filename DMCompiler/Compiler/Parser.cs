@@ -1,14 +1,15 @@
 namespace DMCompiler.Compiler;
 
-internal class Parser<SourceType> {
-    public DMCompiler Compiler;
-    protected Lexer<SourceType> _lexer;
+internal class Parser<TSourceType> {
+    protected readonly Lexer<TSourceType> Lexer;
+    protected readonly DMCompiler Compiler;
+
     private Token _currentToken;
     private readonly Stack<Token> _tokenStack = new(1);
 
-    internal Parser(Lexer<SourceType> lexer) {
-        Compiler = lexer.Compiler;
-        _lexer = lexer;
+    internal Parser(DMCompiler compiler, Lexer<TSourceType> lexer) {
+        Compiler = compiler;
+        Lexer = lexer;
 
         Advance();
     }
@@ -24,7 +25,7 @@ internal class Parser<SourceType> {
         if (_tokenStack.Count > 0) {
             _currentToken = _tokenStack.Pop();
         } else {
-            _currentToken = _lexer.GetNextToken();
+            _currentToken = Lexer.GetNextToken();
 
             if (_currentToken.Type == TokenType.Error) {
                 Emit(WarningCode.BadToken, _currentToken.ValueAsString());

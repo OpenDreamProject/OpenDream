@@ -68,7 +68,7 @@ internal sealed class DMLexer : TokenLexer {
     private readonly Stack<int> _indentationStack = new(new[] { 0 });
 
     /// <param name="source">The enumerable list of tokens output by <see cref="DMPreprocessor.DMPreprocessorLexer"/>.</param>
-    internal DMLexer(DMCompiler compiler, string sourceName, IEnumerable<Token> source) : base(compiler, sourceName, source) { }
+    internal DMLexer(string sourceName, IEnumerable<Token> source) : base(sourceName, source) { }
 
     protected override Token ParseNextToken() {
         Token token;

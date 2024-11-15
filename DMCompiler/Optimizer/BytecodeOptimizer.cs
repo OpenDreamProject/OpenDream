@@ -3,16 +3,14 @@ using System.Diagnostics.CodeAnalysis;
 namespace DMCompiler.Optimizer;
 
 public class BytecodeOptimizer {
-    internal List<IAnnotatedBytecode> Optimize(List<IAnnotatedBytecode> input) {
-        if (input.Count == 0) {
-            return input;
-        }
+    internal void Optimize(DMCompiler compiler, List<IAnnotatedBytecode> input) {
+        if (input.Count == 0)
+            return;
 
         RemoveUnreferencedLabels(input);
         JoinAndForwardLabels(input);
         RemoveUnreferencedLabels(input);
-        PeepholeOptimizer.RunPeephole(input);
-        return input;
+        PeepholeOptimizer.RunPeephole(compiler, input);
     }
 
     private static void RemoveUnreferencedLabels(List<IAnnotatedBytecode> input) {
@@ -63,7 +61,7 @@ public class BytecodeOptimizer {
                         List<IAnnotatedBytecode> args = instruction.GetArgs();
                         for (int j = 0; j < args.Count; j++) {
                             if (args[j] is AnnotatedBytecodeLabel argLabel) {
-                                args[j] = new AnnotatedBytecodeLabel(argLabel.Compiler, labelAliases[argLabel.LabelName],
+                                args[j] = new AnnotatedBytecodeLabel(labelAliases[argLabel.LabelName],
                                     argLabel.Location);
                             }
                         }

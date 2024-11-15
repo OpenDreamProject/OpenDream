@@ -5,7 +5,7 @@ using DMCompiler.Json;
 
 namespace DMCompiler.Compiler.DMM;
 
-internal sealed class DMMParser(DMLexer lexer, int zOffset) : DMParser(lexer) {
+internal sealed class DMMParser(DMCompiler compiler, DMLexer lexer, int zOffset) : DMParser(compiler, lexer) {
     private int _cellNameLength = -1;
     private readonly HashSet<DreamPath> _skippedTypes = new();
 

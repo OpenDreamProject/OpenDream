@@ -3,14 +3,12 @@ using System.Text;
 namespace DMCompiler.Compiler.DMPreprocessor;
 
 internal class DMMacro {
-    public DMCompiler Compiler;
     private readonly List<string>? _parameters;
     private readonly List<Token>? _tokens;
     private readonly string? _overflowParameter;
     private readonly int _overflowParameterIndex;
 
-    public DMMacro(DMCompiler compiler, List<string>? parameters, List<Token>? tokens) {
-        Compiler = compiler;
+    public DMMacro(List<string>? parameters, List<Token>? tokens) {
         _parameters = parameters;
         _tokens = tokens;
 
@@ -48,12 +46,13 @@ internal class DMMacro {
     /// <summary>
     /// Takes given parameters and creates a list of tokens representing the expanded macro
     /// </summary>
+    /// <param name="compiler">The DMCompiler compiling this program</param>
     /// <param name="replacing">The identifier being replaced with this macro</param>
     /// <param name="parameters">Parameters for macro expansion. Null if none given.</param>
     /// <returns>A list of tokens replacing the identifier</returns>
     /// <exception cref="ArgumentException">Thrown if no parameters were given but are required</exception>
     // TODO: Convert this to an IEnumerator<Token>? Could cut down on allocations.
-    public virtual List<Token>? Expand(Token replacing, List<List<Token>>? parameters) {
+    public virtual List<Token>? Expand(DMCompiler compiler, Token replacing, List<List<Token>>? parameters) {
         if (_tokens == null)
             return null;
 
@@ -139,8 +138,8 @@ internal class DMMacro {
 }
 
 // __LINE__
-internal sealed class DMMacroLine(DMCompiler compiler) : DMMacro(compiler, null, null) {
-    public override List<Token> Expand(Token replacing, List<List<Token>>? parameters) {
+internal sealed class DMMacroLine() : DMMacro(null, null) {
+    public override List<Token> Expand(DMCompiler compiler, Token replacing, List<List<Token>>? parameters) {
         var line = replacing.Location.Line;
         if (line == null)
             throw new ArgumentException($"Token {replacing} does not have a line number", nameof(replacing));
@@ -152,8 +151,8 @@ internal sealed class DMMacroLine(DMCompiler compiler) : DMMacro(compiler, null,
 }
 
 // __FILE__
-internal sealed class DMMacroFile(DMCompiler compiler) : DMMacro(compiler, null, null) {
-    public override List<Token> Expand(Token replacing, List<List<Token>>? parameters) {
+internal sealed class DMMacroFile() : DMMacro(null, null) {
+    public override List<Token> Expand(DMCompiler compiler, Token replacing, List<List<Token>>? parameters) {
         string path = replacing.Location.SourceFile.Replace(@"\", @"\\"); //Escape any backwards slashes
 
         return [
@@ -163,19 +162,19 @@ internal sealed class DMMacroFile(DMCompiler compiler) : DMMacro(compiler, null,
 }
 
 // DM_VERSION
-internal sealed class DMMacroVersion(DMCompiler compiler) : DMMacro(compiler, null, null) {
-    public override List<Token> Expand(Token replacing, List<List<Token>>? parameters) {
+internal sealed class DMMacroVersion() : DMMacro(null, null) {
+    public override List<Token> Expand(DMCompiler compiler, Token replacing, List<List<Token>>? parameters) {
         return [
-            new Token(TokenType.DM_Preproc_Number, Compiler.Settings.DMVersion, replacing.Location, null)
+            new Token(TokenType.DM_Preproc_Number, compiler.Settings.DMVersion, replacing.Location, null)
         ];
     }
 }
 
 // DM_BUILD
-internal sealed class DMMacroBuild(DMCompiler compiler) : DMMacro(compiler, null, null) {
-    public override List<Token> Expand(Token replacing, List<List<Token>>? parameters) {
+internal sealed class DMMacroBuild() : DMMacro(null, null) {
+    public override List<Token> Expand(DMCompiler compiler, Token replacing, List<List<Token>>? parameters) {
         return [
-            new Token(TokenType.DM_Preproc_Number, Compiler.Settings.DMBuild, replacing.Location, null)
+            new Token(TokenType.DM_Preproc_Number, compiler.Settings.DMBuild, replacing.Location, null)
         ];
     }
 }

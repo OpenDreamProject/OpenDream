@@ -114,7 +114,7 @@ internal sealed class DMLexer : TokenLexer {
                     token = preprocToken;
                 }
             } else {
-                var FirstTokenLocation = CurrentLocation;
+                var firstTokenLocation = CurrentLocation;
                 switch (preprocToken.Type) {
                     case TokenType.DM_Preproc_Whitespace: Advance(); token = CreateToken(TokenType.DM_Whitespace, preprocToken.Text); break;
                     case TokenType.DM_Preproc_Punctuator_LeftParenthesis: BracketNesting++; Advance(); token = CreateToken(TokenType.DM_LeftParenthesis, preprocToken.Text); break;
@@ -127,17 +127,17 @@ internal sealed class DMLexer : TokenLexer {
                         switch (Advance().Type) {
                             case TokenType.DM_Preproc_Punctuator_Period:
                                 Advance();
-                                token = CreateToken(TokenType.DM_QuestionPeriod, "?.", FirstTokenLocation);
+                                token = CreateToken(TokenType.DM_QuestionPeriod, "?.", firstTokenLocation);
                                 break;
 
                             case TokenType.DM_Preproc_Punctuator_Colon:
                                 Advance();
-                                token = CreateToken(TokenType.DM_QuestionColon, "?:", FirstTokenLocation);
+                                token = CreateToken(TokenType.DM_QuestionColon, "?:", firstTokenLocation);
                                 break;
 
                             case TokenType.DM_Preproc_Punctuator_LeftBracket:
                                 Advance();
-                                token = CreateToken(TokenType.DM_QuestionLeftBracket, "?[", FirstTokenLocation);
+                                token = CreateToken(TokenType.DM_QuestionLeftBracket, "?[", firstTokenLocation);
                                 BracketNesting++;
                                 break;
 
@@ -151,9 +151,9 @@ internal sealed class DMLexer : TokenLexer {
                             case TokenType.DM_Preproc_Punctuator_Period:
                                 if (Advance().Type == TokenType.DM_Preproc_Punctuator_Period) {
                                     Advance();
-                                    token = CreateToken(TokenType.DM_IndeterminateArgs, "...", FirstTokenLocation);
+                                    token = CreateToken(TokenType.DM_IndeterminateArgs, "...", firstTokenLocation);
                                 } else {
-                                    token = CreateToken(TokenType.DM_SuperProc, "..", FirstTokenLocation);
+                                    token = CreateToken(TokenType.DM_SuperProc, "..", firstTokenLocation);
                                 }
 
                                 break;
@@ -266,7 +266,7 @@ internal sealed class DMLexer : TokenLexer {
                         var identifierText = TokenTextBuilder.ToString();
                         var tokenType = Keywords.GetValueOrDefault(identifierText, TokenType.DM_Identifier);
 
-                        token = CreateToken(tokenType, identifierText, FirstTokenLocation);
+                        token = CreateToken(tokenType, identifierText, firstTokenLocation);
                         break;
                     }
                     case TokenType.DM_Preproc_Number: {

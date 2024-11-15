@@ -1,3 +1,4 @@
+using System.Diagnostics.Contracts;
 using DMCompiler.Bytecode;
 using DMCompiler.DM;
 
@@ -534,5 +535,10 @@ internal sealed class AnnotatedBytecodeReference(DMReference.Type refType, int i
 
     public Location GetLocation() {
         return Location;
+    }
+
+    [Pure]
+    public bool Equals(AnnotatedBytecodeReference other) {
+        return RefType == other.RefType && Index == other.Index;
     }
 }

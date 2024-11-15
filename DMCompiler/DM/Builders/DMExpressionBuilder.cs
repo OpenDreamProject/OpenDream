@@ -588,13 +588,16 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                 }
 
                 var field = ctx.Type.GetVariable(name);
-                if (field != null) {
+                if (field != null && scopeMode == Normal) {
                     return new Field(identifier.Location, field, field.ValType);
                 }
 
                 var globalId = ctx.Proc?.GetGlobalVariableId(name) ?? ctx.Type.GetGlobalVariableId(name);
 
                 if (globalId != null) {
+                    if (field is not null)
+                        Compiler.Emit(WarningCode.AmbiguousVarStatic, identifier.Location, $"Static var definition cannot reference instance variable \"{name}\" but a global exists");
+
                     var globalVar = ObjectTree.Globals[globalId.Value];
                     var global = new GlobalField(identifier.Location, globalVar.Type, globalId.Value, globalVar.ValType);
                     return global;

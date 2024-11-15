@@ -848,6 +848,86 @@ internal sealed class ConstFoldPower : IPeepholeOptimization {
     }
 }
 
+// AssignNoPush [ref]
+// PushReferenceValue [ref]
+// -> Assign [ref]
+// These opcodes can be reduced to a single Assign as long as the [ref]s are the same
+internal sealed class AssignAndPushReferenceValue : IPeepholeOptimization {
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.AssignNoPush,
+            DreamProcOpcode.PushReferenceValue
+        ];
+    }
+
+    /// <summary>
+    /// We can only apply this optimization if both opcodes refer to the same reference
+    /// </summary>
+    public bool CheckPreconditions(List<IAnnotatedBytecode> input, int index) {
+        if (index + 1 >= input.Count) {
+            throw new ArgumentOutOfRangeException(nameof(index), "Index plus one is outside the bounds of the input list.");
+        }
+
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
+        AnnotatedBytecodeInstruction secondInstruction = (AnnotatedBytecodeInstruction)(input[index + 1]);
+
+        AnnotatedBytecodeReference assignTarget = firstInstruction.GetArg<AnnotatedBytecodeReference>(0);
+        AnnotatedBytecodeReference pushTarget = secondInstruction.GetArg<AnnotatedBytecodeReference>(0);
+
+        return assignTarget.Equals(pushTarget);
+    }
+
+    public void Apply(List<IAnnotatedBytecode> input, int index) {
+        // We check the input bounds in CheckPreconditions, so we can skip doing it again here
+
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
+        AnnotatedBytecodeReference assignTarget = firstInstruction.GetArg<AnnotatedBytecodeReference>(0);
+
+        input.RemoveRange(index, 2);
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.Assign, [assignTarget]));
+    }
+}
+
+// AppendNoPush [ref]
+// PushReferenceValue [ref]
+// -> Append [ref]
+// These opcodes can be reduced to a single Append as long as the [ref]s are the same
+internal sealed class AppendAndPushReferenceValue : IPeepholeOptimization {
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.AppendNoPush,
+            DreamProcOpcode.PushReferenceValue
+        ];
+    }
+
+    /// <summary>
+    /// We can only apply this optimization if both opcodes refer to the same reference
+    /// </summary>
+    public bool CheckPreconditions(List<IAnnotatedBytecode> input, int index) {
+        if (index + 1 >= input.Count) {
+            throw new ArgumentOutOfRangeException(nameof(index), "Index plus one is outside the bounds of the input list.");
+        }
+
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
+        AnnotatedBytecodeInstruction secondInstruction = (AnnotatedBytecodeInstruction)(input[index + 1]);
+
+        AnnotatedBytecodeReference appendTarget = firstInstruction.GetArg<AnnotatedBytecodeReference>(0);
+        AnnotatedBytecodeReference pushTarget = secondInstruction.GetArg<AnnotatedBytecodeReference>(0);
+
+        return appendTarget.Equals(pushTarget);
+    }
+
+    public void Apply(List<IAnnotatedBytecode> input, int index) {
+        // We check the input bounds in CheckPreconditions, so we can skip doing it again here
+
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
+        AnnotatedBytecodeReference appendTarget = firstInstruction.GetArg<AnnotatedBytecodeReference>(0);
+
+        input.RemoveRange(index, 2);
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.Append, [appendTarget]));
+    }
+}
+
 // PushFloat [constant]
 // PushFloat [constant]
 // BitshiftLeft

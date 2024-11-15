@@ -18,6 +18,7 @@ using Vector4 = Robust.Shared.Maths.Vector4;
 namespace OpenDreamRuntime.Procs {
     internal static class DMOpcodeHandlers {
         #region Values
+
         public static ProcStatus PushReferenceValue(DMProcState state) {
             DreamReference reference = state.ReadReference();
 

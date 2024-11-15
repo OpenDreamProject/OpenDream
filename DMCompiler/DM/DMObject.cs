@@ -9,7 +9,6 @@ namespace DMCompiler.DM;
 /// including its procs, vars, path, parent, etc.
 /// </remarks>
 internal sealed class DMObject(DMCompiler compiler, int id, DreamPath path, DMObject? parent) {
-    public readonly DMCompiler Compiler = compiler;
     public readonly int Id = id;
     public DreamPath Path = path;
     public DMObject? Parent = parent;
@@ -96,12 +95,12 @@ internal sealed class DMObject(DMCompiler compiler, int id, DreamPath path, DMOb
     }
 
     public DMComplexValueType? GetProcReturnTypes(string name) {
-        if (this == Compiler.DMObjectTree.Root && Compiler.DMObjectTree.TryGetGlobalProc(name, out var globalProc))
+        if (this == compiler.DMObjectTree.Root && compiler.DMObjectTree.TryGetGlobalProc(name, out var globalProc))
             return globalProc.RawReturnTypes;
         if (GetProcs(name) is not { } procs)
             return Parent?.GetProcReturnTypes(name);
 
-        var proc = Compiler.DMObjectTree.AllProcs[procs[0]];
+        var proc = compiler.DMObjectTree.AllProcs[procs[0]];
         if ((proc.Attributes & ProcAttributes.IsOverride) != 0)
             return Parent?.GetProcReturnTypes(name) ?? DMValueType.Anything;
 
@@ -109,7 +108,7 @@ internal sealed class DMObject(DMCompiler compiler, int id, DreamPath path, DMOb
     }
 
     public void AddVerb(DMProc verb) {
-        if (!Compiler.Settings.NoStandard && !IsSubtypeOf(DreamPath.Atom) && !IsSubtypeOf(DreamPath.Client))
+        if (!compiler.Settings.NoStandard && !IsSubtypeOf(DreamPath.Atom) && !IsSubtypeOf(DreamPath.Client))
             return;
 
         _verbs ??= [];
@@ -146,29 +145,23 @@ internal sealed class DMObject(DMCompiler compiler, int id, DreamPath path, DMOb
         return Parent?.GetGlobalVariableId(name);
     }
 
-    public DMVariable? GetGlobalVariable(string name) {
-        int? id = GetGlobalVariableId(name);
-
-        return (id == null) ? null : Compiler.DMObjectTree.Globals[id.Value];
-    }
-
     public DMComplexValueType GetReturnType(string name) {
         var procId = GetProcs(name)?[^1];
 
-        return procId is null ? DMValueType.Anything : Compiler.DMObjectTree.AllProcs[procId.Value].ReturnTypes;
+        return procId is null ? DMValueType.Anything : compiler.DMObjectTree.AllProcs[procId.Value].ReturnTypes;
     }
 
     public void CreateInitializationProc() {
         if (InitializationProcExpressions.Count <= 0 || InitializationProc != null)
             return;
 
-        var init = Compiler.DMObjectTree.CreateDMProc(this, null);
+        var init = compiler.DMObjectTree.CreateDMProc(this, null);
         InitializationProc = init.Id;
         init.Call(DMReference.SuperProc, DMCallArgumentsType.None, 0);
 
         foreach (DMExpression expression in InitializationProcExpressions) {
             init.DebugSource(expression.Location);
-            expression.EmitPushValue(new(Compiler, this, init));
+            expression.EmitPushValue(new(compiler, this, init));
         }
     }
 
@@ -182,14 +175,14 @@ internal sealed class DMObject(DMCompiler compiler, int id, DreamPath path, DMOb
             typeJson.Variables = new Dictionary<string, object>();
 
             foreach (KeyValuePair<string, DMVariable> variable in Variables) {
-                if (!variable.Value.TryAsJsonRepresentation(Compiler, out var valueJson))
+                if (!variable.Value.TryAsJsonRepresentation(compiler, out var valueJson))
                     throw new Exception($"Failed to serialize {Path}.{variable.Key}");
 
                 typeJson.Variables.Add(variable.Key, valueJson);
             }
 
             foreach (KeyValuePair<string, DMVariable> variable in VariableOverrides) {
-                if (!variable.Value.TryAsJsonRepresentation(Compiler, out var valueJson))
+                if (!variable.Value.TryAsJsonRepresentation(compiler, out var valueJson))
                     throw new Exception($"Failed to serialize {Path}.{variable.Key}");
 
                 typeJson.Variables[variable.Key] = valueJson;

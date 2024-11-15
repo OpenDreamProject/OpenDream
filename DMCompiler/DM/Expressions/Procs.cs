@@ -109,7 +109,7 @@ internal sealed class ProcCall(Location location, DMExpression target, ArgumentL
         (DMObject? procOwner, DMProc? targetProc) = GetTargetProc(ctx.Compiler, ctx.Type);
         DoCompileTimeLinting(ctx.Compiler, procOwner, targetProc);
         if ((targetProc?.Attributes & ProcAttributes.Unimplemented) == ProcAttributes.Unimplemented) {
-            targetProc!.Compiler.UnimplementedWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}.{targetProc.Name}() is not implemented");
+            ctx.Compiler.UnimplementedWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}.{targetProc.Name}() is not implemented");
         }
 
         string endLabel = ctx.Proc.NewLabelName();
@@ -149,7 +149,7 @@ internal sealed class ProcCall(Location location, DMExpression target, ArgumentL
                         var lastArg = arguments.Expressions.Last().Expr;
                         if(lastArg.TryAsConstant(compiler, out var constant)) {
                             if(constant is not Number opcodeNumber) {
-                                targetProc.Compiler.Emit(WarningCode.SuspiciousMatrixCall, arguments.Location,
+                                compiler.Emit(WarningCode.SuspiciousMatrixCall, arguments.Location,
                                     "Arguments for matrix() are invalid - either opcode is invalid or not enough arguments");
                                 break;
                             }
@@ -162,18 +162,18 @@ internal sealed class ProcCall(Location location, DMExpression target, ArgumentL
                                 //NOTE: This still does let some certain weird opcodes through,
                                 //like a MODIFY with no other operation present.
                                 //Not sure if that is a parity behaviour or not!
-                                targetProc.Compiler.Emit(WarningCode.SuspiciousMatrixCall, arguments.Location,
+                                compiler.Emit(WarningCode.SuspiciousMatrixCall, arguments.Location,
                                     "Arguments for matrix() are invalid - either opcode is invalid or not enough arguments");
                             }
                         }
 
                         break;
                     case 5: // BYOND always runtimes but DOES compile, here
-                        targetProc.Compiler.Emit(WarningCode.SuspiciousMatrixCall, arguments.Location,
-                            $"Calling matrix() with 5 arguments will always error when called at runtime");
+                        compiler.Emit(WarningCode.SuspiciousMatrixCall, arguments.Location,
+                            "Calling matrix() with 5 arguments will always error when called at runtime");
                         break;
                     default: // BYOND always compiletimes here
-                        targetProc.Compiler.Emit(WarningCode.InvalidArgumentCount, arguments.Location,
+                        compiler.Emit(WarningCode.InvalidArgumentCount, arguments.Location,
                             $"Too many arguments to matrix() - got {arguments.Length} arguments, expecting 6 or less");
                         break;
                 }

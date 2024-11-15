@@ -562,7 +562,7 @@ internal static class DMExpressionBuilder {
 
                 if (globalId != null) {
                     if (field is not null)
-                        DMCompiler.Emit(WarningCode.AmbiguousVarStatic, identifier.Location, $"Static var definition can not reference instance variable \"{name}\" but a global exists");
+                        DMCompiler.Emit(WarningCode.AmbiguousVarStatic, identifier.Location, $"Static var definition cannot reference instance variable \"{name}\" but a global exists");
 
                     var globalVar = DMObjectTree.Globals[globalId.Value];
                     var global = new GlobalField(identifier.Location, globalVar.Type, globalId.Value, globalVar.ValType);

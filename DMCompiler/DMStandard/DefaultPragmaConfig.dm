@@ -32,7 +32,7 @@
 #pragma SuspiciousSwitchCase warning
 #pragma PointlessPositionalArgument warning
 #pragma ProcArgumentGlobal warning // Ref BYOND issue https://www.byond.com/forum/post/2830750
-#pragma AmbiguousVarStatic error // https://github.com/OpenDreamProject/OpenDream/issues/997
+#pragma AmbiguousVarStatic warning // https://github.com/OpenDreamProject/OpenDream/issues/997
 // NOTE: The next few pragmas are for OpenDream's experimental type checker
 // This feature is still in development, elevating these pragmas outside of local testing is discouraged
 // An RFC to finalize this feature is coming soon(TM)

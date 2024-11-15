@@ -39,6 +39,9 @@ public class DMCompiler {
     }
 
     public bool Compile(DMCompilerSettings settings) {
+        if (_compileStartTime != default)
+            throw new Exception("Create a new DMCompiler to compile again");
+
         ErrorCount = 0;
         WarningCount = 0;
         UniqueEmissions.Clear();

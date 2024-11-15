@@ -241,4 +241,8 @@ internal sealed class DMObject(int id, DreamPath path, DMObject? parent) {
 
         return DMValueType.Anything;
     }
+
+    public DreamPath[] GetDMAncestors() {
+
+    }
 }

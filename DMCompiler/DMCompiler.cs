@@ -63,7 +63,7 @@ public class DMCompiler {
             ForcedWarning("Unimplemented proc & var warnings are currently suppressed");
         }
 
-        DMPreprocessor preprocessor = Preprocess( this, settings.Files, settings.MacroDefines);
+        DMPreprocessor preprocessor = Preprocess(this, settings.Files, settings.MacroDefines);
         bool successfulCompile = preprocessor is not null && Compile(preprocessor);
 
         if (successfulCompile) {

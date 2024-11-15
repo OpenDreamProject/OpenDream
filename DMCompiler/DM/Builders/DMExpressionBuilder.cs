@@ -57,7 +57,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
 
         switch (expression) {
             case DMASTInvalidExpression:
-                // No  Compiler.Emit() here because the parser should have emitted an error when making this
+                // No error emission here because the parser should have emitted an error when making this
                 return new BadExpression(expression.Location);
 
             case DMASTExpressionConstant constant: result = BuildConstant(constant); break;
@@ -640,7 +640,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
 
         DMExpression? expression;
 
-        // "type" and "parent_type" cannot resolve in a context, but it's still valid with scope identifiers
+        // "type" and "parent_type" cannot resolve in a static context, but it's still valid with scope identifiers
         if (scopeIdentifier.Expression is DMASTIdentifier { Identifier: "type" or "parent_type" } identifier) {
             // This is the same behaviour as in BYOND, but BYOND simply raises an undefined var error.
             // We want to give end users an explanation at least.
@@ -691,7 +691,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
         } else { // A::B
             var globalVarId = owner.GetGlobalVariableId(bIdentifier);
             if (globalVarId != null) {
-                // B is a var.
+                // B is a static var.
                 // This is the only case a ScopeIdentifier can be an LValue.
                 var globalVar = ObjectTree.Globals [globalVarId.Value];
                 return new GlobalField(location, globalVar.Type, globalVarId.Value, globalVar.ValType);
@@ -944,7 +944,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
 
                         property = fromObject.GetVariable(field);
                         if (!fieldOperation.Safe && fromObject.IsSubtypeOf(DreamPath.Client)) {
-                             Compiler.Emit(WarningCode.UnsafeClientAccess, deref.Location,
+                            Compiler.Emit(WarningCode.UnsafeClientAccess, deref.Location,
                                 "Unsafe \"client\" access. Use the \"?.\" operator instead");
                         }
 
@@ -1121,7 +1121,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
         for (int i = 0; i < expArr.Length; i++) {
             DMASTCallParameter parameter = addText.Parameters[i];
             if(parameter.Key != null)
-                 Compiler.Emit(WarningCode.InvalidArgumentKey, parameter.Location, "addtext() does not take named arguments");
+                Compiler.Emit(WarningCode.InvalidArgumentKey, parameter.Location, "addtext() does not take named arguments");
 
             expArr[i] = BuildExpression(parameter.Value, inferredPath);
         }
@@ -1152,7 +1152,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
             // Default filter is "as anything" when there's a list
             input.Types ??= DMValueType.Anything;
             if (input.Types != DMValueType.Anything && (input.Types & objectTypes) == 0x0) {
-                 Compiler.Emit(WarningCode.BadArgument, input.Location,
+                Compiler.Emit(WarningCode.BadArgument, input.Location,
                     $"Invalid input() filter \"{input.Types}\". Filter must be \"{DMValueType.Anything}\" or at least one of \"{objectTypes}\"");
             }
         } else {

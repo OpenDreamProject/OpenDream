@@ -105,7 +105,7 @@ internal sealed class ArgumentList(Location location, (string? Name, DMExpressio
     }
 
     private void VerifyArgType(DMCompiler compiler, DMProc targetProc, int index, string? name, DMExpression expr) {
-        // TODO: See if the  typechecking can be improved
+        // TODO: See if the static typechecking can be improved
         // Also right now we don't care if the arg is Anything
         // TODO: Make a separate "UnsetStaticType" pragma for whether we should care if it's Anything
         // TODO: We currently silently avoid typechecking "call()()" and "new" args (NewPath is handled)

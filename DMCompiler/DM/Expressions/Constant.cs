@@ -24,7 +24,7 @@ internal sealed class Null(Location location) : Constant(location) {
 
     public override bool IsTruthy() => false;
 
-    public override bool TryAsJsonRepresentation(DMCompiler compiler1, out object? json) {
+    public override bool TryAsJsonRepresentation(DMCompiler compiler, out object? json) {
         json = null;
         return true;
     }
@@ -80,7 +80,7 @@ internal sealed class String(Location location, string value) : Constant(locatio
 
     public override bool IsTruthy() => Value.Length != 0;
 
-    public override bool TryAsJsonRepresentation(DMCompiler compiler1, out object? json) {
+    public override bool TryAsJsonRepresentation(DMCompiler compiler, out object? json) {
         json = Value;
         return true;
     }
@@ -240,7 +240,7 @@ internal class ConstantTypeReference(Location location, DMObject dmObject) : Con
 
     public override bool IsTruthy() => true;
 
-    public override bool TryAsJsonRepresentation(DMCompiler compiler1, out object? json) {
+    public override bool TryAsJsonRepresentation(DMCompiler compiler, out object? json) {
         json = new Dictionary<string, object> {
             { "type", JsonVariableType.Type },
             { "value", Value.Id }
@@ -267,7 +267,7 @@ internal sealed class ConstantProcReference(Location location, DreamPath path, D
 
     public override bool IsTruthy() => true;
 
-    public override bool TryAsJsonRepresentation(DMCompiler compiler1, out object? json) {
+    public override bool TryAsJsonRepresentation(DMCompiler compiler, out object? json) {
         json = new Dictionary<string, object> {
             { "type", JsonVariableType.Proc },
             { "value", Value.Id }
@@ -294,7 +294,7 @@ internal sealed class ConstantProcStub(Location location, DMObject onObject, boo
 
     public override bool IsTruthy() => true;
 
-    public override bool TryAsJsonRepresentation(DMCompiler compiler1, out object? json) {
+    public override bool TryAsJsonRepresentation(DMCompiler compiler, out object? json) {
         json = _str;
         return true;
     }

@@ -877,7 +877,7 @@ internal sealed class AssignAndPushReferenceValue : IPeepholeOptimization {
         return assignTarget.Equals(pushTarget);
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         // We check the input bounds in CheckPreconditions, so we can skip doing it again here
 
         AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
@@ -917,7 +917,7 @@ internal sealed class AppendAndPushReferenceValue : IPeepholeOptimization {
         return appendTarget.Equals(pushTarget);
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         // We check the input bounds in CheckPreconditions, so we can skip doing it again here
 
         AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);

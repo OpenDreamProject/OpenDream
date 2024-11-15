@@ -3,18 +3,15 @@ using DMCompiler.Compiler.DM.AST;
 namespace DMCompiler.DM.Builders;
 
 internal class DMCodeTreeBuilder(DMCompiler compiler) {
-    private static DMASTFile _astFile = default!;
-    private static bool _leftDMStandard;
+    private bool _leftDMStandard;
 
     private DMCodeTree CodeTree => compiler.DMCodeTree;
 
     public void BuildCodeTree(DMASTFile astFile) {
-        CodeTree.Reset();
         _leftDMStandard = false;
-        _astFile = astFile;
 
         // Add everything in the AST to the code tree
-        ProcessFile();
+        ProcessBlockInner(astFile.BlockInner, DreamPath.Root);
 
         // Now define everything in the code tree
         CodeTree.DefineEverything();
@@ -28,10 +25,6 @@ internal class DMCodeTreeBuilder(DMCompiler compiler) {
         // Compile every proc
         foreach (DMProc proc in compiler.DMObjectTree.AllProcs)
             proc.Compile();
-    }
-
-    private void ProcessFile() {
-        ProcessBlockInner(_astFile.BlockInner, DreamPath.Root);
     }
 
     private void ProcessBlockInner(DMASTBlockInner blockInner, DreamPath currentType) {

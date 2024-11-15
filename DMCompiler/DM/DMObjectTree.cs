@@ -5,8 +5,7 @@ using DMCompiler.Json;
 
 namespace DMCompiler.DM;
 
-internal class DMObjectTree {
-    public readonly DMCompiler Compiler;
+internal class DMObjectTree(DMCompiler compiler) {
     public readonly List<DMObject> AllObjects = new();
     public readonly List<DMProc> AllProcs = new();
 
@@ -18,48 +17,24 @@ internal class DMObjectTree {
 
     public DMObject Root => GetOrCreateDMObject(DreamPath.Root);
 
-    private readonly Dictionary<string, int> StringToStringId = new();
-
+    private readonly Dictionary<string, int> _stringToStringId = new();
     private readonly Dictionary<DreamPath, int> _pathToTypeId = new();
     private int _dmObjectIdCounter;
     private int _dmProcIdCounter;
 
-    internal DMObjectTree(DMCompiler compiler) {
-        Compiler = compiler;
-        Reset();
-    }
-
-    /// <summary>
-    /// A thousand curses upon you if you add a new member to this thing without deleting it here.
-    /// </summary>
-    public void Reset() {
-        AllObjects.Clear();
-        AllProcs.Clear();
-
-        Globals.Clear();
-        GlobalProcs.Clear();
-        StringTable.Clear();
-        StringToStringId.Clear();
-        Resources.Clear();
-
-        _pathToTypeId.Clear();
-        _dmObjectIdCounter = 0;
-        _dmProcIdCounter = 0;
-    }
-
     public int AddString(string value) {
-        if (!StringToStringId.TryGetValue(value, out var stringId)) {
+        if (!_stringToStringId.TryGetValue(value, out var stringId)) {
             stringId = StringTable.Count;
 
             StringTable.Add(value);
-            StringToStringId.Add(value, stringId);
+            _stringToStringId.Add(value, stringId);
         }
 
         return stringId;
     }
 
     public DMProc CreateDMProc(DMObject dmObject, DMASTProcDefinition? astDefinition) {
-        DMProc dmProc = new DMProc(Compiler, _dmProcIdCounter++, dmObject, astDefinition);
+        DMProc dmProc = new DMProc(compiler, _dmProcIdCounter++, dmObject, astDefinition);
         AllProcs.Add(dmProc);
 
         return dmProc;
@@ -96,7 +71,7 @@ internal class DMObjectTree {
                     parent = GetOrCreateDMObject(DreamPath.Root);
                     break;
                 default:
-                    parent = GetOrCreateDMObject(Compiler.Settings.NoStandard ? DreamPath.Root : DreamPath.Datum);
+                    parent = GetOrCreateDMObject(compiler.Settings.NoStandard ? DreamPath.Root : DreamPath.Datum);
                     break;
             }
         }
@@ -104,7 +79,7 @@ internal class DMObjectTree {
         if (path != DreamPath.Root && parent == null) // Parent SHOULD NOT be null here! (unless we're root lol)
             throw new Exception($"Type {path} did not have a parent");
 
-        dmObject = new DMObject(Compiler, _dmObjectIdCounter++, path, parent);
+        dmObject = new DMObject(compiler, _dmObjectIdCounter++, path, parent);
         AllObjects.Add(dmObject);
         _pathToTypeId[path] = dmObject.Id;
         return dmObject;
@@ -197,7 +172,7 @@ internal class DMObjectTree {
 
     public void AddGlobalProc(DMProc proc) {
         if (GlobalProcs.ContainsKey(proc.Name)) {
-            Compiler.Emit(WarningCode.DuplicateProcDefinition, proc.Location, $"Global proc {proc.Name} is already defined");
+            compiler.Emit(WarningCode.DuplicateProcDefinition, proc.Location, $"Global proc {proc.Name} is already defined");
             return;
         }
 

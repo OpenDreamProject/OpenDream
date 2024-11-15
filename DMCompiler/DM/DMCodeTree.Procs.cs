@@ -6,26 +6,25 @@ namespace DMCompiler.DM;
 internal partial class DMCodeTree {
     private class ProcsNode() : TypeNode("proc");
 
-    private class ProcNode(DreamPath owner, DMASTProcDefinition procDef) : TypeNode(procDef.Name) {
+    private class ProcNode(DMCodeTree codeTree, DreamPath owner, DMASTProcDefinition procDef) : TypeNode(procDef.Name) {
         private string ProcName => procDef.Name;
         private bool IsOverride => procDef.IsOverride;
 
         private bool _defined;
 
-        public void DefineProc(DMCompiler compiler) {
+        public bool TryDefineProc(DMCompiler compiler) {
             if (_defined)
-                return;
+                return true;
             if (!compiler.DMObjectTree.TryGetDMObject(owner, out var dmObject))
-                return;
+                return false;
 
             _defined = true;
-            WaitingNodes.Remove(this);
 
             bool hasProc = dmObject.HasProc(ProcName);
             if (hasProc && !IsOverride && !dmObject.OwnsProc(ProcName) && !procDef.Location.InDMStandard) {
                 compiler.Emit(WarningCode.DuplicateProcDefinition, procDef.Location,
                     $"Type {owner} already inherits a proc named \"{ProcName}\" and cannot redefine it");
-                return; // TODO: Maybe fallthrough since this error is a little pedantic?
+                return true; // TODO: Maybe fallthrough since this error is a little pedantic?
             }
 
             DMProc proc = compiler.DMObjectTree.CreateDMProc(dmObject, procDef);
@@ -36,11 +35,11 @@ internal partial class DMCodeTree {
                         $"Global procs cannot be overridden - '{ProcName}' override will be ignored");
                     //Continue processing the proc anyhoo, just don't add it.
                 } else {
-                    compiler.VerbosePrint($"Adding global proc {procDef.Name}() on pass {_currentPass}");
+                    compiler.VerbosePrint($"Adding global proc {procDef.Name}() on pass {codeTree._currentPass}");
                     compiler.DMObjectTree.AddGlobalProc(proc);
                 }
             } else {
-                compiler.VerbosePrint($"Adding proc {procDef.Name}() to {dmObject.Path} on pass {_currentPass}");
+                compiler.VerbosePrint($"Adding proc {procDef.Name}() to {dmObject.Path} on pass {codeTree._currentPass}");
                 dmObject.AddProc(proc, forceFirst: procDef.Location.InDMStandard);
             }
 
@@ -50,12 +49,14 @@ internal partial class DMCodeTree {
 
                 var procGlobalNode = new ProcGlobalVarNode(owner, proc, varDecl);
                 Children.Add(procGlobalNode);
-                WaitingNodes.Add(procGlobalNode);
+                codeTree._waitingNodes.Add(procGlobalNode);
             }
 
             if (proc.IsVerb) {
                 dmObject.AddVerb(proc);
             }
+
+            return true;
         }
 
         // TODO: Remove this entirely
@@ -107,12 +108,12 @@ internal partial class DMCodeTree {
 
     public void AddProc(DreamPath owner, DMASTProcDefinition procDef) {
         var node = GetDMObjectNode(owner);
-        var procNode = new ProcNode(owner, procDef);
+        var procNode = new ProcNode(this, owner, procDef);
 
         if (procDef is { Name: "New", IsOverride: false })
-            NewProcs[owner] = procNode; // We need to be ready to define New() as soon as the type is created
+            _newProcs[owner] = procNode; // We need to be ready to define New() as soon as the type is created
 
         node.AddProcsNode().Children.Add(procNode);
-        WaitingNodes.Add(procNode);
+        _waitingNodes.Add(procNode);
     }
 }

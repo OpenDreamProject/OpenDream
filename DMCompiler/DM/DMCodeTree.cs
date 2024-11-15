@@ -10,7 +10,7 @@ namespace DMCompiler.DM;
 /// </summary>
 // TODO: "/var" vs "var" has a different init order (same for procs)
 // TODO: Path elements like /static and /global are grouped together
-internal partial class DMCodeTree(DMCompiler compiler) {
+internal partial class DMCodeTree {
     private interface INode;
 
     private class TypeNode(string name) : INode {
@@ -38,30 +38,31 @@ internal partial class DMCodeTree(DMCompiler compiler) {
         }
     }
 
-    private class ObjectNode(string name, DreamPath type) : TypeNode(name) {
+    private class ObjectNode(DMCodeTree codeTree, string name, DreamPath type) : TypeNode(name) {
         private bool _defined;
         private ProcsNode? _procs;
 
-        public void DefineType(DMCompiler compiler) {
+        public bool TryDefineType(DMCompiler compiler) {
             if (_defined)
-                return;
+                return true;
 
             DMObject? explicitParent = null;
-            if (ParentTypes.TryGetValue(type, out var parentType) &&
+            if (codeTree._parentTypes.TryGetValue(type, out var parentType) &&
                 !compiler.DMObjectTree.TryGetDMObject(parentType, out explicitParent))
-                return; // Parent type isn't ready yet
+                return false; // Parent type isn't ready yet
 
             _defined = true;
-            WaitingNodes.Remove(this);
 
             var dmObject = compiler.DMObjectTree.GetOrCreateDMObject(type);
             if (explicitParent != null) {
                 dmObject.Parent = explicitParent;
-                ParentTypes.Remove(type);
+                codeTree._parentTypes.Remove(type);
             }
 
-            if (NewProcs.Remove(type, out var newProcNode))
-                newProcNode.DefineProc(compiler);
+            if (codeTree._newProcs.Remove(type, out var newProcNode))
+                newProcNode.TryDefineProc(compiler);
+
+            return true;
         }
 
         public ProcsNode AddProcsNode() {
@@ -74,31 +75,20 @@ internal partial class DMCodeTree(DMCompiler compiler) {
         }
     }
 
-    public static DMProc GlobalInitProc = default!;
+    private readonly DMCompiler _compiler;
+    private readonly HashSet<INode> _waitingNodes = new();
+    private readonly Dictionary<DreamPath, DreamPath> _parentTypes = new();
+    private readonly Dictionary<DreamPath, ProcNode> _newProcs = new();
+    private ObjectNode _root;
+    private ObjectNode? _dmStandardRoot;
+    private int _currentPass;
 
-    private static readonly HashSet<INode> WaitingNodes = new();
-    private static readonly Dictionary<DreamPath, DreamPath> ParentTypes = new();
-    private static readonly Dictionary<DreamPath, ProcNode> NewProcs = new();
-
-    private static ObjectNode _root = default!;
-    private static ObjectNode? _dmStandardRoot;
-    private static int _currentPass;
-
-    private DMObjectTree ObjectTree => compiler.DMObjectTree;
-
-    public void Reset() {
+    public DMCodeTree(DMCompiler compiler) {
         // Yep, not _dmStandardRoot
         // They get switched in FinishDMStandard()
-        _root = new("/ (DMStandard)", DreamPath.Root);
+        _root = new(this, "/ (DMStandard)", DreamPath.Root);
 
-        GlobalInitProc = new DMProc(compiler, -1, ObjectTree.Root, null);
-        _dmStandardRoot = null;
-        _currentPass = 0;
-        WaitingNodes.Clear();
-        ParentTypes.Clear();
-        NewProcs.Clear();
-
-        ObjectTree.Reset();
+        _compiler = compiler;
     }
 
     public void DefineEverything() {
@@ -107,13 +97,12 @@ internal partial class DMCodeTree(DMCompiler compiler) {
 
         void Pass(ObjectNode root) {
             foreach (var node in TraverseNodes(root)) {
-                if (node is ObjectNode objectNode) {
-                    objectNode.DefineType(compiler);
-                } else if (node is ProcNode procNode) {
-                    procNode.DefineProc(compiler);
-                } else if (node is VarNode varNode) {
-                    varNode.TryDefineVar(compiler);
-                }
+                var successful = (node is ObjectNode objectNode && objectNode.TryDefineType(_compiler)) ||
+                                 (node is ProcNode procNode && procNode.TryDefineProc(_compiler)) ||
+                                 (node is VarNode varNode && varNode.TryDefineVar(_compiler, _currentPass));
+
+                if (successful)
+                    _waitingNodes.Remove(node);
             }
         }
 
@@ -125,11 +114,11 @@ internal partial class DMCodeTree(DMCompiler compiler) {
         int lastCount;
         do {
             _currentPass++;
-            lastCount = WaitingNodes.Count;
+            lastCount = _waitingNodes.Count;
 
             Pass(_root);
             Pass(_dmStandardRoot!);
-        } while (WaitingNodes.Count < lastCount && WaitingNodes.Count > 0);
+        } while (_waitingNodes.Count < lastCount && _waitingNodes.Count > 0);
 
         // Scope operator pass
         DMExpressionBuilder.ScopeOperatorEnabled = true;
@@ -137,22 +126,22 @@ internal partial class DMCodeTree(DMCompiler compiler) {
         Pass(_dmStandardRoot!);
 
         // If there exists vars that didn't successfully compile, emit their errors
-        foreach (var node in WaitingNodes) {
+        foreach (var node in _waitingNodes) {
             if (node is not VarNode varNode) // TODO: If a type or proc fails?
                 continue;
             if (varNode.LastError == null)
                 continue;
 
-            compiler.Emit(WarningCode.ItemDoesntExist, varNode.LastError.Location,
+            _compiler.Emit(WarningCode.ItemDoesntExist, varNode.LastError.Location,
                 varNode.LastError.Message);
         }
 
-        GlobalInitProc.ResolveLabels();
+        _compiler.GlobalInitProc.ResolveLabels();
     }
 
     public void FinishDMStandard() {
         _dmStandardRoot = _root;
-        _root = new("/", DreamPath.Root);
+        _root = new(this, "/", DreamPath.Root);
     }
 
     public void AddType(DreamPath type) {
@@ -215,10 +204,10 @@ internal partial class DMCodeTree(DMCompiler compiler) {
             if (!node.TryGetChild(element, out var childNode)) {
                 var creating = path.FromElements(0, i + 1);
 
-                compiler.VerbosePrint($"Adding {creating} to the code tree");
-                childNode = new ObjectNode(element, creating);
+                _compiler.VerbosePrint($"Adding {creating} to the code tree");
+                childNode = new ObjectNode(this, element, creating);
                 node.Children.Add(childNode);
-                WaitingNodes.Add(childNode);
+                _waitingNodes.Add(childNode);
             }
 
             if (childNode is not ObjectNode objectNode)

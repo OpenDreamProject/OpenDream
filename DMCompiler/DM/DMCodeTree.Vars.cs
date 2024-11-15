@@ -14,7 +14,7 @@ internal partial class DMCodeTree {
 
         protected bool IsFirstPass => (LastError == null);
 
-        public abstract void TryDefineVar(DMCompiler compiler);
+        public abstract bool TryDefineVar(DMCompiler compiler, int pass);
 
         protected bool TryBuildValue(ExpressionContext ctx, DMASTExpression ast, DreamPath? inferredType,
             ScopeMode scope, [NotNullWhen(true)] out DMExpression? value) {
@@ -96,22 +96,21 @@ internal partial class DMCodeTree {
 
         private bool _defined;
 
-        public override void TryDefineVar(DMCompiler compiler) {
+        public override bool TryDefineVar(DMCompiler compiler, int pass) {
             if (_defined)
-                return;
+                return true;
             if (!compiler.DMObjectTree.TryGetDMObject(owner, out var dmObject))
-                return;
+                return false;
 
             if (AlreadyExists(compiler, dmObject)) {
                 _defined = true;
-                WaitingNodes.Remove(this);
-                return;
+                return true;
             }
 
             if (IsStatic) {
-                HandleGlobalVar(compiler, dmObject);
+                return HandleGlobalVar(compiler, dmObject, pass);
             } else {
-                HandleInstanceVar(compiler, dmObject);
+                return HandleInstanceVar(compiler, dmObject);
             }
         }
 
@@ -119,21 +118,20 @@ internal partial class DMCodeTree {
             return varDef.IsStatic ? $"var/static/{VarName}" : $"var/{VarName}";
         }
 
-        private void HandleGlobalVar(DMCompiler compiler, DMObject dmObject) {
+        private bool HandleGlobalVar(DMCompiler compiler, DMObject dmObject, int pass) {
             var scope = IsFirstPass ? ScopeMode.FirstPassStatic : ScopeMode.Static;
-            if (!TryBuildValue(new(compiler, dmObject, GlobalInitProc), varDef.Value, varDef.Type, scope, out var value))
-                return;
+            if (!TryBuildValue(new(compiler, dmObject, compiler.GlobalInitProc), varDef.Value, varDef.Type, scope, out var value))
+                return false;
 
             int globalId = compiler.DMObjectTree.CreateGlobal(out DMVariable global, varDef.Type, VarName, varDef.IsConst,
                 varDef.ValType);
 
             dmObject.AddGlobalVariable(global, globalId);
             _defined = true;
-            WaitingNodes.Remove(this);
 
             if (value.TryAsConstant(compiler, out var constant)) {
                 global.Value = constant;
-                return;
+                return true;
             } else if (!global.IsConst) {
                 // Starts out as null, gets initialized by the global init proc
                 global.Value = new Null(Location.Internal);
@@ -142,22 +140,23 @@ internal partial class DMCodeTree {
             }
 
             // Initialize its value in the global init proc
-            compiler.VerbosePrint($"Adding {dmObject.Path}/var/static/{global.Name} to global init on pass {_currentPass}");
-            GlobalInitProc.DebugSource(value.Location);
-            value.EmitPushValue(new(compiler, dmObject, GlobalInitProc));
-            GlobalInitProc.Assign(DMReference.CreateGlobal(globalId));
+            compiler.VerbosePrint($"Adding {dmObject.Path}/var/static/{global.Name} to global init on pass {pass}");
+            compiler.GlobalInitProc.DebugSource(value.Location);
+            value.EmitPushValue(new(compiler, dmObject, compiler.GlobalInitProc));
+            compiler.GlobalInitProc.Assign(DMReference.CreateGlobal(globalId));
+            return true;
         }
 
-        private void HandleInstanceVar(DMCompiler compiler, DMObject dmObject) {
+        private bool HandleInstanceVar(DMCompiler compiler, DMObject dmObject) {
             if (!TryBuildValue(new(compiler, dmObject, null), varDef.Value, varDef.Type, ScopeMode.Normal, out var value))
-                return;
+                return false;
 
             var variable = new DMVariable(varDef.Type, VarName, false, varDef.IsConst, varDef.IsTmp, varDef.ValType);
             dmObject.AddVariable(variable);
             _defined = true;
-            WaitingNodes.Remove(this);
 
             SetVariableValue(compiler, dmObject, variable, value, false);
+            return true;
         }
 
         private bool AlreadyExists(DMCompiler compiler, DMObject dmObject) {
@@ -192,11 +191,11 @@ internal partial class DMCodeTree {
 
         private bool _finished;
 
-        public override void TryDefineVar(DMCompiler compiler) {
+        public override bool TryDefineVar(DMCompiler compiler, int pass) {
             if (_finished)
-                return;
+                return true;
             if (!compiler.DMObjectTree.TryGetDMObject(owner, out var dmObject))
-                return;
+                return false;
 
             DMVariable? variable = null;
             if (dmObject.HasLocalVariable(VarName)) {
@@ -205,30 +204,27 @@ internal partial class DMCodeTree {
                 compiler.Emit(WarningCode.StaticOverride, varOverride.Location,
                     $"var \"{VarName}\" cannot be overridden - it is a global var");
                 _finished = true;
-                WaitingNodes.Remove(this);
-                return;
+                return true;
             }
 
             if (variable == null) {
-                return;
+                return false;
             } else if (variable.IsConst) {
                 compiler.Emit(WarningCode.WriteToConstant, varOverride.Location,
                     $"Var \"{VarName}\" is const and cannot be modified");
                 _finished = true;
-                WaitingNodes.Remove(this);
-                return;
+                return true;
             } else if (variable.ValType.IsCompileTimeReadOnly) {
                 compiler.Emit(WarningCode.WriteToConstant, varOverride.Location,
                     $"Var \"{VarName}\" is a native read-only value which cannot be modified");
                 _finished = true;
-                WaitingNodes.Remove(this);
-                return;
+                return true;
             }
 
             variable = new DMVariable(variable);
 
             if (!TryBuildValue(new(compiler, dmObject, null), varOverride.Value, variable.Type, ScopeMode.Normal, out var value))
-                return;
+                return false;
 
             if (VarName == "tag" && dmObject.IsSubtypeOf(DreamPath.Datum) && !compiler.Settings.NoStandard)
                 compiler.Emit(WarningCode.InvalidOverride, varOverride.Location,
@@ -236,9 +232,9 @@ internal partial class DMCodeTree {
 
             dmObject.VariableOverrides[variable.Name] = variable;
             _finished = true;
-            WaitingNodes.Remove(this);
 
             SetVariableValue(compiler, dmObject, variable, value, true);
+            return true;
         }
 
         public override string ToString() {
@@ -249,17 +245,17 @@ internal partial class DMCodeTree {
     private class ProcGlobalVarNode(DreamPath owner, DMProc proc, DMASTProcStatementVarDeclaration varDecl) : VarNode {
         private bool _defined;
 
-        public override void TryDefineVar(DMCompiler compiler) {
+        public override bool TryDefineVar(DMCompiler compiler, int pass) {
             if (_defined)
-                return;
+                return true;
             if (!compiler.DMObjectTree.TryGetDMObject(owner, out var dmObject))
-                return;
+                return false;
 
             DMExpression? value = null;
             if (varDecl.Value != null) {
                 var scope = IsFirstPass ? ScopeMode.FirstPassStatic : ScopeMode.Static;
                 if (!TryBuildValue(new(compiler, dmObject, proc), varDecl.Value, varDecl.Type, scope, out value))
-                    return;
+                    return false;
             }
 
             int globalId = compiler.DMObjectTree.CreateGlobal(out DMVariable global, varDecl.Type, varDecl.Name, varDecl.IsConst,
@@ -268,15 +264,16 @@ internal partial class DMCodeTree {
             global.Value = new Null(Location.Internal);
             proc.AddGlobalVariable(global, globalId);
             _defined = true;
-            WaitingNodes.Remove(this);
 
             if (value != null) {
                 // Initialize its value in the global init proc
-                compiler.VerbosePrint($"Adding {dmObject.Path}/proc/{proc.Name}/var/static/{global.Name} to global init on pass {_currentPass}");
-                GlobalInitProc.DebugSource(value.Location);
-                value.EmitPushValue(new(compiler, dmObject, GlobalInitProc));
-                GlobalInitProc.Assign(DMReference.CreateGlobal(globalId));
+                compiler.VerbosePrint($"Adding {dmObject.Path}/proc/{proc.Name}/var/static/{global.Name} to global init on pass {pass}");
+                compiler.GlobalInitProc.DebugSource(value.Location);
+                value.EmitPushValue(new(compiler, dmObject, compiler.GlobalInitProc));
+                compiler.GlobalInitProc.Assign(DMReference.CreateGlobal(globalId));
             }
+
+            return true;
         }
 
         public override string ToString() {
@@ -289,7 +286,7 @@ internal partial class DMCodeTree {
         var varNode = new ObjectVarNode(owner, varDef);
 
         node.Children.Add(varNode);
-        WaitingNodes.Add(varNode);
+        _waitingNodes.Add(varNode);
     }
 
     public void AddObjectVarOverride(DreamPath owner, DMASTObjectVarOverride varOverride) {
@@ -297,23 +294,23 @@ internal partial class DMCodeTree {
 
         // parent_type is not an actual var override, and must be applied as soon as the object is created
         if (varOverride.VarName == "parent_type") {
-            if (ParentTypes.ContainsKey(owner)) {
-                compiler.Emit(WarningCode.InvalidOverride, varOverride.Location,
+            if (_parentTypes.ContainsKey(owner)) {
+                _compiler.Emit(WarningCode.InvalidOverride, varOverride.Location,
                     $"{owner} already has its parent_type set. This override is ignored.");
                 return;
             }
 
             if (varOverride.Value is not DMASTConstantPath parentType) {
-                compiler.Emit(WarningCode.BadExpression, varOverride.Value.Location, "Expected a constant path");
+                _compiler.Emit(WarningCode.BadExpression, varOverride.Value.Location, "Expected a constant path");
                 return;
             }
 
-            ParentTypes.Add(owner, parentType.Value.Path);
+            _parentTypes.Add(owner, parentType.Value.Path);
             return;
         }
 
         var varNode = new ObjectVarOverrideNode(owner, varOverride);
         node.Children.Add(varNode);
-        WaitingNodes.Add(varNode);
+        _waitingNodes.Add(varNode);
     }
 }

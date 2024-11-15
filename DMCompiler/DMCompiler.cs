@@ -30,10 +30,12 @@ public class DMCompiler {
 
     internal readonly DMCodeTree DMCodeTree;
     internal readonly DMObjectTree DMObjectTree;
+    internal readonly DMProc GlobalInitProc;
 
     public DMCompiler() {
         DMCodeTree = new(this);
         DMObjectTree = new(this);
+        GlobalInitProc = new(this, -1, DMObjectTree.Root, null);
     }
 
     public bool Compile(DMCompilerSettings settings) {
@@ -288,8 +290,8 @@ public class DMCompiler {
             Procs = jsonRep.Item2
         };
 
-        if (DMCodeTree.GlobalInitProc.AnnotatedBytecode.GetLength() > 0)
-            compiledDream.GlobalInitProc = DMCodeTree.GlobalInitProc.GetJsonRepresentation();
+        if (GlobalInitProc.AnnotatedBytecode.GetLength() > 0)
+            compiledDream.GlobalInitProc = GlobalInitProc.GetJsonRepresentation();
 
         if (DMObjectTree.Globals.Count > 0) {
             GlobalListJson globalListJson = new GlobalListJson {

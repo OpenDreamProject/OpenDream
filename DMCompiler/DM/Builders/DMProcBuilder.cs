@@ -350,8 +350,11 @@ namespace DMCompiler.DM.Builders {
             proc.AddLabel(afterSpawnLabel);
         }
 
+        /// <remarks>
+        /// Global/static var declarations are handled by <see cref="DMCodeTree.ProcGlobalVarNode" />
+        /// </remarks>
         public void ProcessStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration) {
-            if (varDeclaration.IsGlobal) { return; } //Currently handled by DMObjectBuilder
+            if (varDeclaration.IsGlobal) { return; }
 
             DMExpression value;
             if (varDeclaration.Value != null) {

@@ -213,9 +213,9 @@ public static class DMIParser {
         Vector2u? imageSize = null;
 
         while (stream.Position < stream.Length) {
-            long chunkDataPosition = stream.Position;
             uint chunkLength = ReadBigEndianUint32(reader);
-            string chunkType = new string(reader.ReadChars(4));
+            string chunkType = Encoding.UTF8.GetString(reader.ReadBytes(4));
+            long chunkDataPosition = stream.Position;
 
             switch (chunkType) {
                 case "IHDR": //Image header, contains the image size

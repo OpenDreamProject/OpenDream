@@ -52,7 +52,7 @@ internal sealed class PeepholeOptimizer {
     private static Dictionary<DreamProcOpcode, OptimizationTreeEntry> _optimizationTrees = null!;
 
     /// Setup <see cref="_optimizationTrees"/> for the current <see cref="OptPass"/>
-    private static void GetOptimizations(OptPass optPass) {
+    private static void GetOptimizations(DMCompiler compiler, OptPass optPass) {
         _optimizationTrees = new();
 
         var possibleTypes = typeof(IOptimization).Assembly.GetTypes();
@@ -102,10 +102,12 @@ internal sealed class PeepholeOptimizer {
     public static void RunPeephole(DMCompiler compiler, List<IAnnotatedBytecode> input) {
         var passes = (OptPass[])Enum.GetValues(typeof(OptPass));
         foreach (var optPass in passes) {
-            GetOptimizations(optPass);
-            RunPass(input);
+            GetOptimizations(compiler, optPass);
+            RunPass(compiler, input);
         }
     }
+
+    private static void RunPass(DMCompiler compiler, List<IAnnotatedBytecode> input) {
         OptimizationTreeEntry? currentOpt = null;
         int optSize = 0;
 

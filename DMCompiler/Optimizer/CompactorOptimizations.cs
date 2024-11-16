@@ -20,7 +20,7 @@ internal sealed class PushNStrings : IOptimization {
         ];
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         int count = 0;
         int stackDelta = 0;
 
@@ -56,7 +56,7 @@ internal sealed class PushNFloats : IOptimization {
         ];
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         int count = 0;
         int stackDelta = 0;
 
@@ -92,7 +92,7 @@ internal sealed class PushNRef : IOptimization {
         ];
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         int count = 0;
         int stackDelta = 0;
 
@@ -129,7 +129,7 @@ internal sealed class PushStringFloat : IOptimization {
         ];
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         if (index + 1 >= input.Count) {
             throw new ArgumentOutOfRangeException(nameof(index), "Index plus one is outside the bounds of the input list.");
         }
@@ -184,7 +184,7 @@ internal sealed class PushNResources : IOptimization {
         ];
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         int count = 0;
         int stackDelta = 0;
         while (index + count < input.Count &&
@@ -235,7 +235,7 @@ internal sealed class CreateListNFloats : IOptimization {
         return pushVal1 == pushVal2;
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         if (index + 1 >= input.Count) {
             throw new ArgumentOutOfRangeException(nameof(index), "Index plus one is outside the bounds of the input list.");
         }
@@ -264,7 +264,7 @@ internal sealed class CreateListNStrings : IOptimization {
         ];
     }
 
-    public bool CheckPreconditions(List<IAnnotatedBytecode> input, int index) {
+    public bool CheckPreconditions(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         if (index + 1 >= input.Count) {
             throw new ArgumentOutOfRangeException(nameof(index), "Index plus one is outside the bounds of the input list.");
         }
@@ -277,7 +277,7 @@ internal sealed class CreateListNStrings : IOptimization {
         return pushVal1 == pushVal2;
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         if (index + 1 >= input.Count) {
             throw new ArgumentOutOfRangeException(nameof(index), "Index plus one is outside the bounds of the input list.");
         }
@@ -306,7 +306,7 @@ internal sealed class CreateListNResources : IOptimization {
         ];
     }
 
-    public bool CheckPreconditions(List<IAnnotatedBytecode> input, int index) {
+    public bool CheckPreconditions(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         if (index + 1 >= input.Count) {
             throw new ArgumentOutOfRangeException(nameof(index), "Index plus one is outside the bounds of the input list.");
         }
@@ -319,7 +319,7 @@ internal sealed class CreateListNResources : IOptimization {
         return pushVal1 == pushVal2;
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         if (index + 1 >= input.Count) {
             throw new ArgumentOutOfRangeException(nameof(index), "Index plus one is outside the bounds of the input list.");
         }
@@ -348,7 +348,7 @@ internal sealed class CreateListNRefs : IOptimization {
         ];
     }
 
-    public bool CheckPreconditions(List<IAnnotatedBytecode> input, int index) {
+    public bool CheckPreconditions(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         if (index + 1 >= input.Count) {
             throw new ArgumentOutOfRangeException(nameof(index),"Bytecode index is outside the bounds of the input list.");
         }
@@ -359,7 +359,7 @@ internal sealed class CreateListNRefs : IOptimization {
         return pushVal1 == pushVal2;
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         if (index + 1 >= input.Count) {
             throw new ArgumentOutOfRangeException(nameof(index), "Bytecode index is outside the bounds of the input list.");
         }

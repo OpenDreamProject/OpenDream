@@ -781,7 +781,7 @@ internal sealed class ConstFoldAddStrings : IPeepholeOptimization {
         ];
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         var firstInstruction = (AnnotatedBytecodeInstruction)input[index];
         var firstString = firstInstruction.GetArg<AnnotatedBytecodeString>(0);
         var secondString = ((AnnotatedBytecodeInstruction)input[index+1]).GetArg<AnnotatedBytecodeString>(0);

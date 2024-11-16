@@ -747,55 +747,24 @@ namespace DMCompiler.Compiler.DM {
 
                 return new DMASTProcStatementExpression(loc, expression);
             } else {
-                DMASTProcStatement? procStatement = null;
-                switch (Current().Type) {
-                    case TokenType.DM_If:
-                        procStatement = If();
-                        break;
-                    case TokenType.DM_Return:
-                        procStatement = Return();
-                        break;
-                    case TokenType.DM_For:
-                        procStatement = For();
-                        break;
-                    case TokenType.DM_Set:
-                        procStatement = Set();
-                        break;
-                    case TokenType.DM_Switch:
-                        procStatement = Switch();
-                        break;
-                    case TokenType.DM_Continue:
-                        procStatement = Continue();
-                        break;
-                    case TokenType.DM_Break:
-                        procStatement = Break();
-                        break;
-                    case TokenType.DM_Spawn:
-                        procStatement = Spawn();
-                        break;
-                    case TokenType.DM_While:
-                        procStatement = While();
-                        break;
-                    case TokenType.DM_Do:
-                        procStatement = DoWhile();
-                        break;
-                    case TokenType.DM_Throw:
-                        procStatement = Throw();
-                        break;
-                    case TokenType.DM_Del:
-                        procStatement = Del();
-                        break;
-                    case TokenType.DM_Try:
-                        procStatement = TryCatch();
-                        break;
-                    case TokenType.DM_Goto:
-                        procStatement = Goto();
-                        break;
-                    case TokenType.DM_Slash:
-                    case TokenType.DM_Var:
-                        procStatement = ProcVarDeclaration();
-                        break;
-                }
+                DMASTProcStatement? procStatement = Current().Type switch {
+                    TokenType.DM_If => If(),
+                    TokenType.DM_Return => Return(),
+                    TokenType.DM_For => For(),
+                    TokenType.DM_Set => Set(),
+                    TokenType.DM_Switch => Switch(),
+                    TokenType.DM_Continue => Continue(),
+                    TokenType.DM_Break => Break(),
+                    TokenType.DM_Spawn => Spawn(),
+                    TokenType.DM_While => While(),
+                    TokenType.DM_Do => DoWhile(),
+                    TokenType.DM_Throw => Throw(),
+                    TokenType.DM_Del => Del(),
+                    TokenType.DM_Try => TryCatch(),
+                    TokenType.DM_Goto => Goto(),
+                    TokenType.DM_Slash or TokenType.DM_Var => ProcVarDeclaration(),
+                    _ => null
+                };
 
                 if (procStatement != null) {
                     Whitespace();

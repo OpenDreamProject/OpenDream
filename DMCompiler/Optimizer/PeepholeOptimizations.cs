@@ -786,7 +786,7 @@ internal sealed class ConstFoldAddStrings : IPeepholeOptimization {
         var firstString = firstInstruction.GetArg<AnnotatedBytecodeString>(0);
         var secondString = ((AnnotatedBytecodeInstruction)input[index+1]).GetArg<AnnotatedBytecodeString>(0);
 
-        var combinedId = DMObjectTree.AddString(firstString.ResolveString() + secondString.ResolveString());
+        var combinedId = DMObjectTree.AddString(firstString.ResolveString() + secondString.ResolveString()); // TODO: Currently doesn't handle removing strings from the string tree that have no other references
 
         var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeString(combinedId, firstInstruction.Location)};
 

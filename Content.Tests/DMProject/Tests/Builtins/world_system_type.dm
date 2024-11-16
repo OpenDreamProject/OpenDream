@@ -1,3 +1,3 @@
 
 /proc/RunTest()
-	ASSERT(isnum(world.system_type))
+	ASSERT(istext(world.system_type) && length(world.system_type))

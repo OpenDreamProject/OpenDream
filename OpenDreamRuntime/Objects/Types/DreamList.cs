@@ -174,7 +174,8 @@ public class DreamList : DreamObject {
                 _associativeValues.Remove(_values[i - 1]);
         }
 
-        _values.RemoveRange(start - 1, end - start);
+        if (end > start)
+            _values.RemoveRange(start - 1, end - start);
     }
 
     public void Insert(int index, DreamValue value) {
@@ -409,16 +410,17 @@ internal sealed class DreamListVars(DreamObjectDefinition listDef, DreamObject d
     }
 
     public override DreamValue GetValue(DreamValue key) {
-        if (!key.TryGetValueAsString(out var varName)) {
+        if (key.TryGetValueAsInteger(out int keyInteger)) {
+            return new DreamValue(DreamObject.GetVariableNames().ElementAt(keyInteger - 1)); //1-indexed
+        } else if (key.TryGetValueAsString(out var varName)) {
+            if (DreamObject.TryGetVariable(varName, out var objectVar)) {
+                return objectVar;
+            }
+            
+            throw new Exception($"Cannot get value of undefined var \"{key}\" on type {DreamObject.ObjectDefinition.Type}");
+        } else {
             throw new Exception($"Invalid var index {key}");
         }
-
-        if (!DreamObject.TryGetVariable(varName, out var objectVar)) {
-            throw new Exception(
-                $"Cannot get value of undefined var \"{key}\" on type {DreamObject.ObjectDefinition.Type}");
-        }
-
-        return objectVar;
     }
 
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {

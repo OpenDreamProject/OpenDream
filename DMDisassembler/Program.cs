@@ -230,11 +230,13 @@ internal class Program {
         }
 
         //Add global procs to the root type
-        DMType globalType = AllTypes["/"];
-        foreach (int procId in CompiledJson.GlobalProcs) {
-            var proc = Procs[procId];
+        if (CompiledJson.GlobalProcs != null) {
+            DMType globalType = AllTypes["/"];
+            foreach (int procId in CompiledJson.GlobalProcs) {
+                var proc = Procs[procId];
 
-            globalType.Procs.Add(proc.Name, proc);
+                globalType.Procs.Add(proc.Name, proc);
+            }
         }
     }
 

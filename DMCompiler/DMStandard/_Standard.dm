@@ -1,5 +1,3 @@
-/var/world/world = /world as /world // Set to /world to suppress issues with Typemaker
-
 //These procs should be in alphabetical order, as in DreamProcNativeRoot.cs
 proc/alert(Usr = usr, Message, Title, Button1 = "Ok", Button2, Button3) as text
 proc/animate(Object, time, loop, easing, flags, delay, pixel_x, pixel_y, pixel_z, maptext, maptext_width, maptext_height, maptext_x, maptext_y, dir, alpha, transform, color, luminosity, infra_luminosity, layer, glide_size, icon, icon_state, invisibility, suffix) as null
@@ -22,9 +20,10 @@ proc/file2text(File) as text|null
 proc/filter(type, ...)
 proc/findtext(Haystack, Needle, Start = 1, End = 0) as num
 proc/findtextEx(Haystack, Needle, Start = 1, End = 0) as num
-proc/findlasttext(Haystack, Needle, Start = 1, End = 0) as num
-proc/findlasttextEx(Haystack, Needle, Start = 1, End = 0) as num
+proc/findlasttext(Haystack, Needle, Start = 0, End = 1) as num
+proc/findlasttextEx(Haystack, Needle, Start = 0, End = 1) as num
 proc/flick(Icon, Object)
+	set opendream_unimplemented = 1
 proc/flist(Path) as /list
 proc/floor(A) as num
 proc/fract(n) as num

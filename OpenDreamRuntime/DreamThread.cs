@@ -261,6 +261,7 @@ namespace OpenDreamRuntime {
                             resultStatus = ProcStatus.Cancelled;
                             return default;
                         }
+
                         CancelAll();
                         HandleException(dmError);
                         status = ProcStatus.Cancelled;

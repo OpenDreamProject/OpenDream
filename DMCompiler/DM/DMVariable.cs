@@ -24,23 +24,17 @@ internal sealed class DMVariable {
         ValType = valType ?? DMValueType.Anything;
     }
 
-    /// <summary>
-    /// This is a copy-on-write proc used to set the DMVariable to a constant value. <br/>
-    /// In some contexts, doing so would clobber pre-existing constants, <br/>
-    /// and so this sometimes creates a copy of <see langword="this"/>, with the new constant value.
-    /// </summary>
-    public DMVariable WriteToValue(Expressions.Constant value) {
-        if (Value == null) {
-            Value = value;
-            return this;
-        }
-
-        DMVariable clone = new DMVariable(Type, Name, IsGlobal, IsConst, IsTmp, ValType);
-        clone.Value = value;
-        return clone;
+    public DMVariable(DMVariable copyFrom) {
+        Type = copyFrom.Type;
+        Name = copyFrom.Name;
+        IsGlobal = copyFrom.IsGlobal;
+        IsConst = copyFrom.IsConst;
+        IsTmp = copyFrom.IsTmp;
+        Value = copyFrom.Value;
+        ValType = copyFrom.ValType;
     }
 
-    public bool TryAsJsonRepresentation([NotNullWhen(true)] out object? valueJson) {
-        return Value.TryAsJsonRepresentation(out valueJson);
+    public bool TryAsJsonRepresentation(DMCompiler compiler, [NotNullWhen(true)] out object? valueJson) {
+        return Value.TryAsJsonRepresentation(compiler, out valueJson);
     }
 }

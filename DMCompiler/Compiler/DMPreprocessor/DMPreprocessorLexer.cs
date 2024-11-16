@@ -15,12 +15,15 @@ internal sealed class DMPreprocessorLexer {
     public readonly string IncludeDirectory;
     public readonly string File;
 
+    private readonly DMCompiler _compiler;
     private readonly StreamReader _source;
+    private readonly bool _isDMStandard;
     private char _current;
     private int _currentLine = 1, _currentColumn;
     private readonly Queue<Token> _pendingTokenQueue = new(); // TODO: Possible to remove this?
 
-    public DMPreprocessorLexer(string includeDirectory, string file, string source) {
+    public DMPreprocessorLexer(DMCompiler compiler, string includeDirectory, string file, string source) {
+        _compiler = compiler;
         IncludeDirectory = includeDirectory;
         File = file;
 
@@ -28,11 +31,13 @@ internal sealed class DMPreprocessorLexer {
         Advance();
     }
 
-    public DMPreprocessorLexer(string includeDirectory, string file) {
+    public DMPreprocessorLexer(DMCompiler compiler, string includeDirectory, string file, bool isDMStandard) {
+        _compiler = compiler;
         IncludeDirectory = includeDirectory;
         File = file;
 
         _source = new StreamReader(Path.Combine(includeDirectory, file), Encoding.UTF8);
+        _isDMStandard = isDMStandard;
         Advance();
     }
 
@@ -388,7 +393,7 @@ internal sealed class DMPreprocessorLexer {
 
                 string macroAttempt = text.ToLower();
                 if (TryMacroKeyword(macroAttempt, out var attemptKeyword)) { // if they mis-capitalized the keyword
-                    DMCompiler.Emit(WarningCode.MiscapitalizedDirective, attemptKeyword.Value.Location,
+                    _compiler.Emit(WarningCode.MiscapitalizedDirective, attemptKeyword.Value.Location,
                         $"#{text} is not a valid macro keyword. Did you mean '#{macroAttempt}'?");
                 }
 
@@ -651,11 +656,11 @@ internal sealed class DMPreprocessorLexer {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private Token CreateToken(TokenType type, string text, object? value = null) {
-        return new Token(type, text, new Location(File, _currentLine, _currentColumn), value);
+        return new Token(type, text, new Location(File, _currentLine, _currentColumn, _isDMStandard), value);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private Token CreateToken(TokenType type, char text, object? value = null) {
-        return new Token(type, text.ToString(), new Location(File, _currentLine, _currentColumn), value);
+        return new Token(type, text.ToString(), new Location(File, _currentLine, _currentColumn, _isDMStandard), value);
     }
 }

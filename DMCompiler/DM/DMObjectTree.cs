@@ -1,74 +1,40 @@
 using System.Diagnostics.CodeAnalysis;
-using DMCompiler.Bytecode;
 using DMCompiler.Compiler;
 using DMCompiler.Compiler.DM.AST;
 using DMCompiler.Json;
 
 namespace DMCompiler.DM;
 
-internal static class DMObjectTree {
-    public static readonly List<DMObject> AllObjects = new();
-    public static readonly List<DMProc> AllProcs = new();
+internal class DMObjectTree(DMCompiler compiler) {
+    public readonly List<DMObject> AllObjects = new();
+    public readonly List<DMProc> AllProcs = new();
 
     //TODO: These don't belong in the object tree
-    public static readonly List<DMVariable> Globals = new();
-    public static readonly Dictionary<string, int> GlobalProcs = new();
-    /// <summary>
-    /// Used to keep track of when we see a /proc/foo() or whatever, so that duplicates or missing definitions can be discovered,
-    /// even as GlobalProcs keeps clobbering old global proc overrides/definitions.
-    /// </summary>
-    public static readonly HashSet<string> SeenGlobalProcDefinition = new();
-    public static readonly List<string> StringTable = new();
-    public static DMProc GlobalInitProc = default!; // Initialized by Reset() (called in the static initializer)
-    public static readonly HashSet<string> Resources = new();
+    public readonly List<DMVariable> Globals = new();
+    public readonly Dictionary<string, int> GlobalProcs = new();
+    public readonly List<string> StringTable = new();
+    public readonly HashSet<string> Resources = new();
 
-    public static DMObject Root => GetDMObject(DreamPath.Root)!;
+    public DMObject Root => GetOrCreateDMObject(DreamPath.Root);
 
-    private static readonly Dictionary<string, int> StringToStringId = new();
-    private static readonly List<(int GlobalId, DMExpression Value)> _globalInitAssigns = new();
+    private readonly Dictionary<string, int> _stringToStringId = new();
+    private readonly Dictionary<DreamPath, int> _pathToTypeId = new();
+    private int _dmObjectIdCounter;
+    private int _dmProcIdCounter;
 
-    private static readonly Dictionary<DreamPath, int> _pathToTypeId = new();
-    private static int _dmObjectIdCounter;
-    private static int _dmProcIdCounter;
-
-    static DMObjectTree() {
-        Reset();
-    }
-
-    /// <summary>
-    /// A thousand curses upon you if you add a new member to this thing without deleting it here.
-    /// </summary>
-    public static void Reset() {
-        AllObjects.Clear();
-        AllProcs.Clear();
-
-        Globals.Clear();
-        GlobalProcs.Clear();
-        SeenGlobalProcDefinition.Clear();
-        StringTable.Clear();
-        StringToStringId.Clear();
-        Resources.Clear();
-
-        _globalInitAssigns.Clear();
-        _pathToTypeId.Clear();
-        _dmObjectIdCounter = 0;
-        _dmProcIdCounter = 0;
-        GlobalInitProc = new(-1, Root, null);
-    }
-
-    public static int AddString(string value) {
-        if (!StringToStringId.TryGetValue(value, out var stringId)) {
+    public int AddString(string value) {
+        if (!_stringToStringId.TryGetValue(value, out var stringId)) {
             stringId = StringTable.Count;
 
             StringTable.Add(value);
-            StringToStringId.Add(value, stringId);
+            _stringToStringId.Add(value, stringId);
         }
 
         return stringId;
     }
 
-    public static DMProc CreateDMProc(DMObject dmObject, DMASTProcDefinition? astDefinition) {
-        DMProc dmProc = new DMProc(_dmProcIdCounter++, dmObject, astDefinition);
+    public DMProc CreateDMProc(DMObject dmObject, DMASTProcDefinition? astDefinition) {
+        DMProc dmProc = new DMProc(compiler, _dmProcIdCounter++, dmObject, astDefinition);
         AllProcs.Add(dmProc);
 
         return dmProc;
@@ -78,21 +44,23 @@ internal static class DMObjectTree {
     /// Returns the "New()" DMProc for a given object type ID
     /// </summary>
     /// <returns></returns>
-    public static DMProc GetNewProc(int id) {
+    public DMProc? GetNewProc(int id) {
         var obj = AllObjects[id];
-        var targetProc = obj!.GetProcs("New")[0];
-        return AllProcs[targetProc];
+        var procs = obj.GetProcs("New");
+
+        if (procs != null)
+            return AllProcs[procs[0]];
+        else
+            return null;
     }
 
-    public static DMObject? GetDMObject(DreamPath path, bool createIfNonexistent = true) {
-        if (_pathToTypeId.TryGetValue(path, out int typeId)) {
-            return AllObjects[typeId];
-        }
-        if (!createIfNonexistent) return null;
+    public DMObject GetOrCreateDMObject(DreamPath path) {
+        if (TryGetDMObject(path, out var dmObject))
+            return dmObject;
 
         DMObject? parent = null;
         if (path.Elements.Length > 1) {
-            parent = GetDMObject(path.FromElements(0, -2)); // Create all parent classes as dummies, if we're being dummy-created too
+            parent = GetOrCreateDMObject(path.FromElements(0, -2)); // Create all parent classes as dummies, if we're being dummy-created too
         } else if (path.Elements.Length == 1) {
             switch (path.LastElement) {
                 case "client":
@@ -100,10 +68,10 @@ internal static class DMObjectTree {
                 case "list":
                 case "savefile":
                 case "world":
-                    parent = GetDMObject(DreamPath.Root);
+                    parent = GetOrCreateDMObject(DreamPath.Root);
                     break;
                 default:
-                    parent = GetDMObject(DMCompiler.Settings.NoStandard ? DreamPath.Root : DreamPath.Datum);
+                    parent = GetOrCreateDMObject(compiler.Settings.NoStandard ? DreamPath.Root : DreamPath.Datum);
                     break;
             }
         }
@@ -111,13 +79,23 @@ internal static class DMObjectTree {
         if (path != DreamPath.Root && parent == null) // Parent SHOULD NOT be null here! (unless we're root lol)
             throw new Exception($"Type {path} did not have a parent");
 
-        DMObject dmObject = new DMObject(_dmObjectIdCounter++, path, parent);
+        dmObject = new DMObject(compiler, _dmObjectIdCounter++, path, parent);
         AllObjects.Add(dmObject);
         _pathToTypeId[path] = dmObject.Id;
         return dmObject;
     }
 
-    public static bool TryGetGlobalProc(string name, [NotNullWhen(true)] out DMProc? proc) {
+    public bool TryGetDMObject(DreamPath path, [NotNullWhen(true)] out DMObject? dmObject) {
+        if (_pathToTypeId.TryGetValue(path, out int typeId)) {
+            dmObject = AllObjects[typeId];
+            return true;
+        }
+
+        dmObject = null;
+        return false;
+    }
+
+    public bool TryGetGlobalProc(string name, [NotNullWhen(true)] out DMProc? proc) {
         if (!GlobalProcs.TryGetValue(name, out var id)) {
             proc = null;
             return false;
@@ -128,12 +106,12 @@ internal static class DMObjectTree {
     }
 
     /// <returns>True if the path exists, false if not. Keep in mind though that we may just have not found this object path yet while walking in ObjectBuilder.</returns>
-    public static bool TryGetTypeId(DreamPath path, out int typeId) {
+    public bool TryGetTypeId(DreamPath path, out int typeId) {
         return _pathToTypeId.TryGetValue(path, out typeId);
     }
 
     // TODO: This is all so snowflake and needs redone
-    public static DreamPath? UpwardSearch(DreamPath path, DreamPath search) {
+    public DreamPath? UpwardSearch(DreamPath path, DreamPath search) {
         bool requireProcElement = search.Type == DreamPath.PathType.Absolute;
         string? searchingProcName = null;
 
@@ -184,7 +162,7 @@ internal static class DMObjectTree {
         return null;
     }
 
-    public static int CreateGlobal(out DMVariable global, DreamPath? type, string name, bool isConst, DMComplexValueType valType) {
+    public int CreateGlobal(out DMVariable global, DreamPath? type, string name, bool isConst, DMComplexValueType valType) {
         int id = Globals.Count;
 
         global = new DMVariable(type, name, true, isConst, false, valType);
@@ -192,29 +170,16 @@ internal static class DMObjectTree {
         return id;
     }
 
-    public static void AddGlobalProc(DMProc proc) {
-        // Said in this way so it clobbers previous definitions of this global proc (the ..() stuff doesn't work with glob procs)
+    public void AddGlobalProc(DMProc proc) {
+        if (GlobalProcs.ContainsKey(proc.Name)) {
+            compiler.Emit(WarningCode.DuplicateProcDefinition, proc.Location, $"Global proc {proc.Name} is already defined");
+            return;
+        }
+
         GlobalProcs[proc.Name] = proc.Id;
     }
 
-    public static void AddGlobalInitAssign(int globalId, DMExpression value) {
-        _globalInitAssigns.Add( (globalId, value) );
-    }
-
-    public static void CreateGlobalInitProc() {
-        if (_globalInitAssigns.Count == 0) return;
-
-        foreach (var assign in _globalInitAssigns) {
-            GlobalInitProc.DebugSource(assign.Value.Location);
-
-            assign.Value.EmitPushValue(Root, GlobalInitProc);
-            GlobalInitProc.Assign(DMReference.CreateGlobal(assign.GlobalId));
-        }
-
-        GlobalInitProc.ResolveLabels();
-    }
-
-    public static (DreamTypeJson[], ProcDefinitionJson[]) CreateJsonRepresentation() {
+    public (DreamTypeJson[], ProcDefinitionJson[]) CreateJsonRepresentation() {
         DreamTypeJson[] types = new DreamTypeJson[AllObjects.Count];
         ProcDefinitionJson[] procs = new ProcDefinitionJson[AllProcs.Count];
 

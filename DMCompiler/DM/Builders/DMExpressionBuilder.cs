@@ -972,6 +972,25 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                             prevPath = property.Type;
                             pathIsFuzzy = prevPath == null;
                             continue;
+                        } else if (property?.CanConstFold is true && property.Value.TryAsConstant(Compiler, out var derefConst)) {
+                            expr = derefConst;
+
+                            var newOperationCount = operations.Length - i - 1;
+                            if (newOperationCount == 0) {
+                                return expr;
+                            }
+
+                            if (property.ValType.IsUnimplemented) {
+                                Compiler.UnimplementedWarning(deref.Location,
+                                    $"{prevPath}.{field} is not implemented and will have unexpected behavior");
+                            }
+
+                            operations = new Dereference.Operation[newOperationCount];
+                            astOperationOffset += i + 1;
+                            i = -1;
+                            prevPath = property.Type;
+                            pathIsFuzzy = prevPath == null;
+                            continue;
                         }
 
                         if (property == null) {

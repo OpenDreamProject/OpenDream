@@ -588,7 +588,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                 }
 
                 var field = ctx.Type.GetVariable(name);
-                if (field != null && scopeMode == Normal) {
+                if (field != null && (scopeMode == Normal || field.IsConst)) {
                     return new Field(identifier.Location, field, field.ValType);
                 }
 

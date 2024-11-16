@@ -588,7 +588,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                 }
 
                 var field = ctx.Type.GetVariable(name);
-                if (field != null && scopeMode == Normal) {
+                if (field != null && (scopeMode == Normal || field.IsConst)) {
                     return new Field(identifier.Location, field, field.ValType);
                 }
 
@@ -952,9 +952,28 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                         }
 
                         if (property == null && fromObject.GetGlobalVariableId(field) is { } globalId) {
-                            property = ObjectTree.Globals [globalId];
+                            property = ObjectTree.Globals[globalId];
 
                             expr = new GlobalField(expr.Location, property.Type, globalId, property.ValType);
+
+                            var newOperationCount = operations.Length - i - 1;
+                            if (newOperationCount == 0) {
+                                return expr;
+                            }
+
+                            if (property.ValType.IsUnimplemented) {
+                                Compiler.UnimplementedWarning(deref.Location,
+                                    $"{prevPath}.{field} is not implemented and will have unexpected behavior");
+                            }
+
+                            operations = new Dereference.Operation[newOperationCount];
+                            astOperationOffset += i + 1;
+                            i = -1;
+                            prevPath = property.Type;
+                            pathIsFuzzy = prevPath == null;
+                            continue;
+                        } else if (property?.CanConstFold is true && property.Value.TryAsConstant(Compiler, out var derefConst)) {
+                            expr = derefConst;
 
                             var newOperationCount = operations.Length - i - 1;
                             if (newOperationCount == 0) {

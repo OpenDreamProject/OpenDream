@@ -214,9 +214,9 @@ public sealed class DreamObjectWorld : DreamObject {
             case "system_type":
                 //system_type value should match the defines in Defines.dm
                 if (Environment.OSVersion.Platform is PlatformID.Unix or PlatformID.MacOSX or PlatformID.Other)
-                    value = new DreamValue(0);
+                    value = new DreamValue("UNIX");
                 else
-                    value = new DreamValue(1); //Windows
+                    value = new DreamValue("MS_WINDOWS"); //Windows
 
                 return true;
 

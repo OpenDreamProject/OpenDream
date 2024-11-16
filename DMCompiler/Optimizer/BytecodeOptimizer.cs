@@ -3,18 +3,15 @@ using System.Diagnostics.CodeAnalysis;
 namespace DMCompiler.Optimizer;
 
 public class BytecodeOptimizer {
-    public List<IAnnotatedBytecode> Optimize(List<IAnnotatedBytecode> input) {
-        if (input.Count == 0) {
-            return input;
-        }
+    internal void Optimize(DMCompiler compiler, List<IAnnotatedBytecode> input) {
+        if (input.Count == 0)
+            return;
 
         RemoveUnreferencedLabels(input);
         JoinAndForwardLabels(input);
         RemoveUnreferencedLabels(input);
 
-        PeepholeOptimizer.RunOptimizations(input);
-
-        return input;
+        PeepholeOptimizer.RunPeephole(compiler, input);
     }
 
     private static void RemoveUnreferencedLabels(List<IAnnotatedBytecode> input) {

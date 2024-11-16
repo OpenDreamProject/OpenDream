@@ -34,7 +34,7 @@ internal sealed class DMVariable {
         ValType = copyFrom.ValType;
     }
 
-    public bool TryAsJsonRepresentation([NotNullWhen(true)] out object? valueJson) {
-        return Value.TryAsJsonRepresentation(out valueJson);
+    public bool TryAsJsonRepresentation(DMCompiler compiler, [NotNullWhen(true)] out object? valueJson) {
+        return Value.TryAsJsonRepresentation(compiler, out valueJson);
     }
 }

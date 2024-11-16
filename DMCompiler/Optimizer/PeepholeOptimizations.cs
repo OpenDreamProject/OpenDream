@@ -17,7 +17,7 @@ internal sealed class AppendNoPush : IOptimization {
         ];
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         if (index + 1 >= input.Count) {
             throw new ArgumentOutOfRangeException(nameof(index), "Bytecode index is outside the bounds of the input list.");
         }
@@ -43,7 +43,7 @@ internal sealed class AssignNoPush : IOptimization {
         ];
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         if (index + 1 >= input.Count) {
             throw new ArgumentOutOfRangeException(nameof(index), "Bytecode index is outside the bounds of the input list.");
         }
@@ -69,7 +69,7 @@ internal sealed class AssignNull : IOptimization {
         ];
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         // Ensure that we have at least two elements from the starting index to avoid out-of-bound errors
         if (index + 1 >= input.Count) {
             throw new ArgumentOutOfRangeException(nameof(index), "Index plus one is outside the bounds of the input list.");
@@ -100,7 +100,7 @@ internal sealed class PushField : IOptimization {
         ];
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         if (index + 1 >= input.Count) {
             throw new ArgumentOutOfRangeException(nameof(index), "Index plus one is outside the bounds of the input list.");
         }
@@ -129,7 +129,7 @@ internal class ReturnReferenceValue : IOptimization {
         ];
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
         AnnotatedBytecodeReference pushVal = firstInstruction.GetArg<AnnotatedBytecodeReference>(0);
         input.RemoveRange(index, 2);
@@ -150,7 +150,7 @@ internal class ReturnFloat : IOptimization {
         ];
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         var firstInstruction = IOptimization.GetInstructionAndValue(input[index], out var pushVal);
         IOptimization.ReplaceInstructions(input, index, 2,
             new AnnotatedBytecodeInstruction(DreamProcOpcode.ReturnFloat, [new AnnotatedBytecodeFloat(pushVal, firstInstruction.Location)]));
@@ -170,7 +170,7 @@ internal sealed class JumpIfReferenceFalse : IOptimization {
         ];
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         if (index + 1 >= input.Count) {
             throw new ArgumentOutOfRangeException(nameof(index), "Index plus one is outside the bounds of the input list.");
         }
@@ -186,6 +186,7 @@ internal sealed class JumpIfReferenceFalse : IOptimization {
     }
 }
 
+
 // PushFloat [float]
 // SwitchCase [label]
 // -> SwitchOnFloat [float] [label]
@@ -199,7 +200,7 @@ internal sealed class SwitchOnFloat : IOptimization {
         ];
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         if (index + 1 >= input.Count) {
             throw new ArgumentOutOfRangeException(nameof(index), "Index plus one is outside the bounds of the input list.");
         }
@@ -227,7 +228,7 @@ internal sealed class SwitchOnString : IOptimization {
         ];
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         if (index + 1 >= input.Count) {
             throw new ArgumentOutOfRangeException(nameof(index), "Index plus one is outside the bounds of the input list.");
         }
@@ -255,7 +256,7 @@ internal sealed class RemoveJumpFollowedByJump : IOptimization {
         ];
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         input.RemoveAt(index + 1);
     }
 }
@@ -273,7 +274,7 @@ internal sealed class IsTypeDirect : IOptimization {
         ];
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         if (index + 1 >= input.Count) {
             throw new ArgumentOutOfRangeException(nameof(index), "Index plus one is outside the bounds of the input list.");
         }
@@ -301,7 +302,7 @@ internal sealed class ConstFoldBitNot : IPeepholeOptimization {
         ];
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         var firstInstruction = IPeepholeOptimization.GetInstructionAndValue(input[index], out var pushVal1);
 
         var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(((~(int)pushVal1) & 0xFFFFFF), firstInstruction.Location)};
@@ -326,7 +327,7 @@ internal sealed class ConstFoldBitOr : IPeepholeOptimization {
         ];
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         var firstInstruction = IPeepholeOptimization.GetInstructionAndValue(input[index], out var pushVal1);
 
         IPeepholeOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
@@ -353,7 +354,7 @@ internal sealed class ConstFoldBitAnd : IPeepholeOptimization {
         ];
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         var firstInstruction = IPeepholeOptimization.GetInstructionAndValue(input[index], out var pushVal1);
 
         IPeepholeOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
@@ -380,7 +381,7 @@ internal sealed class ConstFoldMultiply : IOptimization {
         ];
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         var firstInstruction = IOptimization.GetInstructionAndValue(input[index], out var pushVal1);
 
         IOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
@@ -407,7 +408,7 @@ internal sealed class ConstFoldDivide : IOptimization {
         ];
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         var firstInstruction = IOptimization.GetInstructionAndValue(input[index], out var pushVal1);
 
         IOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
@@ -436,7 +437,7 @@ internal sealed class ConstFoldAdd : IOptimization {
         ];
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         var firstInstruction = IOptimization.GetInstructionAndValue(input[index], out var pushVal1);
 
         IOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
@@ -463,7 +464,7 @@ internal sealed class ConstFoldSubtract : IOptimization {
         ];
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         var firstInstruction = IOptimization.GetInstructionAndValue(input[index], out var pushVal1);
 
         IOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
@@ -492,7 +493,7 @@ internal sealed class ConstFoldModulus : IOptimization {
         ];
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         var firstInstruction = IOptimization.GetInstructionAndValue(input[index], out var pushVal1);
 
         IOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
@@ -521,7 +522,7 @@ internal sealed class ConstFoldPower : IOptimization {
         ];
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         var firstInstruction = IOptimization.GetInstructionAndValue(input[index], out var pushVal1);
 
         IOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
@@ -532,6 +533,86 @@ internal sealed class ConstFoldPower : IOptimization {
 
         IOptimization.ReplaceInstructions(input, index, 3,
             new AnnotatedBytecodeInstruction(DreamProcOpcode.PushFloat, 1, args));
+    }
+}
+
+// AssignNoPush [ref]
+// PushReferenceValue [ref]
+// -> Assign [ref]
+// These opcodes can be reduced to a single Assign as long as the [ref]s are the same
+internal sealed class AssignAndPushReferenceValue : IPeepholeOptimization {
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.AssignNoPush,
+            DreamProcOpcode.PushReferenceValue
+        ];
+    }
+
+    /// <summary>
+    /// We can only apply this optimization if both opcodes refer to the same reference
+    /// </summary>
+    public bool CheckPreconditions(List<IAnnotatedBytecode> input, int index) {
+        if (index + 1 >= input.Count) {
+            throw new ArgumentOutOfRangeException(nameof(index), "Index plus one is outside the bounds of the input list.");
+        }
+
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
+        AnnotatedBytecodeInstruction secondInstruction = (AnnotatedBytecodeInstruction)(input[index + 1]);
+
+        AnnotatedBytecodeReference assignTarget = firstInstruction.GetArg<AnnotatedBytecodeReference>(0);
+        AnnotatedBytecodeReference pushTarget = secondInstruction.GetArg<AnnotatedBytecodeReference>(0);
+
+        return assignTarget.Equals(pushTarget);
+    }
+
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
+        // We check the input bounds in CheckPreconditions, so we can skip doing it again here
+
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
+        AnnotatedBytecodeReference assignTarget = firstInstruction.GetArg<AnnotatedBytecodeReference>(0);
+
+        input.RemoveRange(index, 2);
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.Assign, [assignTarget]));
+    }
+}
+
+// AppendNoPush [ref]
+// PushReferenceValue [ref]
+// -> Append [ref]
+// These opcodes can be reduced to a single Append as long as the [ref]s are the same
+internal sealed class AppendAndPushReferenceValue : IPeepholeOptimization {
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.AppendNoPush,
+            DreamProcOpcode.PushReferenceValue
+        ];
+    }
+
+    /// <summary>
+    /// We can only apply this optimization if both opcodes refer to the same reference
+    /// </summary>
+    public bool CheckPreconditions(List<IAnnotatedBytecode> input, int index) {
+        if (index + 1 >= input.Count) {
+            throw new ArgumentOutOfRangeException(nameof(index), "Index plus one is outside the bounds of the input list.");
+        }
+
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
+        AnnotatedBytecodeInstruction secondInstruction = (AnnotatedBytecodeInstruction)(input[index + 1]);
+
+        AnnotatedBytecodeReference appendTarget = firstInstruction.GetArg<AnnotatedBytecodeReference>(0);
+        AnnotatedBytecodeReference pushTarget = secondInstruction.GetArg<AnnotatedBytecodeReference>(0);
+
+        return appendTarget.Equals(pushTarget);
+    }
+
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
+        // We check the input bounds in CheckPreconditions, so we can skip doing it again here
+
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
+        AnnotatedBytecodeReference appendTarget = firstInstruction.GetArg<AnnotatedBytecodeReference>(0);
+
+        input.RemoveRange(index, 2);
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.Append, [appendTarget]));
     }
 }
 
@@ -550,7 +631,7 @@ internal sealed class ConstFoldBitshiftLeft : IOptimization {
         ];
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         var firstInstruction = IOptimization.GetInstructionAndValue(input[index], out var pushVal1);
         IOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
 
@@ -578,7 +659,7 @@ internal sealed class ConstFoldBitshiftRight : IOptimization {
         ];
     }
 
-    public void Apply(List<IAnnotatedBytecode> input, int index) {
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
         var firstInstruction = IOptimization.GetInstructionAndValue(input[index], out var pushVal1);
         IOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
 

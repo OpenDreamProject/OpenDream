@@ -9,7 +9,7 @@ namespace DMCompiler.Optimizer;
 internal interface IOptimization {
     public OptPass OptimizationPass { get; }
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes();
-    public void Apply(List<IAnnotatedBytecode> input, int index);
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index);
 
     public bool CheckPreconditions(List<IAnnotatedBytecode> input, int index) {
         return true;
@@ -71,7 +71,7 @@ internal sealed class PeepholeOptimizer {
 
             var opcodes = opt.GetOpcodes();
             if (opcodes.Length < 2) {
-                DMCompiler.ForcedError(Location.Internal, $"Peephole optimization {optType} must have at least 2 opcodes");
+                compiler.ForcedError(Location.Internal, $"Peephole optimization {optType} must have at least 2 opcodes");
                 continue;
             }
 
@@ -99,15 +99,13 @@ internal sealed class PeepholeOptimizer {
         }
     }
 
-    public static void RunOptimizations(List<IAnnotatedBytecode> input) {
+    public static void RunPeephole(DMCompiler compiler, List<IAnnotatedBytecode> input) {
         var passes = (OptPass[])Enum.GetValues(typeof(OptPass));
         foreach (var optPass in passes) {
             GetOptimizations(optPass);
             RunPass(input);
         }
     }
-
-    private static void RunPass(List<IAnnotatedBytecode> input) {
         OptimizationTreeEntry? currentOpt = null;
         int optSize = 0;
 
@@ -118,7 +116,7 @@ internal sealed class PeepholeOptimizer {
             int offset;
 
             if (currentOpt.Optimization?.CheckPreconditions(input, i - optSize) is true) {
-                currentOpt.Optimization.Apply(input, i - optSize);
+                currentOpt.Optimization.Apply(compiler, input, i - optSize);
                 offset = (optSize + 2); // Run over the new opcodes for potential further optimization
             } else {
                 // This chain of opcodes did not lead to a valid optimization.

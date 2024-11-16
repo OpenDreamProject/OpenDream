@@ -1,14 +1,13 @@
 using System.IO;
 using DMCompiler.Bytecode;
 using DMCompiler.Compiler;
-using DMCompiler.DM;
 using DMCompiler.Json;
 
 namespace DMCompiler.Optimizer;
 
-internal class AnnotatedBytecodeSerializer {
+internal class AnnotatedBytecodeSerializer(DMCompiler compiler) {
     private readonly List<LocalVariableJson> _localVariables = new();
-    private BinaryWriter _bytecodeWriter;
+    private BinaryWriter? _bytecodeWriter;
     private Dictionary<string, int> _labels = new();
     private List<(long Position, string LabelName)> _unresolvedLabels = new();
     private int _lastFileId = -1;
@@ -18,11 +17,8 @@ internal class AnnotatedBytecodeSerializer {
 
     public List<SourceInfoJson> SourceInfo = new();
 
-    public AnnotatedBytecodeSerializer() {
-        _bytecodeWriter = new BinaryWriter(Bytecode);
-    }
-
     public byte[]? Serialize(List<IAnnotatedBytecode> annotatedBytecode) {
+        _bytecodeWriter ??= new BinaryWriter(Bytecode);
         foreach (IAnnotatedBytecode bytecodeChunk in annotatedBytecode) {
             if (bytecodeChunk is AnnotatedBytecodeInstruction instruction) {
                 SerializeInstruction(instruction);
@@ -58,8 +54,9 @@ internal class AnnotatedBytecodeSerializer {
     }
 
     private void SerializeInstruction(AnnotatedBytecodeInstruction instruction) {
+        _bytecodeWriter ??= new BinaryWriter(Bytecode);
         if (instruction.Location.Line != null && (_location == null || instruction.Location.Line != _location?.Line)) {
-            int sourceFileId = DMObjectTree.AddString(instruction.Location.SourceFile);
+            int sourceFileId = compiler.DMObjectTree.AddString(instruction.Location.SourceFile);
             if (_lastFileId != sourceFileId) {
                 _lastFileId = sourceFileId;
                 SourceInfo.Add(new SourceInfoJson {
@@ -149,12 +146,13 @@ internal class AnnotatedBytecodeSerializer {
     }
 
     private void ResolveLabels() {
+        _bytecodeWriter ??= new BinaryWriter(Bytecode);
         foreach ((long position, string labelName) in _unresolvedLabels) {
             if (_labels.TryGetValue(labelName, out int labelPosition)) {
                 _bytecodeWriter.Seek((int)position, SeekOrigin.Begin);
                 _bytecodeWriter.Write((int)labelPosition);
             } else {
-                DMCompiler.Emit(WarningCode.BadLabel, Location.Internal,
+                compiler.Emit(WarningCode.BadLabel, Location.Internal,
                     "Label \"" + labelName + "\" could not be resolved");
             }
         }
@@ -164,6 +162,7 @@ internal class AnnotatedBytecodeSerializer {
     }
 
     public void WriteReference(AnnotatedBytecodeReference reference) {
+        _bytecodeWriter ??= new BinaryWriter(Bytecode);
         _bytecodeWriter.Write((byte)reference.RefType);
         switch (reference.RefType) {
             case DMReference.Type.Argument:
@@ -196,7 +195,7 @@ internal class AnnotatedBytecodeSerializer {
                 break;
 
             default:
-                DMCompiler.ForcedError(_location ?? Location.Unknown, $"Encountered unknown reference type {reference.RefType}");
+                compiler.ForcedError(_location ?? Location.Unknown, $"Encountered unknown reference type {reference.RefType}");
                 break;
         }
     }

@@ -952,7 +952,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                         }
 
                         if (property == null && fromObject.GetGlobalVariableId(field) is { } globalId) {
-                            property = ObjectTree.Globals [globalId];
+                            property = ObjectTree.Globals[globalId];
 
                             expr = new GlobalField(expr.Location, property.Type, globalId, property.ValType);
 

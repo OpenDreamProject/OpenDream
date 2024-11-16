@@ -2801,6 +2801,7 @@ namespace DMCompiler.Compiler.DM {
                 case "path": return DMValueType.Path;
                 case "opendream_unimplemented": return DMValueType.Unimplemented;
                 case "opendream_compiletimereadonly": return DMValueType.CompiletimeReadonly;
+                case "opendream_noconstfold": return DMValueType.NoConstFold;
                 default:
                     Emit(WarningCode.BadToken, typeToken.Location, $"Invalid value type '{typeToken.Text}'");
                     return 0;

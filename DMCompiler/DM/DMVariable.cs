@@ -14,6 +14,9 @@ internal sealed class DMVariable {
     public DMExpression? Value;
     public DMComplexValueType ValType;
 
+    public bool CanConstFold => (IsConst || ValType.MatchesType(DMValueType.CompiletimeReadonly)) &&
+                                !ValType.MatchesType(DMValueType.NoConstFold);
+
     public DMVariable(DreamPath? type, string name, bool isGlobal, bool isConst, bool isTmp, DMComplexValueType? valType = null) {
         Type = type;
         Name = name;

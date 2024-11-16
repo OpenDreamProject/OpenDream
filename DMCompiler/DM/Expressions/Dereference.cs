@@ -303,14 +303,8 @@ internal class Dereference : LValue {
 
         if (operation is FieldOperation fieldOperation && prevPath is not null && compiler.DMObjectTree.TryGetDMObject(prevPath.Value, out var obj)) {
             var variable = obj.GetVariable(fieldOperation.Identifier);
-            if (variable != null) {
-                if (variable.IsConst)
-                    return variable.Value.TryAsConstant(compiler, out constant);
-                if (variable.ValType.IsCompileTimeReadOnly) {
-                    variable.Value.TryAsConstant(compiler, out constant!);
-                    return true; // MUST be true.
-                }
-            }
+            if (variable is { CanConstFold: true })
+                return variable.Value.TryAsConstant(compiler, out constant);
         }
 
         constant = null;

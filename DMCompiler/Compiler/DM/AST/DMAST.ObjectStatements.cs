@@ -65,7 +65,7 @@ public sealed class DMASTObjectVarDefinition(
 
     private readonly ObjVarDeclInfo _varDecl = new(path);
 
-    public bool IsStatic => _varDecl.IsStatic || IsConst;
+    public bool IsStatic => _varDecl.IsStatic;
 
     public bool IsConst => _varDecl.IsConst;
     public bool IsTmp => _varDecl.IsTmp;

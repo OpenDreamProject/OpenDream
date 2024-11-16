@@ -236,8 +236,8 @@ internal sealed class AnnotatedBytecodeString(int id, Location location) : IAnno
         return Location;
     }
 
-    public string ResolveString() {
-        return DMObjectTree.StringTable[Id];
+    public string ResolveString(DMCompiler compiler) {
+        return compiler.DMObjectTree.StringTable[Id];
     }
 }
 

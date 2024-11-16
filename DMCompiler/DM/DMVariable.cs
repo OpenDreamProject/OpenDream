@@ -14,6 +14,9 @@ internal sealed class DMVariable {
     public DMExpression? Value;
     public DMComplexValueType ValType;
 
+    public bool CanConstFold => (IsConst || ValType.Type.HasFlag(DMValueType.CompiletimeReadonly)) &&
+                                !ValType.Type.HasFlag(DMValueType.NoConstFold);
+
     public DMVariable(DreamPath? type, string name, bool isGlobal, bool isConst, bool isTmp, DMComplexValueType? valType = null) {
         Type = type;
         Name = name;
@@ -34,7 +37,7 @@ internal sealed class DMVariable {
         ValType = copyFrom.ValType;
     }
 
-    public bool TryAsJsonRepresentation([NotNullWhen(true)] out object? valueJson) {
-        return Value.TryAsJsonRepresentation(out valueJson);
+    public bool TryAsJsonRepresentation(DMCompiler compiler, [NotNullWhen(true)] out object? valueJson) {
+        return Value.TryAsJsonRepresentation(compiler, out valueJson);
     }
 }

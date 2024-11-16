@@ -60,8 +60,8 @@
 #define SYNC_STEPS 3
 
 //world.system_type
-#define UNIX 0
-#define MS_WINDOWS 1
+#define UNIX "UNIX"
+#define MS_WINDOWS "MS_WINDOWS"
 
 //Icon blending functions
 #define ICON_ADD 0

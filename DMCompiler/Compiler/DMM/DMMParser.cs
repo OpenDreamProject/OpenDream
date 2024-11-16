@@ -1,11 +1,11 @@
-﻿using DMCompiler.DM;
-using DMCompiler.Compiler.DM;
+﻿using DMCompiler.Compiler.DM;
 using DMCompiler.Compiler.DM.AST;
+using DMCompiler.DM.Builders;
 using DMCompiler.Json;
 
 namespace DMCompiler.Compiler.DMM;
 
-internal sealed class DMMParser(DMLexer lexer, int zOffset) : DMParser(lexer) {
+internal sealed class DMMParser(DMCompiler compiler, DMLexer lexer, int zOffset) : DMParser(compiler, lexer) {
     private int _cellNameLength = -1;
     private readonly HashSet<DreamPath> _skippedTypes = new();
 
@@ -55,7 +55,7 @@ internal sealed class DMMParser(DMLexer lexer, int zOffset) : DMParser(lexer) {
             CellDefinitionJson cellDefinition = new CellDefinitionJson(currentToken.ValueAsString());
             DMASTPath? objectType = Path();
             while (objectType != null) {
-                if (!DMObjectTree.TryGetDMObject(objectType.Path, out var type) && _skippedTypes.Add(objectType.Path)) {
+                if (!Compiler.DMObjectTree.TryGetDMObject(objectType.Path, out var type) && _skippedTypes.Add(objectType.Path)) {
                     Warning($"Skipping type '{objectType.Path}'");
                 }
 
@@ -71,15 +71,16 @@ internal sealed class DMMParser(DMLexer lexer, int zOffset) : DMParser(lexer) {
                         }
 
                         if (!varOverride.ObjectPath.Equals(DreamPath.Root))
-                            DMCompiler.ForcedError(statement.Location, $"Invalid var name '{varOverride.VarName}' in DMM on type {objectType.Path}");
+                            Compiler.ForcedError(statement.Location, $"Invalid var name '{varOverride.VarName}' in DMM on type {objectType.Path}");
 
-                        DMObjectTree.TryGetDMObject(objectType.Path, out var dmObject);
-                        DMExpression value = DMExpression.Create(dmObject, null, varOverride.Value);
-                        if (!value.TryAsJsonRepresentation(out var valueJson))
-                            DMCompiler.ForcedError(statement.Location, $"Failed to serialize value to json ({value})");
+                        Compiler.DMObjectTree.TryGetDMObject(objectType.Path, out var dmObject);
+                        var exprBuilder = new DMExpressionBuilder(new(Compiler, dmObject, null));
+                        var value = exprBuilder.Create(varOverride.Value);
+                        if (!value.TryAsJsonRepresentation(Compiler, out var valueJson))
+                            Compiler.ForcedError(statement.Location, $"Failed to serialize value to json ({value})");
 
                         if(!mapObject.AddVarOverride(varOverride.VarName, valueJson)) {
-                            DMCompiler.ForcedWarning(statement.Location, $"Duplicate var override '{varOverride.VarName}' in DMM on type {objectType.Path}");
+                            Compiler.ForcedWarning(statement.Location, $"Duplicate var override '{varOverride.VarName}' in DMM on type {objectType.Path}");
                         }
 
                         CurrentPath = DreamPath.Root;

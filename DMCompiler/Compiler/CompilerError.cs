@@ -50,6 +50,7 @@ public enum WarningCode {
     PointlessScopeOperator = 2209,
     PointlessPositionalArgument = 2210,
     ProcArgumentGlobal = 2211, // Prepending "/" on a proc arg (e.g. "/proc/example(/var/foo)" makes the arg a global var. Ref https://www.byond.com/forum/post/2830750
+    AmbiguousVarStatic = 2212, // Referencing a static variable when an instance variable with the same name exists
     MalformedRange = 2300,
     InvalidRange = 2301,
     InvalidSetStatement = 2302,

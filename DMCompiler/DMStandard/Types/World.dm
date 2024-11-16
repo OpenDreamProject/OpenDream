@@ -42,7 +42,7 @@
 
 	var/sleep_offline = 0
 
-	var/system_type
+	var/const/system_type as opendream_noconstfold
 
 	var/map_cpu = 0 as opendream_unimplemented
 	var/hub as opendream_unimplemented
@@ -56,7 +56,7 @@
 	
 	// An OpenDream read-only var that tells you what port Topic() is listening on
 	// Remove OPENDREAM_TOPIC_PORT_EXISTS if this is ever removed
-	var/const/opendream_topic_port
+	var/const/opendream_topic_port as opendream_noconstfold
 	
 	proc/New()
 	proc/Del()

@@ -3,7 +3,7 @@ using System.Text;
 
 namespace DMCompiler.Compiler.DM;
 
-public sealed class DMLexer : TokenLexer {
+internal sealed class DMLexer : TokenLexer {
     public static readonly List<string> ValidEscapeSequences = [
         "icon",
         "Roman", "roman",
@@ -68,7 +68,7 @@ public sealed class DMLexer : TokenLexer {
     private readonly Stack<int> _indentationStack = new(new[] { 0 });
 
     /// <param name="source">The enumerable list of tokens output by <see cref="DMPreprocessor.DMPreprocessorLexer"/>.</param>
-    public DMLexer(string sourceName, IEnumerable<Token> source) : base(sourceName, source) { }
+    internal DMLexer(string sourceName, IEnumerable<Token> source) : base(sourceName, source) { }
 
     protected override Token ParseNextToken() {
         Token token;

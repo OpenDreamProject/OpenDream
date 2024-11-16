@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using DMCompiler.Compiler;
@@ -7,7 +6,7 @@ using DMCompiler.Json;
 namespace DMCompiler.DM.Expressions;
 
 internal abstract class Constant(Location location) : DMExpression(location) {
-    public sealed override bool TryAsConstant(out Constant constant) {
+    public sealed override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
         constant = this;
         return true;
     }
@@ -19,13 +18,13 @@ internal abstract class Constant(Location location) : DMExpression(location) {
 internal sealed class Null(Location location) : Constant(location) {
     public override DMComplexValueType ValType => DMValueType.Null;
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        proc.PushNull();
+    public override void EmitPushValue(ExpressionContext ctx) {
+        ctx.Proc.PushNull();
     }
 
     public override bool IsTruthy() => false;
 
-    public override bool TryAsJsonRepresentation(out object? json) {
+    public override bool TryAsJsonRepresentation(DMCompiler compiler, out object? json) {
         json = null;
         return true;
     }
@@ -45,13 +44,13 @@ internal sealed class Number : Constant {
         Value = value;
     }
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        proc.PushFloat(Value);
+    public override void EmitPushValue(ExpressionContext ctx) {
+        ctx.Proc.PushFloat(Value);
     }
 
     public override bool IsTruthy() => Value != 0;
 
-    public override bool TryAsJsonRepresentation(out object? json) {
+    public override bool TryAsJsonRepresentation(DMCompiler compiler, out object? json) {
         // Positive/Negative infinity cannot be represented in JSON and need a special value
         if (float.IsPositiveInfinity(Value)) {
             json = new Dictionary<string, JsonVariableType>() {
@@ -75,13 +74,13 @@ internal sealed class String(Location location, string value) : Constant(locatio
 
     public override DMComplexValueType ValType => DMValueType.Text;
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        proc.PushString(Value);
+    public override void EmitPushValue(ExpressionContext ctx) {
+        ctx.Proc.PushString(Value);
     }
 
     public override bool IsTruthy() => Value.Length != 0;
 
-    public override bool TryAsJsonRepresentation(out object? json) {
+    public override bool TryAsJsonRepresentation(DMCompiler compiler, out object? json) {
         json = Value;
         return true;
     }
@@ -102,12 +101,12 @@ internal sealed class Resource : Constant {
     private readonly string _filePath;
     private bool _isAmbiguous;
 
-    public Resource(Location location, string filePath) : base(location) {
+    public Resource(DMCompiler compiler, Location location, string filePath) : base(location) {
         // Treat backslashes as forward slashes on Linux
         // Also remove "." and ".." from the directory path
         filePath = System.IO.Path.GetRelativePath(".", filePath.Replace('\\', '/'));
 
-        var outputDir = System.IO.Path.GetDirectoryName(DMCompiler.Settings.Files?[0]) ?? "/";
+        var outputDir = System.IO.Path.GetDirectoryName(compiler.Settings.Files?[0]) ?? "/";
         if (string.IsNullOrEmpty(outputDir))
             outputDir = "./";
 
@@ -117,7 +116,7 @@ internal sealed class Resource : Constant {
         var fileDir = System.IO.Path.GetDirectoryName(filePath) ?? string.Empty;
 
         // Search every defined FILE_DIR
-        foreach (string resourceDir in DMCompiler.ResourceDirectories) {
+        foreach (string resourceDir in compiler.ResourceDirectories) {
             var directory = FindDirectory(resourceDir, fileDir);
 
             if (directory != null) {
@@ -142,11 +141,11 @@ internal sealed class Resource : Constant {
             _filePath = System.IO.Path.GetRelativePath(outputDir, finalFilePath);
 
             if (_isAmbiguous) {
-                DMCompiler.Emit(WarningCode.AmbiguousResourcePath, Location,
+                compiler.Emit(WarningCode.AmbiguousResourcePath, Location,
                     $"Resource {filePath} has multiple case-insensitive matches, using {_filePath}");
             }
         } else {
-            DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Cannot find file '{filePath}'");
+            compiler.Emit(WarningCode.ItemDoesntExist, Location, $"Cannot find file '{filePath}'");
             _filePath = filePath;
         }
 
@@ -154,16 +153,16 @@ internal sealed class Resource : Constant {
         // Compile-time resources always use forward slashes
         _filePath = _filePath.Replace('\\', '/');
 
-        DMObjectTree.Resources.Add(_filePath);
+        compiler.DMObjectTree.Resources.Add(_filePath);
     }
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        proc.PushResource(_filePath);
+    public override void EmitPushValue(ExpressionContext ctx) {
+        ctx.Proc.PushResource(_filePath);
     }
 
     public override bool IsTruthy() => true;
 
-    public override bool TryAsJsonRepresentation(out object? json) {
+    public override bool TryAsJsonRepresentation(DMCompiler compiler, out object? json) {
         json = new Dictionary<string, object>() {
             { "type", JsonVariableType.Resource },
             { "resourcePath", _filePath }
@@ -233,15 +232,15 @@ internal class ConstantTypeReference(Location location, DMObject dmObject) : Con
     public override DreamPath? Path => Value.Path;
     public override DMComplexValueType ValType => Value.Path;
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        proc.PushType(Value.Id);
+    public override void EmitPushValue(ExpressionContext ctx) {
+        ctx.Proc.PushType(Value.Id);
     }
 
-    public override string? GetNameof(DMObject dmObject) => Value.Path.LastElement;
+    public override string? GetNameof(ExpressionContext ctx) => Value.Path.LastElement;
 
     public override bool IsTruthy() => true;
 
-    public override bool TryAsJsonRepresentation(out object? json) {
+    public override bool TryAsJsonRepresentation(DMCompiler compiler, out object? json) {
         json = new Dictionary<string, object> {
             { "type", JsonVariableType.Type },
             { "value", Value.Id }
@@ -260,15 +259,15 @@ internal sealed class ConstantProcReference(Location location, DreamPath path, D
 
     public override DreamPath? Path => path;
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-        proc.PushProc(Value.Id);
+    public override void EmitPushValue(ExpressionContext ctx) {
+        ctx.Proc.PushProc(Value.Id);
     }
 
-    public override string GetNameof(DMObject dmObject) => Value.Name;
+    public override string GetNameof(ExpressionContext ctx) => Value.Name;
 
     public override bool IsTruthy() => true;
 
-    public override bool TryAsJsonRepresentation(out object? json) {
+    public override bool TryAsJsonRepresentation(DMCompiler compiler, out object? json) {
         json = new Dictionary<string, object> {
             { "type", JsonVariableType.Proc },
             { "value", Value.Id }
@@ -288,14 +287,14 @@ internal sealed class ConstantProcStub(Location location, DMObject onObject, boo
 
     public override DreamPath? Path => onObject.Path.AddToPath(isVerb ? "verb" : "proc");
 
-    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+    public override void EmitPushValue(ExpressionContext ctx) {
         // /datum/proc and /datum/verb just compile down to strings lmao
-        proc.PushString(_str);
+        ctx.Proc.PushString(_str);
     }
 
     public override bool IsTruthy() => true;
 
-    public override bool TryAsJsonRepresentation(out object? json) {
+    public override bool TryAsJsonRepresentation(DMCompiler compiler, out object? json) {
         json = _str;
         return true;
     }

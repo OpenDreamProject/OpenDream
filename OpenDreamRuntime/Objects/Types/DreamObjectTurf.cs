@@ -2,16 +2,16 @@
 
 public sealed class DreamObjectTurf : DreamObjectAtom {
     public readonly int X, Y, Z;
-    public readonly IDreamMapManager.Cell Cell;
     public readonly TurfContentsList Contents;
+    public IDreamMapManager.Cell Cell;
     public int AppearanceId;
 
-    public DreamObjectTurf(DreamObjectDefinition objectDefinition, int x, int y, int z, IDreamMapManager.Cell cell) : base(objectDefinition) {
+    public DreamObjectTurf(DreamObjectDefinition objectDefinition, int x, int y, int z) : base(objectDefinition) {
         X = x;
         Y = y;
         Z = z;
-        Cell = cell;
-        Contents = new TurfContentsList(ObjectTree.List.ObjectDefinition, Cell);
+        Cell = default!; // NEEDS to be set by DreamMapManager after creation
+        Contents = new TurfContentsList(ObjectTree.List.ObjectDefinition, this);
     }
 
     public void SetTurfType(DreamObjectDefinition objectDefinition) {

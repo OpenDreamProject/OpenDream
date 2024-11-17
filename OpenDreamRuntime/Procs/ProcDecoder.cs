@@ -152,6 +152,7 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
             case DreamProcOpcode.CreateTypeEnumerator:
             case DreamProcOpcode.DestroyEnumerator:
             case DreamProcOpcode.IsTypeDirect:
+            case DreamProcOpcode.CreateMultidimensionalList:
                 return (opcode, ReadInt());
 
             case DreamProcOpcode.JumpIfTrueReference:

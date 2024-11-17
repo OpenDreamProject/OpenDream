@@ -452,7 +452,9 @@ internal sealed class ConstFoldAdd : IOptimization {
 // PushString [constant]
 // Add
 // -> PushString [result]
-internal sealed class ConstFoldAddStrings : IPeepholeOptimization {
+internal sealed class ConstFoldAddStrings : IOptimization {
+    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
+
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushString,
@@ -470,7 +472,7 @@ internal sealed class ConstFoldAddStrings : IPeepholeOptimization {
 
         var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeString(combinedId, firstInstruction.Location)};
 
-        IPeepholeOptimization.ReplaceInstructions(input, index, 3,
+        IOptimization.ReplaceInstructions(input, index, 3,
             new AnnotatedBytecodeInstruction(DreamProcOpcode.PushString, 1, args));
     }
 }

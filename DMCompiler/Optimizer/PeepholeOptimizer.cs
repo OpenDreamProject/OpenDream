@@ -33,9 +33,9 @@ internal interface IOptimization {
 /// The list of peephole optimizer passes in the order that they should run
 /// </summary>
 internal enum OptPass : byte {
-    PeepholeOptimization = 1,   // First-pass peephole optimizations (e.g. const folding)
-    BytecodeCompactor = 2,      // Next-pass bytecode compacting (e.g. PushNFloats and other PushN opcodes)
-    ListCompactor = 3           // Final-pass list compacting (e.g. PushNFloats & CreateList -> CreateListNFloats)
+    PeepholeOptimization = 0,   // First-pass peephole optimizations (e.g. const folding)
+    BytecodeCompactor = 1,      // Next-pass bytecode compacting (e.g. PushNFloats and other PushN opcodes)
+    ListCompactor = 2           // Final-pass list compacting (e.g. PushNFloats & CreateList -> CreateListNFloats)
 }
 
 // ReSharper disable once ClassNeverInstantiated.Global
@@ -46,17 +46,27 @@ internal sealed class PeepholeOptimizer {
     }
 
     /// <summary>
+    /// The optimization passes in the order that they run
+    /// </summary>
+    private static OptPass[] _passes;
+
+    /// <summary>
     /// Trees matching chains of opcodes to peephole optimizations
     /// </summary>
-    /// <remarks>This is instantiated when the optimizer runs</remarks>
-    private static Dictionary<DreamProcOpcode, OptimizationTreeEntry> _optimizationTrees = null!;
+    private static Dictionary<DreamProcOpcode, OptimizationTreeEntry>[] _optimizationTrees;
 
-    /// Setup <see cref="_optimizationTrees"/> for the current <see cref="OptPass"/>
-    private static void GetOptimizations(DMCompiler compiler, OptPass optPass) {
-        _optimizationTrees = new();
+    static PeepholeOptimizer() {
+        _passes = (OptPass[])Enum.GetValues(typeof(OptPass));
+        _optimizationTrees = new Dictionary<DreamProcOpcode, OptimizationTreeEntry>[_passes.Length];
+        for (int i = 0; i < _optimizationTrees.Length; i++) {
+            _optimizationTrees[i] = new Dictionary<DreamProcOpcode, OptimizationTreeEntry>();
+        }
+    }
 
+    /// Setup <see cref="_optimizationTrees"/> for each <see cref="OptPass"/>
+    private static void GetOptimizations(DMCompiler compiler) {
         var possibleTypes = typeof(IOptimization).Assembly.GetTypes();
-        var optimizationTypes = new List<Type>();
+        var optimizationTypes = new List<Type>(possibleTypes.Length);
 
         foreach (var type in possibleTypes) {
             if (typeof(IOptimization).IsAssignableFrom(type) && type is { IsClass: true, IsAbstract: false }) {
@@ -66,8 +76,6 @@ internal sealed class PeepholeOptimizer {
 
         foreach (var optType in optimizationTypes) {
             var opt = (IOptimization)(Activator.CreateInstance(optType)!);
-            if(opt.OptimizationPass != optPass)
-                continue;
 
             var opcodes = opt.GetOpcodes();
             if (opcodes.Length < 2) {
@@ -75,12 +83,12 @@ internal sealed class PeepholeOptimizer {
                 continue;
             }
 
-            if (!_optimizationTrees.TryGetValue(opcodes[0], out var treeEntry)) {
+            if (!_optimizationTrees[(byte)opt.OptimizationPass].TryGetValue(opcodes[0], out var treeEntry)) {
                 treeEntry = new() {
                     Children = new()
                 };
 
-                _optimizationTrees.Add(opcodes[0], treeEntry);
+                _optimizationTrees[(byte)opt.OptimizationPass].Add(opcodes[0], treeEntry);
             }
 
             for (int i = 1; i < opcodes.Length; i++) {
@@ -100,14 +108,13 @@ internal sealed class PeepholeOptimizer {
     }
 
     public static void RunPeephole(DMCompiler compiler, List<IAnnotatedBytecode> input) {
-        var passes = (OptPass[])Enum.GetValues(typeof(OptPass));
-        foreach (var optPass in passes) {
-            GetOptimizations(compiler, optPass);
-            RunPass(compiler, input);
+        GetOptimizations(compiler);
+        foreach (var optPass in _passes) {
+            RunPass(compiler, (byte)optPass, input);
         }
     }
 
-    private static void RunPass(DMCompiler compiler, List<IAnnotatedBytecode> input) {
+    private static void RunPass(DMCompiler compiler, byte pass, List<IAnnotatedBytecode> input) {
         OptimizationTreeEntry? currentOpt = null;
         int optSize = 0;
 
@@ -142,7 +149,7 @@ internal sealed class PeepholeOptimizer {
 
             if (currentOpt == null) {
                 optSize = 1;
-                _optimizationTrees.TryGetValue(opcode, out currentOpt);
+                _optimizationTrees[pass].TryGetValue(opcode, out currentOpt);
                 continue;
             }
 

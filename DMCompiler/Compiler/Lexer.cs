@@ -3,21 +3,31 @@
 namespace DMCompiler.Compiler;
 
 internal class Lexer<TSourceType> {
+    /// <summary>
+    /// Location of token that'll be output by <see cref="GetCurrent"/>. If you skip through more
+    /// </summary>
     public Location CurrentLocation { get; protected set; }
-    public Location PreviousLocation { get; protected set; }
-    public string SourceName { get; protected set; }
-    public IEnumerable<TSourceType> Source { get; protected set; }
-    public bool AtEndOfSource { get; protected set; } = false;
+    /// <summary>
+    /// Location of a previous token.
+    /// </summary>
+    public Location PreviousLocation { get; private set; }
+    public IEnumerable<TSourceType> Source { get; private set; }
+    public bool AtEndOfSource { get; private set; }
 
     protected Queue<Token> _pendingTokenQueue = new();
 
     private readonly IEnumerator<TSourceType> _sourceEnumerator;
     private TSourceType _current;
 
+    /// <summary>
+    /// Given a stream of some type, allows to advance through it and create <see cref="Token"/> tokens
+    /// </summary>
+    /// <param name="sourceName">Used to build the initial Location, access through <see cref="CurrentLocation"/></param>
+    /// <param name="source">Source of <see cref="TSourceType"/> input</param>
+    /// <exception cref="FileNotFoundException">Thrown if <paramref name="source"/> is null</exception>
     protected Lexer(string sourceName, IEnumerable<TSourceType> source) {
         CurrentLocation = new Location(sourceName, 1, 0);
         PreviousLocation = CurrentLocation;
-        SourceName = sourceName;
         Source = source;
         if (source == null)
             throw new FileNotFoundException("Source file could not be read: " + sourceName);
@@ -28,7 +38,7 @@ internal class Lexer<TSourceType> {
         if (_pendingTokenQueue.Count > 0)
             return _pendingTokenQueue.Dequeue();
 
-        Token nextToken = ParseNextToken();
+        var nextToken = ParseNextToken();
         while (nextToken.Type == TokenType.Skip) nextToken = ParseNextToken();
 
         if (_pendingTokenQueue.Count > 0) {
@@ -48,10 +58,19 @@ internal class Lexer<TSourceType> {
         return token;
     }
 
+    /// <summary>
+    /// Creates a new <see cref="Token"/> located at <see cref="PreviousLocation"/>
+    /// </summary>
+    /// <remarks>
+    /// If you have used <see cref="Advance"/> more than once, the <see cref="Location"/> will be incorrect,
+    /// and you'll need to use <see cref="CreateToken(TokenType, string, Location, object?)"/>
+    /// with a previously recorded <see cref="CurrentLocation"/>
+    /// </remarks>
     protected Token CreateToken(TokenType type, string text, object? value = null) {
         return CreateToken(type, text, PreviousLocation, value);
     }
 
+    /// <inheritdoc cref="CreateToken(TokenType, string, object?)"/>
     protected Token CreateToken(TokenType type, char text, object? value = null) {
         return CreateToken(type, char.ToString(text), value);
     }
@@ -75,6 +94,7 @@ internal class Lexer<TSourceType> {
 }
 
 internal class TokenLexer : Lexer<Token> {
+    /// <inheritdoc/>
     protected TokenLexer(string sourceName, IEnumerable<Token> source) : base(sourceName, source) {
         Advance();
     }

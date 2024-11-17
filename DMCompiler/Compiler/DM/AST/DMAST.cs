@@ -9,15 +9,14 @@ public abstract class DMASTNode(Location location) {
         return $"{ToString(null)}";
     }
 
-    public string ToString(Location? loc, bool hideLoc = false) {
-        if (hideLoc || (loc is not null && Location.SourceFile == loc.Value.SourceFile && Location.Line == loc.Value.Line))
-            return $"{ToStringNoLocation()}";
+    public string ToString(Location? loc) {
+        if (loc is not null && Location.SourceFile == loc.Value.SourceFile && Location.Line == loc.Value.Line)
+            return ToStringNoLocation();
         return $"{ToStringNoLocation()} [{Location}]";
     }
 
-    public virtual string ToStringNoLocation()
-    {
-        return $"{GetType().Name}";
+    public virtual string ToStringNoLocation() {
+        return GetType().Name;
     }
 }
 

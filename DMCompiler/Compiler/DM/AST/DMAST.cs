@@ -4,6 +4,20 @@ namespace DMCompiler.Compiler.DM.AST;
 
 public abstract class DMASTNode(Location location) {
     public readonly Location Location = location;
+
+    public override string ToString() {
+        return $"{ToString(null)}";
+    }
+
+    public string ToString(Location? loc) {
+        if (loc is not null && Location.SourceFile == loc.Value.SourceFile && Location.Line == loc.Value.Line)
+            return ToStringNoLocation();
+        return $"{ToStringNoLocation()} [{Location}]";
+    }
+
+    public virtual string ToStringNoLocation() {
+        return GetType().Name;
+    }
 }
 
 public sealed class DMASTFile(Location location, DMASTBlockInner blockInner) : DMASTNode(location) {

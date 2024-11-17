@@ -638,7 +638,7 @@ internal sealed class DMPreprocessor(DMCompiler compiler, bool enableDirectives)
 
         Token warningTypeToken = GetNextToken(true);
         if (warningTypeToken.Type != TokenType.DM_Preproc_Identifier) {
-            compiler.Emit(WarningCode.BadDirective, warningNameToken.Location, $"Warnings can only be set to disabled, notice, warning, or error");
+            compiler.Emit(WarningCode.BadDirective, warningTypeToken.Location, "Warnings can only be set to disabled, notice, warning, or error");
             return;
         }
         switch(warningTypeToken.Text.ToLower()) {
@@ -660,7 +660,7 @@ internal sealed class DMPreprocessor(DMCompiler compiler, bool enableDirectives)
                 compiler.SetPragma(warningCode, ErrorLevel.Error);
                 break;
             default:
-                compiler.Emit(WarningCode.BadDirective, warningNameToken.Location, $"Warnings can only be set to disabled, notice, warning, or error");
+                compiler.Emit(WarningCode.BadDirective, warningTypeToken.Location, "Warnings can only be set to disabled, notice, warning, or error");
                 return;
         }
     }

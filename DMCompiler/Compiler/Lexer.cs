@@ -7,13 +7,14 @@ internal class Lexer<TSourceType> {
     /// Location of token that'll be output by <see cref="GetCurrent"/>. If you skip through more
     /// </summary>
     public Location CurrentLocation { get; protected set; }
+
     /// <summary>
     /// Location of a previous token.
     /// </summary>
     public Location PreviousLocation { get; private set; }
-    public IEnumerable<TSourceType> Source { get; private set; }
-    public bool AtEndOfSource { get; private set; }
 
+    public IEnumerable<TSourceType> Source { get; }
+    public bool AtEndOfSource { get; private set; }
     protected Queue<Token> _pendingTokenQueue = new();
 
     private readonly IEnumerator<TSourceType> _sourceEnumerator;

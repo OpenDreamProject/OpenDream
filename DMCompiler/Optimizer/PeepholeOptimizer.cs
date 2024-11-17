@@ -53,7 +53,7 @@ internal sealed class PeepholeOptimizer {
     /// <summary>
     /// Trees matching chains of opcodes to peephole optimizations
     /// </summary>
-    private static Dictionary<DreamProcOpcode, OptimizationTreeEntry>[] _optimizationTrees;
+    private static readonly Dictionary<DreamProcOpcode, OptimizationTreeEntry>[] _optimizationTrees;
 
     static PeepholeOptimizer() {
         _passes = (OptPass[])Enum.GetValues(typeof(OptPass));

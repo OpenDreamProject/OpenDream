@@ -235,6 +235,10 @@ internal sealed class AnnotatedBytecodeString(int id, Location location) : IAnno
     public Location GetLocation() {
         return Location;
     }
+
+    public string ResolveString(DMCompiler compiler) {
+        return compiler.DMObjectTree.StringTable[Id];
+    }
 }
 
 internal sealed class AnnotatedBytecodeArgumentType(DMCallArgumentsType value, Location location) : IAnnotatedBytecode {

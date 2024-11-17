@@ -767,6 +767,33 @@ internal sealed class ConstFoldAdd : IPeepholeOptimization {
     }
 }
 
+// PushString [constant]
+// PushString [constant]
+// Add
+// -> PushString [result]
+internal sealed class ConstFoldAddStrings : IPeepholeOptimization {
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.PushString,
+            DreamProcOpcode.PushString,
+            DreamProcOpcode.Add,
+        ];
+    }
+
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
+        var firstInstruction = (AnnotatedBytecodeInstruction)input[index];
+        var firstString = firstInstruction.GetArg<AnnotatedBytecodeString>(0);
+        var secondString = ((AnnotatedBytecodeInstruction)input[index+1]).GetArg<AnnotatedBytecodeString>(0);
+
+        var combinedId = compiler.DMObjectTree.AddString(firstString.ResolveString(compiler) + secondString.ResolveString(compiler)); // TODO: Currently doesn't handle removing strings from the string tree that have no other references
+
+        var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeString(combinedId, firstInstruction.Location)};
+
+        IPeepholeOptimization.ReplaceInstructions(input, index, 3,
+            new AnnotatedBytecodeInstruction(DreamProcOpcode.PushString, 1, args));
+    }
+}
+
 // PushFloat [constant]
 // PushFloat [constant]
 // Subtract

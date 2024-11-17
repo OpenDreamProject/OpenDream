@@ -1,5 +1,4 @@
 using DMCompiler.Bytecode;
-using DMCompiler.DM;
 
 namespace DMCompiler.Optimizer;
 

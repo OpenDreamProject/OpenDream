@@ -48,7 +48,7 @@ internal sealed class PeepholeOptimizer {
     /// <summary>
     /// The optimization passes in the order that they run
     /// </summary>
-    private static OptPass[] _passes;
+    private static readonly OptPass[] _passes;
 
     /// <summary>
     /// Trees matching chains of opcodes to peephole optimizations

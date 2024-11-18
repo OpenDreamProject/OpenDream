@@ -138,6 +138,10 @@ namespace OpenDreamRuntime {
             _objectTree.LoadJson(json);
             DreamProcNative.SetupNativeProcs(_objectTree);
 
+            foreach(DreamObject dreamObject in IterateDatums()){
+                dreamObject.ObjectDefinition = _objectTree.GetObjectDefinition(_objectTree.GetTreeEntry(dreamObject.ObjectDefinition.Type).Id);
+            }
+
         }
 
         public bool LoadJson(string? jsonPath) {

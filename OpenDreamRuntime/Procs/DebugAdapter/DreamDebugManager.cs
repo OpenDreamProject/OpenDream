@@ -6,6 +6,8 @@ using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.DebugAdapter.Protocol;
 using OpenDreamRuntime.Resources;
 using Robust.Server;
+using Robust.Shared.Configuration;
+using OpenDreamShared;
 
 namespace OpenDreamRuntime.Procs.DebugAdapter;
 
@@ -15,6 +17,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
     [Dependency] private readonly DreamResourceManager _resourceManager = default!;
     [Dependency] private readonly ProcScheduler _procScheduler = default!;
     [Dependency] private readonly IBaseServer _server = default!;
+    [Dependency] private readonly IConfigurationManager _configManager = default!;
 
     private ISawmill _sawmill = default!;
 
@@ -352,6 +355,9 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
                 break;
             case RequestHotReloadResource requestHotReloadResource:
                 HandleRequestHotReloadResource(client, requestHotReloadResource);
+                break;
+            case RequestHotReloadBytecode requestHotReloadBytecode:
+                HandleRequestHotReloadBytecode(client, requestHotReloadBytecode);
                 break;
             default:
                 req.RespondError(client, $"Unknown request \"{req.Command}\"");
@@ -848,13 +854,28 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
             requestHotReloadResource.RespondError(client, "No file provided for a hot reload");
             return;
         }
-        
+
         _sawmill.Debug("Debug adapter triggered resource hot reload for "+requestHotReloadResource.Arguments.FilePath);
         try {
             _dreamManager.HotReloadResource(requestHotReloadResource.Arguments.FilePath);
             requestHotReloadResource.Respond(client);
         } catch (Exception e) {
             requestHotReloadResource.RespondError(client, e.Message);
+        }
+    }
+
+    private void HandleRequestHotReloadBytecode(DebugAdapterClient client, RequestHotReloadBytecode requestHotReloadBytecode) {
+        if (string.IsNullOrWhiteSpace(requestHotReloadBytecode.Arguments.FilePath)) {
+            _sawmill.Error("Debug adapter requested a bytecode hot reload but didn't provide a json file");
+            requestHotReloadBytecode.RespondError(client, "No file provided for a hot reload");
+            return;
+        }
+        _sawmill.Debug($"Debug adapter triggered bytecode hot reload for file {requestHotReloadBytecode.Arguments.FilePath}");
+        try {
+            _dreamManager.HotReloadJson(_configManager.GetCVar(OpenDreamCVars.JsonPath));
+            requestHotReloadBytecode.Respond(client);
+        } catch (Exception e) {
+            requestHotReloadBytecode.RespondError(client, e.Message);
         }
     }
 

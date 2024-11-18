@@ -117,6 +117,29 @@ namespace OpenDreamRuntime {
             }
         }
 
+        public void HotReloadJson(string? jsonPath) {
+            if (string.IsNullOrEmpty(jsonPath) || !File.Exists(jsonPath))
+                throw new FileNotFoundException("Could not find the specified json file");
+
+            string jsonSource = File.ReadAllText(jsonPath);
+            DreamCompiledJson? json = JsonSerializer.Deserialize<DreamCompiledJson>(jsonSource);
+            if (json == null)
+                throw new Exception("Failed to deserialize the json file");
+
+            if (!json.Metadata.Version.Equals(OpcodeVerifier.GetOpcodesHash()))
+                throw new Exception("Compiler opcode version does not match the runtime version!");
+
+            _compiledJson = json;
+            var rootPath = Path.GetFullPath(Path.GetDirectoryName(jsonPath)!);
+            var resources = _compiledJson.Resources ?? Array.Empty<string>();
+            _dreamResourceManager.Initialize(rootPath, resources);
+            if(!string.IsNullOrEmpty(_compiledJson.Interface) && !_dreamResourceManager.DoesFileExist(_compiledJson.Interface))
+                throw new FileNotFoundException("Interface DMF not found at "+Path.Join(rootPath,_compiledJson.Interface));
+            _objectTree.LoadJson(json);
+            DreamProcNative.SetupNativeProcs(_objectTree);
+
+        }
+
         public bool LoadJson(string? jsonPath) {
             if (string.IsNullOrEmpty(jsonPath) || !File.Exists(jsonPath))
                 return false;

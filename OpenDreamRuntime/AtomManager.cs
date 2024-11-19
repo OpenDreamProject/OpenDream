@@ -376,8 +376,8 @@ public sealed class AtomManager {
             case "underlays":
                 throw new Exception($"Cannot assign the {varName} var on an appearance");
 
-            // TODO: overlays, underlays, filters
-            //       Those are handled separately by whatever is calling SetAppearanceVar currently
+            // TODO: filters
+            //       It's handled separately by whatever is calling SetAppearanceVar currently
             default:
                 throw new ArgumentException($"Invalid appearance var {varName}");
         }

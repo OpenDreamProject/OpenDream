@@ -29,8 +29,9 @@ public sealed class DreamConnection {
 
     [ViewVariables] public ICommonSession? Session { get; private set; }
     [ViewVariables] public DreamObjectClient? Client { get; private set; }
-    [ViewVariables]
-    public DreamObjectMob? Mob {
+    [ViewVariables] public string Key { get; private set; }
+
+    [ViewVariables] public DreamObjectMob? Mob {
         get => _mob;
         set {
             if (_mob != value) {
@@ -61,8 +62,7 @@ public sealed class DreamConnection {
         }
     }
 
-    [ViewVariables]
-    public DreamObjectMovable? Eye {
+    [ViewVariables] public DreamObjectMovable? Eye {
         get => _eye;
         set {
             _eye = value;
@@ -93,8 +93,9 @@ public sealed class DreamConnection {
         }
     }
 
-    public DreamConnection() {
+    public DreamConnection(string key) {
         IoCManager.InjectDependencies(this);
+        Key = key;
 
         _entitySystemManager.TryGetEntitySystem(out _screenOverlaySystem);
         _entitySystemManager.TryGetEntitySystem(out _clientImagesSystem);

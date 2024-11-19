@@ -344,7 +344,7 @@ namespace OpenDreamRuntime.Objects {
             // /client is a little special and will return its key var
             // TODO: Maybe this should be an override to GetDisplayName()?
             if (this is DreamObjectClient client)
-                return client.Connection.Session!.Name;
+                return client.Connection.Key;
 
             var name = GetRawName();
             bool isProper = StringIsProper(name);

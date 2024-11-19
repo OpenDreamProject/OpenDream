@@ -82,12 +82,11 @@ public sealed class DreamObjectMob : DreamObjectMovable {
                 Key = DreamProcNativeHelpers.Ckey(Key);
 
                 foreach (var connection in DreamManager.Connections) {
-                    if (DreamProcNativeHelpers.Ckey(connection.Session!.Name) == Key) {
+                    if (DreamProcNativeHelpers.Ckey(connection.Key) == Key) {
                         connection.Mob = this;
                         break;
                     }
                 }
-
 
                 break;
             case "see_invisible":

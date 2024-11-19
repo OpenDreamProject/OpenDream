@@ -55,7 +55,7 @@ public sealed class DreamConnection {
                         _mob.Connection.Mob = null;
 
                     _mob.Connection = this;
-                    _mob.Key = Session!.Name;
+                    _mob.Key = Key;
                     _mob.SpawnProc("Login", usr: _mob);
                 }
             }

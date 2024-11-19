@@ -1254,27 +1254,21 @@ public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectA
 }
 
 // proc args list
-sealed class ProcArgsList : DreamList {
-    private readonly DMProcState _state;
-
-    public ProcArgsList(DreamObjectDefinition listDef, DMProcState state) : base(listDef, 0) {
-        _state = state;
-    }
-
+internal sealed class ProcArgsList(DreamObjectDefinition listDef, DMProcState state) : DreamList(listDef, 0) {
     public override DreamValue GetValue(DreamValue key) {
         if (!key.TryGetValueAsInteger(out var index))
             throw new Exception($"Invalid index into args list: {key}");
-        if (index < 1 || index > _state.ArgumentCount)
+        if (index < 1 || index > state.ArgumentCount)
             throw new Exception($"Out of bounds index on args list: {index}");
 
-        return _state.GetArguments()[index - 1];
+        return state.GetArguments()[index - 1];
     }
 
     // TODO: This would preferably be an IEnumerable<> method. Probably as part of #985.
     public override List<DreamValue> GetValues() {
-        List<DreamValue> values = new(_state.ArgumentCount);
+        List<DreamValue> values = new(state.ArgumentCount);
 
-        foreach (DreamValue value in _state.GetArguments()) {
+        foreach (DreamValue value in state.GetArguments()) {
             values.Add(value);
         }
 
@@ -1284,10 +1278,10 @@ sealed class ProcArgsList : DreamList {
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
         if (!key.TryGetValueAsInteger(out var index))
             throw new Exception($"Invalid index into args list: {key}");
-        if (index < 1 || index > _state.ArgumentCount)
+        if (index < 1 || index > state.ArgumentCount)
             throw new Exception($"Out of bounds index on args list: {index}");
 
-        _state.SetArgument(index - 1, value);
+        state.SetArgument(index - 1, value);
     }
 
     public override void AddValue(DreamValue value) {
@@ -1303,7 +1297,7 @@ sealed class ProcArgsList : DreamList {
     }
 
     public override int GetLength() {
-        return _state.ArgumentCount;
+        return state.ArgumentCount;
     }
 }
 

@@ -256,7 +256,7 @@ namespace OpenDreamRuntime {
 
                 case SessionStatus.InGame: {
                     if (!_connections.TryGetValue(e.Session.UserId, out var connection)) {
-                        connection = new DreamConnection();
+                        connection = new DreamConnection(e.Session.Name);
 
                         _connections.Add(e.Session.UserId, connection);
                     }

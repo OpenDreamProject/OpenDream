@@ -10,6 +10,7 @@ public class BytecodeOptimizer {
         RemoveUnreferencedLabels(input);
         JoinAndForwardLabels(input);
         RemoveUnreferencedLabels(input);
+
         PeepholeOptimizer.RunPeephole(compiler, input);
     }
 

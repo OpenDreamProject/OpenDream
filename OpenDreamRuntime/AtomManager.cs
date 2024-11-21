@@ -231,11 +231,11 @@ public sealed class AtomManager {
             case "transform":
             case "appearance":
             case "verbs":
-                return true;
-
-            // Get/SetAppearanceVar doesn't handle these
             case "overlays":
             case "underlays":
+                return true;
+
+            // Get/SetAppearanceVar doesn't handle filters right now
             case "filters":
             default:
                 return false;
@@ -370,8 +370,14 @@ public sealed class AtomManager {
                 break;
             case "appearance":
                 throw new Exception("Cannot assign the appearance var on an appearance");
-            // TODO: overlays, underlays, filters
-            //       Those are handled separately by whatever is calling SetAppearanceVar currently
+
+            // These should be handled by the DreamObject if being accessed through that
+            case "overlays":
+            case "underlays":
+                throw new Exception($"Cannot assign the {varName} var on an appearance");
+
+            // TODO: filters
+            //       It's handled separately by whatever is calling SetAppearanceVar currently
             default:
                 throw new ArgumentException($"Invalid appearance var {varName}");
         }
@@ -452,8 +458,26 @@ public sealed class AtomManager {
             case "appearance":
                 IconAppearance appearanceCopy = new IconAppearance(appearance); // Return a copy
                 return new(appearanceCopy);
-            // TODO: overlays, underlays, filters
-            //       Those are handled separately by whatever is calling GetAppearanceVar currently
+
+            // These should be handled by an atom if referenced through one
+            case "overlays":
+            case "underlays":
+                // In BYOND this just creates a new normal list
+                var lays = varName == "overlays" ? appearance.Overlays : appearance.Underlays;
+                var list = _objectTree.CreateList(lays.Count);
+
+                if (_appearanceSystem != null) {
+                    foreach (var layId in lays) {
+                        var lay = _appearanceSystem.MustGetAppearance(layId);
+
+                        list.AddValue(new(lay));
+                    }
+                }
+
+                return new(list);
+
+            // TODO: filters
+            //       It's handled separately by whatever is calling GetAppearanceVar currently
             default:
                 throw new ArgumentException($"Invalid appearance var {varName}");
         }

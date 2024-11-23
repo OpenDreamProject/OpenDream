@@ -795,6 +795,8 @@ internal sealed class DreamViewOverlay : Overlay {
     }
 
     public Texture GetTextureFromMaptext(string maptext, int width, int height, DrawingHandleWorld handle) {
+        if(width == 0) width = 32;
+        if(height == 0) height = 32;
         IRenderTexture tempTexture = _renderTargetPool.Rent(new Vector2i(width, height));
         handle.RenderInRenderTarget(tempTexture, () => {
             handle.SetTransform(CreateRenderTargetFlipMatrix(tempTexture.Size, Vector2.Zero));

@@ -48,6 +48,9 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
     [ViewVariables] public List<NetEntity> VisContents;
     [ViewVariables] public List<DreamFilter> Filters;
     [ViewVariables] public List<int> Verbs;
+    [ViewVariables] public Vector2i MaptextSize = new(32,32);
+    [ViewVariables] public Vector2i MaptextOffset = new(0,0);
+    [ViewVariables] public string? Maptext;
 
     /// <summary>
     /// An appearance can gain a color matrix filter by two possible forces: <br/>
@@ -107,6 +110,8 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
         Filters = new(appearance.Filters);
         Verbs = new(appearance.Verbs);
         Override = appearance.Override;
+        Maptext = appearance.Maptext;
+        MaptextSize = appearance.MaptextSize;
 
         for (int i = 0; i < 6; i++) {
             Transform[i] = appearance.Transform[i];
@@ -144,6 +149,8 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
         if (appearance.Filters.Count != Filters.Count) return false;
         if (appearance.Verbs.Count != Verbs.Count) return false;
         if (appearance.Override != Override) return false;
+        if (appearance.Maptext != Maptext) return false;
+        if (appearance.MaptextSize != MaptextSize) return false;
 
         for (int i = 0; i < Filters.Count; i++) {
             if (appearance.Filters[i] != Filters[i]) return false;
@@ -226,6 +233,8 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
         hashCode.Add(RenderTarget);
         hashCode.Add(BlendMode);
         hashCode.Add(AppearanceFlags);
+        hashCode.Add(Maptext);
+        hashCode.Add(MaptextSize);
 
         foreach (int overlay in Overlays) {
             hashCode.Add(overlay);

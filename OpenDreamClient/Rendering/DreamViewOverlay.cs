@@ -2,6 +2,8 @@
 using OpenDreamClient.Interface;
 using Robust.Client.Graphics;
 using Robust.Client.Player;
+using Robust.Client.UserInterface;
+using Robust.Shared.Utility;
 using Robust.Shared.Enums;
 using Robust.Shared.Map;
 using OpenDreamShared.Dream;
@@ -13,6 +15,8 @@ using Robust.Shared.Map.Components;
 using Robust.Shared.Profiling;
 using Vector3 = Robust.Shared.Maths.Vector3;
 using Matrix3x2 = System.Numerics.Matrix3x2;
+using Robust.Client.UserInterface.RichText;
+using Robust.Client.ResourceManagement;
 
 namespace OpenDreamClient.Rendering;
 
@@ -40,6 +44,10 @@ internal sealed class DreamViewOverlay : Overlay {
     [Dependency] private readonly IClyde _clyde = default!;
     [Dependency] private readonly IPrototypeManager _protoManager = default!;
     [Dependency] private readonly ProfManager _prof = default!;
+    [Dependency] private readonly MarkupTagManager _tagManager = default!;
+    [Dependency] private readonly IResourceCache _resourceCache = default!;
+
+    private Font _defaultMaptextFont;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.view");
 
@@ -83,6 +91,7 @@ internal sealed class DreamViewOverlay : Overlay {
         _appearanceSystem = appearanceSystem;
         _screenOverlaySystem = screenOverlaySystem;
         _clientImagesSystem = clientImagesSystem;
+         _defaultMaptextFont = new VectorFont(_resourceCache.GetResource<FontResource>("/Fonts/NotoSans-Regular.ttf"),8);
 
         _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
         _xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
@@ -335,6 +344,35 @@ internal sealed class DreamViewOverlay : Overlay {
         }
 
         //TODO maptext - note colour + transform apply
+        //maptext is basically just an image of rendered text added as an overlay
+        if(icon.Appearance.Maptext != null){ //if has maptext
+            RendererMetaData maptext = RentRendererMetaData();
+            maptext.MainIcon = icon;
+            maptext.Position = current.Position;
+            maptext.Uid = current.Uid;
+            maptext.ClickUid = current.Uid;
+            maptext.IsScreen = current.IsScreen;
+            tieBreaker++;
+            maptext.TieBreaker = tieBreaker;
+            maptext.Plane = current.Plane;
+            maptext.Layer = current.Layer;
+            maptext.RenderSource = null;
+            maptext.RenderTarget = null;
+            maptext.MouseOpacity = current.MouseOpacity;
+            maptext.TransformToApply = current.TransformToApply;
+            maptext.ColorToApply = current.ColorToApply;
+            maptext.ColorMatrixToApply = current.ColorMatrixToApply;
+            maptext.AlphaToApply = current.AlphaToApply;
+            maptext.BlendMode = current.BlendMode;
+
+            maptext.AppearanceFlags = current.AppearanceFlags;
+            maptext.AppearanceFlags &= ~AppearanceFlags.PlaneMaster; //doesn't make sense for maptext
+
+            maptext.Maptext = icon.Appearance.Maptext;
+            maptext.MaptextSize = icon.Appearance.MaptextSize;
+            maptext.Position += icon.Appearance.MaptextOffset;
+            result.Add(maptext);
+        }
 
         //TODO particles - colour and transform don't apply?
 
@@ -394,6 +432,11 @@ internal sealed class DreamViewOverlay : Overlay {
             Vector2i ktSize = iconMetaData.MainIcon?.DMI?.IconSize ?? (64,64);
             iconMetaData.TextureOverride = ProcessKeepTogether(handle, iconMetaData, ktSize);
             positionOffset -= ((ktSize/EyeManager.PixelsPerMeter) - Vector2.One) * new Vector2(0.5f); //correct for KT group texture offset
+        }
+
+        //Maptext
+        if(iconMetaData.Maptext != null){
+            iconMetaData.TextureOverride = GetTextureFromMaptext(iconMetaData.Maptext, iconMetaData.MaptextSize!.Value.X, iconMetaData.MaptextSize!.Value.Y, handle);
         }
 
         var frame = iconMetaData.GetTexture(this, handle);
@@ -751,6 +794,27 @@ internal sealed class DreamViewOverlay : Overlay {
         return ktTexture.Texture;
     }
 
+    public Texture GetTextureFromMaptext(string maptext, int width, int height, DrawingHandleWorld handle) {
+        IRenderTexture tempTexture = _renderTargetPool.Rent(new Vector2i(width, height));
+        handle.RenderInRenderTarget(tempTexture, () => {
+            handle.SetTransform(CreateRenderTargetFlipMatrix(tempTexture.Size, Vector2.Zero));
+            float scale = 1;
+            var font = _defaultMaptextFont;
+            var baseLine = new Vector2(0, 0);
+            var lineHeight = font.GetLineHeight(scale);
+            foreach (var rune in maptext.EnumerateRunes()){
+                var metric = font.GetCharMetrics(rune, scale);
+                Vector2 mod = new Vector2(0);
+                if(metric.HasValue)
+                    mod.Y += metric.Value.BearingY;
+
+                baseLine.X += font.DrawChar(handle, rune, baseLine+mod, scale, Color.White);
+            }
+        }, Color.Transparent);
+        _renderTargetPool.ReturnAtEndOfFrame(tempTexture);
+        return tempTexture.Texture;
+    }
+
     /// <summary>
     /// Creates a transformation matrix that counteracts RT's
     /// <see cref="DrawingHandleBase.RenderInRenderTarget(IRenderTarget,Action,System.Nullable{Robust.Shared.Maths.Color})"/> quirks
@@ -807,6 +871,8 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public BlendMode BlendMode;
     public MouseOpacity MouseOpacity;
     public Texture? TextureOverride;
+    public string? Maptext;
+    public Vector2i? MaptextSize;
 
     public bool IsPlaneMaster => (AppearanceFlags & AppearanceFlags.PlaneMaster) != 0;
     public bool HasRenderSource => !string.IsNullOrEmpty(RenderSource);
@@ -836,6 +902,8 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         BlendMode = BlendMode.Default;
         MouseOpacity = MouseOpacity.Transparent;
         TextureOverride = null;
+        Maptext = null;
+        MaptextSize = null;
     }
 
     public Texture? GetTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle) {

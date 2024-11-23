@@ -180,6 +180,14 @@
 		set category = "Test"
 		usr << output("help sec griffing me", "honk.browser:foo")
 
+	verb/test_maptext()
+		set category = "Test"
+		if(length(src.maptext))
+			src.maptext = null;
+		else
+			src.maptext = "Hello!"
+
+
 	verb/demo_filters()
 		set category = "Test"
 		if(length(src.filters))

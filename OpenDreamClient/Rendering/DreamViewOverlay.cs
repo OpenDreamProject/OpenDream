@@ -343,7 +343,6 @@ internal sealed class DreamViewOverlay : Overlay {
             // TODO: vis_flags
         }
 
-        //TODO maptext - note colour + transform apply
         //maptext is basically just an image of rendered text added as an overlay
         if(icon.Appearance.Maptext != null){ //if has maptext
             RendererMetaData maptext = RentRendererMetaData();

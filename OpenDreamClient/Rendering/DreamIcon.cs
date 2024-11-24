@@ -104,6 +104,8 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             TextureRenderOffset = Vector2.Zero;
             return frame;
         } else {
+            if(textureOverride is not null)
+                return FullRenderTexture(viewOverlay, handle, iconMetaData, frame).Texture; //no caching in the presence of overrides
             CachedTexture = FullRenderTexture(viewOverlay, handle, iconMetaData, frame);
         }
 
@@ -156,7 +158,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
                 _appearanceAnimations[i] = lastAnim;
                 break;
             }
-            
+
         _appearanceAnimations.Add(new AppearanceAnimation(start, duration, endingAppearance, easing, flags, delay, true));
     }
 

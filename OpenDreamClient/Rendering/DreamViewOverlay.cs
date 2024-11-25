@@ -369,7 +369,7 @@ internal sealed class DreamViewOverlay : Overlay {
 
             maptext.Maptext = icon.Appearance.Maptext;
             maptext.MaptextSize = icon.Appearance.MaptextSize;
-            maptext.Position += icon.Appearance.MaptextOffset;
+            maptext.Position += icon.Appearance.MaptextOffset/(float)EyeManager.PixelsPerMeter;
             result.Add(maptext);
         }
 

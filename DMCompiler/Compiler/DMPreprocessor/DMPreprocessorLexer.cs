@@ -409,7 +409,7 @@ internal sealed class DMPreprocessorLexer {
                     var trimEnd = complexDelimiter.Length;
                     if (TokenTextBuilder[^(complexDelimiter.Length + 1)] == '\n') trimEnd += 1;
                     if (TokenTextBuilder[^(complexDelimiter.Length + 2)] == '\r') trimEnd += 1;
-                    var trimStart = 3 + complexDelimiter.Length;
+                    var trimStart = 3 + complexDelimiter.Length; // 3 is from these chars: @()
                     value = TokenTextBuilder.ToString(trimStart, TokenTextBuilder.Length - (trimStart + trimEnd));
                 }
                 else if (isLong) {

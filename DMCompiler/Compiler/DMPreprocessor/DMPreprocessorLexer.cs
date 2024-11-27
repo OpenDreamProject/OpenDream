@@ -414,8 +414,12 @@ internal sealed class DMPreprocessorLexer {
                 }
                 else if (isLong) {
                     // Long strings ignore a newline immediately after the @{" and before the "}
+                    if (TokenTextBuilder[3] == '\r')
+                        TokenTextBuilder.Remove(3, 1);
                     if (TokenTextBuilder[3] == '\n')
                         TokenTextBuilder.Remove(3, 1);
+                    if (TokenTextBuilder[^3] == '\r')
+                        TokenTextBuilder.Remove(TokenTextBuilder.Length - 3, 1);
                     if (TokenTextBuilder[^3] == '\n')
                         TokenTextBuilder.Remove(TokenTextBuilder.Length - 3, 1);
 

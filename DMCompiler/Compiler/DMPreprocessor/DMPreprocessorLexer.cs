@@ -417,9 +417,9 @@ internal sealed class DMPreprocessorLexer {
                         TokenTextBuilder.Remove(3, 1);
                     if (TokenTextBuilder[3] == '\n')
                         TokenTextBuilder.Remove(3, 1);
-                    if (TokenTextBuilder[^3] == '\r')
-                        TokenTextBuilder.Remove(TokenTextBuilder.Length - 3, 1);
                     if (TokenTextBuilder[^3] == '\n')
+                        TokenTextBuilder.Remove(TokenTextBuilder.Length - 3, 1);
+                    if (TokenTextBuilder[^3] == '\r')
                         TokenTextBuilder.Remove(TokenTextBuilder.Length - 3, 1);
 
                     value = TokenTextBuilder.ToString(3, TokenTextBuilder.Length - 5);

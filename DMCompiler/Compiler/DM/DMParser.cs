@@ -886,7 +886,7 @@ namespace DMCompiler.Compiler.DM {
 
                 var valType = AsComplexTypes(procParameters);
                 // the != DMValueType.Null check is a hacky workaround for Anything|Null being equal to just Null
-                if (valType is null && value.GetUnwrapped() is DMASTInput input && input.Types != DMValueType.Null) {
+                if (valType is null && value?.GetUnwrapped() is DMASTInput input && input.Types != DMValueType.Null) {
                     valType = input.Types;
                 }
 

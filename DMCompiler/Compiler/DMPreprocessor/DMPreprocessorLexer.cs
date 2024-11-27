@@ -344,8 +344,11 @@ internal sealed class DMPreprocessorLexer {
                     var delimIdx = 0;
                     do {
                         TokenTextBuilder.Append(c);
+
                         if (GetCurrent() == complexDelimiter[delimIdx]) delimIdx++;
-                        if (delimIdx + 1 == complexDelimiter.Length) {
+                        else delimIdx = 0;
+
+                        if (delimIdx + 1 == complexDelimiter.Length && c == complexDelimiter[^1]) { // latter check ensures a 1-char delimiter actually matches
                             TokenTextBuilder.Remove(TokenTextBuilder.Length - delimIdx, complexDelimiter.Length - 1);
                             break;
                         }

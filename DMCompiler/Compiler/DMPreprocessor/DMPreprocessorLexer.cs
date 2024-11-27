@@ -395,7 +395,8 @@ internal sealed class DMPreprocessorLexer {
                     }
                 }
 
-                TokenTextBuilder.Append(c);
+                if (isComplex) Advance();
+                else TokenTextBuilder.Append(c);
 
                 if (!HandleLineEnd())
                     Advance();

@@ -202,6 +202,7 @@ public sealed class DreamMapManager : IDreamMapManager {
         //if an area changes appearance, invalidate the lookup
         _turfAreaLookup.Clear();
         var oldAppearance = area.Appearance;
+        appearance.AppearanceFlags |= AppearanceFlags.ResetColor | AppearanceFlags.ResetAlpha | AppearanceFlags.ResetTransform;
         area.Appearance  = _appearanceSystem.AddAppearance(appearance);
 
         //get all unique turf appearances

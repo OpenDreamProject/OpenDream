@@ -477,13 +477,11 @@ public sealed class AtomManager {
             case "underlays":
                 // In BYOND this just creates a new normal list
                 var lays = varName == "overlays" ? appearance.Overlays : appearance.Underlays;
-                var list = _objectTree.CreateList(lays.Count);
+                var list = _objectTree.CreateList(lays.Length);
 
                 if (_appearanceSystem != null) {
-                    foreach (var layId in lays) {
-                        var lay = _appearanceSystem.MustGetAppearance(layId);
-
-                        list.AddValue(new(lay));
+                    foreach (var lay in lays) {
+                        list.AddValue(new(lay.ToMutable()));
                     }
                 }
 

@@ -35,8 +35,8 @@ public sealed class DreamObjectArea : DreamObjectAtom {
     public DreamObjectArea(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
         Appearance = AppearanceSystem!.DefaultAppearance;
         Turfs = new();
-        AtomManager.SetAtomAppearance(this, AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
         _contents = new(ObjectTree.List.ObjectDefinition, this);
+        AtomManager.SetAtomAppearance(this, AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
     }
 
     /// <summary>

@@ -12,9 +12,10 @@ public sealed class DreamObjectTurf : DreamObjectAtom {
         X = x;
         Y = y;
         Z = z;
-        AtomManager.SetAtomAppearance(this, AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
+
         Cell = default!; // NEEDS to be set by DreamMapManager after creation
         Contents = new TurfContentsList(ObjectTree.List.ObjectDefinition, this);
+        Appearance = AppearanceSystem!.AddAppearance(AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
     }
 
     public void SetTurfType(DreamObjectDefinition objectDefinition) {

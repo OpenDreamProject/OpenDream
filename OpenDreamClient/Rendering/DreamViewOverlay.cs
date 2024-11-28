@@ -44,7 +44,6 @@ internal sealed class DreamViewOverlay : Overlay {
     [Dependency] private readonly IClyde _clyde = default!;
     [Dependency] private readonly IPrototypeManager _protoManager = default!;
     [Dependency] private readonly ProfManager _prof = default!;
-    [Dependency] private readonly MarkupTagManager _tagManager = default!;
     [Dependency] private readonly IResourceCache _resourceCache = default!;
 
     private Font _defaultMaptextFont;

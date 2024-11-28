@@ -174,7 +174,8 @@ public class DreamList : DreamObject {
                 _associativeValues.Remove(_values[i - 1]);
         }
 
-        _values.RemoveRange(start - 1, end - start);
+        if (end > start)
+            _values.RemoveRange(start - 1, end - start);
     }
 
     public void Insert(int index, DreamValue value) {
@@ -409,16 +410,17 @@ internal sealed class DreamListVars(DreamObjectDefinition listDef, DreamObject d
     }
 
     public override DreamValue GetValue(DreamValue key) {
-        if (!key.TryGetValueAsString(out var varName)) {
+        if (key.TryGetValueAsInteger(out int keyInteger)) {
+            return new DreamValue(DreamObject.GetVariableNames().ElementAt(keyInteger - 1)); //1-indexed
+        } else if (key.TryGetValueAsString(out var varName)) {
+            if (DreamObject.TryGetVariable(varName, out var objectVar)) {
+                return objectVar;
+            }
+
+            throw new Exception($"Cannot get value of undefined var \"{key}\" on type {DreamObject.ObjectDefinition.Type}");
+        } else {
             throw new Exception($"Invalid var index {key}");
         }
-
-        if (!DreamObject.TryGetVariable(varName, out var objectVar)) {
-            throw new Exception(
-                $"Cannot get value of undefined var \"{key}\" on type {DreamObject.ObjectDefinition.Type}");
-        }
-
-        return objectVar;
     }
 
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
@@ -1134,27 +1136,23 @@ public sealed class WorldContentsList(DreamObjectDefinition listDef, AtomManager
 }
 
 // turf.contents list
-public sealed class TurfContentsList : DreamList {
-    private readonly IDreamMapManager.Cell _cell;
-
-    public TurfContentsList(DreamObjectDefinition listDef, IDreamMapManager.Cell cell) : base(listDef, 0) {
-        _cell = cell;
-    }
+public sealed class TurfContentsList(DreamObjectDefinition listDef, DreamObjectTurf turf) : DreamList(listDef, 0) {
+    private IDreamMapManager.Cell Cell => turf.Cell;
 
     public override DreamValue GetValue(DreamValue key) {
         if (!key.TryGetValueAsInteger(out var index))
             throw new Exception($"Invalid index into turf contents list: {key}");
-        if (index < 1 || index > _cell.Movables.Count)
+        if (index < 1 || index > Cell.Movables.Count)
             throw new Exception($"Out of bounds index on turf contents list: {index}");
 
-        return new DreamValue(_cell.Movables[index - 1]);
+        return new DreamValue(Cell.Movables[index - 1]);
     }
 
     // TODO: This would preferably be an IEnumerable<> method. Probably as part of #985.
     public override List<DreamValue> GetValues() {
-        List<DreamValue> values = new(_cell.Movables.Count);
+        List<DreamValue> values = new(Cell.Movables.Count);
 
-        foreach (var movable in _cell.Movables) {
+        foreach (var movable in Cell.Movables) {
             values.Add(new(movable));
         }
 
@@ -1169,32 +1167,30 @@ public sealed class TurfContentsList : DreamList {
         if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
             throw new Exception($"Cannot add {value} to turf contents");
 
-        movable.SetVariable("loc", new(_cell.Turf));
+        movable.SetVariable("loc", new(Cell.Turf));
     }
 
     public override void Cut(int start = 1, int end = 0) {
-        int movableCount = _cell.Movables.Count + 1;
+        int movableCount = Cell.Movables.Count + 1;
         if (end == 0 || end > movableCount) end = movableCount;
 
         for (int i = start; i < end; i++) {
-            _cell.Movables[i - 1].SetVariable("loc", DreamValue.Null);
+            Cell.Movables[i - 1].SetVariable("loc", DreamValue.Null);
         }
     }
 
     public override int GetLength() {
-        return _cell.Movables.Count;
+        return Cell.Movables.Count;
     }
 }
 
 // area.contents list
 public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectArea area) : DreamList(listDef, 0) {
-    private readonly List<DreamObjectTurf> _turfs = new();
-
     public override DreamValue GetValue(DreamValue key) {
         if (!key.TryGetValueAsInteger(out var index))
             throw new Exception($"Invalid index into area contents list: {key}");
 
-        foreach (var turf in _turfs) {
+        foreach (var turf in area.Turfs) {
             if (index < 1)
                 break;
 
@@ -1215,9 +1211,9 @@ public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectA
     }
 
     public override List<DreamValue> GetValues() {
-        List<DreamValue> values = new(_turfs.Count);
+        List<DreamValue> values = new(area.Turfs.Count);
 
-        foreach (var turf in _turfs) {
+        foreach (var turf in area.Turfs) {
             values.Add(new(turf));
             values.AddRange(turf.Contents.GetValues());
         }
@@ -1234,14 +1230,12 @@ public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectA
             throw new Exception($"Cannot add {value} to area contents");
 
         turf.Cell.Area = area;
-        _turfs.Add(turf);
     }
 
     public override void RemoveValue(DreamValue value) {
         if (!value.TryGetValueAsDreamObject<DreamObjectTurf>(out var turf))
             throw new Exception($"Cannot remove {value} from area contents");
 
-        _turfs.Remove(turf); // Remove first, in case the new area (default) is still this area
         turf.Cell.Area = DreamMapManager.DefaultArea;
     }
 
@@ -1250,41 +1244,31 @@ public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectA
     }
 
     public override int GetLength() {
-        int length = _turfs.Count;
+        int length = area.Turfs.Count;
 
-        foreach (var turf in _turfs)
+        foreach (var turf in area.Turfs)
             length += turf.Contents.GetLength();
 
         return length;
     }
-
-    public IEnumerable<DreamObjectTurf> GetTurfs() {
-        return _turfs;
-    }
 }
 
 // proc args list
-sealed class ProcArgsList : DreamList {
-    private readonly DMProcState _state;
-
-    public ProcArgsList(DreamObjectDefinition listDef, DMProcState state) : base(listDef, 0) {
-        _state = state;
-    }
-
+internal sealed class ProcArgsList(DreamObjectDefinition listDef, DMProcState state) : DreamList(listDef, 0) {
     public override DreamValue GetValue(DreamValue key) {
         if (!key.TryGetValueAsInteger(out var index))
             throw new Exception($"Invalid index into args list: {key}");
-        if (index < 1 || index > _state.ArgumentCount)
+        if (index < 1 || index > state.ArgumentCount)
             throw new Exception($"Out of bounds index on args list: {index}");
 
-        return _state.GetArguments()[index - 1];
+        return state.GetArguments()[index - 1];
     }
 
     // TODO: This would preferably be an IEnumerable<> method. Probably as part of #985.
     public override List<DreamValue> GetValues() {
-        List<DreamValue> values = new(_state.ArgumentCount);
+        List<DreamValue> values = new(state.ArgumentCount);
 
-        foreach (DreamValue value in _state.GetArguments()) {
+        foreach (DreamValue value in state.GetArguments()) {
             values.Add(value);
         }
 
@@ -1294,10 +1278,10 @@ sealed class ProcArgsList : DreamList {
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
         if (!key.TryGetValueAsInteger(out var index))
             throw new Exception($"Invalid index into args list: {key}");
-        if (index < 1 || index > _state.ArgumentCount)
+        if (index < 1 || index > state.ArgumentCount)
             throw new Exception($"Out of bounds index on args list: {index}");
 
-        _state.SetArgument(index - 1, value);
+        state.SetArgument(index - 1, value);
     }
 
     public override void AddValue(DreamValue value) {
@@ -1313,7 +1297,7 @@ sealed class ProcArgsList : DreamList {
     }
 
     public override int GetLength() {
-        return _state.ArgumentCount;
+        return state.ArgumentCount;
     }
 }
 

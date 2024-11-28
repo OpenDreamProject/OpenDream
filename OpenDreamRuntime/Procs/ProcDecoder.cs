@@ -56,6 +56,7 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
             case DMReference.Type.Self: return DMReference.Self;
             case DMReference.Type.Usr: return DMReference.Usr;
             case DMReference.Type.Args: return DMReference.Args;
+            case DMReference.Type.World: return DMReference.World;
             case DMReference.Type.SuperProc: return DMReference.SuperProc;
             case DMReference.Type.ListIndex: return DMReference.ListIndex;
             default: throw new Exception($"Invalid reference type {refType}");
@@ -151,6 +152,7 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
             case DreamProcOpcode.CreateTypeEnumerator:
             case DreamProcOpcode.DestroyEnumerator:
             case DreamProcOpcode.IsTypeDirect:
+            case DreamProcOpcode.CreateMultidimensionalList:
                 return (opcode, ReadInt());
 
             case DreamProcOpcode.JumpIfTrueReference:

@@ -24,16 +24,19 @@ public sealed class DreamObjectArea : DreamObjectAtom {
         }
     }
 
-    public readonly AreaContentsList Contents;
     public ImmutableIconAppearance Appearance;
+    public readonly HashSet<DreamObjectTurf> Turfs;
+
+    private readonly AreaContentsList _contents;
 
     // Iterating all our turfs to find the one with the lowest coordinates is slow business
     private int? _cachedX, _cachedY, _cachedZ;
 
     public DreamObjectArea(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
-        Contents = new(ObjectTree.List.ObjectDefinition, this);
         Appearance = AppearanceSystem!.DefaultAppearance;
+        Turfs = new();
         AtomManager.SetAtomAppearance(this, AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
+        _contents = new(ObjectTree.List.ObjectDefinition, this);
     }
 
     /// <summary>
@@ -55,7 +58,7 @@ public sealed class DreamObjectArea : DreamObjectAtom {
                 value = new(Z);
                 return true;
             case "contents":
-                value = new(Contents);
+                value = new(_contents);
                 return true;
             default:
                 return base.TryGetVar(varName, out value);
@@ -109,7 +112,7 @@ public sealed class DreamObjectArea : DreamObjectAtom {
         if (_cachedX != null)
             return;
 
-        foreach (var turf in Contents.GetTurfs()) {
+        foreach (var turf in Turfs) {
             if (_cachedX != null) {
                 if (turf.Z > _cachedZ)
                     continue;

@@ -18,6 +18,7 @@ using Vector4 = Robust.Shared.Maths.Vector4;
 namespace OpenDreamRuntime.Procs {
     internal static class DMOpcodeHandlers {
         #region Values
+
         public static ProcStatus PushReferenceValue(DMProcState state) {
             DreamReference reference = state.ReadReference();
 
@@ -46,7 +47,6 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
-
         public static ProcStatus CreateList(DMProcState state) {
             int size = state.ReadInt();
             var list = state.Proc.ObjectTree.CreateList(size);
@@ -55,6 +55,17 @@ namespace OpenDreamRuntime.Procs {
                 list.AddValue(value);
             }
 
+            state.Push(new DreamValue(list));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus CreateMultidimensionalList(DMProcState state) {
+            var dimensionCount = state.ReadInt();
+            var list = state.Proc.ObjectTree.CreateList();
+            var dimensionSizes = state.PopCount(dimensionCount);
+
+            // Same as new /list(1, 2, 3)
+            list.Initialize(new(dimensionSizes));
             state.Push(new DreamValue(list));
             return ProcStatus.Continue;
         }
@@ -2409,7 +2420,19 @@ namespace OpenDreamRuntime.Procs {
                 foreach (var connection in state.DreamManager.Connections) {
                     connection.OutputControl(message, control);
                 }
+            } else if (receiver is DreamList list) {
+                // Output to every mob in the left-hand list.
+                foreach (var entry in list.GetValues()) {
+                    if (entry.TryGetValueAsDreamObject(out var entryObj)) {
+                        if (entryObj is DreamObjectMob entryMob) {
+                            entryMob.Connection?.OutputControl(message, control);
+                        } else if (entryObj is DreamObjectClient entryClient) {
+                            entryClient.Connection.OutputControl(message, control);
+                        }
+                    }
+                }
             } else {
+                // TODO: BYOND's behavior is to ignore rather than throw here
                 throw new Exception($"Invalid output() recipient: {receiver}");
             }
 

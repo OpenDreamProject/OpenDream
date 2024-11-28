@@ -39,7 +39,7 @@ namespace OpenDreamRuntime {
 
         private ServerAppearanceSystem? _appearanceSystem;
 
-        public DreamObjectWorld WorldInstance { get; private set; }
+        public DreamObjectWorld WorldInstance { get; set; }
         public Exception? LastDMException { get; set; }
 
         public event EventHandler<Exception>? OnException;
@@ -157,8 +157,6 @@ namespace OpenDreamRuntime {
                     Globals[i] = _objectTree.GetDreamValueFromJsonElement(globalValue);
                 }
             }
-
-            Globals[GlobalNames.IndexOf("world")] = new DreamValue(WorldInstance);
 
             _dreamMapManager.LoadMaps(_compiledJson.Maps);
 

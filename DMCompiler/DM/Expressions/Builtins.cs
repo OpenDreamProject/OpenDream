@@ -188,6 +188,33 @@ internal sealed class Rgb(Location location, ArgumentList arguments) : DMExpress
 
         ctx.Proc.Rgb(argInfo.Type, argInfo.StackSize);
     }
+
+    // TODO: This needs to have full parity with the rgb opcode. This is a simplified implementation for the most common case rgb(R, G, B)
+    public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
+        if (arguments.Length != 3) {
+            constant = null;
+            return false;
+        }
+
+        float[] values = new float[3];
+
+        for (var index = 0; index < arguments.Expressions.Length; index++) {
+            var (_, expr) = arguments.Expressions[index];
+            if (!expr.TryAsConstant(compiler, out constant) || constant is not Number num) {
+                constant = null;
+                return false;
+            }
+
+            values[index] = num.Value;
+        }
+
+        byte r = (byte)Math.Clamp(values[0], 0, 255);
+        byte g = (byte)Math.Clamp(values[1], 0, 255);
+        byte b = (byte)Math.Clamp(values[2], 0, 255);
+        constant = new String(Location, $"#{r:X2}{g:X2}{b:X2}".ToLower());
+
+        return true;
+    }
 }
 
 // pick(prob(50);x, prob(200);y)

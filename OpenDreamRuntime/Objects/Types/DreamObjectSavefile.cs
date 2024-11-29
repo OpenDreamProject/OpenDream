@@ -259,6 +259,7 @@ public sealed class DreamObjectSavefile : DreamObject {
     }
 
     public void Flush() {
+        if (Deleted) return;
         Resource!.Clear();
         Resource!.Output(new DreamValue(JsonSerializer.Serialize(_rootNode)));
     }

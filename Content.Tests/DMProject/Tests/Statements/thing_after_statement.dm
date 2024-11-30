@@ -8,3 +8,7 @@
 		ASSERT(TRUE)
 	else
 		ASSERT(FALSE)
+	for(var/i in 1 to 1):
+		ASSERT(TRUE)
+	for(var/i in 1 to 1).
+		ASSERT(TRUE)

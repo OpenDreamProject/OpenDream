@@ -191,27 +191,47 @@ internal sealed class Rgb(Location location, ArgumentList arguments) : DMExpress
 
     // TODO: This needs to have full parity with the rgb opcode. This is a simplified implementation for the most common case rgb(R, G, B)
     public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
-        if (arguments.Length != 3) {
+        (string?, float?)[] values = new (string?, float?)[arguments.Length];
+
+        bool validArgs = true;
+
+        if (arguments.Length < 3 || arguments.Length > 5) {
+            compiler.Emit(WarningCode.BadExpression, Location, $"rgb: expected 3 to 5 arguments (found {arguments.Length})");
             constant = null;
             return false;
         }
 
-        float[] values = new float[3];
-
         for (var index = 0; index < arguments.Expressions.Length; index++) {
-            var (_, expr) = arguments.Expressions[index];
-            if (!expr.TryAsConstant(compiler, out constant) || constant is not Number num) {
+            var (name, expr) = arguments.Expressions[index];
+            if (!expr.TryAsConstant(compiler, out var constExpr)) {
                 constant = null;
                 return false;
             }
 
-            values[index] = num.Value;
+            if (constExpr is not Number num) {
+                validArgs = false;
+                values[index] = (name, null);
+                continue;
+            }
+
+            values[index] = (name, num.Value);
         }
 
-        byte r = (byte)Math.Clamp(values[0], 0, 255);
-        byte g = (byte)Math.Clamp(values[1], 0, 255);
-        byte b = (byte)Math.Clamp(values[2], 0, 255);
-        constant = new String(Location, $"#{r:X2}{g:X2}{b:X2}".ToLower());
+        if (!validArgs) {
+            compiler.Emit(WarningCode.FallbackBuiltinArgument, Location,
+                "Non-numerical rgb argument(s) will always return \"00\"");
+        }
+
+        string result;
+        try {
+            result = SharedOperations.ParseRgb(values);
+        } catch (Exception e) {
+            compiler.Emit(WarningCode.BadExpression, Location, e.Message);
+            constant = null;
+            return false;
+        }
+
+        constant = new String(Location, result);
 
         return true;
     }

@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Robust.Shared.Maths;
 
@@ -116,44 +115,40 @@ public static class SharedOperations {
                 } else if (name.StartsWith("a", StringComparison.InvariantCultureIgnoreCase) && a is null)
                     a = arg.Value;
                 else if (name == "space" && space == default)
-                    space = (ColorSpace)(int)arg.Value;
+                    space = (ColorSpace)(int)arg.Value!;
                 else
                     throw new Exception($"Invalid or double arg \"{name}\"");
             }
-
-            if (color1 is null)
-                color1 = 0;
-            if (color2 is null)
-                color2 = 0;
-            if (color3 is null)
-                color3 = 0;
         }
 
+        color1 ??= 0;
+        color2 ??= 0;
+        color3 ??= 0;
         byte aValue = a is null ? (byte)255 : (byte)Math.Clamp((int)a, 0, 255);
         Color color;
 
         switch (space) {
             case ColorSpace.RGB: {
-                byte r = (byte)Math.Clamp(color1!.Value, 0, 255);
-                byte g = (byte)Math.Clamp(color2!.Value, 0, 255);
-                byte b = (byte)Math.Clamp(color3!.Value, 0, 255);
+                byte r = (byte)Math.Clamp(color1.Value, 0, 255);
+                byte g = (byte)Math.Clamp(color2.Value, 0, 255);
+                byte b = (byte)Math.Clamp(color3.Value, 0, 255);
 
                 color = new Color(r, g, b, aValue);
                 break;
             }
             case ColorSpace.HSV: {
                 // TODO: Going beyond the max defined in the docs returns a different value. Don't know why.
-                float h = Math.Clamp(color1!.Value, 0, 360) / 360f;
-                float s = Math.Clamp(color2!.Value, 0, 100) / 100f;
-                float v = Math.Clamp(color3!.Value, 0, 100) / 100f;
+                float h = Math.Clamp(color1.Value, 0, 360) / 360f;
+                float s = Math.Clamp(color2.Value, 0, 100) / 100f;
+                float v = Math.Clamp(color3.Value, 0, 100) / 100f;
 
                 color = Color.FromHsv((h, s, v, aValue / 255f));
                 break;
             }
             case ColorSpace.HSL: {
-                float h = Math.Clamp(color1!.Value, 0, 360) / 360f;
-                float s = Math.Clamp(color2!.Value, 0, 100) / 100f;
-                float l = Math.Clamp(color3!.Value, 0, 100) / 100f;
+                float h = Math.Clamp(color1.Value, 0, 360) / 360f;
+                float s = Math.Clamp(color2.Value, 0, 100) / 100f;
+                float l = Math.Clamp(color3.Value, 0, 100) / 100f;
 
                 color = Color.FromHsl((h, s, l, aValue / 255f));
                 break;

@@ -375,4 +375,46 @@ internal sealed class CreateListNRefs : IOptimization {
     }
 }
 
+// PushNFloats [count] [float] ... [float]
+// Rgb [argType] [count]
+// -> PushString [result]
+// Only works when [argType] is FromStack and the [count] of both opcodes matches
+internal sealed class EvalRgb : IOptimization {
+    public OptPass OptimizationPass => OptPass.ListCompactor;
+
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.PushNFloats,
+            DreamProcOpcode.Rgb
+        ];
+    }
+
+    public bool CheckPreconditions(List<IAnnotatedBytecode> input, int index) {
+        var floatCount = ((AnnotatedBytecodeInstruction)input[index]).GetArg<AnnotatedBytecodeInteger>(0).Value;
+        var rgbInst = (AnnotatedBytecodeInstruction)input[index + 1];
+        var argType = rgbInst.GetArg<AnnotatedBytecodeArgumentType>(0).Value;
+        var stackDelta = rgbInst.GetArg<AnnotatedBytecodeStackDelta>(1).Delta;
+
+        return argType == DMCallArgumentsType.FromStack && floatCount == stackDelta;
+    }
+
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
+        compiler.ApplyCount += 1;
+        var floats = (AnnotatedBytecodeInstruction)(input[index]);
+        var floatArgs = floats.GetArgs();
+        (string?, float?)[] values = new (string?, float?)[floatArgs.Count - 1];
+        for (int i = 1; i < floatArgs.Count; i++) { // skip the first value since it's the [count] of floats
+            values[i - 1] = (null, ((AnnotatedBytecodeFloat)floatArgs[i]).Value);
+        }
+
+        var resultStr = SharedOperations.ParseRgb(values);
+        var resultId = compiler.DMObjectTree.AddString(resultStr);
+
+        List<IAnnotatedBytecode> args = [new AnnotatedBytecodeString(resultId, floats.Location)];
+
+        input.RemoveRange(index, 2);
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.PushString, 1, args));
+    }
+}
+
 #endregion

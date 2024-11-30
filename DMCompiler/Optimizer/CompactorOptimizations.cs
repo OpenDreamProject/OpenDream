@@ -399,7 +399,6 @@ internal sealed class EvalRgb : IOptimization {
     }
 
     public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
-        compiler.ApplyCount += 1;
         var floats = (AnnotatedBytecodeInstruction)(input[index]);
         var floatArgs = floats.GetArgs();
         (string?, float?)[] values = new (string?, float?)[floatArgs.Count - 1];

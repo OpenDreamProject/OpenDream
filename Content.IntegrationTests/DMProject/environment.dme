@@ -5,5 +5,6 @@
 #include "Tests/verb_duplicate.dm"
 #include "Tests/nonlocal_var.dm"
 #include "Tests/image.dm"
+#include "Tests/filter_initial.dm"
 #include "map.dmm"
 #include "interface.dmf"

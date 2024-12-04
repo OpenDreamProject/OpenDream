@@ -362,6 +362,11 @@ public struct DreamValue : IEquatable<DreamValue> {
             case DreamValueType.Float:
                 var floatValue = MustGetValueAsFloat();
 
+                if (float.IsInfinity(floatValue)) {
+                    var str = float.IsPositiveInfinity(floatValue) ? "inf" : "-inf";
+                    return str;
+                }
+
                 if (floatValue > 16777216f) {
                     return floatValue.ToString("g6");
                 }
@@ -370,6 +375,8 @@ public struct DreamValue : IEquatable<DreamValue> {
                 if (floatValue >= 1000000 && ((int)floatValue == floatValue)) {
                     return floatValue.ToString("g8");
                 }
+
+                if (float.IsNaN(floatValue)) return "nan";
 
                 return floatValue.ToString("g6");
 

@@ -74,6 +74,7 @@ internal partial class DMCodeTree {
                     "file" => true,
                     "sound" => true,
                     "nameof" => true,
+                    "filter" => true,
                     _ => false
                 },
 

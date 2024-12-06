@@ -94,7 +94,7 @@ public readonly struct DMComplexValueType {
                 return true;
             }
             var theirPath = type.AsPath();
-            if (theirPath is not null) {
+            if (type.ListValueTypes is null && theirPath is not null) {
                 var theirObject = DMObjectTree.GetDMObject(theirPath!.Value, false);
                 if (theirObject?.IsSubtypeOf(TypePath!.Value) is true) {
                     return true;
@@ -119,9 +119,10 @@ public readonly struct DMComplexValueType {
                 return ourObject?.IsSubtypeOf(type.TypePath!.Value) ?? false;
             }
             // If ListValueTypes is non-null, we do more advanced checks.
-            if (TypePath!.Value == DreamPath.List && ListValueTypes is not null && type.ListValueTypes is not null) {
+            // The other type's must also be non-null, because we consider empty lists as matching.
+            if (ListValueTypes is not null && type.ListValueTypes is not null) {
                 // Have to do an actual match check here. This can get expensive, but thankfully it's pretty rare.
-                if (!ListValueTypes.NestedListKeyType.MatchesType(type.ListValueTypes!.NestedListKeyType))
+                if (!ListValueTypes.NestedListKeyType.MatchesType(type.ListValueTypes.NestedListKeyType))
                     return false;
                 // If we're assoc (have value types rather than just keys), then the other list must match as well.
                 if (ListValueTypes?.NestedListValType is not null) {

@@ -751,7 +751,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
         }
 
         var target = BuildExpression((DMASTExpression)procCall.Callable, inferredPath);
-        var args = BuildArgumentList(procCall.Location, procCall.Parameters);
+        var args = BuildArgumentList(procCall.Location, procCall.Parameters, inferredPath);
         if (target is Proc targetProc) { // GlobalProc handles returnType itself
             var returnType = targetProc.GetReturnType(ctx.Type);
 

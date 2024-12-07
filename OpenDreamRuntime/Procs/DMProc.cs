@@ -50,6 +50,8 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public (string Source, int Line) GetSourceAtOffset(int offset) {
+            if(SourceInfo.Count == 0)
+                return ("whatthefuck",0);
             SourceInfoJson current = SourceInfo[0];
             string source = ObjectTree.Strings[current.File!.Value];
 
@@ -150,6 +152,8 @@ namespace OpenDreamRuntime.Procs {
         public static readonly Stack<NullProcState> Pool = new();
 
         public override DreamProc? Proc => _proc;
+
+        public override (string SourceFile, int Line) TracyLocationId => ("<null>",0);
 
         private DreamProc? _proc;
 
@@ -353,6 +357,9 @@ namespace OpenDreamRuntime.Procs {
 
         private DMProc _proc;
         public override DMProc Proc => _proc;
+
+        public override (string SourceFile, int Line) TracyLocationId => _proc.GetSourceAtOffset(_pc+1);
+
 
         /// Static initializer for maintainer friendly OpcodeHandlers to performance friendly _opcodeHandlers
         static unsafe DMProcState() {

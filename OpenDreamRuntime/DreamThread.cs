@@ -137,7 +137,9 @@ namespace OpenDreamRuntime {
     public abstract class ProcState : IDisposable {
         private static int _idCounter = 0;
         public int Id { get; } = ++_idCounter;
-
+        public abstract (string SourceFile, int Line) TracyLocationId { get; }
+        public ProfilerZone TracyZoneId { get; set; }
+        public bool TracyZoned { get; set; }
         public DreamThread Thread { get; set; }
 
         [Access(typeof(ProcScheduler))]
@@ -253,6 +255,10 @@ namespace OpenDreamRuntime {
                     ProcStatus status;
                     try {
                         // _current.Resume may mutate our state!!!
+                        if (!_current.TracyZoned && _current.Proc != null) {
+                            _current.TracyZoneId = Profiler.BeginZone(_current.Proc.Name, filePath:_current.TracyLocationId.SourceFile, lineNumber:(uint)_current.TracyLocationId.Line);//ProfilerInternal.StartScopedZone(_current.TracyLocationId);
+                            _current.TracyZoned = true;
+                        }
                         status = _current.Resume();
                     } catch (DMError dmError) {
                         if (_current == null) {
@@ -274,8 +280,18 @@ namespace OpenDreamRuntime {
                     switch (status) {
                         // The entire Thread is stopping
                         case ProcStatus.Cancelled:
+                            if (_current.TracyZoned) {
+                                _current.TracyZoneId.Dispose();
+                                _current.TracyZoned = false;
+                            }
                             var current = _current;
                             _current = null;
+                            foreach (var s in _stack) {
+                                if (!s.TracyZoned)
+                                    continue;
+                                s.TracyZoneId.Dispose();
+                                s.TracyZoned = false;
+                            }
                             _stack.Clear();
                             resultStatus = status;
                             return current.Result;
@@ -283,6 +299,10 @@ namespace OpenDreamRuntime {
                         // Our top-most proc just returned a value
                         case ProcStatus.Returned:
                             var returned = _current.Result;
+                            if (_current.TracyZoned) {
+                                _current.TracyZoneId.Dispose();
+                                _current.TracyZoned = false;
+                            }
                             PopProcState();
 
                             // If our stack is empty, the context has finished execution
@@ -298,6 +318,10 @@ namespace OpenDreamRuntime {
 
                         // The context is done executing for now
                         case ProcStatus.Deferred:
+                            if (_current.TracyZoned) {
+                                _current.TracyZoneId.Dispose();
+                                _current.TracyZoned = false;
+                            }
                             // We return the current return value here even though it may not be the final result
                             resultStatus = status;
                             return _current.Result;

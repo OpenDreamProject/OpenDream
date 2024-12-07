@@ -102,13 +102,21 @@ namespace OpenDreamRuntime {
         public void Update() {
             if (!Initialized)
                 return;
-
-            _procScheduler.Process();
-            UpdateStat();
-            _dreamMapManager.UpdateTiles();
-            DreamObjectSavefile.FlushAllUpdates();
-            WorldInstance.SetVariableValue("cpu", WorldInstance.GetVariable("tick_usage"));
-            ProcessDelQueue();
+            using (Profiler.BeginZone("Tick"))
+            {
+                using (Profiler.BeginZone("DM Execution"))
+                    _procScheduler.Process();
+                using (Profiler.BeginZone("Map Update")){
+                    UpdateStat();
+                    _dreamMapManager.UpdateTiles();
+                }
+                using (Profiler.BeginZone("Disk IO"))
+                    DreamObjectSavefile.FlushAllUpdates();
+                WorldInstance.SetVariableValue("cpu", WorldInstance.GetVariable("tick_usage"));
+                using (Profiler.BeginZone("Deletion Queue"))
+                    ProcessDelQueue();
+            }
+            Profiler.EmitFrameMark();
         }
 
         public void ProcessDelQueue() {

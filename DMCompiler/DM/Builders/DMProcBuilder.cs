@@ -487,6 +487,11 @@ namespace DMCompiler.DM.Builders {
                                 outputExpr = exprRange.Value;
                             }
 
+                            if (outputExpr is DMASTIdentifier identifier &&
+                                dmObject.GetVariable(identifier.Identifier) is { IsConst: true }) {
+                                compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, "Cannot change constant value");
+                            }
+
                             var outputVar = _exprBuilder.Create(outputExpr);
 
                             var start = _exprBuilder.Create(exprRange.StartRange);

@@ -80,16 +80,17 @@ namespace OpenDreamRuntime {
             // It is now OK to call user code, like /New procs.
             Initialized = true;
             InitializedTick = _gameTiming.CurTick;
+            using (Profiler.BeginZone("StartWorld", color:(uint)Color.OrangeRed.ToArgb())) {
+                // Call global <init> with waitfor=FALSE
+                _objectTree.GlobalInitProc?.Spawn(WorldInstance, new());
 
-            // Call global <init> with waitfor=FALSE
-            _objectTree.GlobalInitProc?.Spawn(WorldInstance, new());
+                // Call New() on all /area and /turf that exist, each with waitfor=FALSE separately. If <global init> created any /area, call New a SECOND TIME
+                // new() up /objs and /mobs from compiled-in maps [order: (1,1) then (2,1) then (1,2) then (2,2)]
+                _dreamMapManager.InitializeAtoms(_compiledJson.Maps);
 
-            // Call New() on all /area and /turf that exist, each with waitfor=FALSE separately. If <global init> created any /area, call New a SECOND TIME
-            // new() up /objs and /mobs from compiled-in maps [order: (1,1) then (2,1) then (1,2) then (2,2)]
-            _dreamMapManager.InitializeAtoms(_compiledJson.Maps);
-
-            // Call world.New()
-            WorldInstance.SpawnProc("New");
+                // Call world.New()
+                WorldInstance.SpawnProc("New");
+            }
         }
 
         public void Shutdown() {
@@ -102,18 +103,18 @@ namespace OpenDreamRuntime {
         public void Update() {
             if (!Initialized)
                 return;
-            using (Profiler.BeginZone("Tick"))
+            using (Profiler.BeginZone("Tick", color:(uint)Color.OrangeRed.ToArgb()))
             {
-                using (Profiler.BeginZone("DM Execution"))
+                using (Profiler.BeginZone("DM Execution", color:(uint)Color.LightPink.ToArgb()))
                     _procScheduler.Process();
-                using (Profiler.BeginZone("Map Update")){
+                using (Profiler.BeginZone("Map Update", color:(uint)Color.LightPink.ToArgb())){
                     UpdateStat();
                     _dreamMapManager.UpdateTiles();
                 }
-                using (Profiler.BeginZone("Disk IO"))
+                using (Profiler.BeginZone("Disk IO", color:(uint)Color.LightPink.ToArgb()))
                     DreamObjectSavefile.FlushAllUpdates();
                 WorldInstance.SetVariableValue("cpu", WorldInstance.GetVariable("tick_usage"));
-                using (Profiler.BeginZone("Deletion Queue"))
+                using (Profiler.BeginZone("Deletion Queue", color:(uint)Color.LightPink.ToArgb()))
                     ProcessDelQueue();
             }
             Profiler.EmitFrameMark();

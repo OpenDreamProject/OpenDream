@@ -107,16 +107,21 @@ namespace OpenDreamRuntime {
             {
                 using (Profiler.BeginZone("DM Execution", color:(uint)Color.LightPink.ToArgb()))
                     _procScheduler.Process();
+
                 using (Profiler.BeginZone("Map Update", color:(uint)Color.LightPink.ToArgb())){
                     UpdateStat();
                     _dreamMapManager.UpdateTiles();
                 }
+
                 using (Profiler.BeginZone("Disk IO", color:(uint)Color.LightPink.ToArgb()))
                     DreamObjectSavefile.FlushAllUpdates();
+
                 WorldInstance.SetVariableValue("cpu", WorldInstance.GetVariable("tick_usage"));
+
                 using (Profiler.BeginZone("Deletion Queue", color:(uint)Color.LightPink.ToArgb()))
                     ProcessDelQueue();
             }
+
             Profiler.EmitFrameMark();
         }
 

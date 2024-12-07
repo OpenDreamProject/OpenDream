@@ -1,14 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using bottlenoselabs.C2CS.Runtime;
 using static Tracy.PInvoke;
+
+namespace OpenDreamRuntime;
 
 public static class Profiler
 {
     // Plot names need to be cached for the lifetime of the program
     // seealso Tracy docs section 3.1
-    private static readonly Dictionary<string, CString> PlotNameCache = new Dictionary<string, CString>();
+    private static readonly Dictionary<string, CString> PlotNameCache = new();
 
     /// <summary>
     /// Begins a new <see cref="ProfilerZone"/> and returns the handle to that zone. Time
@@ -115,6 +115,7 @@ public static class Profiler
             plotCString = CString.FromString(name);
             PlotNameCache.Add(name, plotCString);
         }
+
         return plotCString;
     }
 
@@ -129,7 +130,6 @@ public static class Profiler
         using var infostr = GetCString(appInfo, out var infoln);
         TracyEmitMessageAppinfo(infostr, infoln);
     }
-
 
     /// <summary>
     /// Emit the top-level frame marker.
@@ -162,6 +162,7 @@ public static class Profiler
             clength = 0;
             return new CString(0);
         }
+
         clength = (ulong)fromString.Length;
         return CString.FromString(fromString);
     }

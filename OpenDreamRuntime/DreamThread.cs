@@ -254,11 +254,12 @@ namespace OpenDreamRuntime {
                 while (_current != null) {
                     ProcStatus status;
                     try {
-                        // _current.Resume may mutate our state!!!
                         if (!_current.TracyZoned && _current.Proc != null) {
-                            _current.TracyZoneId = Profiler.BeginZone(_current.Proc.OwningType.Path+"/"+_current.Proc.Name, filePath:_current.TracyLocationId.SourceFile, lineNumber:(uint)_current.TracyLocationId.Line);//ProfilerInternal.StartScopedZone(_current.TracyLocationId);
+                            var location =_current.TracyLocationId;
+                            _current.TracyZoneId = Profiler.BeginZone((_current.Proc.OwningType.Path.Equals("/") ? "/proc/" : _current.Proc.OwningType.Path+"/") +_current.Proc.Name, filePath: location.SourceFile, lineNumber:(uint)location.Line);
                             _current.TracyZoned = true;
                         }
+                        // _current.Resume may mutate our state!!!
                         status = _current.Resume();
                     } catch (DMError dmError) {
                         if (_current == null) {
@@ -322,6 +323,7 @@ namespace OpenDreamRuntime {
                                 _current.TracyZoneId.Dispose();
                                 _current.TracyZoned = false;
                             }
+
                             foreach (var s in _stack) {
                                 if (!s.TracyZoned)
                                     continue;

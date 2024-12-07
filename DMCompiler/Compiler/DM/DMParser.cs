@@ -1690,7 +1690,9 @@ namespace DMCompiler.Compiler.DM {
                 var loc = Current().Location;
                 Whitespace();
 
-                DMASTExpression? value = PathArray(ref path.Path);
+                PathArray(ref path.Path);
+
+                DMASTExpression? value = null;
                 DMASTExpression? possibleValues = null;
 
                 if (Check(TokenType.DM_DoubleSquareBracketEquals)) {

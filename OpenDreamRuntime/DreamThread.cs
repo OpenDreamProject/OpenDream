@@ -255,7 +255,7 @@ namespace OpenDreamRuntime {
                     try {
                         if (_current.TracyZoneId is null && _current.Proc != null) {
                             var location =_current.TracyLocationId;
-                            _current.TracyZoneId = Profiler.BeginZone((_current.Proc.OwningType.Path.Equals("/") ? "/proc/" : _current.Proc.OwningType.Path+"/") +_current.Proc.Name, filePath: location.SourceFile, lineNumber:(uint)location.Line);
+                            _current.TracyZoneId = Profiler.BeginZone((_current.Proc.OwningType.Path.Equals("/") ? "/proc/" : _current.Proc.OwningType.Path+"/") +_current.Proc.Name, filePath: location.SourceFile, lineNumber: location.Line);
                         }
                         // _current.Resume may mutate our state!!!
                         status = _current.Resume();

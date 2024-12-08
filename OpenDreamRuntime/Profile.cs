@@ -4,16 +4,16 @@ using static Tracy.PInvoke;
 
 namespace OpenDreamRuntime;
 
-public static class Profiler
-{
-    //whether these procs are NOPs or not
-    private static bool _tracyActvated = false;
+public static class Profiler{
+    //whether these procs are NOPs or not. Defaults to false. Use ActivateTracy() to set true
+    private static bool _tracyActivated;
+
     // Plot names need to be cached for the lifetime of the program
     // seealso Tracy docs section 3.1
     private static readonly Dictionary<string, CString> PlotNameCache = new();
 
     public static void ActivateTracy() {
-        _tracyActvated = true;
+        _tracyActivated = true;
     }
 
     /// <summary>
@@ -44,17 +44,17 @@ public static class Profiler
         bool active = true,
         uint color = 0,
         string? text = null,
-        [CallerLineNumber] uint lineNumber = 0,
+        [CallerLineNumber] int lineNumber = 0,
         [CallerFilePath] string? filePath = null,
         [CallerMemberName] string? memberName = null)
     {
-        if(!_tracyActvated)
+        if(!_tracyActivated)
             return null;
 
         using var filestr = GetCString(filePath, out var fileln);
         using var memberstr = GetCString(memberName, out var memberln);
         using var namestr = GetCString(zoneName, out var nameln);
-        var srcLocId = TracyAllocSrclocName(lineNumber, filestr, fileln, memberstr, memberln, namestr, nameln, color);
+        var srcLocId = TracyAllocSrclocName((uint)lineNumber, filestr, fileln, memberstr, memberln, namestr, nameln, color);
         var context = TracyEmitZoneBeginAlloc(srcLocId, active ? 1 : 0);
 
         if (text != null)
@@ -84,8 +84,9 @@ public static class Profiler
     /// <param name="color">
     /// An <c>RRGGBB</c> color code that Tracy will use to color the plot in the profiler.
     /// </param>
-    public static void PlotConfig(string name, PlotType type = PlotType.Number, bool step = false, bool fill = true, uint color = 0)
-    {
+    public static void PlotConfig(string name, PlotType type = PlotType.Number, bool step = false, bool fill = true, uint color = 0){
+        if(!_tracyActivated)
+            return;
         var namestr = GetPlotCString(name);
         TracyEmitPlotConfig(namestr, (int)type, step ? 1 : 0, fill ? 1 : 0, color);
     }
@@ -93,8 +94,9 @@ public static class Profiler
     /// <summary>
     /// Add a <see langword="double"/> value to a plot.
     /// </summary>
-    public static void Plot(string name, double val)
-    {
+    public static void Plot(string name, double val){
+        if(!_tracyActivated)
+            return;
         var namestr = GetPlotCString(name);
         TracyEmitPlot(namestr, val);
     }
@@ -102,8 +104,9 @@ public static class Profiler
     /// <summary>
     /// Add a <see langword="float"/> value to a plot.
     /// </summary>
-    public static void Plot(string name, int val)
-    {
+    public static void Plot(string name, int val){
+        if(!_tracyActivated)
+            return;
         var namestr = GetPlotCString(name);
         TracyEmitPlotInt(namestr, val);
     }
@@ -111,14 +114,14 @@ public static class Profiler
     /// <summary>
     /// Add a <see langword="float"/> value to a plot.
     /// </summary>
-    public static void Plot(string name, float val)
-    {
+    public static void Plot(string name, float val){
+        if(!_tracyActivated)
+            return;
         var namestr = GetPlotCString(name);
         TracyEmitPlotFloat(namestr, val);
     }
 
-    private static CString GetPlotCString(string name)
-    {
+    private static CString GetPlotCString(string name){
         if(!PlotNameCache.TryGetValue(name, out var plotCString))
         {
             plotCString = CString.FromString(name);
@@ -134,8 +137,9 @@ public static class Profiler
     /// <remarks>
     /// Viewable in the Info tab in the profiler.
     /// </remarks>
-    public static void AppInfo(string appInfo)
-    {
+    public static void AppInfo(string appInfo){
+        if(!_tracyActivated)
+            return;
         using var infostr = GetCString(appInfo, out var infoln);
         TracyEmitMessageAppinfo(infostr, infoln);
     }
@@ -146,9 +150,8 @@ public static class Profiler
     /// <remarks>
     /// Tracy Cpp API and docs refer to this as the <c>FrameMark</c> macro.
     /// </remarks>
-    public static void EmitFrameMark()
-    {
-        if(!_tracyActvated)
+    public static void EmitFrameMark(){
+        if(!_tracyActivated)
             return;
         TracyEmitFrameMark(null);
     }
@@ -157,8 +160,9 @@ public static class Profiler
     /// Is the app connected to the external profiler?
     /// </summary>
     /// <returns></returns>
-    public static bool IsConnected()
-    {
+    public static bool IsConnected(){
+        if(!_tracyActivated)
+            return false;
         return TracyConnected() != 0;
     }
 
@@ -166,8 +170,7 @@ public static class Profiler
     /// Creates a <seealso cref="CString"/> for use by Tracy. Also returns the
     /// length of the string for interop convenience.
     /// </summary>
-    public static CString GetCString(string? fromString, out ulong clength)
-    {
+    public static CString GetCString(string? fromString, out ulong clength){
         if (fromString == null)
         {
             clength = 0;
@@ -178,8 +181,7 @@ public static class Profiler
         return CString.FromString(fromString);
     }
 
-    public enum PlotType
-    {
+    public enum PlotType{
         /// <summary>
         /// Values will be displayed as plain numbers.
         /// </summary>
@@ -197,38 +199,32 @@ public static class Profiler
     }
 }
 
-public readonly struct ProfilerZone : IDisposable
-{
+public readonly struct ProfilerZone : IDisposable{
     public readonly TracyCZoneCtx Context;
 
     public uint Id => Context.Data.Id;
 
     public int Active => Context.Data.Active;
 
-    internal ProfilerZone(TracyCZoneCtx context)
-    {
+    internal ProfilerZone(TracyCZoneCtx context){
         Context = context;
     }
 
-    public void EmitName(string name)
-    {
+    public void EmitName(string name){
         using var namestr = Profiler.GetCString(name, out var nameln);
         TracyEmitZoneName(Context, namestr, nameln);
     }
 
-    public void EmitColor(uint color)
-    {
+    public void EmitColor(uint color){
         TracyEmitZoneColor(Context, color);
     }
 
-    public void EmitText(string text)
-    {
+    public void EmitText(string text){
         using var textstr = Profiler.GetCString(text, out var textln);
         TracyEmitZoneText(Context, textstr, textln);
     }
 
-    public void Dispose()
-    {
+    public void Dispose(){
         TracyEmitZoneEnd(Context);
     }
 }

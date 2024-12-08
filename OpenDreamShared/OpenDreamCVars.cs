@@ -2,6 +2,7 @@
 using Robust.Shared.Configuration;
 
 namespace OpenDreamShared;
+
 [CVarDefs]
 public abstract class OpenDreamCVars {
     public static readonly CVarDef<string> JsonPath =
@@ -26,7 +27,7 @@ public abstract class OpenDreamCVars {
         CVarDef.Create<ushort>("opendream.topic_port", 25567, CVar.SERVERONLY);
 
     public static readonly CVarDef<bool> TracyEnable =
-        CVarDef.Create<bool>("opendream.enable_tracy", false, CVar.SERVERONLY);
+        CVarDef.Create("opendream.enable_tracy", false, CVar.SERVERONLY);
 
     /*
         * INFOLINKS

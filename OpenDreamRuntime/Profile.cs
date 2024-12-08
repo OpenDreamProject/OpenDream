@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Diagnostics.Contracts;
+using System.Runtime.CompilerServices;
 using bottlenoselabs.C2CS.Runtime;
 using static Tracy.PInvoke;
 
@@ -14,6 +15,11 @@ public static class Profiler{
 
     public static void ActivateTracy() {
         _tracyActivated = true;
+    }
+
+    [Pure]
+    public static bool IsActivated() {
+        return _tracyActivated;
     }
 
     /// <summary>

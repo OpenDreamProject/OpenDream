@@ -487,12 +487,11 @@ namespace DMCompiler.DM.Builders {
                                 outputExpr = exprRange.Value;
                             }
 
-                            if (outputExpr is DMASTIdentifier identifier &&
-                                dmObject.GetVariable(identifier.Identifier) is { IsConst: true }) {
-                                compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, "Cannot change constant value");
-                            }
-
                             var outputVar = _exprBuilder.Create(outputExpr);
+
+                            if (outputVar is Local { LocalVar: DMProc.LocalConstVariable } or Field { IsConst: true }) {
+                                compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, $"Cannot change constant value");
+                            }
 
                             var start = _exprBuilder.Create(exprRange.StartRange);
                             var end = _exprBuilder.Create(exprRange.EndRange);
@@ -525,7 +524,10 @@ namespace DMCompiler.DM.Builders {
 
                             if (outputVar is Local outputLocal) {
                                 outputLocal.LocalVar.ExplicitValueType = statementFor.DMTypes;
-                            }
+                                if(outputLocal.LocalVar is DMProc.LocalConstVariable)
+                                    compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, $"Cannot change constant value");
+                            } else if (outputVar is Field { IsConst: true })
+                                compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, "Cannot change constant value");
 
                             ProcessStatementForList(list, outputVar, statementFor.DMTypes, statementFor.Body);
                             break;

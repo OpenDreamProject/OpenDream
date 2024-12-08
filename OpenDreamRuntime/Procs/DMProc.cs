@@ -488,7 +488,9 @@ namespace OpenDreamRuntime.Procs {
         public ProcStatus Call(DreamProc proc, DreamObject? src, DreamProcArguments arguments) {
             if (proc is NativeProc p) {
                 // Skip a whole song and dance.
+                var zone = Profiler.BeginZone(filePath:"Native Proc", lineNumber:0, memberName:p.Name);
                 Push(p.Call(Thread, src, Usr, arguments));
+                zone?.Dispose();
                 return ProcStatus.Continue;
             }
 

@@ -490,7 +490,7 @@ namespace DMCompiler.DM.Builders {
                             var outputVar = _exprBuilder.Create(outputExpr);
 
                             if (outputVar is Local { LocalVar: DMProc.LocalConstVariable } or Field { IsConst: true }) {
-                                compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, $"Cannot change constant value");
+                                compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, "Cannot change constant value");
                             }
 
                             var start = _exprBuilder.Create(exprRange.StartRange);

@@ -138,8 +138,7 @@ namespace OpenDreamRuntime {
         private static int _idCounter = 0;
         public int Id { get; } = ++_idCounter;
         public abstract (string SourceFile, int Line) TracyLocationId { get; }
-        public ProfilerZone TracyZoneId { get; set; }
-        public bool TracyZoned { get; set; }
+        public ProfilerZone? TracyZoneId { get; set; }
         public DreamThread Thread { get; set; }
 
         [Access(typeof(ProcScheduler))]
@@ -254,10 +253,9 @@ namespace OpenDreamRuntime {
                 while (_current != null) {
                     ProcStatus status;
                     try {
-                        if (!_current.TracyZoned && _current.Proc != null) {
+                        if (_current.TracyZoneId is null && _current.Proc != null) {
                             var location =_current.TracyLocationId;
                             _current.TracyZoneId = Profiler.BeginZone((_current.Proc.OwningType.Path.Equals("/") ? "/proc/" : _current.Proc.OwningType.Path+"/") +_current.Proc.Name, filePath: location.SourceFile, lineNumber:(uint)location.Line);
-                            _current.TracyZoned = true;
                         }
                         // _current.Resume may mutate our state!!!
                         status = _current.Resume();
@@ -281,17 +279,17 @@ namespace OpenDreamRuntime {
                     switch (status) {
                         // The entire Thread is stopping
                         case ProcStatus.Cancelled:
-                            if (_current.TracyZoned) {
-                                _current.TracyZoneId.Dispose();
-                                _current.TracyZoned = false;
+                            if (_current.TracyZoneId is not null) {
+                                _current.TracyZoneId.Value.Dispose();
+                                _current.TracyZoneId = null;
                             }
                             var current = _current;
                             _current = null;
                             foreach (var s in _stack) {
-                                if (!s.TracyZoned)
+                                if (s.TracyZoneId is null)
                                     continue;
-                                s.TracyZoneId.Dispose();
-                                s.TracyZoned = false;
+                                s.TracyZoneId.Value.Dispose();
+                                s.TracyZoneId = null;
                             }
                             _stack.Clear();
                             resultStatus = status;
@@ -315,16 +313,16 @@ namespace OpenDreamRuntime {
 
                         // The context is done executing for now
                         case ProcStatus.Deferred:
-                            if (_current.TracyZoned) {
-                                _current.TracyZoneId.Dispose();
-                                _current.TracyZoned = false;
+                            if (_current.TracyZoneId is not null) {
+                                _current.TracyZoneId.Value.Dispose();
+                                _current.TracyZoneId = null;
                             }
 
                             foreach (var s in _stack) {
-                                if (!s.TracyZoned)
+                                if (s.TracyZoneId is null)
                                     continue;
-                                s.TracyZoneId.Dispose();
-                                s.TracyZoned = false;
+                                s.TracyZoneId.Value.Dispose();
+                                s.TracyZoneId = null;
                             }
                             // We return the current return value here even though it may not be the final result
                             resultStatus = status;
@@ -362,9 +360,9 @@ namespace OpenDreamRuntime {
         }
 
         public void PopProcState(bool dispose = true) {
-            if (_current?.TracyZoned == true) {
-                _current.TracyZoneId.Dispose();
-                _current.TracyZoned = false;
+            if (_current?.TracyZoneId is not null) {
+                _current.TracyZoneId.Value.Dispose();
+                _current.TracyZoneId = null;
             }
 
             if (_current?.WaitFor == false) {

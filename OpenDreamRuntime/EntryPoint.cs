@@ -51,6 +51,8 @@ namespace OpenDreamRuntime {
                         _configManager.SetCVar(OpenDreamCVars.JsonPath, arg);
                         break;
                     }
+            if(_configManager.GetCVar(OpenDreamCVars.TracyEnable))
+                Profiler.ActivateTracy();
 
             _prototypeManager.LoadDirectory(new ResPath("/Resources/Prototypes"));
 

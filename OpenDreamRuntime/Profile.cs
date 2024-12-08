@@ -6,9 +6,15 @@ namespace OpenDreamRuntime;
 
 public static class Profiler
 {
+    //whether these procs are NOPs or not
+    private static bool _tracyActvated = false;
     // Plot names need to be cached for the lifetime of the program
     // seealso Tracy docs section 3.1
     private static readonly Dictionary<string, CString> PlotNameCache = new();
+
+    public static void ActivateTracy() {
+        _tracyActvated = true;
+    }
 
     /// <summary>
     /// Begins a new <see cref="ProfilerZone"/> and returns the handle to that zone. Time
@@ -33,7 +39,7 @@ public static class Profiler
     /// If this param is not explicitly assigned the value will provided by <see cref="CallerMemberNameAttribute"/>.
     /// </param>
     /// <returns></returns>
-    public static ProfilerZone BeginZone(
+    public static ProfilerZone? BeginZone(
         string? zoneName = null,
         bool active = true,
         uint color = 0,
@@ -42,6 +48,9 @@ public static class Profiler
         [CallerFilePath] string? filePath = null,
         [CallerMemberName] string? memberName = null)
     {
+        if(!_tracyActvated)
+            return null;
+
         using var filestr = GetCString(filePath, out var fileln);
         using var memberstr = GetCString(memberName, out var memberln);
         using var namestr = GetCString(zoneName, out var nameln);
@@ -139,6 +148,8 @@ public static class Profiler
     /// </remarks>
     public static void EmitFrameMark()
     {
+        if(!_tracyActvated)
+            return;
         TracyEmitFrameMark(null);
     }
 

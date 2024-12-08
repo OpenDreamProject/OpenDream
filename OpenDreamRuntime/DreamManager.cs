@@ -80,6 +80,7 @@ namespace OpenDreamRuntime {
             // It is now OK to call user code, like /New procs.
             Initialized = true;
             InitializedTick = _gameTiming.CurTick;
+
             using (Profiler.BeginZone("StartWorld", color:(uint)Color.OrangeRed.ToArgb())) {
                 // Call global <init> with waitfor=FALSE
                 _objectTree.GlobalInitProc?.Spawn(WorldInstance, new());

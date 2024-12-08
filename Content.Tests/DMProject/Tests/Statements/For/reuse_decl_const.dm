@@ -1,4 +1,4 @@
-// COMPILE ERROR
+// COMPILE ERROR OD0501
 
 /datum
 	var/const/idx = 0

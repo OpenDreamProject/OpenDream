@@ -211,8 +211,10 @@ namespace OpenDreamRuntime {
             var context = new DreamThread(proc.ToString());
 
             if (proc is NativeProc nativeProc) {
+                // ReSharper disable ExplicitCallerInfoArgument
                 using(Profiler.BeginZone(filePath:"Native Proc", lineNumber:0, memberName:nativeProc.Name))
                     return nativeProc.Call(context, src, usr, new(arguments));
+                // ReSharper restore ExplicitCallerInfoArgument
             }
 
             var state = proc.CreateState(context, src, usr, new DreamProcArguments(arguments));

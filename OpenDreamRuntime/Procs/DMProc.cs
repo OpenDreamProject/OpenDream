@@ -488,8 +488,10 @@ namespace OpenDreamRuntime.Procs {
         public ProcStatus Call(DreamProc proc, DreamObject? src, DreamProcArguments arguments) {
             if (proc is NativeProc p) {
                 // Skip a whole song and dance.
+                // ReSharper disable ExplicitCallerInfoArgument
                 using(Profiler.BeginZone(filePath:"Native Proc", lineNumber:0, memberName:p.Name))
                     Push(p.Call(Thread, src, Usr, arguments));
+                // ReSharper restore ExplicitCallerInfoArgument
                 return ProcStatus.Continue;
             }
 

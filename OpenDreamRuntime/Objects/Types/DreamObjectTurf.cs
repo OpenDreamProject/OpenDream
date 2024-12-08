@@ -1,17 +1,21 @@
-﻿namespace OpenDreamRuntime.Objects.Types;
+﻿using OpenDreamShared.Dream;
+
+namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectTurf : DreamObjectAtom {
     public readonly int X, Y, Z;
     public readonly TurfContentsList Contents;
+    public ImmutableIconAppearance Appearance;
     public IDreamMapManager.Cell Cell;
-    public int AppearanceId;
 
     public DreamObjectTurf(DreamObjectDefinition objectDefinition, int x, int y, int z) : base(objectDefinition) {
         X = x;
         Y = y;
         Z = z;
+
         Cell = default!; // NEEDS to be set by DreamMapManager after creation
         Contents = new TurfContentsList(ObjectTree.List.ObjectDefinition, this);
+        Appearance = AppearanceSystem!.AddAppearance(AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
     }
 
     public void SetTurfType(DreamObjectDefinition objectDefinition) {

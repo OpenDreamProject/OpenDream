@@ -1,6 +1,7 @@
 ﻿using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.DebugAdapter;
+using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 
 namespace OpenDreamRuntime {
@@ -14,6 +15,7 @@ namespace OpenDreamRuntime {
             IoCManager.Register<WalkManager, WalkManager>();
             IoCManager.Register<IDreamDebugManager, DreamDebugManager>();
             IoCManager.Register<ServerInfoManager>();
+            IoCManager.Register<DMISpriteSystem>();
 
             #if DEBUG
             IoCManager.Register<LocalHostConGroup>();

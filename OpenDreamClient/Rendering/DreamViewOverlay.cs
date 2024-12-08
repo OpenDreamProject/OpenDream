@@ -672,8 +672,16 @@ internal sealed class DreamViewOverlay : Overlay {
                 if (sprite.ScreenLocation.MapControl != null) // Don't render screen objects meant for other map controls
                     continue;
 
-                Vector2 position = sprite.ScreenLocation.GetViewPosition(worldAABB.BottomLeft, _interfaceManager.View, EyeManager.PixelsPerMeter);
                 Vector2 iconSize = sprite.Icon.DMI == null ? Vector2.Zero : sprite.Icon.DMI.IconSize / (float)EyeManager.PixelsPerMeter;
+                Interface.Descriptors.ControlDescriptorMap mapDescriptor = (Interface.Descriptors.ControlDescriptorMap) _interfaceManager.DefaultMap.ElementDescriptor;
+                var viewport = _interfaceManager.DefaultMap.Viewport;
+                float mapZoom = mapDescriptor.IconSize.Value != 0 ? EyeManager.PixelsPerMeter / (float) mapDescriptor.IconSize.Value : 1;
+                // Limit the viewport drawbox just to what's visible on-screen.
+                var drawBox = viewport.GetDrawBox().Intersection(_interfaceManager.DefaultMap.Viewport.GlobalPixelRect.Intersection(_interfaceManager.DefaultMap.UIElement.GlobalPixelRect) ?? UIBox2i.FromDimensions(0, 0, 0, 0)) ?? UIBox2i.FromDimensions(0, 0, 0, 0);
+                Vector2 viewportTileSize = Vector2.Min(drawBox.Size, viewport.Size) * mapZoom / (float)EyeManager.PixelsPerMeter;
+                // WorldAABB.BottomLeft is offscreen, so instead we use drawBox to get the onscreen component.
+                MapCoordinates viewOffset = viewport.ScreenToMap(drawBox.BottomLeft);
+                Vector2 position = sprite.ScreenLocation.GetViewPosition(viewOffset.Position, _interfaceManager.View, EyeManager.PixelsPerMeter, iconSize, viewportTileSize);
                 for (int x = 0; x < sprite.ScreenLocation.RepeatX; x++) {
                     for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {
                         tValue = 0;

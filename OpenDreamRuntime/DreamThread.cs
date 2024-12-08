@@ -490,6 +490,10 @@ namespace OpenDreamRuntime {
             if (!InspectStack().Any(x => x.IsCatching())) return false;
 
             while (!_current.IsCatching()) {
+                if(_current.TracyZoned) {
+                    _current.TracyZoneId.Dispose();
+                    _current.TracyZoned = false;
+                }
                 PopProcState();
             }
 

@@ -47,6 +47,10 @@ internal sealed class DreamObjectEnumerator : IDreamValueEnumerator {
 
     public bool Enumerate(DMProcState state, DreamReference? reference) {
         bool success = _dreamObjectEnumerator.MoveNext();
+
+        while(success && _dreamObjectEnumerator.Current.Deleted) //skip over deleted
+            success = _dreamObjectEnumerator.MoveNext();
+
         if (_filterType != null) {
             while (success && !_dreamObjectEnumerator.Current.IsSubtypeOf(_filterType)) {
                 success = _dreamObjectEnumerator.MoveNext();

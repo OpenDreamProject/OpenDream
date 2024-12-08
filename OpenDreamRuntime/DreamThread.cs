@@ -211,10 +211,8 @@ namespace OpenDreamRuntime {
             var context = new DreamThread(proc.ToString());
 
             if (proc is NativeProc nativeProc) {
-                var zone = Profiler.BeginZone(filePath:"Native Proc", lineNumber:0, memberName:nativeProc.Name);
-                var result = nativeProc.Call(context, src, usr, new(arguments));
-                zone?.Dispose();
-                return result;
+                using(Profiler.BeginZone(filePath:"Native Proc", lineNumber:0, memberName:nativeProc.Name))
+                    return nativeProc.Call(context, src, usr, new(arguments));
             }
 
             var state = proc.CreateState(context, src, usr, new DreamProcArguments(arguments));

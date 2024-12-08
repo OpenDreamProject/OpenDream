@@ -9,7 +9,7 @@ namespace OpenDreamRuntime.Procs {
         private readonly DreamObjectTree _objectTree;
 
         private enum Stage {
-            // Need to call the object's (init) proc
+        // Need to call the object's (init) proc
             Init,
 
             // Need to call IDreamMetaObject.OnObjectCreated & New
@@ -41,6 +41,8 @@ namespace OpenDreamRuntime.Procs {
         private Stage _stage = Stage.Init;
 
         public override DreamProc? Proc => null;
+
+        public override (string SourceFile, int Line) TracyLocationId => ($"new {_dreamObject.ObjectDefinition.Type}",0);
 
         public override void AppendStackFrame(StringBuilder builder) {
             builder.AppendLine($"new {_dreamObject.ObjectDefinition.Type}");

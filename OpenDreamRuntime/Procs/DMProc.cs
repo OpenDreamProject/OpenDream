@@ -51,7 +51,7 @@ namespace OpenDreamRuntime.Procs {
 
         public (string Source, int Line) GetSourceAtOffset(int offset) {
             if(SourceInfo.Count == 0)
-                return ("whatthefuck",0);
+                return ("<No Source Attached>",0);
             SourceInfoJson current = SourceInfo[0];
             string source = ObjectTree.Strings[current.File!.Value];
 
@@ -153,7 +153,7 @@ namespace OpenDreamRuntime.Procs {
 
         public override DreamProc? Proc => _proc;
 
-        public override (string SourceFile, int Line) TracyLocationId => ("<null>",0);
+        public override (string SourceFile, int Line) TracyLocationId => ("<NO-OP>",0);
 
         private DreamProc? _proc;
 

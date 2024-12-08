@@ -255,8 +255,9 @@ namespace OpenDreamRuntime {
                     try {
                         if (Profiler.IsActivated() && _current.TracyZoneId is null && _current.Proc != null) { //IsActivated() call just for optimisation reasons
                             var location =_current.TracyLocationId;
+                            var procpath = (_current.Proc.OwningType.Path.Equals("/") ? "/proc/" : _current.Proc.OwningType.Path+"/") +_current.Proc.Name;
                             // ReSharper disable ExplicitCallerInfoArgument
-                            _current.TracyZoneId = Profiler.BeginZone((_current.Proc.OwningType.Path.Equals("/") ? "/proc/" : _current.Proc.OwningType.Path+"/") +_current.Proc.Name, filePath: location.SourceFile, lineNumber: location.Line);
+                            _current.TracyZoneId = Profiler.BeginZone(filePath: location.SourceFile, lineNumber: location.Line, memberName: procpath);
                             // ReSharper restore ExplicitCallerInfoArgument
                         }
                         // _current.Resume may mutate our state!!!

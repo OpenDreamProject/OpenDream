@@ -300,10 +300,6 @@ namespace OpenDreamRuntime {
                         // Our top-most proc just returned a value
                         case ProcStatus.Returned:
                             var returned = _current.Result;
-                            if (_current.TracyZoned) {
-                                _current.TracyZoneId.Dispose();
-                                _current.TracyZoned = false;
-                            }
                             PopProcState();
 
                             // If our stack is empty, the context has finished execution
@@ -366,6 +362,11 @@ namespace OpenDreamRuntime {
         }
 
         public void PopProcState(bool dispose = true) {
+            if (_current?.TracyZoned == true) {
+                _current.TracyZoneId.Dispose();
+                _current.TracyZoned = false;
+            }
+
             if (_current?.WaitFor == false) {
                 _syncCount--;
             }
@@ -490,10 +491,6 @@ namespace OpenDreamRuntime {
             if (!InspectStack().Any(x => x.IsCatching())) return false;
 
             while (!_current.IsCatching()) {
-                if(_current.TracyZoned) {
-                    _current.TracyZoneId.Dispose();
-                    _current.TracyZoned = false;
-                }
                 PopProcState();
             }
 

@@ -175,12 +175,13 @@ internal partial class DMCodeTree {
                 return true;
             } else if (dmObject.HasLocalVariable(VarName)) {
                 if (!varDef.Location.InDMStandard) { // Duplicate instance vars are not an error in DMStandard
-                    compiler.Emit(WarningCode.InvalidVarDefinition, varDef.Location,
-                        $"Duplicate definition of var \"{VarName}\"");
                     var variable = dmObject.GetVariable(VarName);
                     if(variable!.Value is not null)
-                        compiler.Emit(WarningCode.InvalidVarDefinition, variable.Value.Location,
-                            $"Previous definition of var \"{VarName}\"");
+                        compiler.Emit(WarningCode.InvalidVarDefinition, varDef.Location,
+                        $"Duplicate definition of var \"{VarName}\". Previous definition at {variable.Value.Location}");
+                    else
+                        compiler.Emit(WarningCode.InvalidVarDefinition, varDef.Location,
+                        $"Duplicate definition of var \"{VarName}\"");
                 }
 
                 return true;

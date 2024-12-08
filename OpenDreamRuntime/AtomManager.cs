@@ -233,6 +233,11 @@ public sealed class AtomManager {
             case "verbs":
             case "overlays":
             case "underlays":
+            case "maptext":
+            case "maptext_width":
+            case "maptext_height":
+            case "maptext_x":
+            case "maptext_y":
                 return true;
 
             // Get/SetAppearanceVar doesn't handle filters right now
@@ -368,6 +373,24 @@ public sealed class AtomManager {
                 }
 
                 break;
+            case "maptext":
+                if(value == DreamValue.Null)
+                    appearance.Maptext = null;
+                else
+                    value.TryGetValueAsString(out appearance.Maptext);
+                break;
+            case "maptext_height":
+                value.TryGetValueAsInteger(out appearance.MaptextSize.Y);
+                break;
+            case "maptext_width":
+                value.TryGetValueAsInteger(out appearance.MaptextSize.X);
+                break;
+            case "maptext_x":
+                value.TryGetValueAsInteger(out appearance.MaptextOffset.X);
+                break;
+            case "maptext_y":
+                value.TryGetValueAsInteger(out appearance.MaptextOffset.Y);
+                break;
             case "appearance":
                 throw new Exception("Cannot assign the appearance var on an appearance");
 
@@ -455,6 +478,18 @@ public sealed class AtomManager {
                     transform[1], transform[3], transform[5]);
 
                 return new(matrix);
+            case "maptext":
+                return (appearance.Maptext != null)
+                    ? new DreamValue(appearance.Maptext)
+                    : DreamValue.Null;
+            case "maptext_height":
+                return new(appearance.MaptextSize.Y);
+            case "maptext_width":
+                return new(appearance.MaptextSize.X);
+            case "maptext_x":
+                return new(appearance.MaptextOffset.X);
+            case "maptext_y":
+                return new(appearance.MaptextOffset.Y);
             case "appearance":
                 IconAppearance appearanceCopy = new IconAppearance(appearance); // Return a copy
                 return new(appearanceCopy);

@@ -524,8 +524,8 @@ namespace DMCompiler.DM.Builders {
 
                             if (outputVar is Local outputLocal) {
                                 outputLocal.LocalVar.ExplicitValueType = statementFor.DMTypes;
-                                if(outputLocal.LocalVar is DMProc.LocalConstVariable)
-                                    compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, "Cannot change constant value");
+                            if(outputLocal.LocalVar is DMProc.LocalConstVariable)
+                                compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, "Cannot change constant value");
                             } else if (outputVar is Field { IsConst: true })
                                 compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, "Cannot change constant value");
 

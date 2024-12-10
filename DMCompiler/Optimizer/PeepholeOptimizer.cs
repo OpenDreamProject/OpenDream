@@ -40,6 +40,7 @@ internal enum OptPass : byte {
 
 // ReSharper disable once ClassNeverInstantiated.Global
 internal sealed class PeepholeOptimizer {
+    private readonly DMCompiler _compiler;
     private class OptimizationTreeEntry {
         public IOptimization? Optimization;
         public Dictionary<DreamProcOpcode, OptimizationTreeEntry>? Children;
@@ -48,14 +49,15 @@ internal sealed class PeepholeOptimizer {
     /// <summary>
     /// The optimization passes in the order that they run
     /// </summary>
-    private static readonly OptPass[] Passes;
+    private readonly OptPass[] Passes;
 
     /// <summary>
     /// Trees matching chains of opcodes to peephole optimizations
     /// </summary>
-    private static readonly Dictionary<DreamProcOpcode, OptimizationTreeEntry>[] OptimizationTrees;
+    private readonly Dictionary<DreamProcOpcode, OptimizationTreeEntry>[] OptimizationTrees;
 
-    static PeepholeOptimizer() {
+    public PeepholeOptimizer(DMCompiler compiler) {
+        _compiler = compiler;
         Passes = (OptPass[])Enum.GetValues(typeof(OptPass));
         OptimizationTrees = new Dictionary<DreamProcOpcode, OptimizationTreeEntry>[Passes.Length];
         for (int i = 0; i < OptimizationTrees.Length; i++) {
@@ -64,7 +66,7 @@ internal sealed class PeepholeOptimizer {
     }
 
     /// Setup <see cref="OptimizationTrees"/> for each <see cref="OptPass"/>
-    private static void GetOptimizations(DMCompiler compiler) {
+    private void GetOptimizations() {
         foreach (var optType in typeof(IOptimization).Assembly.GetTypes()) {
             if (!typeof(IOptimization).IsAssignableFrom(optType) ||
                 optType is not { IsClass: true, IsAbstract: false })
@@ -74,7 +76,7 @@ internal sealed class PeepholeOptimizer {
 
             var opcodes = opt.GetOpcodes();
             if (opcodes.Length < 2) {
-                compiler.ForcedError(Location.Internal,
+                _compiler.ForcedError(Location.Internal,
                     $"Peephole optimization {optType} must have at least 2 opcodes");
                 continue;
             }
@@ -103,14 +105,14 @@ internal sealed class PeepholeOptimizer {
         }
     }
 
-    public static void RunPeephole(DMCompiler compiler, List<IAnnotatedBytecode> input) {
-        GetOptimizations(compiler);
+    public void RunPeephole(List<IAnnotatedBytecode> input) {
+        GetOptimizations();
         foreach (var optPass in Passes) {
-            RunPass(compiler, (byte)optPass, input);
+            RunPass((byte)optPass, input);
         }
     }
 
-    private static void RunPass(DMCompiler compiler, byte pass, List<IAnnotatedBytecode> input) {
+    private void RunPass(byte pass, List<IAnnotatedBytecode> input) {
         OptimizationTreeEntry? currentOpt = null;
         int optSize = 0;
 
@@ -121,7 +123,7 @@ internal sealed class PeepholeOptimizer {
             int offset;
 
             if (currentOpt.Optimization?.CheckPreconditions(input, i - optSize) is true) {
-                currentOpt.Optimization.Apply(compiler, input, i - optSize);
+                currentOpt.Optimization.Apply(_compiler, input, i - optSize);
                 offset = (optSize + 2); // Run over the new opcodes for potential further optimization
             } else {
                 // This chain of opcodes did not lead to a valid optimization.

@@ -2,8 +2,10 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace DMCompiler.Optimizer;
 
-public class BytecodeOptimizer {
-    internal void Optimize(DMCompiler compiler, List<IAnnotatedBytecode> input) {
+public class BytecodeOptimizer(DMCompiler compiler) {
+    private readonly PeepholeOptimizer _peepholeOptimizer = new(compiler);
+
+    internal void Optimize(List<IAnnotatedBytecode> input) {
         if (input.Count == 0)
             return;
 
@@ -11,10 +13,10 @@ public class BytecodeOptimizer {
         JoinAndForwardLabels(input);
         RemoveUnreferencedLabels(input);
 
-        PeepholeOptimizer.RunPeephole(compiler, input);
+        _peepholeOptimizer.RunPeephole(input);
     }
 
-    private static void RemoveUnreferencedLabels(List<IAnnotatedBytecode> input) {
+    private void RemoveUnreferencedLabels(List<IAnnotatedBytecode> input) {
         Dictionary<string, int> labelReferences = new();
         for (int i = 0; i < input.Count; i++) {
             if (input[i] is AnnotatedBytecodeLabel label) {
@@ -38,7 +40,7 @@ public class BytecodeOptimizer {
         }
     }
 
-    private static void JoinAndForwardLabels(List<IAnnotatedBytecode> input) {
+    private void JoinAndForwardLabels(List<IAnnotatedBytecode> input) {
         Dictionary<string, string> labelAliases = new();
         for (int i = 0; i < input.Count; i++) {
             if (input[i] is AnnotatedBytecodeLabel label) {
@@ -74,7 +76,7 @@ public class BytecodeOptimizer {
         }
     }
 
-    private static bool TryGetLabelName(AnnotatedBytecodeInstruction instruction, [NotNullWhen(true)] out string? labelName) {
+    private bool TryGetLabelName(AnnotatedBytecodeInstruction instruction, [NotNullWhen(true)] out string? labelName) {
         foreach (var arg in instruction.GetArgs()) {
             if (arg is not AnnotatedBytecodeLabel label)
                 continue;

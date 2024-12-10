@@ -50,6 +50,8 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public (string Source, int Line) GetSourceAtOffset(int offset) {
+            if(SourceInfo.Count == 0)
+                return ("<No Source Attached>",0);
             SourceInfoJson current = SourceInfo[0];
             string source = ObjectTree.Strings[current.File!.Value];
 
@@ -150,6 +152,8 @@ namespace OpenDreamRuntime.Procs {
         public static readonly Stack<NullProcState> Pool = new();
 
         public override DreamProc? Proc => _proc;
+
+        public override (string SourceFile, int Line) TracyLocationId => ("<NO-OP>",0);
 
         private DreamProc? _proc;
 
@@ -354,6 +358,9 @@ namespace OpenDreamRuntime.Procs {
         private DMProc _proc;
         public override DMProc Proc => _proc;
 
+        public override (string SourceFile, int Line) TracyLocationId => _proc.GetSourceAtOffset(_pc+1);
+
+
         /// Static initializer for maintainer friendly OpcodeHandlers to performance friendly _opcodeHandlers
         static unsafe DMProcState() {
             int maxOpcode = (int)_opcodeHandlers.Keys.Max();
@@ -481,7 +488,10 @@ namespace OpenDreamRuntime.Procs {
         public ProcStatus Call(DreamProc proc, DreamObject? src, DreamProcArguments arguments) {
             if (proc is NativeProc p) {
                 // Skip a whole song and dance.
-                Push(p.Call(Thread, src, Usr, arguments));
+                // ReSharper disable ExplicitCallerInfoArgument
+                using(Profiler.BeginZone(filePath:"Native Proc", lineNumber:0, memberName:p.Name))
+                    Push(p.Call(Thread, src, Usr, arguments));
+                // ReSharper restore ExplicitCallerInfoArgument
                 return ProcStatus.Continue;
             }
 

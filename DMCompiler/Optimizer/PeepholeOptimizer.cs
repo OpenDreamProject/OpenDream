@@ -141,7 +141,7 @@ internal sealed class PeepholeOptimizer {
             var bytecode = input[i];
             if (bytecode is not AnnotatedBytecodeInstruction instruction) {
                 i -= AttemptCurrentOpt(i);
-                i = Math.Max(i, 0);
+                i = Math.Max(i, -1); // i++ brings -1 back to 0
                 continue;
             }
 
@@ -160,7 +160,7 @@ internal sealed class PeepholeOptimizer {
             }
 
             i -= AttemptCurrentOpt(i);
-            i = Math.Max(i, 0);
+            i = Math.Max(i, -1); // i++ brings -1 back to 0
         }
 
         AttemptCurrentOpt(input.Count);

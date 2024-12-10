@@ -923,13 +923,15 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
                     state.Push(new DreamValue(first.MustGetValueAsInteger() << second.MustGetValueAsInteger()));
                     break;
+                case DreamValue.DreamValueType.Float when second.IsNull:
+                    state.Push(new DreamValue(first.MustGetValueAsInteger()));
+                    break;
                 default:
                     throw new Exception($"Invalid bit shift left operation on {first} and {second}");
             }
 
             return ProcStatus.Continue;
         }
-
 
         public static ProcStatus BitShiftLeftReference(DMProcState state) {
             DreamReference reference = state.ReadReference();
@@ -943,9 +945,13 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
                     result = new DreamValue(first.MustGetValueAsInteger() << second.MustGetValueAsInteger());
                     break;
+                case DreamValue.DreamValueType.Float when second.IsNull:
+                    result = new DreamValue(first.MustGetValueAsInteger());
+                    break;
                 default:
                     throw new Exception($"Invalid bit shift left operation on {first} and {second}");
             }
+
             state.AssignReference(reference, result);
             state.Push(result);
             return ProcStatus.Continue;
@@ -955,12 +961,18 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            if (first.IsNull) {
-                state.Push(new DreamValue(0));
-            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                state.Push(new DreamValue(first.MustGetValueAsInteger() >> second.MustGetValueAsInteger()));
-            } else {
-                throw new Exception($"Invalid bit shift right operation on {first} and {second}");
+            switch (first.Type) {
+                case DreamValue.DreamValueType.DreamObject when first.IsNull:
+                    state.Push(new DreamValue(0));
+                    break;
+                case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
+                    state.Push(new DreamValue(first.MustGetValueAsInteger() >> second.MustGetValueAsInteger()));
+                    break;
+                case DreamValue.DreamValueType.Float when second.IsNull:
+                    state.Push(new DreamValue(first.MustGetValueAsInteger()));
+                    break;
+                default:
+                    throw new Exception($"Invalid bit shift right operation on {first} and {second}");
             }
 
             return ProcStatus.Continue;
@@ -978,9 +990,13 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
                     result = new DreamValue(first.MustGetValueAsInteger() >> second.MustGetValueAsInteger());
                     break;
+                case DreamValue.DreamValueType.Float when second.IsNull:
+                    result = new DreamValue(first.MustGetValueAsInteger());
+                    break;
                 default:
                     throw new Exception($"Invalid bit shift right operation on {first} and {second}");
             }
+
             state.AssignReference(reference, result);
             state.Push(result);
             return ProcStatus.Continue;
@@ -1127,6 +1143,12 @@ namespace OpenDreamRuntime.Procs {
                     break;
                 case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
                     result = new DreamValue(first.MustGetValueAsInteger() & second.MustGetValueAsInteger());
+                    break;
+                case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
+                    result = new DreamValue(first.MustGetValueAsInteger() & second.MustGetValueAsInteger());
+                    break;
+                case DreamValue.DreamValueType.Float when second.IsNull:
+                    result = new DreamValue(0);
                     break;
                 default:
                     throw new Exception("Invalid mask operation on " + first + " and " + second);
@@ -2728,8 +2750,19 @@ namespace OpenDreamRuntime.Procs {
                 }
 
                 return new DreamValue(newList);
-            } else {
-                return new DreamValue(first.MustGetValueAsInteger() ^ second.MustGetValueAsInteger());
+            }
+
+            switch (first.Type) {
+                case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
+                    return new DreamValue(first.MustGetValueAsInteger() ^ second.MustGetValueAsInteger());
+                case DreamValue.DreamValueType.DreamObject when first.IsNull && second.IsNull:
+                    return DreamValue.Null;
+                case DreamValue.DreamValueType.DreamObject when first.IsNull && second.Type == DreamValue.DreamValueType.Float:
+                    return new DreamValue(second.MustGetValueAsInteger());
+                case DreamValue.DreamValueType.Float when second.IsNull:
+                    return new DreamValue(first.MustGetValueAsInteger());
+                default:
+                    throw new Exception($"Invalid xor operation on {first} and {second}");
             }
         }
 

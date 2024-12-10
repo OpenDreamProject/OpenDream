@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using bottlenoselabs.C2CS.Runtime;
 using static Tracy.PInvoke;
 
@@ -9,6 +10,8 @@ namespace OpenDreamRuntime;
 public static class Profiler{
     //whether these procs are NOPs or not. Defaults to false. Use ActivateTracy() to set true
     private static bool _tracyActivated;
+
+    //internal tracking for unique IDs for memory zones, because we can't use actual object pointers sadly as they are unstable outside of `unsafe`
     private static UInt64 _memoryUID = 0;
 
     // Plot names need to be cached for the lifetime of the program
@@ -81,7 +84,7 @@ public static class Profiler{
 
         var namestr = name is null ? GetPlotCString("null") : GetPlotCString(name);
         unsafe {
-            return new ProfilerMemory((void*)_memoryUID++, size, namestr);
+            return new ProfilerMemory((void*)(Interlocked.Add(ref _memoryUID, size)-size), size, namestr);
         }
     }
 
@@ -252,6 +255,7 @@ public sealed unsafe class ProfilerMemory {
 
     private readonly void* _ptr;
     private CString _name;
+    private int hasRun = 0;
 
     internal ProfilerMemory(void* pointer, ulong size, CString name){
         _ptr = pointer;
@@ -259,7 +263,13 @@ public sealed unsafe class ProfilerMemory {
         TracyEmitMemoryAllocNamed(_ptr, size, 0, _name);
     }
 
+    public void ReleaseMemory(){
+        if (System.Threading.Interlocked.Exchange(ref hasRun, 1) == 0){ // only run once
+            TracyEmitMemoryFreeNamed(_ptr, 0, _name);
+        }
+    }
+
     ~ProfilerMemory(){
-        TracyEmitMemoryFreeNamed(_ptr, 0, _name);
+        ReleaseMemory();
     }
 }

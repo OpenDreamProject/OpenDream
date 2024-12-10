@@ -89,7 +89,7 @@ namespace OpenDreamRuntime.Objects {
                 ObjectDefinition.DreamManager.Datums.AddLast(new WeakDreamRef(this));
             }
 
-            _tracyMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamObject>() + ObjectDefinition.Variables.Count * Unsafe.SizeOf<DreamValue>() ), "object");
+            _tracyMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamObject>() + ObjectDefinition.Variables.Count * Unsafe.SizeOf<DreamValue>() ), "/datum");
         }
 
         public virtual void Initialize(DreamProcArguments args) {
@@ -109,6 +109,7 @@ namespace OpenDreamRuntime.Objects {
             Variables = null;
 
             ObjectDefinition = null!;
+            _tracyMemoryId?.ReleaseMemory();
         }
 
         /// <summary>

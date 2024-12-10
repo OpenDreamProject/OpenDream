@@ -65,10 +65,12 @@ public struct DreamValue : IEquatable<DreamValue> {
 
     private object? _refValue;
     private readonly float _floatValue;
+    private readonly ProfilerMemory? _tracyMemoryId; //only used for strings, since everything else is a value type or handled in DreamObject
 
     public DreamValue(string value) {
         DebugTools.Assert(value != null);
         Type = DreamValueType.String;
+        _tracyMemoryId = Profiler.BeginMemoryZone((ulong) (1+value.Length*sizeof(char)), "string");
         _refValue = value;
     }
 

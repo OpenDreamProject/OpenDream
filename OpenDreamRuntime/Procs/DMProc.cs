@@ -279,6 +279,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.JumpIfFalseReference, DMOpcodeHandlers.JumpIfFalseReference},
             {DreamProcOpcode.DereferenceField, DMOpcodeHandlers.DereferenceField},
             {DreamProcOpcode.DereferenceIndex, DMOpcodeHandlers.DereferenceIndex},
+            {DreamProcOpcode.IndexRefWithString, DMOpcodeHandlers.IndexRefWithString},
             {DreamProcOpcode.DereferenceCall, DMOpcodeHandlers.DereferenceCall},
             {DreamProcOpcode.PopReference, DMOpcodeHandlers.PopReference},
             {DreamProcOpcode.BitShiftLeftReference,DMOpcodeHandlers.BitShiftLeftReference},

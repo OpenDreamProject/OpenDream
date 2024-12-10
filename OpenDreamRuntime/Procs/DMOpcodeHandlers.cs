@@ -642,6 +642,7 @@ namespace OpenDreamRuntime.Procs {
                     } else {
                         // BYOND ignores all floats, strings, types, etc. here and just returns 0.
                         state.Push(DreamValue.False);
+                        return ProcStatus.Continue;
                     }
                 }
 

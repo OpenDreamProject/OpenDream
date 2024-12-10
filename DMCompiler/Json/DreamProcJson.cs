@@ -3,44 +3,48 @@
 namespace DMCompiler.Json;
 
 public sealed class ProcDefinitionJson {
-    public int OwningTypeId { get; set; }
-    public required string Name { get; set; }
-    public ProcAttributes Attributes { get; set; }
+    public int OwningTypeId { get; init; }
+    public required string Name { get; init; }
+    public ProcAttributes Attributes { get; init; }
 
-    public int MaxStackSize { get; set; }
-    public List<ProcArgumentJson>? Arguments { get; set; }
-    public List<LocalVariableJson>? Locals { get; set; }
-    public required List<SourceInfoJson> SourceInfo { get; set; }
-    public byte[]? Bytecode { get; set; }
+    public int MaxStackSize { get; init; }
+    public List<ProcArgumentJson>? Arguments { get; init; }
+    public List<LocalVariableJson>? Locals { get; init; }
+    public required List<SourceInfoJson> SourceInfo { get; init; }
+    public byte[]? Bytecode { get; init; }
 
-    public bool IsVerb { get; set; }
-    public VerbSrc? VerbSrc { get; set; }
-    public string? VerbName { get; set; }
-    public string? VerbCategory { get; set; }
-    public string? VerbDesc { get; set; }
-    public sbyte Invisibility { get; set; }
+    public bool IsVerb { get; init; }
+    public VerbSrc? VerbSrc { get; init; }
+    public string? VerbName { get; init; }
+    public string? VerbCategory { get; init; }
+    public string? VerbDesc { get; init; }
+    public sbyte Invisibility { get; init; }
 }
 
-public sealed class ProcArgumentJson {
-    public required string Name { get; set; }
-    public DMValueType Type { get; set; }
+public struct ProcArgumentJson {
+    public required string Name { get; init; }
+    public DMValueType Type { get; init; }
 }
 
-public sealed class LocalVariableJson {
-    public int Offset { get; set; }
-    public int? Remove { get; set; }
-    public string? Add { get; set; }
+public struct LocalVariableJson {
+    public int Offset { get; init; }
+    public int? Remove { get; init; }
+    public string? Add { get; init; }
 }
 
-public sealed class SourceInfoJson {
-    public int Offset { get; set; }
+public struct SourceInfoJson {
+    public int Offset { get; init; }
     public int? File { get; set; }
-    public int Line { get; set; }
+    public int Line { get; init; }
 }
 
 public class LineComparer : IEqualityComparer<SourceInfoJson> {
     public bool Equals(SourceInfoJson? x, SourceInfoJson? y) {
         return x?.Line == y?.Line;
+    }
+
+    public bool Equals(SourceInfoJson x, SourceInfoJson y) {
+        return x.Line == y.Line;
     }
 
     public int GetHashCode(SourceInfoJson obj) {

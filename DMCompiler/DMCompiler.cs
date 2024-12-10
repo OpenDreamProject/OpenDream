@@ -14,6 +14,7 @@ using DMCompiler.Compiler;
 using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM.Builders;
 using DMCompiler.Json;
+using DMCompiler.Optimizer;
 
 namespace DMCompiler;
 
@@ -31,11 +32,13 @@ public class DMCompiler {
     internal readonly DMCodeTree DMCodeTree;
     internal readonly DMObjectTree DMObjectTree;
     internal readonly DMProc GlobalInitProc;
+    internal readonly BytecodeOptimizer BytecodeOptimizer;
 
     public DMCompiler() {
         DMCodeTree = new(this);
         DMObjectTree = new(this);
         GlobalInitProc = new(this, -1, DMObjectTree.Root, null);
+        BytecodeOptimizer = new BytecodeOptimizer(this);
     }
 
     public bool Compile(DMCompilerSettings settings) {

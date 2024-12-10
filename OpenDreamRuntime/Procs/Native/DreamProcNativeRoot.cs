@@ -803,7 +803,7 @@ internal static partial class DreamProcNativeRoot {
             return match.Success ? new DreamValue(match.Index + 1) : new DreamValue(0);
         }
 
-        int needleIndex = text.IndexOf(needle, start - 1, end - start, StringComparison.OrdinalIgnoreCase);
+        int needleIndex = text.IndexOf(needle!, start - 1, end - start, StringComparison.OrdinalIgnoreCase);
         return new DreamValue(needleIndex + 1); //1-indexed
     }
 
@@ -846,7 +846,7 @@ internal static partial class DreamProcNativeRoot {
             return match.Success ? new DreamValue(match.Index + 1) : new DreamValue(0);
         }
 
-        int needleIndex = text.IndexOf(needle, start - 1, end - start, StringComparison.InvariantCulture);
+        int needleIndex = text.IndexOf(needle!, start - 1, end - start, StringComparison.InvariantCulture);
         if (needleIndex != -1) {
             return new DreamValue(needleIndex + 1); //1-indexed
         } else {

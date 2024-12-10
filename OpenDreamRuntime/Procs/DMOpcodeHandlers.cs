@@ -1144,9 +1144,6 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
                     result = new DreamValue(first.MustGetValueAsInteger() & second.MustGetValueAsInteger());
                     break;
-                case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
-                    result = new DreamValue(first.MustGetValueAsInteger() & second.MustGetValueAsInteger());
-                    break;
                 case DreamValue.DreamValueType.Float when second.IsNull:
                     result = new DreamValue(0);
                     break;

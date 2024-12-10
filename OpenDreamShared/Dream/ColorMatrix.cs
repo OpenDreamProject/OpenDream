@@ -263,6 +263,36 @@ public struct ColorMatrix {
                c54 == other.c54;
     }
 
+    public override int GetHashCode() {
+        HashCode hashCode = new HashCode();
+        hashCode.Add(c11);
+        hashCode.Add(c12);
+        hashCode.Add(c13);
+        hashCode.Add(c14);
+
+        hashCode.Add(c21);
+        hashCode.Add(c22);
+        hashCode.Add(c23);
+        hashCode.Add(c24);
+
+        hashCode.Add(c31);
+        hashCode.Add(c32);
+        hashCode.Add(c33);
+        hashCode.Add(c34);
+
+        hashCode.Add(c41);
+        hashCode.Add(c42);
+        hashCode.Add(c43);
+        hashCode.Add(c44);
+
+        hashCode.Add(c51);
+        hashCode.Add(c52);
+        hashCode.Add(c53);
+        hashCode.Add(c54);
+
+        return hashCode.ToHashCode();
+    }
+
     /// <summary>
     /// Multiplies two instances.
     /// </summary>
@@ -270,7 +300,7 @@ public struct ColorMatrix {
     /// <param name="right">The right operand of the multiplication.</param>
     /// <param name="result">A new instance that is the result of the multiplication</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Multiply(ref ColorMatrix left, ref ColorMatrix right, out ColorMatrix result) {
+    public static void Multiply(ref readonly ColorMatrix left, ref readonly ColorMatrix right, out ColorMatrix result) {
         float lM11 = left.c11,
             lM12 = left.c12,
             lM13 = left.c13,
@@ -331,7 +361,7 @@ public struct ColorMatrix {
     /// <param name="right">The right operand of the interpolation.</param>
     /// <param name="factor">The amount to interpolate between them. 0..1 is equivalent to left..right.</param>
     /// <param name="result">A new instance that is the result of the interpolation</param>
-    public static void Interpolate(ref ColorMatrix left, ref ColorMatrix right, float factor, out ColorMatrix result) {
+    public static void Interpolate(ref readonly ColorMatrix left, ref readonly ColorMatrix right, float factor, out ColorMatrix result) {
         result = new ColorMatrix(
                     ((1-factor) * left.c11) + (factor * right.c11),
                     ((1-factor) * left.c12) + (factor * right.c12),

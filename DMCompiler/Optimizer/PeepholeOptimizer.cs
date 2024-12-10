@@ -65,21 +65,17 @@ internal sealed class PeepholeOptimizer {
 
     /// Setup <see cref="OptimizationTrees"/> for each <see cref="OptPass"/>
     private static void GetOptimizations(DMCompiler compiler) {
-        var possibleTypes = typeof(IOptimization).Assembly.GetTypes();
-        var optimizationTypes = new List<Type>(possibleTypes.Length);
+        foreach (var optType in typeof(IOptimization).Assembly.GetTypes()) {
+            if (!typeof(IOptimization).IsAssignableFrom(optType) ||
+                optType is not { IsClass: true, IsAbstract: false })
+                continue;
 
-        foreach (var type in possibleTypes) {
-            if (typeof(IOptimization).IsAssignableFrom(type) && type is { IsClass: true, IsAbstract: false }) {
-                optimizationTypes.Add(type);
-            }
-        }
-
-        foreach (var optType in optimizationTypes) {
             var opt = (IOptimization)(Activator.CreateInstance(optType)!);
 
             var opcodes = opt.GetOpcodes();
             if (opcodes.Length < 2) {
-                compiler.ForcedError(Location.Internal, $"Peephole optimization {optType} must have at least 2 opcodes");
+                compiler.ForcedError(Location.Internal,
+                    $"Peephole optimization {optType} must have at least 2 opcodes");
                 continue;
             }
 

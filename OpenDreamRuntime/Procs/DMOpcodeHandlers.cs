@@ -220,7 +220,7 @@ namespace OpenDreamRuntime.Procs {
                 if (!loc.TryGetValueAsDreamObject<DreamObjectTurf>(out var turf))
                     ThrowInvalidTurfLoc(loc);
 
-                state.Proc.DreamMapManager.SetTurf(turf, objectDef, newArguments);
+                state.Proc.DreamMapManager.SetTurf(turf!, objectDef, newArguments);
 
                 state.Push(loc);
                 return ProcStatus.Continue;
@@ -1414,8 +1414,8 @@ namespace OpenDreamRuntime.Procs {
             DreamReference procRef = state.ReadReference();
             var argumentInfo = state.ReadProcArguments();
 
-            DreamObject instance;
-            DreamProc proc;
+            DreamObject? instance;
+            DreamProc? proc;
             switch (procRef.Type) {
                 case DMReference.Type.Self: {
                     instance = state.Instance;
@@ -1442,8 +1442,8 @@ namespace OpenDreamRuntime.Procs {
                 }
                 case DMReference.Type.SrcProc: {
                     instance = state.Instance;
-                    if (!instance.TryGetProc(state.ResolveString(procRef.Value), out proc))
-                        throw new Exception($"Type {instance.ObjectDefinition.Type} has no proc called \"{state.ResolveString(procRef.Value)}\"");
+                    if (instance is null || !instance.TryGetProc(state.ResolveString(procRef.Value), out proc))
+                        throw new Exception($"Type {instance?.ObjectDefinition.Type ?? "<unknown type>"} has no proc called \"{state.ResolveString(procRef.Value)}\"");
 
                     break;
                 }
@@ -2386,7 +2386,7 @@ namespace OpenDreamRuntime.Procs {
                 throw new Exception("Invalid browse_rsc() recipient");
             }
 
-            connection?.BrowseResource(file, filename.IsNull ? Path.GetFileName(file.ResourcePath) : filename.GetValueAsString());
+            connection?.BrowseResource(file, (filename.IsNull ? Path.GetFileName(file.ResourcePath) : filename.MustGetValueAsString())!);
             return ProcStatus.Continue;
         }
 

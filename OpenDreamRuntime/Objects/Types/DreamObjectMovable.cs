@@ -7,6 +7,7 @@ namespace OpenDreamRuntime.Objects.Types;
 
 [Virtual]
 public class DreamObjectMovable : DreamObjectAtom {
+    [Dependency] private readonly SharedMapSystem _mapSystem = default!;
     public EntityUid Entity;
     public readonly DMISpriteComponent SpriteComponent;
     public DreamObjectAtom? Loc;
@@ -198,7 +199,8 @@ public class DreamObjectMovable : DreamObjectAtom {
                 TransformSystem.SetLocalPosition(Entity, Vector2.Zero);
                 break;
             case null:
-                TransformSystem.SetParent(Entity, MapManager.GetMapEntityId(MapId.Nullspace));
+                _mapSystem.TryGetMap(MapId.Nullspace, out var mapId);
+                TransformSystem.SetParent(Entity, mapId!.Value);
                 break;
             default:
                 throw new ArgumentException($"Invalid loc {loc}");

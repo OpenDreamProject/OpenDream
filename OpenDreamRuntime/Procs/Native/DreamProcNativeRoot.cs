@@ -29,7 +29,7 @@ namespace OpenDreamRuntime.Procs.Native;
 /// Note that this proc container also includes global procs which are used to create some DM objects,
 /// like filter(), matrix(), etc.
 /// </remarks>
-internal static class DreamProcNativeRoot {
+internal static partial class DreamProcNativeRoot {
     private static readonly DreamResourceManager _resourceManager = IoCManager.Resolve<DreamResourceManager>();
 
     [DreamProc("alert")]
@@ -156,7 +156,7 @@ internal static class DreamProcNativeRoot {
                 return DreamValue.Null;
             chainAnim = true;
         }
-        
+
         bundle.LastAnimatedObject = new DreamValue(obj);
         if(obj.IsSubtypeOf(bundle.ObjectTree.Filter)) {//TODO animate filters
             return DreamValue.Null;
@@ -466,7 +466,7 @@ internal static class DreamProcNativeRoot {
             return DreamValue.Null;
         }
 
-        text = Regex.Replace(text, "[\\^]|[^A-z0-9@_-]", ""); //Remove all punctuation except - and _
+        text = CkeyExRegex().Replace(text, ""); //Remove all punctuation except - and _
         return new DreamValue(text);
     }
 
@@ -3196,8 +3196,8 @@ internal static class DreamProcNativeRoot {
     public static DreamValue NativeProc_winset(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
         DreamValue player = bundle.GetArgument(0, "player");
         DreamValue controlId = bundle.GetArgument(1, "control_id");
-        string? winsetControlId = (!controlId.IsNull) ? controlId.GetValueAsString() : null;
-        string winsetParams = bundle.GetArgument(2, "params").GetValueAsString();
+        string? winsetControlId = (!controlId.IsNull) ? controlId.MustGetValueAsString() : null;
+        string winsetParams = bundle.GetArgument(2, "params").MustGetValueAsString();
 
         DreamConnection? connection = null;
         if (player.TryGetValueAsDreamObject<DreamObjectMob>(out var mob)) {
@@ -3213,4 +3213,7 @@ internal static class DreamProcNativeRoot {
         connection.WinSet(winsetControlId, winsetParams);
         return DreamValue.Null;
     }
+
+    [GeneratedRegex("[\\^]|[^A-z0-9@_-]")]
+    private static partial Regex CkeyExRegex();
 }

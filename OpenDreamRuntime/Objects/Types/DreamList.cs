@@ -28,6 +28,9 @@ public class DreamList : DreamObject {
     public DreamList(DreamObjectDefinition listDef, List<DreamValue> values, Dictionary<DreamValue, DreamValue>? associativeValues) : base(listDef) {
         _values = values;
         _associativeValues = associativeValues;
+        #if TOOLS
+        _tracyMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamList>() + _values.Count * Unsafe.SizeOf<DreamValue>() + _associativeValues?.Count * Unsafe.SizeOf<DreamValue>() ?? 0), "/list");
+        #endif
     }
 
     public override void Initialize(DreamProcArguments args) {

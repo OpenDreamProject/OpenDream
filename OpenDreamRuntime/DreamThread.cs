@@ -256,13 +256,15 @@ namespace OpenDreamRuntime {
                 while (_current != null) {
                     ProcStatus status;
                     try {
-                        if (Profiler.IsActivated() && _current.TracyZoneId is null && _current.Proc != null) { //IsActivated() call just for optimisation reasons
+                        #if TOOLS
+                        if (_current.TracyZoneId is null && _current.Proc != null) {
                             var location =_current.TracyLocationId;
                             var procpath = (_current.Proc.OwningType.Path.Equals("/") ? "/proc/" : _current.Proc.OwningType.Path+"/") +_current.Proc.Name;
                             // ReSharper disable ExplicitCallerInfoArgument
                             _current.TracyZoneId = Profiler.BeginZone(filePath: location.SourceFile, lineNumber: location.Line, memberName: procpath);
                             // ReSharper restore ExplicitCallerInfoArgument
                         }
+                        #endif
                         // _current.Resume may mutate our state!!!
                         status = _current.Resume();
                     } catch (DMError dmError) {
@@ -285,18 +287,25 @@ namespace OpenDreamRuntime {
                     switch (status) {
                         // The entire Thread is stopping
                         case ProcStatus.Cancelled:
+                            #if TOOLS
                             if (_current.TracyZoneId is not null) {
                                 _current.TracyZoneId.Value.Dispose();
                                 _current.TracyZoneId = null;
                             }
+                            #endif
+
                             var current = _current;
                             _current = null;
+
+                            #if TOOLS
                             foreach (var s in _stack) {
                                 if (s.TracyZoneId is null)
                                     continue;
                                 s.TracyZoneId.Value.Dispose();
                                 s.TracyZoneId = null;
                             }
+                            #endif
+
                             _stack.Clear();
                             resultStatus = status;
                             return current.Result;
@@ -319,6 +328,7 @@ namespace OpenDreamRuntime {
 
                         // The context is done executing for now
                         case ProcStatus.Deferred:
+                            #if TOOLS
                             if (_current.TracyZoneId is not null) {
                                 _current.TracyZoneId.Value.Dispose();
                                 _current.TracyZoneId = null;
@@ -330,6 +340,7 @@ namespace OpenDreamRuntime {
                                 s.TracyZoneId.Value.Dispose();
                                 s.TracyZoneId = null;
                             }
+                            #endif
                             // We return the current return value here even though it may not be the final result
                             resultStatus = status;
                             return _current.Result;

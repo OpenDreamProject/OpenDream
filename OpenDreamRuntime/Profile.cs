@@ -22,6 +22,7 @@ public static class Profiler{
     }
 
     [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsActivated() {
         return _tracyActivated;
     }
@@ -58,8 +59,9 @@ public static class Profiler{
         [CallerFilePath] string? filePath = null,
         [CallerMemberName] string? memberName = null)
     {
-        if(!_tracyActivated)
-            return null;
+        #if !TOOLS
+        return null;
+        #else
 
         using var filestr = GetCString(filePath, out var fileln);
         using var memberstr = GetCString(memberName, out var memberln);
@@ -74,6 +76,7 @@ public static class Profiler{
         }
 
         return new ProfilerZone(context);
+        #endif
     }
 
     public static ProfilerMemory? BeginMemoryZone(ulong size, string? name)

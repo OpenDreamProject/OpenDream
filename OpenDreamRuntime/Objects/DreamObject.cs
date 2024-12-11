@@ -17,7 +17,7 @@ using Robust.Shared.Utility;
 namespace OpenDreamRuntime.Objects {
     [Virtual]
     public class DreamObject {
-        private readonly ProfilerMemory? _tracyMemoryId;
+        protected ProfilerMemory? _tracyMemoryId;
         public DreamObjectDefinition ObjectDefinition;
 
         [Access(typeof(DreamObject))]
@@ -88,8 +88,10 @@ namespace OpenDreamRuntime.Objects {
             if (this is not DreamObjectAtom && IsSubtypeOf(ObjectTree.Datum)) {
                 ObjectDefinition.DreamManager.Datums.AddLast(new WeakDreamRef(this));
             }
-
-            _tracyMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamObject>() + ObjectDefinition.Variables.Count * Unsafe.SizeOf<DreamValue>() ), "/datum");
+            #if TOOLS
+            if(_tracyMemoryId is null) //if it's not null, subclasses have done their own allocation
+                _tracyMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamObject>() + ObjectDefinition.Variables.Count * Unsafe.SizeOf<DreamValue>() ), "/datum");
+            #endif
         }
 
         public virtual void Initialize(DreamProcArguments args) {

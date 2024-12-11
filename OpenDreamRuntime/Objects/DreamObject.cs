@@ -91,8 +91,8 @@ namespace OpenDreamRuntime.Objects {
                 ObjectDefinition.DreamManager.Datums.AddLast(new WeakDreamRef(this));
             }
             #if TOOLS
-            if(_tracyMemoryId is null) //if it's not null, subclasses have done their own allocation
-                _tracyMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamObject>() + ObjectDefinition.Variables.Count * Unsafe.SizeOf<DreamValue>() ), "/datum");
+             //if it's not null, subclasses have done their own allocation
+            _tracyMemoryId ??= Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamObject>() + ObjectDefinition.Variables.Count * Unsafe.SizeOf<DreamValue>() ), "/datum");
             #endif
         }
 

@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace OpenDreamRuntime.Resources;
@@ -19,16 +20,19 @@ public class DreamResource {
 
     private readonly string? _filePath;
     private byte[]? _resourceData;
+    private ProfilerMemory? _tracyMemoryId;
 
     public DreamResource(int id, string? filePath, string? resourcePath) {
         Id = id;
         ResourcePath = resourcePath;
         _filePath = filePath;
+        _tracyMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamResource>() + (ResourceData?.Length ?? 0)), "resource");
     }
 
     public DreamResource(int id, byte[] data) {
         Id = id;
         _resourceData = data;
+        _tracyMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamResource>() + (ResourceData is null? 0 : ResourceData.Length)), "resource");
     }
 
     public virtual string? ReadAsString() {

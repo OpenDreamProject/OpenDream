@@ -139,42 +139,44 @@ public sealed class DreamObjectTree {
     /// (by calling the result of <see cref="DreamObject.InitProc(DreamThread, DreamObject?, DreamProcArguments)"/> or <see cref="DreamObject.InitSpawn(DreamProcArguments)"/>)
     /// </remarks>
     public DreamObject CreateObject(TreeEntry type) {
-        if (type == List)
-            return CreateList();
-        if (type == Savefile)
-            return new DreamObjectSavefile(Savefile.ObjectDefinition);
-        if (type.ObjectDefinition.IsSubtypeOf(DatabaseQuery))
-            return new DreamObjectDatabaseQuery(type.ObjectDefinition);
-        if (type.ObjectDefinition.IsSubtypeOf(Database))
-            return new DreamObjectDatabase(type.ObjectDefinition);
-        if (type.ObjectDefinition.IsSubtypeOf(Matrix))
-            return new DreamObjectMatrix(type.ObjectDefinition);
-        if (type.ObjectDefinition.IsSubtypeOf(Sound))
-            return new DreamObjectSound(type.ObjectDefinition);
-        if (type.ObjectDefinition.IsSubtypeOf(Regex))
-            return new DreamObjectRegex(type.ObjectDefinition);
-        if (type.ObjectDefinition.IsSubtypeOf(Image))
-            return new DreamObjectImage(type.ObjectDefinition);
-        if (type.ObjectDefinition.IsSubtypeOf(Icon))
-            return new DreamObjectIcon(type.ObjectDefinition);
-        if (type.ObjectDefinition.IsSubtypeOf(Filter))
-            return new DreamObjectFilter(type.ObjectDefinition);
-        if (type.ObjectDefinition.IsSubtypeOf(Mob))
-            return new DreamObjectMob(type.ObjectDefinition);
-        if (type.ObjectDefinition.IsSubtypeOf(Movable))
-            return new DreamObjectMovable(type.ObjectDefinition);
-        if (type.ObjectDefinition.IsSubtypeOf(Area))
-            return new DreamObjectArea(type.ObjectDefinition);
-        if (type.ObjectDefinition.IsSubtypeOf(Atom))
-            return new DreamObjectAtom(type.ObjectDefinition);
-        if (type.ObjectDefinition.IsSubtypeOf(Client))
-            throw new Exception("Cannot create objects of type /client");
-        if (type.ObjectDefinition.IsSubtypeOf(Turf))
-            throw new Exception("New turfs must be created by the map manager");
-        if (type.ObjectDefinition.IsSubtypeOf(Exception))
-            return new DreamObjectException(type.ObjectDefinition);
+        using(Profiler.BeginZone($"new {type}")){
+            if (type == List)
+                return CreateList();
+            if (type == Savefile)
+                return new DreamObjectSavefile(Savefile.ObjectDefinition);
+            if (type.ObjectDefinition.IsSubtypeOf(DatabaseQuery))
+                return new DreamObjectDatabaseQuery(type.ObjectDefinition);
+            if (type.ObjectDefinition.IsSubtypeOf(Database))
+                return new DreamObjectDatabase(type.ObjectDefinition);
+            if (type.ObjectDefinition.IsSubtypeOf(Matrix))
+                return new DreamObjectMatrix(type.ObjectDefinition);
+            if (type.ObjectDefinition.IsSubtypeOf(Sound))
+                return new DreamObjectSound(type.ObjectDefinition);
+            if (type.ObjectDefinition.IsSubtypeOf(Regex))
+                return new DreamObjectRegex(type.ObjectDefinition);
+            if (type.ObjectDefinition.IsSubtypeOf(Image))
+                return new DreamObjectImage(type.ObjectDefinition);
+            if (type.ObjectDefinition.IsSubtypeOf(Icon))
+                return new DreamObjectIcon(type.ObjectDefinition);
+            if (type.ObjectDefinition.IsSubtypeOf(Filter))
+                return new DreamObjectFilter(type.ObjectDefinition);
+            if (type.ObjectDefinition.IsSubtypeOf(Mob))
+                return new DreamObjectMob(type.ObjectDefinition);
+            if (type.ObjectDefinition.IsSubtypeOf(Movable))
+                return new DreamObjectMovable(type.ObjectDefinition);
+            if (type.ObjectDefinition.IsSubtypeOf(Area))
+                return new DreamObjectArea(type.ObjectDefinition);
+            if (type.ObjectDefinition.IsSubtypeOf(Atom))
+                return new DreamObjectAtom(type.ObjectDefinition);
+            if (type.ObjectDefinition.IsSubtypeOf(Client))
+                throw new Exception("Cannot create objects of type /client");
+            if (type.ObjectDefinition.IsSubtypeOf(Turf))
+                throw new Exception("New turfs must be created by the map manager");
+            if (type.ObjectDefinition.IsSubtypeOf(Exception))
+                return new DreamObjectException(type.ObjectDefinition);
 
-        return new DreamObject(type.ObjectDefinition);
+            return new DreamObject(type.ObjectDefinition);
+        }
     }
 
     public T CreateObject<T>(TreeEntry type) where T : DreamObject {

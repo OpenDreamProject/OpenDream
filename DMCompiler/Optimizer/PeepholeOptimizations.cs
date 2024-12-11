@@ -118,7 +118,7 @@ internal sealed class PushField : IOptimization {
 
 // PushReferenceValue [ref]
 // PushString [string]
-// DereferenceIndex [value] [string]
+// DereferenceIndex
 // -> IndexRefWithString [ref, string]
 internal sealed class IndexRefWithString : IOptimization {
     public OptPass OptimizationPass => OptPass.PeepholeOptimization;

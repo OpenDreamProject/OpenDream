@@ -172,10 +172,8 @@ internal class Program {
                 }
             }
 
-            var sorted = typeIdToProcCount.OrderByDescending(kvp => kvp.Value).ToList();
             Console.WriteLine("Type: Proc Declarations");
-            for (int i = 0; i < sorted.Count; i++) {
-                var pair = sorted[i];
+            foreach (var pair in typeIdToProcCount.OrderByDescending(kvp => kvp.Value)) {
 
                 var type = TypesById[pair.Key];
                 if (pair.Key == 0) {

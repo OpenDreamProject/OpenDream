@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Threading;
 using bottlenoselabs.C2CS.Runtime;
 using static Tracy.PInvoke;
@@ -252,10 +251,9 @@ public readonly struct ProfilerZone : IDisposable{
 }
 
 public sealed unsafe class ProfilerMemory {
-
     private readonly void* _ptr;
-    private CString _name;
-    private int hasRun = 0;
+    private readonly CString _name;
+    private int _hasRun;
 
     internal ProfilerMemory(void* pointer, ulong size, CString name){
         _ptr = pointer;
@@ -264,7 +262,7 @@ public sealed unsafe class ProfilerMemory {
     }
 
     public void ReleaseMemory(){
-        if (System.Threading.Interlocked.Exchange(ref hasRun, 1) == 0){ // only run once
+        if (Interlocked.Exchange(ref _hasRun, 1) == 0){ // only run once
             TracyEmitMemoryFreeNamed(_ptr, 0, _name);
         }
     }

@@ -26,7 +26,7 @@ public class DreamResource {
         Id = id;
         ResourcePath = resourcePath;
         _filePath = filePath;
-        _tracyMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamResource>() + (ResourceData is null? 0 : ResourceData.Length)), "resource");
+        _tracyMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamResource>() + (ResourceData?.Length ?? 0)), "resource");
     }
 
     public DreamResource(int id, byte[] data) {

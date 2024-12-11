@@ -17,7 +17,7 @@ using Robust.Shared.Utility;
 namespace OpenDreamRuntime.Objects {
     [Virtual]
     public class DreamObject {
-        private ProfilerMemory? _tracyMemoryId;
+        private readonly ProfilerMemory? _tracyMemoryId;
         public DreamObjectDefinition ObjectDefinition;
 
         [Access(typeof(DreamObject))]

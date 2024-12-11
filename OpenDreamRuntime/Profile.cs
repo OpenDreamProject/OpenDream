@@ -69,7 +69,7 @@ public static class Profiler{
     public static ProfilerMemory? BeginMemoryZone(ulong size, string? name)
     {
         #if !TOOLS
-        return null
+        return null;
         #else
         var namestr = name is null ? GetPlotCString("null") : GetPlotCString(name);
         unsafe {

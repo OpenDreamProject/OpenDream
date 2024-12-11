@@ -2,7 +2,6 @@
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamShared;
-using Robust.Server.ServerStatus;
 using Robust.Shared;
 using Robust.Shared.Configuration;
 using Robust.Shared.ContentPack;
@@ -51,9 +50,6 @@ namespace OpenDreamRuntime {
                         _configManager.SetCVar(OpenDreamCVars.JsonPath, arg);
                         break;
                     }
-
-            if(_configManager.GetCVar(OpenDreamCVars.TracyEnable))
-                Profiler.ActivateTracy();
 
             _prototypeManager.LoadDirectory(new ResPath("/Resources/Prototypes"));
 

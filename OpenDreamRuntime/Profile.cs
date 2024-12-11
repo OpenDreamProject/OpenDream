@@ -7,25 +7,12 @@ using static Tracy.PInvoke;
 namespace OpenDreamRuntime;
 
 public static class Profiler{
-    //whether these procs are NOPs or not. Defaults to false. Use ActivateTracy() to set true
-    private static bool _tracyActivated;
-
     //internal tracking for unique IDs for memory zones, because we can't use actual object pointers sadly as they are unstable outside of `unsafe`
     private static UInt64 _memoryUID = 0;
 
     // Plot names need to be cached for the lifetime of the program
     // seealso Tracy docs section 3.1
     private static readonly Dictionary<string, CString> PlotNameCache = new();
-
-    public static void ActivateTracy() {
-        _tracyActivated = true;
-    }
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsActivated() {
-        return _tracyActivated;
-    }
 
     /// <summary>
     /// Begins a new <see cref="ProfilerZone"/> and returns the handle to that zone. Time
@@ -81,13 +68,14 @@ public static class Profiler{
 
     public static ProfilerMemory? BeginMemoryZone(ulong size, string? name)
     {
-        if(!_tracyActivated)
-            return null;
-
+        #if !TOOLS
+        return null
+        #else
         var namestr = name is null ? GetPlotCString("null") : GetPlotCString(name);
         unsafe {
             return new ProfilerMemory((void*)(Interlocked.Add(ref _memoryUID, size)-size), size, namestr);
         }
+        #endif
     }
 
     /// <summary>
@@ -109,8 +97,6 @@ public static class Profiler{
     /// An <c>RRGGBB</c> color code that Tracy will use to color the plot in the profiler.
     /// </param>
     public static void PlotConfig(string name, PlotType type = PlotType.Number, bool step = false, bool fill = true, uint color = 0){
-        if(!_tracyActivated)
-            return;
         var namestr = GetPlotCString(name);
         TracyEmitPlotConfig(namestr, (int)type, step ? 1 : 0, fill ? 1 : 0, color);
     }
@@ -119,8 +105,6 @@ public static class Profiler{
     /// Add a <see langword="double"/> value to a plot.
     /// </summary>
     public static void Plot(string name, double val){
-        if(!_tracyActivated)
-            return;
         var namestr = GetPlotCString(name);
         TracyEmitPlot(namestr, val);
     }
@@ -129,8 +113,6 @@ public static class Profiler{
     /// Add a <see langword="float"/> value to a plot.
     /// </summary>
     public static void Plot(string name, int val){
-        if(!_tracyActivated)
-            return;
         var namestr = GetPlotCString(name);
         TracyEmitPlotInt(namestr, val);
     }
@@ -139,8 +121,6 @@ public static class Profiler{
     /// Add a <see langword="float"/> value to a plot.
     /// </summary>
     public static void Plot(string name, float val){
-        if(!_tracyActivated)
-            return;
         var namestr = GetPlotCString(name);
         TracyEmitPlotFloat(namestr, val);
     }
@@ -162,8 +142,6 @@ public static class Profiler{
     /// Viewable in the Info tab in the profiler.
     /// </remarks>
     public static void AppInfo(string appInfo){
-        if(!_tracyActivated)
-            return;
         using var infostr = GetCString(appInfo, out var infoln);
         TracyEmitMessageAppinfo(infostr, infoln);
     }
@@ -175,8 +153,6 @@ public static class Profiler{
     /// Tracy Cpp API and docs refer to this as the <c>FrameMark</c> macro.
     /// </remarks>
     public static void EmitFrameMark(){
-        if(!_tracyActivated)
-            return;
         TracyEmitFrameMark(null);
     }
 
@@ -185,8 +161,6 @@ public static class Profiler{
     /// </summary>
     /// <returns></returns>
     public static bool IsConnected(){
-        if(!_tracyActivated)
-            return false;
         return TracyConnected() != 0;
     }
 

@@ -26,9 +26,6 @@ public abstract class OpenDreamCVars {
     public static readonly CVarDef<ushort> TopicPort =
         CVarDef.Create<ushort>("opendream.topic_port", 25567, CVar.SERVERONLY);
 
-    public static readonly CVarDef<bool> TracyEnable =
-        CVarDef.Create("opendream.enable_tracy", false, CVar.SERVERONLY);
-
     /*
         * INFOLINKS
         */

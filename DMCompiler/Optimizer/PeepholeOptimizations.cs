@@ -117,6 +117,34 @@ internal sealed class PushField : IOptimization {
 }
 
 // PushReferenceValue [ref]
+// PushString [string]
+// DereferenceIndex
+// -> IndexRefWithString [ref, string]
+internal sealed class IndexRefWithString : IOptimization {
+    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
+
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.PushReferenceValue,
+            DreamProcOpcode.PushString,
+            DreamProcOpcode.DereferenceIndex
+        ];
+    }
+
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
+        AnnotatedBytecodeReference pushVal = firstInstruction.GetArg<AnnotatedBytecodeReference>(0);
+
+        AnnotatedBytecodeInstruction secondInstruction = (AnnotatedBytecodeInstruction)(input[index + 1]);
+        AnnotatedBytecodeString strIndex = secondInstruction.GetArg<AnnotatedBytecodeString>(0);
+
+        input.RemoveRange(index, 3);
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.IndexRefWithString, -1,
+            [pushVal, strIndex]));
+    }
+}
+
+// PushReferenceValue [ref]
 // Return
 // -> ReturnReferenceValue [ref]
 internal class ReturnReferenceValue : IOptimization {

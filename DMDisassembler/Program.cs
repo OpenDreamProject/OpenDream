@@ -131,7 +131,7 @@ internal class Program {
             Console.WriteLine("DM Disassembler for OpenDream");
             Console.WriteLine("Commands and arguments:");
             Console.WriteLine("help [command]            : Show additional help for [command] if applicable");
-            Console.WriteLine("quit|q                    : Exits the disassembler");
+            Console.WriteLine("exit|quit|q               : Exits the disassembler");
             Console.WriteLine("search type|proc [name]   : Search for a particular typepath or a proc on a selected type");
             Console.WriteLine("select|sel                : Select a typepath to run further commands on");
             Console.WriteLine("list procs|globals        : List all globals, or all procs on a selected type");

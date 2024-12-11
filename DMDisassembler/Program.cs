@@ -127,8 +127,7 @@ internal class Program {
             }
         }
 
-        void AllCommands()
-        {
+        void AllCommands() {
             Console.WriteLine("DM Disassembler for OpenDream");
             Console.WriteLine("Commands and arguments:");
             Console.WriteLine("help [command]            : Show additional help for [command] if applicable");

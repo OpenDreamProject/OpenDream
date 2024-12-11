@@ -379,10 +379,12 @@ namespace OpenDreamRuntime {
         }
 
         public void PopProcState(bool dispose = true) {
+            #if TOOLS
             if (_current?.TracyZoneId is not null) {
                 _current.TracyZoneId.Value.Dispose();
                 _current.TracyZoneId = null;
             }
+            #endif
 
             if (_current?.WaitFor == false) {
                 _syncCount--;

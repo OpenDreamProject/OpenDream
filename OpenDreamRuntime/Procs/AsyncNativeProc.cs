@@ -25,9 +25,9 @@ namespace OpenDreamRuntime.Procs {
 
             private AsyncNativeProc? _proc;
             public override DreamProc? Proc => _proc;
-
+            #if TOOLS
             public override (string SourceFile, int Line) TracyLocationId => ("Async Native Proc", 0);
-
+            #endif
             private Func<State, Task<DreamValue>> _taskFunc;
             private Task? _task;
 

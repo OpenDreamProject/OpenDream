@@ -41,9 +41,9 @@ namespace OpenDreamRuntime.Procs {
         private Stage _stage = Stage.Init;
 
         public override DreamProc? Proc => null;
-
+        #if TOOLS
         public override (string SourceFile, int Line) TracyLocationId => ($"new {_dreamObject.ObjectDefinition.Type}",0);
-
+        #endif
         public override void AppendStackFrame(StringBuilder builder) {
             builder.AppendLine($"new {_dreamObject.ObjectDefinition.Type}");
         }

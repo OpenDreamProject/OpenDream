@@ -13,7 +13,9 @@ namespace OpenDreamRuntime.Objects.Types;
 public class DreamList : DreamObject {
     private readonly List<DreamValue> _values;
     private Dictionary<DreamValue, DreamValue>? _associativeValues;
+    #if TOOLS
     private ProfilerMemory? _tracyContentsMemoryId;
+    #endif
     public override bool ShouldCallNew => false;
 
     public virtual bool IsAssociative => (_associativeValues != null && _associativeValues.Count > 0);

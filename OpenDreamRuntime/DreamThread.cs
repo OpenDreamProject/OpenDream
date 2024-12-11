@@ -137,8 +137,10 @@ namespace OpenDreamRuntime {
     public abstract class ProcState : IDisposable {
         private static int _idCounter = 0;
         public int Id { get; } = ++_idCounter;
+        #if TOOLS
         public abstract (string SourceFile, int Line) TracyLocationId { get; }
         public ProfilerZone? TracyZoneId { get; set; }
+        #endif
         public DreamThread Thread { get; set; }
 
         [Access(typeof(ProcScheduler))]

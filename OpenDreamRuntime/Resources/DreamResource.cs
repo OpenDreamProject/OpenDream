@@ -20,19 +20,25 @@ public class DreamResource {
 
     private readonly string? _filePath;
     private byte[]? _resourceData;
+    #if TOOLS
     private ProfilerMemory? _tracyMemoryId;
+    #endif
 
     public DreamResource(int id, string? filePath, string? resourcePath) {
         Id = id;
         ResourcePath = resourcePath;
         _filePath = filePath;
+        #if TOOLS
         _tracyMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamResource>() + (ResourceData?.Length ?? 0)), "resource");
+        #endif
     }
 
     public DreamResource(int id, byte[] data) {
         Id = id;
         _resourceData = data;
+        #if TOOLS
         _tracyMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamResource>() + (ResourceData is null? 0 : ResourceData.Length)), "resource");
+        #endif
     }
 
     public virtual string? ReadAsString() {

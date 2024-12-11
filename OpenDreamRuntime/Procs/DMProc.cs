@@ -152,9 +152,9 @@ namespace OpenDreamRuntime.Procs {
         public static readonly Stack<NullProcState> Pool = new();
 
         public override DreamProc? Proc => _proc;
-
+        #if TOOLS
         public override (string SourceFile, int Line) TracyLocationId => ("<NO-OP>",0);
-
+        #endif
         private DreamProc? _proc;
 
         public override ProcStatus Resume() {
@@ -357,9 +357,9 @@ namespace OpenDreamRuntime.Procs {
 
         private DMProc _proc;
         public override DMProc Proc => _proc;
-
+        #if TOOLS
         public override (string SourceFile, int Line) TracyLocationId => _proc.GetSourceAtOffset(_pc+1);
-
+        #endif
 
         /// Static initializer for maintainer friendly OpcodeHandlers to performance friendly _opcodeHandlers
         static unsafe DMProcState() {

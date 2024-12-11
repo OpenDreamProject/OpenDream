@@ -17,7 +17,9 @@ using Robust.Shared.Utility;
 namespace OpenDreamRuntime.Objects {
     [Virtual]
     public class DreamObject {
+        #if TOOLS
         protected ProfilerMemory? _tracyMemoryId;
+        #endif
         public DreamObjectDefinition ObjectDefinition;
 
         [Access(typeof(DreamObject))]
@@ -111,7 +113,9 @@ namespace OpenDreamRuntime.Objects {
             Variables = null;
 
             ObjectDefinition = null!;
+            #if TOOLS
             _tracyMemoryId?.ReleaseMemory();
+            #endif
         }
 
         /// <summary>

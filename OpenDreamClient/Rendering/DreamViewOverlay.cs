@@ -806,7 +806,7 @@ internal sealed class DreamViewOverlay : Overlay {
                 var metric = font.GetCharMetrics(rune, scale);
                 Vector2 mod = new Vector2(0);
                 if(metric.HasValue)
-                    mod.Y += metric.Value.BearingY;
+                    mod.Y += metric.Value.BearingY - (metric.Value.Height - metric.Value.BearingY);
 
                 baseLine.X += font.DrawChar(handle, rune, baseLine+mod, scale, Color.White);
             }

@@ -24,7 +24,7 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
     public static readonly IconAppearance Default = new();
 
     [ViewVariables] public string Name = string.Empty;
-    [ViewVariables] public string Desc = string.Empty;
+    [ViewVariables] public string? Desc = string.Empty;
     [ViewVariables] public int? Icon;
     [ViewVariables] public string? IconState;
     [ViewVariables] public AtomDirection Direction = AtomDirection.South;

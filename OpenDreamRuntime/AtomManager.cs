@@ -251,7 +251,7 @@ public sealed class AtomManager {
                 break;
             case "desc":
                 value.TryGetValueAsString(out var desc);
-                appearance.Desc = desc ?? string.Empty;
+                appearance.Desc = desc;
                 break;
             case "icon":
                 if (_resourceManager.TryLoadIcon(value, out var icon)) {
@@ -393,6 +393,8 @@ public sealed class AtomManager {
             case "name":
                 return new(appearance.Name);
             case "desc":
+                if (appearance.Desc == null)
+                    return DreamValue.Null;
                 return new(appearance.Desc);
             case "icon":
                 if (appearance.Icon == null)

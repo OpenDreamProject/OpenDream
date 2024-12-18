@@ -16,3 +16,5 @@ var/result_match = "/obj/cable/brown{\n\ticon_state = \"1\"\n\t},\n/obj/cable/br
 			originalStrings[indexText] = (match)
 	while(found)
 	ASSERT(models == result_match)
+	ASSERT(originalStrings ~= list("\"1\"" = "2-8", "\"2\"" = "4-8"))
+	ASSERT(stringIndex == 3)

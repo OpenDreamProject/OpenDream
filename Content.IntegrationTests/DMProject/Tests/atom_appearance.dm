@@ -2,7 +2,7 @@
     name = "hello"
     desc = "this is a thing"
 
-/proc/RunTest()
+/proc/test_appearance()
     var/obj/thingtocopy/T = new()
     var/obj/otherthing = new()
     otherthing.appearance = T.appearance

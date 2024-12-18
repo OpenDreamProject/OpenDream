@@ -501,7 +501,7 @@ public sealed class DreamValueJsonConverter : JsonConverter<DreamValue> {
 
         DreamValue value;
         switch (type) {
-            case DreamValue.DreamValueType.String: value = new DreamValue(reader.GetString()); break;
+            case DreamValue.DreamValueType.String: value = new DreamValue(reader.GetString() ?? string.Empty); break;
             case DreamValue.DreamValueType.Float: value = new DreamValue(reader.GetSingle()); break;
             case DreamValue.DreamValueType.DreamObject: {
                 string? objectTypePath = reader.GetString();

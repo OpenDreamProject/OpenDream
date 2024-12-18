@@ -201,7 +201,7 @@ internal sealed class DreamViewOverlay : Overlay {
                 current.ColorMatrixToApply = icon.Appearance.ColorMatrix;
             } else {
                 current.ColorToApply = parentIcon.ColorToApply * icon.Appearance.Color;
-                ColorMatrix.Multiply(ref parentIcon.ColorMatrixToApply, ref icon.Appearance.ColorMatrix, out current.ColorMatrixToApply);
+                ColorMatrix.Multiply(in parentIcon.ColorMatrixToApply, in icon.Appearance.ColorMatrix, out current.ColorMatrixToApply);
             }
 
             if ((icon.Appearance.AppearanceFlags & AppearanceFlags.ResetAlpha) != 0 || keepTogether) //RESET_ALPHA
@@ -316,9 +316,10 @@ internal sealed class DreamViewOverlay : Overlay {
                     continue;
                 if(sprite.Icon.Appearance == null)
                     continue;
-                if(sprite.Icon.Appearance.Override)
+                if(sprite.Icon.Appearance.Override) {
                     current.MainIcon = sprite.Icon;
-                else
+                    current.Position = current.Position + (sprite.Icon.Appearance.TotalPixelOffset / (float)EyeManager.PixelsPerMeter);
+                } else
                     ProcessIconComponents(sprite.Icon, current.Position, uid, isScreen, ref tieBreaker, result, current);
             }
         }

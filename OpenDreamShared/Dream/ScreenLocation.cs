@@ -72,6 +72,8 @@ public sealed class ScreenLocation {
     }
 
     public Vector2 GetViewPosition(Vector2 viewOffset, ViewRange view, float tileSize, Vector2i iconSize) {
+        // TODO: LEFT/RIGHT/TOP/BOTTOM need to stick to the edge of the visible map if the map's container is smaller than the map itself
+        
         float x = (X + PixelOffsetX / tileSize);
         x += HorizontalAnchor switch {
             HorizontalAnchor.West or HorizontalAnchor.Left => 0,

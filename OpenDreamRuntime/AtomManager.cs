@@ -209,6 +209,7 @@ public sealed class AtomManager {
     public bool IsValidAppearanceVar(string name) {
         switch (name) {
             case "name":
+            case "desc":
             case "icon":
             case "icon_state":
             case "dir":
@@ -247,6 +248,10 @@ public sealed class AtomManager {
             case "name":
                 value.TryGetValueAsString(out var name);
                 appearance.Name = name ?? string.Empty;
+                break;
+            case "desc":
+                value.TryGetValueAsString(out var desc);
+                appearance.Desc = desc ?? string.Empty;
                 break;
             case "icon":
                 if (_resourceManager.TryLoadIcon(value, out var icon)) {
@@ -387,6 +392,8 @@ public sealed class AtomManager {
         switch (varName) {
             case "name":
                 return new(appearance.Name);
+            case "desc":
+                return new(appearance.Desc);
             case "icon":
                 if (appearance.Icon == null)
                     return DreamValue.Null;
@@ -589,6 +596,7 @@ public sealed class AtomManager {
             return appearance;
 
         def.TryGetVariable("name", out var nameVar);
+        def.TryGetVariable("desc", out var descVar);
         def.TryGetVariable("icon", out var iconVar);
         def.TryGetVariable("icon_state", out var stateVar);
         def.TryGetVariable("color", out var colorVar);
@@ -609,6 +617,7 @@ public sealed class AtomManager {
 
         appearance = new IconAppearance();
         SetAppearanceVar(appearance, "name", nameVar);
+        SetAppearanceVar(appearance, "desc", descVar);
         SetAppearanceVar(appearance, "icon", iconVar);
         SetAppearanceVar(appearance, "icon_state", stateVar);
         SetAppearanceVar(appearance, "color", colorVar);

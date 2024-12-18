@@ -5,7 +5,6 @@ namespace OpenDreamRuntime.Objects.Types;
 
 [Virtual]
 public class DreamObjectAtom : DreamObject {
-    public string? Name;
     public string? Desc;
     public readonly DreamOverlaysList Overlays;
     public readonly DreamOverlaysList Underlays;
@@ -22,11 +21,6 @@ public class DreamObjectAtom : DreamObject {
         AtomManager.AddAtom(this);
     }
 
-    public override void Initialize(DreamProcArguments args) {
-        ObjectDefinition.Variables["name"].TryGetValueAsString(out Name);
-        ObjectDefinition.Variables["desc"].TryGetValueAsString(out Desc);
-    }
-
     protected override void HandleDeletion(bool possiblyThreaded) {
         // SAFETY: RemoveAtom is not threadsafe.
         if (possiblyThreaded) {
@@ -37,6 +31,12 @@ public class DreamObjectAtom : DreamObject {
         AtomManager.RemoveAtom(this);
 
         base.HandleDeletion(possiblyThreaded);
+    }
+    public string GetDesc() {
+        if (!TryGetVariable("desc", out DreamValue descVar) || !descVar.TryGetValueAsString(out string? desc))
+            return ObjectDefinition.Type.ToString();
+
+        return desc;
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
@@ -49,13 +49,6 @@ public class DreamObjectAtom : DreamObject {
                 return true;
             case "loc":
                 value = DreamValue.Null;
-                return true;
-
-            case "name":
-                value = (Name != null) ? new(Name) : DreamValue.Null;
-                return true;
-            case "desc":
-                value = (Desc != null) ? new(Desc) : DreamValue.Null;
                 return true;
             case "appearance":
                 var appearanceCopy = new IconAppearance(AtomManager.MustGetAppearance(this)!);
@@ -101,13 +94,6 @@ public class DreamObjectAtom : DreamObject {
             case "y":
             case "z":
             case "loc":
-                break;
-
-            case "name":
-                value.TryGetValueAsString(out Name);
-                break;
-            case "desc":
-                value.TryGetValueAsString(out Desc);
                 break;
             case "appearance":
                 if (!AtomManager.TryCreateAppearanceFrom(value, out var newAppearance))

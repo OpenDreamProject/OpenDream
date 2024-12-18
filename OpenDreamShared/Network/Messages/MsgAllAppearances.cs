@@ -14,6 +14,7 @@ public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppeara
 
     private enum Property : byte {
         Name,
+        Desc,
         Icon,
         IconState,
         Direction,
@@ -65,6 +66,9 @@ public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppeara
                 switch (property) {
                     case Property.Name:
                         appearance.Name = buffer.ReadString();
+                        break;
+                    case Property.Desc:
+                        appearance.Desc = buffer.ReadString();
                         break;
                     case Property.Id:
                         appearanceId = buffer.ReadVariableInt32();
@@ -228,6 +232,11 @@ public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppeara
             if (appearance.Name != IconAppearance.Default.Name) {
                 buffer.Write((byte)Property.Name);
                 buffer.Write(appearance.Name);
+            }
+
+            if (appearance.Desc != IconAppearance.Default.Desc) {
+                buffer.Write((byte)Property.Desc);
+                buffer.Write(appearance.Desc);
             }
 
             if (appearance.Icon != null) {

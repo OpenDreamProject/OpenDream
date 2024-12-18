@@ -24,6 +24,7 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
     public static readonly IconAppearance Default = new();
 
     [ViewVariables] public string Name = string.Empty;
+    [ViewVariables] public string Desc = string.Empty;
     [ViewVariables] public int? Icon;
     [ViewVariables] public string? IconState;
     [ViewVariables] public AtomDirection Direction = AtomDirection.South;
@@ -82,6 +83,7 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
 
     public IconAppearance(IconAppearance appearance) {
         Name = appearance.Name;
+        Desc = appearance.Desc;
         Icon = appearance.Icon;
         IconState = appearance.IconState;
         Direction = appearance.Direction;
@@ -119,6 +121,7 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
         if (appearance == null) return false;
 
         if (appearance.Name != Name) return false;
+        if (appearance.Desc != Desc) return false;
         if (appearance.Icon != Icon) return false;
         if (appearance.IconState != IconState) return false;
         if (appearance.Direction != Direction) return false;
@@ -207,6 +210,7 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
         HashCode hashCode = new HashCode();
 
         hashCode.Add(Name);
+        hashCode.Add(Desc);
         hashCode.Add(Icon);
         hashCode.Add(IconState);
         hashCode.Add(Direction);

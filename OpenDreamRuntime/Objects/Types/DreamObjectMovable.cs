@@ -49,7 +49,7 @@ public class DreamObjectMovable : DreamObjectAtom {
 
         if (EntityManager.TryGetComponent(Entity, out MetaDataComponent? metaData)) {
             MetaDataSystem?.SetEntityName(Entity, GetDisplayName(), metaData);
-            MetaDataSystem?.SetEntityDescription(Entity, Desc ?? string.Empty, metaData);
+            MetaDataSystem?.SetEntityDescription(Entity, GetDesc(), metaData);
         }
 
         args.GetArgument(0).TryGetValueAsDreamObject<DreamObjectAtom>(out var loc);

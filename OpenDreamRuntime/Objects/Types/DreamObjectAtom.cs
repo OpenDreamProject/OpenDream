@@ -31,9 +31,10 @@ public class DreamObjectAtom : DreamObject {
 
         base.HandleDeletion(possiblyThreaded);
     }
-    public string GetDesc() {
+
+    public string GetRTEntityDesc() {
         if (!TryGetVariable("desc", out DreamValue descVar) || !descVar.TryGetValueAsString(out string? desc))
-            return ObjectDefinition.Type.ToString();
+            return ObjectDefinition.Type;
 
         return desc;
     }

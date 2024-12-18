@@ -31,4 +31,5 @@
 	test_range()
 	test_verb_duplicate()
 	test_appearance()
+	test_filter_init()
 	world.log << "IntegrationTests successful, /world/New() exiting..."

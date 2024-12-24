@@ -18,8 +18,6 @@ jobs:
       run: |
         cd main/
         git submodule update --init --recursive
-    - name: Pull engine updates
-      uses: space-wizards/submodule-dependency@v0.1.5
     - name: Update Engine Submodules
       run: |
         cd main/RobustToolbox/

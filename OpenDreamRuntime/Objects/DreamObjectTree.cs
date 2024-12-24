@@ -19,6 +19,8 @@ using MethodImplOptions = System.Runtime.CompilerServices.MethodImplOptions;
 namespace OpenDreamRuntime.Objects;
 
 public sealed class DreamObjectTree {
+    // These all get set when the JSON is loaded so just disable the pragma
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
     public TreeEntry[] Types { get; private set; }
     public List<DreamProc> Procs { get; private set; } = new();
     public List<string> Strings { get; private set; } //TODO: Store this somewhere else
@@ -49,6 +51,8 @@ public sealed class DreamObjectTree {
 
     private readonly Dictionary<string, TreeEntry> _pathToType = new();
     private Dictionary<string, int> _globalProcIds;
+
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
     [Dependency] private readonly AtomManager _atomManager = default!;
     [Dependency] private readonly DreamManager _dreamManager = default!;
@@ -498,7 +502,7 @@ public sealed class TreeEntry {
     public readonly string Path;
     public readonly int Id;
     public DreamObjectDefinition ObjectDefinition;
-    public TreeEntry ParentEntry;
+    public TreeEntry? ParentEntry;
     public readonly List<int> InheritingTypes = new();
 
     /// <summary>

@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using DMCompiler.Bytecode;
 using DMCompiler.Json;
 using JetBrains.Annotations;
 
@@ -118,6 +119,7 @@ internal class Program {
                 Console.WriteLine("Prints various statistics. Usage: stats [type]");
                 Console.WriteLine("Options for [type]:");
                 Console.WriteLine("procs-by-type         : Prints the number of proc declarations (not overrides) on each type in descending order");
+                Console.WriteLine("opcode-count          : Prints the number of occurrences for each opcode in descending order");
                 break;
             }
             default: {
@@ -153,6 +155,10 @@ internal class Program {
                 ProcsByType();
                 return;
             }
+            case "opcode-count": {
+                OpcodeCount();
+                return;
+            }
             default: {
                 Console.WriteLine($"Unknown stat \"{statType}\"");
                 PrintHelp("stats");
@@ -174,13 +180,35 @@ internal class Program {
 
             Console.WriteLine("Type: Proc Declarations");
             foreach (var pair in typeIdToProcCount.OrderByDescending(kvp => kvp.Value)) {
-
                 var type = TypesById[pair.Key];
                 if (pair.Key == 0) {
-                    Console.WriteLine($"<global>: {pair.Value}");
+                    Console.WriteLine($"<global>: {pair.Value:n0}");
                 } else {
-                    Console.WriteLine($"{type.Path}: {pair.Value}");
+                    Console.WriteLine($"{type.Path}: {pair.Value:n0}");
                 }
+            }
+        }
+
+        void OpcodeCount() {
+            Console.WriteLine("Counting all opcode occurrences. This may take a moment.");
+            Dictionary<string, int> opcodeToCount = new Dictionary<string, int>();
+
+            // We need to fill the dict first in case there's any opcodes with 0 occurrences in the bytecode
+            foreach (string opcodeName in Enum.GetNames(typeof(DreamProcOpcode))) {
+                opcodeToCount.Add(opcodeName, 0);
+            }
+
+            foreach (DMProc proc in Procs) {
+                var decompiledOpcodes = proc.GetDecompiledOpcodes(out _);
+                foreach (var opcode in decompiledOpcodes) {
+                    var name = opcode.Text.Split(' ')[0];
+                    opcodeToCount[name] += 1;
+                }
+            }
+
+            Console.WriteLine("Opcode: Count");
+            foreach (var pair in opcodeToCount.OrderByDescending(kvp => kvp.Value)) {
+                Console.WriteLine($"{pair.Key}: {pair.Value:n0}");
             }
         }
     }

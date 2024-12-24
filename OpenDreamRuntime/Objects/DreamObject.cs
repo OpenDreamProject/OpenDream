@@ -17,6 +17,9 @@ using Robust.Shared.Utility;
 namespace OpenDreamRuntime.Objects {
     [Virtual]
     public class DreamObject {
+        #if TOOLS
+        protected ProfilerMemory? _tracyMemoryId;
+        #endif
         public DreamObjectDefinition ObjectDefinition;
 
         [Access(typeof(DreamObject))]
@@ -87,6 +90,10 @@ namespace OpenDreamRuntime.Objects {
             if (this is not DreamObjectAtom && IsSubtypeOf(ObjectTree.Datum)) {
                 ObjectDefinition.DreamManager.Datums.AddLast(new WeakDreamRef(this));
             }
+            #if TOOLS
+             //if it's not null, subclasses have done their own allocation
+            _tracyMemoryId ??= Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamObject>() + ObjectDefinition.Variables.Count * Unsafe.SizeOf<DreamValue>() ), "/datum");
+            #endif
         }
 
         public virtual void Initialize(DreamProcArguments args) {
@@ -106,6 +113,9 @@ namespace OpenDreamRuntime.Objects {
             Variables = null;
 
             ObjectDefinition = null!;
+            #if TOOLS
+            _tracyMemoryId?.ReleaseMemory();
+            #endif
         }
 
         /// <summary>
@@ -145,6 +155,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public bool IsSubtypeOf(TreeEntry ancestor) {
+            if(Deleted) return false;
             return ObjectDefinition.IsSubtypeOf(ancestor);
         }
 

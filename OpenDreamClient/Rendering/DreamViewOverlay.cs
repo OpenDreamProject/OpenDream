@@ -2,9 +2,6 @@
 using OpenDreamClient.Interface;
 using Robust.Client.Graphics;
 using Robust.Client.Player;
-using Robust.Client.UserInterface;
-using Robust.Shared.Utility;
-using Robust.Shared.Enums;
 using Robust.Shared.Map;
 using OpenDreamShared.Dream;
 using Robust.Shared.Console;
@@ -15,8 +12,8 @@ using Robust.Shared.Map.Components;
 using Robust.Shared.Profiling;
 using Vector3 = Robust.Shared.Maths.Vector3;
 using Matrix3x2 = System.Numerics.Matrix3x2;
-using Robust.Client.UserInterface.RichText;
 using Robust.Client.ResourceManagement;
+using Robust.Shared.Enums;
 
 namespace OpenDreamClient.Rendering;
 
@@ -46,7 +43,7 @@ internal sealed class DreamViewOverlay : Overlay {
     [Dependency] private readonly ProfManager _prof = default!;
     [Dependency] private readonly IResourceCache _resourceCache = default!;
 
-    private Font _defaultMaptextFont;
+    private readonly Font _defaultMaptextFont;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.view");
 
@@ -802,7 +799,6 @@ internal sealed class DreamViewOverlay : Overlay {
             float scale = 1;
             var font = _defaultMaptextFont;
             var baseLine = new Vector2(0, 0);
-            var lineHeight = font.GetLineHeight(scale);
             foreach (var rune in maptext.EnumerateRunes()){
                 var metric = font.GetCharMetrics(rune, scale);
                 Vector2 mod = new Vector2(0);

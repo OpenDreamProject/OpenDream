@@ -312,15 +312,19 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             if (endAppearance.Direction != _appearance.Direction) {
                 appearance.Direction = endAppearance.Direction;
             }
+
             if (endAppearance.Icon != _appearance.Icon) {
                 appearance.Icon = endAppearance.Icon;
             }
+
             if (endAppearance.IconState != _appearance.IconState) {
                 appearance.IconState = endAppearance.IconState;
             }
+
             if (endAppearance.Invisibility != _appearance.Invisibility) {
                 appearance.Invisibility = endAppearance.Invisibility;
             }
+
             if (endAppearance.Maptext != _appearance.Maptext) {
                 appearance.Maptext = endAppearance.Maptext;
             }

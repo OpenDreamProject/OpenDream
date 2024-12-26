@@ -14,41 +14,41 @@ namespace OpenDreamShared.Dream;
 
 /*
  * Woe, weary traveler, modifying this class is not for the faint of heart.
- * If you modify MutableIconAppearance, be sure to update the following places:
- * - All of the methods on ImmutableIconAppearance itself
- * - MutableIconAppearance
- * - MutableIconAppearance methods in AtomManager
+ * If you modify MutableAppearance, be sure to update the following places:
+ * - All of the methods on ImmutableAppearance itself
+ * - MutableAppearance
+ * - MutableAppearance methods in AtomManager
  * - There may be others
  */
 
 // TODO: Wow this is huge! Probably look into splitting this by most used/least used to reduce the size of these
 [Serializable]
-public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance>{
+public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance>{
     private bool _registered;
     private int? _storedHashCode;
     private readonly SharedAppearanceSystem? _appearanceSystem;
-    [ViewVariables] public readonly string Name = MutableIconAppearance.Default.Name;
-    [ViewVariables] public readonly int? Icon = MutableIconAppearance.Default.Icon;
-    [ViewVariables] public readonly string? IconState = MutableIconAppearance.Default.IconState;
-    [ViewVariables] public readonly AtomDirection Direction = MutableIconAppearance.Default.Direction;
-    [ViewVariables] public readonly bool InheritsDirection = MutableIconAppearance.Default.InheritsDirection; // Inherits direction when used as an overlay
-    [ViewVariables] public readonly Vector2i PixelOffset = MutableIconAppearance.Default.PixelOffset;  // pixel_x and pixel_y
-    [ViewVariables] public readonly Vector2i PixelOffset2 = MutableIconAppearance.Default.PixelOffset2; // pixel_w and pixel_z
-    [ViewVariables] public readonly Color Color = MutableIconAppearance.Default.Color;
-    [ViewVariables] public readonly byte Alpha = MutableIconAppearance.Default.Alpha;
-    [ViewVariables] public readonly float GlideSize = MutableIconAppearance.Default.GlideSize;
-    [ViewVariables] public readonly float Layer = MutableIconAppearance.Default.Layer;
-    [ViewVariables] public readonly int Plane = MutableIconAppearance.Default.Plane;
-    [ViewVariables] public readonly BlendMode BlendMode = MutableIconAppearance.Default.BlendMode;
-    [ViewVariables] public readonly AppearanceFlags AppearanceFlags = MutableIconAppearance.Default.AppearanceFlags;
-    [ViewVariables] public readonly sbyte Invisibility = MutableIconAppearance.Default.Invisibility;
-    [ViewVariables] public readonly bool Opacity = MutableIconAppearance.Default.Opacity;
-    [ViewVariables] public readonly bool Override = MutableIconAppearance.Default.Override;
-    [ViewVariables] public readonly string? RenderSource = MutableIconAppearance.Default.RenderSource;
-    [ViewVariables] public readonly string? RenderTarget = MutableIconAppearance.Default.RenderTarget;
-    [ViewVariables] public readonly MouseOpacity MouseOpacity = MutableIconAppearance.Default.MouseOpacity;
-    [ViewVariables] public readonly ImmutableIconAppearance[] Overlays;
-    [ViewVariables] public readonly ImmutableIconAppearance[] Underlays;
+    [ViewVariables] public readonly string Name = MutableAppearance.Default.Name;
+    [ViewVariables] public readonly int? Icon = MutableAppearance.Default.Icon;
+    [ViewVariables] public readonly string? IconState = MutableAppearance.Default.IconState;
+    [ViewVariables] public readonly AtomDirection Direction = MutableAppearance.Default.Direction;
+    [ViewVariables] public readonly bool InheritsDirection = MutableAppearance.Default.InheritsDirection; // Inherits direction when used as an overlay
+    [ViewVariables] public readonly Vector2i PixelOffset = MutableAppearance.Default.PixelOffset;  // pixel_x and pixel_y
+    [ViewVariables] public readonly Vector2i PixelOffset2 = MutableAppearance.Default.PixelOffset2; // pixel_w and pixel_z
+    [ViewVariables] public readonly Color Color = MutableAppearance.Default.Color;
+    [ViewVariables] public readonly byte Alpha = MutableAppearance.Default.Alpha;
+    [ViewVariables] public readonly float GlideSize = MutableAppearance.Default.GlideSize;
+    [ViewVariables] public readonly float Layer = MutableAppearance.Default.Layer;
+    [ViewVariables] public readonly int Plane = MutableAppearance.Default.Plane;
+    [ViewVariables] public readonly BlendMode BlendMode = MutableAppearance.Default.BlendMode;
+    [ViewVariables] public readonly AppearanceFlags AppearanceFlags = MutableAppearance.Default.AppearanceFlags;
+    [ViewVariables] public readonly sbyte Invisibility = MutableAppearance.Default.Invisibility;
+    [ViewVariables] public readonly bool Opacity = MutableAppearance.Default.Opacity;
+    [ViewVariables] public readonly bool Override = MutableAppearance.Default.Override;
+    [ViewVariables] public readonly string? RenderSource = MutableAppearance.Default.RenderSource;
+    [ViewVariables] public readonly string? RenderTarget = MutableAppearance.Default.RenderTarget;
+    [ViewVariables] public readonly MouseOpacity MouseOpacity = MutableAppearance.Default.MouseOpacity;
+    [ViewVariables] public readonly ImmutableAppearance[] Overlays;
+    [ViewVariables] public readonly ImmutableAppearance[] Underlays;
 
     [NonSerialized]
     private List<int>? _overlayIDs;
@@ -89,7 +89,7 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
         _underlayIDs = null;
     }
 
-    public ImmutableIconAppearance(MutableIconAppearance appearance, SharedAppearanceSystem? serverAppearanceSystem) {
+    public ImmutableAppearance(MutableAppearance appearance, SharedAppearanceSystem? serverAppearanceSystem) {
         _appearanceSystem = serverAppearanceSystem;
 
         Name = appearance.Name;
@@ -126,60 +126,60 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
         }
     }
 
-    public override bool Equals(object? obj) => obj is ImmutableIconAppearance immutable && Equals(immutable);
+    public override bool Equals(object? obj) => obj is ImmutableAppearance immutable && Equals(immutable);
 
-    public bool Equals(ImmutableIconAppearance? immutableIconAppearance) {
-        if (immutableIconAppearance == null) return false;
+    public bool Equals(ImmutableAppearance? immutableAppearance) {
+        if (immutableAppearance == null) return false;
 
-        if (immutableIconAppearance.Name != Name) return false;
-        if (immutableIconAppearance.Icon != Icon) return false;
-        if (immutableIconAppearance.IconState != IconState) return false;
-        if (immutableIconAppearance.Direction != Direction) return false;
-        if (immutableIconAppearance.InheritsDirection != InheritsDirection) return false;
-        if (immutableIconAppearance.PixelOffset != PixelOffset) return false;
-        if (immutableIconAppearance.PixelOffset2 != PixelOffset2) return false;
-        if (immutableIconAppearance.Color != Color) return false;
-        if (immutableIconAppearance.Alpha != Alpha) return false;
-        if (immutableIconAppearance.GlideSize != GlideSize) return false;
-        if (!immutableIconAppearance.ColorMatrix.Equals(ColorMatrix)) return false;
-        if (immutableIconAppearance.Layer != Layer) return false;
-        if (immutableIconAppearance.Plane != Plane) return false;
-        if (immutableIconAppearance.RenderSource != RenderSource) return false;
-        if (immutableIconAppearance.RenderTarget != RenderTarget) return false;
-        if (immutableIconAppearance.BlendMode != BlendMode) return false;
-        if (immutableIconAppearance.AppearanceFlags != AppearanceFlags) return false;
-        if (immutableIconAppearance.Invisibility != Invisibility) return false;
-        if (immutableIconAppearance.Opacity != Opacity) return false;
-        if (immutableIconAppearance.MouseOpacity != MouseOpacity) return false;
-        if (immutableIconAppearance.Overlays.Length != Overlays.Length) return false;
-        if (immutableIconAppearance.Underlays.Length != Underlays.Length) return false;
-        if (immutableIconAppearance.VisContents.Length != VisContents.Length) return false;
-        if (immutableIconAppearance.Filters.Length != Filters.Length) return false;
-        if (immutableIconAppearance.Verbs.Length != Verbs.Length) return false;
-        if (immutableIconAppearance.Override != Override) return false;
+        if (immutableAppearance.Name != Name) return false;
+        if (immutableAppearance.Icon != Icon) return false;
+        if (immutableAppearance.IconState != IconState) return false;
+        if (immutableAppearance.Direction != Direction) return false;
+        if (immutableAppearance.InheritsDirection != InheritsDirection) return false;
+        if (immutableAppearance.PixelOffset != PixelOffset) return false;
+        if (immutableAppearance.PixelOffset2 != PixelOffset2) return false;
+        if (immutableAppearance.Color != Color) return false;
+        if (immutableAppearance.Alpha != Alpha) return false;
+        if (immutableAppearance.GlideSize != GlideSize) return false;
+        if (!immutableAppearance.ColorMatrix.Equals(ColorMatrix)) return false;
+        if (immutableAppearance.Layer != Layer) return false;
+        if (immutableAppearance.Plane != Plane) return false;
+        if (immutableAppearance.RenderSource != RenderSource) return false;
+        if (immutableAppearance.RenderTarget != RenderTarget) return false;
+        if (immutableAppearance.BlendMode != BlendMode) return false;
+        if (immutableAppearance.AppearanceFlags != AppearanceFlags) return false;
+        if (immutableAppearance.Invisibility != Invisibility) return false;
+        if (immutableAppearance.Opacity != Opacity) return false;
+        if (immutableAppearance.MouseOpacity != MouseOpacity) return false;
+        if (immutableAppearance.Overlays.Length != Overlays.Length) return false;
+        if (immutableAppearance.Underlays.Length != Underlays.Length) return false;
+        if (immutableAppearance.VisContents.Length != VisContents.Length) return false;
+        if (immutableAppearance.Filters.Length != Filters.Length) return false;
+        if (immutableAppearance.Verbs.Length != Verbs.Length) return false;
+        if (immutableAppearance.Override != Override) return false;
 
         for (int i = 0; i < Filters.Length; i++) {
-            if (immutableIconAppearance.Filters[i] != Filters[i]) return false;
+            if (immutableAppearance.Filters[i] != Filters[i]) return false;
         }
 
         for (int i = 0; i < Overlays.Length; i++) {
-            if (!immutableIconAppearance.Overlays[i].Equals(Overlays[i])) return false;
+            if (!immutableAppearance.Overlays[i].Equals(Overlays[i])) return false;
         }
 
         for (int i = 0; i < Underlays.Length; i++) {
-            if (!immutableIconAppearance.Underlays[i].Equals(Underlays[i])) return false;
+            if (!immutableAppearance.Underlays[i].Equals(Underlays[i])) return false;
         }
 
         for (int i = 0; i < VisContents.Length; i++) {
-            if (immutableIconAppearance.VisContents[i] != VisContents[i]) return false;
+            if (immutableAppearance.VisContents[i] != VisContents[i]) return false;
         }
 
         for (int i = 0; i < Verbs.Length; i++) {
-            if (immutableIconAppearance.Verbs[i] != Verbs[i]) return false;
+            if (immutableAppearance.Verbs[i] != Verbs[i]) return false;
         }
 
         for (int i = 0; i < 6; i++) {
-            if (!immutableIconAppearance.Transform[i].Equals(Transform[i])) return false;
+            if (!immutableAppearance.Transform[i].Equals(Transform[i])) return false;
         }
 
         return true;
@@ -213,11 +213,11 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
         hashCode.Add(BlendMode);
         hashCode.Add(AppearanceFlags);
 
-        foreach (ImmutableIconAppearance overlay in Overlays) {
+        foreach (ImmutableAppearance overlay in Overlays) {
             hashCode.Add(overlay.GetHashCode());
         }
 
-        foreach (ImmutableIconAppearance underlay in Underlays) {
+        foreach (ImmutableAppearance underlay in Underlays) {
             hashCode.Add(underlay.GetHashCode());
         }
 
@@ -241,7 +241,7 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
         return (int)_storedHashCode;
     }
 
-   public ImmutableIconAppearance(NetIncomingMessage buffer, IRobustSerializer serializer) {
+   public ImmutableAppearance(NetIncomingMessage buffer, IRobustSerializer serializer) {
         Overlays = [];
         Underlays = [];
         VisContents = [];
@@ -327,7 +327,7 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
                 case IconAppearanceProperty.Overlays: {
                     var overlaysCount = buffer.ReadVariableInt32();
 
-                    Overlays = new ImmutableIconAppearance[overlaysCount];
+                    Overlays = new ImmutableAppearance[overlaysCount];
                     _overlayIDs = new(overlaysCount);
                     for (int overlaysI = 0; overlaysI < overlaysCount; overlaysI++) {
                         _overlayIDs.Add(buffer.ReadVariableInt32());
@@ -338,7 +338,7 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
                 case IconAppearanceProperty.Underlays: {
                     var underlaysCount = buffer.ReadVariableInt32();
 
-                    Underlays = new ImmutableIconAppearance[underlaysCount];
+                    Underlays = new ImmutableAppearance[underlaysCount];
                     _underlayIDs = new(underlaysCount);
                     for (int underlaysI = 0; underlaysI < underlaysCount; underlaysI++) {
                         _underlayIDs.Add(buffer.ReadVariableInt32());
@@ -403,8 +403,8 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
 
     //Creates an editable *copy* of this appearance, which must be added to the ServerAppearanceSystem to be used.
     [Pure]
-    public MutableIconAppearance ToMutable() {
-        MutableIconAppearance result = new MutableIconAppearance() {
+    public MutableAppearance ToMutable() {
+        MutableAppearance result = new MutableAppearance() {
             Name = Name,
             Icon = Icon,
             IconState = IconState,
@@ -433,10 +433,10 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
             Override = Override,
         };
 
-        foreach(ImmutableIconAppearance overlay in Overlays)
+        foreach(ImmutableAppearance overlay in Overlays)
             result.Overlays.Add(overlay);
 
-        foreach(ImmutableIconAppearance underlay in Underlays)
+        foreach(ImmutableAppearance underlay in Underlays)
             result.Underlays.Add(underlay);
 
         for (int i = 0; i < 6; i++) {
@@ -450,7 +450,7 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
         buffer.Write((byte)IconAppearanceProperty.Id);
         buffer.WriteVariableInt32(GetHashCode());
 
-        if (Name != MutableIconAppearance.Default.Name) {
+        if (Name != MutableAppearance.Default.Name) {
             buffer.Write((byte)IconAppearanceProperty.Name);
             buffer.Write(Name);
         }
@@ -465,7 +465,7 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
             buffer.Write(IconState);
         }
 
-        if (Direction != MutableIconAppearance.Default.Direction) {
+        if (Direction != MutableAppearance.Default.Direction) {
             buffer.Write((byte)IconAppearanceProperty.Direction);
             buffer.Write((byte)Direction);
         }
@@ -474,71 +474,71 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
             buffer.Write((byte)IconAppearanceProperty.DoesntInheritDirection);
         }
 
-        if (PixelOffset != MutableIconAppearance.Default.PixelOffset) {
+        if (PixelOffset != MutableAppearance.Default.PixelOffset) {
             buffer.Write((byte)IconAppearanceProperty.PixelOffset);
             buffer.WriteVariableInt32(PixelOffset.X);
             buffer.WriteVariableInt32(PixelOffset.Y);
         }
 
-        if (PixelOffset2 != MutableIconAppearance.Default.PixelOffset2) {
+        if (PixelOffset2 != MutableAppearance.Default.PixelOffset2) {
             buffer.Write((byte)IconAppearanceProperty.PixelOffset2);
             buffer.WriteVariableInt32(PixelOffset2.X);
             buffer.WriteVariableInt32(PixelOffset2.Y);
         }
 
-        if (Color != MutableIconAppearance.Default.Color) {
+        if (Color != MutableAppearance.Default.Color) {
             buffer.Write((byte)IconAppearanceProperty.Color);
             buffer.Write(Color);
         }
 
-        if (Alpha != MutableIconAppearance.Default.Alpha) {
+        if (Alpha != MutableAppearance.Default.Alpha) {
             buffer.Write((byte)IconAppearanceProperty.Alpha);
             buffer.Write(Alpha);
         }
 
-        if (!GlideSize.Equals(MutableIconAppearance.Default.GlideSize)) {
+        if (!GlideSize.Equals(MutableAppearance.Default.GlideSize)) {
             buffer.Write((byte)IconAppearanceProperty.GlideSize);
             buffer.Write(GlideSize);
         }
 
-        if (!ColorMatrix.Equals(MutableIconAppearance.Default.ColorMatrix)) {
+        if (!ColorMatrix.Equals(MutableAppearance.Default.ColorMatrix)) {
             buffer.Write((byte)IconAppearanceProperty.ColorMatrix);
 
             foreach (var value in ColorMatrix.GetValues())
                 buffer.Write(value);
         }
 
-        if (!Layer.Equals(MutableIconAppearance.Default.Layer)) {
+        if (!Layer.Equals(MutableAppearance.Default.Layer)) {
             buffer.Write((byte)IconAppearanceProperty.Layer);
             buffer.Write(Layer);
         }
 
-        if (Plane != MutableIconAppearance.Default.Plane) {
+        if (Plane != MutableAppearance.Default.Plane) {
             buffer.Write((byte)IconAppearanceProperty.Plane);
             buffer.WriteVariableInt32(Plane);
         }
 
-        if (BlendMode != MutableIconAppearance.Default.BlendMode) {
+        if (BlendMode != MutableAppearance.Default.BlendMode) {
             buffer.Write((byte)IconAppearanceProperty.BlendMode);
             buffer.Write((byte)BlendMode);
         }
 
-        if (AppearanceFlags != MutableIconAppearance.Default.AppearanceFlags) {
+        if (AppearanceFlags != MutableAppearance.Default.AppearanceFlags) {
             buffer.Write((byte)IconAppearanceProperty.AppearanceFlags);
             buffer.Write((int)AppearanceFlags);
         }
 
-        if (Invisibility != MutableIconAppearance.Default.Invisibility) {
+        if (Invisibility != MutableAppearance.Default.Invisibility) {
             buffer.Write((byte)IconAppearanceProperty.Invisibility);
             buffer.Write(Invisibility);
         }
 
-        if (Opacity != MutableIconAppearance.Default.Opacity) {
+        if (Opacity != MutableAppearance.Default.Opacity) {
             buffer.Write((byte)IconAppearanceProperty.Opacity);
             buffer.Write(Opacity);
         }
 
-        if (Override != MutableIconAppearance.Default.Override) {
+        if (Override != MutableAppearance.Default.Override) {
             buffer.Write((byte)IconAppearanceProperty.Override);
             buffer.Write(Override);
         }
@@ -553,7 +553,7 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
             buffer.Write(RenderTarget);
         }
 
-        if (MouseOpacity != MutableIconAppearance.Default.MouseOpacity) {
+        if (MouseOpacity != MutableAppearance.Default.MouseOpacity) {
             buffer.Write((byte)IconAppearanceProperty.MouseOpacity);
             buffer.Write((byte)MouseOpacity);
         }
@@ -608,7 +608,7 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
             }
         }
 
-        if (!Transform.SequenceEqual(MutableIconAppearance.Default.Transform)) {
+        if (!Transform.SequenceEqual(MutableAppearance.Default.Transform)) {
             buffer.Write((byte)IconAppearanceProperty.Transform);
 
             for (int i = 0; i < 6; i++) {
@@ -623,7 +623,7 @@ public sealed class ImmutableIconAppearance : IEquatable<ImmutableIconAppearance
         throw new NotImplementedException();
     }
 
-    ~ImmutableIconAppearance() {
+    ~ImmutableAppearance() {
         if(_registered)
             _appearanceSystem!.RemoveAppearance(this);
     }

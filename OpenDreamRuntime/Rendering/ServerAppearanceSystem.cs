@@ -16,16 +16,16 @@ namespace OpenDreamRuntime.Rendering;
 public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     /// <summary>
     /// Each appearance's HashCode is used as its ID. Here we store these as weakrefs, so each object which holds an appearance MUST
-    /// hold that ImmutableIconAppearance until it is no longer needed. Overlays & underlays are stored as hard refs on the ImmutableIconAppearance
+    /// hold that ImmutableAppearance until it is no longer needed. Overlays & underlays are stored as hard refs on the ImmutableAppearance
     /// so you only need to hold the main appearance.
     /// </summary>
-    private readonly Dictionary<int, WeakReference<ImmutableIconAppearance>> _idToAppearance = new();
+    private readonly Dictionary<int, WeakReference<ImmutableAppearance>> _idToAppearance = new();
     private readonly LinkedList<AppearanceQueueNode> _TTLQueue = new();
-    private readonly Dictionary<ImmutableIconAppearance, LinkedListNode<AppearanceQueueNode>> _TTLQueueHashtable = new();
+    private readonly Dictionary<ImmutableAppearance, LinkedListNode<AppearanceQueueNode>> _TTLQueueHashtable = new();
     private readonly double _TTL = 60; //seconds
 
 
-    public readonly ImmutableIconAppearance DefaultAppearance;
+    public readonly ImmutableAppearance DefaultAppearance;
     [Dependency] private readonly IServerNetManager _networkManager = default!;
 
     /// <summary>
@@ -36,9 +36,9 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     [Dependency] private readonly IPlayerManager _playerManager = default!;
 
     public ServerAppearanceSystem() {
-        DefaultAppearance = new ImmutableIconAppearance(MutableIconAppearance.Default, this);
+        DefaultAppearance = new ImmutableAppearance(MutableAppearance.Default, this);
         DefaultAppearance.MarkRegistered();
-        Debug.Assert(DefaultAppearance.GetHashCode() == MutableIconAppearance.Default.GetHashCode());
+        Debug.Assert(DefaultAppearance.GetHashCode() == MutableAppearance.Default.GetHashCode());
     }
 
     public override void Initialize() {
@@ -56,7 +56,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         if (e.NewStatus == SessionStatus.InGame) {
             //todo this is probably stupid slow
             lock (_lock) {
-                Dictionary<int, ImmutableIconAppearance> sendData = new(_idToAppearance.Count);
+                Dictionary<int, ImmutableAppearance> sendData = new(_idToAppearance.Count);
 
                 foreach(int key in _idToAppearance.Keys){
                     if(_idToAppearance[key].TryGetTarget(out var immutable))
@@ -69,8 +69,8 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         }
     }
 
-    public ImmutableIconAppearance AddAppearance(MutableIconAppearance appearance, bool registerApearance = true) {
-        ImmutableIconAppearance immutableAppearance = new(appearance, this);
+    public ImmutableAppearance AddAppearance(MutableAppearance appearance, bool registerApearance = true) {
+        ImmutableAppearance immutableAppearance = new(appearance, this);
         //if this debug assert fails, you've probably changed an icon appearance var and not updated its counterpart
         //this debug MUST pass. A number of things rely on these hashcodes being equivalent *on the server*.
         DebugTools.Assert(appearance.GetHashCode() == immutableAppearance.GetHashCode());
@@ -104,8 +104,8 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         }
     }
 
-    //this should only be called by the ImmutableIconAppearance's finalizer
-    public override void RemoveAppearance(ImmutableIconAppearance appearance) {
+    //this should only be called by the ImmutableAppearance's finalizer
+    public override void RemoveAppearance(ImmutableAppearance appearance) {
         lock (_lock) {
             if(_idToAppearance.TryGetValue(appearance.GetHashCode(), out var weakRef)) {
                 //it is possible that a new appearance was created with the same hash before the GC got around to cleaning up the old one
@@ -117,7 +117,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         }
     }
 
-    public override ImmutableIconAppearance MustGetAppearanceById(int appearanceId) {
+    public override ImmutableAppearance MustGetAppearanceById(int appearanceId) {
         lock (_lock) {
             if(!_idToAppearance[appearanceId].TryGetTarget(out var result))
                 throw new Exception($"Attempted to access deleted appearance ID ${appearanceId} in MustGetAppearanceByID()");
@@ -125,14 +125,14 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         }
     }
 
-    public bool TryGetAppearanceById(int appearanceId, [NotNullWhen(true)] out ImmutableIconAppearance? appearance) {
+    public bool TryGetAppearanceById(int appearanceId, [NotNullWhen(true)] out ImmutableAppearance? appearance) {
         lock (_lock) {
             appearance = null;
             return _idToAppearance.TryGetValue(appearanceId, out var appearanceRef) && appearanceRef.TryGetTarget(out appearance);
         }
     }
 
-    public void Animate(NetEntity entity, MutableIconAppearance targetAppearance, TimeSpan duration, AnimationEasing easing, int loop, AnimationFlags flags, int delay, bool chainAnim, int? turfId) {
+    public void Animate(NetEntity entity, MutableAppearance targetAppearance, TimeSpan duration, AnimationEasing easing, int loop, AnimationFlags flags, int delay, bool chainAnim, int? turfId) {
         int appearanceId = AddAppearance(targetAppearance).GetHashCode();
 
         RaiseNetworkEvent(new AnimationEvent(entity, appearanceId, duration, easing, loop, flags, delay, chainAnim, turfId));
@@ -140,10 +140,10 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
 }
 
 struct AppearanceQueueNode {
-    public ImmutableIconAppearance Appearance;
+    public ImmutableAppearance Appearance;
     public DateTime Expiry;
 
-    public AppearanceQueueNode(ImmutableIconAppearance appearance, DateTime expiry) {
+    public AppearanceQueueNode(ImmutableAppearance appearance, DateTime expiry) {
         Appearance = appearance;
         Expiry = expiry;
     }

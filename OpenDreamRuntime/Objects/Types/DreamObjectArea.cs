@@ -24,7 +24,7 @@ public sealed class DreamObjectArea : DreamObjectAtom {
         }
     }
 
-    public ImmutableIconAppearance Appearance;
+    public ImmutableAppearance Appearance;
     public readonly HashSet<DreamObjectTurf> Turfs;
 
     private readonly AreaContentsList _contents;

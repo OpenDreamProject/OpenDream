@@ -30,7 +30,7 @@ public sealed class AtomManager {
     private int _nextEmptyTurfSlot;
 
     private readonly Dictionary<EntityUid, DreamObjectMovable> _entityToAtom = new();
-    private readonly Dictionary<DreamObjectDefinition, MutableIconAppearance> _definitionAppearanceCache = new();
+    private readonly Dictionary<DreamObjectDefinition, MutableAppearance> _definitionAppearanceCache = new();
 
     private ServerAppearanceSystem? AppearanceSystem{
                                                     get {
@@ -250,7 +250,7 @@ public sealed class AtomManager {
         }
     }
 
-    public void SetAppearanceVar(MutableIconAppearance appearance, string varName, DreamValue value) {
+    public void SetAppearanceVar(MutableAppearance appearance, string varName, DreamValue value) {
         switch (varName) {
             case "name":
                 value.TryGetValueAsString(out var name);
@@ -392,11 +392,11 @@ public sealed class AtomManager {
     }
 
     //TODO THIS IS A SUPER NASTY HACK
-    public DreamValue GetAppearanceVar(MutableIconAppearance appearance, string varName) {
-        return GetAppearanceVar(new ImmutableIconAppearance(appearance, AppearanceSystem), varName);
+    public DreamValue GetAppearanceVar(MutableAppearance appearance, string varName) {
+        return GetAppearanceVar(new ImmutableAppearance(appearance, AppearanceSystem), varName);
     }
 
-    public DreamValue GetAppearanceVar(ImmutableIconAppearance appearance, string varName) {
+    public DreamValue GetAppearanceVar(ImmutableAppearance appearance, string varName) {
         switch (varName) {
             case "name":
                 return new(appearance.Name);
@@ -469,7 +469,7 @@ public sealed class AtomManager {
 
                 return new(matrix);
             case "appearance":
-                MutableIconAppearance appearanceCopy = appearance.ToMutable(); // Return a copy
+                MutableAppearance appearanceCopy = appearance.ToMutable(); // Return a copy
                 return new(appearanceCopy);
 
             // These should be handled by an atom if referenced through one
@@ -498,7 +498,7 @@ public sealed class AtomManager {
     /// Gets an atom's appearance. Will throw if the appearance system is not available.
     /// </summary>
     /// <param name="atom">The atom to find the appearance of.</param>
-    public ImmutableIconAppearance MustGetAppearance(DreamObject atom) {
+    public ImmutableAppearance MustGetAppearance(DreamObject atom) {
         return atom switch {
             DreamObjectTurf turf => turf.Appearance,
             DreamObjectMovable movable => movable.SpriteComponent.Appearance!,
@@ -511,7 +511,7 @@ public sealed class AtomManager {
     /// <summary>
     /// Optionally looks up for an appearance. Does not try to create a new one when one is not found for this atom.
     /// </summary>
-    public bool TryGetAppearance(DreamObject atom, [NotNullWhen(true)] out ImmutableIconAppearance? appearance) {
+    public bool TryGetAppearance(DreamObject atom, [NotNullWhen(true)] out ImmutableAppearance? appearance) {
         if (atom is DreamObjectTurf turf)
             appearance = turf.Appearance;
         else if (atom is DreamObjectMovable movable && movable.SpriteComponent.Appearance is not null)
@@ -526,14 +526,14 @@ public sealed class AtomManager {
         return appearance is not null;
     }
 
-    public void UpdateAppearance(DreamObject atom, Action<MutableIconAppearance> update) {
-        ImmutableIconAppearance immutableAppearance = MustGetAppearance(atom);
-        MutableIconAppearance appearance = immutableAppearance.ToMutable(); // Clone the appearance
+    public void UpdateAppearance(DreamObject atom, Action<MutableAppearance> update) {
+        ImmutableAppearance immutableAppearance = MustGetAppearance(atom);
+        MutableAppearance appearance = immutableAppearance.ToMutable(); // Clone the appearance
         update(appearance);
         SetAtomAppearance(atom, appearance);
     }
 
-    public void SetAtomAppearance(DreamObject atom, MutableIconAppearance appearance) {
+    public void SetAtomAppearance(DreamObject atom, MutableAppearance appearance) {
         if (atom is DreamObjectTurf turf) {
             _dreamMapManager.SetTurfAppearance(turf, appearance);
         } else if (atom is DreamObjectMovable movable) {
@@ -552,12 +552,12 @@ public sealed class AtomManager {
         DMISpriteSystem.SetSpriteScreenLocation(new(movable.Entity, movable.SpriteComponent), screenLocation);
     }
 
-    public void SetSpriteAppearance(Entity<DMISpriteComponent> ent, MutableIconAppearance appearance) {
+    public void SetSpriteAppearance(Entity<DMISpriteComponent> ent, MutableAppearance appearance) {
         DMISpriteSystem.SetSpriteAppearance(ent, appearance);
     }
 
-    public void AnimateAppearance(DreamObject atom, TimeSpan duration, AnimationEasing easing, int loop, AnimationFlags flags, int delay, bool chainAnim, Action<MutableIconAppearance> animate) {
-        MutableIconAppearance appearance;
+    public void AnimateAppearance(DreamObject atom, TimeSpan duration, AnimationEasing easing, int loop, AnimationFlags flags, int delay, bool chainAnim, Action<MutableAppearance> animate) {
+        MutableAppearance appearance;
         EntityUid targetEntity;
         DMISpriteComponent? targetComponent = null;
         NetEntity ent = NetEntity.Invalid;
@@ -604,7 +604,7 @@ public sealed class AtomManager {
         AppearanceSystem?.Animate(ent, appearance, duration, easing, loop, flags, delay, chainAnim, turfId);
     }
 
-    public bool TryCreateAppearanceFrom(DreamValue value, [NotNullWhen(true)] out MutableIconAppearance? appearance) {
+    public bool TryCreateAppearanceFrom(DreamValue value, [NotNullWhen(true)] out MutableAppearance? appearance) {
         if (value.TryGetValueAsAppearance(out var copyFromAppearance)) {
             appearance = new(copyFromAppearance);
             return true;
@@ -626,7 +626,7 @@ public sealed class AtomManager {
         }
 
         if (_resourceManager.TryLoadIcon(value, out var iconResource)) {
-            appearance = new MutableIconAppearance() {
+            appearance = new MutableAppearance() {
                 Icon = iconResource.Id
             };
 
@@ -637,7 +637,7 @@ public sealed class AtomManager {
         return false;
     }
 
-    public MutableIconAppearance GetAppearanceFromDefinition(DreamObjectDefinition def) {
+    public MutableAppearance GetAppearanceFromDefinition(DreamObjectDefinition def) {
         if (_definitionAppearanceCache.TryGetValue(def, out var appearance))
             return appearance;
 
@@ -660,7 +660,7 @@ public sealed class AtomManager {
         def.TryGetVariable("blend_mode", out var blendModeVar);
         def.TryGetVariable("appearance_flags", out var appearanceFlagsVar);
 
-        appearance = new MutableIconAppearance();
+        appearance = new MutableAppearance();
         SetAppearanceVar(appearance, "name", nameVar);
         SetAppearanceVar(appearance, "icon", iconVar);
         SetAppearanceVar(appearance, "icon_state", stateVar);

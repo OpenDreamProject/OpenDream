@@ -8,12 +8,12 @@ namespace OpenDreamShared.Network.Messages;
 public sealed class MsgNewAppearance: NetMessage {
     public override MsgGroups MsgGroup => MsgGroups.EntityEvent;
 
-    public MsgNewAppearance() : this(new ImmutableIconAppearance(MutableIconAppearance.Default, null)) {}
-    public MsgNewAppearance(ImmutableIconAppearance appearance) => Appearance = appearance;
-    public ImmutableIconAppearance Appearance;
+    public MsgNewAppearance() : this(new ImmutableAppearance(MutableAppearance.Default, null)) {}
+    public MsgNewAppearance(ImmutableAppearance appearance) => Appearance = appearance;
+    public ImmutableAppearance Appearance;
 
     public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {
-        Appearance = new ImmutableIconAppearance(buffer, serializer);
+        Appearance = new ImmutableAppearance(buffer, serializer);
     }
 
     public override void WriteToBuffer(NetOutgoingMessage buffer, IRobustSerializer serializer) {

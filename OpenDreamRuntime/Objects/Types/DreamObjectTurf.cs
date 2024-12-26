@@ -5,7 +5,7 @@ namespace OpenDreamRuntime.Objects.Types;
 public sealed class DreamObjectTurf : DreamObjectAtom {
     public readonly int X, Y, Z;
     public readonly TurfContentsList Contents;
-    public ImmutableIconAppearance Appearance;
+    public ImmutableAppearance Appearance;
     public IDreamMapManager.Cell Cell;
 
     public DreamObjectTurf(DreamObjectDefinition objectDefinition, int x, int y, int z) : base(objectDefinition) {

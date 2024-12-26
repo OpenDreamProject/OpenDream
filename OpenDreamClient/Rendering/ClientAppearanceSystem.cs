@@ -11,8 +11,8 @@ using OpenDreamShared.Network.Messages;
 namespace OpenDreamClient.Rendering;
 
 internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
-    private Dictionary<int, ImmutableIconAppearance> _appearances = new();
-    private readonly Dictionary<int, List<Action<ImmutableIconAppearance>>> _appearanceLoadCallbacks = new();
+    private Dictionary<int, ImmutableAppearance> _appearances = new();
+    private readonly Dictionary<int, List<Action<ImmutableAppearance>>> _appearanceLoadCallbacks = new();
     private readonly Dictionary<int, DreamIcon> _turfIcons = new();
     private readonly Dictionary<DreamFilter, ShaderInstance> _filterShaders = new();
 
@@ -35,10 +35,10 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         _turfIcons.Clear();
     }
 
-    public void SetAllAppearances(Dictionary<int, ImmutableIconAppearance> appearances) {
+    public void SetAllAppearances(Dictionary<int, ImmutableAppearance> appearances) {
         _appearances = appearances;
         //need to do this because all overlays can't be resolved until the whole appearance table is populated
-        foreach(KeyValuePair<int, ImmutableIconAppearance> pair in _appearances) {
+        foreach(KeyValuePair<int, ImmutableAppearance> pair in _appearances) {
             pair.Value.ResolveOverlays(this);
             if (_appearanceLoadCallbacks.TryGetValue(pair.Key, out var callbacks)) {
                 foreach (var callback in callbacks) callback(pair.Value);
@@ -46,7 +46,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         }
     }
 
-    public void LoadAppearance(int appearanceId, Action<ImmutableIconAppearance> loadCallback) {
+    public void LoadAppearance(int appearanceId, Action<ImmutableAppearance> loadCallback) {
         if (_appearances.TryGetValue(appearanceId, out var appearance)) {
             loadCallback(appearance);
             return;
@@ -210,11 +210,11 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         return instance;
     }
 
-    public override ImmutableIconAppearance MustGetAppearanceById(int appearanceId) {
+    public override ImmutableAppearance MustGetAppearanceById(int appearanceId) {
         return _appearances[appearanceId];
     }
 
-    public override void RemoveAppearance(ImmutableIconAppearance appearance) {
+    public override void RemoveAppearance(ImmutableAppearance appearance) {
         throw new NotImplementedException();
     }
 }

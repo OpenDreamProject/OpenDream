@@ -162,7 +162,7 @@ public sealed class DreamMapManager : IDreamMapManager {
 
         cell.Turf.SetTurfType(type);
 
-        MutableIconAppearance turfAppearance = _atomManager.GetAppearanceFromDefinition(cell.Turf.ObjectDefinition);
+        MutableAppearance turfAppearance = _atomManager.GetAppearanceFromDefinition(cell.Turf.ObjectDefinition);
         SetTurfAppearance(cell.Turf, turfAppearance);
 
         cell.Turf.InitSpawn(creationArguments);
@@ -176,9 +176,9 @@ public sealed class DreamMapManager : IDreamMapManager {
     /// Caches the turf/area appearance pair instead of recreating and re-registering it for every turf in the game.
     /// This is cleared out when an area appearance changes
     /// </summary>
-    private readonly Dictionary<ValueTuple<MutableIconAppearance, int>, MutableIconAppearance> _turfAreaLookup = new();
+    private readonly Dictionary<ValueTuple<MutableAppearance, int>, MutableAppearance> _turfAreaLookup = new();
 
-    public void SetTurfAppearance(DreamObjectTurf turf, MutableIconAppearance appearance) {
+    public void SetTurfAppearance(DreamObjectTurf turf, MutableAppearance appearance) {
         if(turf.Cell.Area.Appearance != _appearanceSystem.DefaultAppearance)
             if(!appearance.Overlays.Contains(turf.Cell.Area.Appearance)) {
                 if(!_turfAreaLookup.TryGetValue((appearance, turf.Cell.Area.Appearance.GetHashCode()), out var newAppearance)) {
@@ -198,7 +198,7 @@ public sealed class DreamMapManager : IDreamMapManager {
         turf.Appearance = immutableAppearance;
     }
 
-    public void SetAreaAppearance(DreamObjectArea area, MutableIconAppearance appearance) {
+    public void SetAreaAppearance(DreamObjectArea area, MutableAppearance appearance) {
         //if an area changes appearance, invalidate the lookup
         _turfAreaLookup.Clear();
         var oldAppearance = area.Appearance;
@@ -209,12 +209,12 @@ public sealed class DreamMapManager : IDreamMapManager {
         //create the new version of each of those appearances
         //for each turf, update the appropriate ID
 
-        Dictionary<ImmutableIconAppearance, ImmutableIconAppearance> oldToNewAppearance = new();
+        Dictionary<ImmutableAppearance, ImmutableAppearance> oldToNewAppearance = new();
         foreach (var turf in area.Turfs) {
             if(oldToNewAppearance.TryGetValue(turf.Appearance, out var newAppearance))
                 turf.Appearance = newAppearance;
             else {
-                MutableIconAppearance turfAppearance = _atomManager.MustGetAppearance(turf).ToMutable();
+                MutableAppearance turfAppearance = _atomManager.MustGetAppearance(turf).ToMutable();
 
                 turfAppearance.Overlays.Remove(oldAppearance);
                 turfAppearance.Overlays.Add(area.Appearance);
@@ -487,8 +487,8 @@ public interface IDreamMapManager {
     public void UpdateTiles();
 
     public void SetTurf(DreamObjectTurf turf, DreamObjectDefinition type, DreamProcArguments creationArguments);
-    public void SetTurfAppearance(DreamObjectTurf turf, MutableIconAppearance appearance);
-    public void SetAreaAppearance(DreamObjectArea area, MutableIconAppearance appearance);
+    public void SetTurfAppearance(DreamObjectTurf turf, MutableAppearance appearance);
+    public void SetAreaAppearance(DreamObjectArea area, MutableAppearance appearance);
     public bool TryGetCellAt(Vector2i pos, int z, [NotNullWhen(true)] out Cell? cell);
     public bool TryGetTurfAt(Vector2i pos, int z, [NotNullWhen(true)] out DreamObjectTurf? turf);
     public void SetZLevels(int levels);

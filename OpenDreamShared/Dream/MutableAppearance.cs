@@ -8,9 +8,9 @@ namespace OpenDreamShared.Dream;
 
 /*
  * Woe, weary traveler, modifying this class is not for the faint of heart.
- * If you modify MutableIconAppearance, be sure to update the following places:
- * - All of the methods on MutableIconAppearance itself
- * - ImmutableIconAppearance
+ * If you modify MutableAppearance, be sure to update the following places:
+ * - All of the methods on MutableAppearance itself
+ * - ImmutableAppearance
  * - IconAppearance methods in AtomManager
  * - MsgAllAppearances
  * - IconDebugWindow
@@ -20,8 +20,8 @@ namespace OpenDreamShared.Dream;
 
 // TODO: Wow this is huge! Probably look into splitting this by most used/least used to reduce the size of these
 [Serializable]
-public sealed class MutableIconAppearance : IEquatable<MutableIconAppearance>{
-    public static readonly MutableIconAppearance Default = new();
+public sealed class MutableAppearance : IEquatable<MutableAppearance>{
+    public static readonly MutableAppearance Default = new();
 
     [ViewVariables] public string Name = string.Empty;
     [ViewVariables] public int? Icon;
@@ -43,8 +43,8 @@ public sealed class MutableIconAppearance : IEquatable<MutableIconAppearance>{
     [ViewVariables] public string? RenderSource;
     [ViewVariables] public string? RenderTarget;
     [ViewVariables] public MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;
-    [ViewVariables] public List<ImmutableIconAppearance> Overlays;
-    [ViewVariables] public List<ImmutableIconAppearance> Underlays;
+    [ViewVariables] public List<ImmutableAppearance> Overlays;
+    [ViewVariables] public List<ImmutableAppearance> Underlays;
     [ViewVariables] public List<Robust.Shared.GameObjects.NetEntity> VisContents;
     [ViewVariables] public List<DreamFilter> Filters;
     [ViewVariables] public List<int> Verbs;
@@ -72,7 +72,7 @@ public sealed class MutableIconAppearance : IEquatable<MutableIconAppearance>{
     // PixelOffset2 behaves the same as PixelOffset in top-down mode, so this is used
     public Vector2i TotalPixelOffset => PixelOffset + PixelOffset2;
 
-    public MutableIconAppearance() {
+    public MutableAppearance() {
         Overlays = new();
         Underlays = new();
         VisContents = new();
@@ -80,7 +80,7 @@ public sealed class MutableIconAppearance : IEquatable<MutableIconAppearance>{
         Verbs = new();
     }
 
-    public MutableIconAppearance(MutableIconAppearance appearance) {
+    public MutableAppearance(MutableAppearance appearance) {
         Name = appearance.Name;
         Icon = appearance.Icon;
         IconState = appearance.IconState;
@@ -113,9 +113,9 @@ public sealed class MutableIconAppearance : IEquatable<MutableIconAppearance>{
         }
     }
 
-    public override bool Equals(object? obj) => obj is MutableIconAppearance appearance && Equals(appearance);
+    public override bool Equals(object? obj) => obj is MutableAppearance appearance && Equals(appearance);
 
-    public bool Equals(MutableIconAppearance? appearance) {
+    public bool Equals(MutableAppearance? appearance) {
         if (appearance == null) return false;
 
         if (appearance.Name != Name) return false;
@@ -203,7 +203,7 @@ public sealed class MutableIconAppearance : IEquatable<MutableIconAppearance>{
         return maybeColor is not null;
     }
 
-    //it is *ESSENTIAL* that this matches the hashcode of the equivelant ImmutableIconAppearance. There's a debug assert and everything.
+    //it is *ESSENTIAL* that this matches the hashcode of the equivelant ImmutableAppearance. There's a debug assert and everything.
     public override int GetHashCode() {
         HashCode hashCode = new HashCode();
 

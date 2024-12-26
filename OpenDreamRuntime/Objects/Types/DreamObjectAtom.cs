@@ -178,7 +178,7 @@ public class DreamObjectAtom : DreamObject {
             default:
                 if (AtomManager.IsValidAppearanceVar(varName)) {
                     // Basically AtomManager.UpdateAppearance() but without the performance impact of using actions
-                    MutableIconAppearance appearance = AtomManager.MustGetAppearance(this).ToMutable();
+                    MutableAppearance appearance = AtomManager.MustGetAppearance(this).ToMutable();
                     AtomManager.SetAppearanceVar(appearance, varName, value);
                     AtomManager.SetAtomAppearance(this, appearance);
                     break;

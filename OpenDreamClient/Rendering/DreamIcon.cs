@@ -32,7 +32,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
     }
 
     [ViewVariables]
-    public ImmutableIconAppearance? Appearance {
+    public ImmutableAppearance? Appearance {
         get => CalculateAnimatedAppearance();
         private set {
             if (_appearance?.Equals(value) is true)
@@ -43,9 +43,9 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
         }
     }
 
-    private ImmutableIconAppearance? _appearance;
+    private ImmutableAppearance? _appearance;
     //acts as a cache for the mutable appearance, so we don't have to ToMutable() every frame
-    private MutableIconAppearance? _animatedAppearance;
+    private MutableAppearance? _animatedAppearance;
     private AtomDirection _direction;
 
     // TODO: We could cache these per-appearance instead of per-atom
@@ -136,7 +136,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
     }
 
     //three things to do here, chained animations, loops and parallel animations
-    public void StartAppearanceAnimation(ImmutableIconAppearance endingAppearance, TimeSpan duration, AnimationEasing easing, int loops, AnimationFlags flags, int delay, bool chainAnim) {
+    public void StartAppearanceAnimation(ImmutableAppearance endingAppearance, TimeSpan duration, AnimationEasing easing, int loops, AnimationFlags flags, int delay, bool chainAnim) {
         _appearance = CalculateAnimatedAppearance(); //Animation starts from the current animated appearance
         DateTime start = DateTime.Now;
         if(!chainAnim)
@@ -236,7 +236,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             DirtyTexture();
     }
 
-    private ImmutableIconAppearance? CalculateAnimatedAppearance() {
+    private ImmutableAppearance? CalculateAnimatedAppearance() {
         if (_appearanceAnimations == null || _appearanceAnimations.Count == 0 || _appearance == null) {
             _animatedAppearance = null; //null it if _appearanceAnimations is empty
             return _appearance;
@@ -558,10 +558,10 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
         CachedTexture = null;
     }
 
-    private struct AppearanceAnimation(DateTime start, TimeSpan duration, ImmutableIconAppearance endAppearance, AnimationEasing easing, AnimationFlags flags, int delay, bool lastInSequence) {
+    private struct AppearanceAnimation(DateTime start, TimeSpan duration, ImmutableAppearance endAppearance, AnimationEasing easing, AnimationFlags flags, int delay, bool lastInSequence) {
         public readonly DateTime Start = start;
         public readonly TimeSpan Duration = duration;
-        public readonly ImmutableIconAppearance EndAppearance = endAppearance;
+        public readonly ImmutableAppearance EndAppearance = endAppearance;
         public readonly AnimationEasing Easing = easing;
         public readonly AnimationFlags Flags = flags;
         public readonly int Delay = delay;

@@ -26,9 +26,9 @@ public sealed class DummyDreamMapManager : IDreamMapManager {
 
     public void SetTurf(DreamObjectTurf turf, DreamObjectDefinition type, DreamProcArguments creationArguments) { }
 
-    public void SetTurfAppearance(DreamObjectTurf turf, MutableIconAppearance appearance) { }
+    public void SetTurfAppearance(DreamObjectTurf turf, MutableAppearance appearance) { }
 
-    public void SetAreaAppearance(DreamObjectArea area, MutableIconAppearance appearance) { }
+    public void SetAreaAppearance(DreamObjectArea area, MutableAppearance appearance) { }
 
     public void SetArea(DreamObjectTurf turf, DreamObjectArea area) { }
 

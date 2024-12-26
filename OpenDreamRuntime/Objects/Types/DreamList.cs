@@ -687,7 +687,7 @@ public sealed class DreamOverlaysList : DreamList {
         if (!key.TryGetValueAsInteger(out var overlayIndex) || overlayIndex < 1)
             throw new Exception($"Invalid index into {(_isUnderlays ? "underlays" : "overlays")} list: {key}");
 
-        ImmutableIconAppearance appearance = _atomManager.MustGetAppearance(_owner);
+        ImmutableAppearance appearance = _atomManager.MustGetAppearance(_owner);
         var overlaysList = GetOverlaysArray(appearance);
         if (overlayIndex > overlaysList.Length)
             throw new Exception($"Atom only has {overlaysList.Length} {(_isUnderlays ? "underlay" : "overlay")}(s), cannot index {overlayIndex}");
@@ -695,7 +695,7 @@ public sealed class DreamOverlaysList : DreamList {
         if (_appearanceSystem == null)
             return DreamValue.Null;
 
-        ImmutableIconAppearance overlayAppearance = overlaysList[overlayIndex - 1];
+        ImmutableAppearance overlayAppearance = overlaysList[overlayIndex - 1];
         return new DreamValue(overlayAppearance.ToMutable());
     }
 
@@ -707,9 +707,9 @@ public sealed class DreamOverlaysList : DreamList {
         if (_appearanceSystem == null)
             return;
 
-        MutableIconAppearance? overlayAppearance = CreateOverlayAppearance(_atomManager, value, _atomManager.MustGetAppearance(_owner).Icon);
-        overlayAppearance ??= new MutableIconAppearance();
-        ImmutableIconAppearance immutableOverlay = _appearanceSystem.AddAppearance(overlayAppearance);
+        MutableAppearance? overlayAppearance = CreateOverlayAppearance(_atomManager, value, _atomManager.MustGetAppearance(_owner).Icon);
+        overlayAppearance ??= new MutableAppearance();
+        ImmutableAppearance immutableOverlay = _appearanceSystem.AddAppearance(overlayAppearance);
 
         //after UpdateApparance is done, the atom is set with a new immutable appearance containing a hard ref to the overlay
         //only /mutable_appearance handles it differently, and that's done in DreamObjectImage
@@ -722,7 +722,7 @@ public sealed class DreamOverlaysList : DreamList {
         if (_appearanceSystem == null)
             return;
 
-        MutableIconAppearance? overlayAppearance = CreateOverlayAppearance(_atomManager, value, _atomManager.MustGetAppearance(_owner).Icon);
+        MutableAppearance? overlayAppearance = CreateOverlayAppearance(_atomManager, value, _atomManager.MustGetAppearance(_owner).Icon);
         if (overlayAppearance == null)
             return;
 
@@ -736,18 +736,18 @@ public sealed class DreamOverlaysList : DreamList {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private List<ImmutableIconAppearance> GetOverlaysList(MutableIconAppearance appearance) =>
+    private List<ImmutableAppearance> GetOverlaysList(MutableAppearance appearance) =>
         _isUnderlays ? appearance.Underlays : appearance.Overlays;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private ImmutableIconAppearance[] GetOverlaysArray(ImmutableIconAppearance appearance) =>
+    private ImmutableAppearance[] GetOverlaysArray(ImmutableAppearance appearance) =>
         _isUnderlays ? appearance.Underlays : appearance.Overlays;
 
-    public static MutableIconAppearance? CreateOverlayAppearance(AtomManager atomManager, DreamValue value, int? defaultIcon) {
-        MutableIconAppearance overlay;
+    public static MutableAppearance? CreateOverlayAppearance(AtomManager atomManager, DreamValue value, int? defaultIcon) {
+        MutableAppearance overlay;
 
         if (value.TryGetValueAsString(out var iconState)) {
-            overlay = new MutableIconAppearance() {
+            overlay = new MutableAppearance() {
                 IconState = iconState
             };
             overlay.Icon ??= defaultIcon;
@@ -877,7 +877,7 @@ public sealed class DreamFilterList : DreamList {
     }
 
     public int GetIndexOfFilter(DreamFilter filter) {
-        ImmutableIconAppearance appearance = GetAppearance();
+        ImmutableAppearance appearance = GetAppearance();
         int i = 0;
         while(i < appearance.Filters.Length) {
             if(appearance.Filters[i] == filter)
@@ -910,7 +910,7 @@ public sealed class DreamFilterList : DreamList {
         if (!key.TryGetValueAsInteger(out var filterIndex) || filterIndex < 1)
             throw new Exception($"Invalid index into filter list: {key}");
 
-        ImmutableIconAppearance appearance = GetAppearance();
+        ImmutableAppearance appearance = GetAppearance();
         if (filterIndex > appearance.Filters.Length)
             throw new Exception($"Atom only has {appearance.Filters.Length} filter(s), cannot index {filterIndex}");
 
@@ -921,7 +921,7 @@ public sealed class DreamFilterList : DreamList {
     }
 
     public override List<DreamValue> GetValues() {
-        ImmutableIconAppearance appearance = GetAppearance();
+        ImmutableAppearance appearance = GetAppearance();
         List<DreamValue> filterList = new List<DreamValue>(appearance.Filters.Length);
 
         foreach (var filter in appearance.Filters) {
@@ -963,8 +963,8 @@ public sealed class DreamFilterList : DreamList {
         return GetAppearance().Filters.Length;
     }
 
-    private ImmutableIconAppearance GetAppearance() {
-        ImmutableIconAppearance? appearance = _atomManager.MustGetAppearance(_owner);
+    private ImmutableAppearance GetAppearance() {
+        ImmutableAppearance? appearance = _atomManager.MustGetAppearance(_owner);
         if (appearance == null)
             throw new Exception("Atom has no appearance");
 

@@ -260,7 +260,7 @@ public sealed class DreamObjectMatrix : DreamObject {
 
     #region Helpers
 
-    /// <summary> Used to create a float array understandable by <see cref="MutableIconAppearance.Transform"/> to be a transform. </summary>
+    /// <summary> Used to create a float array understandable by <see cref="MutableAppearance.Transform"/> to be a transform. </summary>
     /// <returns>The matrix's values in an array, in [a,d,b,e,c,f] order.</returns>
     /// <remarks>This will not verify that this is a /matrix</remarks>
     public static float[] MatrixToTransformFloatArray(DreamObjectMatrix matrix) {

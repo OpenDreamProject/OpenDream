@@ -177,7 +177,7 @@ internal static partial class DreamProcNativeHelpers {
                 if (!mapManager.TryGetCellAt((eyePos.X + deltaX, eyePos.Y + deltaY), eyePos.Z, out var cell))
                     continue;
 
-                var appearance = atomManager.MustGetAppearance(cell.Turf!);
+                var appearance = atomManager.MustGetAppearance(cell.Turf);
                 var tile = new ViewAlgorithm.Tile() {
                     Opaque = appearance.Opacity,
                     Luminosity = 0,

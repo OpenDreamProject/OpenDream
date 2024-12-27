@@ -182,7 +182,7 @@ public class DreamObjectAtom : DreamObject {
                     AtomManager.SetAppearanceVar(appearance, varName, value);
                     AtomManager.SetAtomAppearance(this, appearance);
                     break;
-            }
+                }
 
                 base.SetVar(varName, value);
                 break;

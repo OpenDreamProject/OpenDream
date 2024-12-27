@@ -14,7 +14,6 @@ using OpenDreamRuntime.Resources;
 using OpenDreamRuntime.Util;
 using OpenDreamShared;
 using OpenDreamShared.Dream;
-using Pidgin;
 using Robust.Server;
 using Robust.Server.Player;
 using Robust.Server.ServerStatus;

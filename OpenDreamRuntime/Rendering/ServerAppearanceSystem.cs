@@ -7,11 +7,7 @@ using OpenDreamShared.Network.Messages;
 using Robust.Shared.Player;
 using Robust.Shared.Network;
 using System.Diagnostics;
-using Robust.Shared.Utility;
-using System.Collections;
-using Robust.Shared.Physics.Collision;
 using System.Linq;
-using Pidgin;
 
 namespace OpenDreamRuntime.Rendering;
 
@@ -23,12 +19,10 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     /// </summary>
     private readonly HashSet<ProxyWeakRef> _appearanceLookup = new();
     private readonly Dictionary<uint, ProxyWeakRef> _idToAppearance = new();
-    private uint _counter = 0;
-    private readonly LinkedList<AppearanceQueueNode> _TTLQueue = new();
-    private readonly Dictionary<ImmutableAppearance, LinkedListNode<AppearanceQueueNode>> _TTLQueueHashtable = new();
-    private readonly double _TTL = 60; //seconds
-
-
+    private uint _counter;
+    private readonly LinkedList<AppearanceQueueNode> _ttlQueue = new();
+    private readonly Dictionary<ImmutableAppearance, LinkedListNode<AppearanceQueueNode>> _ttlQueueHashtable = new();
+    private readonly double _ttl = 60; //seconds
     public readonly ImmutableAppearance DefaultAppearance;
     [Dependency] private readonly IServerNetManager _networkManager = default!;
 
@@ -65,7 +59,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         if (e.NewStatus == SessionStatus.InGame) {
             //todo this is probably stupid slow
             lock (_lock) {
-                Dictionary<uint, ImmutableAppearance> sendData = new(_appearanceLookup.Count());
+                Dictionary<uint, ImmutableAppearance> sendData = new(_appearanceLookup.Count);
 
                 foreach(ProxyWeakRef proxyWeakRef in _appearanceLookup){
                     if(proxyWeakRef.TryGetTarget(out var immutable))
@@ -77,6 +71,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
 
         }
     }
+
     private void RegisterAppearance(ImmutableAppearance immutableAppearance) {
         immutableAppearance.MarkRegistered(_counter++); //lets this appearance know it needs to do GC finaliser & get an ID
         ProxyWeakRef proxyWeakRef = new(immutableAppearance);
@@ -89,24 +84,25 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         ImmutableAppearance immutableAppearance = new(appearance, this);
 
         lock (_lock) {
-            while(_TTLQueue.First is not null && _TTLQueue.First.Value.Expiry < DateTime.Now) {
-                _TTLQueueHashtable.Remove(_TTLQueue.First.Value.Appearance);
-                _TTLQueue.RemoveFirst();
+            while(_ttlQueue.First is not null && _ttlQueue.First.Value.Expiry < DateTime.Now) {
+                _ttlQueueHashtable.Remove(_ttlQueue.First.Value.Appearance);
+                _ttlQueue.RemoveFirst();
             }
 
             if(_appearanceLookup.TryGetValue(new(immutableAppearance), out var weakReference) && weakReference.TryGetTarget(out var originalImmutable)) {
-                if(_TTLQueueHashtable.TryGetValue(originalImmutable, out var linkedListNode)) { //if we already got it, reset its position in the queue
-                    linkedListNode.ValueRef.Expiry = DateTime.Now.AddSeconds(_TTL);
-                    _TTLQueue.Remove(linkedListNode);
-                    _TTLQueue.AddLast(linkedListNode);
+                if(_ttlQueueHashtable.TryGetValue(originalImmutable, out var linkedListNode)) { //if we already got it, reset its position in the queue
+                    linkedListNode.ValueRef.Expiry = DateTime.Now.AddSeconds(_ttl);
+                    _ttlQueue.Remove(linkedListNode);
+                    _ttlQueue.AddLast(linkedListNode);
                 } else { //else add it to the queue
-                    _TTLQueueHashtable.Add(originalImmutable, _TTLQueue.AddLast(new AppearanceQueueNode(originalImmutable, DateTime.Now.AddSeconds(_TTL))));
+                    _ttlQueueHashtable.Add(originalImmutable, _ttlQueue.AddLast(new AppearanceQueueNode(originalImmutable, DateTime.Now.AddSeconds(_ttl))));
                 }
+
                 return originalImmutable;
             } else if (registerApearance) {
                 RegisterAppearance(immutableAppearance);
                 //we absolutely should not already have it, so just add it to the queue
-                _TTLQueueHashtable.Add(immutableAppearance, _TTLQueue.AddLast(new AppearanceQueueNode(immutableAppearance, DateTime.Now.AddSeconds(_TTL))));
+                _ttlQueueHashtable.Add(immutableAppearance, _ttlQueue.AddLast(new AppearanceQueueNode(immutableAppearance, DateTime.Now.AddSeconds(_ttl))));
                 return immutableAppearance;
             } else {
                 //don't bother for unregistered
@@ -162,14 +158,10 @@ struct AppearanceQueueNode {
 }
 
 //this class lets us hold a weakref and also do quick lookups in hash tables
-sealed class ProxyWeakRef : IEquatable<ProxyWeakRef>{
-    public WeakReference<ImmutableAppearance> WeakRef;
+internal sealed class ProxyWeakRef(ImmutableAppearance appearance) : IEquatable<ProxyWeakRef>{
+    public WeakReference<ImmutableAppearance> WeakRef = new(appearance);
     public bool IsAlive => WeakRef.TryGetTarget(out var _);
     public bool TryGetTarget([NotNullWhen(true)] out ImmutableAppearance? target) => WeakRef.TryGetTarget(out target);
-
-    public ProxyWeakRef(ImmutableAppearance appearance) {
-        WeakRef = new(appearance);
-    }
 
     public override int GetHashCode() {
         if(WeakRef.TryGetTarget(out var target))
@@ -180,9 +172,8 @@ sealed class ProxyWeakRef : IEquatable<ProxyWeakRef>{
     public override bool Equals(object? obj) => obj is ProxyWeakRef proxy && Equals(proxy) || obj is ImmutableAppearance immutable && Equals(immutable);
 
     public bool Equals(ProxyWeakRef? proxy) {
-        if(proxy is not null && WeakRef.TryGetTarget(out ImmutableAppearance? thisRef) && proxy.WeakRef.TryGetTarget(out ImmutableAppearance? thatRef)){
+        if(proxy is not null && WeakRef.TryGetTarget(out ImmutableAppearance? thisRef) && proxy.WeakRef.TryGetTarget(out ImmutableAppearance? thatRef))
             return thisRef.Equals(thatRef);
-        }
         return false;
     }
 

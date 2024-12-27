@@ -44,6 +44,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
     }
 
     private ImmutableAppearance? _appearance;
+
     //acts as a cache for the mutable appearance, so we don't have to ToMutable() every frame
     private MutableAppearance? _animatedAppearance;
     private AtomDirection _direction;

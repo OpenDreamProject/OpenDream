@@ -52,4 +52,5 @@
 #pragma AssignmentInConditional warning
 #pragma PickWeightedSyntax disabled
 #pragma AmbiguousInOrder warning
+#pragma ExtraToken warning
 #pragma RuntimeSearchOperator disabled

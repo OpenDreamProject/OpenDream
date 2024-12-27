@@ -117,7 +117,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 if(!regex.IsGlobal) {
                     var match = regex.Regex.Match(haystackString, Math.Clamp(start - 1, 0, haystackSubstring.Length));
                     if (!match.Success) return new DreamValue(haystackString);
-                    regexInstance.SetVariable("next", new DreamValue(match.Index + Math.Max(replacement.Length, 1)));
+                    regexInstance.SetVariable("next", new DreamValue(match.Index + Math.Max(replacement.Length, 1) + 1));
                 }
 
                 string replaced = regex.Regex.Replace(haystackSubstring, replacement, regex.IsGlobal ? -1 : 1,

@@ -74,6 +74,7 @@ public enum WarningCode {
     AssignmentInConditional = 3202,
     PickWeightedSyntax = 3203,
     AmbiguousInOrder = 3204,
+    ExtraToken = 3205,
     RuntimeSearchOperator = 3300,
 
     // 4000 - 4999 are reserved for runtime configuration. (TODO: Runtime doesn't know about configs yet!)

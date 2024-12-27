@@ -1088,20 +1088,30 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus Divide(DMProcState state) {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
-            if (first.IsNull) {
-                state.Push(new(0));
-            } else if (first.TryGetValueAsFloat(out var firstFloat) && second.TryGetValueAsFloat(out var secondFloat)) {
-                if (secondFloat == 0) {
-                    throw new Exception("Division by zero");
-                }
 
-                state.Push(new(firstFloat / secondFloat));
-            } else if (first.TryGetValueAsDreamObject<DreamObject>(out var firstDreamObject)) {
-                var result = firstDreamObject.OperatorDivide(second, state);
-                state.Push(result);
-            } else {
-                throw new Exception($"Invalid divide operation on {first} and {second}");
+            switch (first.Type) {
+                case DreamValue.DreamValueType.DreamObject when first.IsNull:
+                    state.Push(new DreamValue(0));
+                    break;
+                case DreamValue.DreamValueType.Float when second.IsNull:
+                    state.Push(new DreamValue(first.MustGetValueAsFloat()));
+                    break;
+                case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
+                    var secondFloat = second.MustGetValueAsFloat();
+                    if (secondFloat == 0) {
+                        throw new Exception("Division by zero");
+                    }
+
+                    state.Push(new DreamValue(first.MustGetValueAsFloat() / secondFloat));
+                    break;
+                case DreamValue.DreamValueType.DreamObject:
+                    var result = first.MustGetValueAsDreamObject()!.OperatorDivide(second, state);
+                    state.Push(result);
+                    break;
+                default:
+                    throw new Exception($"Invalid divide operation on {first} and {second}");
             }
+
             return ProcStatus.Continue;
         }
 

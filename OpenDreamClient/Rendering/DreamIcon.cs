@@ -69,7 +69,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
     private bool _animationComplete;
     private IRenderTexture? _cachedTexture;
 
-    public DreamIcon(RenderTargetPool renderTargetPool, IGameTiming gameTiming, IClyde clyde, ClientAppearanceSystem appearanceSystem, int appearanceId,
+    public DreamIcon(RenderTargetPool renderTargetPool, IGameTiming gameTiming, IClyde clyde, ClientAppearanceSystem appearanceSystem, uint appearanceId,
         AtomDirection? parentDir = null) : this(renderTargetPool, gameTiming, clyde, appearanceSystem) {
         SetAppearance(appearanceId, parentDir);
     }
@@ -114,7 +114,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
         return CachedTexture?.Texture;
     }
 
-    public void SetAppearance(int? appearanceId, AtomDirection? parentDir = null) {
+    public void SetAppearance(uint? appearanceId, AtomDirection? parentDir = null) {
         // End any animations that are currently happening
         // Note that this isn't faithful to the original behavior
         EndAppearanceAnimation(null);
@@ -482,7 +482,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
 
         Overlays.Clear();
         foreach (var overlayAppearance in Appearance.Overlays) {
-            DreamIcon overlay = new DreamIcon(renderTargetPool, gameTiming, clyde, appearanceSystem, overlayAppearance.GetHashCode(), _direction);
+            DreamIcon overlay = new DreamIcon(renderTargetPool, gameTiming, clyde, appearanceSystem, overlayAppearance.MustGetID(), _direction);
             overlay.SizeChanged += CheckSizeChange;
 
             Overlays.Add(overlay);
@@ -490,7 +490,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
 
         Underlays.Clear();
         foreach (var underlayAppearance in Appearance.Underlays) {
-            DreamIcon underlay = new DreamIcon(renderTargetPool, gameTiming, clyde, appearanceSystem, underlayAppearance.GetHashCode(), _direction);
+            DreamIcon underlay = new DreamIcon(renderTargetPool, gameTiming, clyde, appearanceSystem, underlayAppearance.MustGetID(), _direction);
             underlay.SizeChanged += CheckSizeChange;
 
             Underlays.Add(underlay);

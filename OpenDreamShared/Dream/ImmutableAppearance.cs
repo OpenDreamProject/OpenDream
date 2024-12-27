@@ -9,6 +9,7 @@ using Robust.Shared.Maths;
 using System;
 using OpenDreamShared.Rendering;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace OpenDreamShared.Dream;
 
@@ -24,7 +25,8 @@ namespace OpenDreamShared.Dream;
 // TODO: Wow this is huge! Probably look into splitting this by most used/least used to reduce the size of these
 [Serializable]
 public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance>{
-    private bool _registered;
+    private uint? _registeredId;
+    private bool _needsFinalizer;
     private int? _storedHashCode;
     private readonly SharedAppearanceSystem? _appearanceSystem;
     [ViewVariables] public readonly string Name = MutableAppearance.Default.Name;
@@ -51,10 +53,10 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance>{
     [ViewVariables] public readonly ImmutableAppearance[] Underlays;
 
     [NonSerialized]
-    private List<int>? _overlayIDs;
+    private List<uint>? _overlayIDs;
 
     [NonSerialized]
-    private List<int>? _underlayIDs;
+    private List<uint>? _underlayIDs;
 
     [ViewVariables] public readonly Robust.Shared.GameObjects.NetEntity[] VisContents;
     [ViewVariables] public readonly DreamFilter[] Filters;
@@ -71,8 +73,9 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance>{
     // PixelOffset2 behaves the same as PixelOffset in top-down mode, so this is used
     public Vector2i TotalPixelOffset => PixelOffset + PixelOffset2;
 
-    public void MarkRegistered(){
-        _registered = true;
+    public void MarkRegistered(uint registeredId){
+        _registeredId = registeredId;
+        _needsFinalizer = true;
     }
 
     //this should only be called client-side, after network transfer
@@ -185,6 +188,17 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance>{
         return true;
     }
 
+    public uint MustGetID() {
+        if(_registeredId is null)
+            throw new InvalidDataException("GetID() was called on an appearance without an ID");
+        return (uint)_registeredId;
+    }
+
+    public bool TryGetID([NotNullWhen(true)] out uint? id) {
+        id = _registeredId;
+        return _registeredId is not null;
+    }
+
     public override int GetHashCode() {
         if(_storedHashCode is not null) //because everything is readonly, this only needs to be done once
             return (int)_storedHashCode;
@@ -255,7 +269,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance>{
                     Name = buffer.ReadString();
                     break;
                 case IconAppearanceProperty.Id:
-                    _storedHashCode = buffer.ReadVariableInt32();
+                    _registeredId = buffer.ReadVariableUInt32();
                     break;
                 case IconAppearanceProperty.Icon:
                     Icon = buffer.ReadVariableInt32();
@@ -330,7 +344,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance>{
                     Overlays = new ImmutableAppearance[overlaysCount];
                     _overlayIDs = new(overlaysCount);
                     for (int overlaysI = 0; overlaysI < overlaysCount; overlaysI++) {
-                        _overlayIDs.Add(buffer.ReadVariableInt32());
+                        _overlayIDs.Add(buffer.ReadVariableUInt32());
                     }
 
                     break;
@@ -341,7 +355,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance>{
                     Underlays = new ImmutableAppearance[underlaysCount];
                     _underlayIDs = new(underlaysCount);
                     for (int underlaysI = 0; underlaysI < underlaysCount; underlaysI++) {
-                        _underlayIDs.Add(buffer.ReadVariableInt32());
+                        _underlayIDs.Add(buffer.ReadVariableUInt32());
                     }
 
                     break;
@@ -397,7 +411,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance>{
             property = (IconAppearanceProperty)buffer.ReadByte();
         }
 
-        if(_storedHashCode is null)
+        if(_registeredId is null)
             throw new Exception("No appearance ID found in buffer");
     }
 
@@ -448,7 +462,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance>{
 
     public void WriteToBuffer(NetOutgoingMessage buffer, IRobustSerializer serializer) {
         buffer.Write((byte)IconAppearanceProperty.Id);
-        buffer.WriteVariableInt32(GetHashCode());
+        buffer.WriteVariableUInt32(MustGetID());
 
         if (Name != MutableAppearance.Default.Name) {
             buffer.Write((byte)IconAppearanceProperty.Name);
@@ -563,7 +577,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance>{
 
             buffer.WriteVariableInt32(Overlays.Length);
             foreach (var overlay in Overlays) {
-                buffer.WriteVariableInt32(overlay.GetHashCode());
+                buffer.WriteVariableUInt32(overlay.MustGetID());
             }
         }
 
@@ -572,7 +586,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance>{
 
             buffer.WriteVariableInt32(Underlays.Length);
             foreach (var underlay in Underlays) {
-                buffer.WriteVariableInt32(underlay.GetHashCode());
+                buffer.WriteVariableUInt32(underlay.MustGetID());
             }
         }
 
@@ -624,7 +638,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance>{
     }
 
     ~ImmutableAppearance() {
-        if(_registered)
+        if(_needsFinalizer && _registeredId is not null)
             _appearanceSystem!.RemoveAppearance(this);
     }
 }

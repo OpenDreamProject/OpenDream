@@ -14,6 +14,7 @@ using OpenDreamRuntime.Resources;
 using OpenDreamRuntime.Util;
 using OpenDreamShared;
 using OpenDreamShared.Dream;
+using Pidgin;
 using Robust.Server;
 using Robust.Server.Player;
 using Robust.Server.ServerStatus;
@@ -240,7 +241,7 @@ namespace OpenDreamRuntime {
             } else if (value.TryGetValueAsAppearance(out var appearance)) {
                 refType = RefType.DreamAppearance;
                 _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
-                idx = _appearanceSystem.AddAppearance(appearance).GetHashCode();
+                idx = (int)_appearanceSystem.AddAppearance(appearance).MustGetID();
             } else if (value.TryGetValueAsDreamResource(out var refRsc)) {
                 refType = RefType.DreamResource;
                 idx = refRsc.Id;
@@ -323,7 +324,7 @@ namespace OpenDreamRuntime {
                         return new DreamValue(resource);
                     case RefType.DreamAppearance:
                         _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
-                        return _appearanceSystem.TryGetAppearanceById(refId, out ImmutableAppearance? appearance)
+                        return _appearanceSystem.TryGetAppearanceById((uint) refId, out ImmutableAppearance? appearance)
                             ? new DreamValue(appearance.ToMutable())
                             : DreamValue.Null;
                     case RefType.Proc:

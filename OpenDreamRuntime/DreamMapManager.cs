@@ -176,15 +176,15 @@ public sealed class DreamMapManager : IDreamMapManager {
     /// Caches the turf/area appearance pair instead of recreating and re-registering it for every turf in the game.
     /// This is cleared out when an area appearance changes
     /// </summary>
-    private readonly Dictionary<ValueTuple<MutableAppearance, int>, MutableAppearance> _turfAreaLookup = new();
+    private readonly Dictionary<ValueTuple<MutableAppearance, uint>, MutableAppearance> _turfAreaLookup = new();
 
     public void SetTurfAppearance(DreamObjectTurf turf, MutableAppearance appearance) {
         if(turf.Cell.Area.Appearance != _appearanceSystem.DefaultAppearance)
             if(!appearance.Overlays.Contains(turf.Cell.Area.Appearance)) {
-                if(!_turfAreaLookup.TryGetValue((appearance, turf.Cell.Area.Appearance.GetHashCode()), out var newAppearance)) {
+                if(!_turfAreaLookup.TryGetValue((appearance, turf.Cell.Area.Appearance.MustGetID()), out var newAppearance)) {
                     newAppearance = new(appearance);
                     newAppearance.Overlays.Add(turf.Cell.Area.Appearance);
-                    _turfAreaLookup.Add((appearance, turf.Cell.Area.Appearance.GetHashCode()), newAppearance);
+                    _turfAreaLookup.Add((appearance, turf.Cell.Area.Appearance.MustGetID()), newAppearance);
                 }
 
                 appearance = newAppearance;
@@ -193,8 +193,8 @@ public sealed class DreamMapManager : IDreamMapManager {
         var immutableAppearance = _appearanceSystem.AddAppearance(appearance);
 
         var level = _levels[turf.Z - 1];
-        int turfId = immutableAppearance.GetHashCode() + 1; // +1 because 0 is used for empty turfs
-        level.QueuedTileUpdates[(turf.X, turf.Y)] = new Tile(turfId);
+        uint turfId = immutableAppearance.MustGetID();
+        level.QueuedTileUpdates[(turf.X, turf.Y)] = new Tile((int)turfId);
         turf.Appearance = immutableAppearance;
     }
 
@@ -224,8 +224,8 @@ public sealed class DreamMapManager : IDreamMapManager {
             }
 
             var level = _levels[turf.Z - 1];
-            int turfId = newAppearance.GetHashCode() + 1; // +1 because 0 is used for empty turfs
-            level.QueuedTileUpdates[(turf.X, turf.Y)] = new Tile(turfId);
+            uint turfId = newAppearance.MustGetID();
+            level.QueuedTileUpdates[(turf.X, turf.Y)] = new Tile((int)turfId);
         }
     }
 

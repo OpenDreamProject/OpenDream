@@ -561,7 +561,7 @@ public sealed class AtomManager {
         EntityUid targetEntity;
         DMISpriteComponent? targetComponent = null;
         NetEntity ent = NetEntity.Invalid;
-        int? turfId = null;
+        uint? turfId = null;
 
         if (atom is DreamObjectMovable movable) {
             targetEntity = movable.Entity;
@@ -596,7 +596,7 @@ public sealed class AtomManager {
         } else if (atom is DreamObjectTurf turf) {
             //TODO: turf appearances are just set to the end appearance, they do not get properly animated
             _dreamMapManager.SetTurfAppearance(turf, appearance);
-            turfId = appearance.GetHashCode()+1;
+            turfId = turf.Appearance.MustGetID();
         } else if (atom is DreamObjectArea area) {
             //fuck knows, this will trigger a bunch of turf updates to? idek
         }

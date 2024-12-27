@@ -11,9 +11,9 @@ using OpenDreamShared.Network.Messages;
 namespace OpenDreamClient.Rendering;
 
 internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
-    private Dictionary<int, ImmutableAppearance> _appearances = new();
-    private readonly Dictionary<int, List<Action<ImmutableAppearance>>> _appearanceLoadCallbacks = new();
-    private readonly Dictionary<int, DreamIcon> _turfIcons = new();
+    private Dictionary<uint, ImmutableAppearance> _appearances = new();
+    private readonly Dictionary<uint, List<Action<ImmutableAppearance>>> _appearanceLoadCallbacks = new();
+    private readonly Dictionary<uint, DreamIcon> _turfIcons = new();
     private readonly Dictionary<DreamFilter, ShaderInstance> _filterShaders = new();
 
     [Dependency] private readonly IEntityManager _entityManager = default!;
@@ -35,10 +35,10 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         _turfIcons.Clear();
     }
 
-    public void SetAllAppearances(Dictionary<int, ImmutableAppearance> appearances) {
+    public void SetAllAppearances(Dictionary<uint, ImmutableAppearance> appearances) {
         _appearances = appearances;
         //need to do this because all overlays can't be resolved until the whole appearance table is populated
-        foreach(KeyValuePair<int, ImmutableAppearance> pair in _appearances) {
+        foreach(KeyValuePair<uint, ImmutableAppearance> pair in _appearances) {
             pair.Value.ResolveOverlays(this);
             if (_appearanceLoadCallbacks.TryGetValue(pair.Key, out var callbacks)) {
                 foreach (var callback in callbacks) callback(pair.Value);
@@ -46,7 +46,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         }
     }
 
-    public void LoadAppearance(int appearanceId, Action<ImmutableAppearance> loadCallback) {
+    public void LoadAppearance(uint appearanceId, Action<ImmutableAppearance> loadCallback) {
         if (_appearances.TryGetValue(appearanceId, out var appearance)) {
             loadCallback(appearance);
             return;
@@ -59,8 +59,8 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         _appearanceLoadCallbacks[appearanceId].Add(loadCallback);
     }
 
-    public DreamIcon GetTurfIcon(int turfId) {
-        int appearanceId = turfId - 1;
+    public DreamIcon GetTurfIcon(uint turfId) {
+        uint appearanceId = turfId;
 
         if (!_turfIcons.TryGetValue(appearanceId, out var icon)) {
             icon = new DreamIcon(_spriteSystem.RenderTargetPool, _gameTiming, _clyde, this, appearanceId);
@@ -71,7 +71,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     }
 
     public void OnNewAppearance(MsgNewAppearance e) {
-        int appearanceId = e.Appearance.GetHashCode();
+        uint appearanceId = e.Appearance.MustGetID();
         _appearances[appearanceId] = e.Appearance;
         _appearances[appearanceId].ResolveOverlays(this);
 
@@ -210,7 +210,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         return instance;
     }
 
-    public override ImmutableAppearance MustGetAppearanceById(int appearanceId) {
+    public override ImmutableAppearance MustGetAppearanceById(uint appearanceId) {
         return _appearances[appearanceId];
     }
 

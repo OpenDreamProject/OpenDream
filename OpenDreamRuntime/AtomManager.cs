@@ -503,7 +503,7 @@ public sealed class AtomManager {
             DreamObjectTurf turf => turf.Appearance,
             DreamObjectMovable movable => movable.SpriteComponent.Appearance!,
             DreamObjectArea area => area.Appearance,
-            DreamObjectImage image => image.IsMutableAppearance ? AppearanceSystem!.AddAppearance(image.MutableAppearance!, registerApearance: false) : image.SpriteComponent!.Appearance!,
+            DreamObjectImage image => image.IsMutableAppearance ? AppearanceSystem!.AddAppearance(image.MutableAppearance!, registerAppearance: false) : image.SpriteComponent!.Appearance!,
             _ => throw new Exception($"Cannot get appearance of {atom}")
         };
     }
@@ -517,7 +517,7 @@ public sealed class AtomManager {
         else if (atom is DreamObjectMovable movable && movable.SpriteComponent.Appearance is not null)
             appearance = movable.SpriteComponent.Appearance;
         else if (atom is DreamObjectImage image)
-            appearance = image.IsMutableAppearance ? AppearanceSystem!.AddAppearance(image.MutableAppearance!, registerApearance: false) : image.SpriteComponent?.Appearance;
+            appearance = image.IsMutableAppearance ? AppearanceSystem!.AddAppearance(image.MutableAppearance!, registerAppearance: false) : image.SpriteComponent?.Appearance;
         else if (atom is DreamObjectArea area)
             appearance = area.Appearance;
         else

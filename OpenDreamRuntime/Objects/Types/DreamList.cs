@@ -727,7 +727,7 @@ public sealed class DreamOverlaysList : DreamList {
             return;
 
         _atomManager.UpdateAppearance(_owner, appearance => {
-            GetOverlaysList(appearance).Remove(_appearanceSystem.AddAppearance(overlayAppearance, registerApearance:false));
+            GetOverlaysList(appearance).Remove(_appearanceSystem.AddAppearance(overlayAppearance, registerAppearance:false));
         });
     }
 

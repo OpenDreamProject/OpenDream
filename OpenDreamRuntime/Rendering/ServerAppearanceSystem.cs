@@ -7,6 +7,7 @@ using OpenDreamShared.Network.Messages;
 using Robust.Shared.Player;
 using Robust.Shared.Network;
 using System.Diagnostics;
+using Robust.Shared.Console;
 
 namespace OpenDreamRuntime.Rendering;
 
@@ -61,11 +62,10 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
                     if(proxyWeakRef.TryGetTarget(out var immutable))
                         sendData.Add(immutable.MustGetID(), immutable);
                 }
-                Logger.GetSawmill("appearance").Debug($"Sending {sendData.Count} appearances to new player {e.Session.Name}");
 
+                Logger.GetSawmill("appearance").Debug($"Sending {sendData.Count} appearances to new player {e.Session.Name}");
                 e.Session.Channel.SendMessage(new MsgAllAppearances(sendData));
             }
-
         }
     }
 
@@ -77,17 +77,21 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         _networkManager.ServerSendToAll(new MsgNewAppearance(immutableAppearance));
     }
 
-    public ImmutableAppearance AddAppearance(MutableAppearance appearance, bool registerApearance = true) {
+    public ImmutableAppearance AddAppearance(MutableAppearance appearance, bool registerAppearance = true) {
         ImmutableAppearance immutableAppearance = new(appearance, this);
 
+        AddAppearance(immutableAppearance, registerAppearance);
+    }
+
+    public ImmutableAppearance AddAppearance(ImmutableAppearance appearance, bool registerAppearance = true) {
         lock (_lock) {
-            if(_appearanceLookup.TryGetValue(new(immutableAppearance), out var weakReference) && weakReference.TryGetTarget(out var originalImmutable)) {
+            if(_appearanceLookup.TryGetValue(new(appearance), out var weakReference) && weakReference.TryGetTarget(out var originalImmutable)) {
                 return originalImmutable;
-            } else if (registerApearance) {
-                RegisterAppearance(immutableAppearance);
-                return immutableAppearance;
+            } else if (registerAppearance) {
+                RegisterAppearance(appearance);
+                return appearance;
             } else {
-                return immutableAppearance;
+                return appearance;
             }
         }
     }

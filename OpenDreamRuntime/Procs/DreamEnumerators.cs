@@ -52,7 +52,7 @@ internal sealed class DreamObjectEnumerator : IDreamValueEnumerator {
             success = _dreamObjectEnumerator.MoveNext();
 
         if (_filterType != null) {
-            while (success && !_dreamObjectEnumerator.Current.IsSubtypeOf(_filterType)) {
+            while (success && (_dreamObjectEnumerator.Current.Deleted || !_dreamObjectEnumerator.Current.IsSubtypeOf(_filterType))) {
                 success = _dreamObjectEnumerator.MoveNext();
             }
         }

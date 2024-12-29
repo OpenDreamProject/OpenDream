@@ -80,7 +80,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     public ImmutableAppearance AddAppearance(MutableAppearance appearance, bool registerAppearance = true) {
         ImmutableAppearance immutableAppearance = new(appearance, this);
 
-        AddAppearance(immutableAppearance, registerAppearance);
+        return AddAppearance(immutableAppearance, registerAppearance);
     }
 
     public ImmutableAppearance AddAppearance(ImmutableAppearance appearance, bool registerAppearance = true) {

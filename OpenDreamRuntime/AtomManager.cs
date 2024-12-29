@@ -393,7 +393,7 @@ public sealed class AtomManager {
 
     //TODO THIS IS A SUPER NASTY HACK
     public DreamValue GetAppearanceVar(MutableAppearance appearance, string varName) {
-        return GetAppearanceVar(new ImmutableAppearance(appearance, AppearanceSystem), varName);
+        return GetAppearanceVar(new ImmutableAppearance(appearance, null), varName);
     }
 
     public DreamValue GetAppearanceVar(ImmutableAppearance appearance, string varName) {

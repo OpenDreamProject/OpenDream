@@ -7,7 +7,6 @@ using OpenDreamShared.Network.Messages;
 using Robust.Shared.Player;
 using Robust.Shared.Network;
 using System.Diagnostics;
-using System.Linq;
 
 namespace OpenDreamRuntime.Rendering;
 
@@ -59,12 +58,15 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         if (e.NewStatus == SessionStatus.InGame) {
             //todo this is probably stupid slow
             lock (_lock) {
+                Logger.GetSawmill("appearance").Debug($"Before GC: {_appearanceLookup.Count}");
+                GC.Collect();
                 Dictionary<uint, ImmutableAppearance> sendData = new(_appearanceLookup.Count);
 
                 foreach(ProxyWeakRef proxyWeakRef in _appearanceLookup){
                     if(proxyWeakRef.TryGetTarget(out var immutable))
                         sendData.Add(immutable.MustGetID(), immutable);
                 }
+                Logger.GetSawmill("appearance").Debug($"Sending {sendData.Count} appearances to new player {e.Session.Name}");
 
                 e.Session.Channel.SendMessage(new MsgAllAppearances(sendData));
             }

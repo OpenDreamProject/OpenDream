@@ -58,8 +58,6 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         if (e.NewStatus == SessionStatus.InGame) {
             //todo this is probably stupid slow
             lock (_lock) {
-                Logger.GetSawmill("appearance").Debug($"Before GC: {_appearanceLookup.Count}");
-                GC.Collect();
                 Dictionary<uint, ImmutableAppearance> sendData = new(_appearanceLookup.Count);
 
                 foreach(ProxyWeakRef proxyWeakRef in _appearanceLookup){

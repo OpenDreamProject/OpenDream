@@ -2556,6 +2556,17 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
+        public static ProcStatus IndexRefWithString(DMProcState state) {
+            DreamReference reference = state.ReadReference();
+            var refValue = state.GetReferenceValue(reference);
+
+            var index = new DreamValue(state.ReadString());
+            var indexResult = state.GetIndex(refValue, index, state);
+
+            state.Push(indexResult);
+            return ProcStatus.Continue;
+        }
+
         public static ProcStatus DereferenceCall(DMProcState state) {
             string name = state.ReadString();
             var argumentInfo = state.ReadProcArguments();

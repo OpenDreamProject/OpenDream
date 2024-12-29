@@ -122,6 +122,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
                 if(weakRef.TryGetTarget(out var target) && !ReferenceEquals(target,appearance))
                     return;
                 _appearanceLookup.Remove(proxyWeakRef);
+                _idToAppearance.Remove(appearance.MustGetID());
                 RaiseNetworkEvent(new RemoveAppearanceEvent(appearance.MustGetID()));
             }
         }
@@ -160,28 +161,32 @@ struct AppearanceQueueNode {
 }
 
 //this class lets us hold a weakref and also do quick lookups in hash tables
-internal sealed class ProxyWeakRef(ImmutableAppearance appearance) : IEquatable<ProxyWeakRef>{
-    public WeakReference<ImmutableAppearance> WeakRef = new(appearance);
+internal sealed class ProxyWeakRef: IEquatable<ProxyWeakRef>{
+    public WeakReference<ImmutableAppearance> WeakRef;
+    private readonly uint? _registeredId;
+    private readonly int _hashCode;
     public bool IsAlive => WeakRef.TryGetTarget(out var _);
     public bool TryGetTarget([NotNullWhen(true)] out ImmutableAppearance? target) => WeakRef.TryGetTarget(out target);
 
-    public override int GetHashCode() {
-        if(WeakRef.TryGetTarget(out var target))
-            return target.GetHashCode();
-        return 0; //equals will catch this in the off chance that this causes a collision
+    public ProxyWeakRef(ImmutableAppearance appearance) {
+        appearance.TryGetID(out _registeredId);
+        WeakRef = new(appearance);
+        _hashCode = appearance.GetHashCode();
     }
 
-    public override bool Equals(object? obj) => obj is ProxyWeakRef proxy && Equals(proxy) || obj is ImmutableAppearance immutable && Equals(immutable);
+    public override int GetHashCode() {
+        return _hashCode;
+    }
+
+    public override bool Equals(object? obj) => obj is ProxyWeakRef proxy && Equals(proxy);
 
     public bool Equals(ProxyWeakRef? proxy) {
-        if(proxy is not null && WeakRef.TryGetTarget(out ImmutableAppearance? thisRef) && proxy.WeakRef.TryGetTarget(out ImmutableAppearance? thatRef))
+        if(proxy is null)
+            return false;
+        if(_registeredId == proxy._registeredId)
+            return true;
+        if(WeakRef.TryGetTarget(out ImmutableAppearance? thisRef) && proxy.WeakRef.TryGetTarget(out ImmutableAppearance? thatRef))
             return thisRef.Equals(thatRef);
-        return false;
-    }
-
-    public bool Equals(ImmutableAppearance? immutable){
-        if(WeakRef.TryGetTarget(out ImmutableAppearance? thisRef))
-            return thisRef.Equals(immutable);
         return false;
     }
 }

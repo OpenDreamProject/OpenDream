@@ -616,7 +616,7 @@ public sealed class AtomManager {
         }
 
         if (value.TryGetValueAsType(out var copyFromType)) {
-            appearance = GetAppearanceFromDefinition(copyFromType.ObjectDefinition);
+            appearance = new(GetAppearanceFromDefinition(copyFromType.ObjectDefinition));
             return true;
         }
 

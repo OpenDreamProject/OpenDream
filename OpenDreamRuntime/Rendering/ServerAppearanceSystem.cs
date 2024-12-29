@@ -19,9 +19,6 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     private readonly HashSet<ProxyWeakRef> _appearanceLookup = new();
     private readonly Dictionary<uint, ProxyWeakRef> _idToAppearance = new();
     private uint _counter;
-    private readonly LinkedList<AppearanceQueueNode> _ttlQueue = new();
-    private readonly Dictionary<ImmutableAppearance, LinkedListNode<AppearanceQueueNode>> _ttlQueueHashtable = new();
-    private readonly double _ttl = 60; //seconds
     public readonly ImmutableAppearance DefaultAppearance;
     [Dependency] private readonly IServerNetManager _networkManager = default!;
 
@@ -84,28 +81,12 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         ImmutableAppearance immutableAppearance = new(appearance, this);
 
         lock (_lock) {
-            while(_ttlQueue.First is not null && _ttlQueue.First.Value.Expiry < DateTime.Now) {
-                _ttlQueueHashtable.Remove(_ttlQueue.First.Value.Appearance);
-                _ttlQueue.RemoveFirst();
-            }
-
             if(_appearanceLookup.TryGetValue(new(immutableAppearance), out var weakReference) && weakReference.TryGetTarget(out var originalImmutable)) {
-                if(_ttlQueueHashtable.TryGetValue(originalImmutable, out var linkedListNode)) { //if we already got it, reset its position in the queue
-                    linkedListNode.ValueRef.Expiry = DateTime.Now.AddSeconds(_ttl);
-                    _ttlQueue.Remove(linkedListNode);
-                    _ttlQueue.AddLast(linkedListNode);
-                } else { //else add it to the queue
-                    _ttlQueueHashtable.Add(originalImmutable, _ttlQueue.AddLast(new AppearanceQueueNode(originalImmutable, DateTime.Now.AddSeconds(_ttl))));
-                }
-
                 return originalImmutable;
             } else if (registerApearance) {
                 RegisterAppearance(immutableAppearance);
-                //we absolutely should not already have it, so just add it to the queue
-                _ttlQueueHashtable.Add(immutableAppearance, _ttlQueue.AddLast(new AppearanceQueueNode(immutableAppearance, DateTime.Now.AddSeconds(_ttl))));
                 return immutableAppearance;
             } else {
-                //don't bother for unregistered
                 return immutableAppearance;
             }
         }
@@ -148,16 +129,6 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     }
 }
 
-struct AppearanceQueueNode {
-    public ImmutableAppearance Appearance;
-    public DateTime Expiry;
-
-    public AppearanceQueueNode(ImmutableAppearance appearance, DateTime expiry) {
-        Appearance = appearance;
-        Expiry = expiry;
-    }
-}
-
 //this class lets us hold a weakref and also do quick lookups in hash tables
 internal sealed class ProxyWeakRef: IEquatable<ProxyWeakRef>{
     public WeakReference<ImmutableAppearance> WeakRef;
@@ -181,7 +152,7 @@ internal sealed class ProxyWeakRef: IEquatable<ProxyWeakRef>{
     public bool Equals(ProxyWeakRef? proxy) {
         if(proxy is null)
             return false;
-        if(_registeredId == proxy._registeredId)
+        if(_registeredId is not null && _registeredId == proxy._registeredId)
             return true;
         if(WeakRef.TryGetTarget(out ImmutableAppearance? thisRef) && proxy.WeakRef.TryGetTarget(out ImmutableAppearance? thatRef))
             return thisRef.Equals(thatRef);

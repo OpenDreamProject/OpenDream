@@ -155,7 +155,8 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public bool IsSubtypeOf(TreeEntry ancestor) {
-            if(Deleted) return false;
+            if(Deleted) //null deref protection, deleted objects don't have ObjectDefinition anymore
+                return false;
             return ObjectDefinition.IsSubtypeOf(ancestor);
         }
 

@@ -459,10 +459,6 @@ internal sealed class ConstFoldDivide : IOptimization {
 
         IOptimization.GetInstructionAndValue(input[index + 1], out var pushVal2);
 
-        if (pushVal2 == 0) {
-            compiler.Emit(WarningCode.BadExpression, input[index + 1].GetLocation(), "Division by zero");
-        }
-
         // At runtime, given "A / B" we pop B then A
         // In the peephole optimizer, index is "A", index+1 is "B"
         var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(pushVal1 / pushVal2, firstInstruction.Location)};

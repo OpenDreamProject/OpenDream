@@ -226,7 +226,7 @@ internal class Program {
                 }
             }
 
-            Console.WriteLine($"subtypes-by-type dumped to {outputFile}");
+            Console.WriteLine($"Successfully dumped subtypes-by-type to {outputFile}");
         }
 
         void OpcodeCount() {

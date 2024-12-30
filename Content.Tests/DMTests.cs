@@ -79,6 +79,7 @@ public sealed partial class DMTests : ContentUnitTest {
 
             Assert.That(compiledFile is not null && File.Exists(compiledFile), "Failed to compile DM source file");
             Assert.That(_dreamMan.LoadJson(compiledFile), $"Failed to load {compiledFile}");
+            _dreamMan.LastDMException = null; // Nuke any exception from a prior test
             _dreamMan.StartWorld();
 
             (bool successfulRun, DreamValue? returned, Exception? exception) = RunTest();
@@ -114,8 +115,6 @@ public sealed partial class DMTests : ContentUnitTest {
     }
 
     private (bool Success, DreamValue? Returned, Exception? except) RunTest() {
-        var prev = _dreamMan.LastDMException;
-
         DreamValue? retValue = null;
         Task<DreamValue> callTask = null!;
 
@@ -143,7 +142,7 @@ public sealed partial class DMTests : ContentUnitTest {
             }
         }
 
-        bool retSuccess = _dreamMan.LastDMException == prev; // Works because "null == null" is true in this language.
+        bool retSuccess = _dreamMan.LastDMException == null; // Works because "null == null" is true in this language.
         return (retSuccess, retValue, _dreamMan.LastDMException);
     }
 

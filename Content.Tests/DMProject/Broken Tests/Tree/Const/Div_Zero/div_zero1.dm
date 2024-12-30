@@ -1,4 +1,4 @@
-// COMPILE ERROR
+// COMPILE ERROR OD0011
 
 var/a = 1 / 0
 

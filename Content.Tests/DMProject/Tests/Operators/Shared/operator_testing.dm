@@ -33,7 +33,7 @@ var/list/operator_test_values = list(
 			result = "Error"
 		
 		if (result ~! expected_result)
-			CRASH("Expected [json_encode(expected_result)] for [json_encode(a)], instead got [json_encode(result)]")
+			CRASH("Expected [json_encode(expected_result)] for [json_encode(a)], instead got [json_encode(result)] at index [i - 1]")
 
 /proc/test_binary_operator(var/operator_proc, var/list/expected)
 	var/i = 1
@@ -48,4 +48,4 @@ var/list/operator_test_values = list(
 				result = "Error"
 			
 			if (result ~! expected_result)
-				CRASH("Expected [json_encode(expected_result)] for [json_encode(a)] and [json_encode(b)], instead got [json_encode(result)]")
+				CRASH("Expected [json_encode(expected_result)] for [json_encode(a)] and [json_encode(b)], instead got [json_encode(result)] at index [i - 1]")

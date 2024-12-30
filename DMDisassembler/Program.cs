@@ -120,7 +120,7 @@ internal class Program {
                 Console.WriteLine("Prints various statistics. Usage: stats [type]");
                 Console.WriteLine("Options for [type]:");
                 Console.WriteLine("procs-by-type         : Prints the number of proc declarations (not overrides) on each type in descending order");
-                Console.WriteLine("subtypes-by-type      : Prints the number of subtypes on each type in descending order");
+                Console.WriteLine("subtypes-by-type      : Prints the number of direct-descendant subtypes on each type in descending order");
                 Console.WriteLine("opcode-count          : Prints the number of occurrences for each opcode in descending order");
                 break;
             }

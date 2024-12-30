@@ -1,5 +1,4 @@
 using DMCompiler.Bytecode;
-using DMCompiler.Compiler;
 
 // ReSharper disable UnusedType.Global
 

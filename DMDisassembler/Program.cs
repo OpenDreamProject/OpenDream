@@ -86,6 +86,7 @@ internal class Program {
                 case "d":
                 case "decompile": Decompile(split); break;
                 case "stats": Stats(GetArg()); break;
+                case "dump-types": DumpTypes(); break;
                 case "test-all": TestAll(); break;
                 case "dump-all": DumpAll(); break;
                 case "help": {
@@ -119,6 +120,7 @@ internal class Program {
                 Console.WriteLine("Prints various statistics. Usage: stats [type]");
                 Console.WriteLine("Options for [type]:");
                 Console.WriteLine("procs-by-type         : Prints the number of proc declarations (not overrides) on each type in descending order");
+                Console.WriteLine("subtypes-by-type      : Prints the number of subtypes on each type in descending order");
                 Console.WriteLine("opcode-count          : Prints the number of occurrences for each opcode in descending order");
                 break;
             }
@@ -139,6 +141,7 @@ internal class Program {
             Console.WriteLine("list procs|globals        : List all globals, or all procs on a selected type");
             Console.WriteLine("decompile|d [name]        : Decompiles the proc on the selected type");
             Console.WriteLine("stats [type]              : Prints various stats about the game. Use \"help stats\" for more info");
+            Console.WriteLine("dump-types                : Writes a list of every type to a file");
             Console.WriteLine("dump-all                  : Decompiles every proc and writes the output to a file");
             Console.WriteLine("test-all                  : Tries to decompile every single proc to check for issues with this disassembler; not for production use");
         }
@@ -153,6 +156,10 @@ internal class Program {
         switch (statType) {
             case "procs-by-type": {
                 ProcsByType();
+                return;
+            }
+            case "subtypes-by-type": {
+                SubtypesByType();
                 return;
             }
             case "opcode-count": {
@@ -187,6 +194,39 @@ internal class Program {
                     Console.WriteLine($"{type.Path}: {pair.Value:n0}");
                 }
             }
+        }
+
+        void SubtypesByType() {
+            Console.WriteLine("Counting all subtypes by type. This may take a moment.");
+            Dictionary<int, int> typeIdToSubtypeCount = new Dictionary<int, int>(TypesById.Count);
+
+            foreach (DMType type in TypesById) {
+                var parent = type.Json.Parent;
+                if (parent is null) continue;
+
+                if (typeIdToSubtypeCount.TryGetValue(parent.Value, out var count)) {
+                    typeIdToSubtypeCount[parent.Value] = count + 1;
+                } else {
+                    typeIdToSubtypeCount[parent.Value] = 1;
+                }
+            }
+
+            var outputFile = Path.ChangeExtension(JsonFile, ".txt")!;
+            var name = Path.GetFileName(outputFile);
+            outputFile = outputFile.Replace(name!, $"__od_subtypes-by-type_{name}");
+            using StreamWriter writer = new StreamWriter(outputFile, append: false, encoding: Encoding.UTF8, bufferSize: 65536);
+
+            writer.WriteLine("Type: Subtype Count");
+            foreach (var pair in typeIdToSubtypeCount.OrderByDescending(kvp => kvp.Value)) {
+                var type = TypesById[pair.Key];
+                if (pair.Key == 0) {
+                    writer.WriteLine($"<global>: {pair.Value:n0}");
+                } else {
+                    writer.WriteLine($"{type.Path}: {pair.Value:n0}");
+                }
+            }
+
+            Console.WriteLine($"subtypes-by-type dumped to {outputFile}");
         }
 
         void OpcodeCount() {
@@ -374,6 +414,21 @@ internal class Program {
         return errored;
     }
 
+    private static void DumpTypes() {
+        Console.WriteLine("Dumping all types. This may take a moment.");
+
+        var outputFile = Path.ChangeExtension(JsonFile, ".txt")!;
+        var name = Path.GetFileName(outputFile);
+        outputFile = outputFile.Replace(name!, $"__od_types_{name}");
+        using StreamWriter writer = new StreamWriter(outputFile, append: false, encoding: Encoding.UTF8, bufferSize: 65536);
+
+        foreach (DMType type in TypesById) {
+                writer.WriteLine(type.Path);
+        }
+
+        Console.WriteLine($"Successfully dumped {TypesById.Count:n0} types to {outputFile}");
+    }
+
     private static void DumpAll() {
         Console.WriteLine("Dumping all procs. This may take a moment.");
         int errored = 0, all = 0;
@@ -394,7 +449,7 @@ internal class Program {
             ++all;
         }
 
-        var procCount = errored > 0 ? $"{all - errored}/{all} ({errored} failed procs)" : $"all {all}";
+        var procCount = errored > 0 ? $"{(all - errored):n0}/{all:n0} ({errored:n0} failed procs)" : $"all {all:n0}";
         Console.WriteLine($"Successfully dumped {procCount} procs to {outputFile}");
     }
 

@@ -104,6 +104,8 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             TextureRenderOffset = Vector2.Zero;
             return frame;
         } else {
+            if(textureOverride is not null)
+                return FullRenderTexture(viewOverlay, handle, iconMetaData, frame).Texture; //no caching in the presence of overrides
             CachedTexture = FullRenderTexture(viewOverlay, handle, iconMetaData, frame);
         }
 
@@ -156,7 +158,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
                 _appearanceAnimations[i] = lastAnim;
                 break;
             }
-            
+
         _appearanceAnimations.Add(new AppearanceAnimation(start, duration, endingAppearance, easing, flags, delay, true));
     }
 
@@ -310,20 +312,22 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             if (endAppearance.Direction != _appearance.Direction) {
                 appearance.Direction = endAppearance.Direction;
             }
+
             if (endAppearance.Icon != _appearance.Icon) {
                 appearance.Icon = endAppearance.Icon;
             }
+
             if (endAppearance.IconState != _appearance.IconState) {
                 appearance.IconState = endAppearance.IconState;
             }
+
             if (endAppearance.Invisibility != _appearance.Invisibility) {
                 appearance.Invisibility = endAppearance.Invisibility;
             }
-            /* TODO maptext
-            if (endAppearance.MapText != _appearance.MapText) {
-                appearance.MapText = endAppearance.MapText;
+
+            if (endAppearance.Maptext != _appearance.Maptext) {
+                appearance.Maptext = endAppearance.Maptext;
             }
-            */
             /* TODO suffix
             if (endAppearance.Suffix != _appearance.Suffix) {
                 appearance.Suffix = endAppearance.Suffix;
@@ -381,23 +385,19 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             }
             */
 
-            /* TODO maptext
-            if (endAppearance.MapTextWidth != _appearance.MapTextWidth) {
-                appearance.MapTextWidth = (ushort)Math.Clamp(((1-factor) * _appearance.MapTextWidth) + (factor * endAppearance.MapTextWidth), 0, 65535);
+            if (endAppearance.MaptextSize != _appearance.MaptextSize) {
+                appearance.MaptextSize = new Vector2i(
+                    (int)Math.Round(((1-factor) * _appearance.MaptextSize.X) + (factor * endAppearance.MaptextSize.X)),
+                    (int)Math.Round(((1-factor) * _appearance.MaptextSize.Y) + (factor * endAppearance.MaptextSize.Y))
+                );
             }
 
-            if (endAppearance.MapTextHeight != _appearance.MapTextHeight) {
-                appearance.MapTextHeight = (ushort)Math.Clamp(((1-factor) * _appearance.MapTextHeight) + (factor * endAppearance.MapTextHeight), 0, 65535);
+            if (endAppearance.MaptextOffset != _appearance.MaptextOffset) {
+                appearance.MaptextOffset = new Vector2i(
+                    (int)Math.Round(((1-factor) * _appearance.MaptextOffset.X) + (factor * endAppearance.MaptextOffset.X)),
+                    (int)Math.Round(((1-factor) * _appearance.MaptextOffset.Y) + (factor * endAppearance.MaptextOffset.Y))
+                );
             }
-
-            if (endAppearance.MapTextX != _appearance.MapTextX) {
-                appearance.MapTextX = (short)Math.Clamp(((1-factor) * _appearance.MapTextX) + (factor * endAppearance.MapTextX), -32768, 32767);
-            }
-
-            if (endAppearance.MapTextY != _appearance.MapTextY) {
-                appearance.MapTextY = (short)Math.Clamp(((1-factor) * _appearance.MapTextY) + (factor * endAppearance.MapTextY), -32768, 32767);
-            }
-            */
 
             if (endAppearance.PixelOffset != _appearance.PixelOffset) {
                 Vector2 startingOffset = appearance.PixelOffset;

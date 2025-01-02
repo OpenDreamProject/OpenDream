@@ -459,9 +459,12 @@ public interface IDreamMapManager {
                 _area.Turfs.Remove(Turf);
                 _area.ResetCoordinateCache();
 
+                var oldArea = _area;
                 _area = value;
                 _area.Turfs.Add(Turf);
                 _area.ResetCoordinateCache();
+
+                Turf.OnAreaChange(oldArea);
             }
         }
 

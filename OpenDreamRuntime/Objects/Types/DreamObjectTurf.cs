@@ -28,6 +28,16 @@ public sealed class DreamObjectTurf : DreamObjectAtom {
         Initialize(new());
     }
 
+    public void OnAreaChange(DreamObjectArea oldArea) {
+        if (Cell == null!)
+            return;
+
+        var newAppearance = Appearance.ToMutable();
+
+        newAppearance.Overlays.Remove(oldArea.Appearance);
+        DreamMapManager.SetTurfAppearance(this, newAppearance);
+    }
+
     protected override bool TryGetVar(string varName, out DreamValue value) {
         switch (varName) {
             case "x":

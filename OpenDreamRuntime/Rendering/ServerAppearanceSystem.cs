@@ -7,7 +7,6 @@ using OpenDreamShared.Network.Messages;
 using Robust.Shared.Player;
 using Robust.Shared.Network;
 using System.Diagnostics;
-using Robust.Shared.Console;
 
 namespace OpenDreamRuntime.Rendering;
 

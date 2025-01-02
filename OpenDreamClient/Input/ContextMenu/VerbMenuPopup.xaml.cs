@@ -62,7 +62,7 @@ internal sealed partial class VerbMenuPopup : Popup {
                 case ClientObjectReference.RefType.Turf:
                     var mapManager = IoCManager.Resolve<IMapManager>();
                     var mapId = new MapId(_target.TurfZ);
-                    var mapPos = new Vector2(_target.TurfX - 1, _target.TurfY - 1);
+                    var mapPos = new Vector2(_target.TurfX, _target.TurfY);
                     if (!mapManager.TryFindGridAt(mapId, mapPos, out var gridUid, out var grid)) {
                         Logger.GetSawmill("opendream")
                             .Error($"Failed to get icon for {_target} when trying to debug its icon");

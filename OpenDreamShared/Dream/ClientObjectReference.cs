@@ -59,4 +59,17 @@ public struct ClientObjectReference {
 
         return Equals(other.Value);
     }
+
+    public override string ToString() {
+        switch (Type) {
+            case RefType.Client:
+                return "client";
+            case RefType.Turf:
+                return $"turf{{{TurfX},{TurfY},{TurfZ}}}";
+            case RefType.Entity:
+                return $"entity{{{Entity}}}";
+        }
+
+        return "unknown ClientObjectReference";
+    }
 }

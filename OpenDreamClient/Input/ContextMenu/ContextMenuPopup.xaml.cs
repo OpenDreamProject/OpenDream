@@ -43,7 +43,7 @@ internal sealed partial class ContextMenuPopup : Popup {
         _metadataQuery = _entityManager.GetEntityQuery<MetaDataComponent>();
     }
 
-    public void RepopulateEntities(ClientObjectReference[] entities, int? turfId) {
+    public void RepopulateEntities(ClientObjectReference[] entities, uint? turfId) {
         ContextMenu.RemoveAllChildren();
 
         if (_transformSystem == null)

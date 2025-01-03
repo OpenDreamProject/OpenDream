@@ -1,5 +1,4 @@
 ﻿using OpenDreamRuntime.Procs;
-using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -117,6 +116,7 @@ public class DreamObjectAtom : DreamObject {
                 newAppearance.Direction = AtomManager.MustGetAppearance(this).Direction;
 
                 AtomManager.SetAtomAppearance(this, newAppearance);
+                newAppearance.Dispose();
                 break;
             case "overlays": {
                 Overlays.Cut();
@@ -178,7 +178,7 @@ public class DreamObjectAtom : DreamObject {
             default:
                 if (AtomManager.IsValidAppearanceVar(varName)) {
                     // Basically AtomManager.UpdateAppearance() but without the performance impact of using actions
-                    MutableAppearance appearance = AtomManager.MustGetAppearance(this).ToMutable();
+                    using var appearance = AtomManager.MustGetAppearance(this).ToMutable();
                     AtomManager.SetAppearanceVar(appearance, varName, value);
                     AtomManager.SetAtomAppearance(this, appearance);
                     break;

@@ -528,7 +528,7 @@ public sealed class AtomManager {
 
     public void UpdateAppearance(DreamObject atom, Action<MutableAppearance> update) {
         ImmutableAppearance immutableAppearance = MustGetAppearance(atom);
-        MutableAppearance appearance = immutableAppearance.ToMutable(); // Clone the appearance
+        using var appearance = immutableAppearance.ToMutable(); // Clone the appearance
         update(appearance);
         SetAtomAppearance(atom, appearance);
     }
@@ -540,7 +540,7 @@ public sealed class AtomManager {
             DMISpriteSystem.SetSpriteAppearance(new(movable.Entity, movable.SpriteComponent), appearance);
         } else if (atom is DreamObjectImage image) {
             if(image.IsMutableAppearance)
-                image.MutableAppearance = new(appearance); //this needs to be a copy
+                image.MutableAppearance = MutableAppearance.GetCopy(appearance); //this needs to be a copy
             else
                 DMISpriteSystem.SetSpriteAppearance(new(image.Entity, image.SpriteComponent!), appearance);
         } else if (atom is DreamObjectArea area) {
@@ -606,7 +606,7 @@ public sealed class AtomManager {
 
     public bool TryCreateAppearanceFrom(DreamValue value, [NotNullWhen(true)] out MutableAppearance? appearance) {
         if (value.TryGetValueAsAppearance(out var copyFromAppearance)) {
-            appearance = new(copyFromAppearance);
+            appearance = MutableAppearance.GetCopy(copyFromAppearance);
             return true;
         }
 
@@ -616,7 +616,7 @@ public sealed class AtomManager {
         }
 
         if (value.TryGetValueAsType(out var copyFromType)) {
-            appearance = new(GetAppearanceFromDefinition(copyFromType.ObjectDefinition));
+            appearance = MutableAppearance.GetCopy(GetAppearanceFromDefinition(copyFromType.ObjectDefinition));
             return true;
         }
 
@@ -626,9 +626,8 @@ public sealed class AtomManager {
         }
 
         if (_resourceManager.TryLoadIcon(value, out var iconResource)) {
-            appearance = new MutableAppearance() {
-                Icon = iconResource.Id
-            };
+            appearance = MutableAppearance.Get();
+            appearance.Icon = iconResource.Id;
 
             return true;
         }
@@ -660,7 +659,7 @@ public sealed class AtomManager {
         def.TryGetVariable("blend_mode", out var blendModeVar);
         def.TryGetVariable("appearance_flags", out var appearanceFlagsVar);
 
-        appearance = new MutableAppearance();
+        appearance = MutableAppearance.Get();
         SetAppearanceVar(appearance, "name", nameVar);
         SetAppearanceVar(appearance, "icon", iconVar);
         SetAppearanceVar(appearance, "icon_state", stateVar);

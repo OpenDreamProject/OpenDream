@@ -182,7 +182,7 @@ public sealed class DreamMapManager : IDreamMapManager {
         if(turf.Cell.Area.Appearance != _appearanceSystem.DefaultAppearance)
             if(!appearance.Overlays.Contains(turf.Cell.Area.Appearance)) {
                 if(!_turfAreaLookup.TryGetValue((appearance, turf.Cell.Area.Appearance.MustGetID()), out var newAppearance)) {
-                    newAppearance = new(appearance);
+                    newAppearance = MutableAppearance.GetCopy(appearance);
                     newAppearance.Overlays.Add(turf.Cell.Area.Appearance);
                     _turfAreaLookup.Add((appearance, turf.Cell.Area.Appearance.MustGetID()), newAppearance);
                 }

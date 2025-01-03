@@ -367,7 +367,6 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
                 ColorMatrix.Interpolate(in _appearance.ColorMatrix, in endAppearance.ColorMatrix, factor, out _animatedAppearance.ColorMatrix);
             }
 
-
             if (endAppearance.GlideSize != _appearance.GlideSize) {
                 _animatedAppearance.GlideSize = ((1-factor) * _appearance.GlideSize) + (factor * endAppearance.GlideSize);
             }
@@ -444,7 +443,6 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
                     AppearanceAnimation repeatAnimation = new AppearanceAnimation(start, animation.Duration, animation.EndAppearance, animation.Easing, animation.Flags, animation.Delay, animation.LastInSequence);
                     toReAdd.Add(repeatAnimation);
                 }
-
             }
         }
 

@@ -32,7 +32,7 @@ public sealed class DreamObjectTurf : DreamObjectAtom {
         if (Cell == null!)
             return;
 
-        var newAppearance = Appearance.ToMutable();
+        using var newAppearance = Appearance.ToMutable();
 
         newAppearance.Overlays.Remove(oldArea.Appearance);
         DreamMapManager.SetTurfAppearance(this, newAppearance);

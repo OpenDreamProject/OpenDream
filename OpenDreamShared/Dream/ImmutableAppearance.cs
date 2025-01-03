@@ -24,7 +24,7 @@ namespace OpenDreamShared.Dream;
 
 // TODO: Wow this is huge! Probably look into splitting this by most used/least used to reduce the size of these
 [Serializable]
-public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance>{
+public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
     private uint? _registeredId;
     private bool _needsFinalizer;
     private int? _storedHashCode;
@@ -255,7 +255,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance>{
         return (int)_storedHashCode;
     }
 
-   public ImmutableAppearance(NetIncomingMessage buffer, IRobustSerializer serializer) {
+    public ImmutableAppearance(NetIncomingMessage buffer, IRobustSerializer serializer) {
         Overlays = [];
         Underlays = [];
         VisContents = [];
@@ -418,44 +418,41 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance>{
     //Creates an editable *copy* of this appearance, which must be added to the ServerAppearanceSystem to be used.
     [Pure]
     public MutableAppearance ToMutable() {
-        MutableAppearance result = new MutableAppearance() {
-            Name = Name,
-            Icon = Icon,
-            IconState = IconState,
-            Direction = Direction,
-            InheritsDirection = InheritsDirection,
-            PixelOffset = PixelOffset,
-            PixelOffset2 = PixelOffset2,
-            Color = Color,
-            Alpha = Alpha,
-            GlideSize = GlideSize,
-            ColorMatrix = ColorMatrix,
-            Layer = Layer,
-            Plane = Plane,
-            RenderSource = RenderSource,
-            RenderTarget = RenderTarget,
-            BlendMode = BlendMode,
-            AppearanceFlags = AppearanceFlags,
-            Invisibility = Invisibility,
-            Opacity = Opacity,
-            MouseOpacity = MouseOpacity,
-            Overlays = new(Overlays.Length),
-            Underlays = new(Underlays.Length),
-            VisContents = new(VisContents),
-            Filters = new(Filters),
-            Verbs = new(Verbs),
-            Override = Override,
-        };
+        MutableAppearance result = MutableAppearance.Get();
 
-        foreach(ImmutableAppearance overlay in Overlays)
-            result.Overlays.Add(overlay);
+        result.Name = Name;
+        result.Icon = Icon;
+        result.IconState = IconState;
+        result.Direction = Direction;
+        result.InheritsDirection = InheritsDirection;
+        result.PixelOffset = PixelOffset;
+        result.PixelOffset2 = PixelOffset2;
+        result.Color = Color;
+        result.Alpha = Alpha;
+        result.GlideSize = GlideSize;
+        result.ColorMatrix = ColorMatrix;
+        result.Layer = Layer;
+        result.Plane = Plane;
+        result.RenderSource = RenderSource;
+        result.RenderTarget = RenderTarget;
+        result.BlendMode = BlendMode;
+        result.AppearanceFlags = AppearanceFlags;
+        result.Invisibility = Invisibility;
+        result.Opacity = Opacity;
+        result.MouseOpacity = MouseOpacity;
+        result.Override = Override;
 
-        foreach(ImmutableAppearance underlay in Underlays)
-            result.Underlays.Add(underlay);
-
-        for (int i = 0; i < 6; i++) {
-            result.Transform[i] = Transform[i];
-        }
+        result.Overlays.EnsureCapacity(Overlays.Length);
+        result.Underlays.EnsureCapacity(Underlays.Length);
+        result.VisContents.EnsureCapacity(VisContents.Length);
+        result.Filters.EnsureCapacity(Filters.Length);
+        result.Verbs.EnsureCapacity(Verbs.Length);
+        result.Overlays.AddRange(Overlays);
+        result.Underlays.AddRange(Underlays);
+        result.VisContents.AddRange(VisContents);
+        result.Filters.AddRange(Filters);
+        result.Verbs.AddRange(Verbs);
+        Array.Copy(Transform, result.Transform, 6);
 
         return result;
     }

@@ -20,8 +20,10 @@ namespace OpenDreamShared.Dream;
 
 // TODO: Wow this is huge! Probably look into splitting this by most used/least used to reduce the size of these
 [Serializable]
-public sealed class MutableAppearance : IEquatable<MutableAppearance>{
+public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposable {
     public static readonly MutableAppearance Default = new();
+
+    private static Stack<MutableAppearance> _mutableAppearancePool = new();
 
     [ViewVariables] public string Name = string.Empty;
     [ViewVariables] public int? Icon;
@@ -72,15 +74,34 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>{
     // PixelOffset2 behaves the same as PixelOffset in top-down mode, so this is used
     public Vector2i TotalPixelOffset => PixelOffset + PixelOffset2;
 
-    public MutableAppearance() {
-        Overlays = new();
-        Underlays = new();
-        VisContents = new();
-        Filters = new();
-        Verbs = new();
+    private MutableAppearance() {
+        Overlays = [];
+        Underlays = [];
+        VisContents = [];
+        Filters = [];
+        Verbs = [];
     }
 
-    public MutableAppearance(MutableAppearance appearance) {
+    public void Dispose() {
+        CopyFrom(Default);
+        _mutableAppearancePool.Push(this);
+    }
+
+    public static MutableAppearance Get() {
+        if (_mutableAppearancePool.TryPop(out var popped))
+            return popped;
+
+        return new MutableAppearance();
+    }
+
+    public static MutableAppearance GetCopy(MutableAppearance appearance) {
+        MutableAppearance result = Get();
+
+        result.CopyFrom(appearance);
+        return result;
+    }
+
+    public void CopyFrom(MutableAppearance appearance) {
         Name = appearance.Name;
         Icon = appearance.Icon;
         IconState = appearance.IconState;
@@ -101,16 +122,19 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>{
         Invisibility = appearance.Invisibility;
         Opacity = appearance.Opacity;
         MouseOpacity = appearance.MouseOpacity;
-        Overlays = new(appearance.Overlays);
-        Underlays = new(appearance.Underlays);
-        VisContents = new(appearance.VisContents);
-        Filters = new(appearance.Filters);
-        Verbs = new(appearance.Verbs);
         Override = appearance.Override;
 
-        for (int i = 0; i < 6; i++) {
-            Transform[i] = appearance.Transform[i];
-        }
+        Overlays.Clear();
+        Underlays.Clear();
+        VisContents.Clear();
+        Filters.Clear();
+        Verbs.Clear();
+        Overlays.AddRange(appearance.Overlays);
+        Underlays.AddRange(appearance.Underlays);
+        VisContents.AddRange(appearance.VisContents);
+        Filters.AddRange(appearance.Filters);
+        Verbs.AddRange(appearance.Verbs);
+        Array.Copy(appearance.Transform, Transform, 6);
     }
 
     public override bool Equals(object? obj) => obj is MutableAppearance appearance && Equals(appearance);

@@ -695,8 +695,8 @@ public sealed class DreamOverlaysList : DreamList {
         if (_appearanceSystem == null)
             return DreamValue.Null;
 
-        ImmutableAppearance overlayAppearance = overlaysList[overlayIndex - 1];
-        return new DreamValue(overlayAppearance.ToMutable());
+        var overlayAppearance = overlaysList[overlayIndex - 1].ToMutable();
+        return new DreamValue(overlayAppearance);
     }
 
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
@@ -707,9 +707,9 @@ public sealed class DreamOverlaysList : DreamList {
         if (_appearanceSystem == null)
             return;
 
-        MutableAppearance? overlayAppearance = CreateOverlayAppearance(_atomManager, value, _atomManager.MustGetAppearance(_owner).Icon);
-        overlayAppearance ??= new MutableAppearance();
-        ImmutableAppearance immutableOverlay = _appearanceSystem.AddAppearance(overlayAppearance);
+        var overlayAppearance = CreateOverlayAppearance(_atomManager, value, _atomManager.MustGetAppearance(_owner).Icon);
+        var immutableOverlay = _appearanceSystem.AddAppearance(overlayAppearance ?? MutableAppearance.Default);
+        overlayAppearance?.Dispose();
 
         //after UpdateApparance is done, the atom is set with a new immutable appearance containing a hard ref to the overlay
         //only /mutable_appearance handles it differently, and that's done in DreamObjectImage
@@ -728,6 +728,7 @@ public sealed class DreamOverlaysList : DreamList {
 
         _atomManager.UpdateAppearance(_owner, appearance => {
             GetOverlaysList(appearance).Remove(_appearanceSystem.AddAppearance(overlayAppearance, registerAppearance:false));
+            overlayAppearance.Dispose();
         });
     }
 
@@ -747,9 +748,8 @@ public sealed class DreamOverlaysList : DreamList {
         MutableAppearance overlay;
 
         if (value.TryGetValueAsString(out var iconState)) {
-            overlay = new MutableAppearance() {
-                IconState = iconState
-            };
+            overlay = MutableAppearance.Get();
+            overlay.IconState = iconState;
             overlay.Icon ??= defaultIcon;
         } else if (atomManager.TryCreateAppearanceFrom(value, out var overlayAppearance)) {
             overlay = overlayAppearance;

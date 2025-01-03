@@ -78,6 +78,7 @@ public sealed class DreamObjectImage : DreamObject {
         }
 
         AtomManager.SetAtomAppearance(this, mutableAppearance);
+        mutableAppearance.Dispose();
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
@@ -117,6 +118,7 @@ public sealed class DreamObjectImage : DreamObject {
                 var originalAppearance = AtomManager.MustGetAppearance(this);
                 newAppearance.Direction = originalAppearance.Direction;
                 AtomManager.SetAtomAppearance(this, newAppearance);
+                newAppearance.Dispose();
                 break;
             case "loc":
                 value.TryGetValueAsDreamObject(out _loc);
@@ -138,6 +140,7 @@ public sealed class DreamObjectImage : DreamObject {
 
                         _overlays.Cut();
                         _overlays.AddValue(new(overlay));
+                        overlay.Dispose();
                     }
 
                     return;
@@ -170,6 +173,7 @@ public sealed class DreamObjectImage : DreamObject {
 
                         _underlays.Cut();
                         _underlays.AddValue(new(underlay));
+                        underlay.Dispose();
                     }
 
                     return;
@@ -206,14 +210,14 @@ public sealed class DreamObjectImage : DreamObject {
                 break;
             }
             case "override": {
-                MutableAppearance mutableAppearance = IsMutableAppearance ? MutableAppearance! : AtomManager.MustGetAppearance(this).ToMutable();
+                using var mutableAppearance = IsMutableAppearance ? MutableAppearance! : AtomManager.MustGetAppearance(this).ToMutable();
                 mutableAppearance.Override = value.IsTruthy();
                 AtomManager.SetAtomAppearance(this, mutableAppearance);
                 break;
             }
             default:
                 if (AtomManager.IsValidAppearanceVar(varName)) {
-                    MutableAppearance mutableAppearance = IsMutableAppearance ? MutableAppearance! : AtomManager.MustGetAppearance(this).ToMutable();
+                    using var mutableAppearance = IsMutableAppearance ? MutableAppearance! : AtomManager.MustGetAppearance(this).ToMutable();
                     AtomManager.SetAppearanceVar(mutableAppearance, varName, value);
                     AtomManager.SetAtomAppearance(this, mutableAppearance);
                     break;
@@ -239,6 +243,7 @@ public sealed class DreamObjectImage : DreamObject {
             EntityManager.DeleteEntity(Entity);
         }
 
+        MutableAppearance?.Dispose();
         base.HandleDeletion(possiblyThreaded);
     }
 }

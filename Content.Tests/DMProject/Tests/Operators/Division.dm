@@ -7,39 +7,39 @@
 	var/list/expected = list(
 		1,
 		"Error",
+		10,
+		"Error",
+		"Error", // index 5
 		"Error",
 		"Error",
 		"Error",
 		"Error",
+		"Error", // index 10
 		"Error",
 		"Error",
 		"Error",
 		"Error",
+		"Error", // index 15
 		"Error",
 		"Error",
 		"Error",
 		"Error",
-		"Error",
-		"Error",
-		"Error",
-		"Error",
-		"Error",
-		"Error",
+		"Error", // index 20
 		"Error",
 		"Error",
 		0,
 		0,
+		0, // index 25
 		0,
 		0,
 		0,
 		0,
-		0,
-		0,
+		0, // index 30
 		0,
 		0,
 		0,
 		"Error",
-		"Error",
+		"Error", // index 35
 		"Error",
 		"Error",
 		"Error",

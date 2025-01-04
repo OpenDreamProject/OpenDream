@@ -297,6 +297,7 @@ public class DreamList : DreamObject {
 
     public override DreamValue OperatorAppend(DreamValue b) {
         if (b.TryGetValueAsDreamList(out var bList)) {
+            if (bList == this) bList = this.CreateCopy();
             foreach (DreamValue value in bList.GetValues()) {
                 if (bList._associativeValues?.TryGetValue(value, out var assocValue) is true) {
                     SetValue(value, assocValue);

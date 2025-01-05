@@ -39,11 +39,25 @@ public sealed class AtomManager {
             return _appearanceSystem;
         }
     }
-    
-    private ServerVerbSystem VerbSystem => _verbSystem ??= _entitySystemManager.GetEntitySystem<ServerVerbSystem>();
+
+    private DMISpriteSystem? DMISpriteSystem {
+        get {
+            if(_dmiSpriteSystem is null)
+                _entitySystemManager.TryGetEntitySystem(out _dmiSpriteSystem);
+            return _dmiSpriteSystem;
+        }
+    }
+
+    private ServerVerbSystem? VerbSystem {
+        get {
+            if(_verbSystem is null)
+                _entitySystemManager.TryGetEntitySystem(out _verbSystem);
+            return _verbSystem;
+        }
+    }
+
     private ServerAppearanceSystem? _appearanceSystem;
     private ServerVerbSystem? _verbSystem;
-    private DMISpriteSystem DMISpriteSystem => _dmiSpriteSystem ??= _entitySystemManager.GetEntitySystem<DMISpriteSystem>();
     private DMISpriteSystem? _dmiSpriteSystem;
 
     // ReSharper disable ForCanBeConvertedToForeach (the collections could be added to)
@@ -200,7 +214,7 @@ public sealed class AtomManager {
         var entity = _entityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace));
 
         DMISpriteComponent sprite = _entityManager.AddComponent<DMISpriteComponent>(entity);
-        DMISpriteSystem.SetSpriteAppearance(new(entity, sprite), GetAppearanceFromDefinition(movable.ObjectDefinition));
+        DMISpriteSystem?.SetSpriteAppearance(new(entity, sprite), GetAppearanceFromDefinition(movable.ObjectDefinition));
 
         _entityToAtom.Add(entity, movable);
         return entity;
@@ -363,7 +377,7 @@ public sealed class AtomManager {
                             continue;
 
                         if (!verb.VerbId.HasValue)
-                            VerbSystem.RegisterVerb(verb);
+                            VerbSystem?.RegisterVerb(verb);
                         if (appearance.Verbs.Contains(verb.VerbId!.Value))
                             continue;
 
@@ -371,7 +385,7 @@ public sealed class AtomManager {
                     }
                 } else if (value.TryGetValueAsProc(out var verb)) {
                     if (!verb.VerbId.HasValue)
-                        VerbSystem.RegisterVerb(verb);
+                        VerbSystem?.RegisterVerb(verb);
 
                     appearance.Verbs.Add(verb.VerbId!.Value);
                 }
@@ -515,7 +529,7 @@ public sealed class AtomManager {
     public bool TryGetAppearance(DreamObject atom, [NotNullWhen(true)] out ImmutableAppearance? appearance) {
         if (atom is DreamObjectTurf turf)
             appearance = turf.Appearance;
-        else if (atom is DreamObjectMovable movable && movable.SpriteComponent.Appearance is not null)
+        else if (atom is DreamObjectMovable { SpriteComponent.Appearance: not null } movable)
             appearance = movable.SpriteComponent.Appearance;
         else if (atom is DreamObjectImage image)
             appearance = image.IsMutableAppearance ? AppearanceSystem!.AddAppearance(image.MutableAppearance!, registerAppearance: false) : image.SpriteComponent?.Appearance;
@@ -538,23 +552,23 @@ public sealed class AtomManager {
         if (atom is DreamObjectTurf turf) {
             _dreamMapManager.SetTurfAppearance(turf, appearance);
         } else if (atom is DreamObjectMovable movable) {
-            DMISpriteSystem.SetSpriteAppearance(new(movable.Entity, movable.SpriteComponent), appearance);
+            DMISpriteSystem?.SetSpriteAppearance(new(movable.Entity, movable.SpriteComponent), appearance);
         } else if (atom is DreamObjectImage image) {
             if(image.IsMutableAppearance)
                 image.MutableAppearance = MutableAppearance.GetCopy(appearance); //this needs to be a copy
             else
-                DMISpriteSystem.SetSpriteAppearance(new(image.Entity, image.SpriteComponent!), appearance);
+                DMISpriteSystem?.SetSpriteAppearance(new(image.Entity, image.SpriteComponent!), appearance);
         } else if (atom is DreamObjectArea area) {
             _dreamMapManager.SetAreaAppearance(area, appearance);
         }
     }
 
     public void SetMovableScreenLoc(DreamObjectMovable movable, ScreenLocation screenLocation) {
-        DMISpriteSystem.SetSpriteScreenLocation(new(movable.Entity, movable.SpriteComponent), screenLocation);
+        DMISpriteSystem?.SetSpriteScreenLocation(new(movable.Entity, movable.SpriteComponent), screenLocation);
     }
 
     public void SetSpriteAppearance(Entity<DMISpriteComponent> ent, MutableAppearance appearance) {
-        DMISpriteSystem.SetSpriteAppearance(ent, appearance);
+        DMISpriteSystem?.SetSpriteAppearance(ent, appearance);
     }
 
     public void AnimateAppearance(DreamObject atom, TimeSpan duration, AnimationEasing easing, int loop, AnimationFlags flags, int delay, bool chainAnim, Action<MutableAppearance> animate) {
@@ -568,7 +582,7 @@ public sealed class AtomManager {
             targetEntity = movable.Entity;
             targetComponent = movable.SpriteComponent;
             appearance = MustGetAppearance(atom).ToMutable();
-        } else if (atom is DreamObjectImage image && !image.IsMutableAppearance){
+        } else if (atom is DreamObjectImage { IsMutableAppearance: false } image) {
             targetEntity = image.Entity;
             targetComponent = image.SpriteComponent;
             appearance = MustGetAppearance(atom).ToMutable();
@@ -593,7 +607,7 @@ public sealed class AtomManager {
         if(targetComponent is not null) {
             ent = _entityManager.GetNetEntity(targetEntity);
             // Don't send the updated appearance to clients, they will animate it
-            DMISpriteSystem.SetSpriteAppearance(new(targetEntity, targetComponent), appearance, dirty: false);
+            DMISpriteSystem?.SetSpriteAppearance(new(targetEntity, targetComponent), appearance, dirty: false);
         } else if (atom is DreamObjectTurf turf) {
             //TODO: turf appearances are just set to the end appearance, they do not get properly animated
             _dreamMapManager.SetTurfAppearance(turf, appearance);

@@ -128,6 +128,7 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         Override = appearance.Override;
         Maptext = appearance.Maptext;
         MaptextSize = appearance.MaptextSize;
+        MaptextOffset = appearance.MaptextOffset;
 
         Overlays.Clear();
         Underlays.Clear();
@@ -175,6 +176,7 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         if (appearance.Override != Override) return false;
         if (appearance.Maptext != Maptext) return false;
         if (appearance.MaptextSize != MaptextSize) return false;
+        if (appearance.MaptextOffset != MaptextOffset) return false;
 
         for (int i = 0; i < Filters.Count; i++) {
             if (appearance.Filters[i] != Filters[i]) return false;
@@ -260,6 +262,7 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         hashCode.Add(BlendMode);
         hashCode.Add(AppearanceFlags);
         hashCode.Add(Maptext);
+        hashCode.Add(MaptextOffset);
         hashCode.Add(MaptextSize);
 
         foreach (var overlay in Overlays) {
@@ -398,6 +401,9 @@ public enum IconAppearanceProperty : byte {
         Filters,
         Verbs,
         Transform,
+        Maptext,
+        MaptextSize,
+        MaptextOffset,
         Id,
         End
     }

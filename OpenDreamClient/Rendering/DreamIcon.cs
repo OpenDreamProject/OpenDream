@@ -325,9 +325,9 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
                 _animatedAppearance.IconState = endAppearance.IconState;
             if (endAppearance.Invisibility != _appearance.Invisibility)
                 _animatedAppearance.Invisibility = endAppearance.Invisibility;
-            if (endAppearance.MapText != _appearance.MapText)
-                appearance.MapText = endAppearance.MapText;
-            */
+            if (endAppearance.Maptext != _appearance.Maptext)
+                _appearance.Maptext = endAppearance.Maptext;
+
             /* TODO suffix
             if (endAppearance.Suffix != _appearance.Suffix)
                 appearance.Suffix = endAppearance.Suffix;
@@ -384,17 +384,17 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             */
 
             if (endAppearance.MaptextSize != _appearance.MaptextSize) {
-                appearance.MaptextSize = new Vector2i(
-                    (int)Math.Round(((1-factor) * _appearance.MaptextSize.X) + (factor * endAppearance.MaptextSize.X)),
-                    (int)Math.Round(((1-factor) * _appearance.MaptextSize.Y) + (factor * endAppearance.MaptextSize.Y))
-                );
+                Vector2 startingOffset = _appearance.MaptextSize;
+                Vector2 newMaptextSize = Vector2.Lerp(startingOffset, endAppearance.MaptextSize, 1.0f-factor);
+
+                _animatedAppearance.MaptextSize = (Vector2i)newMaptextSize;
             }
 
             if (endAppearance.MaptextOffset != _appearance.MaptextOffset) {
-                appearance.MaptextOffset = new Vector2i(
-                    (int)Math.Round(((1-factor) * _appearance.MaptextOffset.X) + (factor * endAppearance.MaptextOffset.X)),
-                    (int)Math.Round(((1-factor) * _appearance.MaptextOffset.Y) + (factor * endAppearance.MaptextOffset.Y))
-                );
+                Vector2 startingOffset = _appearance.MaptextOffset;
+                Vector2 newMaptextOffset = Vector2.Lerp(startingOffset, endAppearance.MaptextOffset, 1.0f-factor);
+
+                _animatedAppearance.MaptextOffset = (Vector2i)newMaptextOffset;
             }
 
             if (endAppearance.PixelOffset != _appearance.PixelOffset) {

@@ -55,6 +55,9 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
     [ViewVariables] public readonly DreamFilter[] Filters;
     [ViewVariables] public readonly int[] Verbs;
     [ViewVariables] public readonly ColorMatrix ColorMatrix = ColorMatrix.Identity;
+    [ViewVariables] public Vector2i MaptextSize = MutableAppearance.Default.MaptextSize;
+    [ViewVariables] public Vector2i MaptextOffset = MutableAppearance.Default.MaptextOffset;
+    [ViewVariables] public string? Maptext = MutableAppearance.Default.Maptext;
 
     /// <summary> The Transform property of this appearance, in [a,d,b,e,c,f] order</summary>
     [ViewVariables] public readonly float[] Transform = [
@@ -92,6 +95,9 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         Invisibility = appearance.Invisibility;
         Opacity = appearance.Opacity;
         MouseOpacity = appearance.MouseOpacity;
+        Maptext = appearance.Maptext;
+        MaptextSize = appearance.MaptextSize;
+        MaptextOffset = appearance.MaptextOffset;
 
         Overlays = appearance.Overlays.ToArray();
         Underlays = appearance.Underlays.ToArray();
@@ -161,6 +167,10 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         if (immutableAppearance.Filters.Length != Filters.Length) return false;
         if (immutableAppearance.Verbs.Length != Verbs.Length) return false;
         if (immutableAppearance.Override != Override) return false;
+        if (immutableAppearance.Maptext != Maptext) return false;
+        if (immutableAppearance.MaptextSize != MaptextSize) return false;
+        if (immutableAppearance.MaptextOffset != MaptextOffset) return false;
+
 
         for (int i = 0; i < Filters.Length; i++) {
             if (immutableAppearance.Filters[i] != Filters[i]) return false;
@@ -227,6 +237,9 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         hashCode.Add(RenderTarget);
         hashCode.Add(BlendMode);
         hashCode.Add(AppearanceFlags);
+        hashCode.Add(Maptext);
+        hashCode.Add(MaptextOffset);
+        hashCode.Add(MaptextSize);
 
         foreach (ImmutableAppearance overlay in Overlays) {
             hashCode.Add(overlay.GetHashCode());
@@ -405,6 +418,18 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
 
                     break;
                 }
+                case IconAppearanceProperty.Maptext: {
+                    Maptext = buffer.ReadString();
+                    break;
+                }
+                case IconAppearanceProperty.MaptextSize: {
+                    MaptextSize = (buffer.ReadVariableInt32(), buffer.ReadVariableInt32());
+                    break;
+                }
+                case IconAppearanceProperty.MaptextOffset: {
+                    MaptextOffset = (buffer.ReadVariableInt32(), buffer.ReadVariableInt32());
+                    break;
+                }
                 default:
                     throw new Exception($"Invalid property {property}");
             }
@@ -442,6 +467,9 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         result.Opacity = Opacity;
         result.MouseOpacity = MouseOpacity;
         result.Override = Override;
+        result.Maptext = Maptext;
+        result.MaptextOffset = MaptextOffset;
+        result.MaptextSize = MaptextSize;
 
         result.Overlays.EnsureCapacity(Overlays.Length);
         result.Underlays.EnsureCapacity(Underlays.Length);
@@ -626,6 +654,24 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
             for (int i = 0; i < 6; i++) {
                 buffer.Write(Transform[i]);
             }
+        }
+
+        if(!string.IsNullOrEmpty(Maptext)){
+            buffer.Write((byte) IconAppearanceProperty.Maptext);
+            buffer.Write(Maptext);
+        }
+
+        if (MaptextOffset != MutableAppearance.Default.MaptextOffset) {
+            buffer.Write((byte)IconAppearanceProperty.MaptextOffset);
+            buffer.WriteVariableInt32(MaptextOffset.X);
+            buffer.WriteVariableInt32(MaptextOffset.Y);
+        }
+
+
+        if (MaptextSize != MutableAppearance.Default.MaptextSize) {
+            buffer.Write((byte)IconAppearanceProperty.MaptextSize);
+            buffer.WriteVariableInt32(MaptextSize.X);
+            buffer.WriteVariableInt32(MaptextSize.Y);
         }
 
         buffer.Write((byte)IconAppearanceProperty.End);

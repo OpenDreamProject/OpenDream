@@ -186,8 +186,12 @@
 			src.maptext = null;
 		else
 			src.maptext = "Hello!"
-			animate(src, maptext="Hi!", maptext_x=64, maptext_y=64, time=50)
+			animate(src, maptext_x=64, maptext_y=64, time=50)
+			animate(maptext_x=64, maptext_y=-64, time=50)
 			animate(maptext_x=-64, maptext_y=-64, time=50)
+			animate(maptext_x=64, maptext_y=-64, time=50)
+			animate(maptext_x=0, maptext_y=0, time=50)
+			animate(maptext="Hello :)", time=10)
 
 
 	verb/demo_filters()

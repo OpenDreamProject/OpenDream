@@ -6,13 +6,14 @@ using Robust.Shared.Prototypes;
 using OpenDreamClient.Resources;
 using OpenDreamClient.Resources.ResourceTypes;
 using Robust.Shared.Timing;
+using OpenDreamShared.Network.Messages;
 
 namespace OpenDreamClient.Rendering;
 
 internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
-    private Dictionary<int, IconAppearance> _appearances = new();
-    private readonly Dictionary<int, List<Action<IconAppearance>>> _appearanceLoadCallbacks = new();
-    private readonly Dictionary<int, DreamIcon> _turfIcons = new();
+    private Dictionary<uint, ImmutableAppearance> _appearances = new();
+    private readonly Dictionary<uint, List<Action<ImmutableAppearance>>> _appearanceLoadCallbacks = new();
+    private readonly Dictionary<uint, DreamIcon> _turfIcons = new();
     private readonly Dictionary<DreamFilter, ShaderInstance> _filterShaders = new();
 
     [Dependency] private readonly IEntityManager _entityManager = default!;
@@ -23,7 +24,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     [Dependency] private readonly DMISpriteSystem _spriteSystem = default!;
 
     public override void Initialize() {
-        SubscribeNetworkEvent<NewAppearanceEvent>(OnNewAppearance);
+        SubscribeNetworkEvent<RemoveAppearanceEvent>(e => _appearances.Remove(e.AppearanceId));
         SubscribeNetworkEvent<AnimationEvent>(OnAnimation);
         SubscribeLocalEvent<DMISpriteComponent, WorldAABBEvent>(OnWorldAABB);
     }
@@ -34,19 +35,21 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         _turfIcons.Clear();
     }
 
-    public void SetAllAppearances(Dictionary<int, IconAppearance> appearances) {
+    public void SetAllAppearances(Dictionary<uint, ImmutableAppearance> appearances) {
         _appearances = appearances;
-
-        foreach (KeyValuePair<int, IconAppearance> pair in _appearances) {
+        //need to do this because all overlays can't be resolved until the whole appearance table is populated
+        foreach(KeyValuePair<uint, ImmutableAppearance> pair in _appearances) {
+            pair.Value.ResolveOverlays(this);
             if (_appearanceLoadCallbacks.TryGetValue(pair.Key, out var callbacks)) {
                 foreach (var callback in callbacks) callback(pair.Value);
             }
         }
     }
 
-    public void LoadAppearance(int appearanceId, Action<IconAppearance> loadCallback) {
+    public void LoadAppearance(uint appearanceId, Action<ImmutableAppearance> loadCallback) {
         if (_appearances.TryGetValue(appearanceId, out var appearance)) {
             loadCallback(appearance);
+            return;
         }
 
         if (!_appearanceLoadCallbacks.ContainsKey(appearanceId)) {
@@ -56,8 +59,8 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         _appearanceLoadCallbacks[appearanceId].Add(loadCallback);
     }
 
-    public DreamIcon GetTurfIcon(int turfId) {
-        int appearanceId = turfId - 1;
+    public DreamIcon GetTurfIcon(uint turfId) {
+        uint appearanceId = turfId;
 
         if (!_turfIcons.TryGetValue(appearanceId, out var icon)) {
             icon = new DreamIcon(_spriteSystem.RenderTargetPool, _gameTiming, _clyde, this, appearanceId);
@@ -67,22 +70,31 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         return icon;
     }
 
-    private void OnNewAppearance(NewAppearanceEvent e) {
-        _appearances[e.AppearanceId] = e.Appearance;
+    public void OnNewAppearance(MsgNewAppearance e) {
+        uint appearanceId = e.Appearance.MustGetId();
+        _appearances[appearanceId] = e.Appearance;
+        _appearances[appearanceId].ResolveOverlays(this);
 
-        if (_appearanceLoadCallbacks.TryGetValue(e.AppearanceId, out var callbacks)) {
-            foreach (var callback in callbacks) callback(e.Appearance);
+        if (_appearanceLoadCallbacks.TryGetValue(appearanceId, out var callbacks)) {
+            foreach (var callback in callbacks) callback(_appearances[appearanceId]);
         }
     }
 
     private void OnAnimation(AnimationEvent e) {
-        EntityUid ent = _entityManager.GetEntity(e.Entity);
-        if (!_entityManager.TryGetComponent<DMISpriteComponent>(ent, out var sprite))
-            return;
+        if(e.Entity == NetEntity.Invalid && e.TurfId is not null) { //it's a turf or area
+            if(_turfIcons.TryGetValue(e.TurfId.Value-1, out var turfIcon))
+                LoadAppearance(e.TargetAppearanceId, targetAppearance => {
+                    turfIcon.StartAppearanceAnimation(targetAppearance, e.Duration, e.Easing, e.Loop, e.Flags, e.Delay, e.ChainAnim);
+                });
+        } else { //image or movable
+            EntityUid ent = _entityManager.GetEntity(e.Entity);
+            if (!_entityManager.TryGetComponent<DMISpriteComponent>(ent, out var sprite))
+                return;
 
-        LoadAppearance(e.TargetAppearanceId, targetAppearance => {
-            sprite.Icon.StartAppearanceAnimation(targetAppearance, e.Duration, e.Easing, e.Loop, e.Flags, e.Delay, e.ChainAnim);
-        });
+            LoadAppearance(e.TargetAppearanceId, targetAppearance => {
+                sprite.Icon.StartAppearanceAnimation(targetAppearance, e.Duration, e.Easing, e.Loop, e.Flags, e.Delay, e.ChainAnim);
+            });
+        }
     }
 
     private void OnWorldAABB(EntityUid uid, DMISpriteComponent comp, ref WorldAABBEvent e) {
@@ -196,5 +208,13 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         filter.Used = true;
         _filterShaders[filter] = instance;
         return instance;
+    }
+
+    public override ImmutableAppearance MustGetAppearanceById(uint appearanceId) {
+        return _appearances[appearanceId];
+    }
+
+    public override void RemoveAppearance(ImmutableAppearance appearance) {
+        throw new NotImplementedException();
     }
 }

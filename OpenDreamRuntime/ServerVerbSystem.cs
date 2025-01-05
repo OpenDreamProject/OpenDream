@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Linq;
 using DMCompiler.DM;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
@@ -180,8 +181,7 @@ public sealed class ServerVerbSystem : VerbSystem {
             return true;
         } else if (src is DreamObjectAtom atom) {
             var appearance = _atomManager.MustGetAppearance(atom);
-
-            if (appearance?.Verbs.Contains(verb.VerbId.Value) is not true) // Inside atom.verbs?
+            if (appearance.Verbs.Contains(verb.VerbId.Value) is not true) // Inside atom.verbs?
                 return false;
         }
 

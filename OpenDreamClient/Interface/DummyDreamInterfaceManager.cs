@@ -1,6 +1,8 @@
 using OpenDreamClient.Interface.Controls;
 using OpenDreamClient.Interface.Descriptors;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Network.Messages;
+using Robust.Shared.Network;
 using Robust.Shared.Timing;
 
 namespace OpenDreamClient.Interface;
@@ -18,8 +20,10 @@ public sealed class DummyDreamInterfaceManager : IDreamInterfaceManager {
     public ControlMap? DefaultMap => null;
     public ViewRange View => new(5);
     public bool ShowPopupMenus => true;
+    [Dependency] private readonly IClientNetManager _netManager = default!;
 
     public void Initialize() {
+        _netManager.RegisterNetMessage<MsgLoadInterface>((_) => _netManager.ClientSendMessage(new MsgAckLoadInterface()));
     }
 
     public void FrameUpdate(FrameEventArgs frameEventArgs) {

@@ -206,7 +206,7 @@ internal sealed class DreamViewOverlay : Overlay {
                 current.ColorMatrixToApply = icon.Appearance.ColorMatrix;
             } else {
                 current.ColorToApply = parentIcon.ColorToApply * icon.Appearance.Color;
-                ColorMatrix.Multiply(ref parentIcon.ColorMatrixToApply, ref icon.Appearance.ColorMatrix, out current.ColorMatrixToApply);
+                ColorMatrix.Multiply(in parentIcon.ColorMatrixToApply, in icon.Appearance.ColorMatrix, out current.ColorMatrixToApply);
             }
 
             if ((icon.Appearance.AppearanceFlags & AppearanceFlags.ResetAlpha) != 0 || keepTogether) //RESET_ALPHA
@@ -321,9 +321,10 @@ internal sealed class DreamViewOverlay : Overlay {
                     continue;
                 if(sprite.Icon.Appearance == null)
                     continue;
-                if(sprite.Icon.Appearance.Override)
+                if(sprite.Icon.Appearance.Override) {
                     current.MainIcon = sprite.Icon;
-                else
+                    current.Position = current.Position + (sprite.Icon.Appearance.TotalPixelOffset / (float)EyeManager.PixelsPerMeter);
+                } else
                     ProcessIconComponents(sprite.Icon, current.Position, uid, isScreen, ref tieBreaker, result, current);
             }
         }
@@ -599,7 +600,7 @@ internal sealed class DreamViewOverlay : Overlay {
         // Gather up all the data the view algorithm needs
         while (tileRefs.MoveNext(out var tileRef)) {
             var delta = tileRef.GridIndices - eyeTile.GridIndices;
-            var appearance = _appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId).Appearance;
+            var appearance = _appearanceSystem.GetTurfIcon((uint)tileRef.Tile.TypeId).Appearance;
             if (appearance == null)
                 continue;
 
@@ -665,7 +666,7 @@ internal sealed class DreamViewOverlay : Overlay {
             tValue = 0;
             //pass the turf coords for client.images lookup
             Vector3 turfCoords = new Vector3(tileRef.X, tileRef.Y, (int) worldPos.MapId);
-            ProcessIconComponents(_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), worldPos.Position - Vector2.One, EntityUid.Invalid, false, ref tValue, _spriteContainer, turfCoords: turfCoords);
+            ProcessIconComponents(_appearanceSystem.GetTurfIcon((uint)tileRef.Tile.TypeId), worldPos.Position - Vector2.One, EntityUid.Invalid, false, ref tValue, _spriteContainer, turfCoords: turfCoords);
         }
 
         // Visible entities

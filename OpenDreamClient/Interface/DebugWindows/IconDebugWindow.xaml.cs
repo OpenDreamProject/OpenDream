@@ -44,25 +44,25 @@ internal sealed partial class IconDebugWindow : OSWindow {
 
         // Would be nice if we could use ViewVariables instead, but I couldn't find a nice way to do that
         // Would be especially nice if we could use VV to make these editable
-        AddPropertyIfNotDefault("Name", appearance.Name, IconAppearance.Default.Name);
-        AddPropertyIfNotDefault("Icon State", appearance.IconState, IconAppearance.Default.IconState);
-        AddPropertyIfNotDefault("Direction", appearance.Direction, IconAppearance.Default.Direction);
-        AddPropertyIfNotDefault("Inherits Direction", appearance.InheritsDirection, IconAppearance.Default.InheritsDirection);
-        AddPropertyIfNotDefault("Pixel Offset X/Y", appearance.PixelOffset, IconAppearance.Default.PixelOffset);
-        AddPropertyIfNotDefault("Pixel Offset W/Z", appearance.PixelOffset2, IconAppearance.Default.PixelOffset2);
-        AddPropertyIfNotDefault("Color", appearance.Color, IconAppearance.Default.Color);
-        AddPropertyIfNotDefault("Alpha", appearance.Alpha, IconAppearance.Default.Alpha);
-        AddPropertyIfNotDefault("Glide Size", appearance.GlideSize, IconAppearance.Default.GlideSize);
-        AddPropertyIfNotDefault("Layer", appearance.Layer, IconAppearance.Default.Layer);
-        AddPropertyIfNotDefault("Plane", appearance.Plane, IconAppearance.Default.Plane);
-        AddPropertyIfNotDefault("Blend Mode", appearance.BlendMode, IconAppearance.Default.BlendMode);
-        AddPropertyIfNotDefault("Appearance Flags", appearance.AppearanceFlags, IconAppearance.Default.AppearanceFlags);
-        AddPropertyIfNotDefault("Invisibility", appearance.Invisibility, IconAppearance.Default.Invisibility);
-        AddPropertyIfNotDefault("Opacity", appearance.Opacity, IconAppearance.Default.Opacity);
-        AddPropertyIfNotDefault("Override", appearance.Override, IconAppearance.Default.Override);
-        AddPropertyIfNotDefault("Render Source", appearance.RenderSource, IconAppearance.Default.RenderSource);
-        AddPropertyIfNotDefault("Render Target", appearance.RenderTarget, IconAppearance.Default.RenderTarget);
-        AddPropertyIfNotDefault("Mouse Opacity", appearance.MouseOpacity, IconAppearance.Default.MouseOpacity);
+        AddPropertyIfNotDefault("Name", appearance.Name, MutableAppearance.Default.Name);
+        AddPropertyIfNotDefault("Icon State", appearance.IconState, MutableAppearance.Default.IconState);
+        AddPropertyIfNotDefault("Direction", appearance.Direction, MutableAppearance.Default.Direction);
+        AddPropertyIfNotDefault("Inherits Direction", appearance.InheritsDirection, MutableAppearance.Default.InheritsDirection);
+        AddPropertyIfNotDefault("Pixel Offset X/Y", appearance.PixelOffset, MutableAppearance.Default.PixelOffset);
+        AddPropertyIfNotDefault("Pixel Offset W/Z", appearance.PixelOffset2, MutableAppearance.Default.PixelOffset2);
+        AddPropertyIfNotDefault("Color", appearance.Color, MutableAppearance.Default.Color);
+        AddPropertyIfNotDefault("Alpha", appearance.Alpha, MutableAppearance.Default.Alpha);
+        AddPropertyIfNotDefault("Glide Size", appearance.GlideSize, MutableAppearance.Default.GlideSize);
+        AddPropertyIfNotDefault("Layer", appearance.Layer, MutableAppearance.Default.Layer);
+        AddPropertyIfNotDefault("Plane", appearance.Plane, MutableAppearance.Default.Plane);
+        AddPropertyIfNotDefault("Blend Mode", appearance.BlendMode, MutableAppearance.Default.BlendMode);
+        AddPropertyIfNotDefault("Appearance Flags", appearance.AppearanceFlags, MutableAppearance.Default.AppearanceFlags);
+        AddPropertyIfNotDefault("Invisibility", appearance.Invisibility, MutableAppearance.Default.Invisibility);
+        AddPropertyIfNotDefault("Opacity", appearance.Opacity, MutableAppearance.Default.Opacity);
+        AddPropertyIfNotDefault("Override", appearance.Override, MutableAppearance.Default.Override);
+        AddPropertyIfNotDefault("Render Source", appearance.RenderSource, MutableAppearance.Default.RenderSource);
+        AddPropertyIfNotDefault("Render Target", appearance.RenderTarget, MutableAppearance.Default.RenderTarget);
+        AddPropertyIfNotDefault("Mouse Opacity", appearance.MouseOpacity, MutableAppearance.Default.MouseOpacity);
 
         foreach (var overlay in _icon.Overlays) {
             AddDreamIconButton(OverlaysGrid, overlay);

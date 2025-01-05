@@ -1,6 +1,7 @@
 ﻿using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.DebugAdapter;
+using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 
 namespace OpenDreamRuntime {

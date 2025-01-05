@@ -20,7 +20,7 @@ public sealed class MsgAllAppearances(Dictionary<uint, ImmutableAppearance> allA
 
         for (int i = 0; i < count; i++) {
             var appearance = new ImmutableAppearance(buffer, serializer);
-            AllAppearances.Add(appearance.MustGetID(), appearance);
+            AllAppearances.Add(appearance.MustGetId(), appearance);
         }
     }
 

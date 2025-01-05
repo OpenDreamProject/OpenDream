@@ -32,13 +32,14 @@ public sealed class AtomManager {
     private readonly Dictionary<EntityUid, DreamObjectMovable> _entityToAtom = new();
     private readonly Dictionary<DreamObjectDefinition, MutableAppearance> _definitionAppearanceCache = new();
 
-    private ServerAppearanceSystem? AppearanceSystem{
-                                                    get {
-                                                        if(_appearanceSystem is null)
-                                                            _entitySystemManager.TryGetEntitySystem(out _appearanceSystem);
-                                                        return _appearanceSystem;
-                                                    }
-                                                }
+    private ServerAppearanceSystem? AppearanceSystem {
+        get {
+            if(_appearanceSystem is null)
+                _entitySystemManager.TryGetEntitySystem(out _appearanceSystem);
+            return _appearanceSystem;
+        }
+    }
+    
     private ServerVerbSystem VerbSystem => _verbSystem ??= _entitySystemManager.GetEntitySystem<ServerVerbSystem>();
     private ServerAppearanceSystem? _appearanceSystem;
     private ServerVerbSystem? _verbSystem;
@@ -596,7 +597,7 @@ public sealed class AtomManager {
         } else if (atom is DreamObjectTurf turf) {
             //TODO: turf appearances are just set to the end appearance, they do not get properly animated
             _dreamMapManager.SetTurfAppearance(turf, appearance);
-            turfId = turf.Appearance.MustGetID();
+            turfId = turf.Appearance.MustGetId();
         } else if (atom is DreamObjectArea area) {
             //fuck knows, this will trigger a bunch of turf updates to? idek
         }

@@ -5,17 +5,15 @@ using Robust.Shared.GameStates;
 namespace OpenDreamRuntime.Rendering;
 
 public sealed class DMISpriteSystem : EntitySystem {
-    private ServerAppearanceSystem? _appearance;
-    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+    [Dependency] private readonly ServerAppearanceSystem _appearance = default!;
 
     public override void Initialize() {
         SubscribeLocalEvent<DMISpriteComponent, ComponentGetState>(GetComponentState);
-        _entitySystemManager.TryGetEntitySystem(out _appearance);
     }
 
     private void GetComponentState(EntityUid uid, DMISpriteComponent component, ref ComponentGetState args) {
         uint? appearanceId = (component.Appearance != null)
-            ? _appearance?.AddAppearance(component.Appearance).MustGetID()
+            ? _appearance.AddAppearance(component.Appearance).MustGetId()
             : null;
 
         args.State = new SharedDMISpriteComponent.DMISpriteComponentState(appearanceId, component.ScreenLocation);

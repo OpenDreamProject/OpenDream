@@ -11,22 +11,24 @@ using System.Diagnostics;
 namespace OpenDreamRuntime.Rendering;
 
 public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
+    public readonly ImmutableAppearance DefaultAppearance;
+
     /// <summary>
     /// Each appearance gets a unique ID when marked as registered. Here we store these as a key -> weakref in a weaktable, which does not count
     /// as a hard ref but allows quick lookup. Each object which holds an appearance MUST hold that ImmutableAppearance until it is no longer
     /// needed or it will be GC'd. Overlays & underlays are stored as hard refs on the ImmutableAppearance so you only need to hold the main appearance.
     /// </summary>
     private readonly HashSet<ProxyWeakRef> _appearanceLookup = new();
-    private readonly Dictionary<uint, ProxyWeakRef> _idToAppearance = new();
-    private uint _counter;
-    public readonly ImmutableAppearance DefaultAppearance;
-    [Dependency] private readonly IServerNetManager _networkManager = default!;
 
     /// <summary>
     /// This system is used by the PVS thread, we need to be thread-safe
     /// </summary>
     private readonly object _lock = new();
 
+    private readonly Dictionary<uint, ProxyWeakRef> _idToAppearance = new();
+    private uint _counter;
+
+    [Dependency] private readonly IServerNetManager _networkManager = default!;
     [Dependency] private readonly IPlayerManager _playerManager = default!;
 
     public ServerAppearanceSystem() {
@@ -34,7 +36,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         DefaultAppearance.MarkRegistered(_counter++); //first appearance registered gets id 0, this is the blank default appearance
         ProxyWeakRef proxyWeakRef = new(DefaultAppearance);
         _appearanceLookup.Add(proxyWeakRef);
-        _idToAppearance.Add(DefaultAppearance.MustGetID(), proxyWeakRef);
+        _idToAppearance.Add(DefaultAppearance.MustGetId(), proxyWeakRef);
         //leaving this in as a sanity check for mutable and immutable appearance hashcodes covering all the same vars
         //if this debug assert fails, you've probably changed appearance var and not updated its counterpart
         Debug.Assert(DefaultAppearance.GetHashCode() == MutableAppearance.Default.GetHashCode());
@@ -59,7 +61,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
 
                 foreach(ProxyWeakRef proxyWeakRef in _appearanceLookup){
                     if(proxyWeakRef.TryGetTarget(out var immutable))
-                        sendData.Add(immutable.MustGetID(), immutable);
+                        sendData.Add(immutable.MustGetId(), immutable);
                 }
 
                 Logger.GetSawmill("appearance").Debug($"Sending {sendData.Count} appearances to new player {e.Session.Name}");
@@ -72,7 +74,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         immutableAppearance.MarkRegistered(_counter++); //lets this appearance know it needs to do GC finaliser & get an ID
         ProxyWeakRef proxyWeakRef = new(immutableAppearance);
         _appearanceLookup.Add(proxyWeakRef);
-        _idToAppearance.Add(immutableAppearance.MustGetID(), proxyWeakRef);
+        _idToAppearance.Add(immutableAppearance.MustGetId(), proxyWeakRef);
         _networkManager.ServerSendToAll(new MsgNewAppearance(immutableAppearance));
     }
 
@@ -104,8 +106,8 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
                 if(weakRef.TryGetTarget(out var target) && !ReferenceEquals(target,appearance))
                     return;
                 _appearanceLookup.Remove(proxyWeakRef);
-                _idToAppearance.Remove(appearance.MustGetID());
-                RaiseNetworkEvent(new RemoveAppearanceEvent(appearance.MustGetID()));
+                _idToAppearance.Remove(appearance.MustGetId());
+                RaiseNetworkEvent(new RemoveAppearanceEvent(appearance.MustGetId()));
             }
         }
     }
@@ -126,7 +128,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     }
 
     public void Animate(NetEntity entity, MutableAppearance targetAppearance, TimeSpan duration, AnimationEasing easing, int loop, AnimationFlags flags, int delay, bool chainAnim, uint? turfId) {
-        uint appearanceId = AddAppearance(targetAppearance).MustGetID();
+        uint appearanceId = AddAppearance(targetAppearance).MustGetId();
 
         RaiseNetworkEvent(new AnimationEvent(entity, appearanceId, duration, easing, loop, flags, delay, chainAnim, turfId));
     }
@@ -134,15 +136,15 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
 
 //this class lets us hold a weakref and also do quick lookups in hash tables
 internal sealed class ProxyWeakRef: IEquatable<ProxyWeakRef>{
-    public WeakReference<ImmutableAppearance> WeakRef;
     private readonly uint? _registeredId;
     private readonly int _hashCode;
-    public bool IsAlive => WeakRef.TryGetTarget(out var _);
-    public bool TryGetTarget([NotNullWhen(true)] out ImmutableAppearance? target) => WeakRef.TryGetTarget(out target);
+    public bool TryGetTarget([NotNullWhen(true)] out ImmutableAppearance? target) => _weakRef.TryGetTarget(out target);
+
+    private readonly WeakReference<ImmutableAppearance> _weakRef;
 
     public ProxyWeakRef(ImmutableAppearance appearance) {
-        appearance.TryGetID(out _registeredId);
-        WeakRef = new(appearance);
+        appearance.TryGetId(out _registeredId);
+        _weakRef = new(appearance);
         _hashCode = appearance.GetHashCode();
     }
 
@@ -157,7 +159,7 @@ internal sealed class ProxyWeakRef: IEquatable<ProxyWeakRef>{
             return false;
         if(_registeredId is not null && _registeredId == proxy._registeredId)
             return true;
-        if(WeakRef.TryGetTarget(out ImmutableAppearance? thisRef) && proxy.WeakRef.TryGetTarget(out ImmutableAppearance? thatRef))
+        if(_weakRef.TryGetTarget(out ImmutableAppearance? thisRef) && proxy._weakRef.TryGetTarget(out ImmutableAppearance? thatRef))
             return thisRef.Equals(thatRef);
         return false;
     }

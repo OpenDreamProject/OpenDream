@@ -240,7 +240,7 @@ namespace OpenDreamRuntime {
             } else if (value.TryGetValueAsAppearance(out var appearance)) {
                 refType = RefType.DreamAppearance;
                 _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
-                idx = (int)_appearanceSystem.AddAppearance(appearance).MustGetID();
+                idx = (int)_appearanceSystem.AddAppearance(appearance).MustGetId();
             } else if (value.TryGetValueAsDreamResource(out var refRsc)) {
                 refType = RefType.DreamResource;
                 idx = refRsc.Id;

@@ -256,7 +256,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             float timeFactor = Math.Clamp((float)(DateTime.Now - animation.Start).Ticks / animation.Duration.Ticks, 0.0f, 1.0f);
             float factor = 0;
             if((animation.Easing & AnimationEasing.EaseIn) != 0)
-                timeFactor = timeFactor/2.0f;
+                timeFactor /= 2.0f;
             if((animation.Easing & AnimationEasing.EaseOut) != 0)
                 timeFactor = 0.5f+timeFactor/2.0f;
 
@@ -287,6 +287,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
                         bounce -= 2.625f;
                         factor = MathF.Pow(bounce, 2) + 0.984375f;
                     }
+
                     break;
                 case AnimationEasing.Elastic: //http://www.java2s.com/example/csharp/system/easing-equation-function-for-an-elastic-exponentially-decaying-sine-w.html with d=1, s=pi/2, c=2, b = -1
                     factor = MathF.Pow(2, -10 * timeFactor) * MathF.Sin((timeFactor - MathF.PI/2.0f) * (2.0f*MathF.PI/0.3f)) + 1.0f;
@@ -314,27 +315,22 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             suffix
             */
 
-            if (endAppearance.Direction != _appearance.Direction) {
+            if (endAppearance.Direction != _appearance.Direction)
                 _animatedAppearance.Direction = endAppearance.Direction;
-            }
-            if (endAppearance.Icon != _appearance.Icon) {
+            if (endAppearance.Icon != _appearance.Icon)
                 _animatedAppearance.Icon = endAppearance.Icon;
-            }
-            if (endAppearance.IconState != _appearance.IconState) {
+            if (endAppearance.IconState != _appearance.IconState)
                 _animatedAppearance.IconState = endAppearance.IconState;
-            }
-            if (endAppearance.Invisibility != _appearance.Invisibility) {
+            if (endAppearance.Invisibility != _appearance.Invisibility)
                 _animatedAppearance.Invisibility = endAppearance.Invisibility;
-            }
+
             /* TODO maptext
-            if (endAppearance.MapText != _appearance.MapText) {
+            if (endAppearance.MapText != _appearance.MapText)
                 appearance.MapText = endAppearance.MapText;
-            }
             */
             /* TODO suffix
-            if (endAppearance.Suffix != _appearance.Suffix) {
+            if (endAppearance.Suffix != _appearance.Suffix)
                 appearance.Suffix = endAppearance.Suffix;
-            }
             */
 
             //smooth animation properties
@@ -367,7 +363,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
                 ColorMatrix.Interpolate(in _appearance.ColorMatrix, in endAppearance.ColorMatrix, factor, out _animatedAppearance.ColorMatrix);
             }
 
-            if (endAppearance.GlideSize != _appearance.GlideSize) {
+            if (!endAppearance.GlideSize.Equals(_appearance.GlideSize)) {
                 _animatedAppearance.GlideSize = ((1-factor) * _appearance.GlideSize) + (factor * endAppearance.GlideSize);
             }
 
@@ -377,7 +373,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             }
             */
 
-            if (endAppearance.Layer != _appearance.Layer) {
+            if (!endAppearance.Layer.Equals(_appearance.Layer)) {
                 _animatedAppearance.Layer = ((1-factor) * _appearance.Layer) + (factor * endAppearance.Layer);
             }
 
@@ -481,7 +477,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
 
         Overlays.Clear();
         foreach (var overlayAppearance in Appearance.Overlays) {
-            DreamIcon overlay = new DreamIcon(renderTargetPool, gameTiming, clyde, appearanceSystem, overlayAppearance.MustGetID(), _direction);
+            DreamIcon overlay = new DreamIcon(renderTargetPool, gameTiming, clyde, appearanceSystem, overlayAppearance.MustGetId(), _direction);
             overlay.SizeChanged += CheckSizeChange;
 
             Overlays.Add(overlay);
@@ -489,7 +485,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
 
         Underlays.Clear();
         foreach (var underlayAppearance in Appearance.Underlays) {
-            DreamIcon underlay = new DreamIcon(renderTargetPool, gameTiming, clyde, appearanceSystem, underlayAppearance.MustGetID(), _direction);
+            DreamIcon underlay = new DreamIcon(renderTargetPool, gameTiming, clyde, appearanceSystem, underlayAppearance.MustGetId(), _direction);
             underlay.SizeChanged += CheckSizeChange;
 
             Underlays.Add(underlay);

@@ -71,7 +71,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     }
 
     public void OnNewAppearance(MsgNewAppearance e) {
-        uint appearanceId = e.Appearance.MustGetID();
+        uint appearanceId = e.Appearance.MustGetId();
         _appearances[appearanceId] = e.Appearance;
         _appearances[appearanceId].ResolveOverlays(this);
 

@@ -51,13 +51,6 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
     [ViewVariables] public readonly MouseOpacity MouseOpacity = MutableAppearance.Default.MouseOpacity;
     [ViewVariables] public readonly ImmutableAppearance[] Overlays;
     [ViewVariables] public readonly ImmutableAppearance[] Underlays;
-
-    [NonSerialized]
-    private List<uint>? _overlayIDs;
-
-    [NonSerialized]
-    private List<uint>? _underlayIDs;
-
     [ViewVariables] public readonly Robust.Shared.GameObjects.NetEntity[] VisContents;
     [ViewVariables] public readonly DreamFilter[] Filters;
     [ViewVariables] public readonly int[] Verbs;
@@ -73,24 +66,8 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
     // PixelOffset2 behaves the same as PixelOffset in top-down mode, so this is used
     public Vector2i TotalPixelOffset => PixelOffset + PixelOffset2;
 
-    public void MarkRegistered(uint registeredId){
-        _registeredId = registeredId;
-        _needsFinalizer = true;
-    }
-
-    //this should only be called client-side, after network transfer
-    public void ResolveOverlays(SharedAppearanceSystem appearanceSystem) {
-        if(_overlayIDs is not null)
-            for (int i = 0; i < _overlayIDs.Count; i++)
-                Overlays[i] = appearanceSystem.MustGetAppearanceById(_overlayIDs[i]);
-
-        if(_underlayIDs is not null)
-            for (int i = 0; i < _underlayIDs.Count; i++)
-                Underlays[i] = appearanceSystem.MustGetAppearanceById(_underlayIDs[i]);
-
-        _overlayIDs = null;
-        _underlayIDs = null;
-    }
+    [NonSerialized] private List<uint>? _overlayIDs;
+    [NonSerialized] private List<uint>? _underlayIDs;
 
     public ImmutableAppearance(MutableAppearance appearance, SharedAppearanceSystem? serverAppearanceSystem) {
         _appearanceSystem = serverAppearanceSystem;
@@ -127,6 +104,30 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         for (int i = 0; i < 6; i++) {
             Transform[i] = appearance.Transform[i];
         }
+    }
+
+    ~ImmutableAppearance() {
+        if(_needsFinalizer && _registeredId is not null)
+            _appearanceSystem!.RemoveAppearance(this);
+    }
+
+    public void MarkRegistered(uint registeredId){
+        _registeredId = registeredId;
+        _needsFinalizer = true;
+    }
+
+    //this should only be called client-side, after network transfer
+    public void ResolveOverlays(SharedAppearanceSystem appearanceSystem) {
+        if(_overlayIDs is not null)
+            for (int i = 0; i < _overlayIDs.Count; i++)
+                Overlays[i] = appearanceSystem.MustGetAppearanceById(_overlayIDs[i]);
+
+        if(_underlayIDs is not null)
+            for (int i = 0; i < _underlayIDs.Count; i++)
+                Underlays[i] = appearanceSystem.MustGetAppearanceById(_underlayIDs[i]);
+
+        _overlayIDs = null;
+        _underlayIDs = null;
     }
 
     public override bool Equals(object? obj) => obj is ImmutableAppearance immutable && Equals(immutable);
@@ -188,13 +189,13 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         return true;
     }
 
-    public uint MustGetID() {
+    public uint MustGetId() {
         if(_registeredId is null)
             throw new InvalidDataException("GetID() was called on an appearance without an ID");
         return (uint)_registeredId;
     }
 
-    public bool TryGetID([NotNullWhen(true)] out uint? id) {
+    public bool TryGetId([NotNullWhen(true)] out uint? id) {
         id = _registeredId;
         return _registeredId is not null;
     }
@@ -459,7 +460,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
 
     public void WriteToBuffer(NetOutgoingMessage buffer, IRobustSerializer serializer) {
         buffer.Write((byte)IconAppearanceProperty.Id);
-        buffer.WriteVariableUInt32(MustGetID());
+        buffer.WriteVariableUInt32(MustGetId());
 
         if (Name != MutableAppearance.Default.Name) {
             buffer.Write((byte)IconAppearanceProperty.Name);
@@ -574,7 +575,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
 
             buffer.WriteVariableInt32(Overlays.Length);
             foreach (var overlay in Overlays) {
-                buffer.WriteVariableUInt32(overlay.MustGetID());
+                buffer.WriteVariableUInt32(overlay.MustGetId());
             }
         }
 
@@ -583,7 +584,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
 
             buffer.WriteVariableInt32(Underlays.Length);
             foreach (var underlay in Underlays) {
-                buffer.WriteVariableUInt32(underlay.MustGetID());
+                buffer.WriteVariableUInt32(underlay.MustGetId());
             }
         }
 
@@ -632,11 +633,6 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
 
     public int ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {
         throw new NotImplementedException();
-    }
-
-    ~ImmutableAppearance() {
-        if(_needsFinalizer && _registeredId is not null)
-            _appearanceSystem!.RemoveAppearance(this);
     }
 }
 

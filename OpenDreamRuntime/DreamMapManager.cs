@@ -181,10 +181,10 @@ public sealed class DreamMapManager : IDreamMapManager {
     public void SetTurfAppearance(DreamObjectTurf turf, MutableAppearance appearance) {
         if(turf.Cell.Area.Appearance != _appearanceSystem.DefaultAppearance)
             if(!appearance.Overlays.Contains(turf.Cell.Area.Appearance)) {
-                if(!_turfAreaLookup.TryGetValue((appearance, turf.Cell.Area.Appearance.MustGetID()), out var newAppearance)) {
+                if(!_turfAreaLookup.TryGetValue((appearance, turf.Cell.Area.Appearance.MustGetId()), out var newAppearance)) {
                     newAppearance = MutableAppearance.GetCopy(appearance);
                     newAppearance.Overlays.Add(turf.Cell.Area.Appearance);
-                    _turfAreaLookup.Add((appearance, turf.Cell.Area.Appearance.MustGetID()), newAppearance);
+                    _turfAreaLookup.Add((appearance, turf.Cell.Area.Appearance.MustGetId()), newAppearance);
                 }
 
                 appearance = newAppearance;
@@ -193,7 +193,7 @@ public sealed class DreamMapManager : IDreamMapManager {
         var immutableAppearance = _appearanceSystem.AddAppearance(appearance);
 
         var level = _levels[turf.Z - 1];
-        uint turfId = immutableAppearance.MustGetID();
+        uint turfId = immutableAppearance.MustGetId();
         level.QueuedTileUpdates[(turf.X, turf.Y)] = new Tile((int)turfId);
         turf.Appearance = immutableAppearance;
     }
@@ -224,7 +224,7 @@ public sealed class DreamMapManager : IDreamMapManager {
             }
 
             var level = _levels[turf.Z - 1];
-            uint turfId = newAppearance.MustGetID();
+            uint turfId = newAppearance.MustGetId();
             level.QueuedTileUpdates[(turf.X, turf.Y)] = new Tile((int)turfId);
         }
     }

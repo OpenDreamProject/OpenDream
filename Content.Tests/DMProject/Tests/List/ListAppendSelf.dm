@@ -5,4 +5,4 @@
 
 	L2 = list(a=1, b=2)
 	L2 += L2
-	ASSERT(L2 = list(a=1, b=2))
+	ASSERT(L2 ~= list(a=1, b=2, "a", "b"))

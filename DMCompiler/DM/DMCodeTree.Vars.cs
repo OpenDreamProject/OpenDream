@@ -125,7 +125,7 @@ internal partial class DMCodeTree {
                 return false;
 
             int globalId = compiler.DMObjectTree.CreateGlobal(out DMVariable global, varDef.Type, VarName, varDef.IsConst,
-                varDef.ValType);
+                varDef.IsFinal, varDef.ValType);
 
             dmObject.AddGlobalVariable(global, globalId);
             _defined = true;
@@ -152,7 +152,7 @@ internal partial class DMCodeTree {
             if (!TryBuildValue(new(compiler, dmObject, null), varDef.Value, varDef.Type, ScopeMode.Normal, out var value))
                 return false;
 
-            var variable = new DMVariable(varDef.Type, VarName, false, varDef.IsConst, varDef.IsTmp, varDef.ValType);
+            var variable = new DMVariable(varDef.Type, VarName, false, varDef.IsConst, varDef.IsFinal, varDef.IsTmp, varDef.ValType);
             dmObject.AddVariable(variable);
             _defined = true;
 
@@ -222,6 +222,11 @@ internal partial class DMCodeTree {
                     $"Var \"{VarName}\" is const and cannot be modified");
                 _finished = true;
                 return true;
+            } else if (variable.IsFinal) {
+                compiler.Emit(WarningCode.FinalOverride, varOverride.Location,
+                    $"Var \"{VarName}\" is final and cannot be modified");
+                _finished = true;
+                return true;
             } else if (variable.ValType.IsCompileTimeReadOnly) {
                 compiler.Emit(WarningCode.WriteToConstant, varOverride.Location,
                     $"Var \"{VarName}\" is a native read-only value which cannot be modified");
@@ -267,7 +272,7 @@ internal partial class DMCodeTree {
             }
 
             int globalId = compiler.DMObjectTree.CreateGlobal(out DMVariable global, varDecl.Type, varDecl.Name, varDecl.IsConst,
-                varDecl.ValType);
+                false, varDecl.ValType);
 
             global.Value = new Null(Location.Internal);
             proc.AddGlobalVariable(global, globalId);

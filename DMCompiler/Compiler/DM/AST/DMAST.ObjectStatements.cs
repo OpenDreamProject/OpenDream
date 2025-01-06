@@ -68,6 +68,7 @@ public sealed class DMASTObjectVarDefinition(
     public bool IsStatic => _varDecl.IsStatic;
 
     public bool IsConst => _varDecl.IsConst;
+    public bool IsFinal => _varDecl.IsFinal;
     public bool IsTmp => _varDecl.IsTmp;
 
     public readonly DMComplexValueType ValType = valType;

@@ -4,24 +4,27 @@ namespace DMCompiler.DM;
 
 internal sealed class DMVariable {
     public DreamPath? Type;
-    public string Name;
-    public bool IsGlobal;
+    public readonly string Name;
+    public readonly bool IsGlobal;
+    public readonly bool IsTmp;
+    public readonly bool IsFinal;
+    public DMExpression? Value;
+    public DMComplexValueType ValType;
+
     /// <remarks>
     /// NOTE: This DMVariable may be forced constant through opendream_compiletimereadonly. This only marks that the variable has the DM quality of /const/ness.
     /// </remarks>
-    public bool IsConst;
-    public bool IsTmp;
-    public DMExpression? Value;
-    public DMComplexValueType ValType;
+    public readonly bool IsConst;
 
     public bool CanConstFold => (IsConst || ValType.Type.HasFlag(DMValueType.CompiletimeReadonly)) &&
                                 !ValType.Type.HasFlag(DMValueType.NoConstFold);
 
-    public DMVariable(DreamPath? type, string name, bool isGlobal, bool isConst, bool isTmp, DMComplexValueType? valType = null) {
+    public DMVariable(DreamPath? type, string name, bool isGlobal, bool isConst, bool isFinal, bool isTmp, DMComplexValueType? valType = null) {
         Type = type;
         Name = name;
         IsGlobal = isGlobal;
         IsConst = isConst;
+        IsFinal = isFinal;
         IsTmp = isTmp;
         Value = null;
         ValType = valType ?? DMValueType.Anything;
@@ -32,6 +35,7 @@ internal sealed class DMVariable {
         Name = copyFrom.Name;
         IsGlobal = copyFrom.IsGlobal;
         IsConst = copyFrom.IsConst;
+        IsFinal = copyFrom.IsFinal;
         IsTmp = copyFrom.IsTmp;
         Value = copyFrom.Value;
         ValType = copyFrom.ValType;

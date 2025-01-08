@@ -134,7 +134,6 @@ public class DMCompiler {
             string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
             string dmStandardDirectory = Path.Join(compilerDirectory, "DMStandard");
 
-
             // Push DMStandard to the top of the stack, prioritizing it.
             if (!Settings.NoStandard) {
                 preproc.IncludeFile(dmStandardDirectory, "_Standard.dm", true);

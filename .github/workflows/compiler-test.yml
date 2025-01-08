@@ -39,7 +39,7 @@ jobs:
     - name: Compile TestGame in directory
       run: |
         cd main\TestGame\
-        main\bin\DMCompiler\DMCompiler.exe environment.dme --suppress-unimplemented
+        ..\bin\DMCompiler\DMCompiler.exe environment.dme --suppress-unimplemented
     - name: Checkout /tg/station Master
       uses: actions/checkout@v2
       with:

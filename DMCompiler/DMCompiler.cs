@@ -129,7 +129,8 @@ public class DMCompiler {
             }
 
             // Adds the root of the DM project to FILE_DIR
-            compiler.AddResourceDirectory(Path.GetDirectoryName(files[0]) ?? "/");
+            var dirName = Path.GetDirectoryName(files[0]);
+            compiler.AddResourceDirectory(string.IsNullOrEmpty(dirName) ? "/" : dirName);
 
             string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
             string dmStandardDirectory = Path.Join(compilerDirectory, "DMStandard");

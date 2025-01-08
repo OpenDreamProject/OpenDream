@@ -162,10 +162,10 @@ internal class DMObjectTree(DMCompiler compiler) {
         return null;
     }
 
-    public int CreateGlobal(out DMVariable global, DreamPath? type, string name, bool isConst, DMComplexValueType valType) {
+    public int CreateGlobal(out DMVariable global, DreamPath? type, string name, bool isConst, bool isFinal, DMComplexValueType valType) {
         int id = Globals.Count;
 
-        global = new DMVariable(type, name, true, isConst, false, valType);
+        global = new DMVariable(type, name, true, isConst, isFinal, false, valType);
         Globals.Add(global);
         return id;
     }

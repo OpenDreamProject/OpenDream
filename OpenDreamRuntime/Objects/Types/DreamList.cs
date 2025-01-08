@@ -297,11 +297,14 @@ public class DreamList : DreamObject {
 
     public override DreamValue OperatorAppend(DreamValue b) {
         if (b.TryGetValueAsDreamList(out var bList)) {
-            foreach (DreamValue value in bList.GetValues()) {
-                if (bList._associativeValues?.TryGetValue(value, out var assocValue) is true) {
-                    SetValue(value, assocValue);
-                } else {
-                    AddValue(value);
+            var values = bList.GetValues();
+            var valueCount = values.Count; // Some lists return a reference to their internal values list which could change with each loop
+            for (int i = 0; i < valueCount; i++) {
+                var value = values[i];
+                AddValue(value); // Always add the value
+                if (bList._associativeValues?.TryGetValue(value, out var assocValue) is true) { // Ensure the associated value is correct
+                    _associativeValues ??= new();
+                    _associativeValues[value] = assocValue;
                 }
             }
         } else {
@@ -574,9 +577,9 @@ public sealed class ClientVerbsList : DreamList {
 // atom's verbs list
 // Keeps track of an appearance's verbs (atom.verbs, mutable_appearance.verbs, etc)
 public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManager, ServerVerbSystem? verbSystem, DreamObjectAtom atom) : DreamList(objectTree.List.ObjectDefinition, 0) {
-   public override DreamValue GetValue(DreamValue key) {
+    public override DreamValue GetValue(DreamValue key) {
         if (verbSystem == null)
-           return DreamValue.Null;
+            return DreamValue.Null;
         if (!key.TryGetValueAsInteger(out var index))
             throw new Exception($"Invalid index into verbs list: {key}");
 
@@ -814,12 +817,12 @@ public sealed class DreamVisContentsList : DreamList {
     public override void AddValue(DreamValue value) {
         EntityUid entity;
         if (value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable)) {
-            if(_visContents.Contains(movable))
+            if (_visContents.Contains(movable))
                 return; // vis_contents cannot contain duplicates
             _visContents.Add(movable);
             entity = movable.Entity;
         } else if (value.TryGetValueAsDreamObject<DreamObjectTurf>(out var turf)) {
-            if(_visContents.Contains(turf))
+            if (_visContents.Contains(turf))
                 return; // vis_contents cannot contain duplicates
             _visContents.Add(turf);
             entity = EntityUid.Invalid; // TODO: Support turfs in vis_contents
@@ -934,7 +937,7 @@ public sealed class DreamFilterList : DreamList {
     }
 
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
-        if (!value.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject) &&!value.IsNull)
+        if (!value.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject) && !value.IsNull)
             throw new Exception($"Cannot set value of filter list to {value}");
         if (!key.TryGetValueAsInteger(out var filterIndex) || filterIndex < 1)
             throw new Exception($"Invalid index into filter list: {key}");

@@ -33,7 +33,7 @@ public sealed partial class DMTests : ContentUnitTest {
         NoReturn = 16,      // Shouldn't return (aka stopped by a stack-overflow or runtimes)
     }
 
-    private void OnException(object? sender, Exception exception) => TestContext.WriteLine(exception);
+    private void OnException(object? sender, Exception exception) => TestContext.Out.WriteLine(exception);
 
     [OneTimeSetUp]
     public void OneTimeSetup() {
@@ -63,7 +63,7 @@ public sealed partial class DMTests : ContentUnitTest {
     [Test, TestCaseSource(nameof(GetTests))]
     public void TestFiles(string sourceFile, DMTestFlags testFlags, int errorCode) {
         string initialDirectory = Directory.GetCurrentDirectory();
-        TestContext.WriteLine($"--- TEST {sourceFile} | Flags: {testFlags}");
+        TestContext.Out.WriteLine($"--- TEST {sourceFile} | Flags: {testFlags}");
         try {
             var dmCompiler = new DMCompiler.DMCompiler();
             var compiledFile = Compile(dmCompiler, Path.Join(initialDirectory, TestsDirectory, sourceFile));
@@ -73,7 +73,7 @@ public sealed partial class DMTests : ContentUnitTest {
                 Assert.That(compiledFile, Is.Null, "Expected an error during DM compilation");
 
                 Cleanup(compiledFile);
-                TestContext.WriteLine($"--- PASS {sourceFile}");
+                TestContext.Out.WriteLine($"--- PASS {sourceFile}");
                 return;
             }
 
@@ -107,7 +107,7 @@ public sealed partial class DMTests : ContentUnitTest {
             GC.Collect();
             _dreamMan.Update();
             Cleanup(compiledFile);
-            TestContext.WriteLine($"--- PASS {sourceFile}");
+            TestContext.Out.WriteLine($"--- PASS {sourceFile}");
         } finally {
             // Restore the original CurrentDirectory, since loading a compiled JSON changes it.
             Directory.SetCurrentDirectory(initialDirectory);

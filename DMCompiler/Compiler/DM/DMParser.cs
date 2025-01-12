@@ -725,6 +725,16 @@ namespace DMCompiler.Compiler.DM {
                                     DMASTExpression control = procCall.Parameters[1].Value;
                                     return new DMASTProcStatementOutputControl(loc, leftShift.LHS, msg, control);
                                 }
+                                case "link": {
+                                    if (procCall.Parameters.Length != 1) {
+                                        Emit(WarningCode.InvalidArgumentCount, procCall.Location,
+                                            "link() requires 1 parameter");
+                                        return new DMASTInvalidProcStatement(procCall.Location);
+                                    }
+
+                                    DMASTExpression url = procCall.Parameters[0].Value;
+                                    return new DMASTProcStatementLink(loc, leftShift.LHS, url);
+                                }
                                 case "ftp": {
                                     if (procCall.Parameters.Length is not 1 and not 2) {
                                         Emit(WarningCode.InvalidArgumentCount, procCall.Location,

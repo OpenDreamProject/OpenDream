@@ -101,6 +101,7 @@ namespace DMCompiler.DM.Builders {
                 case DMASTProcStatementBrowse statementBrowse: ProcessStatementBrowse(statementBrowse); break;
                 case DMASTProcStatementBrowseResource statementBrowseResource: ProcessStatementBrowseResource(statementBrowseResource); break;
                 case DMASTProcStatementOutputControl statementOutputControl: ProcessStatementOutputControl(statementOutputControl); break;
+                case DMASTProcStatementLink statementLink: ProcessStatementLink(statementLink); break;
                 case DMASTProcStatementFtp statementFtp: ProcessStatementFtp(statementFtp); break;
                 case DMASTProcStatementOutput statementOutput: ProcessStatementOutput(statementOutput); break;
                 case DMASTProcStatementInput statementInput: ProcessStatementInput(statementInput); break;
@@ -891,6 +892,12 @@ namespace DMCompiler.DM.Builders {
             _exprBuilder.Emit(statementOutputControl.Message);
             _exprBuilder.Emit(statementOutputControl.Control);
             proc.OutputControl();
+        }
+
+        public void ProcessStatementLink(DMASTProcStatementLink statementLink) {
+            _exprBuilder.Emit(statementLink.Receiver);
+            _exprBuilder.Emit(statementLink.Url);
+            proc.Link();
         }
 
         public void ProcessStatementFtp(DMASTProcStatementFtp statementFtp) {

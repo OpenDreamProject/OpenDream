@@ -40,6 +40,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     [Dependency] private readonly IUserInterfaceManager _uiManager = default!;
     [Dependency] private readonly IRobustRandom _random = default!;
     [Dependency] private readonly ITimerManager _timerManager = default!;
+    [Dependency] private readonly IUriOpener _uriOpener = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.interface");
 
@@ -117,6 +118,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         _netManager.RegisterNetMessage<MsgWinClone>(RxWinClone);
         _netManager.RegisterNetMessage<MsgWinExists>(RxWinExists);
         _netManager.RegisterNetMessage<MsgWinGet>(RxWinGet);
+        _netManager.RegisterNetMessage<MsgLink>(RxLink);
         _netManager.RegisterNetMessage<MsgFtp>(RxFtp);
         _netManager.RegisterNetMessage<MsgLoadInterface>(RxLoadInterface);
         _netManager.RegisterNetMessage<MsgAckLoadInterface>();
@@ -254,6 +256,23 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
             _netManager.ClientSendMessage(response);
         }));
+    }
+
+    private void RxLink(MsgLink message) {
+        Uri uri;
+        try {
+            uri = new Uri(message.Url);
+        } catch (Exception e) {
+            _sawmill.Error($"Received link \"{message.Url}\" which failed to parse as a valid URI: {e.Message}");
+            return;
+        }
+
+        // TODO: This can be a topic call or a connection to another server
+        if (uri.Scheme is "http" or "https") {
+            _uriOpener.OpenUri(message.Url);
+        } else {
+            _sawmill.Warning($"Received link \"{message.Url}\" which is being ignored because it's not http or https");
+        }
     }
 
     private void RxFtp(MsgFtp message) {

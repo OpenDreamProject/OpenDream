@@ -132,7 +132,8 @@ public enum DreamProcOpcode : byte {
     [OpcodeMetadata(-1)]
     Power = 0x42,
     //0x43,
-    //0x44
+    [OpcodeMetadata(-2)]
+    Link = 0x44,
     [OpcodeMetadata(-3, OpcodeArgType.TypeId)]
     Prompt = 0x45,
     [OpcodeMetadata(-3)]

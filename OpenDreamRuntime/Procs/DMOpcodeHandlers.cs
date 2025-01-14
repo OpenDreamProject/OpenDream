@@ -2512,6 +2512,27 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Called;
         }
 
+        public static ProcStatus Link(DMProcState state) {
+            DreamValue url = state.Pop();
+            if (!state.Pop().TryGetValueAsDreamObject(out var receiver) || receiver == null)
+                return ProcStatus.Continue;
+
+            DreamConnection? connection = receiver switch {
+                DreamObjectMob receiverMob => receiverMob.Connection,
+                DreamObjectClient receiverClient => receiverClient.Connection,
+                _ => throw new Exception("Invalid link() recipient")
+            };
+
+            if (!url.TryGetValueAsString(out var urlStr)) {
+                throw new Exception($"Invalid link() url: {url}");
+            } else if (string.IsNullOrWhiteSpace(urlStr)) {
+                return ProcStatus.Continue;
+            }
+
+            connection?.SendLink(urlStr);
+            return ProcStatus.Continue;
+        }
+
         public static ProcStatus Ftp(DMProcState state) {
             DreamValue name = state.Pop();
             DreamValue file = state.Pop();

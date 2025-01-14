@@ -247,6 +247,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.CreateFilteredListEnumerator, DMOpcodeHandlers.CreateFilteredListEnumerator},
             {DreamProcOpcode.Power, DMOpcodeHandlers.Power},
             {DreamProcOpcode.Prompt, DMOpcodeHandlers.Prompt},
+            {DreamProcOpcode.Link, DMOpcodeHandlers.Link},
             {DreamProcOpcode.Ftp, DMOpcodeHandlers.Ftp},
             {DreamProcOpcode.Initial, DMOpcodeHandlers.Initial},
             {DreamProcOpcode.IsType, DMOpcodeHandlers.IsType},

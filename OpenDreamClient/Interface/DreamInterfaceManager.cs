@@ -41,6 +41,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     [Dependency] private readonly IRobustRandom _random = default!;
     [Dependency] private readonly ITimerManager _timerManager = default!;
     [Dependency] private readonly IUriOpener _uriOpener = default!;
+    [Dependency] private readonly IGameController _gameController = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.interface");
 
@@ -267,11 +268,17 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             return;
         }
 
-        // TODO: This can be a topic call or a connection to another server
+        // TODO: This can be a topic call
+
         if (uri.Scheme is "http" or "https") {
             _uriOpener.OpenUri(message.Url);
+        } else if (uri.Scheme is "ss14" or "ss14s") {
+            if (_gameController.LaunchState.FromLauncher)
+                _gameController.Redial(message.Url, "link() used to connect to another server.");
+            else
+                _sawmill.Warning("link() only supports connecting to other servers when utilizing the launcher. Ignoring.");
         } else {
-            _sawmill.Warning($"Received link \"{message.Url}\" which is being ignored because it's not http or https");
+            _sawmill.Warning($"Received link \"{message.Url}\" which is not supported. Ignoring.");
         }
     }
 

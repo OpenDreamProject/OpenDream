@@ -326,7 +326,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             if (endAppearance.Invisibility != _appearance.Invisibility)
                 _animatedAppearance.Invisibility = endAppearance.Invisibility;
             if (endAppearance.Maptext != _appearance.Maptext)
-                _appearance.Maptext = endAppearance.Maptext;
+                _animatedAppearance.Maptext = endAppearance.Maptext;
 
             /* TODO suffix
             if (endAppearance.Suffix != _appearance.Suffix)

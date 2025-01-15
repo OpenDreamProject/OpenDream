@@ -669,7 +669,6 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
             buffer.WriteVariableInt32(MaptextOffset.Y);
         }
 
-
         if (MaptextSize != MutableAppearance.Default.MaptextSize) {
             buffer.Write((byte)IconAppearanceProperty.MaptextSize);
             buffer.WriteVariableInt32(MaptextSize.X);

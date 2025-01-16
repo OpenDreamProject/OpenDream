@@ -22,7 +22,6 @@ namespace OpenDreamClient;
 public sealed class EntryPoint : GameClient {
     [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
     [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
-    [Dependency] private readonly IDreamSoundEngine _soundEngine = default!;
     [Dependency] private readonly IOverlayManager _overlayManager = default!;
     [Dependency] private readonly ILightManager _lightManager = default!;
     [Dependency] private readonly IConfigurationManager _configurationManager = default!;
@@ -86,6 +85,7 @@ public sealed class EntryPoint : GameClient {
         IoCManager.Resolve<IDreamSoundEngine>().Initialize();
 
         _netManager.RegisterNetMessage<MsgAllAppearances>(RxAllAppearances);
+        _netManager.RegisterNetMessage<MsgNewAppearance>(RxNewAppearance);
 
         if (_configurationManager.GetCVar(CVars.DisplayCompat))
             _dreamInterface.OpenAlert(
@@ -111,6 +111,15 @@ public sealed class EntryPoint : GameClient {
         }
 
         clientAppearanceSystem.SetAllAppearances(message.AllAppearances);
+    }
+
+    private void RxNewAppearance(MsgNewAppearance message) {
+        if (!_entitySystemManager.TryGetEntitySystem<ClientAppearanceSystem>(out var clientAppearanceSystem)) {
+            Logger.GetSawmill("opendream").Error("Received MsgNewAppearance before initializing entity systems");
+            return;
+        }
+
+        clientAppearanceSystem.OnNewAppearance(message);
     }
 
     // As of RobustToolbox v0.90.0.0 there's a TileEdgeOverlay that breaks our rendering

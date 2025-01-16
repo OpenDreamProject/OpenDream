@@ -26,15 +26,7 @@ public class DreamObjectMovable : DreamObjectAtom {
 
     private string? ScreenLoc {
         get => _screenLoc;
-        set {
-            _screenLoc = value;
-            if (!EntityManager.TryGetComponent<DMISpriteComponent>(Entity, out var sprite))
-                return;
-
-            sprite.ScreenLocation = !string.IsNullOrEmpty(value) ?
-                                        new ScreenLocation(value) :
-                                        new ScreenLocation(0, 0, 0, 0);
-        }
+        set => SetScreenLoc(value);
     }
 
     private string? _screenLoc;
@@ -42,6 +34,7 @@ public class DreamObjectMovable : DreamObjectAtom {
     public DreamObjectMovable(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
         Entity = AtomManager.CreateMovableEntity(this);
         SpriteComponent = EntityManager.GetComponent<DMISpriteComponent>(Entity);
+        AtomManager.SetSpriteAppearance((Entity, SpriteComponent), AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
         _transformComponent = EntityManager.GetComponent<TransformComponent>(Entity);
 
         Contents = new MovableContentsList(ObjectTree.List.ObjectDefinition, this);
@@ -198,5 +191,10 @@ public class DreamObjectMovable : DreamObjectAtom {
             default:
                 throw new ArgumentException($"Invalid loc {loc}");
         }
+    }
+
+    private void SetScreenLoc(string? screenLoc) {
+        _screenLoc = screenLoc;
+        AtomManager.SetMovableScreenLoc(this, !string.IsNullOrEmpty(screenLoc) ? new ScreenLocation(screenLoc) : new ScreenLocation(0, 0, 0, 0));
     }
 }

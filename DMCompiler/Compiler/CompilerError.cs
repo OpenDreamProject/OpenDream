@@ -22,6 +22,7 @@ public enum WarningCode {
     ItemDoesntExist = 404,
     DanglingOverride = 405,
     StaticOverride = 406,
+    FinalOverride = 407,
     // ReSharper disable once InconsistentNaming
     IAmATeaPot = 418, // TODO: Implement the HTCPC protocol for OD
     HardConstContext = 500,
@@ -49,6 +50,8 @@ public enum WarningCode {
     FallbackBuiltinArgument = 2208, // A builtin (sin(), cos(), etc) with an invalid/fallback argument
     PointlessScopeOperator = 2209,
     PointlessPositionalArgument = 2210,
+    ProcArgumentGlobal = 2211, // Prepending "/" on a proc arg (e.g. "/proc/example(/var/foo)" makes the arg a global var. Ref https://www.byond.com/forum/post/2830750
+    AmbiguousVarStatic = 2212, // Referencing a static variable when an instance variable with the same name exists
     MalformedRange = 2300,
     InvalidRange = 2301,
     InvalidSetStatement = 2302,
@@ -71,7 +74,9 @@ public enum WarningCode {
     SuspiciousSwitchCase = 3201, // "else if" cases are actually valid DM, they just spontaneously end the switch context and begin an if-else ladder within the else case of the switch
     AssignmentInConditional = 3202,
     PickWeightedSyntax = 3203,
-    AmbiguousInOrder = 3204
+    AmbiguousInOrder = 3204,
+    ExtraToken = 3205,
+    RuntimeSearchOperator = 3300,
 
     // 4000 - 4999 are reserved for runtime configuration. (TODO: Runtime doesn't know about configs yet!)
 }
@@ -114,11 +119,4 @@ public struct CompilerEmission {
         ErrorLevel.Error => $"Error OD{(int)Code:d4} at {Location.ToString()}: {Message}",
         _ => "",
     };
-}
-
-// TODO: Find a nicer way to do this
-public sealed class UnknownIdentifierException(Location location, string identifier)
-    : Exception($"Unknown identifier \"{identifier}\" - This message should not be seen") {
-    public readonly Location Location = location;
-    public readonly string Identifier = identifier;
 }

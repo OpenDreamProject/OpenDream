@@ -1,7 +1,7 @@
 ﻿/image
 	parent_type = /datum
 
-	//note these values also need to be set in IconAppearance.cs
+	//note these values also need to be set in MutableAppearance.cs
 	var/alpha = 255
 	var/appearance
 	var/appearance_flags = 0

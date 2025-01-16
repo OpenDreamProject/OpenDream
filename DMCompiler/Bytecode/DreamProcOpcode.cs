@@ -95,7 +95,8 @@ public enum DreamProcOpcode : byte {
     CreateObject = 0x2E,
     [OpcodeMetadata(-1, OpcodeArgType.Label)]
     BooleanOr = 0x2F, // Shrinks the stack by 1 or 0. Assume 1.
-    //0x30
+    [OpcodeMetadata(0, OpcodeArgType.ListSize)]
+    CreateMultidimensionalList = 0x30,
     [OpcodeMetadata(-1)]
     CompareGreaterThanOrEqual = 0x31,
     [OpcodeMetadata(-1, OpcodeArgType.Label)]
@@ -131,7 +132,8 @@ public enum DreamProcOpcode : byte {
     [OpcodeMetadata(-1)]
     Power = 0x42,
     //0x43,
-    //0x44
+    [OpcodeMetadata(-2)]
+    Link = 0x44,
     [OpcodeMetadata(-3, OpcodeArgType.TypeId)]
     Prompt = 0x45,
     [OpcodeMetadata(-3)]
@@ -253,10 +255,10 @@ public enum DreamProcOpcode : byte {
     [OpcodeMetadata]
     Abs = 0x83,
     // Peephole optimization opcodes
-    [OpcodeMetadata(0, OpcodeArgType.Reference, OpcodeArgType.Label)]
-    PushRefandJumpIfNotNull = 0x84,
     [OpcodeMetadata(-1, OpcodeArgType.Reference)]
-    AssignPop = 0x85,
+    AppendNoPush = 0x84,
+    [OpcodeMetadata(-1, OpcodeArgType.Reference)]
+    AssignNoPush = 0x85,
     [OpcodeMetadata(1, OpcodeArgType.Reference, OpcodeArgType.String)]
     PushRefAndDereferenceField = 0x86,
     [OpcodeMetadata(true, 0, OpcodeArgType.Int)]
@@ -285,14 +287,17 @@ public enum DreamProcOpcode : byte {
     CreateListNResources = 0x92,
     [OpcodeMetadata(0, OpcodeArgType.String, OpcodeArgType.Label)]
     SwitchOnString = 0x93,
-    [OpcodeMetadata(1, OpcodeArgType.Label)]
-    JumpIfNotNull = 0x94,
+    //0x94
     [OpcodeMetadata(0, OpcodeArgType.TypeId)]
     IsTypeDirect = 0x95,
     [OpcodeMetadata(0, OpcodeArgType.Reference)]
     NullRef = 0x96,
     [OpcodeMetadata(0, OpcodeArgType.Reference)]
     ReturnReferenceValue = 0x97,
+    [OpcodeMetadata(0, OpcodeArgType.Float)]
+    ReturnFloat = 0x98,
+    [OpcodeMetadata(1, OpcodeArgType.Reference, OpcodeArgType.String)]
+    IndexRefWithString = 0x99,
 }
 // ReSharper restore MissingBlankLines
 

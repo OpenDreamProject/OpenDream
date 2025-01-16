@@ -28,6 +28,7 @@ public enum DMValueType {
     //Byond here be dragons
     Unimplemented = 0x4000, // Marks that a method or property is not implemented. Throws a compiler warning if accessed.
     CompiletimeReadonly = 0x8000, // Marks that a property can only ever be read from, never written to. This is a const-ier version of const, for certain standard values like list.type
+    NoConstFold = 0x10000 // Marks that a const var cannot be const-folded during compile
 }
 
 /// <summary>
@@ -56,12 +57,10 @@ public readonly struct DMComplexValueType {
         return IsAnything || (Type & type) != 0;
     }
 
-    public bool MatchesType(DMComplexValueType type) {
+    internal bool MatchesType(DMCompiler compiler, DMComplexValueType type) {
         if (IsPath && type.IsPath) {
-            var dmObject = DMObjectTree.GetDMObject(type.TypePath!.Value, false);
-
-            // Allow subtypes
-            if (dmObject?.IsSubtypeOf(TypePath!.Value) is true)
+            if (compiler.DMObjectTree.TryGetDMObject(type.TypePath!.Value, out var dmObject) &&
+                dmObject.IsSubtypeOf(TypePath!.Value)) // Allow subtypes
                 return true;
         }
 

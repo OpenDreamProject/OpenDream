@@ -100,6 +100,15 @@ public sealed class DreamObjectWorld : DreamObject {
         _server.Shutdown("world was deleted");
     }
 
+    ~DreamObjectWorld() {
+        if (this != DreamManager.WorldInstance) {
+            Deleted = true;
+            return;
+        }
+
+        Delete(true);
+    }
+
     protected override bool TryGetVar(string varName, out DreamValue value) {
         switch (varName) {
             case "log":
@@ -205,9 +214,9 @@ public sealed class DreamObjectWorld : DreamObject {
             case "system_type":
                 //system_type value should match the defines in Defines.dm
                 if (Environment.OSVersion.Platform is PlatformID.Unix or PlatformID.MacOSX or PlatformID.Other)
-                    value = new DreamValue(0);
+                    value = new DreamValue("UNIX");
                 else
-                    value = new DreamValue(1); //Windows
+                    value = new DreamValue("MS_WINDOWS"); //Windows
 
                 return true;
 

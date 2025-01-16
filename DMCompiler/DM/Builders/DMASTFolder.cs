@@ -219,48 +219,6 @@ public class DMASTFolder {
 
                 break;
             }
-            case DMASTLeftShift leftShift: {
-                if (leftShift is { LHS: DMASTConstantInteger lhsInt, RHS: DMASTConstantInteger rhsInt }) {
-                    return new DMASTConstantInteger(expression.Location, lhsInt.Value << rhsInt.Value);
-                }
-
-                break;
-            }
-            case DMASTRightShift rightShift: {
-                if (rightShift is { LHS: DMASTConstantInteger lhsInt, RHS: DMASTConstantInteger rhsInt }) {
-                    return new DMASTConstantInteger(expression.Location, lhsInt.Value >> rhsInt.Value);
-                }
-
-                break;
-            }
-            case DMASTBinaryAnd binaryAnd: {
-                if (binaryAnd is { LHS: DMASTConstantInteger lhsInt, RHS: DMASTConstantInteger rhsInt }) {
-                    return new DMASTConstantInteger(expression.Location, lhsInt.Value & rhsInt.Value);
-                }
-
-                break;
-            }
-            case DMASTBinaryOr binaryOr: {
-                if (binaryOr is { LHS: DMASTConstantInteger lhsInt, RHS: DMASTConstantInteger rhsInt }) {
-                    return new DMASTConstantInteger(expression.Location, lhsInt.Value | rhsInt.Value);
-                }
-
-                break;
-            }
-            case DMASTBinaryNot binaryNot: {
-                if (binaryNot.Value is DMASTConstantInteger exprInt) {
-                    return new DMASTConstantInteger(expression.Location, (~exprInt.Value) & 0xFFFFFF);
-                }
-
-                break;
-            }
-            case DMASTAdd add: {
-                DMASTConstantString? lhsString = add.LHS as DMASTConstantString;
-                DMASTConstantString? rhsString = add.RHS as DMASTConstantString;
-                if (lhsString != null && rhsString != null) return new DMASTConstantString(expression.Location, lhsString.Value + rhsString.Value);
-
-                break;
-            }
 
             #endregion Math
 

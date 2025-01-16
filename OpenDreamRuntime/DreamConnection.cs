@@ -29,8 +29,9 @@ public sealed class DreamConnection {
 
     [ViewVariables] public ICommonSession? Session { get; private set; }
     [ViewVariables] public DreamObjectClient? Client { get; private set; }
-    [ViewVariables]
-    public DreamObjectMob? Mob {
+    [ViewVariables] public string Key { get; private set; }
+
+    [ViewVariables] public DreamObjectMob? Mob {
         get => _mob;
         set {
             if (_mob != value) {
@@ -54,15 +55,14 @@ public sealed class DreamConnection {
                         _mob.Connection.Mob = null;
 
                     _mob.Connection = this;
-                    _mob.Key = Session!.Name;
+                    _mob.Key = Key;
                     _mob.SpawnProc("Login", usr: _mob);
                 }
             }
         }
     }
 
-    [ViewVariables]
-    public DreamObjectMovable? Eye {
+    [ViewVariables] public DreamObjectMovable? Eye {
         get => _eye;
         set {
             _eye = value;
@@ -93,8 +93,9 @@ public sealed class DreamConnection {
         }
     }
 
-    public DreamConnection() {
+    public DreamConnection(string key) {
         IoCManager.InjectDependencies(this);
+        Key = key;
 
         _entitySystemManager.TryGetEntitySystem(out _screenOverlaySystem);
         _entitySystemManager.TryGetEntitySystem(out _clientImagesSystem);
@@ -465,6 +466,19 @@ public sealed class DreamConnection {
 
     public void WinClone(string controlId, string cloneId) {
         var msg = new MsgWinClone() { ControlId = controlId, CloneId = cloneId };
+
+        Session?.Channel.SendMessage(msg);
+    }
+
+    /// <summary>
+    /// Sends a URL to the client to open.
+    /// Can be a website, a topic call, or another server to connect to.
+    /// </summary>
+    /// <param name="url">URL to open on the client's side</param>
+    public void SendLink(string url) {
+        var msg = new MsgLink {
+            Url = url
+        };
 
         Session?.Channel.SendMessage(msg);
     }

@@ -43,7 +43,7 @@ internal sealed partial class ContextMenuPopup : Popup {
         _metadataQuery = _entityManager.GetEntityQuery<MetaDataComponent>();
     }
 
-    public void RepopulateEntities(ClientObjectReference[] entities, int? turfId) {
+    public void RepopulateEntities(ClientObjectReference[] entities, uint? turfId) {
         ContextMenu.RemoveAllChildren();
 
         if (_transformSystem == null)
@@ -52,7 +52,7 @@ internal sealed partial class ContextMenuPopup : Popup {
         foreach (var objectReference in entities) {
             if (objectReference.Type == ClientObjectReference.RefType.Entity) {
                 var entity = _entityManager.GetEntity(objectReference.Entity);
-                if (_xformQuery.TryGetComponent(entity, out TransformComponent? transform) && !_mapManager.IsGrid(_transformSystem.GetParent(transform)!.Owner)) // Not a child of another entity
+                if (_xformQuery.TryGetComponent(entity, out TransformComponent? transform) && !_mapManager.IsGrid(_transformSystem.GetParentUid(entity))) // Not a child of another entity
                     continue;
                 if (!_spriteQuery.TryGetComponent(entity, out DMISpriteComponent? sprite)) // Has a sprite
                     continue;

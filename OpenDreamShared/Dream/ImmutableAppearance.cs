@@ -210,7 +210,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         return _registeredId is not null;
     }
 
-    // ResSharper disable NonReadonlyMemberInGetHashCode
+    [SuppressMessage("ReSharper", "NonReadonlyMemberInGetHashCode")]
     public override int GetHashCode() {
         if(_storedHashCode is not null) //because everything is readonly, this only needs to be done once
             return (int)_storedHashCode;
@@ -269,7 +269,6 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         _storedHashCode = hashCode.ToHashCode();
         return (int)_storedHashCode;
     }
-    // ResSharper enable NonReadonlyMemberInGetHashCode
 
     public ImmutableAppearance(NetIncomingMessage buffer, IRobustSerializer serializer) {
         Overlays = [];

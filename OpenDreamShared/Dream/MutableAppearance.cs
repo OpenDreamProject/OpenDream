@@ -236,8 +236,9 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         return maybeColor is not null;
     }
 
-    // ResSharper disable NonReadonlyMemberInGetHashCode
+
     //it is *ESSENTIAL* that this matches the hashcode of the equivelant ImmutableAppearance. There's a debug assert and everything.
+    [SuppressMessage("ReSharper", "NonReadonlyMemberInGetHashCode")]
     public override int GetHashCode() {
         HashCode hashCode = new HashCode();
 
@@ -292,7 +293,6 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
 
         return hashCode.ToHashCode();
     }
-    // ResSharper enable NonReadonlyMemberInGetHashCode
 
     /// <summary>
     /// Parses the given colour string and sets this appearance to use it.

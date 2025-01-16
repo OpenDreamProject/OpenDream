@@ -156,11 +156,12 @@ internal static class DreamProcNativeRoot {
                 return DreamValue.Null;
             chainAnim = true;
         }
-        
+
         bundle.LastAnimatedObject = new DreamValue(obj);
         if(obj.IsSubtypeOf(bundle.ObjectTree.Filter)) {//TODO animate filters
             return DreamValue.Null;
         }
+
         // TODO: Is this the correct behavior for invalid time?
         if (!bundle.GetArgument(1, "time").TryGetValueAsFloat(out float time))
             return DreamValue.Null;
@@ -700,7 +701,6 @@ internal static class DreamProcNativeRoot {
         DreamValue file = bundle.GetArgument(0, "File");
         DreamResource? resource;
 
-
         if (file.TryGetValueAsString(out var rscPath)) {
             resource = bundle.ResourceManager.LoadResource(rscPath);
         } else if (!file.TryGetValueAsDreamResource(out resource)) {
@@ -993,9 +993,60 @@ internal static class DreamProcNativeRoot {
             if (isCreationTime.IsTruthy()) {
                 return new DreamValue((fi.CreationTime - new DateTime(2000, 1, 1)).TotalMilliseconds / 100);
             }
+
             return new DreamValue((fi.LastWriteTime - new DateTime(2000, 1, 1)).TotalMilliseconds / 100);
         }
+
         throw new Exception("Invalid path argument");
+    }
+
+    [DreamProc("get_step_to")]
+    [DreamProcParameter("Ref", Type = DreamValueTypeFlag.DreamObject)]
+    [DreamProcParameter("Trg", Type = DreamValueTypeFlag.DreamObject)]
+    [DreamProcParameter("Min", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    public static DreamValue NativeProc_get_step_to(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        var refArg = bundle.GetArgument(0, "Ref");
+        var trgArg = bundle.GetArgument(1, "Trg");
+        var minArg = (int)bundle.GetArgument(2, "Min").UnsafeGetValueAsFloat();
+
+        if (!refArg.TryGetValueAsDreamObject<DreamObjectAtom>(out var refAtom))
+            return DreamValue.Null;
+        if (!trgArg.TryGetValueAsDreamObject<DreamObjectAtom>(out var trgAtom))
+            return DreamValue.Null;
+
+        var loc = bundle.AtomManager.GetAtomPosition(refAtom);
+        var dest = bundle.AtomManager.GetAtomPosition(trgAtom);
+        var steps = bundle.MapManager.CalculateSteps(loc, dest, minArg);
+
+        // We perform a whole path-find then return only the first step
+        // Truly, DM's most optimized proc
+        return new((int)steps.FirstOrDefault());
+    }
+
+    [DreamProc("get_steps_to")]
+    [DreamProcParameter("Ref", Type = DreamValueTypeFlag.DreamObject)]
+    [DreamProcParameter("Trg", Type = DreamValueTypeFlag.DreamObject)]
+    [DreamProcParameter("Min", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    public static DreamValue NativeProc_get_steps_to(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        var refArg = bundle.GetArgument(0, "Ref");
+        var trgArg = bundle.GetArgument(1, "Trg");
+        var minArg = (int)bundle.GetArgument(2, "Min").UnsafeGetValueAsFloat();
+
+        if (!refArg.TryGetValueAsDreamObject<DreamObjectAtom>(out var refAtom))
+            return DreamValue.Null;
+        if (!trgArg.TryGetValueAsDreamObject<DreamObjectAtom>(out var trgAtom))
+            return DreamValue.Null;
+
+        var loc = bundle.AtomManager.GetAtomPosition(refAtom);
+        var dest = bundle.AtomManager.GetAtomPosition(trgAtom);
+        var steps = bundle.MapManager.CalculateSteps(loc, dest, minArg);
+        var result = bundle.ObjectTree.CreateList();
+
+        foreach (var step in steps) {
+            result.AddValue(new((int)step));
+        }
+
+        return new(result);
     }
 
     [DreamProc("hascall")]

@@ -1,4 +1,5 @@
-﻿using OpenDreamShared.Dream;
+﻿using OpenDreamRuntime.Map;
+using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -7,6 +8,8 @@ public sealed class DreamObjectTurf : DreamObjectAtom {
     public readonly TurfContentsList Contents;
     public ImmutableAppearance Appearance;
     public IDreamMapManager.Cell Cell;
+
+    public bool IsDense => GetVariable("density").IsTruthy();
 
     public DreamObjectTurf(DreamObjectDefinition objectDefinition, int x, int y, int z) : base(objectDefinition) {
         X = x;

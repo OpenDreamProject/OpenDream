@@ -10,12 +10,12 @@ using Robust.Server.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Utility;
-using Level = OpenDreamRuntime.IDreamMapManager.Level;
-using Cell = OpenDreamRuntime.IDreamMapManager.Cell;
+using Level = OpenDreamRuntime.Map.IDreamMapManager.Level;
+using Cell = OpenDreamRuntime.Map.IDreamMapManager.Cell;
 
-namespace OpenDreamRuntime;
+namespace OpenDreamRuntime.Map;
 
-public sealed class DreamMapManager : IDreamMapManager {
+public sealed partial class DreamMapManager : IDreamMapManager {
     [Dependency] private readonly DreamManager _dreamManager = default!;
     [Dependency] private readonly AtomManager _atomManager = default!;
     [Dependency] private readonly IMapManager _mapManager = default!;
@@ -497,4 +497,6 @@ public interface IDreamMapManager {
     public void SetZLevels(int levels);
     public void SetWorldSize(Vector2i size);
     public EntityUid GetZLevelEntity(int z);
+
+    public IEnumerable<AtomDirection> CalculateSteps((int X, int Y, int Z) loc, (int X, int Y, int Z) dest, int distance);
 }

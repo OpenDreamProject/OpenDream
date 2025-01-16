@@ -230,7 +230,8 @@ public sealed class DreamObjectSavefile : DreamObject {
         _sawmill ??= Logger.GetSawmill("opendream.res");
         foreach (DreamObjectSavefile savefile in SavefilesToFlush) {
             try {
-                savefile.Flush();
+                // We need to avoid Flush() recreating a nonexistent file
+                if (File.Exists(savefile.Resource!.ResourcePath)) savefile.Flush();
             } catch (Exception e) {
                 _sawmill.Error($"Error flushing savefile {savefile.Resource!.ResourcePath}: {e}");
             }
@@ -239,10 +240,12 @@ public sealed class DreamObjectSavefile : DreamObject {
     }
 
     public void Close() {
-        Flush();
+        // We need to avoid Flush() recreating a nonexistent file
+        if (File.Exists(Resource!.ResourcePath)) Flush();
         if (_isTemporary && Resource?.ResourcePath != null) {
             File.Delete(Resource.ResourcePath);
         }
+
         //check to see if the file is still in use by another savefile datum
         if(Resource?.ResourcePath != null) {
             var fineToDelete = true;
@@ -255,7 +258,9 @@ public sealed class DreamObjectSavefile : DreamObject {
             if (fineToDelete)
                 SavefileDirectories.Remove(Resource.ResourcePath);
         }
+
         Savefiles.Remove(this);
+        SavefilesToFlush.Remove(this);
     }
 
     public void Flush() {

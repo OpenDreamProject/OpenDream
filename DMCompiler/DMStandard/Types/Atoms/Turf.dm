@@ -4,6 +4,8 @@
 	layer = TURF_LAYER
 
 	Enter(atom/movable/O, atom/oldloc)
+		if (!..())
+			return FALSE
 		if (!src.Cross(O))
 			return FALSE
 
@@ -15,6 +17,8 @@
 		return TRUE
 
 	Exit(atom/movable/O, atom/newloc)
+		if (!..())
+			return FALSE
 		return src.Uncross(O)
 		// /atom/movable/Move() is responsible for calling Uncross() on contents
 

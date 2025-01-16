@@ -12,17 +12,21 @@
 
 /obj/plane_master
 	appearance_flags = PLANE_MASTER
-	
+
 /obj/plane_master/turf
 	screen_loc = "1,1"
 	plane = TURF_PLANE
 
 	New()
-		src.filters = filter(type="displace", size=100, icon=icon('icons/displace.dmi',"lense"))					
+		src.filters = filter(type="displace", size=100, icon=icon('icons/displace.dmi',"lense"))
 
 /mob/verb/examine(atom/thing as obj|mob in world)
 	set category = null
 	usr << "This is [thing]. [thing.desc]"
+
+/mob/verb/possess_key(mob/someone as mob in world)
+	set category = null
+	someone.ckey = usr.key
 
 /turf
 	icon = 'icons/turf.dmi'
@@ -45,7 +49,7 @@
 			icon = null
 		else
 			icon = 'icons/objects.dmi'
-		spawn(20)	
+		spawn(20)
 			toggleBlink()
 
 /mob
@@ -118,12 +122,12 @@
 		set name = "Walk North"
 		usr << "Walking north. Use the 'Walk Stop' verb to cease."
 		walk(src, NORTH)
-		
+
 	verb/start_walk_rand()
 		set name = "Walk Randomly"
 		usr << "Walking randomly. Use the 'Walk Stop' verb to cease."
 		walk_rand(src)
-	
+
 	verb/stop_walk()
 		set name = "Walk Stop"
 		usr << "Walking stopped."
@@ -210,7 +214,7 @@
 				if("drop_shadow")
 					src.filters = filter(type="drop_shadow", size=2)
 				if("displace")
-					src.client.screen += new /obj/plane_master/turf 
+					src.client.screen += new /obj/plane_master/turf
 			usr << "Applied [selected] filter"
 
 	verb/toggle_see_invisibility()
@@ -225,7 +229,7 @@
 		var/image/i = image(icon = 'icons/hanoi.dmi', icon_state="8")
 		i.loc = src
 		i.override = 1
-		
+
 		src.client.images += i
 		usr << "override added"
 		for(var/turf/T in range(src, 2))
@@ -243,10 +247,10 @@
 		spawn(20)
 			src << "showing main window"
 			winset(src,"mainwindow","is-visible=true")
-			
+
 	verb/winget_text_verb(var/rawtext as command_text)
 		set name = "wingettextverb"
-		world << "recieved: [rawtext]"			
+		world << "recieved: [rawtext]"
 
 	verb/test_hot_reload_interface()
 		set category = "Test"
@@ -273,6 +277,54 @@
 	verb/toggle_show_popups()
 		client.show_popup_menus = !client.show_popup_menus
 		src << "Popups are now [client.show_popup_menus ? "enabled" : "disabled"]"
+
+	// input() test		
+	verb/text_test()
+		set category = "Input Test"
+		src << input("Input test: text") as text|null
+	
+	// todo: implement
+	// verb/password_test()
+	// 	set category = "Input Test"
+	// 	src << input("Input test: password") as password|null
+		
+	verb/multiline_test()
+		set category = "Input Test"
+		src << input("Input test: message") as message|null
+		
+	verb/command_test()
+		set category = "Input Test"
+		src << input("Input test: command_text") as command_text|null
+		
+	verb/num_test()
+		set category = "Input Test"
+		src << input("Input test: num") as num|null
+		
+	verb/icon_test()
+		set category = "Input Test"
+		src << input("Input test: icon") as icon|null
+		
+	verb/sound_test()
+		set category = "Input Test"
+		src << input("Input test: sound") as sound|null
+		
+	verb/file_test()
+		set category = "Input Test"
+		src << input("Input test: file") as file|null
+		
+	// todo: implement
+	// verb/key_test()
+	// 	set category = "Input Test"
+	// 	src << input("Input test: key") as key|null
+		
+	verb/color_test()
+		set category = "Input Test"
+		src << input("Input test: color") as color|null
+		
+	verb/list_test()
+		set category = "Input Test"
+		src << input("Input test: list") as null|anything in list("option 1", "option 2", "option 3", "option 4", "option 5")
+		
 
 /mob/Stat()
 	if (statpanel("Status"))

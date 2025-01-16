@@ -40,6 +40,8 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     [Dependency] private readonly IUserInterfaceManager _uiManager = default!;
     [Dependency] private readonly IRobustRandom _random = default!;
     [Dependency] private readonly ITimerManager _timerManager = default!;
+    [Dependency] private readonly IUriOpener _uriOpener = default!;
+    [Dependency] private readonly IGameController _gameController = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.interface");
 
@@ -117,6 +119,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         _netManager.RegisterNetMessage<MsgWinClone>(RxWinClone);
         _netManager.RegisterNetMessage<MsgWinExists>(RxWinExists);
         _netManager.RegisterNetMessage<MsgWinGet>(RxWinGet);
+        _netManager.RegisterNetMessage<MsgLink>(RxLink);
         _netManager.RegisterNetMessage<MsgFtp>(RxFtp);
         _netManager.RegisterNetMessage<MsgLoadInterface>(RxLoadInterface);
         _netManager.RegisterNetMessage<MsgAckLoadInterface>();
@@ -254,6 +257,29 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
             _netManager.ClientSendMessage(response);
         }));
+    }
+
+    private void RxLink(MsgLink message) {
+        Uri uri;
+        try {
+            uri = new Uri(message.Url);
+        } catch (Exception e) {
+            _sawmill.Error($"Received link \"{message.Url}\" which failed to parse as a valid URI: {e.Message}");
+            return;
+        }
+
+        // TODO: This can be a topic call
+
+        if (uri.Scheme is "http" or "https") {
+            _uriOpener.OpenUri(message.Url);
+        } else if (uri.Scheme is "ss14" or "ss14s") {
+            if (_gameController.LaunchState.FromLauncher)
+                _gameController.Redial(message.Url, "link() used to connect to another server.");
+            else
+                _sawmill.Warning("link() only supports connecting to other servers when utilizing the launcher. Ignoring.");
+        } else {
+            _sawmill.Warning($"Received link \"{message.Url}\" which is not supported. Ignoring.");
+        }
     }
 
     private void RxFtp(MsgFtp message) {
@@ -444,7 +470,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             }
 
             default: {
-                string[] argsRaw = fullCommand.Split(' ', 2, StringSplitOptions.TrimEntries);
+                string[] argsRaw = fullCommand!.Split(' ', 2, StringSplitOptions.TrimEntries);
                 string command = argsRaw[0].ToLowerInvariant(); // Case-insensitive
 
                 if (!_entitySystemManager.TryGetEntitySystem(out ClientVerbSystem? verbSystem))

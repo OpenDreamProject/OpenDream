@@ -8,7 +8,8 @@ namespace OpenDreamClient.Rendering;
 /// Disables RobustToolbox's transform lerping and replaces it with our own gliding
 /// </summary>
 public sealed class AtomGlideSystem : EntitySystem {
-    private sealed class Glide(TransformComponent transform, DMISpriteComponent sprite) {
+    private sealed class Glide(EntityUid uid, TransformComponent transform, DMISpriteComponent sprite) {
+        public readonly EntityUid Uid = uid;
         public readonly TransformComponent Transform = transform;
         public readonly DMISpriteComponent Sprite = sprite;
         public Vector2 EndPos;
@@ -82,7 +83,7 @@ public sealed class AtomGlideSystem : EntitySystem {
             }
 
             _ignoreMoveEvent = true;
-            _transformSystem.SetLocalPositionNoLerp(glide.Transform, newPos);
+            _transformSystem.SetLocalPositionNoLerp(glide.Uid, newPos, glide.Transform);
             _ignoreMoveEvent = false;
         }
     }
@@ -123,7 +124,7 @@ public sealed class AtomGlideSystem : EntitySystem {
         }
 
         if (glide == null) {
-            glide = new(e.Component, sprite);
+            glide = new(e.Sender, e.Component, sprite);
             _currentGlides.Add(glide);
         }
 

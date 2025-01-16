@@ -180,6 +180,7 @@ namespace OpenDreamRuntime.Procs {
         private static readonly ArrayPool<DreamValue> _dreamValuePool = ArrayPool<DreamValue>.Create();
 
         #region Opcode Handlers
+
         //Human readable friendly version, which will be converted to a more efficient lookup at runtime.
         private static readonly Dictionary<DreamProcOpcode, OpcodeHandler> _opcodeHandlers = new() {
             {DreamProcOpcode.BitShiftLeft, DMOpcodeHandlers.BitShiftLeft},
@@ -206,6 +207,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.Negate, DMOpcodeHandlers.Negate},
             {DreamProcOpcode.Modulus, DMOpcodeHandlers.Modulus},
             {DreamProcOpcode.Append, DMOpcodeHandlers.Append},
+            {DreamProcOpcode.AppendNoPush, DMOpcodeHandlers.AppendNoPush},
             {DreamProcOpcode.CreateRangeEnumerator, DMOpcodeHandlers.CreateRangeEnumerator},
             {DreamProcOpcode.Input, DMOpcodeHandlers.Input},
             {DreamProcOpcode.CompareLessThanOrEqual, DMOpcodeHandlers.CompareLessThanOrEqual},
@@ -227,6 +229,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.Combine, DMOpcodeHandlers.Combine},
             {DreamProcOpcode.CreateObject, DMOpcodeHandlers.CreateObject},
             {DreamProcOpcode.BooleanOr, DMOpcodeHandlers.BooleanOr},
+            {DreamProcOpcode.CreateMultidimensionalList, DMOpcodeHandlers.CreateMultidimensionalList},
             {DreamProcOpcode.CompareGreaterThanOrEqual, DMOpcodeHandlers.CompareGreaterThanOrEqual},
             {DreamProcOpcode.SwitchCase, DMOpcodeHandlers.SwitchCase},
             {DreamProcOpcode.Mask, DMOpcodeHandlers.Mask},
@@ -244,6 +247,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.CreateFilteredListEnumerator, DMOpcodeHandlers.CreateFilteredListEnumerator},
             {DreamProcOpcode.Power, DMOpcodeHandlers.Power},
             {DreamProcOpcode.Prompt, DMOpcodeHandlers.Prompt},
+            {DreamProcOpcode.Link, DMOpcodeHandlers.Link},
             {DreamProcOpcode.Ftp, DMOpcodeHandlers.Ftp},
             {DreamProcOpcode.Initial, DMOpcodeHandlers.Initial},
             {DreamProcOpcode.IsType, DMOpcodeHandlers.IsType},
@@ -276,6 +280,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.JumpIfFalseReference, DMOpcodeHandlers.JumpIfFalseReference},
             {DreamProcOpcode.DereferenceField, DMOpcodeHandlers.DereferenceField},
             {DreamProcOpcode.DereferenceIndex, DMOpcodeHandlers.DereferenceIndex},
+            {DreamProcOpcode.IndexRefWithString, DMOpcodeHandlers.IndexRefWithString},
             {DreamProcOpcode.DereferenceCall, DMOpcodeHandlers.DereferenceCall},
             {DreamProcOpcode.PopReference, DMOpcodeHandlers.PopReference},
             {DreamProcOpcode.BitShiftLeftReference,DMOpcodeHandlers.BitShiftLeftReference},
@@ -302,9 +307,8 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.DebuggerBreakpoint, DMOpcodeHandlers.DebuggerBreakpoint},
             {DreamProcOpcode.Rgb, DMOpcodeHandlers.Rgb},
             // Peephole optimizer opcode handlers
-            {DreamProcOpcode.PushRefandJumpIfNotNull, DMOpcodeHandlers.PushReferenceAndJumpIfNotNull},
             {DreamProcOpcode.NullRef, DMOpcodeHandlers.NullRef},
-            {DreamProcOpcode.AssignPop, DMOpcodeHandlers.AssignPop},
+            {DreamProcOpcode.AssignNoPush, DMOpcodeHandlers.AssignNoPush},
             {DreamProcOpcode.PushRefAndDereferenceField, DMOpcodeHandlers.PushReferenceAndDereferenceField},
             {DreamProcOpcode.PushNRefs, DMOpcodeHandlers.PushNRefs},
             {DreamProcOpcode.PushNFloats, DMOpcodeHandlers.PushNFloats},
@@ -319,12 +323,13 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.CreateListNStrings, DMOpcodeHandlers.CreateListNStrings},
             {DreamProcOpcode.CreateListNRefs, DMOpcodeHandlers.CreateListNRefs},
             {DreamProcOpcode.CreateListNResources, DMOpcodeHandlers.CreateListNResources},
-            {DreamProcOpcode.JumpIfNotNull, DMOpcodeHandlers.JumpIfNotNull},
             {DreamProcOpcode.IsTypeDirect, DMOpcodeHandlers.IsTypeDirect},
-            {DreamProcOpcode.ReturnReferenceValue, DMOpcodeHandlers.ReturnReferenceValue}
+            {DreamProcOpcode.ReturnReferenceValue, DMOpcodeHandlers.ReturnReferenceValue},
+            {DreamProcOpcode.ReturnFloat, DMOpcodeHandlers.ReturnFloat}
         };
 
         public static readonly unsafe delegate*<DMProcState, ProcStatus>[] OpcodeHandlers;
+
         #endregion
 
         public DreamManager DreamManager => _proc.DreamManager;
@@ -484,6 +489,8 @@ namespace OpenDreamRuntime.Procs {
 
             var state = proc.CreateState(Thread, src, Usr, arguments);
             Thread.PushProcState(state);
+            if (proc is AsyncNativeProc) // Hack to ensure sleeping native procs will return our value in a no-waitfor context
+                state.Result = Result;
             return ProcStatus.Called;
         }
 
@@ -658,6 +665,7 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.Self:
                 case DMReference.Type.Usr:
                 case DMReference.Type.Args:
+                case DMReference.Type.World:
                 case DMReference.Type.SuperProc:
                 case DMReference.Type.ListIndex:
                     return new DreamReference(refType, 0);
@@ -685,32 +693,10 @@ namespace OpenDreamRuntime.Procs {
         public (DMCallArgumentsType Type, int StackSize) ReadProcArguments() {
             return ((DMCallArgumentsType) ReadByte(), ReadInt());
         }
+
         #endregion
 
         #region References
-        public bool IsNullDereference(DreamReference reference) {
-            switch (reference.Type) {
-                case DMReference.Type.Field: {
-                    if (Peek().IsNull) {
-                        PopDrop();
-                        return true;
-                    }
-
-                    return false;
-                }
-                case DMReference.Type.ListIndex: {
-                    DreamValue list = _stack[_stackIndex - 2];
-                    if (list.IsNull) {
-                        PopDrop();
-                        PopDrop();
-                        return true;
-                    }
-
-                    return false;
-                }
-                default: throw new Exception($"Invalid dereference type {reference.Type}");
-            }
-        }
 
         /// <summary>
         /// Takes a DMReference with a <see cref="DMReference.Type.ListIndex"/> type and returns the value being indexed
@@ -751,6 +737,7 @@ namespace OpenDreamRuntime.Procs {
                     if (!value.TryGetValueAsDreamObject(out Usr)) {
                         ThrowCannotAssignUsrTo(value);
                     }
+
                     break;
                 case DMReference.Type.Field: {
                     DreamValue owner = Pop();
@@ -811,6 +798,7 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.Argument: return _localVariables[reference.Value];
                 case DMReference.Type.Local: return _localVariables[ArgumentCount + reference.Value];
                 case DMReference.Type.Args: return new(new ProcArgsList(Proc.ObjectTree.List.ObjectDefinition, this));
+                case DMReference.Type.World: return new(DreamManager.WorldInstance);
                 case DMReference.Type.Field: {
                     DreamValue owner = peek ? Peek() : Pop();
 
@@ -848,7 +836,7 @@ namespace OpenDreamRuntime.Procs {
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         private void ThrowTypeHasNoField(string fieldName) {
-            throw new Exception($"Type {Instance!.ObjectDefinition!.Type} has no field called \"{fieldName}\"");
+            throw new Exception($"Type {Instance!.ObjectDefinition.Type} has no field called \"{fieldName}\"");
         }
 
         public void PopReference(DreamReference reference) {

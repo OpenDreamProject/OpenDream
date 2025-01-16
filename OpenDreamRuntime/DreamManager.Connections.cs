@@ -65,12 +65,14 @@ namespace OpenDreamRuntime {
             _netManager.RegisterNetMessage<MsgWinClone>();
             _netManager.RegisterNetMessage<MsgWinExists>();
             _netManager.RegisterNetMessage<MsgWinGet>();
+            _netManager.RegisterNetMessage<MsgLink>();
             _netManager.RegisterNetMessage<MsgFtp>();
             _netManager.RegisterNetMessage<MsgLoadInterface>();
             _netManager.RegisterNetMessage<MsgAckLoadInterface>(RxAckLoadInterface);
             _netManager.RegisterNetMessage<MsgSound>();
             _netManager.RegisterNetMessage<MsgUpdateClientInfo>();
             _netManager.RegisterNetMessage<MsgAllAppearances>();
+            _netManager.RegisterNetMessage<MsgNewAppearance>();
 
             var topicPort = _config.GetCVar(OpenDreamCVars.TopicPort);
             var worldTopicAddress = new IPEndPoint(IPAddress.Loopback, topicPort);
@@ -256,7 +258,7 @@ namespace OpenDreamRuntime {
 
                 case SessionStatus.InGame: {
                     if (!_connections.TryGetValue(e.Session.UserId, out var connection)) {
-                        connection = new DreamConnection();
+                        connection = new DreamConnection(e.Session.Name);
 
                         _connections.Add(e.Session.UserId, connection);
                     }

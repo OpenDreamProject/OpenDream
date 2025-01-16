@@ -50,8 +50,13 @@ public partial class DreamMapManager {
 
         toExplore.Enqueue(PathFindNode.GetNode(loc.X, loc.Y));
 
-        void Explore(PathFindNode current, int offsetX, int offsetY, int currentStep) {
-            var next = PathFindNode.GetNode(current.X + offsetX, current.Y + offsetY);
+        void Explore(PathFindNode current, int offsetX, int offsetY) {
+            var nextX = current.X + offsetX;
+            var nextY = current.Y + offsetY;
+            if (nextX < 1 || nextX > Size.X || nextY < 1 || nextY > Size.Y)
+                return; // This is outside of map bounds
+
+            var next = PathFindNode.GetNode(nextX, nextY);
             if (explored.Contains(next))
                 return;
             if (!TryGetCellAt(new(next.X, next.Y), z, out var cell) || cell.Turf.IsDense)
@@ -59,10 +64,10 @@ public partial class DreamMapManager {
 
             if (!toExplore.Contains(next))
                 toExplore.Enqueue(next);
-            else if (next.NeededSteps >= currentStep + 1)
+            else if (next.NeededSteps >= current.NeededSteps + 1)
                 return;
 
-            next.NeededSteps = currentStep + 1;
+            next.NeededSteps = current.NeededSteps + 1;
             next.Parent = current;
         }
 
@@ -87,14 +92,14 @@ public partial class DreamMapManager {
             }
 
             explored.Add(node);
-            Explore(node,  1,  0, node.NeededSteps);
-            Explore(node,  1,  1, node.NeededSteps);
-            Explore(node,  0,  1, node.NeededSteps);
-            Explore(node, -1,  1, node.NeededSteps);
-            Explore(node, -1,  0, node.NeededSteps);
-            Explore(node, -1, -1, node.NeededSteps);
-            Explore(node,  0, -1, node.NeededSteps);
-            Explore(node,  1, -1, node.NeededSteps);
+            Explore(node,  1,  0);
+            Explore(node,  1,  1);
+            Explore(node,  0,  1);
+            Explore(node, -1,  1);
+            Explore(node, -1,  0);
+            Explore(node, -1, -1);
+            Explore(node,  0, -1);
+            Explore(node,  1, -1);
         }
 
         foreach (var node in explored)

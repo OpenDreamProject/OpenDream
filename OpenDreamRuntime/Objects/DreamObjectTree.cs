@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -48,8 +49,8 @@ public sealed class DreamObjectTree {
     public TreeEntry Obj { get; private set; }
     public TreeEntry Mob { get; private set; }
 
-    private readonly Dictionary<string, TreeEntry> _pathToType = new();
-    private Dictionary<string, int> _globalProcIds;
+    private FrozenDictionary<string, TreeEntry> _pathToType = FrozenDictionary<string, TreeEntry>.Empty;
+    private FrozenDictionary<string, int> _globalProcIds = FrozenDictionary<string, int>.Empty;
 
     [Dependency] private readonly AtomManager _atomManager = default!;
     [Dependency] private readonly DreamManager _dreamManager = default!;
@@ -125,13 +126,15 @@ public sealed class DreamObjectTree {
     public IEnumerable<TreeEntry> GetAllDescendants(TreeEntry treeEntry) {
         yield return treeEntry;
 
-        foreach (int typeId in treeEntry.InheritingTypes) {
-            TreeEntry type = Types[typeId];
-            IEnumerator<TreeEntry> typeChildren = GetAllDescendants(type).GetEnumerator();
+        if (treeEntry.InheritingTypes is not null) {
+            foreach (int typeId in treeEntry.InheritingTypes) {
+                TreeEntry type = Types[typeId];
+                IEnumerator<TreeEntry> typeChildren = GetAllDescendants(type).GetEnumerator();
 
-            while (typeChildren.MoveNext()) yield return typeChildren.Current;
+                while (typeChildren.MoveNext()) yield return typeChildren.Current;
 
-            typeChildren.Dispose();
+                typeChildren.Dispose();
+            }
         }
     }
 
@@ -268,13 +271,16 @@ public sealed class DreamObjectTree {
 
         //First pass: Create types and set them up for initialization
         Types[0] = Root;
+        var pathToType = new Dictionary<string, TreeEntry>(types.Length);
         for (int i = 1; i < Types.Length; i++) {
             var path = types[i].Path;
             var type = new TreeEntry(path, i);
 
             Types[i] = type;
-            _pathToType[path] = type;
+            pathToType[path] = type;
         }
+
+        _pathToType = pathToType.ToFrozenDictionary();
 
         World = GetTreeEntry("/world");
         List = GetTreeEntry("/list");
@@ -308,7 +314,7 @@ public sealed class DreamObjectTree {
 
             if (jsonType.Parent != null) {
                 TreeEntry parent = Types[jsonType.Parent.Value];
-
+                parent.InheritingTypes ??= new List<int>(1);
                 parent.InheritingTypes.Add(i);
                 type.ParentEntry = parent;
             }
@@ -427,13 +433,15 @@ public sealed class DreamObjectTree {
         }
 
         if (jsonGlobalProcs != null) {
-            _globalProcIds = new(jsonGlobalProcs.Length);
+            Dictionary<string, int> globalProcIds = new(jsonGlobalProcs.Length);
 
             foreach (var procId in jsonGlobalProcs) {
                 var proc = Procs[procId];
 
-                _globalProcIds.Add(proc.Name, procId);
+                globalProcIds.Add(proc.Name, procId);
             }
+
+            _globalProcIds = globalProcIds.ToFrozenDictionary();
         }
     }
 
@@ -483,11 +491,13 @@ public sealed class DreamObjectTree {
     /// Enumerate the inheritance tree in post-order
     /// </summary>
     private IEnumerable<TreeEntry> TraversePostOrder(TreeEntry from) {
-        foreach (int typeId in from.InheritingTypes) {
-            TreeEntry type = Types[typeId];
-            using IEnumerator<TreeEntry> typeChildren = TraversePostOrder(type).GetEnumerator();
+        if (from.InheritingTypes is not null) {
+            foreach (int typeId in from.InheritingTypes) {
+                TreeEntry type = Types[typeId];
+                using IEnumerator<TreeEntry> typeChildren = TraversePostOrder(type).GetEnumerator();
 
-            while (typeChildren.MoveNext()) yield return typeChildren.Current;
+                while (typeChildren.MoveNext()) yield return typeChildren.Current;
+            }
         }
 
         yield return from;
@@ -500,7 +510,7 @@ public sealed class TreeEntry {
     public readonly int Id;
     public DreamObjectDefinition ObjectDefinition;
     public TreeEntry ParentEntry;
-    public readonly List<int> InheritingTypes = new();
+    public List<int>? InheritingTypes;
 
     /// <summary>
     /// This node's index in the inheritance tree based on a depth-first search<br/>

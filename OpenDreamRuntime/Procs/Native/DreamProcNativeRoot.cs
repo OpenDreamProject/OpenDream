@@ -1020,7 +1020,15 @@ internal static class DreamProcNativeRoot {
 
         // We perform a whole path-find then return only the first step
         // Truly, DM's most optimized proc
-        return new((int)steps.FirstOrDefault());
+        var direction = steps.FirstOrDefault();
+        var stepLoc = direction switch {
+            // The ref says get_step_to() returns 0 if there's no change, but it also says it returns null.
+            // I wasn't able to get it to return 0 so null it is.
+            0 => null,
+            _ => DreamProcNativeHelpers.GetStep(bundle.AtomManager, bundle.MapManager, refAtom, direction)
+        };
+
+        return new(stepLoc);
     }
 
     [DreamProc("get_steps_to")]
@@ -1046,7 +1054,8 @@ internal static class DreamProcNativeRoot {
             result.AddValue(new((int)step));
         }
 
-        return new(result);
+        // Null if there are no steps
+        return new(result.GetLength() > 0 ? result : null);
     }
 
     [DreamProc("hascall")]

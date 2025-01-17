@@ -1265,45 +1265,39 @@ public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectA
 }
 
 // mob.contents, obj.contents list
-public sealed class MovableContentsList(DreamObjectDefinition listDef, DreamObjectMovable movable) : DreamList(listDef, 0) {
-    private readonly DreamObjectMovable _movable = movable;
+public sealed class MovableContentsList(DreamObjectDefinition listDef, DreamObjectMovable owner) : DreamList(listDef, 0) {
     public override DreamValue GetValue(DreamValue key) {
         if (!key.TryGetValueAsInteger(out var index))
             throw new Exception($"Invalid index into movable contents list: {key}");
-
-
-        if (index < 1 || index > _movable.ChildCount)
+        if (index < 1 || index > owner.ChildCount)
             throw new Exception($"Out of bounds index on movable contents list: {index}");
 
+        using var childEnumerator = owner.ChildEnumerator;
+        while (index >= 1) {
+            childEnumerator.MoveNext(out EntityUid child);
 
-        using (var childEnumerator = _movable.ChildEnumerator) {
-            while (index >= 1) {
-                var current = childEnumerator.MoveNext(out EntityUid child);
-
-                if (index == 1) {
-                    if (AtomManager.TryGetMovableFromEntity(child, out var childObject))
-                        return new DreamValue(childObject);
-                    else
-                        throw new Exception($"Invalid child in movable contents list: {child}");
-                }
-
-                index--;
+            if (index == 1) {
+                if (AtomManager.TryGetMovableFromEntity(child, out var childObject))
+                    return new DreamValue(childObject);
+                else
+                    throw new Exception($"Invalid child in movable contents list: {child}");
             }
+
+            index--;
         }
 
         throw new Exception($"Out of bounds index on movable contents list after iterating: {key}");
     }
 
     public override List<DreamValue> GetValues() {
-        List<DreamValue> values = new List<DreamValue>(_movable.ChildCount);
+        List<DreamValue> values = new List<DreamValue>(owner.ChildCount);
+        using var childEnumerator = owner.ChildEnumerator;
 
-        using (var childEnumerator = _movable.ChildEnumerator) {
-            while (childEnumerator.MoveNext(out EntityUid child)) {
-                if (!AtomManager.TryGetMovableFromEntity(child, out var childObject))
-                    continue;
+        while (childEnumerator.MoveNext(out EntityUid child)) {
+            if (!AtomManager.TryGetMovableFromEntity(child, out var childObject))
+                continue;
 
-                values.Add(new DreamValue(childObject));
-            }
+            values.Add(new DreamValue(childObject));
         }
 
         return values;
@@ -1314,10 +1308,10 @@ public sealed class MovableContentsList(DreamObjectDefinition listDef, DreamObje
     }
 
     public override void AddValue(DreamValue value) {
-        if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
+        if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var dreamObject))
             throw new Exception($"Cannot add {value} to movable contents");
 
-        movable.SetVariable("loc", new (_movable));
+        dreamObject.SetVariable("loc", new (owner));
     }
 
     public override void RemoveValue(DreamValue value) {
@@ -1328,16 +1322,14 @@ public sealed class MovableContentsList(DreamObjectDefinition listDef, DreamObje
     }
 
     public override bool ContainsValue(DreamValue value) {
-        if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
+        if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var dreamObject))
+            return false;
+        if (!dreamObject.TryGetVariable("loc", out var locVariable))
+            return false;
+        if (!locVariable.TryGetValueAsDreamObject<DreamObjectAtom>(out var loc))
             return false;
 
-        if (!movable.TryGetVariable("loc", out var _locVariable))
-            return false;
-
-        if (!_locVariable.TryGetValueAsDreamObject<DreamObjectAtom>(out var _loc))
-            return false;
-
-        return _loc == _movable;
+        return loc == owner;
     }
 
     public override void Cut(int start = 1, int end = 0) {
@@ -1345,7 +1337,7 @@ public sealed class MovableContentsList(DreamObjectDefinition listDef, DreamObje
     }
 
     public override int GetLength() {
-        return _movable.ChildCount;
+        return owner.ChildCount;
     }
 }
 

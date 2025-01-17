@@ -18,26 +18,21 @@ public class DreamObjectMovable : DreamObjectAtom {
     public int Z => (int)_transformComponent.MapID;
 
     private readonly TransformComponent _transformComponent;
-
-    public readonly MovableContentsList Contents;
-
-    public TransformChildrenEnumerator ChildEnumerator => _transformComponent.ChildEnumerator;
-    public int ChildCount => _transformComponent.ChildCount;
+    private readonly MovableContentsList _contents;
+    private string? _screenLoc;
 
     private string? ScreenLoc {
         get => _screenLoc;
         set => SetScreenLoc(value);
     }
 
-    private string? _screenLoc;
-
     public DreamObjectMovable(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
         Entity = AtomManager.CreateMovableEntity(this);
         SpriteComponent = EntityManager.GetComponent<DMISpriteComponent>(Entity);
         AtomManager.SetSpriteAppearance((Entity, SpriteComponent), AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
-        _transformComponent = EntityManager.GetComponent<TransformComponent>(Entity);
 
-        Contents = new MovableContentsList(ObjectTree.List.ObjectDefinition, this);
+        _transformComponent = EntityManager.GetComponent<TransformComponent>(Entity);
+        _contents = new MovableContentsList(ObjectTree.List.ObjectDefinition, this, _transformComponent);
     }
 
     public override void Initialize(DreamProcArguments args) {
@@ -86,7 +81,7 @@ public class DreamObjectMovable : DreamObjectAtom {
                 value = (ScreenLoc != null) ? new(ScreenLoc) : DreamValue.Null;
                 return true;
             case "contents":
-                value = new(Contents);
+                value = new(_contents);
                 return true;
             case "locs":
                 // Unimplemented; just return a list containing src.loc
@@ -145,7 +140,7 @@ public class DreamObjectMovable : DreamObjectAtom {
         }
     }
 
-    private void SetLoc(DreamObjectAtom? loc) {
+    public void SetLoc(DreamObjectAtom? loc) {
         Loc = loc;
         if (TransformSystem == null)
             return;

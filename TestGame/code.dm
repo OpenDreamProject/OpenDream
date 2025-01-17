@@ -24,14 +24,6 @@
 	set category = null
 	usr << "This is [thing]. [thing.desc]"
 
-/mob/verb/poke(mob/someone as obj|mob in world)
-	set category = null
-	usr << "You poke [someone]!"
-	for(var/x in view(someone, 0))
-		usr << "They see: [x]"
-	for(var/obj/item/item in someone)
-		usr << "They have: [item]"
-
 /mob/verb/possess_key(mob/someone as mob in world)
 	set category = null
 	someone.ckey = usr.key
@@ -60,29 +52,6 @@
 		spawn(20)
 			toggleBlink()
 
-/obj/item/bandoleer
-	icon = 'icons/objects.dmi'
-	icon_state = "bandoleer"
-	layer = OBJ_LAYER
-
-	name = "Bandoleer"
-	desc = "Stylish and comes with a gun!"
-
-	New()
-		..()
-		contents += new /obj/item/gun
-
-/obj/item/gun
-	icon = 'icons/objects.dmi'
-	icon_state = "gun"
-	layer = OBJ_LAYER
-
-	name = "Testing Gun"
-	desc = "Non-functional, but it takes up space"
-
-	New()
-		..()
-
 /mob
 	icon = 'icons/mob.dmi'
 	icon_state = "mob"
@@ -96,11 +65,6 @@
 
 	New()
 		..()
-		contents += new /obj/item/bandoleer
-		var/obj/item/gun = new /obj/item/gun
-		gun.name = "Testing Gun Outer" // Keep it distinct
-		contents += gun
-
 		loc = locate(5, 5, 1)
 
 	Login()

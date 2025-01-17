@@ -156,7 +156,7 @@ internal static class DreamProcNativeRoot {
                 return DreamValue.Null;
             chainAnim = true;
         }
-        
+
         bundle.LastAnimatedObject = new DreamValue(obj);
         if(obj.IsSubtypeOf(bundle.ObjectTree.Filter)) {//TODO animate filters
             return DreamValue.Null;
@@ -3025,7 +3025,9 @@ internal static class DreamProcNativeRoot {
             return new(view);
 
         if (center.TryGetVariable("contents", out var centerContents) && centerContents.TryGetValueAsDreamList(out var centerContentsList)) {
-            view.AddValueRange(centerContentsList);
+            foreach (var item in centerContentsList.GetValues()) {
+                view.AddValue(item);
+            }
         }
 
         // Center gets included during the walk through the tiles

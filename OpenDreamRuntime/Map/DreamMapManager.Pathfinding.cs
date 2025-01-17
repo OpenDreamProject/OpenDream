@@ -70,7 +70,7 @@ public partial class DreamMapManager {
             var distX = node.X - dest.X;
             var distY = node.Y - dest.Y;
             if (Math.Sqrt(distX * distX + distY * distY) <= distance) { // Path to the destination was found
-                Stack<AtomDirection> path = new();
+                Stack<AtomDirection> path = new(node.NeededSteps);
 
                 while (node.Parent != null) {
                     var stepDir = DreamProcNativeHelpers.GetDir((node.Parent.X, node.Parent.Y, z), (node.X, node.Y, z));

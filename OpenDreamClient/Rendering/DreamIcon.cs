@@ -385,28 +385,28 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
 
             if (endAppearance.MaptextSize != _appearance.MaptextSize) {
                 Vector2 startingOffset = _appearance.MaptextSize;
-                Vector2 newMaptextSize = Vector2.Lerp(startingOffset, endAppearance.MaptextSize, 1.0f-factor);
+                Vector2 newMaptextSize = Vector2.Lerp(startingOffset, endAppearance.MaptextSize, factor);
 
                 _animatedAppearance.MaptextSize = (Vector2i)newMaptextSize;
             }
 
             if (endAppearance.MaptextOffset != _appearance.MaptextOffset) {
                 Vector2 startingOffset = _appearance.MaptextOffset;
-                Vector2 newMaptextOffset = Vector2.Lerp(startingOffset, endAppearance.MaptextOffset, 1.0f-factor);
+                Vector2 newMaptextOffset = Vector2.Lerp(startingOffset, endAppearance.MaptextOffset, factor);
 
                 _animatedAppearance.MaptextOffset = (Vector2i)newMaptextOffset;
             }
 
             if (endAppearance.PixelOffset != _appearance.PixelOffset) {
                 Vector2 startingOffset = _appearance.PixelOffset;
-                Vector2 newPixelOffset = Vector2.Lerp(startingOffset, endAppearance.PixelOffset, 1.0f-factor);
+                Vector2 newPixelOffset = Vector2.Lerp(startingOffset, endAppearance.PixelOffset, factor);
 
                 _animatedAppearance.PixelOffset = (Vector2i)newPixelOffset;
             }
 
             if (endAppearance.PixelOffset2 != _appearance.PixelOffset2) {
                 Vector2 startingOffset = _appearance.PixelOffset2;
-                Vector2 newPixelOffset = Vector2.Lerp(startingOffset, endAppearance.PixelOffset2, 1.0f-factor);
+                Vector2 newPixelOffset = Vector2.Lerp(startingOffset, endAppearance.PixelOffset2, factor);
 
                 _animatedAppearance.PixelOffset2 = (Vector2i)newPixelOffset;
             }

@@ -189,7 +189,7 @@
 			animate(src, maptext_x=64, maptext_y=64, time=50)
 			animate(maptext_x=64, maptext_y=-64, time=50)
 			animate(maptext_x=-64, maptext_y=-64, time=50)
-			animate(maptext_x=64, maptext_y=-64, time=50)
+			animate(maptext_x=-64, maptext_y=64, time=50)
 			animate(maptext_x=0, maptext_y=0, time=50)
 			animate(maptext="Hello :)", time=10)
 

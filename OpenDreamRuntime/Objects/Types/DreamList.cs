@@ -977,19 +977,9 @@ public sealed class DreamFilterList : DreamList {
 }
 
 // client.screen list
-public sealed class ClientScreenList : DreamList {
-    private readonly DreamObjectTree _objectTree;
-    private readonly ServerScreenOverlaySystem? _screenOverlaySystem;
-
-    private readonly DreamConnection _connection;
+public sealed class ClientScreenList(DreamObjectTree objectTree, ServerScreenOverlaySystem? screenOverlaySystem, DreamConnection connection)
+    : DreamList(objectTree.List.ObjectDefinition, 0) {
     private readonly List<DreamValue> _screenObjects = new();
-
-    public ClientScreenList(DreamObjectTree objectTree, ServerScreenOverlaySystem? screenOverlaySystem, DreamConnection connection) : base(objectTree.List.ObjectDefinition, 0) {
-        _objectTree = objectTree;
-        _screenOverlaySystem = screenOverlaySystem;
-
-        _connection = connection;
-    }
 
     public override bool ContainsValue(DreamValue value) {
         return _screenObjects.Contains(value);
@@ -1014,7 +1004,7 @@ public sealed class ClientScreenList : DreamList {
         if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
             return;
 
-        _screenOverlaySystem?.AddScreenObject(_connection, movable);
+        screenOverlaySystem?.AddScreenObject(connection, movable);
         _screenObjects.Add(value);
     }
 
@@ -1022,7 +1012,7 @@ public sealed class ClientScreenList : DreamList {
         if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
             return;
 
-        _screenOverlaySystem?.RemoveScreenObject(_connection, movable);
+        screenOverlaySystem?.RemoveScreenObject(connection, movable);
         _screenObjects.Remove(value);
     }
 
@@ -1033,7 +1023,7 @@ public sealed class ClientScreenList : DreamList {
             if (!_screenObjects[i].TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
                 continue;
 
-            _screenOverlaySystem?.RemoveScreenObject(_connection, movable);
+            screenOverlaySystem?.RemoveScreenObject(connection, movable);
         }
 
         _screenObjects.RemoveRange(start - 1, end - start);
@@ -1043,7 +1033,6 @@ public sealed class ClientScreenList : DreamList {
         return _screenObjects.Count;
     }
 }
-
 
 // client.images list
 public sealed class ClientImagesList : DreamList {
@@ -1171,7 +1160,7 @@ public sealed class TurfContentsList(DreamObjectDefinition listDef, DreamObjectT
         if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
             throw new Exception($"Cannot add {value} to turf contents");
 
-        movable.SetVariable("loc", new(Cell.Turf));
+        movable.SetLoc(Cell.Turf);
     }
 
     public override void Cut(int start = 1, int end = 0) {
@@ -1179,7 +1168,7 @@ public sealed class TurfContentsList(DreamObjectDefinition listDef, DreamObjectT
         if (end == 0 || end > movableCount) end = movableCount;
 
         for (int i = start; i < end; i++) {
-            Cell.Movables[i - 1].SetVariable("loc", DreamValue.Null);
+            Cell.Movables[i - 1].SetLoc(null);
         }
     }
 
@@ -1254,6 +1243,81 @@ public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectA
             length += turf.Contents.GetLength();
 
         return length;
+    }
+}
+
+// mob.contents, obj.contents list
+public sealed class MovableContentsList(DreamObjectDefinition listDef, DreamObjectMovable owner, TransformComponent transform) : DreamList(listDef, 0) {
+    public override DreamValue GetValue(DreamValue key) {
+        if (!key.TryGetValueAsInteger(out var index))
+            throw new Exception($"Invalid index into movable contents list: {key}");
+        if (index < 1 || index > transform.ChildCount)
+            throw new Exception($"Out of bounds index on movable contents list: {index}");
+
+        using var childEnumerator = transform.ChildEnumerator;
+        while (index >= 1) {
+            childEnumerator.MoveNext(out EntityUid child);
+
+            if (index == 1) {
+                if (AtomManager.TryGetMovableFromEntity(child, out var childObject))
+                    return new DreamValue(childObject);
+                else
+                    throw new Exception($"Invalid child in movable contents list: {child}");
+            }
+
+            index--;
+        }
+
+        throw new Exception($"Out of bounds index on movable contents list after iterating: {key}");
+    }
+
+    public override List<DreamValue> GetValues() {
+        List<DreamValue> values = new List<DreamValue>(transform.ChildCount);
+        using var childEnumerator = transform.ChildEnumerator;
+
+        while (childEnumerator.MoveNext(out EntityUid child)) {
+            if (!AtomManager.TryGetMovableFromEntity(child, out var childObject))
+                continue;
+
+            values.Add(new DreamValue(childObject));
+        }
+
+        return values;
+    }
+
+    public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
+        throw new Exception("Cannot set an index of movable contents list");
+    }
+
+    public override void AddValue(DreamValue value) {
+        if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var dreamObject))
+            throw new Exception($"Cannot add {value} to movable contents");
+
+        dreamObject.SetLoc(owner);
+    }
+
+    public override void RemoveValue(DreamValue value) {
+        if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
+            throw new Exception($"Cannot remove {value} from movable contents");
+        if (movable.Loc != owner)
+            return; // This object wasn't in our contents to begin with
+
+        movable.SetLoc(null);
+    }
+
+    public override bool ContainsValue(DreamValue value) {
+        if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var dreamObject))
+            return false;
+
+        return dreamObject.Loc == owner;
+    }
+
+    public override void Cut(int start = 1, int end = 0) {
+        // TODO
+    }
+
+    public override int GetLength() {
+        return transform.ChildCount;
     }
 }
 

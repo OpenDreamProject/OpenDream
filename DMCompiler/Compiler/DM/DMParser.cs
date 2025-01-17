@@ -270,24 +270,24 @@ namespace DMCompiler.Compiler.DM {
 
             //Var definition(s)
             if (CurrentPath.FindElement("var") != -1) {
-                var isIndented = (CurrentPath.LastElement == "var");
+                bool isIndented = false;
                 DreamPath varPath = CurrentPath;
                 List<DMASTObjectVarDefinition> varDefinitions = new();
 
-                if (isIndented) {
-                    Newline();
-                    if (!Check(TokenType.DM_Indent)) {
-                        Emit(WarningCode.BadToken, CurrentLoc, "Expected beginning of a var block");
-                        return new DMASTInvalidStatement(CurrentLoc);
-                    }
+                var possibleNewline = Current();
+                if (Newline()) {
+                    if (Check(TokenType.DM_Indent)) {
+                        isIndented = true;
+                        DMASTPath? newVarPath = Path();
+                        if (newVarPath == null) {
+                            Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
+                            return new DMASTInvalidStatement(CurrentLoc);
+                        }
 
-                    DMASTPath? newVarPath = Path();
-                    if (newVarPath == null) {
-                        Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
-                        return new DMASTInvalidStatement(CurrentLoc);
+                        varPath = CurrentPath.AddToPath(newVarPath.Path.PathString);
+                    } else {
+                        ReuseToken(possibleNewline);
                     }
-
-                    varPath = CurrentPath.AddToPath(newVarPath.Path.PathString);
                 }
 
                 while (true) {

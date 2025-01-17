@@ -5,6 +5,7 @@ using System.Text;
 using DMCompiler.Bytecode;
 using DMCompiler.DM;
 using DMCompiler.Json;
+using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.DebugAdapter;

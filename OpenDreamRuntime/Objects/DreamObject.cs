@@ -3,6 +3,7 @@ using OpenDreamRuntime.Procs;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using DMCompiler.Bytecode;
+using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;

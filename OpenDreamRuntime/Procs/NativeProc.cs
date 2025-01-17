@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using DMCompiler.DM;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Resources;
-using System.Threading;
+using OpenDreamRuntime.Map;
 
 namespace OpenDreamRuntime.Procs;
 
@@ -60,6 +60,7 @@ public sealed unsafe class NativeProc : DreamProc {
         public WalkManager WalkManager => Proc._walkManager;
         public DreamObjectTree ObjectTree => Proc._objectTree;
         private readonly DreamThread _thread;
+
         public DreamValue? LastAnimatedObject {
             get => _thread.LastAnimatedObject;
             set => _thread.LastAnimatedObject = value;

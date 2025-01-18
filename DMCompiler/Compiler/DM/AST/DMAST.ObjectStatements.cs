@@ -7,6 +7,12 @@ namespace DMCompiler.Compiler.DM.AST;
 /// </summary>
 public abstract class DMASTStatement(Location location) : DMASTNode(location);
 
+/// <summary>
+/// Used when there was an error parsing a statement
+/// </summary>
+/// <remarks>Emit an error code before creating!</remarks>
+public sealed class DMASTInvalidStatement(Location location) : DMASTStatement(location);
+
 public sealed class DMASTObjectDefinition(Location location, DreamPath path, DMASTBlockInner? innerBlock)
     : DMASTStatement(location) {
     /// <summary> Unlike other Path variables stored by AST nodes, this path is guaranteed to be the real, absolute path of this object definition block. <br/>

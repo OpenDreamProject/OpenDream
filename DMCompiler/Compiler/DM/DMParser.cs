@@ -268,16 +268,27 @@ namespace DMCompiler.Compiler.DM {
                 return new DMASTProcDefinition(loc, CurrentPath, parameters.ToArray(), procBlock, types);
             }
 
-            //Object definition
-            if (Block() is { } block) {
-                Compiler.VerbosePrint($"Parsed object {CurrentPath}");
-                return new DMASTObjectDefinition(loc, CurrentPath, block);
-            }
-
             //Var definition(s)
             if (CurrentPath.FindElement("var") != -1) {
+                bool isIndented = false;
                 DreamPath varPath = CurrentPath;
                 List<DMASTObjectVarDefinition> varDefinitions = new();
+
+                var possibleNewline = Current();
+                if (Newline()) {
+                    if (Check(TokenType.DM_Indent)) {
+                        isIndented = true;
+                        DMASTPath? newVarPath = Path();
+                        if (newVarPath == null) {
+                            Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
+                            return new DMASTInvalidStatement(CurrentLoc);
+                        }
+
+                        varPath = CurrentPath.AddToPath(newVarPath.Path.PathString);
+                    } else {
+                        ReuseToken(possibleNewline);
+                    }
+                }
 
                 while (true) {
                     Whitespace();
@@ -304,23 +315,25 @@ namespace DMCompiler.Compiler.DM {
                     var varDef = new DMASTObjectVarDefinition(loc, varPath, value, valType);
 
                     varDefinitions.Add(varDef);
-                    if (Check(TokenType.DM_Comma)) {
+                    if (Check(TokenType.DM_Comma) || (isIndented && Newline())) {
                         Whitespace();
                         DMASTPath? newVarPath = Path();
 
                         if (newVarPath == null) {
                             Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
                             break;
-                        } else if (newVarPath.Path.Elements.Length > 1) { // TODO: This is valid DM
-                            Emit(WarningCode.BadToken, newVarPath.Location, "Invalid var name");
-                            break;
                         }
 
-                        varPath = CurrentPath.AddToPath("../" + newVarPath.Path.PathString);
+                        varPath = CurrentPath.AddToPath(
+                            isIndented ? newVarPath.Path.PathString
+                                       : "../" + newVarPath.Path.PathString);
                     } else {
                         break;
                     }
                 }
+
+                if (isIndented)
+                    Consume(TokenType.DM_Dedent, "Expected end of var block");
 
                 return (varDefinitions.Count == 1)
                     ? varDefinitions[0]
@@ -334,6 +347,12 @@ namespace DMCompiler.Compiler.DM {
                 RequireExpression(ref value);
 
                 return new DMASTObjectVarOverride(loc, CurrentPath, value);
+            }
+
+            //Object definition
+            if (Block() is { } block) {
+                Compiler.VerbosePrint($"Parsed object {CurrentPath}");
+                return new DMASTObjectDefinition(loc, CurrentPath, block);
             }
 
             //Empty object definition

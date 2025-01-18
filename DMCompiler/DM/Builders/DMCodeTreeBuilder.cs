@@ -40,8 +40,9 @@ internal class DMCodeTreeBuilder(DMCompiler compiler) {
         }
 
         switch (statement) {
-            case DMASTInvalidStatement:
-                break; // An error should have been emitted by whatever made this
+            case DMASTInvalidStatement: // An error should have been emitted by whatever made this
+            case DMASTNullStatement:
+                break;
             case DMASTObjectDefinition objectDefinition:
                 CodeTree.AddType(objectDefinition.Path);
                 if (objectDefinition.InnerBlock != null)

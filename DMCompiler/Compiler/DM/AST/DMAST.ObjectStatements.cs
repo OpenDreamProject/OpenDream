@@ -13,6 +13,9 @@ public abstract class DMASTStatement(Location location) : DMASTNode(location);
 /// <remarks>Emit an error code before creating!</remarks>
 public sealed class DMASTInvalidStatement(Location location) : DMASTStatement(location);
 
+/// Lone semicolon, statement containing nothing
+public sealed class DMASTNullStatement(Location location) : DMASTStatement(location);
+
 public sealed class DMASTObjectDefinition(Location location, DreamPath path, DMASTBlockInner? innerBlock)
     : DMASTStatement(location) {
     /// <summary> Unlike other Path variables stored by AST nodes, this path is guaranteed to be the real, absolute path of this object definition block. <br/>

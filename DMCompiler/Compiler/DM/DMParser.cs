@@ -203,6 +203,11 @@ namespace DMCompiler.Compiler.DM {
         protected DMASTStatement? Statement() {
             var loc = CurrentLoc;
 
+            if (Current().Type == TokenType.DM_Semicolon) { // A lone semicolon creates a "null statement" (like C)
+                // Note that we do not consume the semicolon here
+                return new DMASTNullStatement(loc);
+            }
+
             DMASTPath? path = Path();
             if (path is null)
                 return null;
@@ -517,7 +522,7 @@ namespace DMCompiler.Compiler.DM {
                 Newline();
                 Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
 
-                return new DMASTBlockInner(loc, blockInner.ToArray());
+                return new DMASTBlockInner(loc, blockInner?.ToArray() ?? []);
             }
 
             return null;

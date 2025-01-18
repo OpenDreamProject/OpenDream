@@ -16,9 +16,9 @@ public sealed class InterfaceDescriptor {
         MenuDescriptors = menuDescriptors;
     }
 
-    public ElementDescriptor? GetElementDescriptor(string name) {
+    public ElementDescriptor? GetElementDescriptor(string id) {
         return WindowDescriptors.Concat<ElementDescriptor>(MacroSetDescriptors)
-            .Concat(MenuDescriptors).FirstOrDefault(descriptor => descriptor.Id.Value == name);
+            .Concat(MenuDescriptors).FirstOrDefault(descriptor => descriptor.Id.Value == id);
     }
 }
 

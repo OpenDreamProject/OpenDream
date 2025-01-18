@@ -7,6 +7,12 @@ namespace DMCompiler.Compiler.DM.AST;
 /// </summary>
 public abstract class DMASTStatement(Location location) : DMASTNode(location);
 
+/// <summary>
+/// Used when there was an error parsing a statement
+/// </summary>
+/// <remarks>Emit an error code before creating!</remarks>
+public sealed class DMASTInvalidStatement(Location location) : DMASTStatement(location);
+
 /// Lone semicolon, statement containing nothing
 public sealed class DMASTNullStatement(Location location) : DMASTStatement(location);
 

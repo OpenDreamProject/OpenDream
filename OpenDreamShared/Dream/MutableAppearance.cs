@@ -236,7 +236,6 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         return maybeColor is not null;
     }
 
-
     //it is *ESSENTIAL* that this matches the hashcode of the equivelant ImmutableAppearance. There's a debug assert and everything.
     [SuppressMessage("ReSharper", "NonReadonlyMemberInGetHashCode")]
     public override int GetHashCode() {

@@ -50,6 +50,9 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
     [ViewVariables] public List<Robust.Shared.GameObjects.NetEntity> VisContents;
     [ViewVariables] public List<DreamFilter> Filters;
     [ViewVariables] public List<int> Verbs;
+    [ViewVariables] public Vector2i MaptextSize = new(32,32);
+    [ViewVariables] public Vector2i MaptextOffset = new(0,0);
+    [ViewVariables] public string? Maptext;
 
     /// <summary>
     /// An appearance can gain a color matrix filter by two possible forces: <br/>
@@ -123,6 +126,9 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         Opacity = appearance.Opacity;
         MouseOpacity = appearance.MouseOpacity;
         Override = appearance.Override;
+        Maptext = appearance.Maptext;
+        MaptextSize = appearance.MaptextSize;
+        MaptextOffset = appearance.MaptextOffset;
 
         Overlays.Clear();
         Underlays.Clear();
@@ -168,6 +174,9 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         if (appearance.Filters.Count != Filters.Count) return false;
         if (appearance.Verbs.Count != Verbs.Count) return false;
         if (appearance.Override != Override) return false;
+        if (appearance.Maptext != Maptext) return false;
+        if (appearance.MaptextSize != MaptextSize) return false;
+        if (appearance.MaptextOffset != MaptextOffset) return false;
 
         for (int i = 0; i < Filters.Count; i++) {
             if (appearance.Filters[i] != Filters[i]) return false;
@@ -228,6 +237,7 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
     }
 
     //it is *ESSENTIAL* that this matches the hashcode of the equivelant ImmutableAppearance. There's a debug assert and everything.
+    [SuppressMessage("ReSharper", "NonReadonlyMemberInGetHashCode")]
     public override int GetHashCode() {
         HashCode hashCode = new HashCode();
 
@@ -252,6 +262,9 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         hashCode.Add(RenderTarget);
         hashCode.Add(BlendMode);
         hashCode.Add(AppearanceFlags);
+        hashCode.Add(Maptext);
+        hashCode.Add(MaptextOffset);
+        hashCode.Add(MaptextSize);
 
         foreach (var overlay in Overlays) {
             hashCode.Add(overlay.GetHashCode());
@@ -389,6 +402,9 @@ public enum IconAppearanceProperty : byte {
         Filters,
         Verbs,
         Transform,
+        Maptext,
+        MaptextSize,
+        MaptextOffset,
         Id,
         End
     }

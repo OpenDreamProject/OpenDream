@@ -180,6 +180,20 @@
 		set category = "Test"
 		usr << output("help sec griffing me", "honk.browser:foo")
 
+	verb/test_maptext()
+		set category = "Test"
+		if(length(src.maptext))
+			src.maptext = null;
+		else
+			src.maptext = "Hello!"
+			animate(src, maptext_x=64, maptext_y=64, time=50)
+			animate(maptext_x=64, maptext_y=-64, time=50)
+			animate(maptext_x=-64, maptext_y=-64, time=50)
+			animate(maptext_x=-64, maptext_y=64, time=50)
+			animate(maptext_x=0, maptext_y=0, time=50)
+			animate(maptext="Hello :)", time=10)
+
+
 	verb/demo_filters()
 		set category = "Test"
 		if(length(src.filters))

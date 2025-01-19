@@ -211,14 +211,16 @@ internal static class DreamProcNativeRoot {
             /* TODO these are not yet implemented
             if(!pixelZ.IsNull)
                 pixelZ = new(pixelZ.UnsafeGetValueAsFloat() + obj.GetVariable("pixel_z").UnsafeGetValueAsFloat()); //TODO change to appearance when pixel_z is implemented
+            */
             if(!maptextWidth.IsNull)
-                maptextWidth = new(maptextWidth.UnsafeGetValueAsFloat() + obj.GetVariable("maptext_width").UnsafeGetValueAsFloat()); //TODO change to appearance when maptext_width is implemented
+                maptextWidth = new(maptextWidth.UnsafeGetValueAsFloat() + appearance.MaptextSize.X);
             if(!maptextHeight.IsNull)
-                maptextHeight = new(maptextHeight.UnsafeGetValueAsFloat() + obj.GetVariable("maptext_height").UnsafeGetValueAsFloat()); //TODO change to appearance when maptext_height is implemented
+                maptextHeight = new(maptextHeight.UnsafeGetValueAsFloat() + appearance.MaptextSize.Y);
             if(!maptextX.IsNull)
-                maptextX = new(maptextX.UnsafeGetValueAsFloat() + obj.GetVariable("maptext_x").UnsafeGetValueAsFloat()); //TODO change to appearance when maptext_x is implemented
+                maptextX = new(maptextX.UnsafeGetValueAsFloat() + appearance.MaptextOffset.X);
             if(!maptextY.IsNull)
-                maptextY = new(maptextY.UnsafeGetValueAsFloat() + obj.GetVariable("maptext_y").UnsafeGetValueAsFloat()); //TODO change to appearance when maptext_y is implemented
+                maptextY = new(maptextY.UnsafeGetValueAsFloat() + appearance.MaptextOffset.Y);
+            /*
             if(!luminosity.IsNull)
                 luminosity = new(luminosity.UnsafeGetValueAsFloat() + obj.GetVariable("luminosity").UnsafeGetValueAsFloat()); //TODO change to appearance when luminosity is implemented
             */
@@ -274,17 +276,30 @@ internal static class DreamProcNativeRoot {
             }
             */
 
-            /* TODO maptext
             if (!maptextX.IsNull) {
                 obj.SetVariableValue("maptext_x", maptextX);
-                maptextX.TryGetValueAsInteger(out appearance.MapTextOffset.X);
+                maptextX.TryGetValueAsInteger(out appearance.MaptextOffset.X);
             }
 
             if (!maptextY.IsNull) {
                 obj.SetVariableValue("maptext_y", maptextY);
-                maptextY.TryGetValueAsInteger(out appearance.MapTextOffset.Y);
+                maptextY.TryGetValueAsInteger(out appearance.MaptextOffset.Y);
             }
-            */
+
+            if (!maptextWidth.IsNull) {
+                obj.SetVariableValue("maptext_width", maptextWidth);
+                maptextX.TryGetValueAsInteger(out appearance.MaptextSize.X);
+            }
+
+            if (!maptextHeight.IsNull) {
+                obj.SetVariableValue("maptext_y", maptextHeight);
+                maptextY.TryGetValueAsInteger(out appearance.MaptextSize.Y);
+            }
+
+            if(!maptext.IsNull){
+                obj.SetVariableValue("maptext", maptext);
+                maptext.TryGetValueAsString(out appearance.Maptext);
+            }
 
             if (!dir.IsNull) {
                 obj.SetVariableValue("dir", dir);

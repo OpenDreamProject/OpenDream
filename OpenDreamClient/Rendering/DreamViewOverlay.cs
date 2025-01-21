@@ -13,6 +13,7 @@ using Robust.Shared.Profiling;
 using Vector3 = Robust.Shared.Maths.Vector3;
 using Matrix3x2 = System.Numerics.Matrix3x2;
 using Robust.Client.ResourceManagement;
+using Robust.Client.UserInterface.RichText;
 using Robust.Shared.Enums;
 
 namespace OpenDreamClient.Rendering;
@@ -21,6 +22,8 @@ namespace OpenDreamClient.Rendering;
 /// Overlay for rendering world atoms
 /// </summary>
 internal sealed class DreamViewOverlay : Overlay {
+    public static ShaderInstance ColorInstance = default!;
+
     public override OverlaySpace Space => OverlaySpace.WorldSpaceBelowWorld;
 
     public bool ScreenOverlayEnabled = true;
@@ -42,8 +45,7 @@ internal sealed class DreamViewOverlay : Overlay {
     [Dependency] private readonly IPrototypeManager _protoManager = default!;
     [Dependency] private readonly ProfManager _prof = default!;
     [Dependency] private readonly IResourceCache _resourceCache = default!;
-
-    private readonly Font _defaultMaptextFont;
+    [Dependency] private readonly MarkupTagManager _tagManager = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.view");
 
@@ -62,13 +64,13 @@ internal sealed class DreamViewOverlay : Overlay {
     private readonly List<RendererMetaData> _spriteContainer = new();
 
     private readonly Dictionary<BlendMode, ShaderInstance> _blendModeInstances;
-    public static ShaderInstance ColorInstance = default!;
 
     private IRenderTexture? _mouseMapRenderTarget;
     private IRenderTexture? _baseRenderTarget;
     private readonly RenderTargetPool _renderTargetPool;
     private readonly Stack<RendererMetaData> _rendererMetaDataRental = new();
     private readonly Stack<RendererMetaData> _rendererMetaDataToReturn = new();
+    private readonly MapTextRenderer _mapTextRenderer;
 
     private static readonly Matrix3x2 FlipMatrix = Matrix3x2.Identity with {
         M22 = -1
@@ -87,7 +89,6 @@ internal sealed class DreamViewOverlay : Overlay {
         _appearanceSystem = appearanceSystem;
         _screenOverlaySystem = screenOverlaySystem;
         _clientImagesSystem = clientImagesSystem;
-         _defaultMaptextFont = new VectorFont(_resourceCache.GetResource<FontResource>("/Fonts/NotoSans-Regular.ttf"),8);
 
         _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
         _xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
@@ -104,6 +105,8 @@ internal sealed class DreamViewOverlay : Overlay {
             {BlendMode.Multiply, _protoManager.Index<ShaderPrototype>("blend_multiply").InstanceUnique()}, //BLEND_MULTIPLY
             {BlendMode.InsertOverlay, _protoManager.Index<ShaderPrototype>("blend_inset_overlay").InstanceUnique()} //BLEND_INSET_OVERLAY //TODO
         };
+
+        _mapTextRenderer = new(_resourceCache, _tagManager);
     }
 
     protected override void Draw(in OverlayDrawArgs args) {
@@ -434,8 +437,18 @@ internal sealed class DreamViewOverlay : Overlay {
         }
 
         //Maptext
-        if(iconMetaData.Maptext != null){
-            iconMetaData.TextureOverride = GetTextureFromMaptext(iconMetaData.Maptext, iconMetaData.MaptextSize!.Value.X, iconMetaData.MaptextSize!.Value.Y, handle);
+        if(iconMetaData.Maptext != null) {
+            var maptextSize = iconMetaData.MaptextSize!.Value;
+            if (maptextSize.X == 0)
+                maptextSize.X = 32;
+            if (maptextSize.Y == 0)
+                maptextSize.Y = 32;
+
+            var renderTarget = _renderTargetPool.Rent(maptextSize);
+
+            _mapTextRenderer.RenderToTarget(handle, renderTarget, iconMetaData.Maptext);
+            _renderTargetPool.ReturnAtEndOfFrame(renderTarget);
+            iconMetaData.TextureOverride = renderTarget.Texture;
         }
 
         var frame = iconMetaData.GetTexture(this, handle);
@@ -794,28 +807,6 @@ internal sealed class DreamViewOverlay : Overlay {
         return ktTexture.Texture;
     }
 
-    public Texture GetTextureFromMaptext(string maptext, int width, int height, DrawingHandleWorld handle) {
-        if(width == 0) width = 32;
-        if(height == 0) height = 32;
-        IRenderTexture tempTexture = _renderTargetPool.Rent(new Vector2i(width, height));
-        handle.RenderInRenderTarget(tempTexture, () => {
-            handle.SetTransform(CreateRenderTargetFlipMatrix(tempTexture.Size, Vector2.Zero));
-            float scale = 1;
-            var font = _defaultMaptextFont;
-            var baseLine = new Vector2(0, 0);
-            foreach (var rune in maptext.EnumerateRunes()){
-                var metric = font.GetCharMetrics(rune, scale);
-                Vector2 mod = new Vector2(0);
-                if(metric.HasValue)
-                    mod.Y += metric.Value.BearingY - (metric.Value.Height - metric.Value.BearingY);
-
-                baseLine.X += font.DrawChar(handle, rune, baseLine+mod, scale, Color.White);
-            }
-        }, Color.Transparent);
-        _renderTargetPool.ReturnAtEndOfFrame(tempTexture);
-        return tempTexture.Texture;
-    }
-
     /// <summary>
     /// Creates a transformation matrix that counteracts RT's
     /// <see cref="DrawingHandleBase.RenderInRenderTarget(IRenderTarget,Action,System.Nullable{Robust.Shared.Maths.Color})"/> quirks
@@ -848,7 +839,6 @@ internal sealed class DreamViewOverlay : Overlay {
             * Matrix3x2.CreateTranslation(frameSize/2)       //translate back to original position
             * Matrix3x2.CreateScale(scaleFactors)               //scale
             * CreateRenderTargetFlipMatrix(renderTargetSize, pixelPosition-((scaleFactors-Vector2.One)*frameSize/2)); //flip and apply scale-corrected translation
-
     }
 }
 

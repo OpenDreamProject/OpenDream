@@ -43,13 +43,15 @@ internal partial class DMCodeTree {
 
             if (value.TryAsConstant(compiler, out var constant)) {
                 variable.Value = constant;
-                return;
+
+                // We want to continue with putting this in the init proc if a base type initializes it to another value
+                if (!isOverride || !dmObject.IsRuntimeInitialized(variable.Name)) {
+                    return;
+                }
             } else if (variable.IsConst) {
                 compiler.Emit(WarningCode.HardConstContext, value.Location, "Value of const var must be a constant");
                 return;
-            }
-
-            if (!IsValidRightHandSide(compiler, dmObject, value)) {
+            } else if (!IsValidRightHandSide(compiler, dmObject, value)) {
                 compiler.Emit(WarningCode.BadExpression, value.Location,
                     $"Invalid initial value for \"{variable.Name}\"");
                 return;
@@ -60,7 +62,7 @@ internal partial class DMCodeTree {
             var assign = new Assignment(initLoc, field, value);
 
             variable.Value = new Null(Location.Internal);
-            dmObject.InitializationProcExpressions.Add(assign);
+            dmObject.InitializationProcAssignments.Add((variable.Name, assign));
         }
 
         /// <returns>Whether the given value can be used as an instance variable's initial value</returns>

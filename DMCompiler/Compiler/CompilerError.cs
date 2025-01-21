@@ -22,6 +22,7 @@ public enum WarningCode {
     ItemDoesntExist = 404,
     DanglingOverride = 405,
     StaticOverride = 406,
+    FinalOverride = 407,
     // ReSharper disable once InconsistentNaming
     IAmATeaPot = 418, // TODO: Implement the HTCPC protocol for OD
     HardConstContext = 500,
@@ -74,6 +75,7 @@ public enum WarningCode {
     AssignmentInConditional = 3202,
     PickWeightedSyntax = 3203,
     AmbiguousInOrder = 3204,
+    ExtraToken = 3205,
     RuntimeSearchOperator = 3300,
 
     // 4000 - 4999 are reserved for runtime configuration. (TODO: Runtime doesn't know about configs yet!)

@@ -170,10 +170,9 @@ namespace DMCompiler.DM {
         }
 
         public ProcDefinitionJson GetJsonRepresentation() {
-            var optimizer = new BytecodeOptimizer();
             var serializer = new AnnotatedBytecodeSerializer(_compiler);
 
-            optimizer.Optimize(_compiler, AnnotatedBytecode.GetAnnotatedBytecode());
+            _compiler.BytecodeOptimizer.Optimize(AnnotatedBytecode.GetAnnotatedBytecode());
 
             List<ProcArgumentJson>? arguments = null;
             if (_parameters.Count > 0) {
@@ -478,6 +477,10 @@ namespace DMCompiler.DM {
 
         public void OutputControl() {
             WriteOpcode(DreamProcOpcode.OutputControl);
+        }
+
+        public void Link() {
+            WriteOpcode(DreamProcOpcode.Link);
         }
 
         public void Ftp() {

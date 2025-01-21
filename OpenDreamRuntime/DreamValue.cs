@@ -102,7 +102,7 @@ public struct DreamValue : IEquatable<DreamValue> {
         _refValue = value;
     }
 
-    public DreamValue(IconAppearance appearance) {
+    public DreamValue(MutableAppearance appearance) {
         Type = DreamValueType.Appearance;
         _refValue = appearance;
     }
@@ -315,9 +315,9 @@ public struct DreamValue : IEquatable<DreamValue> {
         throw new InvalidCastException("Value " + this + " was not the expected type of DreamProc");
     }
 
-    public readonly bool TryGetValueAsAppearance([NotNullWhen(true)] out IconAppearance? args) {
+    public readonly bool TryGetValueAsAppearance([NotNullWhen(true)] out MutableAppearance? args) {
         if (Type == DreamValueType.Appearance) {
-            args = Unsafe.As<IconAppearance>(_refValue)!;
+            args = Unsafe.As<MutableAppearance>(_refValue)!;
 
             return true;
         }
@@ -326,9 +326,9 @@ public struct DreamValue : IEquatable<DreamValue> {
         return false;
     }
 
-    public IconAppearance MustGetValueAsAppearance() {
+    public MutableAppearance MustGetValueAsAppearance() {
         if (Type == DreamValueType.Appearance) {
-            return Unsafe.As<IconAppearance>(_refValue)!;
+            return Unsafe.As<MutableAppearance>(_refValue)!;
         }
 
         throw new InvalidCastException("Value " + this + " was not the expected type of Appearance");
@@ -362,6 +362,11 @@ public struct DreamValue : IEquatable<DreamValue> {
             case DreamValueType.Float:
                 var floatValue = MustGetValueAsFloat();
 
+                if (float.IsInfinity(floatValue)) {
+                    var str = float.IsPositiveInfinity(floatValue) ? "inf" : "-inf";
+                    return str;
+                }
+
                 if (floatValue > 16777216f) {
                     return floatValue.ToString("g6");
                 }
@@ -370,6 +375,8 @@ public struct DreamValue : IEquatable<DreamValue> {
                 if (floatValue >= 1000000 && ((int)floatValue == floatValue)) {
                     return floatValue.ToString("g8");
                 }
+
+                if (float.IsNaN(floatValue)) return "nan";
 
                 return floatValue.ToString("g6");
 

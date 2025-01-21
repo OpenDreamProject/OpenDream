@@ -1,17 +1,24 @@
-﻿namespace OpenDreamRuntime.Objects.Types;
+﻿using OpenDreamRuntime.Map;
+using OpenDreamShared.Dream;
+
+namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectTurf : DreamObjectAtom {
     public readonly int X, Y, Z;
-    public readonly IDreamMapManager.Cell Cell;
     public readonly TurfContentsList Contents;
-    public int AppearanceId;
+    public ImmutableAppearance Appearance;
+    public IDreamMapManager.Cell Cell;
 
-    public DreamObjectTurf(DreamObjectDefinition objectDefinition, int x, int y, int z, IDreamMapManager.Cell cell) : base(objectDefinition) {
+    public bool IsDense => GetVariable("density").IsTruthy();
+
+    public DreamObjectTurf(DreamObjectDefinition objectDefinition, int x, int y, int z) : base(objectDefinition) {
         X = x;
         Y = y;
         Z = z;
-        Cell = cell;
-        Contents = new TurfContentsList(ObjectTree.List.ObjectDefinition, Cell);
+
+        Cell = default!; // NEEDS to be set by DreamMapManager after creation
+        Contents = new TurfContentsList(ObjectTree.List.ObjectDefinition, this);
+        Appearance = AppearanceSystem!.AddAppearance(AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
     }
 
     public void SetTurfType(DreamObjectDefinition objectDefinition) {
@@ -22,6 +29,16 @@ public sealed class DreamObjectTurf : DreamObjectAtom {
         Variables?.Clear();
 
         Initialize(new());
+    }
+
+    public void OnAreaChange(DreamObjectArea oldArea) {
+        if (Cell == null!)
+            return;
+
+        using var newAppearance = Appearance.ToMutable();
+
+        newAppearance.Overlays.Remove(oldArea.Appearance);
+        DreamMapManager.SetTurfAppearance(this, newAppearance);
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {

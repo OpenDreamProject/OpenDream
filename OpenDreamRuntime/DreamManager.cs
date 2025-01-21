@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Threading;
 using DMCompiler.Bytecode;
 using DMCompiler.Json;
+using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs;
@@ -267,7 +268,7 @@ namespace OpenDreamRuntime {
             } else if (value.TryGetValueAsAppearance(out var appearance)) {
                 refType = RefType.DreamAppearance;
                 _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
-                idx = (int)_appearanceSystem.AddAppearance(appearance);
+                idx = (int)_appearanceSystem.AddAppearance(appearance).MustGetId();
             } else if (value.TryGetValueAsDreamResource(out var refRsc)) {
                 refType = RefType.DreamResource;
                 idx = refRsc.Id;
@@ -350,8 +351,8 @@ namespace OpenDreamRuntime {
                         return new DreamValue(resource);
                     case RefType.DreamAppearance:
                         _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
-                        return _appearanceSystem.TryGetAppearance(refId, out IconAppearance? appearance)
-                            ? new DreamValue(appearance)
+                        return _appearanceSystem.TryGetAppearanceById((uint) refId, out ImmutableAppearance? appearance)
+                            ? new DreamValue(appearance.ToMutable())
                             : DreamValue.Null;
                     case RefType.Proc:
                         return new(_objectTree.Procs[refId]);

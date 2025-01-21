@@ -3,6 +3,7 @@ using OpenDreamRuntime.Procs;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using DMCompiler.Bytecode;
+using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
@@ -145,6 +146,8 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public bool IsSubtypeOf(TreeEntry ancestor) {
+            if(Deleted) //null deref protection, deleted objects don't have ObjectDefinition anymore
+                return false;
             return ObjectDefinition.IsSubtypeOf(ancestor);
         }
 
@@ -344,7 +347,7 @@ namespace OpenDreamRuntime.Objects {
             // /client is a little special and will return its key var
             // TODO: Maybe this should be an override to GetDisplayName()?
             if (this is DreamObjectClient client)
-                return client.Connection.Session!.Name;
+                return client.Connection.Key;
 
             var name = GetRawName();
             bool isProper = StringIsProper(name);

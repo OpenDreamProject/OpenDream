@@ -41,10 +41,10 @@ public sealed class DreamObjectClient : DreamObject {
     protected override bool TryGetVar(string varName, out DreamValue value) {
         switch (varName) {
             case "ckey":
-                value = new(DreamProcNativeHelpers.Ckey(Connection.Session!.Name));
+                value = new(DreamProcNativeHelpers.Ckey(Connection.Key));
                 return true;
             case "key":
-                value = new(Connection.Session!.Name);
+                value = new(Connection.Key);
                 return true;
             case "mob":
                 value = new(Connection.Mob);
@@ -68,7 +68,7 @@ public sealed class DreamObjectClient : DreamObject {
                 MD5 md5 = MD5.Create();
                 // Check on Robust.Shared.Network.NetUserData.HWId" if you want to seed from how RT does user identification.
                 // We don't use it here because it is probably not enough to ensure security, and (as of time of writing) only works on Windows machines.
-                byte[] brown = Encoding.UTF8.GetBytes(Connection.Session!.Name);
+                byte[] brown = Encoding.UTF8.GetBytes(Connection.Key);
                 byte[] hash = md5.ComputeHash(brown);
                 string hashStr = BitConverter.ToString(hash).Replace("-", "").ToLower().Substring(0,15); // Extracting the first 15 digits to ensure it'll fit in a 64-bit number
 

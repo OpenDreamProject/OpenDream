@@ -119,6 +119,7 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
                 return (opcode, ReadReference(), ReadReference());
 
             case DreamProcOpcode.PushRefAndDereferenceField:
+            case DreamProcOpcode.IndexRefWithString:
                 return (opcode, ReadReference(), ReadString());
 
             case DreamProcOpcode.CallStatement:

@@ -9,7 +9,7 @@ using JetBrains.Annotations;
 namespace DMDisassembler;
 
 internal class DMProc(ProcDefinitionJson json) {
-    private class DecompiledOpcode(int position, string text) {
+    internal struct DecompiledOpcode(int position, string text) {
         public readonly int Position = position;
         public readonly string Text = text;
     }
@@ -21,19 +21,7 @@ internal class DMProc(ProcDefinitionJson json) {
     public Exception exception;
 
     public string Decompile() {
-        List<DecompiledOpcode> decompiled = new();
-        HashSet<int> labeledPositions = new();
-
-        try {
-            foreach (var (position, instruction) in new ProcDecoder(Program.CompiledJson.Strings, Bytecode).Disassemble()) {
-                decompiled.Add(new DecompiledOpcode(position, ProcDecoder.Format(instruction, type => Program.CompiledJson.Types[type].Path)));
-                if (ProcDecoder.GetJumpDestination(instruction) is int jumpPosition) {
-                    labeledPositions.Add(jumpPosition);
-                }
-            }
-        } catch (Exception ex) {
-            exception = ex;
-        }
+        List<DecompiledOpcode> decompiled = GetDecompiledOpcodes(out var labeledPositions);
 
         StringBuilder result = new StringBuilder();
         foreach (DecompiledOpcode decompiledOpcode in decompiled) {
@@ -57,6 +45,24 @@ internal class DMProc(ProcDefinitionJson json) {
         }
 
         return result.ToString();
+    }
+
+    public List<DecompiledOpcode> GetDecompiledOpcodes(out HashSet<int> labeledPositions) {
+        List<DecompiledOpcode> decompiled = new();
+        labeledPositions = new();
+
+        try {
+            foreach (var (position, instruction) in new ProcDecoder(Program.CompiledJson.Strings, Bytecode).Disassemble()) {
+                decompiled.Add(new DecompiledOpcode(position, ProcDecoder.Format(instruction, type => Program.CompiledJson.Types[type].Path)));
+                if (ProcDecoder.GetJumpDestination(instruction) is int jumpPosition) {
+                    labeledPositions.Add(jumpPosition);
+                }
+            }
+        } catch (Exception ex) {
+            exception = ex;
+        }
+
+        return decompiled;
     }
 
     [CanBeNull]

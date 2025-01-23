@@ -29,7 +29,9 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
     private bool _needsFinalizer;
     private int? _storedHashCode;
     private readonly SharedAppearanceSystem? _appearanceSystem;
+
     [ViewVariables] public readonly string Name = MutableAppearance.Default.Name;
+    [ViewVariables] public readonly string? Desc = MutableAppearance.Default.Desc;
     [ViewVariables] public readonly int? Icon = MutableAppearance.Default.Icon;
     [ViewVariables] public readonly string? IconState = MutableAppearance.Default.IconState;
     [ViewVariables] public readonly AtomDirection Direction = MutableAppearance.Default.Direction;
@@ -76,6 +78,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         _appearanceSystem = serverAppearanceSystem;
 
         Name = appearance.Name;
+        Desc = appearance.Desc;
         Icon = appearance.Icon;
         IconState = appearance.IconState;
         Direction = appearance.Direction;
@@ -142,6 +145,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         if (immutableAppearance == null) return false;
 
         if (immutableAppearance.Name != Name) return false;
+        if (immutableAppearance.Desc != Desc) return false;
         if (immutableAppearance.Icon != Icon) return false;
         if (immutableAppearance.IconState != IconState) return false;
         if (immutableAppearance.Direction != Direction) return false;
@@ -150,9 +154,9 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         if (immutableAppearance.PixelOffset2 != PixelOffset2) return false;
         if (immutableAppearance.Color != Color) return false;
         if (immutableAppearance.Alpha != Alpha) return false;
-        if (immutableAppearance.GlideSize != GlideSize) return false;
+        if (!immutableAppearance.GlideSize.Equals(GlideSize)) return false;
         if (!immutableAppearance.ColorMatrix.Equals(ColorMatrix)) return false;
-        if (immutableAppearance.Layer != Layer) return false;
+        if (!immutableAppearance.Layer.Equals(Layer)) return false;
         if (immutableAppearance.Plane != Plane) return false;
         if (immutableAppearance.RenderSource != RenderSource) return false;
         if (immutableAppearance.RenderTarget != RenderTarget) return false;
@@ -170,7 +174,6 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         if (immutableAppearance.Maptext != Maptext) return false;
         if (immutableAppearance.MaptextSize != MaptextSize) return false;
         if (immutableAppearance.MaptextOffset != MaptextOffset) return false;
-
 
         for (int i = 0; i < Filters.Length; i++) {
             if (immutableAppearance.Filters[i] != Filters[i]) return false;
@@ -218,6 +221,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         HashCode hashCode = new HashCode();
 
         hashCode.Add(Name);
+        hashCode.Add(Desc);
         hashCode.Add(Icon);
         hashCode.Add(IconState);
         hashCode.Add(Direction);
@@ -282,6 +286,9 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
             switch (property) {
                 case IconAppearanceProperty.Name:
                     Name = buffer.ReadString();
+                    break;
+                case IconAppearanceProperty.Desc:
+                    Desc = buffer.ReadString();
                     break;
                 case IconAppearanceProperty.Id:
                     _registeredId = buffer.ReadVariableUInt32();
@@ -448,6 +455,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         MutableAppearance result = MutableAppearance.Get();
 
         result.Name = Name;
+        result.Desc = Desc;
         result.Icon = Icon;
         result.IconState = IconState;
         result.Direction = Direction;
@@ -494,6 +502,11 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         if (Name != MutableAppearance.Default.Name) {
             buffer.Write((byte)IconAppearanceProperty.Name);
             buffer.Write(Name);
+        }
+
+        if (Desc != MutableAppearance.Default.Desc) {
+            buffer.Write((byte)IconAppearanceProperty.Desc);
+            buffer.Write(Desc);
         }
 
         if (Icon != null) {

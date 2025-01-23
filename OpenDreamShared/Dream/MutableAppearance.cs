@@ -380,6 +380,7 @@ public enum AnimationFlags {
 //used for encoding for netmessages
 public enum IconAppearanceProperty : byte {
         Name,
+        Desc,
         Icon,
         IconState,
         Direction,

@@ -32,10 +32,10 @@ public class DreamObjectAtom : DreamObject {
     }
 
     public string GetRTEntityDesc() {
-        if (!TryGetVariable("desc", out DreamValue descVar) || !descVar.TryGetValueAsString(out string? desc))
-            return ObjectDefinition.Type;
+        if (AtomManager.TryGetAppearance(this, out var appearance) && appearance.Desc != null)
+            return appearance.Desc;
 
-        return desc;
+        return ObjectDefinition.Type;
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {

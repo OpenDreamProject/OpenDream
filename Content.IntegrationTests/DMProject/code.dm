@@ -34,4 +34,5 @@
 	test_nonlocal_var()
 	test_images()
 	test_filter_init()
+	test_string_interpolation()
 	world.log << "IntegrationTests successful, /world/New() exiting..."

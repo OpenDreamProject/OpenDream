@@ -560,9 +560,9 @@ public sealed class AtomManager {
     /// <param name="atom">The atom to find the appearance of.</param>
     public ImmutableAppearance MustGetAppearance(DreamObject atom) {
         return atom switch {
+            DreamObjectArea area => area.Appearance,
             DreamObjectTurf turf => turf.Appearance,
             DreamObjectMovable movable => movable.SpriteComponent.Appearance!,
-            DreamObjectArea area => area.Appearance,
             DreamObjectImage image => image.IsMutableAppearance ? AppearanceSystem!.AddAppearance(image.MutableAppearance!, registerAppearance: false) : image.SpriteComponent!.Appearance!,
             _ => throw new Exception($"Cannot get appearance of {atom}")
         };
@@ -572,16 +572,15 @@ public sealed class AtomManager {
     /// Optionally looks up for an appearance. Does not try to create a new one when one is not found for this atom.
     /// </summary>
     public bool TryGetAppearance(DreamObject atom, [NotNullWhen(true)] out ImmutableAppearance? appearance) {
-        if (atom is DreamObjectTurf turf)
-            appearance = turf.Appearance;
-        else if (atom is DreamObjectMovable { SpriteComponent.Appearance: not null } movable)
-            appearance = movable.SpriteComponent.Appearance;
-        else if (atom is DreamObjectImage image)
-            appearance = image.IsMutableAppearance ? AppearanceSystem!.AddAppearance(image.MutableAppearance!, registerAppearance: false) : image.SpriteComponent?.Appearance;
-        else if (atom is DreamObjectArea area)
-            appearance = area.Appearance;
-        else
-            appearance = null;
+        appearance = atom switch {
+            DreamObjectArea area => area.Appearance,
+            DreamObjectTurf turf => turf.Appearance,
+            DreamObjectMovable { SpriteComponent.Appearance: { } movableAppearance } => movableAppearance,
+            DreamObjectImage image => image.IsMutableAppearance
+                ? AppearanceSystem!.AddAppearance(image.MutableAppearance!, registerAppearance: false)
+                : image.SpriteComponent?.Appearance,
+            _ => null
+        };
 
         return appearance is not null;
     }

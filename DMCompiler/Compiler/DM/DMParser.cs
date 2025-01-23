@@ -293,6 +293,14 @@ namespace DMCompiler.Compiler.DM {
                     } else {
                         ReuseToken(possibleNewline);
                     }
+                } else if (Current().Type == TokenType.DM_Identifier) { // "var foo" instead of "var/foo"
+                    DMASTPath? newVarPath = Path();
+                    if (newVarPath == null) {
+                        Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
+                        return new DMASTInvalidStatement(CurrentLoc);
+                    }
+
+                    varPath = CurrentPath.AddToPath(newVarPath.Path.PathString);
                 }
 
                 while (true) {

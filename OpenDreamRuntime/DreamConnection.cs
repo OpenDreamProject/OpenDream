@@ -471,6 +471,19 @@ public sealed class DreamConnection {
     }
 
     /// <summary>
+    /// Sends a URL to the client to open.
+    /// Can be a website, a topic call, or another server to connect to.
+    /// </summary>
+    /// <param name="url">URL to open on the client's side</param>
+    public void SendLink(string url) {
+        var msg = new MsgLink {
+            Url = url
+        };
+
+        Session?.Channel.SendMessage(msg);
+    }
+
+    /// <summary>
     /// Prompts the user to save a file to disk
     /// </summary>
     /// <param name="file">File to save</param>

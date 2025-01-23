@@ -5,6 +5,7 @@ using System.Text;
 using DMCompiler.Bytecode;
 using DMCompiler.DM;
 using DMCompiler.Json;
+using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.DebugAdapter;
@@ -247,6 +248,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.CreateFilteredListEnumerator, DMOpcodeHandlers.CreateFilteredListEnumerator},
             {DreamProcOpcode.Power, DMOpcodeHandlers.Power},
             {DreamProcOpcode.Prompt, DMOpcodeHandlers.Prompt},
+            {DreamProcOpcode.Link, DMOpcodeHandlers.Link},
             {DreamProcOpcode.Ftp, DMOpcodeHandlers.Ftp},
             {DreamProcOpcode.Initial, DMOpcodeHandlers.Initial},
             {DreamProcOpcode.IsType, DMOpcodeHandlers.IsType},

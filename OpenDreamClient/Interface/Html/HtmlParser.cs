@@ -24,6 +24,9 @@ public static class HtmlParser {
         }
 
         void PushCurrentText() {
+            if (currentText.Length == 0)
+                return;
+
             appendTo.AddText(currentText.ToString());
             currentText.Clear();
         }
@@ -84,9 +87,6 @@ public static class HtmlParser {
                     }
 
                     break;
-                case '\n':
-                    appendTo.PushNewline();
-                    break;
                 case '&':
                     // HTML named/numbered entity
                     int end = text.IndexOf(';', i);
@@ -122,6 +122,10 @@ public static class HtmlParser {
                         }
                     }
 
+                    break;
+                case '\n':
+                    PushCurrentText();
+                    appendTo.PushNewline();
                     break;
                 default:
                     currentText.Append(c);

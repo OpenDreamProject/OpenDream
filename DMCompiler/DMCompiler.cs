@@ -128,6 +128,9 @@ public class DMCompiler {
                 preproc.IncludeFile(includeDir, fileName, false);
             }
 
+            // Adds the root of the DM project to FILE_DIR
+            compiler.AddResourceDirectory(Path.GetDirectoryName(files[0]) ?? "/");
+
             string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
             string dmStandardDirectory = Path.Join(compilerDirectory, "DMStandard");
 
@@ -139,7 +142,7 @@ public class DMCompiler {
             // Push the pragma config file to the tippy-top of the stack, super-duper prioritizing it, since it governs some compiler behaviour.
             string pragmaName;
             string pragmaDirectory;
-            if(Settings.PragmaFileOverride is not null) {
+            if (Settings.PragmaFileOverride is not null) {
                 pragmaDirectory = Path.GetDirectoryName(Settings.PragmaFileOverride);
                 pragmaName = Path.GetFileName(Settings.PragmaFileOverride);
             } else {
@@ -147,7 +150,7 @@ public class DMCompiler {
                 pragmaName = "DefaultPragmaConfig.dm";
             }
 
-            if(!File.Exists(Path.Join(pragmaDirectory,pragmaName))) {
+            if (!File.Exists(Path.Join(pragmaDirectory, pragmaName))) {
                 ForcedError($"Configuration file '{pragmaName}' not found.");
                 return null;
             }
@@ -336,7 +339,7 @@ public class DMCompiler {
 
             try {
                 JsonSerializer.Serialize(outputFileHandle, compiledDream,
-                    new JsonSerializerOptions() {DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault});
+                    new JsonSerializerOptions() { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault });
 
                 return $"Saved to {outputFile}";
             } catch (Exception e) {
@@ -349,7 +352,7 @@ public class DMCompiler {
 
     public void DefineFatalErrors() {
         foreach (WarningCode code in Enum.GetValues<WarningCode>()) {
-            if((int)code < 1_000) {
+            if ((int)code < 1_000) {
                 Config.ErrorConfig[code] = ErrorLevel.Error;
             }
         }
@@ -359,7 +362,7 @@ public class DMCompiler {
     /// This method also enforces the rule that all emissions with codes less than 1000 are mandatory errors.
     /// </summary>
     public void CheckAllPragmasWereSet() {
-        foreach(WarningCode code in Enum.GetValues<WarningCode>()) {
+        foreach (WarningCode code in Enum.GetValues<WarningCode>()) {
             if (!Config.ErrorConfig.ContainsKey(code)) {
                 ForcedWarning($"Warning #{(int)code:d4} '{code.ToString()}' was never declared as error, warning, notice, or disabled.");
                 Config.ErrorConfig.Add(code, ErrorLevel.Disabled);

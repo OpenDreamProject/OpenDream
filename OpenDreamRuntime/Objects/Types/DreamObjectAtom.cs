@@ -1,5 +1,4 @@
 ﻿using OpenDreamRuntime.Procs;
-using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -51,7 +50,7 @@ public class DreamObjectAtom : DreamObject {
                 value = DreamValue.Null;
                 return true;
             case "appearance":
-                var appearanceCopy = new IconAppearance(AtomManager.MustGetAppearance(this)!);
+                var appearanceCopy = AtomManager.MustGetAppearance(this).ToMutable();
 
                 value = new(appearanceCopy);
                 return true;
@@ -77,7 +76,7 @@ public class DreamObjectAtom : DreamObject {
 
             default:
                 if (AtomManager.IsValidAppearanceVar(varName)) {
-                    var appearance = AtomManager.MustGetAppearance(this)!;
+                    var appearance = AtomManager.MustGetAppearance(this);
 
                     value = AtomManager.GetAppearanceVar(appearance, varName);
                     return true;
@@ -100,9 +99,10 @@ public class DreamObjectAtom : DreamObject {
                     return; // Ignore attempts to set an invalid appearance
 
                 // The dir does not get changed
-                newAppearance.Direction = AtomManager.MustGetAppearance(this)!.Direction;
+                newAppearance.Direction = AtomManager.MustGetAppearance(this).Direction;
 
                 AtomManager.SetAtomAppearance(this, newAppearance);
+                newAppearance.Dispose();
                 break;
             case "overlays": {
                 Overlays.Cut();
@@ -164,12 +164,7 @@ public class DreamObjectAtom : DreamObject {
             default:
                 if (AtomManager.IsValidAppearanceVar(varName)) {
                     // Basically AtomManager.UpdateAppearance() but without the performance impact of using actions
-                    var appearance = AtomManager.MustGetAppearance(this);
-
-                    // Clone the appearance
-                    // TODO: We can probably avoid cloning while the DMISpriteComponent is dirty
-                    appearance = (appearance != null) ? new(appearance) : new();
-
+                    using var appearance = AtomManager.MustGetAppearance(this).ToMutable();
                     AtomManager.SetAppearanceVar(appearance, varName, value);
                     AtomManager.SetAtomAppearance(this, appearance);
                     break;

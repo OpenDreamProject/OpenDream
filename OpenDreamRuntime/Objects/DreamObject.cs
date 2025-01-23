@@ -3,6 +3,7 @@ using OpenDreamRuntime.Procs;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using DMCompiler.Bytecode;
+using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
@@ -145,6 +146,8 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public bool IsSubtypeOf(TreeEntry ancestor) {
+            if(Deleted) //null deref protection, deleted objects don't have ObjectDefinition anymore
+                return false;
             return ObjectDefinition.IsSubtypeOf(ancestor);
         }
 

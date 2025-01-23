@@ -1,4 +1,5 @@
 using System.Threading;
+using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.Native;

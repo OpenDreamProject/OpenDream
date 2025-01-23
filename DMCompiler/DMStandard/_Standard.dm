@@ -28,6 +28,8 @@ proc/flist(Path) as /list
 proc/floor(A) as num
 proc/fract(n) as num
 proc/ftime(File, IsCreationTime = 0) as num
+proc/get_step_to(Ref, Trg, Min=0) as num
+proc/get_steps_to(Ref, Trg, Min=0) as /list
 proc/gradient(A, index)
 proc/hascall(Object, ProcName) as num
 proc/hearers(Depth = world.view, Center = usr) as /list
@@ -160,14 +162,6 @@ proc/replacetextEx_char(Haystack as text, Needle, Replacement, Start = 1, End = 
 
 	var/step_dir = get_dir(Ref, Trg)
 	return step(Ref, step_dir, Speed)
-
-/proc/get_step_to(Ref, Trg, Min=0)
-	set opendream_unimplemented = TRUE
-	CRASH("/get_step_to() is not implemented")
-
-/proc/get_steps_to(Ref, Trg, Min=0) as /list
-	set opendream_unimplemented = TRUE
-	CRASH("/get_steps_to() is not implemented")
 
 /proc/walk_away(Ref,Trg,Max=5,Lag=0,Speed=0)
 	set opendream_unimplemented = TRUE

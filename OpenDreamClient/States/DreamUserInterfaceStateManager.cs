@@ -12,8 +12,8 @@ namespace OpenDreamClient.States;
 [UsedImplicitly]
 public sealed class DreamUserInterfaceStateManager {
     [Dependency] private readonly IGameController _gameController = default!;
-    [Dependency] private readonly IBaseClient _client = default!;
     [Dependency] private readonly IStateManager _stateManager = default!;
+    [Dependency] private readonly IBaseClient _client = default!;
 
     public void Initialize() {
         _client.RunLevelChanged += ((_, args) => {

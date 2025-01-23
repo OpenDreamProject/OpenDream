@@ -3,6 +3,7 @@ using OpenDreamShared.Dream;
 using System.Text.RegularExpressions;
 using OpenDreamRuntime.Objects.Types;
 using System.Text;
+using OpenDreamRuntime.Map;
 
 namespace OpenDreamRuntime.Procs.Native;
 
@@ -177,7 +178,7 @@ internal static partial class DreamProcNativeHelpers {
                 if (!mapManager.TryGetCellAt((eyePos.X + deltaX, eyePos.Y + deltaY), eyePos.Z, out var cell))
                     continue;
 
-                var appearance = atomManager.MustGetAppearance(cell.Turf!)!;
+                var appearance = atomManager.MustGetAppearance(cell.Turf);
                 var tile = new ViewAlgorithm.Tile() {
                     Opaque = appearance.Opacity,
                     Luminosity = 0,
@@ -186,7 +187,7 @@ internal static partial class DreamProcNativeHelpers {
                 };
 
                 foreach (var movable in cell.Movables) {
-                    appearance = atomManager.MustGetAppearance(movable)!;
+                    appearance = atomManager.MustGetAppearance(movable);
 
                     tile.Opaque |= appearance.Opacity;
                 }
@@ -541,21 +542,26 @@ internal static partial class DreamProcNativeHelpers {
         var loc1Pos = atomManager.GetAtomPosition(loc1);
         var loc2Pos = atomManager.GetAtomPosition(loc2);
 
-        if (loc1Pos.Z != loc2Pos.Z) // They must be on the same z-level
+        return GetDir(loc1Pos, loc2Pos);
+    }
+
+    /// <inheritdoc cref="GetDir(OpenDreamRuntime.AtomManager,OpenDreamRuntime.Objects.Types.DreamObjectAtom,OpenDreamRuntime.Objects.Types.DreamObjectAtom)"/>
+    public static AtomDirection GetDir((int X, int Y, int Z) loc1, (int X, int Y, int Z) loc2) {
+        if (loc1.Z != loc2.Z) // They must be on the same z-level
             return 0;
 
         AtomDirection direction = AtomDirection.None;
 
         // East or West
-        if (loc2Pos.X < loc1Pos.X)
+        if (loc2.X < loc1.X)
             direction |= AtomDirection.West;
-        else if (loc2Pos.X > loc1Pos.X)
+        else if (loc2.X > loc1.X)
             direction |= AtomDirection.East;
 
         // North or South
-        if (loc2Pos.Y < loc1Pos.Y)
+        if (loc2.Y < loc1.Y)
             direction |= AtomDirection.South;
-        else if (loc2Pos.Y > loc1Pos.Y)
+        else if (loc2.Y > loc1.Y)
             direction |= AtomDirection.North;
 
         return direction;

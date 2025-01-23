@@ -1,4 +1,4 @@
-﻿using System.Buffers;
+using System.Buffers;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
@@ -156,11 +156,12 @@ internal static class DreamProcNativeRoot {
                 return DreamValue.Null;
             chainAnim = true;
         }
-        
+
         bundle.LastAnimatedObject = new DreamValue(obj);
         if(obj.IsSubtypeOf(bundle.ObjectTree.Filter)) {//TODO animate filters
             return DreamValue.Null;
         }
+
         // TODO: Is this the correct behavior for invalid time?
         if (!bundle.GetArgument(1, "time").TryGetValueAsFloat(out float time))
             return DreamValue.Null;
@@ -210,14 +211,16 @@ internal static class DreamProcNativeRoot {
             /* TODO these are not yet implemented
             if(!pixelZ.IsNull)
                 pixelZ = new(pixelZ.UnsafeGetValueAsFloat() + obj.GetVariable("pixel_z").UnsafeGetValueAsFloat()); //TODO change to appearance when pixel_z is implemented
+            */
             if(!maptextWidth.IsNull)
-                maptextWidth = new(maptextWidth.UnsafeGetValueAsFloat() + obj.GetVariable("maptext_width").UnsafeGetValueAsFloat()); //TODO change to appearance when maptext_width is implemented
+                maptextWidth = new(maptextWidth.UnsafeGetValueAsFloat() + appearance.MaptextSize.X);
             if(!maptextHeight.IsNull)
-                maptextHeight = new(maptextHeight.UnsafeGetValueAsFloat() + obj.GetVariable("maptext_height").UnsafeGetValueAsFloat()); //TODO change to appearance when maptext_height is implemented
+                maptextHeight = new(maptextHeight.UnsafeGetValueAsFloat() + appearance.MaptextSize.Y);
             if(!maptextX.IsNull)
-                maptextX = new(maptextX.UnsafeGetValueAsFloat() + obj.GetVariable("maptext_x").UnsafeGetValueAsFloat()); //TODO change to appearance when maptext_x is implemented
+                maptextX = new(maptextX.UnsafeGetValueAsFloat() + appearance.MaptextOffset.X);
             if(!maptextY.IsNull)
-                maptextY = new(maptextY.UnsafeGetValueAsFloat() + obj.GetVariable("maptext_y").UnsafeGetValueAsFloat()); //TODO change to appearance when maptext_y is implemented
+                maptextY = new(maptextY.UnsafeGetValueAsFloat() + appearance.MaptextOffset.Y);
+            /*
             if(!luminosity.IsNull)
                 luminosity = new(luminosity.UnsafeGetValueAsFloat() + obj.GetVariable("luminosity").UnsafeGetValueAsFloat()); //TODO change to appearance when luminosity is implemented
             */
@@ -273,17 +276,30 @@ internal static class DreamProcNativeRoot {
             }
             */
 
-            /* TODO maptext
             if (!maptextX.IsNull) {
                 obj.SetVariableValue("maptext_x", maptextX);
-                maptextX.TryGetValueAsInteger(out appearance.MapTextOffset.X);
+                maptextX.TryGetValueAsInteger(out appearance.MaptextOffset.X);
             }
 
             if (!maptextY.IsNull) {
                 obj.SetVariableValue("maptext_y", maptextY);
-                maptextY.TryGetValueAsInteger(out appearance.MapTextOffset.Y);
+                maptextY.TryGetValueAsInteger(out appearance.MaptextOffset.Y);
             }
-            */
+
+            if (!maptextWidth.IsNull) {
+                obj.SetVariableValue("maptext_width", maptextWidth);
+                maptextX.TryGetValueAsInteger(out appearance.MaptextSize.X);
+            }
+
+            if (!maptextHeight.IsNull) {
+                obj.SetVariableValue("maptext_y", maptextHeight);
+                maptextY.TryGetValueAsInteger(out appearance.MaptextSize.Y);
+            }
+
+            if(!maptext.IsNull){
+                obj.SetVariableValue("maptext", maptext);
+                maptext.TryGetValueAsString(out appearance.Maptext);
+            }
 
             if (!dir.IsNull) {
                 obj.SetVariableValue("dir", dir);
@@ -700,7 +716,6 @@ internal static class DreamProcNativeRoot {
         DreamValue file = bundle.GetArgument(0, "File");
         DreamResource? resource;
 
-
         if (file.TryGetValueAsString(out var rscPath)) {
             resource = bundle.ResourceManager.LoadResource(rscPath);
         } else if (!file.TryGetValueAsDreamResource(out resource)) {
@@ -993,9 +1008,69 @@ internal static class DreamProcNativeRoot {
             if (isCreationTime.IsTruthy()) {
                 return new DreamValue((fi.CreationTime - new DateTime(2000, 1, 1)).TotalMilliseconds / 100);
             }
+
             return new DreamValue((fi.LastWriteTime - new DateTime(2000, 1, 1)).TotalMilliseconds / 100);
         }
+
         throw new Exception("Invalid path argument");
+    }
+
+    [DreamProc("get_step_to")]
+    [DreamProcParameter("Ref", Type = DreamValueTypeFlag.DreamObject)]
+    [DreamProcParameter("Trg", Type = DreamValueTypeFlag.DreamObject)]
+    [DreamProcParameter("Min", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    public static DreamValue NativeProc_get_step_to(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        var refArg = bundle.GetArgument(0, "Ref");
+        var trgArg = bundle.GetArgument(1, "Trg");
+        var minArg = (int)bundle.GetArgument(2, "Min").UnsafeGetValueAsFloat();
+
+        if (!refArg.TryGetValueAsDreamObject<DreamObjectAtom>(out var refAtom))
+            return DreamValue.Null;
+        if (!trgArg.TryGetValueAsDreamObject<DreamObjectAtom>(out var trgAtom))
+            return DreamValue.Null;
+
+        var loc = bundle.AtomManager.GetAtomPosition(refAtom);
+        var dest = bundle.AtomManager.GetAtomPosition(trgAtom);
+        var steps = bundle.MapManager.CalculateSteps(loc, dest, minArg);
+
+        // We perform a whole path-find then return only the first step
+        // Truly, DM's most optimized proc
+        var direction = steps.FirstOrDefault();
+        var stepLoc = direction switch {
+            // The ref says get_step_to() returns 0 if there's no change, but it also says it returns null.
+            // I wasn't able to get it to return 0 so null it is.
+            0 => null,
+            _ => DreamProcNativeHelpers.GetStep(bundle.AtomManager, bundle.MapManager, refAtom, direction)
+        };
+
+        return new(stepLoc);
+    }
+
+    [DreamProc("get_steps_to")]
+    [DreamProcParameter("Ref", Type = DreamValueTypeFlag.DreamObject)]
+    [DreamProcParameter("Trg", Type = DreamValueTypeFlag.DreamObject)]
+    [DreamProcParameter("Min", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    public static DreamValue NativeProc_get_steps_to(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        var refArg = bundle.GetArgument(0, "Ref");
+        var trgArg = bundle.GetArgument(1, "Trg");
+        var minArg = (int)bundle.GetArgument(2, "Min").UnsafeGetValueAsFloat();
+
+        if (!refArg.TryGetValueAsDreamObject<DreamObjectAtom>(out var refAtom))
+            return DreamValue.Null;
+        if (!trgArg.TryGetValueAsDreamObject<DreamObjectAtom>(out var trgAtom))
+            return DreamValue.Null;
+
+        var loc = bundle.AtomManager.GetAtomPosition(refAtom);
+        var dest = bundle.AtomManager.GetAtomPosition(trgAtom);
+        var steps = bundle.MapManager.CalculateSteps(loc, dest, minArg);
+        var result = bundle.ObjectTree.CreateList();
+
+        foreach (var step in steps) {
+            result.AddValue(new((int)step));
+        }
+
+        // Null if there are no steps
+        return new(result.GetLength() > 0 ? result : null);
     }
 
     [DreamProc("hascall")]
@@ -3023,6 +3098,14 @@ internal static class DreamProcNativeRoot {
         (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, usr as DreamObjectAtom, bundle.Arguments);
         if (center is null)
             return new(view);
+
+        if (center.TryGetVariable("contents", out var centerContents) && centerContents.TryGetValueAsDreamList(out var centerContentsList)) {
+            foreach (var item in centerContentsList.GetValues()) {
+                view.AddValue(item);
+            }
+        }
+
+        // Center gets included during the walk through the tiles
 
         var eyePos = bundle.AtomManager.GetAtomPosition(center);
         var viewData = DreamProcNativeHelpers.CollectViewData(bundle.AtomManager, bundle.MapManager, eyePos, range);

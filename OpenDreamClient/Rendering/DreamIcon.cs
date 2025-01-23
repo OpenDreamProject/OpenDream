@@ -109,8 +109,8 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             TextureRenderOffset = Vector2.Zero;
             return frame;
         } else {
-            if (textureOverride is not null) {
-                var texture = FullRenderTexture(viewOverlay, handle, iconMetaData, frame); //no caching in the presence of overrides
+            if (textureOverride is not null) { //no caching in the presence of overrides
+                var texture = FullRenderTexture(viewOverlay, handle, iconMetaData, frame);
 
                 renderTargetPool.ReturnAtEndOfFrame(texture);
                 return texture.Texture;

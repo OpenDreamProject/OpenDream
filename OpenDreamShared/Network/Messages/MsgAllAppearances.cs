@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using System.Collections.Generic;
 using Lidgren.Network;
 using OpenDreamShared.Dream;
 using Robust.Shared.Network;
@@ -12,6 +9,7 @@ namespace OpenDreamShared.Network.Messages;
 public sealed class MsgAllAppearances(Dictionary<uint, ImmutableAppearance> allAppearances) : NetMessage {
     public override MsgGroups MsgGroup => MsgGroups.EntityEvent;
     public Dictionary<uint, ImmutableAppearance> AllAppearances = allAppearances;
+
     public MsgAllAppearances() : this(new()) { }
 
     public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {

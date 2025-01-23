@@ -1,4 +1,5 @@
 #include "code.dm"
+#include "Tests/atom_appearance.dm"
 #include "Tests/block.dm"
 #include "Tests/color_matrix.dm"
 #include "Tests/range.dm"
@@ -6,5 +7,6 @@
 #include "Tests/nonlocal_var.dm"
 #include "Tests/image.dm"
 #include "Tests/filter_initial.dm"
+#include "Tests/string_interpolation.dm"
 #include "map.dmm"
 #include "interface.dmf"

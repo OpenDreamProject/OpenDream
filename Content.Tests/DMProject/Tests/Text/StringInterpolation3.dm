@@ -1,14 +1,23 @@
+/datum/test/var/name
 
-/obj/blombo
-	name = "Blombo"
-	gender = FEMALE
-
-/obj/blorpo
-	name = "Blorpo"
-	gender = MALE
+/datum/test/test1
+    name = ""
+/datum/test/test2
+    name = "   " // 3 spaces
+/datum/test/test3
+    name = "\t"
 
 /proc/RunTest()
-	var/obj/blombo/b = new
-	var/obj/blorpo/b2 = new
-	var/result_text = "[b]? Nobody likes \him. \He is awful! Unlike [b2]. \He is pretty cool!"
-	ASSERT(result_text == "Blombo? Nobody likes her. She is awful! Unlike Blorpo. He is pretty cool!")
+    var/list/correct = list(
+        "/datum/test/test1: ",
+        "/datum/test/test2:    ",
+        "/datum/test/test3: \t"
+    )
+    var/i = 1
+    for (var/T in typesof(/datum/test))
+        if(T == /datum/test)
+            continue
+        var/datum/test/D = new T()
+        var/true_text = correct[i]
+        ASSERT(true_text == "[T]: \the [D]")
+        ++i

@@ -233,6 +233,7 @@ public sealed class AtomManager {
     public bool IsValidAppearanceVar(string name) {
         switch (name) {
             case "name":
+            case "desc":
             case "icon":
             case "icon_state":
             case "dir":
@@ -276,6 +277,10 @@ public sealed class AtomManager {
             case "name":
                 value.TryGetValueAsString(out var name);
                 appearance.Name = name ?? string.Empty;
+                break;
+            case "desc":
+                value.TryGetValueAsString(out var desc);
+                appearance.Desc = desc;
                 break;
             case "icon":
                 if (_resourceManager.TryLoadIcon(value, out var icon)) {
@@ -439,6 +444,10 @@ public sealed class AtomManager {
         switch (varName) {
             case "name":
                 return new(appearance.Name);
+            case "desc":
+                if (appearance.Desc == null)
+                    return DreamValue.Null;
+                return new(appearance.Desc);
             case "icon":
                 if (appearance.Icon == null)
                     return DreamValue.Null;
@@ -551,9 +560,9 @@ public sealed class AtomManager {
     /// <param name="atom">The atom to find the appearance of.</param>
     public ImmutableAppearance MustGetAppearance(DreamObject atom) {
         return atom switch {
+            DreamObjectArea area => area.Appearance,
             DreamObjectTurf turf => turf.Appearance,
             DreamObjectMovable movable => movable.SpriteComponent.Appearance!,
-            DreamObjectArea area => area.Appearance,
             DreamObjectImage image => image.IsMutableAppearance ? AppearanceSystem!.AddAppearance(image.MutableAppearance!, registerAppearance: false) : image.SpriteComponent!.Appearance!,
             _ => throw new Exception($"Cannot get appearance of {atom}")
         };
@@ -563,16 +572,15 @@ public sealed class AtomManager {
     /// Optionally looks up for an appearance. Does not try to create a new one when one is not found for this atom.
     /// </summary>
     public bool TryGetAppearance(DreamObject atom, [NotNullWhen(true)] out ImmutableAppearance? appearance) {
-        if (atom is DreamObjectTurf turf)
-            appearance = turf.Appearance;
-        else if (atom is DreamObjectMovable { SpriteComponent.Appearance: not null } movable)
-            appearance = movable.SpriteComponent.Appearance;
-        else if (atom is DreamObjectImage image)
-            appearance = image.IsMutableAppearance ? AppearanceSystem!.AddAppearance(image.MutableAppearance!, registerAppearance: false) : image.SpriteComponent?.Appearance;
-        else if (atom is DreamObjectArea area)
-            appearance = area.Appearance;
-        else
-            appearance = null;
+        appearance = atom switch {
+            DreamObjectArea area => area.Appearance,
+            DreamObjectTurf turf => turf.Appearance,
+            DreamObjectMovable { SpriteComponent.Appearance: { } movableAppearance } => movableAppearance,
+            DreamObjectImage image => image.IsMutableAppearance
+                ? AppearanceSystem!.AddAppearance(image.MutableAppearance!, registerAppearance: false)
+                : image.SpriteComponent?.Appearance,
+            _ => null
+        };
 
         return appearance is not null;
     }
@@ -692,6 +700,7 @@ public sealed class AtomManager {
             return appearance;
 
         def.TryGetVariable("name", out var nameVar);
+        def.TryGetVariable("desc", out var descVar);
         def.TryGetVariable("icon", out var iconVar);
         def.TryGetVariable("icon_state", out var stateVar);
         def.TryGetVariable("color", out var colorVar);
@@ -712,6 +721,7 @@ public sealed class AtomManager {
 
         appearance = MutableAppearance.Get();
         SetAppearanceVar(appearance, "name", nameVar);
+        SetAppearanceVar(appearance, "desc", descVar);
         SetAppearanceVar(appearance, "icon", iconVar);
         SetAppearanceVar(appearance, "icon_state", stateVar);
         SetAppearanceVar(appearance, "color", colorVar);

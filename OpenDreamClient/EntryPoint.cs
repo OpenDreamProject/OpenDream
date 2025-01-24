@@ -6,7 +6,6 @@ using OpenDreamClient.Resources;
 using OpenDreamClient.States;
 using OpenDreamShared;
 using OpenDreamShared.Network.Messages;
-using Robust.Client;
 using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Client.Map;

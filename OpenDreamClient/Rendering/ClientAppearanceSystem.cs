@@ -52,7 +52,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     }
 
     public void LoadAppearance(uint appearanceId, Action<ImmutableAppearance> loadCallback) {
-        if (_appearances.TryGetValue(appearanceId, out var appearance)) {
+        if (_appearances.TryGetValue(appearanceId, out var appearance) && _receivedAllAppearancesMsg) {
             loadCallback(appearance);
             return;
         }

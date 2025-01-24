@@ -76,13 +76,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         _appearanceLookup.Add(proxyWeakRef);
         _idToAppearance.Add(immutableAppearance.MustGetId(), proxyWeakRef);
 
-        var msg = new MsgNewAppearance(immutableAppearance);
-        foreach (var session in _playerManager.Sessions) {
-            if (session.Status != SessionStatus.InGame)
-                continue;
-
-            _networkManager.ServerSendMessage(msg, session.Channel);
-        }
+        RaiseNetworkEvent(new NewAppearanceEvent(immutableAppearance));
     }
 
     public ImmutableAppearance AddAppearance(MutableAppearance appearance, bool registerAppearance = true) {

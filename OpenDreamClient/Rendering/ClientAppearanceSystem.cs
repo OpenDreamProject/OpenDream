@@ -15,6 +15,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     private readonly Dictionary<uint, List<Action<ImmutableAppearance>>> _appearanceLoadCallbacks = new();
     private readonly Dictionary<uint, DreamIcon> _turfIcons = new();
     private readonly Dictionary<DreamFilter, ShaderInstance> _filterShaders = new();
+    private bool _receivedAllAppearancesMsg;
 
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IDreamResourceManager _dreamResourceManager = default!;
@@ -30,13 +31,17 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     }
 
     public override void Shutdown() {
+        _receivedAllAppearancesMsg = false;
         _appearances.Clear();
         _appearanceLoadCallbacks.Clear();
         _turfIcons.Clear();
+        _filterShaders.Clear();
     }
 
     public void SetAllAppearances(Dictionary<uint, ImmutableAppearance> appearances) {
         _appearances = appearances;
+        _receivedAllAppearancesMsg = true;
+
         //need to do this because all overlays can't be resolved until the whole appearance table is populated
         foreach(KeyValuePair<uint, ImmutableAppearance> pair in _appearances) {
             pair.Value.ResolveOverlays(this);
@@ -73,10 +78,14 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     public void OnNewAppearance(MsgNewAppearance e) {
         uint appearanceId = e.Appearance.MustGetId();
         _appearances[appearanceId] = e.Appearance;
-        _appearances[appearanceId].ResolveOverlays(this);
 
-        if (_appearanceLoadCallbacks.TryGetValue(appearanceId, out var callbacks)) {
-            foreach (var callback in callbacks) callback(_appearances[appearanceId]);
+        // If we haven't received the MsgAllAppearances yet, leave this initialization for later
+        if (_receivedAllAppearancesMsg) {
+            _appearances[appearanceId].ResolveOverlays(this);
+
+            if (_appearanceLoadCallbacks.TryGetValue(appearanceId, out var callbacks)) {
+                foreach (var callback in callbacks) callback(_appearances[appearanceId]);
+            }
         }
     }
 

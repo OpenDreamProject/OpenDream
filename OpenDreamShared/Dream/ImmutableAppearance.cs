@@ -23,12 +23,9 @@ namespace OpenDreamShared.Dream;
  */
 
 // TODO: Wow this is huge! Probably look into splitting this by most used/least used to reduce the size of these
-[Serializable]
+[Serializable, NetSerializable]
 public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
     private uint? _registeredId;
-    private bool _needsFinalizer;
-    private int? _storedHashCode;
-    private readonly SharedAppearanceSystem? _appearanceSystem;
 
     [ViewVariables] public readonly string Name = MutableAppearance.Default.Name;
     [ViewVariables] public readonly string? Desc = MutableAppearance.Default.Desc;
@@ -71,6 +68,9 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
     // PixelOffset2 behaves the same as PixelOffset in top-down mode, so this is used
     public Vector2i TotalPixelOffset => PixelOffset + PixelOffset2;
 
+    [NonSerialized] private readonly SharedAppearanceSystem? _appearanceSystem;
+    [NonSerialized] private bool _needsFinalizer;
+    [NonSerialized] private int? _storedHashCode;
     [NonSerialized] private List<uint>? _overlayIDs;
     [NonSerialized] private List<uint>? _underlayIDs;
 

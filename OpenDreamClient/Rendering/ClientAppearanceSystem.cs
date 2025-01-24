@@ -6,7 +6,6 @@ using Robust.Shared.Prototypes;
 using OpenDreamClient.Resources;
 using OpenDreamClient.Resources.ResourceTypes;
 using Robust.Shared.Timing;
-using OpenDreamShared.Network.Messages;
 
 namespace OpenDreamClient.Rendering;
 
@@ -25,6 +24,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     [Dependency] private readonly DMISpriteSystem _spriteSystem = default!;
 
     public override void Initialize() {
+        SubscribeNetworkEvent<NewAppearanceEvent>(OnNewAppearance);
         SubscribeNetworkEvent<RemoveAppearanceEvent>(e => _appearances.Remove(e.AppearanceId));
         SubscribeNetworkEvent<AnimationEvent>(OnAnimation);
         SubscribeLocalEvent<DMISpriteComponent, WorldAABBEvent>(OnWorldAABB);
@@ -75,7 +75,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         return icon;
     }
 
-    public void OnNewAppearance(MsgNewAppearance e) {
+    public void OnNewAppearance(NewAppearanceEvent e) {
         uint appearanceId = e.Appearance.MustGetId();
         _appearances[appearanceId] = e.Appearance;
 

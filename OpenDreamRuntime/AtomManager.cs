@@ -709,6 +709,11 @@ public sealed class AtomManager {
         def.TryGetVariable("render_target", out var renderTargetVar);
         def.TryGetVariable("blend_mode", out var blendModeVar);
         def.TryGetVariable("appearance_flags", out var appearanceFlagsVar);
+        def.TryGetVariable("maptext", out var maptextVar);
+        def.TryGetVariable("maptext_width", out var maptextWidthVar);
+        def.TryGetVariable("maptext_height", out var maptextHeightVar);
+        def.TryGetVariable("maptext_x", out var maptextXVar);
+        def.TryGetVariable("maptext_y", out var maptextYVar);
 
         appearance = MutableAppearance.Get();
         SetAppearanceVar(appearance, "name", nameVar);
@@ -729,6 +734,11 @@ public sealed class AtomManager {
         SetAppearanceVar(appearance, "render_target", renderTargetVar);
         SetAppearanceVar(appearance, "blend_mode", blendModeVar);
         SetAppearanceVar(appearance, "appearance_flags", appearanceFlagsVar);
+        SetAppearanceVar(appearance, "maptext", maptextVar);
+        SetAppearanceVar(appearance, "maptext_width", maptextWidthVar);
+        SetAppearanceVar(appearance, "maptext_height", maptextHeightVar);
+        SetAppearanceVar(appearance, "maptext_x", maptextXVar);
+        SetAppearanceVar(appearance, "maptext_y", maptextYVar);
 
         if (def.TryGetVariable("transform", out var transformVar) && transformVar.TryGetValueAsDreamObject<DreamObjectMatrix>(out var transformMatrix)) {
             appearance.Transform = DreamObjectMatrix.MatrixToTransformFloatArray(transformMatrix);

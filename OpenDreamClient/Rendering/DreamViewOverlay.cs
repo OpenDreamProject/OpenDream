@@ -513,7 +513,7 @@ internal sealed class DreamViewOverlay : Overlay {
 
         plane = new(renderTarget);
         _planes.Add(planeIndex, plane);
-        _sawmill.Info($"Created plane {planeIndex}");
+        _sawmill.Verbose($"Created plane {planeIndex}");
         return plane;
     }
 

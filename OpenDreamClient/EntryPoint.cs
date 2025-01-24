@@ -6,6 +6,7 @@ using OpenDreamClient.Resources;
 using OpenDreamClient.States;
 using OpenDreamShared;
 using OpenDreamShared.Network.Messages;
+using Robust.Client;
 using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Client.Map;
@@ -27,6 +28,7 @@ public sealed class EntryPoint : GameClient {
     [Dependency] private readonly IConfigurationManager _configurationManager = default!;
     [Dependency] private readonly IClientNetManager _netManager = default!;
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+    [Dependency] private readonly IBaseClient _client = default!;
 
     private const string UserAgent =
         "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.2; WOW64; Trident/7.0; .NET4.0C; .NET4.0E; .NET CLR 2.0.50727; .NET CLR 3.0.30729; .NET CLR 3.5.30729)";
@@ -114,7 +116,8 @@ public sealed class EntryPoint : GameClient {
     }
 
     private void RxNewAppearance(MsgNewAppearance message) {
-        if (!_entitySystemManager.TryGetEntitySystem<ClientAppearanceSystem>(out var clientAppearanceSystem)) {
+        if (_client.RunLevel != ClientRunLevel.InGame ||
+            !_entitySystemManager.TryGetEntitySystem<ClientAppearanceSystem>(out var clientAppearanceSystem)) {
             Logger.GetSawmill("opendream").Error("Received MsgNewAppearance before initializing entity systems");
             return;
         }

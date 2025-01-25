@@ -45,9 +45,15 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         //need to do this because all overlays can't be resolved until the whole appearance table is populated
         foreach(KeyValuePair<uint, ImmutableAppearance> pair in _appearances) {
             pair.Value.ResolveOverlays(this);
-            if (_appearanceLoadCallbacks.TryGetValue(pair.Key, out var callbacks)) {
-                foreach (var callback in callbacks) callback(pair.Value);
-            }
+        }
+
+        // Callbacks called in another pass to ensure all appearances are initialized first
+        foreach (var callbackPair in _appearanceLoadCallbacks) {
+            if (!_appearances.TryGetValue(callbackPair.Key, out var appearance))
+                continue;
+
+            foreach (var callback in callbackPair.Value)
+                callback(appearance);
         }
     }
 

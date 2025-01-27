@@ -411,8 +411,7 @@ internal sealed class DMPreprocessorLexer {
                     if (TokenTextBuilder[^(complexDelimiter.Length + 2)] == '\r') trimEnd += 1;
                     var trimStart = 3 + complexDelimiter.Length; // 3 is from these chars: @()
                     value = TokenTextBuilder.ToString(trimStart, TokenTextBuilder.Length - (trimStart + trimEnd));
-                }
-                else if (isLong) {
+                } else if (isLong) {
                     // Long strings ignore a newline immediately after the @{" and before the "}
                     if (TokenTextBuilder[3] == '\r')
                         TokenTextBuilder.Remove(3, 1);

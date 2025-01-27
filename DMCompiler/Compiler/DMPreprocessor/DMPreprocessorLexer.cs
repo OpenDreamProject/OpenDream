@@ -348,8 +348,7 @@ internal sealed class DMPreprocessorLexer {
                         if (GetCurrent() == complexDelimiter[delimIdx]) delimIdx++;
                         else delimIdx = 0;
 
-                        if (delimIdx + 1 == complexDelimiter.Length && c == complexDelimiter[^1]) { // latter check ensures a 1-char delimiter actually matches
-                            TokenTextBuilder.Remove(TokenTextBuilder.Length - delimIdx, complexDelimiter.Length - 1);
+                        if (delimIdx == complexDelimiter.Length && c == complexDelimiter[^1]) { // latter check ensures a 1-char delimiter actually matches
                             break;
                         }
 
@@ -360,8 +359,6 @@ internal sealed class DMPreprocessorLexer {
                         _compiler.Emit(WarningCode.BadExpression, startLoc,
                             "Unterminated string delimiter");
                     }
-
-                    TokenTextBuilder.Append(complexDelimiter);
                 } else if (isLong) {
                     bool nextCharCanTerm = false;
 
@@ -395,8 +392,7 @@ internal sealed class DMPreprocessorLexer {
                     }
                 }
 
-                if (isComplex) Advance();
-                else TokenTextBuilder.Append(c);
+                if (!isComplex) TokenTextBuilder.Append(c);
 
                 if (!HandleLineEnd())
                     Advance();

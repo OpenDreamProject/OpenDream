@@ -122,6 +122,7 @@ internal sealed class Local(Location location, DMProc.LocalVariable localVar) : 
 
 // Identifier of field
 internal sealed class Field(Location location, DMVariable variable, DMComplexValueType valType) : LValue(location, variable.Type) {
+    public bool IsConst { get; } = variable.IsConst;
     public override DMComplexValueType ValType => valType;
 
     public override void EmitPushInitial(ExpressionContext ctx) {

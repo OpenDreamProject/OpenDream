@@ -22,8 +22,6 @@
 	set opendream_unimplemented = TRUE
 /proc/issaved(v)
 	set opendream_unimplemented = TRUE
-/proc/link(url)
-	set opendream_unimplemented = TRUE
 /proc/load_resource(File)
 	set opendream_unimplemented = TRUE
 proc/missile(Type, Start, End)

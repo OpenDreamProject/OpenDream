@@ -43,13 +43,15 @@ internal partial class DMCodeTree {
 
             if (value.TryAsConstant(compiler, out var constant)) {
                 variable.Value = constant;
-                return;
+
+                // We want to continue with putting this in the init proc if a base type initializes it to another value
+                if (!isOverride || !dmObject.IsRuntimeInitialized(variable.Name)) {
+                    return;
+                }
             } else if (variable.IsConst) {
                 compiler.Emit(WarningCode.HardConstContext, value.Location, "Value of const var must be a constant");
                 return;
-            }
-
-            if (!IsValidRightHandSide(compiler, dmObject, value)) {
+            } else if (!IsValidRightHandSide(compiler, dmObject, value)) {
                 compiler.Emit(WarningCode.BadExpression, value.Location,
                     $"Invalid initial value for \"{variable.Name}\"");
                 return;
@@ -60,7 +62,7 @@ internal partial class DMCodeTree {
             var assign = new Assignment(initLoc, field, value);
 
             variable.Value = new Null(Location.Internal);
-            dmObject.InitializationProcExpressions.Add(assign);
+            dmObject.InitializationProcAssignments.Add((variable.Name, assign));
         }
 
         /// <returns>Whether the given value can be used as an instance variable's initial value</returns>
@@ -74,6 +76,7 @@ internal partial class DMCodeTree {
                     "file" => true,
                     "sound" => true,
                     "nameof" => true,
+                    "filter" => true,
                     _ => false
                 },
 
@@ -124,7 +127,7 @@ internal partial class DMCodeTree {
                 return false;
 
             int globalId = compiler.DMObjectTree.CreateGlobal(out DMVariable global, varDef.Type, VarName, varDef.IsConst,
-                varDef.ValType);
+                varDef.IsFinal, varDef.ValType);
 
             dmObject.AddGlobalVariable(global, globalId);
             _defined = true;
@@ -151,7 +154,7 @@ internal partial class DMCodeTree {
             if (!TryBuildValue(new(compiler, dmObject, null), varDef.Value, varDef.Type, ScopeMode.Normal, out var value))
                 return false;
 
-            var variable = new DMVariable(varDef.Type, VarName, false, varDef.IsConst, varDef.IsTmp, varDef.ValType);
+            var variable = new DMVariable(varDef.Type, VarName, false, varDef.IsConst, varDef.IsFinal, varDef.IsTmp, varDef.ValType);
             dmObject.AddVariable(variable);
             _defined = true;
 
@@ -173,9 +176,16 @@ internal partial class DMCodeTree {
                     $"Duplicate definition of static var \"{VarName}\"");
                 return true;
             } else if (dmObject.HasLocalVariable(VarName)) {
-                if (!varDef.Location.InDMStandard) // Duplicate instance vars are not an error in DMStandard
-                    compiler.Emit(WarningCode.InvalidVarDefinition, varDef.Location,
+                if (!varDef.Location.InDMStandard) { // Duplicate instance vars are not an error in DMStandard
+                    var variable = dmObject.GetVariable(VarName);
+                    if(variable!.Value is not null)
+                        compiler.Emit(WarningCode.InvalidVarDefinition, varDef.Location,
+                        $"Duplicate definition of var \"{VarName}\". Previous definition at {variable.Value.Location}");
+                    else
+                        compiler.Emit(WarningCode.InvalidVarDefinition, varDef.Location,
                         $"Duplicate definition of var \"{VarName}\"");
+                }
+
                 return true;
             } else if (IsStatic && VarName == "vars" && dmObject == compiler.DMObjectTree.Root) {
                 compiler.Emit(WarningCode.InvalidVarDefinition, varDef.Location, "Duplicate definition of global.vars");
@@ -212,6 +222,11 @@ internal partial class DMCodeTree {
             } else if (variable.IsConst) {
                 compiler.Emit(WarningCode.WriteToConstant, varOverride.Location,
                     $"Var \"{VarName}\" is const and cannot be modified");
+                _finished = true;
+                return true;
+            } else if (variable.IsFinal) {
+                compiler.Emit(WarningCode.FinalOverride, varOverride.Location,
+                    $"Var \"{VarName}\" is final and cannot be modified");
                 _finished = true;
                 return true;
             } else if (variable.ValType.IsCompileTimeReadOnly) {
@@ -259,7 +274,7 @@ internal partial class DMCodeTree {
             }
 
             int globalId = compiler.DMObjectTree.CreateGlobal(out DMVariable global, varDecl.Type, varDecl.Name, varDecl.IsConst,
-                varDecl.ValType);
+                false, varDecl.ValType);
 
             global.Value = new Null(Location.Internal);
             proc.AddGlobalVariable(global, globalId);

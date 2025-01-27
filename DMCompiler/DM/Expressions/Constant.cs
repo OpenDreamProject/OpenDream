@@ -117,7 +117,7 @@ internal sealed class Resource : Constant {
 
         // Search every defined FILE_DIR
         foreach (string resourceDir in compiler.ResourceDirectories) {
-            var directory = FindDirectory(resourceDir, fileDir);
+            var directory = FindDirectory(resourceDir == string.Empty ? "./" : resourceDir, fileDir);
 
             if (directory != null) {
                 // Perform a case-insensitive search for the file

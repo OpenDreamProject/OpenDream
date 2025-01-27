@@ -1,7 +1,7 @@
 ﻿/image
 	parent_type = /datum
 
-	//note these values also need to be set in IconAppearance.cs
+	//note these values also need to be set in MutableAppearance.cs
 	var/alpha = 255
 	var/appearance
 	var/appearance_flags = 0
@@ -17,11 +17,11 @@
 	var/list/filters = list()
 	var/layer = FLOAT_LAYER
 	var/luminosity = 0 as opendream_unimplemented
-	var/maptext = "i" as opendream_unimplemented
-	var/maptext_width = 32 as opendream_unimplemented
-	var/maptext_height = 32 as opendream_unimplemented
-	var/maptext_x = 0 as opendream_unimplemented
-	var/maptext_y = 0 as opendream_unimplemented
+	var/maptext = null
+	var/maptext_width = 32
+	var/maptext_height = 32
+	var/maptext_x = 0
+	var/maptext_y = 0
 	var/mouse_over_pointer = 0 as opendream_unimplemented
 	var/mouse_drag_pointer = 0 as opendream_unimplemented
 	var/mouse_drop_pointer = 1 as opendream_unimplemented

@@ -65,6 +65,7 @@ namespace OpenDreamRuntime {
             _netManager.RegisterNetMessage<MsgWinClone>();
             _netManager.RegisterNetMessage<MsgWinExists>();
             _netManager.RegisterNetMessage<MsgWinGet>();
+            _netManager.RegisterNetMessage<MsgLink>();
             _netManager.RegisterNetMessage<MsgFtp>();
             _netManager.RegisterNetMessage<MsgLoadInterface>();
             _netManager.RegisterNetMessage<MsgAckLoadInterface>(RxAckLoadInterface);

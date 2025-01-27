@@ -18,8 +18,6 @@ jobs:
       run: |
         cd main/
         git submodule update --init --recursive
-    - name: Pull engine updates
-      uses: space-wizards/submodule-dependency@v0.1.5
     - name: Update Engine Submodules
       run: |
         cd main/RobustToolbox/
@@ -27,7 +25,7 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 8.0.100
+        dotnet-version: 9.0.100
     - name: Install compiler dependencies
       run: dotnet restore main/DMCompiler/DMCompiler.csproj
     - name: Install disassembler dependencies
@@ -38,6 +36,10 @@ jobs:
       run: dotnet build main/DMDisassembler/DMDisassembler.csproj --property WarningLevel=0 --configuration Release --no-restore /m
     - name: Compile TestGame
       run: main\bin\DMCompiler\DMCompiler.exe main\TestGame\environment.dme --suppress-unimplemented
+    - name: Compile TestGame in directory
+      run: |
+        cd main\TestGame\
+        ..\bin\DMCompiler\DMCompiler.exe environment.dme --suppress-unimplemented
     - name: Checkout /tg/station Master
       uses: actions/checkout@v2
       with:

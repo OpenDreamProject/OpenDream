@@ -3,6 +3,7 @@ using OpenDreamRuntime.Procs;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using DMCompiler.Bytecode;
+using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
@@ -145,6 +146,8 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public bool IsSubtypeOf(TreeEntry ancestor) {
+            if(Deleted) //null deref protection, deleted objects don't have ObjectDefinition anymore
+                return false;
             return ObjectDefinition.IsSubtypeOf(ancestor);
         }
 
@@ -373,10 +376,15 @@ namespace OpenDreamRuntime.Objects {
         /// <summary>
         /// Returns the name of this object with no formatting evaluated
         /// </summary>
-        /// <returns></returns>
         public string GetRawName() {
-            if (!TryGetVariable("name", out DreamValue nameVar) || !nameVar.TryGetValueAsString(out string? name))
-                return ObjectDefinition.Type.ToString();
+            string name = ObjectDefinition.Type;
+
+            if (this is DreamObjectAtom) {
+                if (AtomManager.TryGetAppearance(this, out var appearance))
+                    name = appearance.Name;
+            } else if (TryGetVariable("name", out DreamValue nameVar) && nameVar.TryGetValueAsString(out var nameVarStr)) {
+                name = nameVarStr;
+            }
 
             return name;
         }

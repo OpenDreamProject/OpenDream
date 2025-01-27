@@ -1,4 +1,6 @@
-﻿using DMCompiler.Bytecode;
+﻿using System.Linq;
+using DMCompiler.Bytecode;
+using DMCompiler.DM.Expressions;
 using DMCompiler.Json;
 
 namespace DMCompiler.DM;
@@ -21,7 +23,7 @@ internal sealed class DMObject(DMCompiler compiler, int id, DreamPath path, DMOb
     public int? InitializationProc;
 
     /// <summary>A list of var and verb initializations implicitly done before the user's New() is called.</summary>
-    public readonly List<DMExpression> InitializationProcExpressions = new();
+    public readonly List<(string Name, Assignment Assignment)> InitializationProcAssignments = new();
 
     public bool IsRoot => Path == DreamPath.Root;
 
@@ -133,6 +135,11 @@ internal sealed class DMObject(DMCompiler compiler, int id, DreamPath path, DMOb
             TmpVariables.Add(global.Name);
     }
 
+    public bool IsRuntimeInitialized(string varName) {
+        return InitializationProcAssignments.Any(v => v.Name == varName)
+               || (Parent?.IsRuntimeInitialized(varName) ?? false);
+    }
+
     /// <summary>
     /// Recursively searches for a global/static with the given name.
     /// </summary>
@@ -152,16 +159,16 @@ internal sealed class DMObject(DMCompiler compiler, int id, DreamPath path, DMOb
     }
 
     public void CreateInitializationProc() {
-        if (InitializationProcExpressions.Count <= 0 || InitializationProc != null)
+        if (InitializationProcAssignments.Count <= 0 || InitializationProc != null)
             return;
 
         var init = compiler.DMObjectTree.CreateDMProc(this, null);
         InitializationProc = init.Id;
         init.Call(DMReference.SuperProc, DMCallArgumentsType.None, 0);
 
-        foreach (DMExpression expression in InitializationProcExpressions) {
-            init.DebugSource(expression.Location);
-            expression.EmitPushValue(new(compiler, this, init));
+        foreach (var assignment in InitializationProcAssignments) {
+            init.DebugSource(assignment.Assignment.Location);
+            assignment.Assignment.EmitPushValue(new(compiler, this, init));
         }
     }
 

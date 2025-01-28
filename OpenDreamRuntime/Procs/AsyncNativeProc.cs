@@ -1,10 +1,9 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using DMCompiler.DM;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Resources;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
 using Dependency = Robust.Shared.IoC.DependencyAttribute;
 
 namespace OpenDreamRuntime.Procs {
@@ -60,7 +59,7 @@ namespace OpenDreamRuntime.Procs {
                 Thread.Resume();
             }
 
-            public Task<DreamValue> Call(DreamProc proc, DreamObject src, DreamObject? usr, params DreamValue[] arguments) {
+            public Task<DreamValue> Call(DreamProc proc, DreamObject? src, DreamObject? usr, params DreamValue[] arguments) {
                 _callTcs = new();
                 _callProcNotify = proc.CreateState(Thread, src, usr, new DreamProcArguments(arguments));
 
@@ -169,8 +168,8 @@ namespace OpenDreamRuntime.Procs {
         private readonly Dictionary<string, DreamValue>? _defaultArgumentValues;
         private readonly Func<State, Task<DreamValue>> _taskFunc;
 
-        public AsyncNativeProc(int id, DreamPath owningType, string name, List<string> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, Func<State, Task<DreamValue>> taskFunc)
-            : base(id, owningType, name, null, ProcAttributes.None, argumentNames, null, null, null, null, 0) {
+        public AsyncNativeProc(int id, TreeEntry owningType, string name, List<string> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, Func<State, Task<DreamValue>> taskFunc)
+            : base(id, owningType, name, null, ProcAttributes.None, argumentNames, null, null, null, null, null, 0) {
             _defaultArgumentValues = defaultArgumentValues;
             _taskFunc = taskFunc;
         }

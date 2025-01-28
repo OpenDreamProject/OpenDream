@@ -1,29 +1,27 @@
 ﻿using OpenDreamClient.Interface.Descriptors;
 using OpenDreamClient.Interface.Html;
+using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Utility;
 
 namespace OpenDreamClient.Interface.Controls;
 
-public sealed class ControlOutput : InterfaceControl {
+public sealed class ControlOutput(ControlDescriptor controlDescriptor, ControlWindow window) : InterfaceControl(controlDescriptor, window) {
     private OutputPanel _textBox;
-    //private Border _border;
-
-    public ControlOutput(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
 
     protected override Control CreateUIElement() {
         _textBox = new OutputPanel();
 
-        /*
-        _border = new Border() {
-            BorderBrush = Brushes.Black,
-            BorderThickness = new Thickness(1),
-            Child = _textBox
-        };
-        */
-
         return _textBox;
+    }
+
+    protected override void UpdateElementDescriptor() {
+        base.UpdateElementDescriptor();
+
+        _textBox.StyleBoxOverride = new StyleBoxFlat((ControlDescriptor.BackgroundColor.Value != Color.Transparent)
+            ? ControlDescriptor.BackgroundColor.Value
+            : Color.White);
     }
 
     public override void Output(string value, string? data) {

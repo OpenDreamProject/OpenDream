@@ -1,4 +1,4 @@
-﻿// COMPILE ERROR
+﻿// COMPILE ERROR OD0001
 
 /proc/RunTest()
 	var/InvalidProper = "Example \proper"

@@ -41,7 +41,7 @@ public sealed class InterfaceMacroSet : InterfaceElement {
         if (descriptor is not MacroDescriptor macroDescriptor)
             throw new ArgumentException($"Attempted to add a {descriptor} to a macro set", nameof(descriptor));
 
-        Macros.Add(macroDescriptor.Id, new InterfaceMacro(_inputContextName, macroDescriptor, _entitySystemManager, _inputManager, _inputContext, _uiManager));
+        Macros.Add(macroDescriptor.Id.AsRaw(), new InterfaceMacro(_inputContextName, macroDescriptor, _entitySystemManager, _inputManager, _inputContext, _uiManager));
     }
 
     public void SetActive() {
@@ -155,11 +155,7 @@ internal struct ParsedKeybind {
     private static Dictionary<Key, string>? keyToKeyName;
 
     public static Key KeyNameToKey(string key) {
-        if (keyNameToKey.TryGetValue(key, out Key result)) {
-            return result;
-        } else {
-            return Keyboard.Key.Unknown;
-        }
+        return keyNameToKey.GetValueOrDefault(key, Keyboard.Key.Unknown);
     }
 
     public static string? KeyToKeyName(Key key) {
@@ -170,11 +166,7 @@ internal struct ParsedKeybind {
             }
         }
 
-        if (keyToKeyName.TryGetValue(key, out var result)) {
-            return result;
-        } else {
-            return null;
-        }
+        return keyToKeyName.GetValueOrDefault(key);
     }
 
     public static ParsedKeybind Parse(string keybind) {
@@ -212,8 +204,23 @@ internal struct ParsedKeybind {
                     if (foundKey) {
                         throw new Exception($"Duplicate key in keybind: {part}");
                     }
+
                     foundKey = true;
                     break;
+            }
+        }
+
+        // If we haven't found a key and the first part is a modifier, treat it as the keybind instead of a modifier
+        if (!foundKey) {
+            if (parts[0] == "SHIFT") {
+                parsed.Key = KeyNameToKey(parts[0]);
+                parsed.Shift = false;
+            } else if (parts[0] == "CTRL") {
+                parsed.Key = KeyNameToKey(parts[0]);
+                parsed.Ctrl = false;
+            } else if (parts[0] == "ALT") {
+                parsed.Key = KeyNameToKey(parts[0]);
+                parsed.Alt = false;
             }
         }
 
@@ -244,7 +251,7 @@ public sealed class InterfaceMacro : InterfaceElement {
         ParsedKeybind parsedKeybind;
 
         try {
-            parsedKeybind = ParsedKeybind.Parse(ElementDescriptor.Name);
+            parsedKeybind = ParsedKeybind.Parse(ElementDescriptor.Name.AsRaw());
         } catch (Exception e) {
             Logger.GetSawmill("opendream.macro").Warning($"Invalid keybind for macro {Id}: {e.Message}");
             return;

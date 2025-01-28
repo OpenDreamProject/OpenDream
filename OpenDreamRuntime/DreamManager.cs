@@ -1,17 +1,21 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using DMCompiler.Bytecode;
+using DMCompiler.Json;
+using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
+using OpenDreamRuntime.Util;
 using OpenDreamShared;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Json;
 using Robust.Server;
 using Robust.Server.Player;
 using Robust.Server.ServerStatus;
@@ -21,6 +25,7 @@ using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime {
     public sealed partial class DreamManager {
+        [Dependency] private readonly AtomManager _atomManager = default!;
         [Dependency] private readonly IConfigurationManager _configManager = default!;
         [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
@@ -29,26 +34,30 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly ITaskManager _taskManager = default!;
         [Dependency] private readonly IGameTiming _gameTiming = default!;
         [Dependency] private readonly DreamObjectTree _objectTree = default!;
+        [Dependency] private readonly IEntityManager _entityManager = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
         [Dependency] private readonly IStatusHost _statusHost = default!;
         [Dependency] private readonly IDependencyCollection _dependencyCollection = default!;
 
         private ServerAppearanceSystem? _appearanceSystem;
 
-        public DreamObjectWorld WorldInstance { get; private set; }
+        public DreamObjectWorld WorldInstance { get; set; }
         public Exception? LastDMException { get; set; }
 
         public event EventHandler<Exception>? OnException;
 
         // Global state that may not really (really really) belong here
         public DreamValue[] Globals { get; set; } = Array.Empty<DreamValue>();
-        public List<string> GlobalNames { get; private set; } = new List<string>();
-        public Dictionary<DreamObject, int> ReferenceIDs { get; } = new();
-        public Dictionary<int, DreamObject> ReferenceIDsToDreamObject { get; } = new();
+        public List<string> GlobalNames { get; private set; } = new();
+        public ConcurrentDictionary<int, WeakDreamRef> ReferenceIDsToDreamObject { get; } = new();
         public HashSet<DreamObject> Clients { get; set; } = new();
-        public HashSet<DreamObject> Datums { get; set; } = new();
+
+        // I solemnly swear this benefits from being a linked list (constant remove times without relying on object hash) --kaylie
+        public LinkedList<WeakDreamRef> Datums { get; set; } = new();
+        public ConcurrentBag<DreamObject> DelQueue = new();
         public Random Random { get; set; } = new();
         public Dictionary<string, List<DreamObject>> Tags { get; set; } = new();
+        public DreamProc ImageConstructor, ImageFactoryProc;
         private int _dreamObjectRefIdCounter;
 
         private DreamCompiledJson _compiledJson;
@@ -107,8 +116,15 @@ namespace OpenDreamRuntime {
 
             UpdateStat(); // ... except for Stat
             _dreamMapManager.UpdateTiles();
-
+            DreamObjectSavefile.FlushAllUpdates();
             WorldInstance.SetVariableValue("cpu", WorldInstance.GetVariable("tick_usage"));
+            ProcessDelQueue();
+        }
+
+        public void ProcessDelQueue() {
+            while (DelQueue.TryTake(out var obj)) {
+                obj.Delete();
+            }
         }
 
         public bool LoadJson(string? jsonPath) {
@@ -125,15 +141,16 @@ namespace OpenDreamRuntime {
             }
 
             _compiledJson = json;
-            var rootPath = Path.GetDirectoryName(jsonPath)!;
+            var rootPath = Path.GetFullPath(Path.GetDirectoryName(jsonPath)!);
             var resources = _compiledJson.Resources ?? Array.Empty<string>();
             _dreamResourceManager.Initialize(rootPath, resources);
             if(!string.IsNullOrEmpty(_compiledJson.Interface) && !_dreamResourceManager.DoesFileExist(_compiledJson.Interface))
                 throw new FileNotFoundException("Interface DMF not found at "+Path.Join(rootPath,_compiledJson.Interface));
 
             _objectTree.LoadJson(json);
-
             DreamProcNative.SetupNativeProcs(_objectTree);
+            ImageConstructor = _objectTree.Image.ObjectDefinition.GetProc("New");
+            _objectTree.TryGetGlobalProc("image", out ImageFactoryProc!);
 
             _dreamMapManager.Initialize();
             WorldInstance = new DreamObjectWorld(_objectTree.World.ObjectDefinition);
@@ -153,13 +170,11 @@ namespace OpenDreamRuntime {
                 }
             }
 
-            Globals[GlobalNames.IndexOf("world")] = new DreamValue(WorldInstance);
-
             _dreamMapManager.LoadMaps(_compiledJson.Maps);
 
-            _statusHost.SetMagicAczProvider(new DreamMagicAczProvider(
-                _dependencyCollection, rootPath, resources
-            ));
+            var aczProvider = new DreamAczProvider(_dependencyCollection, rootPath, resources);
+            _statusHost.SetMagicAczProvider(aczProvider);
+            _statusHost.SetFullHybridAczProvider(aczProvider);
 
             return true;
         }
@@ -195,12 +210,14 @@ namespace OpenDreamRuntime {
                         // i dont believe this will **ever** be called, but just to be sure, funky errors /might/ appear in the future if someone does a fucky wucky and calls this on a deleted object.
                         throw new Exception("Cannot create reference ID for an object that is deleted");
                     }
+
                     switch(refObject){
                         case DreamObjectTurf: refType = RefType.DreamObjectTurf; break;
                         case DreamObjectMob: refType = RefType.DreamObjectMob; break;
                         case DreamObjectArea: refType = RefType.DreamObjectArea; break;
                         case DreamObjectClient: refType = RefType.DreamObjectArea; break;
                         case DreamObjectImage: refType = RefType.DreamObjectImage; break;
+                        case DreamObjectFilter: refType = RefType.DreamObjectFilter; break;
                         default: {
                             refType = RefType.DreamObjectDatum;
                             if(refObject.IsSubtypeOf(_objectTree.Obj))
@@ -210,10 +227,15 @@ namespace OpenDreamRuntime {
                             break;
                         }
                     }
-                    if (!ReferenceIDs.TryGetValue(refObject, out idx)) {
-                        idx = _dreamObjectRefIdCounter++;
-                        ReferenceIDs.Add(refObject, idx);
-                        ReferenceIDsToDreamObject.Add(idx, refObject);
+
+                    if (refObject.RefId is not {} id) {
+                        idx = Interlocked.Increment(ref _dreamObjectRefIdCounter);
+                        refObject.RefId = idx;
+
+                        // SAFETY: Infallible! idx is always unique and add can only fail if this is not the case.
+                        ReferenceIDsToDreamObject.TryAdd(idx, new WeakDreamRef(refObject));
+                    } else {
+                        idx = id;
                     }
                 }
             } else if (value.TryGetValueAsString(out var refStr)) {
@@ -230,7 +252,7 @@ namespace OpenDreamRuntime {
             } else if (value.TryGetValueAsAppearance(out var appearance)) {
                 refType = RefType.DreamAppearance;
                 _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
-                idx = (int)_appearanceSystem.AddAppearance(appearance);
+                idx = (int)_appearanceSystem.AddAppearance(appearance).MustGetId();
             } else if (value.TryGetValueAsDreamResource(out var refRsc)) {
                 refType = RefType.DreamResource;
                 idx = refRsc.Id;
@@ -243,6 +265,26 @@ namespace OpenDreamRuntime {
 
             // The first digit is the type
             return $"[0x{((int) refType+idx):x}]";
+        }
+
+        /// <summary>
+        /// Iterates the list of datums
+        /// </summary>
+        /// <returns>Datum enumerater</returns>
+        /// <remarks>As it's a convenient time, this will collect any dead datum refs as it finds them.</remarks>
+        public IEnumerable<DreamObject> IterateDatums() {
+            // This isn't a common operation so we'll use this time to also do some pruning.
+            var node = Datums.First;
+
+            while (node is not null) {
+                var next = node.Next;
+                var val = node.Value.Target;
+                if (val is null)
+                    Datums.Remove(node);
+                else
+                    yield return val;
+                node = next;
+            }
         }
 
         public DreamValue LocateRef(string refString) {
@@ -268,11 +310,12 @@ namespace OpenDreamRuntime {
                     case RefType.DreamObjectClient:
                     case RefType.DreamObjectDatum:
                     case RefType.DreamObjectImage:
+                    case RefType.DreamObjectFilter:
                     case RefType.DreamObjectList:
                     case RefType.DreamObjectMob:
                     case RefType.DreamObjectTurf:
                     case RefType.DreamObject:
-                        if (ReferenceIDsToDreamObject.TryGetValue(refId, out var dreamObject))
+                        if (ReferenceIDsToDreamObject.TryGetValue(refId, out var weakRef) && weakRef.Target is {} dreamObject)
                             return new(dreamObject);
 
                         return DreamValue.Null;
@@ -284,6 +327,7 @@ namespace OpenDreamRuntime {
                         return _objectTree.Types.Length > refId
                             ? new DreamValue(_objectTree.Types[refId])
                             : DreamValue.Null;
+                    case RefType.DreamResourceIcon: // Alias of DreamResource for now. TODO: Does this *only* contain icon resources?
                     case RefType.DreamResource:
                         if (!_dreamResourceManager.TryLoadResource(refId, out var resource))
                             return DreamValue.Null;
@@ -291,8 +335,8 @@ namespace OpenDreamRuntime {
                         return new DreamValue(resource);
                     case RefType.DreamAppearance:
                         _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
-                        return _appearanceSystem.TryGetAppearance(refId, out IconAppearance? appearance)
-                            ? new DreamValue(appearance)
+                        return _appearanceSystem.TryGetAppearanceById((uint) refId, out ImmutableAppearance? appearance)
+                            ? new DreamValue(appearance.ToMutable())
                             : DreamValue.Null;
                     case RefType.Proc:
                         return new(_objectTree.Procs[refId]);
@@ -312,9 +356,40 @@ namespace OpenDreamRuntime {
             return DreamValue.Null;
         }
 
-        public void HandleException(Exception e) {
+        public DreamObject? GetFromClientReference(DreamConnection connection, ClientObjectReference reference) {
+            switch (reference.Type) {
+                case ClientObjectReference.RefType.Client:
+                    return connection.Client;
+                case ClientObjectReference.RefType.Entity:
+                    _atomManager.TryGetMovableFromEntity(_entityManager.GetEntity(reference.Entity), out var atom);
+                    return atom;
+                case ClientObjectReference.RefType.Turf:
+                    _dreamMapManager.TryGetTurfAt((reference.TurfX, reference.TurfY), reference.TurfZ, out var turf);
+                    return turf;
+            }
+
+            return null;
+        }
+
+        public void HandleException(Exception e, string msg = "", string file = "", int line = 0) {
+            if (string.IsNullOrEmpty(msg)) { // Just print the C# exception if we don't override the message
+                msg = e.Message;
+            }
+
             LastDMException = e;
             OnException?.Invoke(this, e);
+
+            // Invoke world.Error()
+            var obj =_objectTree.CreateObject<DreamObjectException>(_objectTree.Exception);
+            if(e is DMThrowException throwException)
+                obj.Name = throwException.Value;
+            else
+                obj.Name = new DreamValue(e.Message);
+            obj.Desc =  new DreamValue(msg);
+            obj.Line = new DreamValue(line);
+            obj.File = new DreamValue(file);
+
+            WorldInstance.SpawnProc("Error", usr: null, new DreamValue(obj));
         }
     }
 
@@ -325,6 +400,8 @@ namespace OpenDreamRuntime {
         DreamObjectMob = 0x3000000,
         DreamObjectArea = 0x4000000,
         DreamObjectClient = 0x5000000,
+        DreamObjectFilter = 0x5300000,
+        DreamResourceIcon = 0xC000000,
         DreamObjectImage = 0xD000000,
         DreamObjectList = 0xF000000,
         DreamObjectDatum = 0x21000000,

@@ -34,19 +34,19 @@ public sealed class DebugAdapterClient {
     public void HandleMessages() {
         // `_netStream.DataAvailable` goes to false as soon as there is one Read call.
         // `_client` and `_netReader` each keep buffers and we have to loop until they are all drained.
-        while (_client.Connected && (_netStream.DataAvailable || _client.Available > 0 || _netReader.Peek() != -1)) {
-            ProtocolMessage? message = ReadRequest();
-            if (message == null)
-                continue;
-
-            _sawmill.Log(LogLevel.Verbose, $"Parsed {message}");
-            _seqCounter = message.Seq + 1;
-            switch (message) {
-                case Request req:
-                    OnRequest?.Invoke(this, req);
-                    break;
-            }
-        }
+        try {
+            _netReader.BaseStream.ReadTimeout = 1; //1ms is lowest possible value
+            if(_client.Connected && (_netStream.DataAvailable || _client.Available > 0)) //check for buffered messages only once per tick
+                while (ReadRequest() is { } message) { //then process each message sequentially until there are none left
+                    _sawmill.Log(LogLevel.Verbose, $"Parsed {message}");
+                    _seqCounter = message.Seq + 1;
+                    switch (message) {
+                        case Request req:
+                            OnRequest?.Invoke(this, req);
+                            break;
+                    }
+                }
+        } catch (IOException) {} //ignore timeouts
     }
 
     public void Close() {
@@ -108,7 +108,7 @@ public sealed class DebugAdapterClient {
         int contentLength = -1;
 
         string? headerLine;
-        while ((headerLine = _netReader.ReadLine()) != String.Empty && headerLine != null) {
+        while ((headerLine = _netReader.ReadLine()) != string.Empty && headerLine != null) {
             string[] split = headerLine.Split(": ");
             string field = split[0];
             string value = split[1];
@@ -144,7 +144,7 @@ public sealed class DebugAdapterClient {
             return null;
         }
 
-        string content = new String(buffer);
+        string content = new string(buffer);
         _sawmill.Log(LogLevel.Verbose, $"Received {contentLength} {content}");
 
         return content;

@@ -1,13 +1,9 @@
 <Popup xmlns="https://spacestation14.io">
     <PanelContainer StyleClasses="ContextMenuBackground">
         <BoxContainer Orientation="Vertical">
-            <Control Name="Desc">
-                <Label Name="DescLabel" />
-                <Control MinHeight="6" />
-            </Control>
             <ScrollContainer HScrollEnabled="False" ReturnMeasure="True">
                 <BoxContainer Name="VerbMenu" Orientation="Vertical">
-                    <!-- TODO: Fill with verbs -->
+                    <!-- Verb buttons go here -->
                 </BoxContainer>
             </ScrollContainer>
         </BoxContainer>

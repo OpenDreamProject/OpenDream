@@ -12,8 +12,8 @@ namespace OpenDreamClient.States;
 [UsedImplicitly]
 public sealed class DreamUserInterfaceStateManager {
     [Dependency] private readonly IGameController _gameController = default!;
-    [Dependency] private readonly IBaseClient _client = default!;
     [Dependency] private readonly IStateManager _stateManager = default!;
+    [Dependency] private readonly IBaseClient _client = default!;
 
     public void Initialize() {
         _client.RunLevelChanged += ((_, args) => {
@@ -31,8 +31,14 @@ public sealed class DreamUserInterfaceStateManager {
                 // When we disconnect from the server:
                 case ClientRunLevel.Error:
                 case ClientRunLevel.Initialize when args.OldLevel >= ClientRunLevel.Connected:
-                    if (_gameController.LaunchState.FromLauncher) {
-                        _stateManager.RequestStateChange<ConnectingState>();
+                    // TODO: Reconnect without returning to the launcher
+                    // The client currently believes its still connected at this point and will refuse
+                    if (_gameController.LaunchState is {
+                            FromLauncher: true,
+                            Ss14Address: not null
+                        }) {
+                        _gameController.Redial(_gameController.LaunchState.Ss14Address, "Connection lost; attempting reconnect");
+
                         break;
                     }
 

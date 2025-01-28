@@ -1,4 +1,4 @@
-// COMPILE ERROR
+// COMPILE ERROR OD0001
 
 #define A 1
 #define B 1

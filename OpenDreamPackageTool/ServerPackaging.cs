@@ -12,9 +12,9 @@ public static class ServerPackaging {
         new("win-x64", "Windows", true),
         new("linux-x64", "Linux", true),
         new("linux-arm64", "Linux", true),
-        new("osx-x64", "MacOS", true),
 
         // Non-default platforms (i.e. for Watchdog Git)
+        new("osx-x64", "MacOS", false), // macOS is not supported currently
         new("win-x86", "Windows", false),
         new("linux-x86", "Linux", false),
         new("linux-arm", "Linux", false),
@@ -33,8 +33,10 @@ public static class ServerPackaging {
         "OpenDreamServer",
         "OpenDreamShared",
         "OpenDreamRuntime",
+        "OpenDreamPackaging",
         "Byond.TopicSender",
         "Microsoft.Extensions.Logging.Abstractions", // dep of Byond.TopicSender
+        "Microsoft.Extensions.DependencyInjection.Abstractions", // dep of above
         "DMCompiler"
     };
 
@@ -43,8 +45,10 @@ public static class ServerPackaging {
         "OpenDreamServer",
         "OpenDreamShared",
         "OpenDreamRuntime",
+        "OpenDreamPackaging",
         "Byond.TopicSender",
         "Microsoft.Extensions.Logging.Abstractions", // dep of Byond.TopicSender
+        "Microsoft.Extensions.DependencyInjection.Abstractions", // dep of above
         "DMCompiler"
     };
 
@@ -122,7 +126,7 @@ public static class ServerPackaging {
                 ArgumentList = {
                     "build",
                     "OpenDreamServer/OpenDreamServer.csproj",
-                    "-c", "Release",
+                    "-c", options.BuildConfiguration,
                     "--nologo",
                     "/v:m",
                     $"/p:TargetOS={platform.TargetOs}",
@@ -133,7 +137,7 @@ public static class ServerPackaging {
                 }
             }).Wait();
 
-            PublishClientServer(platform.RId, platform.TargetOs);
+            PublishClientServer(platform.RId, platform.TargetOs, options.BuildConfiguration);
         }
 
         string releaseDir = options.OutputDir;
@@ -147,11 +151,11 @@ public static class ServerPackaging {
         CopyContentAssemblies(Path.Combine(releaseDir, "Resources", "Assemblies"));
         if (options.HybridAcz) {
             // Hybrid ACZ expects "Content.Client.zip" (as it's not OpenDream-specific)
-            ZipFile.CreateFromDirectory(Path.Combine(options.OutputDir, "OpenDreamClient"), Path.Combine(releaseDir, "Content.Client.Zip"));
+            ZipFile.CreateFromDirectory(Path.Combine(options.OutputDir, "OpenDreamClient"), Path.Combine(releaseDir, "Content.Client.zip"));
         }
     }
 
-    private static void PublishClientServer(string platformRId, string targetOs) {
+    private static void PublishClientServer(string platformRId, string targetOs, string buildConfig) {
         ProcessHelpers.RunCheck(new ProcessStartInfo {
             FileName = "dotnet",
             ArgumentList = {
@@ -159,7 +163,7 @@ public static class ServerPackaging {
                 "RobustToolbox/Robust.Server/Robust.Server.csproj",
                 "--runtime", platformRId,
                 "--no-self-contained",
-                "-c", "Release",
+                "-c", buildConfig,
                 $"/p:TargetOS={targetOs}",
                 "/p:FullRelease=True",
                 "/m"

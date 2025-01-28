@@ -1,12 +1,14 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
+using JetBrains.Annotations;
 
 namespace OpenDreamRuntime.Procs.DebugAdapter.Protocol;
 
 [Virtual]
 public class Request : ProtocolMessage {
-    [JsonPropertyName("command")] public string Command { get; set; }
+    [JsonPropertyName("command")] public required string Command { get; set; }
 
+    [UsedImplicitly]
     public Request() : base("request") { }
 
     public static Request? DeserializeRequest(JsonDocument json) {
@@ -33,6 +35,8 @@ public class Request : ProtocolMessage {
             "stepIn" => json.Deserialize<RequestStepIn>(),
             "stepOut" => json.Deserialize<RequestStepOut>(),
             "disassemble" => json.Deserialize<RequestDisassemble>(),
+            "hotreloadinterface" => json.Deserialize<RequestHotReloadInterface>(),
+            "hotreloadresource" => json.Deserialize<RequestHotReloadResource>(),
             // Caller will fail to recognize it and can respond with `success: false`.
             _ => request,
         };

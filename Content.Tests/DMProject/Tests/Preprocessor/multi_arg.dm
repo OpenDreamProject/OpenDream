@@ -1,4 +1,4 @@
-// COMPILE ERROR
+// COMPILE ERROR OD0001
 
 //# issue 14
 

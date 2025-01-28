@@ -2,10 +2,10 @@
 	parent_type = /atom/movable
 
 	var/client/client
-	var/key
-	var/ckey
+	var/key as text|null
+	var/tmp/ckey as text|null
 
-	var/list/group as opendream_unimplemented
+	var/tmp/list/group as opendream_unimplemented
 
 	var/see_invisible = 0
 	var/see_infrared = 0 as opendream_unimplemented

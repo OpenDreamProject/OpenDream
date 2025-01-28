@@ -25,11 +25,16 @@
 	ASSERT(result == "foo foo")
 
 	ASSERT(R.Find("foo foo", start=1) == 1)
+	ASSERT(findtext("foo foo", R, Start=1) == 1)
 
 	ASSERT(R.Find("foo foo", start=2) == 5)
+	ASSERT(findtext("foo foo", R, Start=2) == 5)
 
 	ASSERT(R.Find("foo foo", start=5) == 5)
+	ASSERT(findtext("foo foo", R, Start=5) == 5)
 
 	ASSERT(R.Find("foo foo", start=6) == 0)
+	ASSERT(findtext("foo foo", R, Start=6) == 0)
 
 	ASSERT(R.Find("foo foo", start=69) == 0)
+	ASSERT(findtext("foo foo", R, Start=69) == 0)

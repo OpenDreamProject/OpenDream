@@ -19,6 +19,7 @@ binds: # These are all the current engine keybinds.
   canFocus: true
 - function: ShowDebugMonitors
   type: Toggle
+  mod1: Shift  
   key: F3
 - function: HideUI
   type: Toggle
@@ -67,6 +68,7 @@ binds: # These are all the current engine keybinds.
   canFocus: true
 - function: ShowDebugConsole
   type: State
+  mod1: Shift  
   key: Tilde
 - function: TextCursorLeft
   type: State
@@ -175,6 +177,19 @@ binds: # These are all the current engine keybinds.
 - function: TextScrollToBottom
   type: State
   key: PageDown
+- function: TextTabComplete
+  type: State
+  key: Tab
+- function: TextCompleteNext
+  type: State
+  key: Down
+  priority: 1
+  canRepeat: true
+- function: TextCompletePrev
+  type: State
+  key: Up
+  priority: 1
+  canRepeat: true
 - function: TextDelete
   type: State
   key: Delete

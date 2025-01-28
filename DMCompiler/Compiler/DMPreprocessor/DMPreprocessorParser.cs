@@ -1,7 +1,5 @@
 ﻿using DMCompiler.Compiler.DM;
-using OpenDreamShared.Compiler;
-using System;
-using System.Collections.Generic;
+using System.IO;
 
 namespace DMCompiler.Compiler.DMPreprocessor;
 
@@ -27,14 +25,14 @@ Constant ::= Integer | Float | Null
 /// An extremely simple parser that acts on a sliver of tokens that have been DM-lexed for evaluation in a preprocessor directive, <br/>
 /// held separate from DMParser because of slightly different behaviour, far simpler implementation, and (<see langword="TODO"/>) possible statelessness.
 /// </summary>
-internal static class DMPreprocessorParser {
-    private static List<Token>? _tokens;
-    private static Dictionary<string, DMMacro>? _defines;
-    private static int _tokenIndex;
-    private static readonly float DegenerateValue = 0.0f;
+internal class DMPreprocessorParser(DMCompiler compiler) {
+    private List<Token>? _tokens;
+    private Dictionary<string, DMMacro>? _defines;
+    private int _tokenIndex;
+    private readonly float DegenerateValue = 0.0f;
 
     /// <returns>A float, because that is the only possible thing a well-formed preproc expression can evaluate to.</returns>
-    public static float? ExpressionFromTokens(List<Token> input, Dictionary<string, DMMacro> defines) {
+    public float? ExpressionFromTokens(List<Token> input, Dictionary<string, DMMacro> defines) {
         _tokens = input;
         _defines = defines;
         var ret = Expression();
@@ -44,18 +42,18 @@ internal static class DMPreprocessorParser {
         return ret;
     }
 
-    private static void Advance() {
+    private void Advance() {
         ++_tokenIndex;
     }
 
-    private static Token Current() {
+    private Token Current() {
         if (_tokenIndex >= _tokens!.Count)
             return new Token(TokenType.EndOfFile, "\0", Location.Unknown, null);
 
         return _tokens[_tokenIndex];
     }
 
-    private static bool Check(TokenType type) {
+    private bool Check(TokenType type) {
         if (Current().Type == type) {
             Advance();
             return true;
@@ -64,7 +62,7 @@ internal static class DMPreprocessorParser {
         return false;
     }
 
-    private static bool Check(TokenType[] types) {
+    private bool Check(TokenType[] types) {
         foreach (TokenType type in types) {
             if (Current().Type == type) {
                 Advance();
@@ -75,15 +73,15 @@ internal static class DMPreprocessorParser {
         return false;
     }
 
-    private static void Error(string msg) {
-        DMCompiler.Emit(WarningCode.BadDirective, Current().Location, msg);
+    private void Error(string msg) {
+        compiler.Emit(WarningCode.BadDirective, Current().Location, msg);
     }
 
-    private static float? Expression() {
+    private float? Expression() {
         return ExpressionOr();
     }
 
-    private static float? ExpressionOr() {
+    private float? ExpressionOr() {
         float? a = ExpressionAnd();
         if (a is null) return a;
 
@@ -103,7 +101,7 @@ internal static class DMPreprocessorParser {
         return a;
     }
 
-    private static float? ExpressionAnd() {
+    private float? ExpressionAnd() {
         float? a = ExpressionComparison();
         if (a is null) return a;
 
@@ -123,7 +121,7 @@ internal static class DMPreprocessorParser {
         return a;
     }
 
-    private static float? ExpressionComparison() {
+    private float? ExpressionComparison() {
         float? a = ExpressionComparisonLtGt();
         if (a is null) return a;
         for (Token token = Current(); Check(DMParser.ComparisonTypes); token = Current()) {
@@ -152,7 +150,7 @@ internal static class DMPreprocessorParser {
         return a;
     }
 
-    private static float? ExpressionComparisonLtGt() {
+    private float? ExpressionComparisonLtGt() {
         float? a = ExpressionAdditionSubtraction();
         if (a is null) return a;
         for (Token token = Current(); Check(DMParser.LtGtComparisonTypes); token = Current()) {
@@ -181,7 +179,7 @@ internal static class DMPreprocessorParser {
         return a;
     }
 
-    private static float? ExpressionAdditionSubtraction() {
+    private float? ExpressionAdditionSubtraction() {
         float? a = ExpressionMultiplicationDivisionModulus();
         if (a is null) return a;
         for (Token token = Current(); Check(DMParser.PlusMinusTypes); token = Current()) {
@@ -204,7 +202,7 @@ internal static class DMPreprocessorParser {
         return a;
     }
 
-    private static float? ExpressionMultiplicationDivisionModulus() {
+    private float? ExpressionMultiplicationDivisionModulus() {
         float? a = ExpressionPower();
         if (a is null) return a;
         for (Token token = Current(); Check(DMParser.MulDivModTypes); token = Current()) {
@@ -230,7 +228,7 @@ internal static class DMPreprocessorParser {
         return a;
     }
 
-    private static float? ExpressionPower() {
+    private float? ExpressionPower() {
         float? a = ExpressionUnary();
         if (a is null) return a;
 
@@ -247,7 +245,7 @@ internal static class DMPreprocessorParser {
         return a;
     }
 
-    private static float? ExpressionUnary() {
+    private float? ExpressionUnary() {
         if (Check(TokenType.DM_Exclamation)) {
             float? expression = ExpressionUnary();
             if (expression == null) {
@@ -261,7 +259,7 @@ internal static class DMPreprocessorParser {
         return ExpressionSign();
     }
 
-    private static float? ExpressionSign() {
+    private float? ExpressionSign() {
         Token token = Current();
 
         if (Check(DMParser.PlusMinusTypes)) {
@@ -280,7 +278,7 @@ internal static class DMPreprocessorParser {
         return ExpressionPrimary();
     }
 
-    private static float? ExpressionPrimary() {
+    private float? ExpressionPrimary() {
         Token token = Current();
         switch (token.Type) {
             case TokenType.DM_LeftParenthesis:
@@ -308,12 +306,41 @@ internal static class DMPreprocessorParser {
 
                     Advance();
                     if (!Check(TokenType.DM_RightParenthesis)) {
-                        DMCompiler.Emit(WarningCode.DefinedMissingParen, token.Location,
+                        compiler.Emit(WarningCode.DefinedMissingParen, token.Location,
                             "Expected ')' to end defined() expression");
                         //Electing to not return a degenerate value here since "defined(x" actually isn't an ambiguous grammar; we can figure out what they meant.
                     }
 
                     return _defines!.ContainsKey(definedInner.Text) ? 1.0f : 0.0f;
+                } else if (token.Text == "fexists") {
+                    Advance();
+                    if (!Check(TokenType.DM_LeftParenthesis)) {
+                        Error("Expected '(' to begin fexists() expression");
+                        return DegenerateValue;
+                    }
+
+                    Token fExistsInner = Current();
+
+                    if (fExistsInner.Type != TokenType.DM_ConstantString) {
+                        Error($"Unexpected token {fExistsInner.PrintableText} - file path expected");
+                        return DegenerateValue;
+                    }
+
+                    Advance();
+                    if (!Check(TokenType.DM_RightParenthesis)) {
+                        compiler.Emit(WarningCode.DefinedMissingParen, token.Location,
+                            "Expected ')' to end fexists() expression");
+                    }
+
+                    var filePath = Path.GetRelativePath(".", fExistsInner.ValueAsString().Replace('\\', '/'));
+
+                    var outputDir = Path.Combine(Path.GetDirectoryName(compiler.Settings.Files?[0]) ?? "/", Path.GetDirectoryName(fExistsInner.Location.SourceFile) ?? "/");
+                    if (string.IsNullOrEmpty(outputDir))
+                        outputDir = "./";
+
+                    filePath = Path.Combine(outputDir, filePath);
+
+                    return File.Exists(filePath) ? 1.0f : 0.0f;
                 }
 
                 Error($"Unexpected identifier {token.PrintableText} in preprocessor expression");
@@ -323,17 +350,17 @@ internal static class DMPreprocessorParser {
         }
     }
 
-    private static float? Constant() {
+    private float? Constant() {
         Token constantToken = Current();
 
         switch (constantToken.Type) {
             case TokenType.DM_Integer:
                 Advance();
-                return (float)((int)constantToken.Value);
+                return (float)(constantToken.ValueAsInt());
             case TokenType.DM_Float:
                 Advance();
-                return (float)constantToken.Value;
-            case TokenType.DM_String: {
+                return constantToken.ValueAsFloat();
+            case TokenType.DM_ConstantString: {
                 Advance();
                 Error("Strings are not valid in preprocessor expressions. Did you mean to use a define() here?");
                 return DegenerateValue;

@@ -1,12 +1,12 @@
-﻿/world
+/world
 	var/list/contents = null
 	var/list/vars
 
 	var/log = null
 
-	var/area = /area
-	var/turf = /turf
-	var/mob = /mob
+	var/area = /area as /area
+	var/turf = /turf as /turf
+	var/mob = /mob as /mob
 
 	var/name = "OpenDream World"
 	var/time
@@ -19,11 +19,11 @@
 	var/tick_usage
 	var/loop_checks = 0 as opendream_unimplemented
 
-	var/maxx = null
-	var/maxy = null
-	var/maxz = null
-	var/icon_size = 32
-	var/view = 5
+	var/maxx = null as num|null
+	var/maxy = null as num|null
+	var/maxz = null as num|null
+	var/icon_size = 32 as num
+	var/view = 5 as text|num
 	var/movement_mode = LEGACY_MOVEMENT_MODE as opendream_unimplemented
 
 	var/byond_version = DM_VERSION
@@ -40,9 +40,9 @@
 	var/process
 	var/list/params = null
 
-	var/sleep_offline = 0 as opendream_unimplemented
+	var/sleep_offline = 0
 
-	var/system_type
+	var/const/system_type as opendream_noconstfold
 
 	var/map_cpu = 0 as opendream_unimplemented
 	var/hub as opendream_unimplemented
@@ -56,7 +56,7 @@
 	
 	// An OpenDream read-only var that tells you what port Topic() is listening on
 	// Remove OPENDREAM_TOPIC_PORT_EXISTS if this is ever removed
-	var/const/opendream_topic_port
+	var/const/opendream_topic_port as opendream_noconstfold
 	
 	proc/New()
 	proc/Del()
@@ -117,3 +117,7 @@
 	proc/Tick()
 		set waitfor = FALSE
 		return null
+	
+	proc/ODHotReloadInterface()
+
+	proc/ODHotReloadResource(var/file_name)

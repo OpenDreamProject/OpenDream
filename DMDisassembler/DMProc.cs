@@ -1,65 +1,79 @@
 ﻿using OpenDreamRuntime.Procs;
-using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using DMCompiler.DM;
+using DMCompiler.Json;
+using JetBrains.Annotations;
 
-namespace DMDisassembler {
-    class DMProc {
-        private class DecompiledOpcode {
-            public int Position;
-            public string Text;
+namespace DMDisassembler;
 
-            public DecompiledOpcode(int position, string text) {
-                Position = position;
-                Text = text;
-            }
-        }
+internal class DMProc(ProcDefinitionJson json) {
+    internal struct DecompiledOpcode(int position, string text) {
+        public readonly int Position = position;
+        public readonly string Text = text;
+    }
 
-        public string Name;
-        public byte[] Bytecode;
-        public Exception exception;
+    public string Name = json.Name;
+    public int OwningTypeId = json.OwningTypeId;
+    public byte[] Bytecode = json.Bytecode ?? Array.Empty<byte>();
+    public bool IsOverride = (json.Attributes & ProcAttributes.IsOverride) != 0;
+    public Exception exception;
 
-        public DMProc(ProcDefinitionJson json) {
-            Name = json.Name;
-            Bytecode = json.Bytecode ?? Array.Empty<byte>();
-        }
+    public string Decompile() {
+        List<DecompiledOpcode> decompiled = GetDecompiledOpcodes(out var labeledPositions);
 
-        public string Decompile() {
-            List<DecompiledOpcode> decompiled = new();
-            HashSet<int> labeledPositions = new();
-
-            try {
-                foreach (var (position, instruction) in new ProcDecoder(Program.CompiledJson.Strings, Bytecode).Disassemble()) {
-                    decompiled.Add(new DecompiledOpcode(position, ProcDecoder.Format(instruction, type => Program.CompiledJson.Types[type].Path)));
-                    if (ProcDecoder.GetJumpDestination(instruction) is int jumpPosition) {
-                        labeledPositions.Add(jumpPosition);
-                    }
-                }
-            } catch (Exception ex) {
-                exception = ex;
-            }
-
-            StringBuilder result = new StringBuilder();
-            foreach (DecompiledOpcode decompiledOpcode in decompiled) {
-                if (labeledPositions.Contains(decompiledOpcode.Position)) {
-                    result.AppendFormat("0x{0:x}", decompiledOpcode.Position);
-                }
-                result.Append('\t');
-                result.AppendLine(decompiledOpcode.Text);
-            }
-
-            if (labeledPositions.Contains(Bytecode.Length)) {
-                // In case of a Jump off the end of the proc.
-                result.AppendFormat("0x{0:x}", Bytecode.Length);
+        StringBuilder result = new StringBuilder();
+        foreach (DecompiledOpcode decompiledOpcode in decompiled) {
+            if (labeledPositions.Contains(decompiledOpcode.Position)) {
+                result.AppendFormat("0x{0:x}", decompiledOpcode.Position);
                 result.AppendLine();
             }
 
-            if (exception != null) {
-                result.Append(exception);
-            }
-
-            return result.ToString();
+            result.Append('\t');
+            result.AppendLine(decompiledOpcode.Text);
         }
+
+        if (labeledPositions.Contains(Bytecode.Length)) {
+            // In case of a Jump off the end of the proc.
+            result.AppendFormat("0x{0:x}", Bytecode.Length);
+            result.AppendLine();
+        }
+
+        if (exception != null) {
+            result.Append(exception);
+        }
+
+        return result.ToString();
+    }
+
+    public List<DecompiledOpcode> GetDecompiledOpcodes(out HashSet<int> labeledPositions) {
+        List<DecompiledOpcode> decompiled = new();
+        labeledPositions = new();
+
+        try {
+            foreach (var (position, instruction) in new ProcDecoder(Program.CompiledJson.Strings, Bytecode).Disassemble()) {
+                decompiled.Add(new DecompiledOpcode(position, ProcDecoder.Format(instruction, type => Program.CompiledJson.Types[type].Path)));
+                if (ProcDecoder.GetJumpDestination(instruction) is int jumpPosition) {
+                    labeledPositions.Add(jumpPosition);
+                }
+            }
+        } catch (Exception ex) {
+            exception = ex;
+        }
+
+        return decompiled;
+    }
+
+    [CanBeNull]
+    public string[] GetArguments() {
+        if (json.Arguments is null || json.Arguments.Count == 0) return null;
+
+        string[] argNames = new string[json.Arguments.Count];
+        for (var index = 0; index < json.Arguments.Count; index++) {
+            argNames[index] = json.Arguments[index].Name;
+        }
+
+        return argNames;
     }
 }

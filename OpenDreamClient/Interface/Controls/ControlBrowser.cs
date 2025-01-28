@@ -4,7 +4,9 @@ using System.Web;
 using OpenDreamClient.Interface.Descriptors;
 using OpenDreamClient.Resources;
 using OpenDreamShared.Network.Messages;
+using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
+using Robust.Client.UserInterface.Controls;
 using Robust.Client.WebView;
 using Robust.Shared.Console;
 using Robust.Shared.ContentPack;
@@ -34,6 +36,7 @@ internal sealed class ControlBrowser : InterfaceControl {
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.browser");
 
+    private PanelContainer _panel;
     private WebViewControl _webView;
 
     public ControlBrowser(ControlDescriptor controlDescriptor, ControlWindow window)
@@ -42,27 +45,58 @@ internal sealed class ControlBrowser : InterfaceControl {
     }
 
     protected override Control CreateUIElement() {
-        _webView = new WebViewControl();
+        _panel = new PanelContainer {
+            Children = {
+                (_webView = new WebViewControl())
+            }
+        };
 
         _webView.AddResourceRequestHandler(RequestHandler);
         _webView.AddBeforeBrowseHandler(BeforeBrowseHandler);
+        _webView.OnVisibilityChanged += (args) => {
+            if (args.Visible) {
+                OnShowEvent();
+            } else {
+                OnHideEvent();
+            }
+        };
 
-        return _webView;
+        if(ControlDescriptor.IsVisible.Value)
+            OnShowEvent();
+        else
+            OnHideEvent();
+
+        return _panel;
+    }
+
+    protected override void UpdateElementDescriptor() {
+        base.UpdateElementDescriptor();
+
+        _panel.PanelOverride = new StyleBoxFlat(Color.White); // Always white background
     }
 
     public override void Output(string value, string? jsFunction) {
         if (jsFunction == null) return;
 
         // Prepare the argument to be used in JS
-        value = HttpUtility.UrlDecode(value);
-        value = HttpUtility.JavaScriptStringEncode(value);
+        //output is formatted by list2params sometimes, which means raw strings are url encoded, but the message contains & chars which are not encoded that are the params
+        //so we split on &, url decode the parts, and then join them back together with , as the separator for the JS params
+        var parts = value.Split('&');
+        for (var i = 0; i < parts.Length; i++) {
+            parts[i] = "\""+HttpUtility.JavaScriptStringEncode(HttpUtility.UrlDecode(parts[i]))+"\""; //wrap in quotes and encode for JS
+        }
 
         // Insert the values directly into JS and execute it (what could go wrong??)
-        _webView.ExecuteJavaScript($"{jsFunction}(\"{value}\")");
+        _webView.ExecuteJavaScript($"{jsFunction}({string.Join(",", parts)})");
     }
 
-    public void SetFileSource(ResPath filepath, bool userData) {
-        _webView.Url = (userData ? "usr://127.0.0.1/" : "res://127.0.0.1/") + filepath; // hostname must be the localhost IP for TGUI to work properly
+    public void SetFileSource(ResPath? filepath) {
+        if (filepath != null) {
+            // hostname must be the localhost IP for TGUI to work properly
+            _webView.Url = "http://127.0.0.1/" + filepath;
+        } else {
+            _webView.Url = "about:blank";
+        }
     }
 
     private void BeforeBrowseHandler(IBeforeBrowseContext context) {
@@ -77,13 +111,19 @@ internal sealed class ControlBrowser : InterfaceControl {
             if (newUri.Scheme == "byond" || (newUri.AbsolutePath == oldUri.AbsolutePath && newUri.Query != string.Empty)) {
                 context.DoCancel();
 
-                if (newUri.Host == "winset") {
-                    HandleEmbeddedWinset(newUri.Query);
-                    return;
+                switch (newUri.Host) {
+                    case "winset":
+                        HandleEmbeddedWinset(newUri.Query);
+                        return;
+                    case "winget":
+                        HandleEmbeddedWinget(newUri.Query);
+                        return;
+                    default: {
+                        var msg = new MsgTopic { Query = newUri.Query };
+                        _netManager.ClientSendMessage(msg);
+                        break;
+                    }
                 }
-
-                var msg = new MsgTopic() { Query = newUri.Query };
-                _netManager.ClientSendMessage(msg);
             }
         } catch (Exception e) {
             _sawmill.Error($"Exception in BeforeBrowseHandler: {e}");
@@ -91,28 +131,38 @@ internal sealed class ControlBrowser : InterfaceControl {
     }
 
     private void RequestHandler(IRequestHandlerContext context) {
-        Uri newUri = new Uri(context.Url);
+        // An exception in here will crash RT (and not log it because it's uncaught)
+        try {
+            Uri newUri = new Uri(context.Url);
 
-        if (newUri.Scheme == "usr") {
-            Stream stream;
-            HttpStatusCode status;
-            var path = new ResPath(newUri.AbsolutePath);
-            try {
-                stream = _resourceManager.UserData.OpenRead(_dreamResource.GetCacheFilePath(newUri.AbsolutePath));
-                status = HttpStatusCode.OK;
-            } catch (FileNotFoundException) {
-                stream = Stream.Null;
-                status = HttpStatusCode.NotFound;
-            } catch (Exception e) {
-                _sawmill.Error($"Exception while loading file from usr://:\n{e}");
-                stream = Stream.Null;
-                status = HttpStatusCode.InternalServerError;
+            if (newUri is {Scheme: "http", Host: "127.0.0.1"}) {
+                Stream stream;
+                HttpStatusCode status;
+                var path = new ResPath(newUri.AbsolutePath);
+                if (!_dreamResource.EnsureCacheFile(newUri.AbsolutePath)) {
+                    stream = Stream.Null;
+                    status = HttpStatusCode.NotFound;
+                } else {
+                    try {
+                        stream = _resourceManager.UserData.OpenRead(
+                            _dreamResource.GetCacheFilePath(newUri.AbsolutePath));
+                        status = HttpStatusCode.OK;
+                    } catch (FileNotFoundException) {
+                        stream = Stream.Null;
+                        status = HttpStatusCode.NotFound;
+                    } catch (Exception e) {
+                        _sawmill.Error($"Exception while loading file from {newUri}:\n{e}");
+                        stream = Stream.Null;
+                        status = HttpStatusCode.InternalServerError;
+                    }
+                }
+
+                var mimeType = FileExtensionMimeTypes.GetValueOrDefault(path.Extension, "application/octet-stream");
+                context.DoRespondStream(stream, mimeType, status);
             }
-
-            if (!FileExtensionMimeTypes.TryGetValue(path.Extension, out var mimeType))
-                mimeType = "application/octet-stream";
-
-            context.DoRespondStream(stream, mimeType, status);
+        } catch (Exception e) {
+            _sawmill.Error($"Exception in RequestHandler: {e}");
+            context.DoCancel();
         }
     }
 
@@ -145,6 +195,55 @@ internal sealed class ControlBrowser : InterfaceControl {
 
         // We can finally call winset
         _interfaceManager.WinSet(element, modifiedQuery);
+    }
+
+    /// <summary>
+    /// Handles an embedded winget
+    /// </summary>
+    /// <param name="query">The query portion of the embedded winget</param>
+    // Example: byond://winget?id=browseroutput&property=size&callback=JSFunction
+    // (Not in the XML comment because '&' breaks that apparently)
+    private void HandleEmbeddedWinget(string query) {
+        // Strip the question mark out before parsing
+        var queryParams = HttpUtility.ParseQueryString(query.Substring(1));
+
+        var elementId = queryParams.Get("id");
+        var property = queryParams.Get("property");
+        var callback = queryParams.Get("callback");
+        if (elementId == null || property == null || callback == null) {
+            _sawmill.Error($"Required arg 'id', 'property', or 'callback' not provided in embedded winget ({query})");
+            return;
+        }
+
+        // TG uses property=* but really just wants size
+        // TODO: Actual winget * support
+        bool forceJson = true;
+        if (property == "*") {
+            property = "size";
+            forceJson = false; // property=* does not return "as json" values (why?!)
+        }
+
+        var result = _interfaceManager.WinGet(elementId, property, forceJson: forceJson);
+
+        // Execute the callback
+        var propertyEncoded = HttpUtility.JavaScriptStringEncode(property);
+        var resultEncoded = HttpUtility.JavaScriptStringEncode(result);
+        var jsonArgument = $"{{ \"{propertyEncoded}\": \"{resultEncoded}\" }}";
+        _webView.ExecuteJavaScript($"{callback}({jsonArgument})");
+    }
+
+    private void OnShowEvent() {
+        ControlDescriptorBrowser controlDescriptor = (ControlDescriptorBrowser)ControlDescriptor;
+        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnShowCommand.Value)) {
+            _interfaceManager.RunCommand(controlDescriptor.OnShowCommand.AsRaw());
+        }
+    }
+
+    private void OnHideEvent() {
+        ControlDescriptorBrowser controlDescriptor = (ControlDescriptorBrowser)ControlDescriptor;
+        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnHideCommand.Value)) {
+            _interfaceManager.RunCommand(controlDescriptor.OnHideCommand.AsRaw());
+        }
     }
 }
 

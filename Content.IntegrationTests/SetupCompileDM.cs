@@ -15,11 +15,12 @@ public sealed class SetupCompileDm {
 
     [OneTimeSetUp]
     public void Compile() {
-        bool successfulCompile = DMCompiler.DMCompiler.Compile(new() {
+        DMCompiler.DMCompiler compiler = new();
+        bool successfulCompile = compiler.Compile(new() {
             Files = new() { DmEnvironment }
         });
 
-        Assert.IsTrue(successfulCompile && File.Exists(CompiledProject), "Failed to compile DM test project!");
+        Assert.That(successfulCompile && File.Exists(CompiledProject), "Failed to compile DM test project!");
     }
 
     [OneTimeTearDown]

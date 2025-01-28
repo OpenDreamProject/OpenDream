@@ -8,14 +8,11 @@ namespace OpenDreamClient.Rendering;
 /// Disables RobustToolbox's transform lerping and replaces it with our own gliding
 /// </summary>
 public sealed class AtomGlideSystem : EntitySystem {
-    private sealed class Glide {
-        public readonly TransformComponent Transform;
+    private sealed class Glide(EntityUid uid, TransformComponent transform, DMISpriteComponent sprite) {
+        public readonly EntityUid Uid = uid;
+        public readonly TransformComponent Transform = transform;
+        public readonly DMISpriteComponent Sprite = sprite;
         public Vector2 EndPos;
-        public float MovementPerFrame;
-
-        public Glide(TransformComponent transform) {
-            Transform = transform;
-        }
     }
 
     [Dependency] private readonly TransformSystem _transformSystem = default!;
@@ -31,9 +28,11 @@ public sealed class AtomGlideSystem : EntitySystem {
     private bool _ignoreMoveEvent;
 
     public override void Initialize() {
+        UpdatesBefore.Add(typeof(SharedTransformSystem));
+
         _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
 
-        SubscribeLocalEvent<TransformComponent, MoveEvent>(OnTransformMove);
+        _transformSystem.OnGlobalMoveEvent += OnTransformMove;
     }
 
     public override void Shutdown() {
@@ -41,27 +40,40 @@ public sealed class AtomGlideSystem : EntitySystem {
     }
 
     public override void FrameUpdate(float frameTime) {
+        // As of writing, Reset() does nothing but clear the transform system's _lerpingTransforms list
+        // We update before SharedTransformSystem so this serves to disable RT's lerping, which fights our gliding
+        // TODO: This kinda fights RT. Would be nice to modify RT to make it play nicer.
+        _transformSystem.Reset();
+
         _ignoreMoveEvent = false;
 
         for (int i = 0; i < _currentGlides.Count; i++) {
             var glide = _currentGlides[i];
+
+            if (glide.Sprite.Icon.Appearance == null) {
+                _currentGlides.RemoveSwap(i--);
+                continue;
+            }
+
             var currentPos = glide.Transform.LocalPosition;
             var newPos = currentPos;
+            var movementSpeed = CalculateMovementSpeed(glide.Sprite.Icon.Appearance.GlideSize);
+            var movement = movementSpeed * frameTime;
 
             // Move X towards the end position at a constant speed
             if (!MathHelper.CloseTo(currentPos.X, glide.EndPos.X)) {
                 if (currentPos.X < glide.EndPos.X)
-                    newPos.X = Math.Min(glide.EndPos.X, newPos.X + glide.MovementPerFrame);
+                    newPos.X = Math.Min(glide.EndPos.X, newPos.X + movement);
                 else if (currentPos.X > glide.EndPos.X)
-                    newPos.X = Math.Max(glide.EndPos.X, newPos.X - glide.MovementPerFrame);
+                    newPos.X = Math.Max(glide.EndPos.X, newPos.X - movement);
             }
 
             // Move Y towards the end position at a constant speed
             if (!MathHelper.CloseTo(currentPos.Y, glide.EndPos.Y)) {
                 if (currentPos.Y < glide.EndPos.Y)
-                    newPos.Y = Math.Min(glide.EndPos.Y, newPos.Y + glide.MovementPerFrame);
+                    newPos.Y = Math.Min(glide.EndPos.Y, newPos.Y + movement);
                 else if (currentPos.Y > glide.EndPos.Y)
-                    newPos.Y = Math.Max(glide.EndPos.Y, newPos.Y - glide.MovementPerFrame);
+                    newPos.Y = Math.Max(glide.EndPos.Y, newPos.Y - movement);
             }
 
             if (newPos.EqualsApprox(glide.EndPos)) { // Glide is finished
@@ -71,19 +83,18 @@ public sealed class AtomGlideSystem : EntitySystem {
             }
 
             _ignoreMoveEvent = true;
-            _transformSystem.SetLocalPositionNoLerp(glide.Transform, newPos);
+            _transformSystem.SetLocalPositionNoLerp(glide.Uid, newPos, glide.Transform);
             _ignoreMoveEvent = false;
         }
     }
 
-    // TODO: This kinda fights RT. Would be nice to modify RT to make it play nicer.
     /// <summary>
     /// Disables RT lerping and sets up the entity's glide
     /// </summary>
-    private void OnTransformMove(EntityUid entity, TransformComponent transform, ref MoveEvent e) {
+    private void OnTransformMove(ref MoveEvent e) {
         if (_ignoreMoveEvent || e.ParentChanged)
             return;
-        if (!_spriteQuery.TryGetComponent(entity, out var sprite))
+        if (!_spriteQuery.TryGetComponent(e.Sender, out var sprite) || sprite.Icon?.Appearance is null)
             return;
 
         _ignoreMoveEvent = true;
@@ -91,7 +102,7 @@ public sealed class AtomGlideSystem : EntitySystem {
         // Look for any in-progress glides on this transform
         Glide? glide = null;
         foreach (var potentiallyThisTransform in _currentGlides) {
-            if (potentiallyThisTransform.Transform != transform)
+            if (potentiallyThisTransform.Transform != e.Component)
                 continue;
 
             glide = potentiallyThisTransform;
@@ -113,27 +124,23 @@ public sealed class AtomGlideSystem : EntitySystem {
         }
 
         if (glide == null) {
-            glide = new(transform);
+            glide = new(e.Sender, e.Component, sprite);
             _currentGlides.Add(glide);
         }
 
         // Move the transform to our starting point
-        // Also serves the function of disabling RT's lerp
-        _transformSystem.SetLocalPositionNoLerp(transform, startingFrom);
+        _transformSystem.SetLocalPositionNoLerp(e.Sender, startingFrom, e.Component);
 
         glide.EndPos = glidingTo;
-        glide.MovementPerFrame = CalculateMovementPerFrame(sprite.Icon.Appearance.GlideSize);
         _ignoreMoveEvent = false;
     }
 
-    private static float CalculateMovementPerFrame(byte glideSize) {
+    private static float CalculateMovementSpeed(float glideSize) {
         if (glideSize == 0)
             glideSize = 4; // TODO: 0 gives us "automated control" over this value, not just setting it to 4
 
-        // Assume a 60 FPS client and a 20 TPS server
-        // TODO: Support other FPS and TPS
-        var scaling = (60f / 20f);
-
-        return glideSize / scaling / EyeManager.PixelsPerMeter;
+        // Assume a 20 TPS server
+        // TODO: Support other TPS
+        return glideSize / EyeManager.PixelsPerMeter * 20f;
     }
 }

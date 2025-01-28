@@ -7,6 +7,13 @@ namespace OpenDreamClient.Interface.Html;
 public static class HtmlParser {
     private const string TagNotClosedError = "HTML tag was not closed";
 
+    private static readonly ISawmill Sawmill;
+    private static readonly HashSet<string> WarnedAttributes = new();
+
+    static HtmlParser() {
+        Sawmill = IoCManager.Resolve<ILogManager>().GetSawmill("opendream.html_parser");
+    }
+
     public static void Parse(string text, FormattedMessage appendTo) {
         StringBuilder currentText = new();
         Stack<string> tags = new();
@@ -18,6 +25,9 @@ public static class HtmlParser {
         }
 
         void PushCurrentText() {
+            if (currentText.Length == 0)
+                return;
+
             appendTo.AddText(currentText.ToString());
             currentText.Clear();
         }
@@ -32,7 +42,7 @@ public static class HtmlParser {
                     i++;
                     SkipWhitespace();
                     if (i >= text.Length) {
-                        Logger.Error(TagNotClosedError);
+                        Sawmill.Error(TagNotClosedError);
                         return;
                     }
 
@@ -51,7 +61,7 @@ public static class HtmlParser {
                     } while (i < text.Length);
 
                     if (c != '>') {
-                        Logger.Error(TagNotClosedError);
+                        Sawmill.Error(TagNotClosedError);
                         return;
                     }
 
@@ -62,10 +72,10 @@ public static class HtmlParser {
                     currentText.Clear();
                     if (closingTag) {
                         if (tags.Count == 0) {
-                            Logger.Error("Unexpected closing tag");
+                            Sawmill.Error("Unexpected closing tag");
                             return;
                         } else if (tags.Peek() != tagType) {
-                            Logger.Error($"Invalid closing tag </{tagType}>, expected </{tags.Peek()}>");
+                            Sawmill.Error($"Invalid closing tag </{tagType}>, expected </{tags.Peek()}>");
                             return;
                         }
 
@@ -78,7 +88,44 @@ public static class HtmlParser {
                     }
 
                     break;
+                case '&':
+                    // HTML named/numbered entity
+                    int end = text.IndexOf(';', i);
+                    if (end == -1) {
+                        // browsers usually allow for some fallibility here
+                        break;
+                    }
+
+                    string insideEntity = text.Substring(i + 1, end - (i + 1));
+                    i = end;
+
+                    if (insideEntity.StartsWith('#')) {
+                        if (int.TryParse(insideEntity.Substring(1), out int result)) {
+                            currentText.Append((char) result);
+                        }
+                    } else {
+                        switch (insideEntity) {
+                            case "nbsp": currentText.Append("\u00A0"); break;
+                            case "lt": currentText.Append("<"); break;
+                            case "gt": currentText.Append(">"); break;
+                            case "amp": currentText.Append("&"); break;
+                            case "quot": currentText.Append("\""); break;
+                            case "apos": currentText.Append("'"); break;
+                            case "cent": currentText.Append("¢"); break;
+                            case "pound": currentText.Append("£"); break;
+                            case "yen": currentText.Append("¥"); break;
+                            case "euro": currentText.Append("€"); break;
+                            case "copyright": currentText.Append("©"); break;
+                            case "trademark": currentText.Append("®"); break;
+                            default:
+                                currentText.Append("&" + insideEntity + ";");
+                                break;
+                        }
+                    }
+
+                    break;
                 case '\n':
+                    PushCurrentText();
                     appendTo.PushNewline();
                     break;
                 default:
@@ -123,7 +170,8 @@ public static class HtmlParser {
                     parameter = new(color);
                     break;
                 default:
-                    Logger.Debug($"Unimplemented HTML attribute \"{attributeName}\"");
+                    if (WarnedAttributes.Add(attributeName))
+                        Sawmill.Debug($"Unimplemented HTML attribute \"{attributeName}\"");
                     continue;
             }
 

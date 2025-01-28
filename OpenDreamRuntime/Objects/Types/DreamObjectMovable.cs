@@ -1,8 +1,7 @@
-﻿using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
 using Robust.Shared.Map;
-using Robust.Shared.Utility;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -10,6 +9,7 @@ namespace OpenDreamRuntime.Objects.Types;
 public class DreamObjectMovable : DreamObjectAtom {
     public EntityUid Entity;
     public readonly DMISpriteComponent SpriteComponent;
+    public DreamObjectAtom? Loc;
 
     // TODO: Cache this shit. GetWorldPosition is slow.
     public Vector2i Position => (Vector2i?)TransformSystem?.GetWorldPosition(_transformComponent) ?? (0, 0);
@@ -18,45 +18,49 @@ public class DreamObjectMovable : DreamObjectAtom {
     public int Z => (int)_transformComponent.MapID;
 
     private readonly TransformComponent _transformComponent;
-
-    private DreamObjectAtom? _loc;
+    private readonly MovableContentsList _contents;
+    private string? _screenLoc;
 
     private string? ScreenLoc {
         get => _screenLoc;
-        set {
-            _screenLoc = value;
-            if (!EntityManager.TryGetComponent<DMISpriteComponent>(Entity, out var sprite))
-                return;
-
-            sprite.ScreenLocation = !string.IsNullOrEmpty(value) ?
-                                        new ScreenLocation(value) :
-                                        new ScreenLocation(0, 0, 0, 0);
-        }
+        set => SetScreenLoc(value);
     }
-
-    private string? _screenLoc;
 
     public DreamObjectMovable(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
         Entity = AtomManager.CreateMovableEntity(this);
         SpriteComponent = EntityManager.GetComponent<DMISpriteComponent>(Entity);
-        _transformComponent = EntityManager.GetComponent<TransformComponent>(Entity);
+        AtomManager.SetSpriteAppearance((Entity, SpriteComponent), AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
 
-        objectDefinition.Variables["screen_loc"].TryGetValueAsString(out var screenLoc);
-        ScreenLoc = screenLoc;
+        _transformComponent = EntityManager.GetComponent<TransformComponent>(Entity);
+        _contents = new MovableContentsList(ObjectTree.List.ObjectDefinition, this, _transformComponent);
     }
 
     public override void Initialize(DreamProcArguments args) {
         base.Initialize(args);
 
+        ObjectDefinition.Variables["screen_loc"].TryGetValueAsString(out var screenLoc);
+        ScreenLoc = screenLoc;
+
+        if (EntityManager.TryGetComponent(Entity, out MetaDataComponent? metaData)) {
+            MetaDataSystem?.SetEntityName(Entity, GetDisplayName(), metaData);
+            MetaDataSystem?.SetEntityDescription(Entity, GetRTEntityDesc(), metaData);
+        }
+
         args.GetArgument(0).TryGetValueAsDreamObject<DreamObjectAtom>(out var loc);
         SetLoc(loc); //loc is set before /New() is ever called
     }
 
-    protected override void HandleDeletion() {
+    protected override void HandleDeletion(bool possiblyThreaded) {
+        // SAFETY: Deleting entities is not threadsafe.
+        if (possiblyThreaded) {
+            EnterIntoDelQueue();
+            return;
+        }
+
         WalkManager.StopWalks(this);
         AtomManager.DeleteMovableEntity(this);
 
-        base.HandleDeletion();
+        base.HandleDeletion(possiblyThreaded);
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
@@ -71,29 +75,22 @@ public class DreamObjectMovable : DreamObjectAtom {
                 value = new(Z);
                 return true;
             case "loc":
-                value = new(_loc);
+                value = new(Loc);
+                return true;
+            case "bound_width":
+            case "bound_height":
+                value = new(32); // TODO: Custom bounds support
                 return true;
             case "screen_loc":
                 value = (ScreenLoc != null) ? new(ScreenLoc) : DreamValue.Null;
                 return true;
             case "contents":
-                DreamList contents = ObjectTree.CreateList();
-
-                using (var childEnumerator = _transformComponent.ChildEnumerator) {
-                    while (childEnumerator.MoveNext(out EntityUid? child)) {
-                        if (!AtomManager.TryGetMovableFromEntity(child.Value, out var childAtom))
-                            continue;
-
-                        contents.AddValue(new DreamValue(childAtom));
-                    }
-                }
-
-                value = new(contents);
+                value = new(_contents);
                 return true;
             case "locs":
                 // Unimplemented; just return a list containing src.loc
                 DreamList locs = ObjectTree.CreateList();
-                locs.AddValue(new(_loc));
+                locs.AddValue(new(Loc));
 
                 value = new DreamValue(locs);
                 return true;
@@ -147,8 +144,8 @@ public class DreamObjectMovable : DreamObjectAtom {
         }
     }
 
-    private void SetLoc(DreamObjectAtom? loc) {
-        _loc = loc;
+    public void SetLoc(DreamObjectAtom? loc) {
+        Loc = loc;
         if (TransformSystem == null)
             return;
 
@@ -193,5 +190,10 @@ public class DreamObjectMovable : DreamObjectAtom {
             default:
                 throw new ArgumentException($"Invalid loc {loc}");
         }
+    }
+
+    private void SetScreenLoc(string? screenLoc) {
+        _screenLoc = screenLoc;
+        AtomManager.SetMovableScreenLoc(this, !string.IsNullOrEmpty(screenLoc) ? new ScreenLocation(screenLoc) : new ScreenLocation(0, 0, 0, 0));
     }
 }

@@ -3,9 +3,11 @@ using OpenDreamRuntime.Procs;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using DMCompiler.Bytecode;
+using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
+using OpenDreamRuntime.Util;
 using Robust.Server.GameObjects;
 using Robust.Server.GameStates;
 using Robust.Server.Player;
@@ -20,6 +22,9 @@ namespace OpenDreamRuntime.Objects {
 
         [Access(typeof(DreamObject))]
         public bool Deleted;
+
+        [Access(typeof(DreamManager), typeof(DreamObject))]
+        public int? RefId;
 
         public virtual bool ShouldCallNew => true;
 
@@ -38,8 +43,11 @@ namespace OpenDreamRuntime.Objects {
         protected TransformSystem? TransformSystem => ObjectDefinition.TransformSystem;
         protected PvsOverrideSystem? PvsOverrideSystem => ObjectDefinition.PvsOverrideSystem;
         protected MetaDataSystem? MetaDataSystem => ObjectDefinition.MetaDataSystem;
+        protected ServerVerbSystem? VerbSystem => ObjectDefinition.VerbSystem;
 
         protected Dictionary<string, DreamValue>? Variables;
+        //handle to the list of vars on this object so that it's only created once and refs to object.vars are consistent
+        private DreamListVars? _varsList;
 
         private string? Tag {
             get => _tag;
@@ -78,7 +86,7 @@ namespace OpenDreamRuntime.Objects {
 
             // Atoms are in world.contents
             if (this is not DreamObjectAtom && IsSubtypeOf(ObjectTree.Datum)) {
-                ObjectDefinition.DreamManager.Datums.Add(this);
+                ObjectDefinition.DreamManager.Datums.AddLast(new WeakDreamRef(this));
             }
         }
 
@@ -86,14 +94,12 @@ namespace OpenDreamRuntime.Objects {
             // For subtypes to implement
         }
 
-        protected virtual void HandleDeletion() {
+        protected virtual void HandleDeletion(bool possiblyThreaded) {
             // Atoms are in world.contents
-            if (this is not DreamObjectAtom && IsSubtypeOf(ObjectTree.Datum)) {
-                DreamManager.Datums.Remove(this);
-            }
+            // Datum removal used to live here, but datums are now tracked weakly.
 
-            if (DreamManager.ReferenceIDs.Remove(this, out var refId))
-                DreamManager.ReferenceIDsToDreamObject.Remove(refId);
+            if (RefId is not null)
+                DreamManager.ReferenceIDsToDreamObject.Remove(RefId.Value, out _);
 
             Tag = null;
             Deleted = true;
@@ -103,25 +109,49 @@ namespace OpenDreamRuntime.Objects {
             ObjectDefinition = null!;
         }
 
-        public void Delete() {
+        /// <summary>
+        ///     Enters the current dream object into a global del queue that is guaranteed to run on the DM thread.
+        ///     Use if your deletion handler must be on the DM thread.
+        /// </summary>
+        protected void EnterIntoDelQueue() {
+            DreamManager.DelQueue.Add(this);
+        }
+
+        /// <summary>
+        ///     Del() the object, cleaning up its variables and refs to minimize size until the .NET GC collects it.
+        /// </summary>
+        /// <param name="possiblyThreaded">If true, Delete() will be defensive and assume it may have been called from another thread by .NET</param>
+        public void Delete(bool possiblyThreaded = false) {
             if (Deleted)
                 return;
 
-            if (TryGetProc("Del", out var delProc))
-                DreamThread.Run(delProc, this, null);
+            if (TryGetProc("Del", out var delProc)) {
+                // SAFETY: See associated comment in Datum.dm. This relies on the invariant that this proc is in a
+                //         thread-safe subset of DM (if such a thing exists) or empty. Currently, it is empty.
+                var datumBaseProc = delProc is DMProc {Bytecode.Length: 0};
+                if (possiblyThreaded && !datumBaseProc) {
+                    EnterIntoDelQueue();
+                    return; //Whoops, cannot thread.
+                } else if (!datumBaseProc) {
+                    DreamThread.Run(delProc, this, null);
+                }
+            }
 
-            HandleDeletion();
+            HandleDeletion(possiblyThreaded);
+        }
+
+        ~DreamObject() {
+            // Softdel, possibly.
+            Delete(true);
         }
 
         public bool IsSubtypeOf(TreeEntry ancestor) {
+            if(Deleted) //null deref protection, deleted objects don't have ObjectDefinition anymore
+                return false;
             return ObjectDefinition.IsSubtypeOf(ancestor);
         }
 
         #region Variables
-        public virtual DreamValue Initial(string name) {
-            return ObjectDefinition.Variables[name];
-        }
-
         public virtual bool IsSaved(string name) {
             return ObjectDefinition.Variables.ContainsKey(name)
                 && !ObjectDefinition.GlobalVariables.ContainsKey(name)
@@ -164,13 +194,16 @@ namespace OpenDreamRuntime.Objects {
 
                     return true;
                 case "vars":
-                    value = new(new DreamListVars(ObjectTree.List.ObjectDefinition, this));
+                    _varsList ??= new DreamListVars(ObjectTree.List.ObjectDefinition, this);
+                    value = new(_varsList);
                     return true;
                 case "tag":
                     value = (Tag != null) ? new(Tag) : DreamValue.Null;
                     return true;
                 default:
-                    return (Variables?.TryGetValue(varName, out value) is true) || ObjectDefinition.Variables.TryGetValue(varName, out value);
+                    return (Variables?.TryGetValue(varName, out value) is true) ||
+                     (ObjectDefinition.Variables.TryGetValue(varName, out value) is true) ||
+                        (ObjectDefinition.GlobalVariables.TryGetValue(varName, out var globalIndex) is true) && ObjectDefinition.DreamManager.Globals.TryGetValue(globalIndex, out value);
             }
         }
 
@@ -314,7 +347,7 @@ namespace OpenDreamRuntime.Objects {
             // /client is a little special and will return its key var
             // TODO: Maybe this should be an override to GetDisplayName()?
             if (this is DreamObjectClient client)
-                return client.Connection.Session!.Name;
+                return client.Connection.Key;
 
             var name = GetRawName();
             bool isProper = StringIsProper(name);
@@ -343,10 +376,15 @@ namespace OpenDreamRuntime.Objects {
         /// <summary>
         /// Returns the name of this object with no formatting evaluated
         /// </summary>
-        /// <returns></returns>
         public string GetRawName() {
-            if (!TryGetVariable("name", out DreamValue nameVar) || !nameVar.TryGetValueAsString(out string? name))
-                return ObjectDefinition.Type.ToString();
+            string name = ObjectDefinition.Type;
+
+            if (this is DreamObjectAtom) {
+                if (AtomManager.TryGetAppearance(this, out var appearance))
+                    name = appearance.Name;
+            } else if (TryGetVariable("name", out DreamValue nameVar) && nameVar.TryGetValueAsString(out var nameVarStr)) {
+                name = nameVarStr;
+            }
 
             return name;
         }
@@ -354,22 +392,66 @@ namespace OpenDreamRuntime.Objects {
 
         #region Operators
         // +
-        public virtual DreamValue OperatorAdd(DreamValue b) {
+        public virtual DreamValue OperatorAdd(DreamValue b, DMProcState state) {
+            if (TryExecuteOperatorOverload(state, "operator+", new DreamProcArguments(b), out var result))
+                return result;
+
             throw new InvalidOperationException($"Addition cannot be done between {this} and {b}");
         }
 
         // -
-        public virtual DreamValue OperatorSubtract(DreamValue b) {
+        public virtual DreamValue OperatorSubtract(DreamValue b, DMProcState state) {
+            if (TryExecuteOperatorOverload(state, "operator-", new DreamProcArguments(b), out var result))
+                return result;
+
             throw new InvalidOperationException($"Subtraction cannot be done between {this} and {b}");
         }
 
         // *
-        public virtual DreamValue OperatorMultiply(DreamValue b) {
+        public virtual DreamValue OperatorMultiply(DreamValue b, DMProcState state) {
+            if (TryExecuteOperatorOverload(state, "operator*", new DreamProcArguments(b), out var result))
+                return result;
+
             throw new InvalidOperationException($"Multiplication cannot be done between {this} and {b}");
         }
 
+        // *=
+        public virtual DreamValue OperatorMultiplyRef(DreamValue b, DMProcState state) {
+            var args = new DreamProcArguments(b);
+            if (TryExecuteOperatorOverload(state, "operator*=", args, out var result))
+                return result;
+
+            if (TryExecuteOperatorOverload(state, "operator*", args, out result))
+                return result;
+
+            throw new InvalidOperationException($"Multiplication cannot be done between {this} and {b}");
+        }
+
+        // /
+        public virtual DreamValue OperatorDivide(DreamValue b, DMProcState state) {
+            if (TryExecuteOperatorOverload(state, "operator/", new DreamProcArguments(b), out var result))
+                return result;
+
+            throw new InvalidOperationException($"Division cannot be done between {this} and {b}");
+        }
+
+        // /=
+        public virtual DreamValue OperatorDivideRef(DreamValue b, DMProcState state) {
+            var args = new DreamProcArguments(b);
+            if (TryExecuteOperatorOverload(state, "operator/=", args, out var result))
+                return result;
+
+            if (TryExecuteOperatorOverload(state, "operator/", args, out result))
+                return result;
+
+            throw new InvalidOperationException($"Division cannot be done between {this} and {b}");
+        }
+
         // |
-        public virtual DreamValue OperatorOr(DreamValue b) {
+        public virtual DreamValue OperatorOr(DreamValue b, DMProcState state) {
+            if (TryExecuteOperatorOverload(state, "operator|", new DreamProcArguments(b), out var result))
+                return result;
+
             throw new InvalidOperationException($"Cannot or {this} and {b}");
         }
 
@@ -407,15 +489,51 @@ namespace OpenDreamRuntime.Objects {
         }
 
         // []
-        public virtual DreamValue OperatorIndex(DreamValue index) {
+        public virtual DreamValue OperatorIndex(DreamValue index, DMProcState state) {
+            if (TryExecuteOperatorOverload(state, "operator[]", new DreamProcArguments(index), out var result))
+                return result;
+
             throw new InvalidOperationException($"Cannot index {this} with {index}");
         }
 
         // []=
-        public virtual void OperatorIndexAssign(DreamValue index, DreamValue value) {
+        public virtual void OperatorIndexAssign(DreamValue index, DMProcState state, DreamValue value) {
+            if (TryExecuteOperatorOverload(state, "operator[]=", new DreamProcArguments(index, value), out _))
+                return;
+
             throw new InvalidOperationException($"Cannot assign {value} to index {index} of {this}");
         }
         #endregion Operators
+
+        private bool TryExecuteOperatorOverload(
+            DMProcState parentState,
+            string operatorName,
+            DreamProcArguments arguments,
+            out DreamValue procResult) {
+            if (!TryGetProc(operatorName, out var proc)) {
+                procResult = default;
+                return false;
+            }
+
+            var thread = parentState.Thread;
+            var operatorProcState = proc.CreateState(thread, this, parentState.Usr, arguments);
+            operatorProcState.WaitFor = false;
+            thread.PushProcState(operatorProcState);
+            procResult = thread.ReentrantResume(parentState, out var resultStatus);
+
+            switch (resultStatus) {
+                case ProcStatus.Cancelled:
+                    // Throw DMError so parent .Resume() call also cancels cleanly.
+                    throw new DMError("Re-entrant proc cancelled");
+                case ProcStatus.Returned:
+                    // Normal behavior, proc finished executing.
+                    return true;
+                default:
+                    // This means Deferred, most likely. Which shouldn't be possible,
+                    // as the proc state is WaitFor = false.
+                    throw new Exception($"Unexpected proc result from re-entrant operator: {resultStatus}");
+            }
+        }
 
         public override string ToString() {
             if (Deleted) {
@@ -427,7 +545,7 @@ namespace OpenDreamRuntime.Objects {
                 return $"{ObjectDefinition.Type}{{name=\"{name}\"}}";
             }
 
-            return ObjectDefinition.Type.ToString();
+            return ObjectDefinition.Type;
         }
     }
 }

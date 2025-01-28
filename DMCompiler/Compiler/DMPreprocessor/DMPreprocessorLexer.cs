@@ -1,9 +1,7 @@
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
-using OpenDreamShared.Compiler;
 
 namespace DMCompiler.Compiler.DMPreprocessor;
 
@@ -17,12 +15,16 @@ internal sealed class DMPreprocessorLexer {
     public readonly string IncludeDirectory;
     public readonly string File;
 
+    private readonly DMCompiler _compiler;
     private readonly StreamReader _source;
+    private readonly bool _isDMStandard;
     private char _current;
     private int _currentLine = 1, _currentColumn;
+    private int _previousLine = 1, _previousColumn;
     private readonly Queue<Token> _pendingTokenQueue = new(); // TODO: Possible to remove this?
 
-    public DMPreprocessorLexer(string includeDirectory, string file, string source) {
+    public DMPreprocessorLexer(DMCompiler compiler, string includeDirectory, string file, string source) {
+        _compiler = compiler;
         IncludeDirectory = includeDirectory;
         File = file;
 
@@ -30,11 +32,13 @@ internal sealed class DMPreprocessorLexer {
         Advance();
     }
 
-    public DMPreprocessorLexer(string includeDirectory, string file) {
+    public DMPreprocessorLexer(DMCompiler compiler, string includeDirectory, string file, bool isDMStandard) {
+        _compiler = compiler;
         IncludeDirectory = includeDirectory;
         File = file;
 
         _source = new StreamReader(Path.Combine(includeDirectory, file), Encoding.UTF8);
+        _isDMStandard = isDMStandard;
         Advance();
     }
 
@@ -58,6 +62,9 @@ internal sealed class DMPreprocessorLexer {
 
         char c = GetCurrent();
 
+        _previousLine = _currentLine;
+        _previousColumn = _currentColumn;
+
         switch (c) {
             case '\0':
                 return CreateToken(TokenType.EndOfFile, c);
@@ -79,12 +86,16 @@ internal sealed class DMPreprocessorLexer {
             case ';': Advance(); return CreateToken(TokenType.DM_Preproc_Punctuator_Semicolon, c);
             case '.': Advance(); return CreateToken(TokenType.DM_Preproc_Punctuator_Period, c);
             case ':':
-                if (Advance() == '=') {
-                    Advance();
-                    return CreateToken(TokenType.DM_Preproc_Punctuator, ":=");
+                switch (Advance()) {
+                    case '=':
+                        Advance();
+                        return CreateToken(TokenType.DM_Preproc_Punctuator, ":=");
+                    case ':':
+                        Advance();
+                        return CreateToken(TokenType.DM_Preproc_Punctuator, "::");
+                    default:
+                        return CreateToken(TokenType.DM_Preproc_Punctuator_Colon, c);
                 }
-
-                return CreateToken(TokenType.DM_Preproc_Punctuator_Colon, c);
             case ',': Advance(); return CreateToken(TokenType.DM_Preproc_Punctuator_Comma, c);
             case '(': Advance(); return CreateToken(TokenType.DM_Preproc_Punctuator_LeftParenthesis, c);
             case ')': Advance(); return CreateToken(TokenType.DM_Preproc_Punctuator_RightParenthesis, c);
@@ -290,12 +301,31 @@ internal sealed class DMPreprocessorLexer {
             }
             case '@': { //Raw string
                 char delimiter = Advance();
+                var startLoc = CurrentLocation();
+
+                // @(XYZ) where XYZ is the delimiter
+                string complexDelimiter = string.Empty;
+                if (delimiter == '(') {
+                    Advance();
+                    while (GetCurrent() != ')') {
+                        if (AtEndOfSource()) {
+                            _compiler.Emit(WarningCode.BadExpression, startLoc,
+                                "Unterminated string delimiter");
+                            break;
+                        }
+
+                        complexDelimiter += GetCurrent();
+                        Advance();
+                    }
+                }
 
                 TokenTextBuilder.Clear();
                 TokenTextBuilder.Append('@');
                 TokenTextBuilder.Append(delimiter);
 
+                bool isComplex = complexDelimiter != string.Empty;
                 bool isLong = false;
+
                 c = Advance();
                 if (delimiter == '{') {
                     TokenTextBuilder.Append(c);
@@ -303,22 +333,58 @@ internal sealed class DMPreprocessorLexer {
                     if (c == '"') isLong = true;
                 }
 
-                if (isLong) {
-                    bool nextCharCanTerm = false;
-                    do {
-                        c = Advance();
+                if (isComplex) {
+                    TokenTextBuilder.Append(complexDelimiter);
+                    TokenTextBuilder.Append(')');
 
-                        if(nextCharCanTerm && c == '}')
+                    // Ignore a newline immediately after @(complexDelimiter)
+                    if (c == '\r') c = Advance();
+                    if (c == '\n') c = Advance();
+
+                    var delimIdx = 0;
+                    do {
+                        TokenTextBuilder.Append(c);
+
+                        if (GetCurrent() == complexDelimiter[delimIdx]) delimIdx++;
+                        else delimIdx = 0;
+
+                        if (delimIdx == complexDelimiter.Length && c == complexDelimiter[^1]) { // latter check ensures a 1-char delimiter actually matches
                             break;
-                        else {
+                        }
+
+                        c = Advance();
+                    } while (!AtEndOfSource());
+
+                    if (AtEndOfSource()) {
+                        _compiler.Emit(WarningCode.BadExpression, startLoc,
+                            "Unterminated string delimiter");
+                    }
+                } else if (isLong) {
+                    bool nextCharCanTerm = false;
+
+                    Advance();
+                    do {
+                        c = GetCurrent();
+
+                        if (nextCharCanTerm && c == '}')
+                            break;
+
+                        if (HandleLineEnd()) {
+                            TokenTextBuilder.Append('\n');
+                        } else {
+                            Advance();
                             TokenTextBuilder.Append(c);
                             nextCharCanTerm = false;
                         }
 
                         if (c == '"')
                             nextCharCanTerm = true;
-
                     } while (!AtEndOfSource());
+
+                    if (AtEndOfSource()) {
+                        _compiler.Emit(WarningCode.BadExpression, startLoc,
+                            "Unterminated string delimiter");
+                    }
                 } else {
                     while (c != delimiter && !AtLineEnd() && !AtEndOfSource()) {
                         TokenTextBuilder.Append(c);
@@ -326,12 +392,37 @@ internal sealed class DMPreprocessorLexer {
                     }
                 }
 
-                TokenTextBuilder.Append(c);
+                if (!isComplex) TokenTextBuilder.Append(c);
+
                 if (!HandleLineEnd())
                     Advance();
 
                 string text = TokenTextBuilder.ToString();
-                string value = isLong ? text.Substring(3, text.Length - 5) : text.Substring(2, text.Length - 3);
+                string value;
+
+                if (isComplex) {
+                    // Complex strings need to strip @(complexDelimiter) and a potential final newline. Newline after @(complexDelimiter) is already handled
+                    var trimEnd = complexDelimiter.Length;
+                    if (TokenTextBuilder[^(complexDelimiter.Length + 1)] == '\n') trimEnd += 1;
+                    if (TokenTextBuilder[^(complexDelimiter.Length + 2)] == '\r') trimEnd += 1;
+                    var trimStart = 3 + complexDelimiter.Length; // 3 is from these chars: @()
+                    value = TokenTextBuilder.ToString(trimStart, TokenTextBuilder.Length - (trimStart + trimEnd));
+                } else if (isLong) {
+                    // Long strings ignore a newline immediately after the @{" and before the "}
+                    if (TokenTextBuilder[3] == '\r')
+                        TokenTextBuilder.Remove(3, 1);
+                    if (TokenTextBuilder[3] == '\n')
+                        TokenTextBuilder.Remove(3, 1);
+                    if (TokenTextBuilder[^3] == '\n')
+                        TokenTextBuilder.Remove(TokenTextBuilder.Length - 3, 1);
+                    if (TokenTextBuilder[^3] == '\r')
+                        TokenTextBuilder.Remove(TokenTextBuilder.Length - 3, 1);
+
+                    value = TokenTextBuilder.ToString(3, TokenTextBuilder.Length - 5);
+                } else {
+                    value = TokenTextBuilder.ToString(2, TokenTextBuilder.Length - 3);
+                }
+
                 return CreateToken(TokenType.DM_Preproc_ConstantString, text, value);
             }
             case '\'':
@@ -342,7 +433,7 @@ internal sealed class DMPreprocessorLexer {
                     LexString(true) :
                     CreateToken(TokenType.DM_Preproc_Punctuator, c);
             case '#': {
-                bool isConcat = (Advance() == '#');
+                bool isConcat = Advance() == '#';
                 if (isConcat) Advance();
 
                 // Whitespace after '#' is ignored
@@ -368,7 +459,7 @@ internal sealed class DMPreprocessorLexer {
 
                 string macroAttempt = text.ToLower();
                 if (TryMacroKeyword(macroAttempt, out var attemptKeyword)) { // if they mis-capitalized the keyword
-                    DMCompiler.Emit(WarningCode.MiscapitalizedDirective, attemptKeyword.Value.Location,
+                    _compiler.Emit(WarningCode.MiscapitalizedDirective, attemptKeyword.Value.Location,
                         $"#{text} is not a valid macro keyword. Did you mean '#{macroAttempt}'?");
                 }
 
@@ -419,7 +510,7 @@ internal sealed class DMPreprocessorLexer {
                 }
 
                 Advance();
-                return CreateToken(TokenType.Error, string.Empty, $"Unknown character: {c.ToString()}");
+                return CreateToken(TokenType.Error, string.Empty, $"Unknown character: {c}");
             }
         }
     }
@@ -473,21 +564,31 @@ internal sealed class DMPreprocessorLexer {
     ///<remarks>
     /// If it contains string interpolations, it splits the string tokens into parts and lex the expressions as normal <br/>
     /// For example, "There are [amount] of them" becomes: <br/>
-    ///    DM_Preproc_String("There are "), DM_Preproc_Identifier(amount), DM_Preproc_String(" of them") <br/>
+    ///    DM_Preproc_StringBegin("There are "), DM_Preproc_Identifier(amount), DM_Preproc_StringEnd(" of them") <br/>
     /// If there is no string interpolation, it outputs a DM_Preproc_ConstantString token instead
     /// </remarks>
     private Token LexString(bool isLong) {
         char terminator = GetCurrent();
-        StringBuilder textBuilder = new StringBuilder(isLong ? "{" + terminator : char.ToString(terminator));
+        StringBuilder textBuilder = new StringBuilder();
         Queue<Token> stringTokens = new();
+        string tokenTextStart = isLong ? "{" + terminator : char.ToString(terminator);
+        string tokenTextEnd = isLong ? terminator + "}" : char.ToString(terminator);
+        bool isConstant = true;
+        bool foundTerminator = false;
 
         Advance();
         while (!(!isLong && AtLineEnd()) && !AtEndOfSource()) {
             char stringC = GetCurrent();
 
-            textBuilder.Append(stringC);
-            if (stringC == '[') {
-                stringTokens.Enqueue(CreateToken(TokenType.DM_Preproc_String, textBuilder.ToString()));
+            if (HandleLineEnd()) {
+                textBuilder.Append('\n');
+            } else if (stringC == '[') {
+                textBuilder.Append(stringC);
+                stringTokens.Enqueue(isConstant // First case of '['
+                    ? CreateToken(TokenType.DM_Preproc_StringBegin, tokenTextStart + textBuilder, textBuilder.ToString())
+                    : CreateToken(TokenType.DM_Preproc_StringMiddle, textBuilder.ToString(), textBuilder.ToString()));
+
+                isConstant = false;
                 textBuilder.Clear();
 
                 Advance();
@@ -508,29 +609,33 @@ internal sealed class DMPreprocessorLexer {
             } else if (stringC == '\\') {
                 Advance();
 
-                if (AtLineEnd()) { //Line splice
-                    //Remove the '\' from textBuilder and ignore newlines & all incoming whitespace
-                    textBuilder.Remove(textBuilder.Length - 1, 1);
-                    do {
-                        Advance();
-                    } while (AtLineEnd() || GetCurrent() == ' ' || GetCurrent() == '\t');
+                if (HandleLineEnd()) { //Line splice
+                    // Ignore newlines & all incoming whitespace
+                    while (AtLineEnd() || GetCurrent() is ' ' or '\t') {
+                        if (!HandleLineEnd())
+                            Advance(); // Was a space or tab so advance it
+                    }
                 } else {
+                    textBuilder.Append(stringC);
                     textBuilder.Append(GetCurrent());
                     Advance();
                 }
             } else if (stringC == terminator) {
                 if (isLong) {
-                    stringC = Advance();
-
-                    if (stringC == '}') {
-                        textBuilder.Append('}');
-
+                    if (Advance() == '}') {
+                        foundTerminator = true;
                         break;
                     }
+
+                    textBuilder.Append(stringC);
                 } else {
+                    foundTerminator = true;
                     break;
                 }
             } else {
+                if (stringC != '\r') // \r\n becomes \n
+                    textBuilder.Append(stringC);
+
                 Advance();
             }
         }
@@ -538,22 +643,20 @@ internal sealed class DMPreprocessorLexer {
         if (!AtEndOfSource() && !HandleLineEnd())
             Advance();
 
-        string text = textBuilder.ToString();
-        if (!isLong && !(text.EndsWith(terminator) && text.Length != 1))
-            return CreateToken(TokenType.Error, string.Empty, "Expected '" + terminator + "' to end string");
-        if (isLong && !text.EndsWith("}"))
+        if (!isLong && !foundTerminator)
+            return CreateToken(TokenType.Error, string.Empty, $"Expected '{terminator}' to end string");
+        if (isLong && !foundTerminator)
             return CreateToken(TokenType.Error, string.Empty, "Expected '}' to end long string");
 
-        if (stringTokens.Count == 0) {
-            string stringValue = isLong ? text.Substring(2, text.Length - 4) : text.Substring(1, text.Length - 2);
+        var text = textBuilder.ToString();
 
-            return CreateToken(TokenType.DM_Preproc_ConstantString, text, stringValue);
+        if (isConstant) {
+            return CreateToken(TokenType.DM_Preproc_ConstantString, tokenTextStart + text + tokenTextEnd, text);
         } else {
-            stringTokens.Enqueue(CreateToken(TokenType.DM_Preproc_String, textBuilder.ToString()));
+            foreach (var token in stringTokens)
+                _pendingTokenQueue.Enqueue(token);
 
-            foreach (Token stringToken in stringTokens) {
-                _pendingTokenQueue.Enqueue(stringToken);
-            }
+            _pendingTokenQueue.Enqueue(CreateToken(TokenType.DM_Preproc_StringEnd, text + tokenTextEnd, text));
 
             return _pendingTokenQueue.Dequeue();
         }
@@ -582,7 +685,7 @@ internal sealed class DMPreprocessorLexer {
                 goto case '\n';
             case '\n':
                 _currentLine++;
-                _currentColumn = 1;
+                _currentColumn = 0; // Because Advance will bump this to 1 and any position reads will happen next NextToken() call
 
                 if (c == '\n') // This line could have ended with only \r
                     Advance();
@@ -598,13 +701,17 @@ internal sealed class DMPreprocessorLexer {
         return _current;
     }
 
+    private Location CurrentLocation() {
+        return new Location(File, _previousLine, _previousColumn, _isDMStandard);
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private char Advance() {
         int value = _source.Read();
 
         if (value == -1) {
             _current = '\0';
-        }  else {
+        } else {
             _currentColumn++;
             _current = (char)value;
         }
@@ -619,11 +726,11 @@ internal sealed class DMPreprocessorLexer {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private Token CreateToken(TokenType type, string text, object? value = null) {
-        return new Token(type, text, new Location(File, _currentLine, _currentColumn), value);
+        return new Token(type, text, new Location(File, _previousLine, _previousColumn, _isDMStandard), value);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private Token CreateToken(TokenType type, char text, object? value = null) {
-        return new Token(type, text.ToString(), new Location(File, _currentLine, _currentColumn), value);
+        return new Token(type, text.ToString(), new Location(File, _previousLine, _previousColumn, _isDMStandard), value);
     }
 }

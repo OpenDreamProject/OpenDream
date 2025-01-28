@@ -1,17 +1,18 @@
 ﻿using OpenDreamClient.Interface.Controls;
 using OpenDreamClient.Interface.Descriptors;
+using OpenDreamClient.Interface.DMF;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface.Controls;
 
 namespace OpenDreamClient.Interface;
 
 internal sealed class BrowsePopup {
-    public event Action Closed;
+    public event Action? Closed;
 
-    public ControlBrowser Browser;
-    public ControlWindow WindowElement;
+    public readonly ControlBrowser Browser;
+    public readonly ControlWindow WindowElement;
 
-    private OSWindow _window;
+    private readonly OSWindow _window;
 
     public BrowsePopup(
         string name,
@@ -20,13 +21,13 @@ internal sealed class BrowsePopup {
         WindowDescriptor popupWindowDescriptor = new WindowDescriptor(name,
             new() {
                 new ControlDescriptorBrowser {
-                    Id = "browser",
-                    Size = size,
-                    Anchor1 = new Vector2i(0, 0),
-                    Anchor2 = new Vector2i(100, 100)
+                    Id = new DMFPropertyString("browser"),
+                    Size = new DMFPropertySize(size),
+                    Anchor1 = new DMFPropertyPos(0, 0),
+                    Anchor2 = new DMFPropertyPos(100, 100)
                 }
             }) {
-                Size = size
+                Size = new DMFPropertySize(size)
             };
 
         WindowElement = new ControlWindow(popupWindowDescriptor);

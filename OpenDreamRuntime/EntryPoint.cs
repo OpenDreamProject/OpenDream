@@ -21,14 +21,11 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IConfigurationManager _configManager = default!;
         [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
         [Dependency] private readonly IDreamDebugManager _debugManager = default!;
+        [Dependency] private readonly ServerInfoManager _serverInfoManager = default!;
 
         private DreamCommandSystem? _commandSystem;
 
         public override void Init() {
-            IoCManager.Resolve<IStatusHost>().SetMagicAczProvider(new DefaultMagicAczProvider(
-                new DefaultMagicAczInfo("Content.Client", new[] {"OpenDreamClient", "OpenDreamShared"}),
-                IoCManager.Resolve<IDependencyCollection>()));
-
             IComponentFactory componentFactory = IoCManager.Resolve<IComponentFactory>();
             componentFactory.DoAutoRegistrations();
 
@@ -45,7 +42,8 @@ namespace OpenDreamRuntime {
             componentFactory.GenerateNetIds();
 
             _configManager.OverrideDefault(CVars.NetLogLateMsg, false); // Disable since disabling prediction causes timing errors otherwise.
-            _configManager.OverrideDefault(CVars.GameAutoPauseEmpty, false); // TODO: world.sleep_offline can control this
+            _configManager.OverrideDefault(CVars.GameAutoPauseEmpty, false); // DreamObjectWorld sets this appropriately but we need to keep it disabled til then or it won't be reached
+            _configManager.OverrideDefault(CVars.DiscordRichPresenceSecondIconId, "opendream");
             _configManager.SetCVar(CVars.GridSplitting, false); // Grid splitting should never be used
             if(String.IsNullOrEmpty(_configManager.GetCVar<string>(OpenDreamCVars.JsonPath))) //if you haven't set the jsonpath cvar, set it to the first valid file path passed as an arg
                 foreach (string arg in Environment.GetCommandLineArgs().Skip(1)) //skip the first element, because it's just the server's exe path
@@ -55,6 +53,8 @@ namespace OpenDreamRuntime {
                     }
 
             _prototypeManager.LoadDirectory(new ResPath("/Resources/Prototypes"));
+
+            _serverInfoManager.Initialize();
         }
 
         public override void PostInit() {
@@ -72,8 +72,12 @@ namespace OpenDreamRuntime {
 
         protected override void Dispose(bool disposing) {
             // Write every savefile to disk
-            foreach (var savefile in DreamObjectSavefile.Savefiles) {
-                savefile.Flush();
+            foreach (var savefile in DreamObjectSavefile.Savefiles.ToArray()) { //ToArray() to avoid modifying the collection while iterating over it
+                try {
+                    savefile.Close();
+                } catch (Exception e) {
+                    Logger.GetSawmill("opendream").Error($"Exception while flushing savefile '{savefile.Resource.ResourcePath}', data has been lost. {e}");
+                }
             }
 
             _dreamManager.Shutdown();

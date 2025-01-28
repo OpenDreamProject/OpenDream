@@ -1,196 +1,200 @@
 using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Bytecode;
-using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream;
+using DMCompiler.Compiler;
 
-namespace DMCompiler.DM.Expressions {
-    abstract class LValue : DMExpression {
-        public override DreamPath? Path { get; }
+namespace DMCompiler.DM.Expressions;
 
-        protected LValue(Location location, DreamPath? path) : base(location) {
-            Path = path;
+internal abstract class LValue(Location location, DreamPath? path) : DMExpression(location) {
+    public override DreamPath? Path { get; } = path;
+
+    public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) { // BYOND also seems to push consts instead of references when possible
+            constant.EmitPushValue(ctx);
+            return;
         }
 
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            string endLabel = proc.NewLabelName();
+        EmitPushValueNoConstant(ctx);
+    }
 
-            DMReference reference = EmitReference(dmObject, proc, endLabel);
-            proc.PushReferenceValue(reference);
+    public void EmitPushValueNoConstant(ExpressionContext ctx) {
+        string endLabel = ctx.Proc.NewLabelName();
 
-            proc.AddLabel(endLabel);
-        }
+        DMReference reference = EmitReference(ctx, endLabel);
+        ctx.Proc.PushReferenceValue(reference);
 
-        public virtual void EmitPushInitial(DMObject dmObject, DMProc proc) {
-            throw new CompileErrorException(Location, $"Can't get initial value of {this}");
+        ctx.Proc.AddLabel(endLabel);
+    }
+
+    public virtual void EmitPushInitial(ExpressionContext ctx) {
+        ctx.Compiler.Emit(WarningCode.BadExpression, Location, $"Can't get initial value of {this}");
+        ctx.Proc.Error();
+    }
+}
+
+// global
+internal class Global(Location location) : LValue(location, null) {
+    public override DMReference EmitReference(ExpressionContext ctx, string endLabel,
+        ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+        ctx.Compiler.Emit(WarningCode.BadExpression, Location, "attempt to use `global` as a reference");
+        return DMReference.Invalid;
+    }
+}
+
+// src
+internal sealed class Src(Location location, DreamPath? path) : LValue(location, path) {
+    public override DMComplexValueType ValType => DMValueType.Anything;
+
+    public override DMReference EmitReference(ExpressionContext ctx, string endLabel,
+        ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+        return DMReference.Src;
+    }
+
+    public override string GetNameof(ExpressionContext ctx) => "src";
+}
+
+// usr
+internal sealed class Usr(Location location) : LValue(location, DreamPath.Mob) {
+    //According to the docs, Usr is a mob. But it will get set to null by coders to clear refs.
+    public override DMComplexValueType ValType => (DMValueType.Mob | DMValueType.Null);
+
+    public override DMReference EmitReference(ExpressionContext ctx, string endLabel,
+        ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+        return DMReference.Usr;
+    }
+
+    public override string GetNameof(ExpressionContext ctx) => "usr";
+}
+
+// args
+internal sealed class Args(Location location) : LValue(location, DreamPath.List) {
+    public override DMReference EmitReference(ExpressionContext ctx, string endLabel,
+        ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+        return DMReference.Args;
+    }
+
+    public override string GetNameof(ExpressionContext ctx) => "args";
+}
+
+// world
+internal sealed class World(Location location) : LValue(location, DreamPath.World) {
+    public override DMReference EmitReference(ExpressionContext ctx, string endLabel,
+        ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+        return DMReference.World;
+    }
+
+    public override string GetNameof(ExpressionContext ctx) => "world";
+}
+
+// Identifier of local variable
+internal sealed class Local(Location location, DMProc.LocalVariable localVar) : LValue(location, localVar.Type) {
+    public DMProc.LocalVariable LocalVar { get; } = localVar;
+
+    // TODO: non-const local var static typing
+    public override DMComplexValueType ValType => LocalVar.ExplicitValueType ?? DMValueType.Anything;
+
+    public override DMReference EmitReference(ExpressionContext ctx, string endLabel,
+        ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+        if (LocalVar.IsParameter) {
+            return DMReference.CreateArgument(LocalVar.Id);
+        } else {
+            return DMReference.CreateLocal(LocalVar.Id);
         }
     }
 
-    // global
-    class Global : LValue {
-        public Global(Location location)
-            : base(location, null) { }
-
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
-            throw new CompileErrorException(Location, $"attempt to use `global` as a reference");
+    public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
+        if (LocalVar is DMProc.LocalConstVariable constVar) {
+            constant = constVar.Value;
+            return true;
         }
+
+        constant = null;
+        return false;
     }
 
-    // src
-    sealed class Src : LValue {
-        public Src(Location location, DreamPath? path)
-            : base(location, path)
-        {}
-
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
-            return DMReference.Src;
-        }
-
-        public override string GetNameof(DMObject dmObject, DMProc proc) {
-            return "src";
-        }
+    public override void EmitPushInitial(ExpressionContext ctx) {
+        // This happens silently in BYOND
+        ctx.Compiler.Emit(WarningCode.PointlessBuiltinCall, Location, "calling initial() on a local variable returns the current value");
+        EmitPushValue(ctx);
     }
 
-    // usr
-    sealed class Usr : LValue {
-        public Usr(Location location)
-            : base(location, DreamPath.Mob)
-        {}
+    public override string GetNameof(ExpressionContext ctx) => LocalVar.Name;
+}
 
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
-            return DMReference.Usr;
-        }
+// Identifier of field
+internal sealed class Field(Location location, DMVariable variable, DMComplexValueType valType) : LValue(location, variable.Type) {
+    public bool IsConst { get; } = variable.IsConst;
+    public override DMComplexValueType ValType => valType;
+
+    public override void EmitPushInitial(ExpressionContext ctx) {
+        ctx.Proc.PushReferenceValue(DMReference.Src);
+        ctx.Proc.PushString(variable.Name);
+        ctx.Proc.Initial();
     }
 
-    // args
-    sealed class Args : LValue {
-        public Args(Location location)
-            : base(location, DreamPath.List)
-        {}
-
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
-            return DMReference.Args;
-        }
+    public void EmitPushIsSaved(DMProc proc) {
+        proc.PushReferenceValue(DMReference.Src);
+        proc.PushString(variable.Name);
+        proc.IsSaved();
     }
 
-    // Identifier of local variable
-    sealed class Local : LValue {
-        DMProc.LocalVariable LocalVar { get; }
-
-        public Local(Location location, DMProc.LocalVariable localVar)
-            : base(location, localVar.Type) {
-            LocalVar = localVar;
-        }
-
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
-            if (LocalVar.IsParameter) {
-                return DMReference.CreateArgument(LocalVar.Id);
-            } else {
-                return DMReference.CreateLocal(LocalVar.Id);
-            }
-        }
-
-        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-            if (LocalVar is DMProc.LocalConstVariable constVar) {
-                constant = constVar.Value;
-                return true;
-            }
-
-            constant = null;
-            return false;
-        }
-
-        public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
-            // This happens silently in BYOND
-            DMCompiler.Emit(WarningCode.PointlessBuiltinCall, Location, "calling initial() on a local variable returns the current value");
-            EmitPushValue(dmObject, proc);
-        }
-
-        public override string GetNameof(DMObject dmObject, DMProc proc) {
-            return LocalVar.IsParameter ? proc.Parameters[LocalVar.Id] : proc.GetLocalVarName(LocalVar.Id);
-        }
+    public override DMReference EmitReference(ExpressionContext ctx, string endLabel,
+        ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+        return DMReference.CreateSrcField(variable.Name);
     }
 
-    // Identifier of field
-    sealed class Field : LValue {
-        public readonly DMVariable Variable;
+    public override string GetNameof(ExpressionContext ctx) => variable.Name;
 
-        public Field(Location location, DMVariable variable)
-            : base(location, variable.Type) {
-            Variable = variable;
+    public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
+        if (variable is { CanConstFold: true, Value: not null }) {
+            return variable.Value.TryAsConstant(compiler, out constant);
         }
 
-        public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
-            proc.PushReferenceValue(DMReference.Src);
-            proc.PushString(Variable.Name);
-            proc.Initial();
-        }
-
-        public void EmitPushIsSaved(DMProc proc) {
-            proc.PushReferenceValue(DMReference.Src);
-            proc.PushString(Variable.Name);
-            proc.IsSaved();
-        }
-
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
-            return DMReference.CreateSrcField(Variable.Name);
-        }
-
-        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-            if (Variable.IsConst && Variable.Value != null) {
-                return Variable.Value.TryAsConstant(out constant);
-            }
-
-            constant = null;
-            return false;
-        }
+        constant = null;
+        return false;
     }
 
-    // Id of global field
-    sealed class GlobalField : LValue {
-        int Id { get; }
+    public override string ToString() {
+        return variable.Name;
+    }
+}
 
-        public GlobalField(Location location, DreamPath? path, int id)
-            : base(location, path) {
-            Id = id;
-        }
+// Id of global field
+internal sealed class GlobalField(Location location, DreamPath? path, int id,  DMComplexValueType valType) : LValue(location, path) {
+    private int Id { get; } = id;
 
-        public void EmitPushIsSaved(DMProc proc) {
-            throw new CompileErrorException(Location, "issaved() on globals is unimplemented");
-        }
+    public override DMComplexValueType ValType => valType;
 
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
-            return DMReference.CreateGlobal(Id);
-        }
-
-        public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
-            // This happens silently in BYOND
-            DMCompiler.Emit(WarningCode.PointlessBuiltinCall, Location, "calling initial() on a global returns the current value");
-            EmitPushValue(dmObject, proc);
-        }
-
-        public override string GetNameof(DMObject dmObject, DMProc proc) {
-            DMVariable global = DMObjectTree.Globals[Id];
-            return global.Name;
-        }
-
-        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-            DMVariable global = DMObjectTree.Globals[Id];
-            if (global.IsConst) {
-                return global.Value.TryAsConstant(out constant);
-            }
-
-            constant = null;
-            return false;
-        }
+    public override DMReference EmitReference(ExpressionContext ctx, string endLabel,
+        ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+        return DMReference.CreateGlobal(Id);
     }
 
-    sealed class GlobalVars : LValue {
-        public GlobalVars(Location location)
-            : base(location, null) {
+    public override void EmitPushInitial(ExpressionContext ctx) {
+        // This happens silently in BYOND
+        ctx.Compiler.Emit(WarningCode.PointlessBuiltinCall, Location, "calling initial() on a global returns the current value");
+        EmitPushValue(ctx);
+    }
+
+    public override string GetNameof(ExpressionContext ctx) {
+        DMVariable global = ctx.ObjectTree.Globals[Id];
+        return global.Name;
+    }
+
+    public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
+        DMVariable global = compiler.DMObjectTree.Globals[Id];
+        if (global.CanConstFold) {
+            return global.Value.TryAsConstant(compiler, out constant);
         }
 
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            proc.PushGlobalVars();
-        }
+        constant = null;
+        return false;
     }
+}
+
+internal sealed class GlobalVars(Location location) : LValue(location, null) {
+    public override void EmitPushValue(ExpressionContext ctx) {
+        ctx.Proc.PushGlobalVars();
+    }
+
+    public override string GetNameof(ExpressionContext ctx) => "vars";
 }

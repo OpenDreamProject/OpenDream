@@ -53,7 +53,8 @@ public sealed class DreamObjectMatrix : DreamObject {
     }
 
     #region Operators
-    public override DreamValue OperatorAdd(DreamValue b) {
+
+    public override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
         GetVariable("a").TryGetValueAsFloat(out float lA);
         GetVariable("b").TryGetValueAsFloat(out float lB);
         GetVariable("c").TryGetValueAsFloat(out float lC);
@@ -81,10 +82,10 @@ public sealed class DreamObjectMatrix : DreamObject {
             return new DreamValue(output);
         }
 
-        return base.OperatorAdd(b);
+        return base.OperatorAdd(b, state);
     }
 
-    public override DreamValue OperatorSubtract(DreamValue b) {
+    public override DreamValue OperatorSubtract(DreamValue b, DMProcState state) {
         GetVariable("a").TryGetValueAsFloat(out float lA);
         GetVariable("b").TryGetValueAsFloat(out float lB);
         GetVariable("c").TryGetValueAsFloat(out float lC);
@@ -112,10 +113,10 @@ public sealed class DreamObjectMatrix : DreamObject {
             return new DreamValue(output);
         }
 
-        return base.OperatorSubtract(b);
+        return base.OperatorSubtract(b, state);
     }
 
-    public override DreamValue OperatorMultiply(DreamValue b) {
+    public override DreamValue OperatorMultiply(DreamValue b, DMProcState state) {
         GetVariable("a").TryGetValueAsFloat(out float lA);
         GetVariable("b").TryGetValueAsFloat(out float lB);
         GetVariable("c").TryGetValueAsFloat(out float lC);
@@ -128,7 +129,7 @@ public sealed class DreamObjectMatrix : DreamObject {
                     lA * bFloat,lB * bFloat,lC * bFloat,
                     lD * bFloat,lE * bFloat,lF * bFloat
                 );
-            return new(output);
+            return new DreamValue(output);
         } else if (b.TryGetValueAsDreamObject<DreamObjectMatrix>(out var right)) {
             right.GetVariable("a").TryGetValueAsFloat(out float rA);
             right.GetVariable("b").TryGetValueAsFloat(out float rB);
@@ -146,10 +147,42 @@ public sealed class DreamObjectMatrix : DreamObject {
                 rC * lD + rF * lE + lF // f
             );
 
-            return new(output);
+            return new DreamValue(output);
         }
 
-        return base.OperatorMultiply(b);
+        return base.OperatorMultiply(b, state);
+    }
+
+    public override DreamValue OperatorMultiplyRef(DreamValue b, DMProcState state) {
+        return OperatorMultiply(b, state);
+    }
+
+    public override DreamValue OperatorDivide(DreamValue b, DMProcState state) {
+        GetVariable("a").TryGetValueAsFloat(out float lA);
+        GetVariable("b").TryGetValueAsFloat(out float lB);
+        GetVariable("c").TryGetValueAsFloat(out float lC);
+        GetVariable("d").TryGetValueAsFloat(out float lD);
+        GetVariable("e").TryGetValueAsFloat(out float lE);
+        GetVariable("f").TryGetValueAsFloat(out float lF);
+
+        if (b.TryGetValueAsFloat(out float bFloat)) {
+            DreamObjectMatrix output = MakeMatrix(ObjectTree,
+                    lA / bFloat,lB / bFloat,lC / bFloat,
+                    lD / bFloat,lE / bFloat,lF / bFloat
+                );
+            return new DreamValue(output);
+        } else if(b.TryGetValueAsDreamObject<DreamObjectMatrix>(out var right)) { //matrix divided by matrix isn't a thing, but in BYOND it's apparently multiplication by the inverse, because of course it is
+            DreamObjectMatrix rightCopy = MatrixClone(ObjectTree, right);
+            if (!TryInvert(rightCopy))
+                throw new ArgumentException("Matrix does not have a valid inversion for Invert()");
+            return OperatorMultiply(new(rightCopy), state);
+        }
+
+        return base.OperatorDivide(b, state);
+    }
+
+    public override DreamValue OperatorDivideRef(DreamValue b, DMProcState state) {
+        return OperatorDivide(b, state);
     }
 
     public override DreamValue OperatorEquivalent(DreamValue b) {
@@ -226,7 +259,8 @@ public sealed class DreamObjectMatrix : DreamObject {
     #endregion Operators
 
     #region Helpers
-    /// <summary> Used to create a float array understandable by <see cref="IconAppearance.Transform"/> to be a transform. </summary>
+
+    /// <summary> Used to create a float array understandable by <see cref="MutableAppearance.Transform"/> to be a transform. </summary>
     /// <returns>The matrix's values in an array, in [a,d,b,e,c,f] order.</returns>
     /// <remarks>This will not verify that this is a /matrix</remarks>
     public static float[] MatrixToTransformFloatArray(DreamObjectMatrix matrix) {
@@ -284,8 +318,8 @@ public sealed class DreamObjectMatrix : DreamObject {
     /// <seealso cref="MakeMatrix(DreamObjectTree,float,float,float,float,float,float)"/>
     public static DreamObjectMatrix MakeMatrix(DreamObjectTree objectTree, float[] matrixValues) {
         return MakeMatrix(objectTree,
-                          matrixValues[0], matrixValues[1], matrixValues[2],
-                          matrixValues[3], matrixValues[4], matrixValues[5]);
+                          matrixValues[0], matrixValues[2], matrixValues[4], //order on these matches the output of MatrixToTransformFloatArray
+                          matrixValues[1], matrixValues[3], matrixValues[5]);
     }
 
     public static float Determinant(DreamObjectMatrix matrix) {

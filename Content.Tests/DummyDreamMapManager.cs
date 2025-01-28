@@ -1,56 +1,61 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using OpenDreamRuntime;
+using DMCompiler.Json;
+using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Json;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Maths;
 
-namespace Content.Tests {
-    public sealed class DummyDreamMapManager : IDreamMapManager {
-        public Vector2i Size => Vector2i.Zero;
-        public int Levels => 0;
+namespace Content.Tests;
 
-        public void Initialize() { }
+public sealed class DummyDreamMapManager : IDreamMapManager {
+    public Vector2i Size => Vector2i.Zero;
+    public int Levels => 0;
+    public DreamObjectArea DefaultArea => null!;
 
-        public void UpdateTiles() { }
+    public void Initialize() { }
 
-        public void LoadMaps(List<DreamMapJson>? maps) { }
+    public void UpdateTiles() { }
 
-        public void InitializeAtoms(List<DreamMapJson>? maps) { }
+    public void LoadMaps(List<DreamMapJson>? maps) { }
 
-        public void SetTurf(DreamObjectTurf turf, DreamObjectDefinition type, DreamProcArguments creationArguments) { }
+    public void InitializeAtoms(List<DreamMapJson>? maps) { }
 
-        public void SetTurfAppearance(DreamObjectTurf turf, IconAppearance appearance) { }
+    public void SetTurf(DreamObjectTurf turf, DreamObjectDefinition type, DreamProcArguments creationArguments) { }
 
-        public void SetArea(DreamObjectTurf turf, DreamObjectArea area) { }
+    public void SetTurfAppearance(DreamObjectTurf turf, MutableAppearance appearance) { }
 
-        public bool TryGetCellFromTransform(TransformComponent transform, [NotNullWhen(true)] out IDreamMapManager.Cell? cell) {
-            cell = null;
-            return false;
-        }
+    public void SetAreaAppearance(DreamObjectArea area, MutableAppearance appearance) { }
 
-        public IDreamMapManager.Cell GetCellFromTurf(DreamObjectTurf turf) {
-            throw null;
-        }
+    public void SetArea(DreamObjectTurf turf, DreamObjectArea area) { }
 
-        public bool TryGetCellAt(Vector2i pos, int z, out IDreamMapManager.Cell? cell) {
-            cell = null;
-            return false;
-        }
+    public bool TryGetCellFromTransform(TransformComponent transform, [NotNullWhen(true)] out IDreamMapManager.Cell? cell) {
+        cell = null;
+        return false;
+    }
 
-        public bool TryGetTurfAt(Vector2i pos, int z, out DreamObjectTurf turf) {
-            turf = null;
-            return false;
-        }
+    public bool TryGetCellAt(Vector2i pos, int z, [NotNullWhen(true)] out IDreamMapManager.Cell? cell) {
+        cell = null;
+        return false;
+    }
 
-        public void SetZLevels(int levels) { }
+    public bool TryGetTurfAt(Vector2i pos, int z, [NotNullWhen(true)] out DreamObjectTurf? turf) {
+        turf = null;
+        return false;
+    }
 
-        public EntityUid GetZLevelEntity(int z) {
-            return EntityUid.Invalid;
-        }
+    public void SetZLevels(int levels) { }
+
+    public void SetWorldSize(Vector2i size) { }
+
+    public EntityUid GetZLevelEntity(int z) {
+        return EntityUid.Invalid;
+    }
+
+    public IEnumerable<AtomDirection> CalculateSteps((int X, int Y, int Z) loc, (int X, int Y, int Z) dest, int distance) {
+        yield break;
     }
 }

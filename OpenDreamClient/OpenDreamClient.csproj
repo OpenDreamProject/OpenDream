@@ -2,16 +2,14 @@
   <PropertyGroup>
     <!-- Work around https://github.com/dotnet/project-system/issues/4314 -->
     <TargetFramework>$(TargetFramework)</TargetFramework>
-    <LangVersion>11</LangVersion>
+    <LangVersion>12</LangVersion>
     <IsPackable>false</IsPackable>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <OutputPath>..\bin\Content.Client\</OutputPath>
     <OutputType Condition="'$(FullRelease)' != 'True'">Exe</OutputType>
     <Nullable>enable</Nullable>
+    <NoWarn>NU1507</NoWarn>
   </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="Nett" Version="0.15.0" />
-  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\OpenDreamShared\OpenDreamShared.csproj" />
     <ProjectReference Include="..\RobustToolbox\Lidgren.Network\Lidgren.Network.csproj" />

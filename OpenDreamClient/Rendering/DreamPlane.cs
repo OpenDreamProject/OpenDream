@@ -4,25 +4,23 @@ using Robust.Shared.Utility;
 
 namespace OpenDreamClient.Rendering;
 
-internal sealed class DreamPlane {
-    public IRenderTexture RenderTarget => _temporaryRenderTarget ?? _mainRenderTarget;
+internal sealed class DreamPlane(IRenderTexture mainRenderTarget) : IDisposable {
+    public IRenderTexture RenderTarget => _temporaryRenderTarget ?? mainRenderTarget;
     public RendererMetaData? Master;
 
-    public readonly List<Action<Vector2i>> IconDrawActions = new();
-    public readonly List<Action<Vector2i>> MouseMapDrawActions = new();
+    public readonly List<RendererMetaData> Sprites = new();
 
-    private IRenderTexture _mainRenderTarget;
     private IRenderTexture? _temporaryRenderTarget;
-
-    public DreamPlane(IRenderTexture renderTarget) {
-        _mainRenderTarget = renderTarget;
-    }
 
     public void Clear() {
         Master = null;
-        IconDrawActions.Clear();
-        MouseMapDrawActions.Clear();
+        Sprites.Clear();
         _temporaryRenderTarget = null;
+    }
+
+    public void Dispose() {
+        mainRenderTarget.Dispose();
+        Clear();
     }
 
     /// <summary>
@@ -30,8 +28,8 @@ internal sealed class DreamPlane {
     /// Persists through calls to <see cref="Clear()"/>
     /// </summary>
     public void SetMainRenderTarget(IRenderTexture renderTarget) {
-        _mainRenderTarget.Dispose();
-        _mainRenderTarget = renderTarget;
+        mainRenderTarget.Dispose();
+        mainRenderTarget = renderTarget;
     }
 
     /// <summary>
@@ -45,21 +43,25 @@ internal sealed class DreamPlane {
     /// <summary>
     /// Clears this plane's render target, then draws all the plane's icons onto it
     /// </summary>
-    public void Draw(DreamViewOverlay overlay, DrawingHandleWorld handle) {
+    public void Draw(DreamViewOverlay overlay, DrawingHandleWorld handle, Box2 worldAABB) {
         // Draw all icons
-        handle.RenderInRenderTarget(_mainRenderTarget, () => {
-            foreach (Action<Vector2i> iconAction in IconDrawActions)
-                iconAction(_mainRenderTarget.Size);
+        handle.RenderInRenderTarget(mainRenderTarget, () => {
+            foreach (var sprite in Sprites) {
+                if (sprite.HasRenderSource && overlay.RenderSourceLookup.TryGetValue(sprite.RenderSource!, out var renderSourceTexture)) {
+                    sprite.TextureOverride = renderSourceTexture.Texture;
+                    overlay.DrawIcon(handle, mainRenderTarget.Size, sprite, (-worldAABB.BottomLeft)-(worldAABB.Size/2)+new Vector2(0.5f,0.5f));
+                } else {
+                    overlay.DrawIcon(handle, mainRenderTarget.Size, sprite, -worldAABB.BottomLeft);
+                }
+            }
         }, new Color());
 
         if (_temporaryRenderTarget != null) {
             // Draw again, but with the color applied
             handle.RenderInRenderTarget(_temporaryRenderTarget, () => {
-                handle.UseShader(overlay.GetBlendAndColorShader(Master, blendModeOverride: BlendMode.Overlay));
-                handle.SetTransform(overlay.CreateRenderTargetFlipMatrix(_temporaryRenderTarget.Size, Vector2.Zero));
-                handle.DrawTextureRect(_mainRenderTarget.Texture, new Box2(Vector2.Zero, _mainRenderTarget.Size));
-                handle.SetTransform(Matrix3.Identity);
-                handle.UseShader(null);
+                handle.UseShader(overlay.GetBlendAndColorShader(Master, useOverlayMode: true));
+                handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(_temporaryRenderTarget.Size, Vector2.Zero));
+                handle.DrawTextureRect(mainRenderTarget.Texture, new Box2(Vector2.Zero, mainRenderTarget.Size));
             }, new Color());
         }
     }
@@ -67,8 +69,31 @@ internal sealed class DreamPlane {
     /// <summary>
     /// Draws this plane's mouse map onto the current render target
     /// </summary>
-    public void DrawMouseMap(Vector2i renderTargetSize) {
-        foreach (Action<Vector2i> mouseMapAction in MouseMapDrawActions)
-            mouseMapAction(renderTargetSize);
+    public void DrawMouseMap(DrawingHandleWorld handle, DreamViewOverlay overlay, Vector2i renderTargetSize, Box2 worldAABB) {
+        if (Master?.MouseOpacity == MouseOpacity.Transparent)
+            return;
+
+        handle.UseShader(overlay.BlockColorInstance);
+        foreach (var sprite in Sprites) {
+            if (sprite.MouseOpacity == MouseOpacity.Transparent || sprite.ShouldPassMouse)
+                continue;
+
+            var texture = sprite.MainIcon?.LastRenderedTexture;
+            if (texture == null)
+                continue;
+
+            var pos = (sprite.Position - worldAABB.BottomLeft) * EyeManager.PixelsPerMeter;
+            if (sprite.MainIcon != null)
+                pos += sprite.MainIcon.TextureRenderOffset;
+
+            int hash = sprite.GetHashCode();
+            var colorR = (byte)(hash & 0xFF);
+            var colorG = (byte)((hash >> 8) & 0xFF);
+            var colorB = (byte)((hash >> 16) & 0xFF);
+            Color targetColor = new Color(colorR, colorG, colorB); //TODO - this could result in mis-clicks due to hash-collision since we ditch a whole byte.
+            overlay.MouseMapLookup[targetColor] = sprite;
+            handle.SetTransform(DreamViewOverlay.CalculateDrawingMatrix(sprite.TransformToApply, pos, texture.Size, renderTargetSize));
+            handle.DrawTextureRect(texture, new Box2(Vector2.Zero, texture.Size), targetColor);
+        }
     }
 }

@@ -22,8 +22,6 @@
 	set opendream_unimplemented = TRUE
 /proc/issaved(v)
 	set opendream_unimplemented = TRUE
-/proc/link(url)
-	set opendream_unimplemented = TRUE
 /proc/load_resource(File)
 	set opendream_unimplemented = TRUE
 proc/missile(Type, Start, End)
@@ -40,32 +38,6 @@ proc/missile(Type, Start, End)
 	set opendream_unimplemented = TRUE
 /proc/splittext_char(Text,Start=1,End=0,Insert="")
 	set opendream_unimplemented = TRUE
-/proc/walk_rand(Ref,Lag=0,Speed=0)
-	set opendream_unimplemented = TRUE
-
-/database
-	parent_type = /datum
-	proc/Close()
-	proc/Error()
-	proc/ErrorMsg()
-	New(filename)
-	proc/Open(filename)
-
-/database/query
-	var/_binobj as opendream_unimplemented
-	proc/Add(text, ...)
-	proc/Clear()
-	Close()
-	proc/Columns(column)
-	Error()
-	ErrorMsg()
-	proc/Execute(database)
-	proc/GetColumn(column)
-	proc/GetRowData()
-	New(text, ...)
-	proc/NextRow()
-	proc/Reset()
-	proc/RowsAffected()
 
 /proc/_dm_db_new_con()
 	set opendream_unimplemented = TRUE

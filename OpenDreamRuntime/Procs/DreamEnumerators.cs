@@ -47,15 +47,19 @@ internal sealed class DreamObjectEnumerator : IDreamValueEnumerator {
 
     public bool Enumerate(DMProcState state, DreamReference? reference) {
         bool success = _dreamObjectEnumerator.MoveNext();
+
+        while(success && _dreamObjectEnumerator.Current.Deleted) //skip over deleted
+            success = _dreamObjectEnumerator.MoveNext();
+
         if (_filterType != null) {
-            while (success && !_dreamObjectEnumerator.Current.IsSubtypeOf(_filterType)) {
+            while (success && (_dreamObjectEnumerator.Current.Deleted || !_dreamObjectEnumerator.Current.IsSubtypeOf(_filterType))) {
                 success = _dreamObjectEnumerator.MoveNext();
             }
         }
 
         // Assign regardless of success
         if (reference != null)
-            state.AssignReference(reference.Value, new DreamValue(_dreamObjectEnumerator.Current));
+            state.AssignReference(reference.Value, success ? new DreamValue(_dreamObjectEnumerator.Current) : DreamValue.Null);
         return success;
     }
 }

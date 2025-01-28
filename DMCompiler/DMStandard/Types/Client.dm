@@ -11,7 +11,7 @@
 	var/tag
 	var/const/type = /client
 
-	var/mob/mob
+	var/mob/mob // TODO: as /mob|null
 	var/atom/eye
 	var/lazy_eye = 0 as opendream_unimplemented
 	var/perspective = MOB_PERSPECTIVE
@@ -20,7 +20,7 @@
 	var/pixel_y = 0 as opendream_unimplemented
 	var/pixel_z = 0 as opendream_unimplemented
 	var/pixel_w = 0 as opendream_unimplemented
-	var/show_popup_menus = 1 as opendream_unimplemented
+	var/show_popup_menus = 1
 	var/show_verb_panel = 1 as opendream_unimplemented
 
 	var/byond_version = DM_VERSION
@@ -28,8 +28,8 @@
 
 	var/address
 	var/inactivity = 0 as opendream_unimplemented
-	var/key
-	var/ckey
+	var/key as text|null
+	var/ckey as text|null
 	var/connection
 	var/computer_id = 0
 	var/tick_lag = 0 as opendream_unimplemented
@@ -49,7 +49,8 @@
 
 	proc/New(TopicData)
 		// Search every mob for one with our ckey
-		for (var/mob/M in world)
+		// TODO: This /mob|mob thing is kinda silly huh?
+		for (var/mob/M as /mob|mob in world)
 			if (M.key == key)
 				mob = M
 				break
@@ -134,7 +135,6 @@
 		src_object.MouseDrag(over_object,src_location,over_location,src_control,over_control,params)
 
 	proc/MouseDrop(atom/src_object,over_object,src_location,over_location,src_control,over_control,params)
-		set opendream_unimplemented = TRUE
 		src_object.MouseDrop(over_object,src_location,over_location,src_control,over_control,params)
 
 	proc/MouseEntered(atom/object,location,control,params)
@@ -168,3 +168,6 @@
 		set opendream_unimplemented = TRUE
 	proc/SetAPI(Api, Key, Value)
 		set opendream_unimplemented = TRUE
+	proc/RenderIcon(object)
+		set opendream_unimplemented = TRUE
+		return object

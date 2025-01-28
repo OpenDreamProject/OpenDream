@@ -4,8 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using JetBrains.Annotations;
 
 namespace OpenDreamShared.Dream;
+
 /// <summary>
 /// Holds the 5x4 matrix data necessary to encapsulate a color matrix: https://www.byond.com/docs/ref/#/{notes}/color-matrix
 /// </summary>
@@ -168,17 +170,18 @@ public struct ColorMatrix {
     /// Gets the diagonal values in this matrix. Used for detecting whether this matrix is convertible into a Color.
     /// </summary>
     /// <returns></returns>
+    [Pure]
     public IEnumerable<float> GetDiagonal() {
         yield return c11;
         yield return c22;
         yield return c33;
         yield return c44;
-        yield break;
     }
 
     /// <summary>
     /// Returns all of the values in this struct, in order.
     /// </summary>
+    [Pure]
     public IEnumerable<float> GetValues() {
         yield return c11;
         yield return c12;
@@ -204,7 +207,6 @@ public struct ColorMatrix {
         yield return c52;
         yield return c53;
         yield return c54;
-        yield break;
     }
 
     public Matrix4 GetMatrix4(){
@@ -230,35 +232,47 @@ public struct ColorMatrix {
     /// This method avoids implementing <see cref="IEquatable{T}"/> since that would make the argument be copied - <br/>
     /// the argument in that interface lacks an 'in' modifier and one cannot be provided!
     /// </remarks>
+    [Pure]
     public bool Equals(in ColorMatrix other) {
         //there is currently no kosher, "safe" C# way
         //of doing a fast-path pointer compare here.
         //(ReferenceEquals actually boxes structs just like default Equals)
         //so this pretty much MUST be a long elementwise compare on all elements.
-        return c11 == other.c11 &&
-               c12 == other.c12 &&
-               c13 == other.c13 &&
-               c14 == other.c14 &&
+        return c11.Equals(other.c11) && c12.Equals(other.c12) && c13.Equals(other.c13) && c14.Equals(other.c14) &&
+               c21.Equals(other.c21) && c22.Equals(other.c22) && c23.Equals(other.c23) && c24.Equals(other.c24) &&
+               c31.Equals(other.c31) && c32.Equals(other.c32) && c33.Equals(other.c33) && c34.Equals(other.c34) &&
+               c41.Equals(other.c41) && c42.Equals(other.c42) && c43.Equals(other.c43) && c44.Equals(other.c44) &&
+               c51.Equals(other.c51) && c52.Equals(other.c52) && c53.Equals(other.c53) && c54.Equals(other.c54);
+    }
 
-               c21 == other.c21 &&
-               c22 == other.c22 &&
-               c23 == other.c23 &&
-               c24 == other.c24 &&
+    public override int GetHashCode() {
+        HashCode hashCode = new HashCode();
+        hashCode.Add(c11);
+        hashCode.Add(c12);
+        hashCode.Add(c13);
+        hashCode.Add(c14);
 
-               c31 == other.c31 &&
-               c32 == other.c32 &&
-               c33 == other.c33 &&
-               c34 == other.c34 &&
+        hashCode.Add(c21);
+        hashCode.Add(c22);
+        hashCode.Add(c23);
+        hashCode.Add(c24);
 
-               c41 == other.c41 &&
-               c42 == other.c42 &&
-               c43 == other.c43 &&
-               c44 == other.c44 &&
+        hashCode.Add(c31);
+        hashCode.Add(c32);
+        hashCode.Add(c33);
+        hashCode.Add(c34);
 
-               c51 == other.c51 &&
-               c52 == other.c52 &&
-               c53 == other.c53 &&
-               c54 == other.c54;
+        hashCode.Add(c41);
+        hashCode.Add(c42);
+        hashCode.Add(c43);
+        hashCode.Add(c44);
+
+        hashCode.Add(c51);
+        hashCode.Add(c52);
+        hashCode.Add(c53);
+        hashCode.Add(c54);
+
+        return hashCode.ToHashCode();
     }
 
     /// <summary>
@@ -268,7 +282,7 @@ public struct ColorMatrix {
     /// <param name="right">The right operand of the multiplication.</param>
     /// <param name="result">A new instance that is the result of the multiplication</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Multiply(ref ColorMatrix left, ref ColorMatrix right, out ColorMatrix result) {
+    public static void Multiply(ref readonly ColorMatrix left, ref readonly ColorMatrix right, out ColorMatrix result) {
         float lM11 = left.c11,
             lM12 = left.c12,
             lM13 = left.c13,
@@ -320,5 +334,37 @@ public struct ColorMatrix {
             c43 = lM41 * rM13 + lM42 * rM23 + lM43 * rM33 + lM44 * rM43,
             c44 = lM41 * rM14 + lM42 * rM24 + lM43 * rM34 + lM44 * rM44
         };
+    }
+
+    /// <summary>
+    /// Linearly interpolates between two instances.
+    /// </summary>
+    /// <param name="left">The left operand of the interpolation.</param>
+    /// <param name="right">The right operand of the interpolation.</param>
+    /// <param name="factor">The amount to interpolate between them. 0..1 is equivalent to left..right.</param>
+    /// <param name="result">A new instance that is the result of the interpolation</param>
+    public static void Interpolate(ref readonly ColorMatrix left, ref readonly ColorMatrix right, float factor, out ColorMatrix result) {
+        result = new ColorMatrix(
+                    ((1-factor) * left.c11) + (factor * right.c11),
+                    ((1-factor) * left.c12) + (factor * right.c12),
+                    ((1-factor) * left.c13) + (factor * right.c13),
+                    ((1-factor) * left.c14) + (factor * right.c14),
+                    ((1-factor) * left.c21) + (factor * right.c21),
+                    ((1-factor) * left.c22) + (factor * right.c22),
+                    ((1-factor) * left.c23) + (factor * right.c23),
+                    ((1-factor) * left.c24) + (factor * right.c24),
+                    ((1-factor) * left.c31) + (factor * right.c31),
+                    ((1-factor) * left.c32) + (factor * right.c32),
+                    ((1-factor) * left.c33) + (factor * right.c33),
+                    ((1-factor) * left.c34) + (factor * right.c34),
+                    ((1-factor) * left.c41) + (factor * right.c41),
+                    ((1-factor) * left.c42) + (factor * right.c42),
+                    ((1-factor) * left.c43) + (factor * right.c43),
+                    ((1-factor) * left.c44) + (factor * right.c44),
+                    ((1-factor) * left.c51) + (factor * right.c51),
+                    ((1-factor) * left.c52) + (factor * right.c52),
+                    ((1-factor) * left.c53) + (factor * right.c53),
+                    ((1-factor) * left.c54) + (factor * right.c54)
+                );
     }
 }

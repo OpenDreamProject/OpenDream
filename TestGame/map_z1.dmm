@@ -36,13 +36,20 @@
 "J" = (/obj/order_test_target,/turf,/area)
 "K" = (/obj/complex_overlay_test,/turf,/area)
 "L" = (/obj/float_layer_test,/turf,/area)
+"M" = (/mob,/turf,/area)
+"N" = (/obj/plaque/animation_turf_test,/turf,/area)
+"O" = (/obj/plaque/animation_test,/turf,/area)
+"R" = (/turf/blue,/area/withicon)
+"S" = (/obj/button/animation_turf_test,/turf,/area)
+"X" = (/turf,/area/withicon)
+"Z" = (/obj/button/animation_test,/turf,/area)
 
 (1,1,1) = {"
 bbbbbbbbbbbbbbbbbbbbbb
 bedciklwopsuaaaaaaaaab
 bfghjmnxqrtvaaaaaaaaab
-byADFGaaaaaaaaaaaaaaab
-bzBEHIaaaaaaaaaaaaaaab
+byADFGZSaaaaaaaaaaaaab
+bzBEHIONaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab
@@ -56,8 +63,8 @@ baaaaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab
-baaaaaaaaaaaaaaaaaaaab
-baaaaaaaaaaaaaaaaaaaab
+bXaaaaaaaaaaaaaaaaaaab
+RaaaaaMaaaaaaaaaaaaaab
 bCJKLaaaaaaaaaaaaaaaab
 bbbbbbbbbbbbbbbbbbbbbb
 "}

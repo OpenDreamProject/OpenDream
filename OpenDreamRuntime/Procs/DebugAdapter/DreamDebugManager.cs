@@ -21,11 +21,11 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
     // Setup
     private DebugAdapter? _adapter;
     private string RootPath => _resourceManager.RootPath ?? throw new Exception("No RootPath yet!");
-    private bool _stopOnEntry = false;
+    private bool _stopOnEntry;
 
     // State
-    private bool _stopped = false;
-    private bool _terminated = false;
+    private bool _stopped;
+    private bool _terminated;
 
     public enum StepMode {
         StepOver,  // aka "next"
@@ -43,15 +43,11 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
     private const string ExceptionFilterRuntimes = "runtimes";
     private bool _breakOnRuntimes = true;
 
-    private sealed class FileBreakpointSlot {
+    private sealed class FileBreakpointSlot(DMProc proc) {
         public IReadOnlyList<ActiveBreakpoint> Breakpoints => _breakpoints;
-        public readonly DMProc Proc;
+        public readonly DMProc Proc = proc;
 
         private readonly List<ActiveBreakpoint> _breakpoints = new();
-
-        public FileBreakpointSlot(DMProc proc) {
-            Proc = proc;
-        }
 
         public void ClearBreakpoints() {
             // Set all the opcodes back to their original
@@ -96,8 +92,9 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
 
     private readonly Dictionary<int, WeakReference<ProcState>> _stackFramesById = new();
 
-    private int _variablesIdCounter = 0;
+    private int _variablesIdCounter;
     private readonly Dictionary<int, Func<RequestVariables, IEnumerable<Variable>>> _variableReferences = new();
+
     private int AllocVariableRef(Func<RequestVariables, IEnumerable<Variable>> func) {
         int id = ++_variablesIdCounter;
         _variableReferences[id] = func;
@@ -110,7 +107,6 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
         _adapter = new DebugAdapter();
 
         _adapter.OnClientConnected += OnClientConnected;
-        //_adapter.StartListening();
         _adapter.ConnectOut(port: port);
     }
 
@@ -150,7 +146,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
 
         // Check for a function breakpoint
         List<int>? hit = null;
-        if (_possibleFunctionBreakpoints.TryGetValue((state.Proc.OwningType.PathString, state.Proc.Name), out var slot)) {
+        if (_possibleFunctionBreakpoints.TryGetValue((state.Proc.OwningType.Path, state.Proc.Name), out var slot)) {
             foreach (var bp in slot.Breakpoints) {
                 if (TestBreakpoint(bp)) {
                     hit ??= new(1);
@@ -160,7 +156,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
         }
 
         if (hit != null) {
-            Output($"Function breakpoint hit at {state.Proc.OwningType.PathString}::{state.Proc.Name}");
+            Output($"Function breakpoint hit at {state.Proc.OwningType.Path}::{state.Proc.Name}");
             Stop(state.Thread, new StoppedEvent {
                 Reason = StoppedEvent.ReasonFunctionBreakpoint,
                 HitBreakpointIds = hit
@@ -351,6 +347,12 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
             case RequestDisassemble requestDisassemble:
                 HandleRequestDisassemble(client, requestDisassemble);
                 break;
+            case RequestHotReloadInterface requestHotReloadInterface:
+                HandleRequestHotReloadInterface(client, requestHotReloadInterface);
+                break;
+            case RequestHotReloadResource requestHotReloadResource:
+                HandleRequestHotReloadResource(client, requestHotReloadResource);
+                break;
             default:
                 req.RespondError(client, $"Unknown request \"{req.Command}\"");
                 break;
@@ -422,7 +424,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
 
     private IEnumerable<(string Type, string Proc)> IterateProcs() {
         foreach (var proc in _objectTree.Procs) {
-            yield return (proc.OwningType.PathString, proc.Name);
+            yield return (proc.OwningType.Path, proc.Name);
         }
     }
 
@@ -542,9 +544,11 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
         foreach (var thread in InspectThreads().Distinct()) {
             threads.Add(new Thread(thread.Id, thread.Name));
         }
+
         if (!threads.Any()) {
             threads.Add(new Thread(0, "Nothing"));
         }
+
         reqThreads.Respond(client, threads);
     }
 
@@ -636,6 +640,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
             output.Add(outputFrame);
             _stackFramesById[frame.Id] = new WeakReference<ProcState>(frame);
         }
+
         reqStackTrace.Respond(client, output, output.Count);
     }
 
@@ -673,6 +678,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
                 PresentationHint = Scope.PresentationHintRegisters,
             });
         }
+
         scopes.Add(new Scope {
             Name = "Arguments",
             PresentationHint = Scope.PresentationHintArguments,
@@ -692,10 +698,12 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     private IEnumerable<Variable> ExpandArguments(RequestVariables req, DMProcState dmFrame) {
-        if (dmFrame.Proc.OwningType != OpenDreamShared.Dream.DreamPath.Root) {
+        if (dmFrame.Proc.OwningType != _objectTree.Root) {
             yield return DescribeValue("src", new(dmFrame.Instance));
         }
+
         yield return DescribeValue("usr", new(dmFrame.Usr));
+
         foreach (var (name, value) in dmFrame.DebugArguments()) {
             yield return DescribeValue(name, value);
         }
@@ -708,7 +716,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     private IEnumerable<Variable> ExpandGlobals(RequestVariables req) {
-        foreach (var (name, value) in _dreamManager.GlobalNames.Order().Zip(_dreamManager.Globals)) {
+        foreach ((string name, DreamValue value) in _dreamManager.GlobalNames.Zip(_dreamManager.Globals).OrderBy(kv => kv.First)) {
             yield return DescribeValue(name, value);
         }
     }
@@ -720,8 +728,8 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     private Variable DescribeValue(string name, DreamValue value) {
-        var varDesc = new Variable { Name = name };
-        varDesc.Value = value.ToString();
+        var varDesc = new Variable { Name = name, Value = value.ToString() };
+
         if (value.TryGetValueAsDreamList(out var list)) {
             if (list.GetLength() > 0) {
                 varDesc.VariablesReference = AllocVariableRef(req => ExpandList(req, list));
@@ -731,9 +739,9 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
             varDesc.VariablesReference = AllocVariableRef(req => ExpandObject(req, obj));
             varDesc.NamedVariables = obj.ObjectDefinition?.Variables.Count;
         }
+
         return varDesc;
     }
-
 
     private IEnumerable<Variable> ExpandList(RequestVariables req, DreamList list) {
         if (list.IsAssociative) {
@@ -753,6 +761,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
     private IEnumerable<Variable> ExpandObject(RequestVariables req, DreamObject obj) {
         foreach (var name in obj.GetVariableNames().OrderBy(k => k)) {
             Variable described;
+
             try {
                 described = DescribeValue(name, obj.GetVariable(name));
             } catch (Exception ex) {
@@ -763,6 +772,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
                     Value = $"<error: {ex.Message}>",
                 };
             }
+
             yield return described;
         }
     }
@@ -787,6 +797,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
             } else {
                 requestDisassemble.Respond(client, Enumerable.Repeat(LowInstruction, requestDisassemble.Arguments.InstructionCount));
             }
+
             return;
         }
 
@@ -795,9 +806,9 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
         DisassembledInstruction? previousInstruction = null;
         int previousOffset = 0;
         foreach (var (offset, instruction) in new ProcDecoder(_objectTree.Strings, proc.Bytecode).Disassemble()) {
-            if (previousInstruction != null) {
+            /*if (previousInstruction != null) {
                 previousInstruction.InstructionBytes = BitConverter.ToString(proc.Bytecode, previousOffset, offset - previousOffset).Replace("-", " ").ToLowerInvariant();
-            }
+            }*/
 
             previousOffset = offset;
             previousInstruction = new DisassembledInstruction {
@@ -812,13 +823,39 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
             output.Add(previousInstruction);
         }
 
-        if (previousInstruction != null) {
+        /*if (previousInstruction != null) {
             previousInstruction.InstructionBytes = BitConverter.ToString(proc.Bytecode, previousOffset).Replace("-", " ").ToLowerInvariant();
-        }
+        }*/
 
         // ... and THEN strip everything outside the requested range.
         int requestedPoint = output.FindIndex(di => di.Address == requestDisassemble.Arguments.MemoryReference);
         requestDisassemble.Respond(client, DisassemblySkipTake(output, requestedPoint, requestDisassemble.Arguments.InstructionOffset ?? 0, requestDisassemble.Arguments.InstructionCount));
+    }
+
+    private void HandleRequestHotReloadInterface(DebugAdapterClient client, RequestHotReloadInterface requestHotReloadInterface) {
+        _sawmill.Debug("Debug adapter triggered interface hot reload");
+        try {
+            _dreamManager.HotReloadInterface();
+            requestHotReloadInterface.Respond(client);
+        } catch (Exception e) {
+            requestHotReloadInterface.RespondError(client, e.Message);
+        }
+    }
+
+    private void HandleRequestHotReloadResource(DebugAdapterClient client, RequestHotReloadResource requestHotReloadResource) {
+        if (string.IsNullOrWhiteSpace(requestHotReloadResource.Arguments.FilePath)) {
+            _sawmill.Error("Debug adapter requested a resource hot reload but didn't provide a file");
+            requestHotReloadResource.RespondError(client, "No file provided for a hot reload");
+            return;
+        }
+        
+        _sawmill.Debug("Debug adapter triggered resource hot reload for "+requestHotReloadResource.Arguments.FilePath);
+        try {
+            _dreamManager.HotReloadResource(requestHotReloadResource.Arguments.FilePath);
+            requestHotReloadResource.Respond(client);
+        } catch (Exception e) {
+            requestHotReloadResource.RespondError(client, e.Message);
+        }
     }
 
     private IEnumerable<DisassembledInstruction> DisassemblySkipTake(List<DisassembledInstruction> list, int midpoint, int offset, int count) {
@@ -842,7 +879,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
         // Otherwise it will think they're all the same and never refetch.
         int procId = proc.GetHashCode();
         _disassemblyProcs[procId] = proc;
-        ulong ip = ((ulong)(uint)procId << 32) | (ulong)(uint)pc;
+        ulong ip = ((ulong)(uint)procId << 32) | (uint)pc;
         return "0x" + ip.ToString("x");
     }
 

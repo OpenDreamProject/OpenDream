@@ -21,7 +21,7 @@ namespace OpenDreamClient.Rendering;
 /// <summary>
 /// Overlay for rendering world atoms
 /// </summary>
-internal sealed partial class DreamViewOverlay : Overlay, IEntityEventSubscriber {
+internal sealed partial class DreamViewOverlay : Overlay {
     public static ShaderInstance ColorInstance = default!;
 
     public override OverlaySpace Space => OverlaySpace.WorldSpaceBelowWorld;

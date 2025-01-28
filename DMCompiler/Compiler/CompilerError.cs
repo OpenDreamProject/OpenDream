@@ -22,6 +22,7 @@ public enum WarningCode {
     ItemDoesntExist = 404,
     DanglingOverride = 405,
     StaticOverride = 406,
+    FinalOverride = 407,
     // ReSharper disable once InconsistentNaming
     IAmATeaPot = 418, // TODO: Implement the HTCPC protocol for OD
     HardConstContext = 500,

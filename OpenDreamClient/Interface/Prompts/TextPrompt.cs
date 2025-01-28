@@ -8,6 +8,8 @@ internal sealed class TextPrompt : InputWindow {
 
     public TextPrompt(string title, string message, string defaultValue, bool canCancel,
         Action<DreamValueType, object?>? onClose) : base(title, message, canCancel, onClose) {
+        MinHeight = 100;
+
         _textEdit = new LineEdit {
             Text = defaultValue,
             VerticalAlignment = VAlignment.Top

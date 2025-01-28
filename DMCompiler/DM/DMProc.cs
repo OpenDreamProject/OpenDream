@@ -479,6 +479,10 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.OutputControl);
         }
 
+        public void Link() {
+            WriteOpcode(DreamProcOpcode.Link);
+        }
+
         public void Ftp() {
             WriteOpcode(DreamProcOpcode.Ftp);
         }

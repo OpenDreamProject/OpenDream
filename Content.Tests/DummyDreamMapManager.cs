@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Json;
-using OpenDreamRuntime;
+using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs;
@@ -26,9 +26,9 @@ public sealed class DummyDreamMapManager : IDreamMapManager {
 
     public void SetTurf(DreamObjectTurf turf, DreamObjectDefinition type, DreamProcArguments creationArguments) { }
 
-    public void SetTurfAppearance(DreamObjectTurf turf, IconAppearance appearance) { }
+    public void SetTurfAppearance(DreamObjectTurf turf, MutableAppearance appearance) { }
 
-    public void SetAreaAppearance(DreamObjectArea area, IconAppearance appearance) { }
+    public void SetAreaAppearance(DreamObjectArea area, MutableAppearance appearance) { }
 
     public void SetArea(DreamObjectTurf turf, DreamObjectArea area) { }
 
@@ -53,5 +53,9 @@ public sealed class DummyDreamMapManager : IDreamMapManager {
 
     public EntityUid GetZLevelEntity(int z) {
         return EntityUid.Invalid;
+    }
+
+    public IEnumerable<AtomDirection> CalculateSteps((int X, int Y, int Z) loc, (int X, int Y, int Z) dest, int distance) {
+        yield break;
     }
 }

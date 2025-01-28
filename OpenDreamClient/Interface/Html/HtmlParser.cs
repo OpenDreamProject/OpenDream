@@ -8,6 +8,7 @@ public static class HtmlParser {
     private const string TagNotClosedError = "HTML tag was not closed";
 
     private static readonly ISawmill Sawmill;
+    private static readonly HashSet<string> WarnedAttributes = new();
 
     static HtmlParser() {
         Sawmill = IoCManager.Resolve<ILogManager>().GetSawmill("opendream.html_parser");
@@ -24,6 +25,9 @@ public static class HtmlParser {
         }
 
         void PushCurrentText() {
+            if (currentText.Length == 0)
+                return;
+
             appendTo.AddText(currentText.ToString());
             currentText.Clear();
         }
@@ -84,9 +88,6 @@ public static class HtmlParser {
                     }
 
                     break;
-                case '\n':
-                    appendTo.PushNewline();
-                    break;
                 case '&':
                     // HTML named/numbered entity
                     int end = text.IndexOf(';', i);
@@ -122,6 +123,10 @@ public static class HtmlParser {
                         }
                     }
 
+                    break;
+                case '\n':
+                    PushCurrentText();
+                    appendTo.PushNewline();
                     break;
                 default:
                     currentText.Append(c);
@@ -165,7 +170,8 @@ public static class HtmlParser {
                     parameter = new(color);
                     break;
                 default:
-                    Sawmill.Debug($"Unimplemented HTML attribute \"{attributeName}\"");
+                    if (WarnedAttributes.Add(attributeName))
+                        Sawmill.Debug($"Unimplemented HTML attribute \"{attributeName}\"");
                     continue;
             }
 

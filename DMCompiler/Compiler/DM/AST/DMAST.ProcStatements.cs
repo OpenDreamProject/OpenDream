@@ -191,6 +191,14 @@ public sealed class DMASTProcStatementOutputControl(
     public DMASTExpression Control = control;
 }
 
+public sealed class DMASTProcStatementLink(
+    Location location,
+    DMASTExpression receiver,
+    DMASTExpression url) : DMASTProcStatement(location) {
+    public readonly DMASTExpression Receiver = receiver;
+    public readonly DMASTExpression Url = url;
+}
+
 public sealed class DMASTProcStatementFtp(
     Location location,
     DMASTExpression receiver,

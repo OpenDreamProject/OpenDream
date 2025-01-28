@@ -106,14 +106,14 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
         }
     }
 
-    private (ClientObjectReference Atom, Vector2i IconPosition)? GetTurfUnderMouse(MapCoordinates mapCoords, out int? turfId) {
+    private (ClientObjectReference Atom, Vector2i IconPosition)? GetTurfUnderMouse(MapCoordinates mapCoords, out uint? turfId) {
         // Grid coordinates are half a meter off from entity coordinates
         mapCoords = new MapCoordinates(mapCoords.Position + new Vector2(0.5f), mapCoords.MapId);
 
         if (_mapManager.TryFindGridAt(mapCoords, out var gridEntity, out var grid)) {
             Vector2i position = _mapSystem.CoordinatesToTile(gridEntity, grid, _mapSystem.MapToGrid(gridEntity, mapCoords));
             _mapSystem.TryGetTile(grid, position, out Tile tile);
-            turfId = tile.TypeId;
+            turfId = (uint)tile.TypeId;
             Vector2i turfIconPosition = (Vector2i) ((mapCoords.Position - position) * EyeManager.PixelsPerMeter);
             MapCoordinates worldPosition = _mapSystem.GridTileToWorld(gridEntity, grid, position);
 

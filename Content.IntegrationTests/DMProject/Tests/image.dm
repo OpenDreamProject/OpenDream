@@ -2,7 +2,9 @@
 	plane = 123
 	icon_state = "subclass"
 
-/proc/RunTest()
+/proc/test_images()
+	ASSERT(image('icons.dmi', "mob") != null)
+
 	var/image/test = new /image/subclass
 	ASSERT(test.plane == 123)
 	ASSERT(test.icon_state == "subclass")

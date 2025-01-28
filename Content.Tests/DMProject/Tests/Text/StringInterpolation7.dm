@@ -1,30 +1,39 @@
+﻿/datum/thing
+	var/name = "thing"
 
+/datum/Thing
+	var/name = "Thing"
+
+/datum/proper_thing
+	var/name = "\proper thing"
+
+/datum/plural_things
+	var/name = "things"
+	var/gender = PLURAL
 
 /proc/RunTest()
-	var/text = "[0]\th"
-	ASSERT(text == "0th")
-	text = "[1]\th"
-	ASSERT(text == "1st")
-	text = "[2]\th"
-	ASSERT(text == "2nd")
-	text = "[3]\th"
-	ASSERT(text == "3rd")
-	text = "[4]\th"
-	ASSERT(text == "4th")
-	text = "[-1]\th"
-	ASSERT(text == "-1th")
-	text = "[4.52]\th"
-	ASSERT(text == "4th")
-	text = "the fitness [1.7]\th is a"
-	ASSERT(text == "the fitness 1st is a")
-	text = "the fitness [99999999]\th is a"
-	ASSERT(text == "the fitness 100000000th is a")
-	text = "[null]\th"
-	ASSERT(text == "0th")
-	var/datum/D = new
-	text = "[D]\th"
-	ASSERT(text == "0th")
-	var/foo = "bar"
-	text = "[foo]\th"
-	ASSERT(text == "0th")
+	// Lowercase \a on datums
+	ASSERT("\a [new /datum/thing]" == "a thing")
+	ASSERT("\a [new /datum/Thing]" == "Thing")
+	ASSERT("\a [new /datum/proper_thing]" == "thing")
+	ASSERT("\a [new /datum/plural_things]" == "some things")
+	
+	// Uppercase \A on datums
+	ASSERT("\A [new /datum/thing]" == "A thing")
+	ASSERT("\A [new /datum/Thing]" == "Thing")
+	ASSERT("\A [new /datum/proper_thing]" == "thing")
+	ASSERT("\A [new /datum/plural_things]" == "Some things")
+	
+	// Lowercase \a on strings
+	ASSERT("\a ["thing"]" == "a thing")
+	ASSERT("\a ["Thing"]" == "Thing")
+	ASSERT("\a ["\proper thing"]" == "thing")
+	
+	// Uppercase \A on strings
+	ASSERT("\A ["thing"]" == "A thing")
+	ASSERT("\A ["Thing"]" == "Thing")
+	ASSERT("\A ["\proper thing"]" == "thing")
 
+	// Invalid \a
+	ASSERT("\a [123]" == "")
+	ASSERT("\A [123]" == "")

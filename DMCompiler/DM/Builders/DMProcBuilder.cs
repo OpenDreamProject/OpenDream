@@ -101,6 +101,7 @@ namespace DMCompiler.DM.Builders {
                 case DMASTProcStatementBrowse statementBrowse: ProcessStatementBrowse(statementBrowse); break;
                 case DMASTProcStatementBrowseResource statementBrowseResource: ProcessStatementBrowseResource(statementBrowseResource); break;
                 case DMASTProcStatementOutputControl statementOutputControl: ProcessStatementOutputControl(statementOutputControl); break;
+                case DMASTProcStatementLink statementLink: ProcessStatementLink(statementLink); break;
                 case DMASTProcStatementFtp statementFtp: ProcessStatementFtp(statementFtp); break;
                 case DMASTProcStatementOutput statementOutput: ProcessStatementOutput(statementOutput); break;
                 case DMASTProcStatementInput statementInput: ProcessStatementInput(statementInput); break;
@@ -489,6 +490,10 @@ namespace DMCompiler.DM.Builders {
 
                             var outputVar = _exprBuilder.Create(outputExpr);
 
+                            if (outputVar is Local { LocalVar: DMProc.LocalConstVariable } or Field { IsConst: true }) {
+                                compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, "Cannot change constant value");
+                            }
+
                             var start = _exprBuilder.Create(exprRange.StartRange);
                             var end = _exprBuilder.Create(exprRange.EndRange);
                             var step = exprRange.Step != null
@@ -520,7 +525,10 @@ namespace DMCompiler.DM.Builders {
 
                             if (outputVar is Local outputLocal) {
                                 outputLocal.LocalVar.ExplicitValueType = statementFor.DMTypes;
-                            }
+                            if(outputLocal.LocalVar is DMProc.LocalConstVariable)
+                                compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, "Cannot change constant value");
+                            } else if (outputVar is Field { IsConst: true })
+                                compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, "Cannot change constant value");
 
                             ProcessStatementForList(list, outputVar, statementFor.DMTypes, statementFor.Body);
                             break;
@@ -884,6 +892,12 @@ namespace DMCompiler.DM.Builders {
             _exprBuilder.Emit(statementOutputControl.Message);
             _exprBuilder.Emit(statementOutputControl.Control);
             proc.OutputControl();
+        }
+
+        public void ProcessStatementLink(DMASTProcStatementLink statementLink) {
+            _exprBuilder.Emit(statementLink.Receiver);
+            _exprBuilder.Emit(statementLink.Url);
+            proc.Link();
         }
 
         public void ProcessStatementFtp(DMASTProcStatementFtp statementFtp) {

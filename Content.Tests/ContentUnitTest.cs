@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using OpenDreamClient;
 using OpenDreamRuntime;
+using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared;
 using OpenDreamShared.Rendering;

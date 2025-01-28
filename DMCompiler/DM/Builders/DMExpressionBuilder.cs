@@ -75,12 +75,12 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
             case DMASTDereference deref: result = BuildDereference(deref, inferredPath); break;
             case DMASTLocate locate: result = BuildLocate(locate, inferredPath); break;
             case DMASTImplicitIsType implicitIsType: result = BuildImplicitIsType(implicitIsType, inferredPath); break;
-            case DMASTList list: result = BuildList(list); break;
+            case DMASTList list: result = BuildList(list, inferredPath); break;
             case DMASTDimensionalList dimensionalList: result = BuildDimensionalList(dimensionalList, inferredPath); break;
             case DMASTNewList newList: result = BuildNewList(newList, inferredPath); break;
             case DMASTAddText addText: result = BuildAddText(addText, inferredPath); break;
-            case DMASTInput input: result = BuildInput(input); break;
-            case DMASTPick pick: result = BuildPick(pick); break;
+            case DMASTInput input: result = BuildInput(input, inferredPath); break;
+            case DMASTPick pick: result = BuildPick(pick, inferredPath); break;
             case DMASTLog log: result = BuildLog(log, inferredPath); break;
             case DMASTCall call: result = BuildCall(call, inferredPath); break;
             case DMASTExpressionWrapped wrapped: result = BuildExpression(wrapped.Value, inferredPath); break;
@@ -327,10 +327,10 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                 break;
             case DMASTGradient gradient:
                 result = new Gradient(gradient.Location,
-                    BuildArgumentList(gradient.Location, gradient.Parameters));
+                    BuildArgumentList(gradient.Location, gradient.Parameters, inferredPath));
                 break;
             case DMASTRgb rgb:
-                result = new Rgb(rgb.Location, BuildArgumentList(rgb.Location, rgb.Parameters));
+                result = new Rgb(rgb.Location, BuildArgumentList(rgb.Location, rgb.Parameters, inferredPath));
                 break;
             case DMASTLocateCoordinates locateCoordinates:
                 result = new LocateCoordinates(locateCoordinates.Location,
@@ -435,7 +435,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
             case DMASTVarDeclExpression varDeclExpr:
                 var declIdentifier = new DMASTIdentifier(expression.Location, varDeclExpr.DeclPath.Path.LastElement);
 
-                result = BuildIdentifier(declIdentifier);
+                result = BuildIdentifier(declIdentifier, inferredPath);
                 break;
             case DMASTVoid:
                 result = BadExpression(WarningCode.BadExpression, expression.Location, "Attempt to use a void expression");
@@ -751,7 +751,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
         }
 
         var target = BuildExpression((DMASTExpression)procCall.Callable, inferredPath);
-        var args = BuildArgumentList(procCall.Location, procCall.Parameters);
+        var args = BuildArgumentList(procCall.Location, procCall.Parameters, inferredPath);
         if (target is Proc targetProc) { // GlobalProc handles returnType itself
             var returnType = targetProc.GetReturnType(ctx.Type);
 
@@ -885,7 +885,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                             return UnknownReference(callOperation.Location,
                                 $"Could not find a global proc named \"{callOperation.Identifier}\"");
 
-                        var argumentList = BuildArgumentList(deref.Expression.Location, callOperation.Parameters);
+                        var argumentList = BuildArgumentList(deref.Expression.Location, callOperation.Parameters, inferredPath);
 
                         var globalProcExpr = new GlobalProc(expr.Location, globalProc);
                         expr = new ProcCall(expr.Location, globalProcExpr, argumentList, DMValueType.Anything);
@@ -1023,7 +1023,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
 
                 case DMASTDereference.CallOperation callOperation: {
                     var field = callOperation.Identifier;
-                    var argumentList = BuildArgumentList(deref.Expression.Location, callOperation.Parameters);
+                    var argumentList = BuildArgumentList(deref.Expression.Location, callOperation.Parameters, inferredPath);
 
                     if (!callOperation.NoSearch && !pathIsFuzzy) {
                         if (prevPath == null) {
@@ -1081,7 +1081,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
         return new IsTypeInferred(isType.Location, expr, expr.Path.Value);
     }
 
-    private DMExpression BuildList(DMASTList list) {
+    private DMExpression BuildList(DMASTList list, DreamPath? inferredPath) {
         (DMExpression? Key, DMExpression Value)[] values = [];
 
         if (list.Values != null) {
@@ -1089,8 +1089,8 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
 
             for (int i = 0; i < list.Values.Length; i++) {
                 DMASTCallParameter value = list.Values[i];
-                DMExpression? key = (value.Key != null) ? BuildExpression(value.Key) : null;
-                DMExpression listValue = BuildExpression(value.Value);
+                DMExpression? key = (value.Key != null) ? BuildExpression(value.Key, inferredPath) : null;
+                DMExpression listValue = BuildExpression(value.Value, inferredPath);
 
                 values[i] = (key, listValue);
             }
@@ -1151,7 +1151,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
         return new AddText(addText.Location, expArr);
     }
 
-    private DMExpression BuildInput(DMASTInput input) {
+    private DMExpression BuildInput(DMASTInput input, DreamPath? inferredPath) {
         DMExpression[] arguments = new DMExpression[input.Parameters.Length];
         for (int i = 0; i < input.Parameters.Length; i++) {
             DMASTCallParameter parameter = input.Parameters[i];
@@ -1161,12 +1161,12 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                     "input() does not take named arguments");
             }
 
-            arguments[i] = BuildExpression(parameter.Value);
+            arguments[i] = BuildExpression(parameter.Value, inferredPath);
         }
 
         DMExpression? list = null;
         if (input.List != null) {
-            list = BuildExpression(input.List);
+            list = BuildExpression(input.List, inferredPath);
 
             DMValueType objectTypes = DMValueType.Null |DMValueType.Obj | DMValueType.Mob | DMValueType.Turf |
                                       DMValueType.Area;
@@ -1188,13 +1188,13 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
         return new Input(input.Location, arguments, input.Types.Value, list);
     }
 
-    private DMExpression BuildPick(DMASTPick pick) {
+    private DMExpression BuildPick(DMASTPick pick, DreamPath? inferredPath) {
         Pick.PickValue[] pickValues = new Pick.PickValue[pick.Values.Length];
 
         for (int i = 0; i < pickValues.Length; i++) {
             DMASTPick.PickValue pickValue = pick.Values[i];
-            DMExpression? weight = (pickValue.Weight != null) ? BuildExpression(pickValue.Weight) : null;
-            DMExpression value = BuildExpression(pickValue.Value);
+            DMExpression? weight = (pickValue.Weight != null) ? BuildExpression(pickValue.Weight, inferredPath) : null;
+            DMExpression value = BuildExpression(pickValue.Value, inferredPath);
 
             if (weight is Prob prob) // pick(prob(50);x, prob(200);y) format
                 weight = prob.P;

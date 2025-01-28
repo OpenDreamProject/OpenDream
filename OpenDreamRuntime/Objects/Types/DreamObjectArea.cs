@@ -1,4 +1,6 @@
-﻿namespace OpenDreamRuntime.Objects.Types;
+﻿using OpenDreamShared.Dream;
+
+namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectArea : DreamObjectAtom {
     public int X {
@@ -22,8 +24,8 @@ public sealed class DreamObjectArea : DreamObjectAtom {
         }
     }
 
+    public ImmutableAppearance Appearance;
     public readonly HashSet<DreamObjectTurf> Turfs;
-    public int AppearanceId;
 
     private readonly AreaContentsList _contents;
 
@@ -31,9 +33,10 @@ public sealed class DreamObjectArea : DreamObjectAtom {
     private int? _cachedX, _cachedY, _cachedZ;
 
     public DreamObjectArea(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
+        Appearance = AppearanceSystem!.DefaultAppearance;
         Turfs = new();
-        AtomManager.SetAtomAppearance(this, AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
         _contents = new(ObjectTree.List.ObjectDefinition, this);
+        AtomManager.SetAtomAppearance(this, AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
     }
 
     /// <summary>

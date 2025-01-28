@@ -6,6 +6,7 @@ namespace OpenDreamShared.Network.Messages;
 
 public sealed class MsgFtp : NetMessage {
     public override MsgGroups MsgGroup => MsgGroups.EntityEvent;
+    public override NetDeliveryMethod DeliveryMethod => NetDeliveryMethod.ReliableUnordered;
 
     public int ResourceId;
     public string SuggestedName = string.Empty;

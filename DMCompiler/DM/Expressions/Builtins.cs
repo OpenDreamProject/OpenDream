@@ -552,6 +552,13 @@ internal class Initial(Location location, DMExpression expr) : DMExpression(loca
             return;
         }
 
+        if (Expression is Arglist arglist) {
+            // This happens silently in BYOND
+            ctx.Compiler.Emit(WarningCode.PointlessBuiltinCall, Location, "calling initial() on arglist() returns the current value");
+            arglist.EmitPushArglist(ctx);
+            return;
+        }
+
         ctx.Compiler.Emit(WarningCode.BadArgument, Expression.Location, $"can't get initial value of {Expression}");
         ctx.Proc.Error();
     }

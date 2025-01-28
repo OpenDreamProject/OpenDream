@@ -1,15 +1,17 @@
-/obj/thing_1/dodaa
+/datum/var/name
+
+/datum/thing_1/dodaa
 	name = "underscore 1 test"
 
-#define NUMPATH_OBJDEF(num) /obj/thing_##num/name = #num
+#define NUMPATH_OBJDEF(num) /datum/thing_##num/name = #num
 
 NUMPATH_OBJDEF(4)
 NUMPATH_OBJDEF(stuff)
 
 /proc/RunTest()
-	var/obj/thing_1/dodaa/D = new
+	var/datum/thing_1/dodaa/D = new
 	ASSERT(D.name == "underscore 1 test")
-	var/obj/thing_4/T = new
+	var/datum/thing_4/T = new
 	ASSERT(T.name == "4")
-	var/obj/thing_stuff/Y = new
+	var/datum/thing_stuff/Y = new
 	ASSERT(Y.name == "stuff")

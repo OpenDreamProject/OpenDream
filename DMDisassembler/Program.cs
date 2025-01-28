@@ -213,7 +213,8 @@ internal class Program {
 
             var outputFile = Path.ChangeExtension(JsonFile, ".txt")!;
             var name = Path.GetFileName(outputFile);
-            outputFile = outputFile.Replace(name!, $"__od_subtypes-by-type_{name}");
+            var path = Path.GetDirectoryName(outputFile)!;
+            outputFile = Path.Combine(path, $"__od_subtypes-by-type_{name}");
             using StreamWriter writer = new StreamWriter(outputFile, append: false, encoding: Encoding.UTF8, bufferSize: 65536);
 
             writer.WriteLine("Type: Subtype Count");
@@ -419,7 +420,8 @@ internal class Program {
 
         var outputFile = Path.ChangeExtension(JsonFile, ".txt")!;
         var name = Path.GetFileName(outputFile);
-        outputFile = outputFile.Replace(name!, $"__od_types_{name}");
+        var path = Path.GetDirectoryName(outputFile)!;
+        outputFile = Path.Combine(path, $"__od_types_{name}");
         using StreamWriter writer = new StreamWriter(outputFile, append: false, encoding: Encoding.UTF8, bufferSize: 65536);
 
         foreach (DMType type in TypesById) {

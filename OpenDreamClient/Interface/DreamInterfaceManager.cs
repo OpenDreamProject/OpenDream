@@ -56,7 +56,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     public Dictionary<string, ControlWindow> Windows { get; } = new();
     public Dictionary<string, InterfaceMenu> Menus { get; } = new();
     public Dictionary<string, InterfaceMacroSet> MacroSets { get; } = new();
-    private Dictionary<WindowId, ControlWindow> ClydeWindowIDToControl { get; } = new();
+    private Dictionary<WindowId, ControlWindow> ClydeWindowIdToControl { get; } = new();
 
     public ViewRange View {
         get => _view;
@@ -919,13 +919,12 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         _uiManager.StateRoot.AddChild(DefaultWindow.UIElement);
 
         if (DefaultWindow.GetClydeWindow() is { } clydeWindow) {
-            ClydeWindowIDToControl.Add(clydeWindow.Id, DefaultWindow);
+            ClydeWindowIdToControl.Add(clydeWindow.Id, DefaultWindow);
         }
-
     }
 
     private void OnWindowFocused(WindowFocusedEventArgs args) {
-        if(ClydeWindowIDToControl.TryGetValue(args.Window.Id, out var controlWindow)){
+        if(ClydeWindowIdToControl.TryGetValue(args.Window.Id, out var controlWindow)){
             _sawmill.Debug($"window id {controlWindow.Id} was {(args.Focused ? "focused" : "defocused")}");
             WindowDescriptor descriptor = (WindowDescriptor) controlWindow.ElementDescriptor;
             descriptor.Focus = new DMFPropertyBool(args.Focused);
@@ -959,7 +958,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 }
 
                 if (window.GetClydeWindow() is { } clydeWindow) {
-                    ClydeWindowIDToControl.Add(clydeWindow.Id, window);
+                    ClydeWindowIdToControl.Add(clydeWindow.Id, window);
                 }
 
                 break;

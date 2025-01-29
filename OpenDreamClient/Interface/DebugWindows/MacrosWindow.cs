@@ -43,8 +43,8 @@ internal sealed class MacrosWindow : OSWindow {
 
         foreach (var macro in macroSet.Macros.Values) {
             var idText = macro.Id;
-            if (macro.ElementDescriptor.Name.Value != idText.Value)
-                idText.Value += $" ({macro.ElementDescriptor.Name.AsRaw()})";
+            if (macro.ElementDescriptor.Id.Value != idText.Value)
+                idText.Value += $" ({macro.ElementDescriptor.Id.AsRaw()})";
 
             var idLabel = new Label { Text = idText.AsRaw() };
             var commandLabel = new Label { Text = macro.Command };

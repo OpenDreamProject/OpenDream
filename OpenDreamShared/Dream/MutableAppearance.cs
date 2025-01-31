@@ -26,6 +26,7 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
     private static Stack<MutableAppearance> _mutableAppearancePool = new();
 
     [ViewVariables] public string Name = string.Empty;
+    [ViewVariables] public string? Desc = string.Empty;
     [ViewVariables] public int? Icon;
     [ViewVariables] public string? IconState;
     [ViewVariables] public AtomDirection Direction = AtomDirection.South;
@@ -106,6 +107,7 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
 
     public void CopyFrom(MutableAppearance appearance) {
         Name = appearance.Name;
+        Desc = appearance.Desc;
         Icon = appearance.Icon;
         IconState = appearance.IconState;
         Direction = appearance.Direction;
@@ -149,6 +151,7 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         if (appearance == null) return false;
 
         if (appearance.Name != Name) return false;
+        if (appearance.Desc != Desc) return false;
         if (appearance.Icon != Icon) return false;
         if (appearance.IconState != IconState) return false;
         if (appearance.Direction != Direction) return false;
@@ -242,6 +245,7 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         HashCode hashCode = new HashCode();
 
         hashCode.Add(Name);
+        hashCode.Add(Desc);
         hashCode.Add(Icon);
         hashCode.Add(IconState);
         hashCode.Add(Direction);
@@ -376,6 +380,7 @@ public enum AnimationFlags {
 //used for encoding for netmessages
 public enum IconAppearanceProperty : byte {
         Name,
+        Desc,
         Icon,
         IconState,
         Direction,

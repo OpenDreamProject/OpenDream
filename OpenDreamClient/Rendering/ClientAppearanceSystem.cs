@@ -6,7 +6,6 @@ using Robust.Shared.Prototypes;
 using OpenDreamClient.Resources;
 using OpenDreamClient.Resources.ResourceTypes;
 using Robust.Shared.Timing;
-using OpenDreamShared.Network.Messages;
 
 namespace OpenDreamClient.Rendering;
 
@@ -15,6 +14,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     private readonly Dictionary<uint, List<Action<ImmutableAppearance>>> _appearanceLoadCallbacks = new();
     private readonly Dictionary<uint, DreamIcon> _turfIcons = new();
     private readonly Dictionary<DreamFilter, ShaderInstance> _filterShaders = new();
+    private bool _receivedAllAppearancesMsg;
 
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IDreamResourceManager _dreamResourceManager = default!;
@@ -24,30 +24,41 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     [Dependency] private readonly DMISpriteSystem _spriteSystem = default!;
 
     public override void Initialize() {
+        SubscribeNetworkEvent<NewAppearanceEvent>(OnNewAppearance);
         SubscribeNetworkEvent<RemoveAppearanceEvent>(e => _appearances.Remove(e.AppearanceId));
         SubscribeNetworkEvent<AnimationEvent>(OnAnimation);
         SubscribeLocalEvent<DMISpriteComponent, WorldAABBEvent>(OnWorldAABB);
     }
 
     public override void Shutdown() {
+        _receivedAllAppearancesMsg = false;
         _appearances.Clear();
         _appearanceLoadCallbacks.Clear();
         _turfIcons.Clear();
+        _filterShaders.Clear();
     }
 
     public void SetAllAppearances(Dictionary<uint, ImmutableAppearance> appearances) {
         _appearances = appearances;
+        _receivedAllAppearancesMsg = true;
+
         //need to do this because all overlays can't be resolved until the whole appearance table is populated
         foreach(KeyValuePair<uint, ImmutableAppearance> pair in _appearances) {
             pair.Value.ResolveOverlays(this);
-            if (_appearanceLoadCallbacks.TryGetValue(pair.Key, out var callbacks)) {
-                foreach (var callback in callbacks) callback(pair.Value);
-            }
+        }
+
+        // Callbacks called in another pass to ensure all appearances are initialized first
+        foreach (var callbackPair in _appearanceLoadCallbacks) {
+            if (!_appearances.TryGetValue(callbackPair.Key, out var appearance))
+                continue;
+
+            foreach (var callback in callbackPair.Value)
+                callback(appearance);
         }
     }
 
     public void LoadAppearance(uint appearanceId, Action<ImmutableAppearance> loadCallback) {
-        if (_appearances.TryGetValue(appearanceId, out var appearance)) {
+        if (_appearances.TryGetValue(appearanceId, out var appearance) && _receivedAllAppearancesMsg) {
             loadCallback(appearance);
             return;
         }
@@ -70,13 +81,17 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         return icon;
     }
 
-    public void OnNewAppearance(MsgNewAppearance e) {
+    public void OnNewAppearance(NewAppearanceEvent e) {
         uint appearanceId = e.Appearance.MustGetId();
         _appearances[appearanceId] = e.Appearance;
-        _appearances[appearanceId].ResolveOverlays(this);
 
-        if (_appearanceLoadCallbacks.TryGetValue(appearanceId, out var callbacks)) {
-            foreach (var callback in callbacks) callback(_appearances[appearanceId]);
+        // If we haven't received the MsgAllAppearances yet, leave this initialization for later
+        if (_receivedAllAppearancesMsg) {
+            _appearances[appearanceId].ResolveOverlays(this);
+
+            if (_appearanceLoadCallbacks.TryGetValue(appearanceId, out var callbacks)) {
+                foreach (var callback in callbacks) callback(_appearances[appearanceId]);
+            }
         }
     }
 

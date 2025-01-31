@@ -1,5 +1,4 @@
 using OpenDreamClient.Interface.Controls;
-using OpenDreamClient.Interface.Descriptors;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Network.Messages;
 using Robust.Shared.Network;
@@ -20,6 +19,7 @@ public sealed class DummyDreamInterfaceManager : IDreamInterfaceManager {
     public ControlMap? DefaultMap => null;
     public ViewRange View => new(5);
     public bool ShowPopupMenus => true;
+
     [Dependency] private readonly IClientNetManager _netManager = default!;
 
     public void Initialize() {

@@ -301,12 +301,31 @@ internal sealed class DMPreprocessorLexer {
             }
             case '@': { //Raw string
                 char delimiter = Advance();
+                var startLoc = CurrentLocation();
+
+                // @(XYZ) where XYZ is the delimiter
+                string complexDelimiter = string.Empty;
+                if (delimiter == '(') {
+                    Advance();
+                    while (GetCurrent() != ')') {
+                        if (AtEndOfSource()) {
+                            _compiler.Emit(WarningCode.BadExpression, startLoc,
+                                "Unterminated string delimiter");
+                            break;
+                        }
+
+                        complexDelimiter += GetCurrent();
+                        Advance();
+                    }
+                }
 
                 TokenTextBuilder.Clear();
                 TokenTextBuilder.Append('@');
                 TokenTextBuilder.Append(delimiter);
 
+                bool isComplex = complexDelimiter != string.Empty;
                 bool isLong = false;
+
                 c = Advance();
                 if (delimiter == '{') {
                     TokenTextBuilder.Append(c);
@@ -314,7 +333,33 @@ internal sealed class DMPreprocessorLexer {
                     if (c == '"') isLong = true;
                 }
 
-                if (isLong) {
+                if (isComplex) {
+                    TokenTextBuilder.Append(complexDelimiter);
+                    TokenTextBuilder.Append(')');
+
+                    // Ignore a newline immediately after @(complexDelimiter)
+                    if (c == '\r') c = Advance();
+                    if (c == '\n') c = Advance();
+
+                    var delimIdx = 0;
+                    do {
+                        TokenTextBuilder.Append(c);
+
+                        if (GetCurrent() == complexDelimiter[delimIdx]) delimIdx++;
+                        else delimIdx = 0;
+
+                        if (delimIdx == complexDelimiter.Length && c == complexDelimiter[^1]) { // latter check ensures a 1-char delimiter actually matches
+                            break;
+                        }
+
+                        c = Advance();
+                    } while (!AtEndOfSource());
+
+                    if (AtEndOfSource()) {
+                        _compiler.Emit(WarningCode.BadExpression, startLoc,
+                            "Unterminated string delimiter");
+                    }
+                } else if (isLong) {
                     bool nextCharCanTerm = false;
 
                     Advance();
@@ -335,6 +380,11 @@ internal sealed class DMPreprocessorLexer {
                         if (c == '"')
                             nextCharCanTerm = true;
                     } while (!AtEndOfSource());
+
+                    if (AtEndOfSource()) {
+                        _compiler.Emit(WarningCode.BadExpression, startLoc,
+                            "Unterminated string delimiter");
+                    }
                 } else {
                     while (c != delimiter && !AtLineEnd() && !AtEndOfSource()) {
                         TokenTextBuilder.Append(c);
@@ -342,18 +392,30 @@ internal sealed class DMPreprocessorLexer {
                     }
                 }
 
-                TokenTextBuilder.Append(c);
+                if (!isComplex) TokenTextBuilder.Append(c);
+
                 if (!HandleLineEnd())
                     Advance();
 
                 string text = TokenTextBuilder.ToString();
                 string value;
 
-                if (isLong) {
+                if (isComplex) {
+                    // Complex strings need to strip @(complexDelimiter) and a potential final newline. Newline after @(complexDelimiter) is already handled
+                    var trimEnd = complexDelimiter.Length;
+                    if (TokenTextBuilder[^(complexDelimiter.Length + 1)] == '\n') trimEnd += 1;
+                    if (TokenTextBuilder[^(complexDelimiter.Length + 2)] == '\r') trimEnd += 1;
+                    var trimStart = 3 + complexDelimiter.Length; // 3 is from these chars: @()
+                    value = TokenTextBuilder.ToString(trimStart, TokenTextBuilder.Length - (trimStart + trimEnd));
+                } else if (isLong) {
                     // Long strings ignore a newline immediately after the @{" and before the "}
+                    if (TokenTextBuilder[3] == '\r')
+                        TokenTextBuilder.Remove(3, 1);
                     if (TokenTextBuilder[3] == '\n')
                         TokenTextBuilder.Remove(3, 1);
                     if (TokenTextBuilder[^3] == '\n')
+                        TokenTextBuilder.Remove(TokenTextBuilder.Length - 3, 1);
+                    if (TokenTextBuilder[^3] == '\r')
                         TokenTextBuilder.Remove(TokenTextBuilder.Length - 3, 1);
 
                     value = TokenTextBuilder.ToString(3, TokenTextBuilder.Length - 5);
@@ -637,6 +699,10 @@ internal sealed class DMPreprocessorLexer {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private char GetCurrent() {
         return _current;
+    }
+
+    private Location CurrentLocation() {
+        return new Location(File, _previousLine, _previousColumn, _isDMStandard);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

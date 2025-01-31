@@ -43,7 +43,7 @@ public class DreamObjectMovable : DreamObjectAtom {
 
         if (EntityManager.TryGetComponent(Entity, out MetaDataComponent? metaData)) {
             MetaDataSystem?.SetEntityName(Entity, GetDisplayName(), metaData);
-            MetaDataSystem?.SetEntityDescription(Entity, Desc ?? string.Empty, metaData);
+            MetaDataSystem?.SetEntityDescription(Entity, GetRTEntityDesc(), metaData);
         }
 
         args.GetArgument(0).TryGetValueAsDreamObject<DreamObjectAtom>(out var loc);
@@ -76,6 +76,10 @@ public class DreamObjectMovable : DreamObjectAtom {
                 return true;
             case "loc":
                 value = new(Loc);
+                return true;
+            case "bound_width":
+            case "bound_height":
+                value = new(32); // TODO: Custom bounds support
                 return true;
             case "screen_loc":
                 value = (ScreenLoc != null) ? new(ScreenLoc) : DreamValue.Null;

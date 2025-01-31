@@ -45,6 +45,7 @@ internal sealed partial class IconDebugWindow : OSWindow {
         // Would be nice if we could use ViewVariables instead, but I couldn't find a nice way to do that
         // Would be especially nice if we could use VV to make these editable
         AddPropertyIfNotDefault("Name", appearance.Name, MutableAppearance.Default.Name);
+        AddPropertyIfNotDefault("Desc", appearance.Desc, MutableAppearance.Default.Desc);
         AddPropertyIfNotDefault("Icon State", appearance.IconState, MutableAppearance.Default.IconState);
         AddPropertyIfNotDefault("Direction", appearance.Direction, MutableAppearance.Default.Direction);
         AddPropertyIfNotDefault("Inherits Direction", appearance.InheritsDirection, MutableAppearance.Default.InheritsDirection);
@@ -63,6 +64,9 @@ internal sealed partial class IconDebugWindow : OSWindow {
         AddPropertyIfNotDefault("Render Source", appearance.RenderSource, MutableAppearance.Default.RenderSource);
         AddPropertyIfNotDefault("Render Target", appearance.RenderTarget, MutableAppearance.Default.RenderTarget);
         AddPropertyIfNotDefault("Mouse Opacity", appearance.MouseOpacity, MutableAppearance.Default.MouseOpacity);
+        AddPropertyIfNotDefault("Map Text Offset", appearance.MaptextOffset, MutableAppearance.Default.MaptextOffset);
+        AddPropertyIfNotDefault("Map Text Size", appearance.MaptextSize, MutableAppearance.Default.MaptextSize);
+        AddPropertyIfNotDefault("Map Text", appearance.Maptext, MutableAppearance.Default.Maptext);
 
         foreach (var overlay in _icon.Overlays) {
             AddDreamIconButton(OverlaysGrid, overlay);

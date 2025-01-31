@@ -21,7 +21,6 @@
 /proc/generator(type, A, B, rand)
 	set opendream_unimplemented = TRUE
 /proc/issaved(v)
-	set opendream_unimplemented = TRUE
 /proc/load_resource(File)
 	set opendream_unimplemented = TRUE
 proc/missile(Type, Start, End)

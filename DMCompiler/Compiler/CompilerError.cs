@@ -33,6 +33,7 @@ public enum WarningCode {
     FileAlreadyIncluded = 1000,
     MissingIncludedFile = 1001,
     InvalidWarningCode = 1002,
+    InvalidFileDirDefine = 1003,
     MisplacedDirective = 1100,
     UndefineMissingDirective = 1101,
     DefinedMissingParen = 1150,

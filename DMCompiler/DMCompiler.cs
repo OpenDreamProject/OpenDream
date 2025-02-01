@@ -101,10 +101,8 @@ public class DMCompiler {
     public void AddResourceDirectory(string dir, Location loc) {
         dir = dir.Replace('\\', Path.DirectorySeparatorChar);
         if (!Directory.Exists(dir)) {
-            if (!string.IsNullOrWhiteSpace(_codeDirectory))
-                dir = Path.GetRelativePath(_codeDirectory, dir);
-
-            Emit(WarningCode.InvalidFileDirDefine, loc, $"Folder \"{dir}\" does not exist");
+            Emit(WarningCode.InvalidFileDirDefine, loc,
+                $"Folder \"{Path.GetRelativePath(_codeDirectory, dir)}\" does not exist");
             return;
         }
 
@@ -137,7 +135,9 @@ public class DMCompiler {
             }
 
             // Adds the root of the DM project to FILE_DIR
-            _codeDirectory = Path.GetDirectoryName(files[0]) ?? "/";
+            _codeDirectory = Path.GetDirectoryName(files[0]) ?? "";
+            if (string.IsNullOrWhiteSpace(_codeDirectory))
+                _codeDirectory = Path.GetFullPath(".");
             compiler.AddResourceDirectory(_codeDirectory, Location.Internal);
 
             string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;

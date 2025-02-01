@@ -21,8 +21,8 @@
 	var/tmp/z = 0
 	var/pixel_x = 0
 	var/pixel_y = 0
-	var/pixel_z = 0 as opendream_unimplemented
-	var/pixel_w = 0 as opendream_unimplemented
+	var/pixel_z = 0
+	var/pixel_w = 0
 
 	var/icon = null
 	var/icon_state = ""

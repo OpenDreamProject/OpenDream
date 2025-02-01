@@ -101,7 +101,10 @@ public class DMCompiler {
     public void AddResourceDirectory(string dir, Location loc) {
         dir = dir.Replace('\\', Path.DirectorySeparatorChar);
         if (!Directory.Exists(dir)) {
-            Emit(WarningCode.InvalidFileDirDefine, loc, $"Folder \"{Path.GetRelativePath(_codeDirectory, dir)}\" does not exist");
+            if (!string.IsNullOrWhiteSpace(_codeDirectory))
+                dir = Path.GetRelativePath(_codeDirectory, dir);
+
+            Emit(WarningCode.InvalidFileDirDefine, loc, $"Folder \"{dir}\" does not exist");
             return;
         }
 

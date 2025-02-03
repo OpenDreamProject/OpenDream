@@ -212,11 +212,13 @@ public sealed class DreamConnection {
         if (value.TryGetValueAsDreamObject<DreamObjectSound>(out var outputObject)) {
             ushort channel = (ushort)outputObject.GetVariable("channel").GetValueAsInteger();
             ushort volume = (ushort)outputObject.GetVariable("volume").GetValueAsInteger();
+            int offset = (int)outputObject.GetVariable("offset").UnsafeGetValueAsFloat();
             DreamValue file = outputObject.GetVariable("file");
 
             var msg = new MsgSound() {
                 Channel = channel,
-                Volume = volume
+                Volume = volume,
+                Offset = offset
             };
 
             if (!file.TryGetValueAsDreamResource(out var soundResource)) {

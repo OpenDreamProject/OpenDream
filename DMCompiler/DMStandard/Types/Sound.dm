@@ -18,7 +18,7 @@
 	var/environment as opendream_unimplemented
 	var/echo as opendream_unimplemented
 	var/len as opendream_unimplemented
-	var/offset as opendream_unimplemented
+	var/offset
 
 	var/priority = 0 as opendream_unimplemented
 	var/status = 0 as opendream_unimplemented

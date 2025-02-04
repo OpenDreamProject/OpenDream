@@ -105,7 +105,7 @@ internal partial class DMCodeTree {
             if (!compiler.DMObjectTree.TryGetDMObject(owner, out var dmObject))
                 return false;
 
-            if (AlreadyExists(compiler, dmObject)) {
+            if (CheckCantDefine(compiler, dmObject)) {
                 _defined = true;
                 return true;
             }
@@ -162,12 +162,23 @@ internal partial class DMCodeTree {
             return true;
         }
 
-        private bool AlreadyExists(DMCompiler compiler, DMObject dmObject) {
-            // "type" and "tag" can only be defined in DMStandard
-            if (VarName is "type" or "tag" && !varDef.Location.InDMStandard) {
-                compiler.Emit(WarningCode.InvalidVarDefinition, varDef.Location,
-                    $"Cannot redefine built-in var \"{VarName}\"");
-                return true;
+        private bool CheckCantDefine(DMCompiler compiler, DMObject dmObject) {
+            if (!compiler.Settings.NoStandard) {
+                var inStandard = varDef.Location.InDMStandard;
+
+                // "type" and "tag" can only be defined in DMStandard
+                if (VarName is "type" or "tag" && !inStandard) {
+                    compiler.Emit(WarningCode.InvalidVarDefinition, varDef.Location,
+                        $"Cannot redefine built-in var \"{VarName}\"");
+                    return true;
+                }
+
+                // Vars on /world and /list can only be defined in DMStandard
+                if ((dmObject.Path == DreamPath.World || dmObject.Path == DreamPath.List) && !inStandard) {
+                    compiler.Emit(WarningCode.InvalidVarDefinition, varDef.Location,
+                        $"Cannot define a var on type {dmObject.Path}");
+                    return true;
+                }
             }
 
             //DMObjects store two bundles of variables; the statics in GlobalVariables and the non-statics in Variables.

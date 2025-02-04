@@ -4,6 +4,10 @@ binds: # These are all the current engine keybinds.
   type: State
   key: MouseLeft
   canFocus: true
+- function: MouseMiddle
+  type: State
+  key: MouseMiddle
+  canFocus: true
 - function: UIRightClick
   type: State
   key: MouseRight

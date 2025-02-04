@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading;
 using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects.Types;
@@ -103,6 +104,38 @@ public sealed class WalkManager {
                 AtomDirection dir = DreamProcNativeHelpers.GetDir(_atomManager, movable, target);
                 if (dir == AtomDirection.None)
                     continue;
+
+                DreamObjectTurf? newLoc = DreamProcNativeHelpers.GetStep(_atomManager, _dreamMapManager, movable, dir);
+                await state.Call(moveProc, movable, null, new(newLoc), new((int)dir));
+            }
+
+            return DreamValue.Null;
+        });
+    }
+
+    /// <summary>
+    /// Walk towards the target with pathfinding taken into account
+    /// </summary>
+    public void StartWalkTo(DreamObjectMovable movable, DreamObjectAtom target, int min, int lag, int speed) { // TODO: Implement speed. Speed=0 uses Ref.step_size
+        StopWalks(movable);
+
+        lag = Math.Max(lag, 1); // Minimum of 1 tick lag
+
+        CancellationTokenSource cancelSource = new();
+        _walkTasks[movable] = cancelSource;
+
+        DreamThread.Run($"walk_to {movable}", async state => {
+            var moveProc = movable.GetProc("Move");
+
+            while (true) {
+                await _scheduler.CreateDelayTicks(lag);
+                if (cancelSource.IsCancellationRequested)
+                    break;
+
+                var currentLoc = _atomManager.GetAtomPosition(movable);
+                var targetLoc = _atomManager.GetAtomPosition(target);
+                var steps = _dreamMapManager.CalculateSteps(currentLoc, targetLoc, min);
+                var dir = steps.First();
 
                 DreamObjectTurf? newLoc = DreamProcNativeHelpers.GetStep(_atomManager, _dreamMapManager, movable, dir);
                 await state.Call(moveProc, movable, null, new(newLoc), new((int)dir));

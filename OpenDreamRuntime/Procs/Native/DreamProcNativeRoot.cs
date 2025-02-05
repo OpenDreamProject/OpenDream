@@ -2380,6 +2380,22 @@ internal static class DreamProcNativeRoot {
         return new DreamValue(total);
     }
 
+    [DreamProc("sign")]
+    [DreamProcParameter("A", Type = DreamValueTypeFlag.Float)]
+    public static DreamValue NativeProc_sign(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        if (bundle.Arguments.Length != 1) throw new Exception($"expected 1 argument (found {bundle.Arguments.Length})");
+        DreamValue arg = bundle.GetArgument(0, "A");
+
+        // Any non-num returns 0
+        if (!arg.TryGetValueAsFloat(out var value)) return new DreamValue(0);
+
+        return value switch {
+            0 => new DreamValue(0),
+            < 0 => new DreamValue(-1),
+            _ => new DreamValue(1)
+        };
+    }
+
     [DreamProc("sha1")]
     [DreamProcParameter("T", Type = DreamValueTypeFlag.String | DreamValueTypeFlag.DreamResource)]
     public static DreamValue NativeProc_sha1(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {

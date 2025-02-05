@@ -57,6 +57,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
     private readonly ClientImagesSystem _clientImagesSystem;
 
     private readonly EntityQuery<DMISpriteComponent> _spriteQuery;
+    private readonly EntityQuery<ParticlesComponent> _particlesQuery;
     private readonly EntityQuery<TransformComponent> _xformQuery;
     private readonly EntityQuery<DreamMobSightComponent> _mobSightQuery;
 
@@ -88,6 +89,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
         _clientImagesSystem = clientImagesSystem;
 
         _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
+        _particlesQuery = _entityManager.GetEntityQuery<ParticlesComponent>();
         _xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
         _mobSightQuery = _entityManager.GetEntityQuery<DreamMobSightComponent>();
 
@@ -374,6 +376,12 @@ internal sealed partial class DreamViewOverlay : Overlay {
         }
 
         //TODO particles - colour and transform don't apply?
+        //query entity for particles component
+        //if it has one, add it to the result list
+        if(_particlesQuery.TryGetComponent(current.Uid, out ParticlesComponent? particlesComponent) && particlesComponent.particlesSystem is not null){
+            current.Particles ??= new();
+            current.Particles.Add(particlesComponent.particlesSystem);
+        }
 
         //flatten KeepTogetherGroup. Done here so we get implicit recursive iteration down the tree.
         if (current.KeepTogetherGroup?.Count > 0) {
@@ -451,6 +459,14 @@ internal sealed partial class DreamViewOverlay : Overlay {
         var frame = iconMetaData.GetTexture(this, handle);
         var pixelPosition = (iconMetaData.Position + positionOffset) * EyeManager.PixelsPerMeter;
 
+        if(iconMetaData.Particles is not null) {
+            foreach(var particleSystem in iconMetaData.Particles){
+                handle.UseShader(GetBlendAndColorShader(iconMetaData, ignoreColor: true));
+
+                handle.SetTransform(CalculateDrawingMatrix(iconMetaData.TransformToApply, pixelPosition, new Vector2i(200,200), renderTargetSize));
+                particleSystem.Draw(handle);
+            }
+        }
         //if frame is null, this doesn't require a draw, so return NOP
         if (frame == null)
             return;
@@ -799,6 +815,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public Texture? TextureOverride;
     public string? Maptext;
     public Vector2i? MaptextSize;
+    public List<ParticleSystem>? Particles;
 
     public bool IsPlaneMaster => (AppearanceFlags & AppearanceFlags.PlaneMaster) != 0;
     public bool HasRenderSource => !string.IsNullOrEmpty(RenderSource);
@@ -830,6 +847,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         TextureOverride = null;
         Maptext = null;
         MaptextSize = null;
+        Particles = null;
     }
 
     public Texture? GetTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle) {

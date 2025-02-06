@@ -555,6 +555,25 @@ internal static class DreamProcNativeRoot {
         return DreamValue.True;
     }
 
+    [DreamProc("cmptextEx")]
+    [DreamProcParameter("T1", Type = DreamValueTypeFlag.String)]
+    public static DreamValue NativeProc_cmptextEx(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        if (!bundle.GetArgument(0, "T1").TryGetValueAsString(out var t1))
+            return DreamValue.False;
+
+        for (int i = 1; i < bundle.Arguments.Length; i++) {
+            var arg = bundle.Arguments[i];
+
+            if (!arg.TryGetValueAsString(out var t2))
+                return DreamValue.False;
+
+            if (!t2.Equals(t1, StringComparison.InvariantCulture))
+                return DreamValue.False;
+        }
+
+        return DreamValue.True;
+    }
+
     [DreamProc("copytext")]
     [DreamProcParameter("T", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]

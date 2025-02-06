@@ -8,6 +8,7 @@ proc/ckey(Key) as text|null
 proc/ckeyEx(Text) as text|null
 proc/clamp(Value, Low, High) as /list|num|null
 proc/cmptext(T1) as num
+proc/cmptextEx(T1) as num
 proc/copytext(T, Start = 1, End = 0) as text|null
 proc/copytext_char(T,Start=1,End=0) as text|null
 proc/CRASH(msg) as null

@@ -474,7 +474,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
                 );
                 handle.UseShader(GetBlendAndColorShader(iconMetaData, ignoreColor: true));
 
-                handle.SetTransform(CalculateDrawingMatrix(iconMetaData.TransformToApply, pixelPosition, particleSystem.RenderSize, renderTargetSize));
+                handle.SetTransform(CalculateDrawingMatrix(iconMetaData.TransformToApply, pixelPosition-particleSystem.RenderSize/2, particleSystem.RenderSize, renderTargetSize));
                 handle.DrawTextureRect(particleRenderTarget.Texture, Box2.FromDimensions(Vector2.Zero, particleSystem.RenderSize));
 
                 _renderTargetPool.ReturnAtEndOfFrame(particleRenderTarget);

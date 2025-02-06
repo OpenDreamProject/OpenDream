@@ -135,9 +135,12 @@ public sealed class WalkManager {
                 var currentLoc = _atomManager.GetAtomPosition(movable);
                 var targetLoc = _atomManager.GetAtomPosition(target);
                 var steps = _dreamMapManager.CalculateSteps(currentLoc, targetLoc, min);
-                var dir = steps.First();
+                using var enumerator = steps.GetEnumerator();
+                if (!enumerator.MoveNext()) // No more steps to take
+                    break;
 
-                DreamObjectTurf? newLoc = DreamProcNativeHelpers.GetStep(_atomManager, _dreamMapManager, movable, dir);
+                var dir = enumerator.Current;
+                var newLoc = DreamProcNativeHelpers.GetStep(_atomManager, _dreamMapManager, movable, dir);
                 await state.Call(moveProc, movable, null, new(newLoc), new((int)dir));
             }
 

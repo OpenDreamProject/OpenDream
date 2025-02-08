@@ -68,7 +68,7 @@ jobs:
         path: para
     - name: Compile Paradise Master
       run: main\bin\DMCompiler\DMCompiler.exe para\paradise.dme --suppress-unimplemented
-    - name: Checkout  Dev
+    - name: Checkout Nebula Dev
       uses: actions/checkout@v2
       with:
         repository: NebulaSS13/Nebula
@@ -83,7 +83,7 @@ jobs:
         ref: Bleeding-Edge
         path: vg
     - name: Compile /vg/station Master
-      run: main\bin\DMCompiler\DMCompiler.exe vg\vgstation13.dme --suppress-unimplemented
+      run: main\bin\DMCompiler\DMCompiler.exe vg\vgstation13.dme --suppress-unimplemented --version=516.1655
     - name: Checkout CM Master
       uses: actions/checkout@v2
       with:

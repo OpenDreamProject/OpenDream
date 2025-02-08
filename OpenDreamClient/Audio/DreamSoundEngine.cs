@@ -30,7 +30,7 @@ public sealed class DreamSoundEngine : IDreamSoundEngine {
         _netManager.Disconnect += DisconnectedFromServer;
     }
 
-    public void PlaySound(int channel, MsgSound.FormatType format, ResourceSound sound, float volume) {
+    public void PlaySound(int channel, MsgSound.FormatType format, ResourceSound sound, float volume, float offset) {
         if (_audioSystem == null)
             _entitySystemManager.Resolve(ref _audioSystem);
 
@@ -59,7 +59,7 @@ public sealed class DreamSoundEngine : IDreamSoundEngine {
         }
 
         var db = 20 * MathF.Log10(volume); // convert from DM volume (0-100) to OpenAL volume (db)
-        var source = _audioSystem.PlayGlobal(stream, AudioParams.Default.WithVolume(db)); // TODO: Positional audio.
+        var source = _audioSystem.PlayGlobal(stream, AudioParams.Default.WithVolume(db).WithPlayOffset(offset)); // TODO: Positional audio.
         if (source == null) {
             _sawmill.Error($"Failed to play audio ${sound}");
             return;
@@ -86,7 +86,7 @@ public sealed class DreamSoundEngine : IDreamSoundEngine {
     private void RxSound(MsgSound msg) {
         if (msg.ResourceId.HasValue) {
             _resourceManager.LoadResourceAsync<ResourceSound>(msg.ResourceId.Value,
-                sound => PlaySound(msg.Channel, msg.Format!.Value, sound, msg.Volume / 100.0f));
+                sound => PlaySound(msg.Channel, msg.Format!.Value, sound, msg.Volume / 100.0f, msg.Offset));
         } else {
             StopChannel(msg.Channel);
         }

@@ -14,6 +14,7 @@ namespace OpenDreamShared.Network.Messages {
 
         public ushort Channel;
         public ushort Volume;
+        public float Offset;
         public int? ResourceId;
         public FormatType? Format; // TODO: This should probably be sent along with the sound resource instead somehow
         //TODO: Frequency and friends
@@ -21,6 +22,7 @@ namespace OpenDreamShared.Network.Messages {
         public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {
             Channel = buffer.ReadUInt16();
             Volume = buffer.ReadUInt16();
+            Offset = buffer.ReadFloat();
 
             if (buffer.ReadBoolean()) {
                 ResourceId = buffer.ReadInt32();
@@ -31,6 +33,7 @@ namespace OpenDreamShared.Network.Messages {
         public override void WriteToBuffer(NetOutgoingMessage buffer, IRobustSerializer serializer) {
             buffer.Write(Channel);
             buffer.Write(Volume);
+            buffer.Write(Offset);
 
             buffer.Write(ResourceId != null);
             if (ResourceId != null) {

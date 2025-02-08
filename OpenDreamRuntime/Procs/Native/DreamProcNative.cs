@@ -82,9 +82,9 @@ internal static class DreamProcNative {
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_rgb2num);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_roll);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_round);
-        objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_sign);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_sha1);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_shutdown);
+        objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_sign);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_sleep);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_sorttext);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_sorttextEx);

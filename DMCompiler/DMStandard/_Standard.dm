@@ -81,9 +81,9 @@ proc/rgb(R, G, B, A, space) as text|null
 proc/rgb2num(color, space = COLORSPACE_RGB) as /list
 proc/roll(ndice = 1, sides) as num
 proc/round(A, B) as num
-proc/sign(A) as num
 proc/sha1(input) as text|null
 proc/shutdown(Addr,Natural = 0)
+proc/sign(A) as num
 proc/sleep(Delay)
 proc/sorttext(T1, T2) as num
 proc/sorttextEx(T1, T2) as num

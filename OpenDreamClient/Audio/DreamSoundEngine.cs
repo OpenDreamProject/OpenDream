@@ -30,7 +30,7 @@ public sealed class DreamSoundEngine : IDreamSoundEngine {
         _netManager.Disconnect += DisconnectedFromServer;
     }
 
-    public void PlaySound(int channel, MsgSound.FormatType format, ResourceSound sound, float volume, int offset) {
+    public void PlaySound(int channel, MsgSound.FormatType format, ResourceSound sound, float volume, float offset) {
         if (_audioSystem == null)
             _entitySystemManager.Resolve(ref _audioSystem);
 

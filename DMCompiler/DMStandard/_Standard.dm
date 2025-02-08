@@ -113,7 +113,6 @@ proc/viewers(Depth, Center = usr) as /list
 proc/walk(Ref, Dir, Lag = 0, Speed = 0)
 proc/walk_rand(Ref,Lag = 0,Speed = 0)
 proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
-	set opendream_unimplemented = 1
 proc/walk_towards(Ref,Trg,Lag=0,Speed=0)
 proc/winclone(player, window_name, clone_name)
 proc/winexists(player, control_id) as text

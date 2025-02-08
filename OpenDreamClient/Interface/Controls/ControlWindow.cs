@@ -33,6 +33,10 @@ public sealed class ControlWindow : InterfaceControl {
         IoCManager.InjectDependencies(this);
     }
 
+    public IClydeWindow? GetClydeWindow() {
+        return _myWindow.osWindow is null ? _myWindow.clydeWindow : _myWindow.osWindow.ClydeWindow;
+    }
+
     protected override void UpdateElementDescriptor() {
         // Don't call base.UpdateElementDescriptor();
 

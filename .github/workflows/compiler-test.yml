@@ -68,14 +68,14 @@ jobs:
         path: para
     - name: Compile Paradise Master
       run: main\bin\DMCompiler\DMCompiler.exe para\paradise.dme --suppress-unimplemented
-    - name: Checkout Nebula Dev
+    - name: Checkout  Dev
       uses: actions/checkout@v2
       with:
         repository: NebulaSS13/Nebula
         ref: dev
         path: nebula
     - name: Compile Nebula Dev
-      run: main\bin\DMCompiler\DMCompiler.exe nebula\nebula.dme --suppress-unimplemented
+      run: main\bin\DMCompiler\DMCompiler.exe nebula\nebula.dme --suppress-unimplemented --version=516.1655
     - name: Checkout /vg/station Master
       uses: actions/checkout@v2
       with:

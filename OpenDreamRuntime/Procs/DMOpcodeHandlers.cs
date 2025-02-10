@@ -1403,6 +1403,40 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
+        public static ProcStatus AsType(DMProcState state) {
+            DreamValue typeValue = state.Pop();
+            DreamValue value = state.Pop();
+            TreeEntry? type;
+
+            if (typeValue.TryGetValueAsDreamObject(out var typeObject)) {
+                if (typeObject == null) {
+                    state.Push(DreamValue.Null);
+                    return ProcStatus.Continue;
+                }
+
+                type = typeObject.ObjectDefinition.TreeEntry;
+            } else if (typeValue.TryGetValueAsAppearance(out _)) {
+                // /image matches an appearance
+                state.Push(value.TryGetValueAsDreamObject<DreamObjectImage>(out var imageObject)
+                    ? new DreamValue(imageObject)
+                    : DreamValue.Null);
+
+                return ProcStatus.Continue;
+            } else if (!typeValue.TryGetValueAsType(out type)) {
+                state.Push(DreamValue.Null);
+
+                return ProcStatus.Continue;
+            }
+
+            if (value.TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null && dreamObject.IsSubtypeOf(type)) {
+                state.Push(new DreamValue(dreamObject));
+            } else {
+                state.Push(DreamValue.Null);
+            }
+
+            return ProcStatus.Continue;
+        }
+
         public static ProcStatus IsType(DMProcState state) {
             DreamValue typeValue = state.Pop();
             DreamValue value = state.Pop();

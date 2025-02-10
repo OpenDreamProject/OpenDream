@@ -2641,6 +2641,16 @@ namespace DMCompiler.Compiler.DM {
                             ? new DMASTLog(callLoc, callParameters[0].Value, null)
                             : new DMASTLog(callLoc, callParameters[1].Value, callParameters[0].Value);
                     }
+                    case "astype": {
+                        if (callParameters.Length != 1 && callParameters.Length != 2) {
+                            Emit(WarningCode.InvalidArgumentCount, callLoc, "astype() requires 1 or 2 arguments");
+                            return new DMASTInvalidExpression(callLoc);
+                        }
+
+                        return callParameters.Length == 1
+                            ? new DMASTImplicitAsType(callLoc, callParameters[0].Value)
+                            : new DMASTAsType(callLoc, callParameters[0].Value, callParameters[1].Value);
+                    }
                     case "istype": {
                         if (callParameters.Length != 1 && callParameters.Length != 2) {
                             Emit(WarningCode.InvalidArgumentCount, callLoc, "istype() requires 1 or 2 arguments");

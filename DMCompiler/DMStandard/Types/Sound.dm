@@ -11,6 +11,9 @@
 	var/pan = 0 as opendream_unimplemented
 	var/params = null as opendream_unimplemented
 	var/falloff = 1 as opendream_unimplemented
+	
+	var/atom/atom as opendream_unimplemented
+	var/transform as opendream_unimplemented
 	var/x as opendream_unimplemented
 	var/y as opendream_unimplemented
 	var/z as opendream_unimplemented

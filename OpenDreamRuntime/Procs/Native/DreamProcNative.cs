@@ -108,6 +108,7 @@ internal static class DreamProcNative {
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_uppertext);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_url_decode);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_url_encode);
+        objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_values_product);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_view);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_viewers);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_walk);

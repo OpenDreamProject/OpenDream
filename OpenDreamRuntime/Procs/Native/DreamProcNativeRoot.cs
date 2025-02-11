@@ -3108,6 +3108,25 @@ internal static class DreamProcNativeRoot {
         return new DreamValue(HttpUtility.UrlEncode(plainText));
     }
 
+    [DreamProc("values_product")]
+    [DreamProcParameter("Alist", Type = DreamValueTypeFlag.DreamObject)]
+    public static DreamValue NativeProc_values_product(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        if (bundle.Arguments.Length != 1) throw new Exception("expected 1 argument");
+
+        DreamValue arg = bundle.GetArgument(0, "Alist");
+
+        float product = 1; // Default return is 1 for invalid args
+
+        if (arg.TryGetValueAsDreamList(out var list)) {
+            var assocValues = list.GetAssociativeValues();
+            foreach (var (_,value) in assocValues) {
+                if(value.TryGetValueAsFloat(out var valFloat)) product *= valFloat;
+            }
+        }
+
+        return new DreamValue(product);
+    }
+
     [DreamProc("view")]
     [DreamProcParameter("Dist", Type = DreamValueTypeFlag.Float, DefaultValue = 5)]
     [DreamProcParameter("Center", Type = DreamValueTypeFlag.DreamObject)]

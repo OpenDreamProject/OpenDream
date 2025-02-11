@@ -3117,7 +3117,7 @@ internal static class DreamProcNativeRoot {
 
         float product = 1; // Default return is 1 for invalid args
 
-        if (arg.TryGetValueAsDreamList(out var list)) {
+        if (arg.TryGetValueAsDreamList(out var list) && list.IsAssociative) {
             var assocValues = list.GetAssociativeValues();
             foreach (var (_,value) in assocValues) {
                 if(value.TryGetValueAsFloat(out var valFloat)) product *= valFloat;
@@ -3125,6 +3125,25 @@ internal static class DreamProcNativeRoot {
         }
 
         return new DreamValue(product);
+    }
+
+    [DreamProc("values_sum")]
+    [DreamProcParameter("Alist", Type = DreamValueTypeFlag.DreamObject)]
+    public static DreamValue NativeProc_values_sum(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        if (bundle.Arguments.Length != 1) throw new Exception("expected 1 argument");
+
+        DreamValue arg = bundle.GetArgument(0, "Alist");
+
+        float sum = 0; // Default return is 0 for invalid args
+
+        if (arg.TryGetValueAsDreamList(out var list) && list.IsAssociative) {
+            var assocValues = list.GetAssociativeValues();
+            foreach (var (_,value) in assocValues) {
+                if(value.TryGetValueAsFloat(out var valFloat)) sum += valFloat;
+            }
+        }
+
+        return new DreamValue(sum);
     }
 
     [DreamProc("view")]

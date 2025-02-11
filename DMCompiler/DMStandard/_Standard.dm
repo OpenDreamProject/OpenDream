@@ -107,6 +107,7 @@ proc/typesof(Item1) as /list
 proc/uppertext(T as text) as text
 proc/url_decode(UrlText) as text
 proc/url_encode(PlainText, format = 0) as text
+proc/values_dot(A, B) as num
 proc/values_product(Alist) as num
 proc/values_sum(Alist) as num
 proc/view(Dist = 5, Center = usr) as /list

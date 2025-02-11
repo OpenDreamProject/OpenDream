@@ -3108,6 +3108,35 @@ internal static class DreamProcNativeRoot {
         return new DreamValue(HttpUtility.UrlEncode(plainText));
     }
 
+    [DreamProc("values_dot")]
+    [DreamProcParameter("A", Type = DreamValueTypeFlag.DreamObject)]
+    [DreamProcParameter("B", Type = DreamValueTypeFlag.DreamObject)]
+    public static DreamValue NativeProc_values_dot(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        if (bundle.Arguments.Length != 2) throw new Exception("expected 2 arguments");
+
+        DreamValue argA = bundle.GetArgument(0, "A");
+        DreamValue argB = bundle.GetArgument(1, "B");
+
+        float sum = 0; // Default return is 0 for invalid args
+
+        if (argA.TryGetValueAsDreamList(out var listA) && listA.IsAssociative && argB.TryGetValueAsDreamList(out var listB) && listB.IsAssociative) {
+            var aValues = listA.GetAssociativeValues();
+            var bValues = listB.GetAssociativeValues();
+
+            // sum += valueA * valueB
+            // for each assoc value whose key exists in both lists
+            // and when both assoc values are floats
+            foreach (var (key,value) in aValues) {
+                if (value.TryGetValueAsFloat(out var aFloat) && bValues.TryGetValue(key, out var bVal) &&
+                    bVal.TryGetValueAsFloat(out var bFloat)) {
+                    sum += (aFloat * bFloat);
+                }
+            }
+        }
+
+        return new DreamValue(sum);
+    }
+
     [DreamProc("values_product")]
     [DreamProcParameter("Alist", Type = DreamValueTypeFlag.DreamObject)]
     public static DreamValue NativeProc_values_product(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {

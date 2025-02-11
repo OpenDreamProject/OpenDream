@@ -23,6 +23,10 @@
 	var/pixel_y = 0
 	var/pixel_z = 0
 	var/pixel_w = 0
+	
+	var/icon_w = 0 as opendream_unimplemented
+	var/icon_z = 0 as opendream_unimplemented
+	var/pixloc/pixloc as opendream_unimplemented
 
 	var/icon = null
 	var/icon_state = ""

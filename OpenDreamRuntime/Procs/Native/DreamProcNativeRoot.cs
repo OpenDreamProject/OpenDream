@@ -3108,6 +3108,84 @@ internal static class DreamProcNativeRoot {
         return new DreamValue(HttpUtility.UrlEncode(plainText));
     }
 
+    [DreamProc("values_cut_over")]
+    [DreamProcParameter("Alist", Type = DreamValueTypeFlag.DreamObject)]
+    [DreamProcParameter("Max", Type = DreamValueTypeFlag.Float)]
+    [DreamProcParameter("inclusive", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    public static DreamValue NativeProc_values_cut_over(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        if (bundle.Arguments.Length < 2 || bundle.Arguments.Length > 3) throw new Exception($"expected 2-3 arguments (found {bundle.Arguments.Length})");
+
+        DreamValue argList = bundle.GetArgument(0, "Alist");
+        DreamValue argMin = bundle.GetArgument(1, "Max");
+        DreamValue argInclusive = bundle.GetArgument(2, "inclusive");
+
+        return values_cut_helper(argList, argMin, argInclusive, false);
+    }
+
+    [DreamProc("values_cut_under")]
+    [DreamProcParameter("Alist", Type = DreamValueTypeFlag.DreamObject)]
+    [DreamProcParameter("Min", Type = DreamValueTypeFlag.Float)]
+    [DreamProcParameter("inclusive", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    public static DreamValue NativeProc_values_cut_under(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        if (bundle.Arguments.Length < 2 || bundle.Arguments.Length > 3) throw new Exception($"expected 2-3 arguments (found {bundle.Arguments.Length})");
+
+        DreamValue argList = bundle.GetArgument(0, "Alist");
+        DreamValue argMin = bundle.GetArgument(1, "Min");
+        DreamValue argInclusive = bundle.GetArgument(2, "inclusive");
+
+        return values_cut_helper(argList, argMin, argInclusive, true);
+    }
+
+    private static DreamValue values_cut_helper(DreamValue argList, DreamValue argMin, DreamValue argInclusive, bool under) {
+        // BYOND explicitly doesn't check for any truthy value
+        bool inclusive = argInclusive.TryGetValueAsFloat(out var inclusiveValue) && inclusiveValue >= 1;
+
+        var cutCount = 0; // number of values cut from the list
+        var min = argMin.UnsafeGetValueAsFloat();
+
+        if (argList.TryGetValueAsDreamList(out var list)) {
+            if (!list.IsAssociative) {
+                cutCount = list.GetLength();
+                list.Cut();
+                return new DreamValue(cutCount);
+            }
+
+            var values = list.GetValues();
+            var assocValues = list.GetAssociativeValues();
+
+            // Nuke any keys without values
+            if (values.Count != assocValues.Count) {
+                // We need to copy the list so we can modify while enumerating
+                var listCopy = new List<DreamValue>(values);
+                foreach (var val in listCopy) {
+                    if (!assocValues.ContainsKey(val)) {
+                        cutCount += 1;
+                        list.RemoveValue(val);
+                    }
+                }
+            }
+
+            foreach (var (key,value) in assocValues) {
+                if (value.TryGetValueAsFloat(out var valFloat)) {
+                    switch (inclusive)
+                    {
+                        case true when under && valFloat <= min:
+                        case true when !under && valFloat >= min:
+                        case false when under && valFloat < min:
+                        case false when !under && valFloat > min:
+                            list.RemoveValue(key);
+                            cutCount += 1;
+                            break;
+                    }
+                } else {
+                    list.RemoveValue(key); // Keys without numeric values seem to always be removed
+                }
+            }
+        }
+
+        return new DreamValue(cutCount);
+    }
+
     [DreamProc("values_dot")]
     [DreamProcParameter("A", Type = DreamValueTypeFlag.DreamObject)]
     [DreamProcParameter("B", Type = DreamValueTypeFlag.DreamObject)]

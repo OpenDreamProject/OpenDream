@@ -3179,6 +3179,7 @@ internal static class DreamProcNativeRoot {
                     }
                 } else {
                     list.RemoveValue(key); // Keys without numeric values seem to always be removed
+                    cutCount += 1;
                 }
             }
         }

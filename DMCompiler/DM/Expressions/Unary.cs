@@ -9,6 +9,7 @@ internal abstract class UnaryOp(Location location, DMExpression expr) : DMExpres
 
 // -x
 internal sealed class Negate(Location location, DMExpression expr) : UnaryOp(location, expr) {
+    public override DMComplexValueType ValType => Expr.ValType; // could be a num, could be a matrix, you never know
     public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
         if (!Expr.TryAsConstant(compiler, out constant) || constant is not Number number)
             return false;
@@ -25,6 +26,7 @@ internal sealed class Negate(Location location, DMExpression expr) : UnaryOp(loc
 
 // !x
 internal sealed class Not(Location location, DMExpression expr) : UnaryOp(location, expr) {
+    public override DMComplexValueType ValType => DMValueType.Num; // could eventually be updated to be a bool
     public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
         if (!Expr.TryAsConstant(compiler, out constant)) return false;
 
@@ -40,6 +42,7 @@ internal sealed class Not(Location location, DMExpression expr) : UnaryOp(locati
 
 // ~x
 internal sealed class BinaryNot(Location location, DMExpression expr) : UnaryOp(location, expr) {
+    public override DMComplexValueType ValType => DMValueType.Num;
     public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
         if (!Expr.TryAsConstant(compiler, out constant) || constant is not Number constantNum)
             return false;

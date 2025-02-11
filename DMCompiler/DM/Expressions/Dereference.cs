@@ -36,6 +36,18 @@ internal class Dereference : LValue {
         /// The index expression. (eg. x[expr])
         /// </summary>
         public required DMExpression Index { get; init; }
+        public DMComplexValueType UnnestValType(DMListValueTypes? listValueTypes) {
+            if (listValueTypes is null) return DMValueType.Anything;
+            if (listValueTypes.NestedListValType is null) return listValueTypes.NestedListKeyType | DMValueType.Null;
+            return Index.ValType.Type switch {
+                // if Index.ValType is only null, we return null
+                DMValueType.Null => DMValueType.Null,
+                // if it's only num, return key
+                DMValueType.Num => listValueTypes.NestedListKeyType,
+                // else, return valtype|null
+                _ => listValueTypes.NestedListValType.Value | DMValueType.Null
+            };
+        }
     }
 
     public sealed class CallOperation : NamedOperation {
@@ -73,7 +85,8 @@ internal class Dereference : LValue {
         while (!type.IsAnything && i < _operations.Length) {
             var operation = _operations[i++];
 
-            if (type.TypePath is null || !objectTree.TryGetDMObject(type.TypePath.Value, out var dmObject)) {
+            var typePath = type.TypePath ?? type.AsPath();
+            if (typePath is null || !objectTree.TryGetDMObject(typePath.Value, out var dmObject)) {
                 // We're dereferencing something without a type-path, this could be anything
                 type = DMValueType.Anything;
                 break;
@@ -81,8 +94,8 @@ internal class Dereference : LValue {
 
             type = operation switch {
                 FieldOperation fieldOperation => dmObject.GetVariable(fieldOperation.Identifier)?.ValType ?? DMValueType.Anything,
-                IndexOperation => DMValueType.Anything, // Lists currently can't be typed, this could be anything
-                CallOperation callOperation => dmObject.GetProcReturnTypes(callOperation.Identifier) ?? DMValueType.Anything,
+                IndexOperation indexOperation => indexOperation.UnnestValType(type.ListValueTypes), // TODO: Keys of assoc lists
+                CallOperation callOperation => dmObject.GetProcReturnTypes(callOperation.Identifier, callOperation.Parameters) ?? DMValueType.Anything,
                 _ => throw new InvalidOperationException("Unimplemented dereference operation")
             };
         }
@@ -125,7 +138,14 @@ internal class Dereference : LValue {
                 break;
 
             case CallOperation callOperation:
-                var (argumentsType, argumentStackSize) = callOperation.Parameters.EmitArguments(ctx, null);
+                DMProc? targetProc = null;
+                if (callOperation.Path is not null && ctx.ObjectTree.TryGetDMObject(callOperation.Path.Value, out var dmObj)) {
+                    var procs = dmObj?.GetProcs(callOperation.Identifier);
+                    if (procs is not null && procs.Count > 0) {
+                        targetProc = ctx.ObjectTree.AllProcs[procs[0]];
+                    }
+                }
+                var (argumentsType, argumentStackSize) = callOperation.Parameters.EmitArguments(ctx, targetProc);
                 ctx.Proc.DereferenceCall(callOperation.Identifier, argumentsType, argumentStackSize);
                 break;
 
@@ -314,8 +334,8 @@ internal class Dereference : LValue {
 
 // expression::identifier
 // Same as initial(expression?.identifier) except this keeps its type
-internal sealed class ScopeReference(DMObjectTree objectTree, Location location, DMExpression expression, string identifier, DMVariable dmVar)
-    : Initial(location, new Dereference(objectTree, location, dmVar.Type, expression, // Just a little hacky
+internal sealed class ScopeReference(DMCompiler compiler, Location location, DMExpression expression, string identifier, DMVariable dmVar)
+    : Initial(location, new Dereference(compiler.DMObjectTree, location, dmVar.Type, expression, // Just a little hacky
         [
             new Dereference.FieldOperation {
                 Identifier = identifier,
@@ -325,6 +345,12 @@ internal sealed class ScopeReference(DMObjectTree objectTree, Location location,
         ])
     ) {
     public override DreamPath? Path => Expression.Path;
+    public override DMComplexValueType ValType {
+        get {
+            TryAsConstant(compiler, out var constant);
+            return constant is not null ? constant.ValType : dmVar.ValType;
+        }
+    }
 
     public override string GetNameof(ExpressionContext ctx) => dmVar.Name;
 

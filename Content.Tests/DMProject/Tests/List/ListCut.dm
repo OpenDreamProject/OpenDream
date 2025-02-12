@@ -6,6 +6,6 @@
 
 	A = list(a = 10, b = 20)
 	A.Cut(1, 2)
-	ASSERT(A ~= list("b"))
+	ASSERT(A ~= list("b" = 20))
 	ASSERT(A["a"] == null)
 	ASSERT(A["b"] == 20)

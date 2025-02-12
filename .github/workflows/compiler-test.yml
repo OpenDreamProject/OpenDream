@@ -99,4 +99,4 @@ jobs:
         ref: master
         path: aurora
     - name: Compile Aurora Master
-      run: main\bin\DMCompiler\DMCompiler.exe aurora\aurorastation.dme --suppress-unimplemented
+      run: main\bin\DMCompiler\DMCompiler.exe aurora\aurorastation.dme --suppress-unimplemented --version=516.1655

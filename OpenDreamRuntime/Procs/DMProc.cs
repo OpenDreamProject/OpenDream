@@ -251,6 +251,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.Link, DMOpcodeHandlers.Link},
             {DreamProcOpcode.Ftp, DMOpcodeHandlers.Ftp},
             {DreamProcOpcode.Initial, DMOpcodeHandlers.Initial},
+            {DreamProcOpcode.AsType, DMOpcodeHandlers.AsType},
             {DreamProcOpcode.IsType, DMOpcodeHandlers.IsType},
             {DreamProcOpcode.LocateCoord, DMOpcodeHandlers.LocateCoord},
             {DreamProcOpcode.Locate, DMOpcodeHandlers.Locate},

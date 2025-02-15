@@ -31,6 +31,7 @@ public sealed class DMASTNameof(Location location, DMASTExpression expression) :
 public sealed class DMASTIsSaved(Location location, DMASTExpression expression) : DMASTUnary(location, expression);
 public sealed class DMASTIsNull(Location location, DMASTExpression value) : DMASTUnary(location, value);
 public sealed class DMASTLength(Location location, DMASTExpression value) : DMASTUnary(location, value);
+public sealed class DMASTImplicitAsType(Location location, DMASTExpression value) : DMASTUnary(location, value);
 public sealed class DMASTImplicitIsType(Location location, DMASTExpression value) : DMASTUnary(location, value);
 
 /// <summary>

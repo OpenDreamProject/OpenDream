@@ -140,7 +140,8 @@ public enum DreamProcOpcode : byte {
     Ftp = 0x46,
     [OpcodeMetadata(-1)]
     Initial = 0x47,
-    //0x48
+    [OpcodeMetadata(-1)]
+    AsType = 0x48,
     [OpcodeMetadata(-1)]
     IsType = 0x49,
     [OpcodeMetadata(-2)]

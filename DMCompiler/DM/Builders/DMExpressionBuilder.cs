@@ -74,6 +74,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
             case DMASTNotEqual notEqual: result = BuildNotEqual(notEqual, inferredPath); break;
             case DMASTDereference deref: result = BuildDereference(deref, inferredPath); break;
             case DMASTLocate locate: result = BuildLocate(locate, inferredPath); break;
+            case DMASTImplicitAsType implicitAsType: result = BuildImplicitAsType(implicitAsType, inferredPath); break;
             case DMASTImplicitIsType implicitIsType: result = BuildImplicitIsType(implicitIsType, inferredPath); break;
             case DMASTList list: result = BuildList(list, inferredPath); break;
             case DMASTDimensionalList dimensionalList: result = BuildDimensionalList(dimensionalList, inferredPath); break;
@@ -338,25 +339,21 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                     BuildExpression(locateCoordinates.Y, inferredPath),
                     BuildExpression(locateCoordinates.Z, inferredPath));
                 break;
+            case DMASTAsType asType: {
+                var lhs = BuildExpression(asType.LHS, inferredPath);
+                var rhs = BuildExpression(asType.RHS, lhs.Path);
+
+                result = new AsType(asType.Location, lhs, rhs);
+                break;
+            }
             case DMASTIsSaved isSaved:
                 result = new IsSaved(isSaved.Location, BuildExpression(isSaved.Value, inferredPath));
                 break;
             case DMASTIsType isType: {
-                if (isType.RHS is DMASTIdentifier { Identifier: "__IMPLIED_TYPE__" }) {
-                    var expr = BuildExpression(isType.LHS, inferredPath);
-                    if (expr.Path is null) {
-                        result = BadExpression(WarningCode.BadExpression, isType.Location,
-                            "A type could not be inferred!");
-                        break;
-                    }
+                var lhs = BuildExpression(isType.LHS, inferredPath);
+                var rhs = BuildExpression(isType.RHS, lhs.Path);
 
-                    result = new IsTypeInferred(isType.Location, expr, expr.Path.Value);
-                    break;
-                }
-
-                result = new IsType(isType.Location,
-                    BuildExpression(isType.LHS, inferredPath),
-                    BuildExpression(isType.RHS, inferredPath));
+                result = new IsType(isType.Location, lhs, rhs);
                 break;
             }
 
@@ -1070,6 +1067,16 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
 
         var pathExpr = BuildExpression(locate.Expression, inferredPath);
         return new Locate(locate.Location, pathExpr, container);
+    }
+
+    private DMExpression BuildImplicitAsType(DMASTImplicitAsType asType, DreamPath? inferredPath) {
+        var expr = BuildExpression(asType.Value, inferredPath);
+
+        if (inferredPath is null) {
+            return BadExpression(WarningCode.BadExpression, asType.Location, "Could not infer a type");
+        }
+
+        return new AsTypeInferred(asType.Location, expr, inferredPath.Value);
     }
 
     private DMExpression BuildImplicitIsType(DMASTImplicitIsType isType, DreamPath? inferredPath) {

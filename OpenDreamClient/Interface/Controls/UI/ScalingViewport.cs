@@ -111,7 +111,7 @@ public sealed class ScalingViewport : Control, IViewportControl {
         _inputManager.ViewportKeyEvent(this, args);
     }
 
-    protected override void Draw(DrawingHandleScreen handle) {
+    protected override void Draw(IRenderHandle handle) {
         EnsureViewportCreated();
 
         DebugTools.AssertNotNull(_viewport);
@@ -133,7 +133,7 @@ public sealed class ScalingViewport : Control, IViewportControl {
         var drawBox = GetDrawBox();
         var drawBoxGlobal = drawBox.Translated(GlobalPixelPosition);
         _viewport.RenderScreenOverlaysBelow(handle, this, drawBoxGlobal);
-        handle.DrawTextureRect(_viewport.RenderTarget.Texture, drawBox);
+        handle.DrawingHandleScreen.DrawTextureRect(_viewport.RenderTarget.Texture, drawBox);
         _viewport.RenderScreenOverlaysAbove(handle, this, drawBoxGlobal);
     }
 

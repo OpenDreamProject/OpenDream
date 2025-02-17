@@ -1,5 +1,6 @@
 
 using System.Numerics;
+using OpenDreamShared.Dream;
 using Robust.Shared.GameObjects;
 using Robust.Shared.GameStates;
 using Robust.Shared.Maths;
@@ -11,16 +12,16 @@ namespace OpenDreamShared.Rendering;
 
 [NetworkedComponent]
 public abstract partial class SharedDreamParticlesComponent : Component {
-	//The width and height of the drawing surface for the particles - this is the size of the texture that the particles are drawn on.
     [ViewVariables(VVAccess.ReadWrite)] public int Width = 640;
     [ViewVariables(VVAccess.ReadWrite)] public int Height = 480;
-	//Maximum number of particles in this system
     [ViewVariables(VVAccess.ReadWrite)] public int Count = 1000;
-	//Maximum number of particles spawned per second
     [ViewVariables(VVAccess.ReadWrite)] public float Spawning = 100;
-	//Texture that the particles have. This is a list of paths to textures, and the particle system will randomly choose one of them for each particle. If blank, the particle will be a 1px white dot.
-    [ViewVariables(VVAccess.ReadWrite)] public ResPath[] TextureList = [];
-	//Maximum lifespan of the partcles in seconds
+    [ViewVariables(VVAccess.ReadWrite)] public Vector3 Bound1;
+    [ViewVariables(VVAccess.ReadWrite)] public Vector3 Bound2;
+    [ViewVariables(VVAccess.ReadWrite)] public Vector3 Gravity;
+    [ViewVariables(VVAccess.ReadWrite)] public Color[] Gradient = [];
+    [ViewVariables(VVAccess.ReadWrite)] public Matrix3x2 Transform;
+    [ViewVariables(VVAccess.ReadWrite)] public ImmutableAppearance[] TextureList = [];
     [ViewVariables(VVAccess.ReadWrite)] public float LifespanHigh;
     [ViewVariables(VVAccess.ReadWrite)] public float LifespanLow;
     [ViewVariables(VVAccess.ReadWrite)] public ParticlePropertyType LifespanType;
@@ -30,9 +31,7 @@ public abstract partial class SharedDreamParticlesComponent : Component {
     [ViewVariables(VVAccess.ReadWrite)] public int FadeOutHigh = 0;
     [ViewVariables(VVAccess.ReadWrite)] public int FadeOutLow = 0;
     [ViewVariables(VVAccess.ReadWrite)] public ParticlePropertyType FadeOutType;
-	//Color of the particles. This can either be a list of a colours, or a gradient that the particles will interpolate between over their lifespan.
-    [ViewVariables(VVAccess.ReadWrite)] public Color[] ColorList = [];
-	//Starting position of the particles. X,Y,Z. The Z co-ordinate determines layering order.
+
     [ViewVariables(VVAccess.ReadWrite)] public Vector3 SpawnPositionHigh;
     [ViewVariables(VVAccess.ReadWrite)] public Vector3 SpawnPositionLow;
     [ViewVariables(VVAccess.ReadWrite)] public ParticlePropertyType SpawnPositionType;
@@ -44,6 +43,9 @@ public abstract partial class SharedDreamParticlesComponent : Component {
     [ViewVariables(VVAccess.ReadWrite)] public Vector3 AccelerationHigh;
     [ViewVariables(VVAccess.ReadWrite)] public Vector3 AccelerationLow;
     [ViewVariables(VVAccess.ReadWrite)] public ParticlePropertyType AccelerationType;
+    [ViewVariables(VVAccess.ReadWrite)] public Vector3 FrictionHigh;
+    [ViewVariables(VVAccess.ReadWrite)] public Vector3 FrictionLow;
+    [ViewVariables(VVAccess.ReadWrite)] public ParticlePropertyType FrictionType;
 	//Scaling applied to the particles in (x,y)
     [ViewVariables(VVAccess.ReadWrite)] public Vector2 ScaleHigh;
     [ViewVariables(VVAccess.ReadWrite)] public Vector2 ScaleLow;

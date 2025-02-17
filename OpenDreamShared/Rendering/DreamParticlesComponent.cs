@@ -2,9 +2,9 @@
 using System.Numerics;
 using Robust.Shared.GameObjects;
 using Robust.Shared.GameStates;
+using Robust.Shared.Maths;
 using Robust.Shared.Utility;
 using Robust.Shared.ViewVariables;
-using Color = System.Drawing.Color;
 using Vector3 = Robust.Shared.Maths.Vector3;
 
 namespace OpenDreamShared.Rendering;
@@ -60,9 +60,4 @@ public abstract partial class SharedDreamParticlesComponent : Component {
     [ViewVariables(VVAccess.ReadWrite)] public float SpinHigh = 0;
     [ViewVariables(VVAccess.ReadWrite)] public float SpinLow = 0;
     [ViewVariables(VVAccess.ReadWrite)] public ParticlePropertyType SpinType;
-}
-
-public enum ParticlePropertyType {
-    HighValue,
-    RandomUniform
 }

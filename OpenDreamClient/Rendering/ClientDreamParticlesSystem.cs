@@ -2,7 +2,6 @@ using JetBrains.Annotations;
 using OpenDreamShared.Rendering;
 using Robust.Client.Graphics;
 using Robust.Client.ResourceManagement;
-using Robust.Shared.Prototypes;
 using Robust.Shared.Random;
 using Vector3 = Robust.Shared.Maths.Vector3;
 
@@ -13,34 +12,33 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
 {
     [Dependency] private readonly ParticlesManager _particlesManager = default!;
     [Dependency] private readonly IResourceCache _resourceCache = default!;
-    [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
     private Random random = new();
 
     public override void Initialize() {
         base.Initialize();
-        SubscribeLocalEvent<DynamicParticlesComponent, ComponentChange>(OnDynamicParticlesComponentChange);
-        SubscribeLocalEvent<DynamicParticlesComponent, ComponentAdd>(HandleComponentAdd);
-        SubscribeLocalEvent<DynamicParticlesComponent, ComponentRemove>(HandleComponentRemove);
+        SubscribeLocalEvent<DreamParticlesComponent, ComponentChange>(OnDreamParticlesComponentChange);
+        SubscribeLocalEvent<DreamParticlesComponent, ComponentAdd>(HandleComponentAdd);
+        SubscribeLocalEvent<DreamParticlesComponent, ComponentRemove>(HandleComponentRemove);
     }
 
-    private void OnDynamicParticlesComponentChange(EntityUid uid, DynamicParticlesComponent component, ref ComponentChange args)
+    private void OnDreamParticlesComponentChange(EntityUid uid, DreamParticlesComponent component, ref ComponentChange args)
     {
         if(_particlesManager.TryGetParticleSystem(uid, out var system))
             system.UpdateSystem(GetParticleSystemArgs(component));
     }
 
-    private void HandleComponentAdd(EntityUid uid, DynamicParticlesComponent component, ref ComponentAdd args)
+    private void HandleComponentAdd(EntityUid uid, DreamParticlesComponent component, ref ComponentAdd args)
     {
         component.particlesSystem = _particlesManager.CreateParticleSystem(uid, GetParticleSystemArgs(component));
     }
 
-    private void HandleComponentRemove(EntityUid uid, DynamicParticlesComponent component, ref ComponentRemove args)
+    private void HandleComponentRemove(EntityUid uid, DreamParticlesComponent component, ref ComponentRemove args)
     {
         component.particlesSystem = null;
         _particlesManager.DestroyParticleSystem(uid);
     }
 
-    private ParticleSystemArgs GetParticleSystemArgs(DynamicParticlesComponent component){
+    private ParticleSystemArgs GetParticleSystemArgs(DreamParticlesComponent component){
         Func<Texture> textureFunc;
         if(component.TextureList is null || component.TextureList.Length == 0)
             textureFunc = () => Texture.White;
@@ -60,7 +58,7 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
                 return component.ColorList[colorIndex];
             };
         else
-            result.Color = (float lifetime) => System.Drawing.Color.White;
+            result.Color = (float lifetime) => Color.White;
         result.Acceleration = (float _ ) => GetGeneratorVector3(component.AccelerationLow, component.AccelerationHigh, component.AccelerationType)();
         result.SpawnPosition = GetGeneratorVector3(component.SpawnPositionLow, component.SpawnPositionHigh, component.SpawnPositionType);
         result.SpawnVelocity = GetGeneratorVector3(component.SpawnVelocityLow, component.SpawnVelocityHigh, component.SpawnVelocityType);

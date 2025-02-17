@@ -40,6 +40,8 @@ internal sealed partial class DreamViewOverlay : Overlay {
     [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
     [Dependency] private readonly IPlayerManager _playerManager = default!;
     [Dependency] private readonly IEntityManager _entityManager = default!;
+    [Dependency] private readonly ParticlesManager _particlesManager = default!;
+
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly IClyde _clyde = default!;
     [Dependency] private readonly IPrototypeManager _protoManager = default!;
@@ -57,7 +59,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
     private readonly ClientImagesSystem _clientImagesSystem;
 
     private readonly EntityQuery<DMISpriteComponent> _spriteQuery;
-    private readonly EntityQuery<ParticlesComponent> _particlesQuery;
+    private readonly EntityQuery<DynamicParticlesComponent> _particlesQuery;
     private readonly EntityQuery<TransformComponent> _xformQuery;
     private readonly EntityQuery<DreamMobSightComponent> _mobSightQuery;
 
@@ -89,7 +91,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
         _clientImagesSystem = clientImagesSystem;
 
         _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
-        _particlesQuery = _entityManager.GetEntityQuery<ParticlesComponent>();
+        _particlesQuery = _entityManager.GetEntityQuery<DynamicParticlesComponent>();
         _xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
         _mobSightQuery = _entityManager.GetEntityQuery<DreamMobSightComponent>();
 
@@ -375,12 +377,11 @@ internal sealed partial class DreamViewOverlay : Overlay {
             result.Add(maptext);
         }
 
-        //TODO particles - colour and transform don't apply?
         //query entity for particles component
         //if it has one, add it to the result list
-        if(_particlesQuery.TryGetComponent(current.Uid, out ParticlesComponent? particlesComponent) && particlesComponent.particlesSystem is not null){
+        if(_particlesManager.TryGetParticleSystem(current.Uid, out var particlesSystem)){
             current.Particles ??= new();
-            current.Particles.Add(particlesComponent.particlesSystem);
+            current.Particles.Add(particlesSystem);
         }
 
         //flatten KeepTogetherGroup. Done here so we get implicit recursive iteration down the tree.
@@ -464,16 +465,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
             foreach(var particleSystem in iconMetaData.Particles){
                 var particleRenderTarget = _renderTargetPool.Rent(particleSystem.RenderSize);
                 handle.UseShader(GetBlendAndColorShader(iconMetaData, ignoreColor: true));
-
-                //handle.SetTransform(CalculateDrawingMatrix(iconMetaData.TransformToApply, pixelPosition-new Vector2(-200,-200), new Vector2i(200,200), renderTargetSize));
-                handle.RenderInRenderTarget(particleRenderTarget,
-                    () => {
-                        particleSystem.Draw(handle);
-                    },
-                    Color.Transparent
-                );
-                handle.UseShader(GetBlendAndColorShader(iconMetaData, ignoreColor: true));
-
+                particleSystem.Draw(handle, pixelPosition);
                 handle.SetTransform(CalculateDrawingMatrix(iconMetaData.TransformToApply, pixelPosition-particleSystem.RenderSize/2, particleSystem.RenderSize, renderTargetSize));
                 handle.DrawTextureRect(particleRenderTarget.Texture, Box2.FromDimensions(Vector2.Zero, particleSystem.RenderSize));
 

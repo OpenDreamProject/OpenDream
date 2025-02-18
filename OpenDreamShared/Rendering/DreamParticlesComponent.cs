@@ -62,4 +62,7 @@ public abstract partial class SharedDreamParticlesComponent : Component {
     [ViewVariables(VVAccess.ReadWrite)] public float SpinHigh = 0;
     [ViewVariables(VVAccess.ReadWrite)] public float SpinLow = 0;
     [ViewVariables(VVAccess.ReadWrite)] public ParticlePropertyType SpinType;
+    [ViewVariables(VVAccess.ReadWrite)] public Vector3 DriftHigh;
+    [ViewVariables(VVAccess.ReadWrite)] public Vector3 DriftLow;
+    [ViewVariables(VVAccess.ReadWrite)] public ParticlePropertyType DriftType;
 }

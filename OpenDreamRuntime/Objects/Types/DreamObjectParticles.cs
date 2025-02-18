@@ -121,19 +121,37 @@ public sealed class DreamObjectParticles : DreamObject {
                 ParticlesComponent.TextureList = immutableAppearances.ToArray();
                 break;
             case "lifespan": //num or generator
-                ParticlesComponent.LifespanHigh = value.GetValueAsFloat();
-                ParticlesComponent.LifespanLow = value.GetValueAsFloat();
-                ParticlesComponent.LifespanType = value.GetValueAsParticlePropertyType();
+                if(value.TryGetValueAsFloat(out float floatValue)){
+                    ParticlesComponent.LifespanHigh = floatValue;
+                    ParticlesComponent.LifespanLow = floatValue;
+                    ParticlesComponent.LifespanType = ParticlePropertyType.HighValue;
+                } else if(value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var dreamObjectGenerator)) {
+                    ParticlesComponent.LifespanHigh = dreamObjectGenerator.B.MustGetValueAsFloat();
+                    ParticlesComponent.LifespanLow = dreamObjectGenerator.A.MustGetValueAsFloat();
+                    ParticlesComponent.LifespanType = ParticlePropertyType.RandomUniform; //TODO all the other distributions
+                }
                 break;
             case "fadein": //num or generator
-                ParticlesComponent.FadeInHigh = value.GetValueAsInteger();
-                ParticlesComponent.FadeInLow = value.GetValueAsInteger();
-                ParticlesComponent.FadeInType = value.GetValueAsParticlePropertyType();
+                if(value.TryGetValueAsInteger(out int intValue)){
+                    ParticlesComponent.FadeInHigh = intValue;
+                    ParticlesComponent.FadeInLow = intValue;
+                    ParticlesComponent.FadeInType = ParticlePropertyType.HighValue;
+                } else if(value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var dreamObjectGenerator)) {
+                    ParticlesComponent.FadeInHigh = dreamObjectGenerator.B.MustGetValueAsInteger();
+                    ParticlesComponent.FadeInLow = dreamObjectGenerator.A.MustGetValueAsInteger();
+                    ParticlesComponent.FadeInType = ParticlePropertyType.RandomUniform; //TODO all the other distributions
+                }
                 break;
             case "fade": //num or generator
-                ParticlesComponent.FadeOutHigh = value.GetValueAsInteger();
-                ParticlesComponent.FadeOutLow = value.GetValueAsInteger();
-                ParticlesComponent.FadeOutType = value.GetValueAsParticlePropertyType();
+                if(value.TryGetValueAsInteger(out intValue)){
+                    ParticlesComponent.FadeOutHigh = intValue;
+                    ParticlesComponent.FadeOutLow = intValue;
+                    ParticlesComponent.FadeOutType = ParticlePropertyType.HighValue;
+                } else if(value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var dreamObjectGenerator)) {
+                    ParticlesComponent.FadeOutHigh = dreamObjectGenerator.B.MustGetValueAsInteger();
+                    ParticlesComponent.FadeOutLow = dreamObjectGenerator.A.MustGetValueAsInteger();
+                    ParticlesComponent.FadeOutType = ParticlePropertyType.RandomUniform; //TODO all the other distributions
+                }
                 break;
             case "position": //list, vector, or generator
                 ParticlesComponent.SpawnPositionHigh = value.GetValueAsVector3();
@@ -156,21 +174,33 @@ public sealed class DreamObjectParticles : DreamObject {
                 ParticlesComponent.GrowthType = value.GetValueAsParticlePropertyType();
                 break;
             case "rotation": //num or generator
-                ParticlesComponent.RotationHigh = value.GetValueAsFloat();
-                ParticlesComponent.RotationLow = value.GetValueAsFloat();
-                ParticlesComponent.RotationType = value.GetValueAsParticlePropertyType();
+                if(value.TryGetValueAsFloat(out floatValue)){
+                    ParticlesComponent.RotationHigh = floatValue;
+                    ParticlesComponent.RotationLow = floatValue;
+                    ParticlesComponent.RotationType = ParticlePropertyType.HighValue;
+                } else if(value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var dreamObjectGenerator)) {
+                    ParticlesComponent.RotationHigh = dreamObjectGenerator.B.MustGetValueAsFloat();
+                    ParticlesComponent.RotationLow = dreamObjectGenerator.A.MustGetValueAsFloat();
+                    ParticlesComponent.RotationType = ParticlePropertyType.RandomUniform; //TODO all the other distributions
+                }
                 break;
             case "spin": //num or generator
-                ParticlesComponent.SpinHigh = value.GetValueAsFloat();
-                ParticlesComponent.SpinLow = value.GetValueAsFloat();
-                ParticlesComponent.SpinType = value.GetValueAsParticlePropertyType();
+                if(value.TryGetValueAsFloat(out floatValue)){
+                    ParticlesComponent.SpinHigh = floatValue;
+                    ParticlesComponent.SpinLow = floatValue;
+                    ParticlesComponent.SpinType = ParticlePropertyType.HighValue;
+                } else if(value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var dreamObjectGenerator)) {
+                    ParticlesComponent.SpinHigh = dreamObjectGenerator.B.MustGetValueAsFloat();
+                    ParticlesComponent.SpinLow = dreamObjectGenerator.A.MustGetValueAsFloat();
+                    ParticlesComponent.SpinType = ParticlePropertyType.RandomUniform; //TODO all the other distributions
+                }
                 break;
-            case "friction": //num or generator
+            case "friction": //num, vector, or generator
                 ParticlesComponent.FrictionHigh = value.GetValueAsFloat();
                 ParticlesComponent.FrictionLow = value.GetValueAsFloat();
                 ParticlesComponent.FrictionType = value.GetValueAsParticlePropertyType();
                 break;
-            case "drift": //num or generator
+            case "drift": //num, vector, or generator
                 ParticlesComponent.DriftHigh = value.GetValueAsVector3();
                 ParticlesComponent.DriftLow = value.GetValueAsVector3();
                 ParticlesComponent.DriftType = value.GetValueAsParticlePropertyType();

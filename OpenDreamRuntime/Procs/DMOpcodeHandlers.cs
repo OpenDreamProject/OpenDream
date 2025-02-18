@@ -1445,7 +1445,11 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (value.TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
-                return doCast ? new DreamValue(dreamObject) : new DreamValue(dreamObject.IsSubtypeOf(type) ? 1 : 0);
+                if (dreamObject.IsSubtypeOf(type)) {
+                    return doCast ? new DreamValue(dreamObject) : DreamValue.True;
+                }
+
+                return nullOrFalse;
             }
 
             return nullOrFalse;

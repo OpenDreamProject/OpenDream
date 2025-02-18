@@ -1434,8 +1434,7 @@ namespace OpenDreamRuntime.Procs {
                 type = typeObject.ObjectDefinition.TreeEntry;
             } else if (typeValue.TryGetValueAsAppearance(out _)) {
                 // /image matches an appearance
-                if (value.TryGetValueAsDreamObject<DreamObjectImage>(out var imageObject))
-                {
+                if (value.TryGetValueAsDreamObject<DreamObjectImage>(out var imageObject)) {
                     return doCast ? new DreamValue(imageObject) : DreamValue.True;
                 }
 

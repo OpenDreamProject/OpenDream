@@ -969,6 +969,10 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.IsSaved);
         }
 
+        public void AsType() {
+            WriteOpcode(DreamProcOpcode.AsType);
+        }
+
         public void IsType() {
             WriteOpcode(DreamProcOpcode.IsType);
         }

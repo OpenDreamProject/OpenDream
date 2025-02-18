@@ -12,8 +12,17 @@ public class BytecodeOptimizer(DMCompiler compiler) {
         RemoveUnreferencedLabels(input);
         JoinAndForwardLabels(input);
         RemoveUnreferencedLabels(input);
+        RemoveImmediateJumps(input);
+        RemoveUnreferencedLabels(input);
 
         _peepholeOptimizer.RunPeephole(input);
+
+        // Run label optimizations again due to possibly removed jumps in peephole optimizers
+        RemoveUnreferencedLabels(input);
+        JoinAndForwardLabels(input);
+        RemoveUnreferencedLabels(input);
+        RemoveImmediateJumps(input);
+        RemoveUnreferencedLabels(input);
     }
 
     private void RemoveUnreferencedLabels(List<IAnnotatedBytecode> input) {
@@ -35,6 +44,22 @@ public class BytecodeOptimizer(DMCompiler compiler) {
                 if (labelReferences[label.LabelName] == 0) {
                     input.RemoveAt(i);
                     i--;
+                }
+            }
+        }
+    }
+
+    /**
+     * <summary>Removes jumps for which the next element is the jump's destination</summary>
+     */
+    private void RemoveImmediateJumps(List<IAnnotatedBytecode> input) {
+        for (int i = input.Count - 2; i >= 0; i--) {
+            if (input[i] is AnnotatedBytecodeInstruction { Opcode: Bytecode.DreamProcOpcode.Jump } instruction) {
+                if (input[i + 1] is AnnotatedBytecodeLabel followingLabel) {
+                    AnnotatedBytecodeLabel jumpLabelName = instruction.GetArg<AnnotatedBytecodeLabel>(0);
+                    if (jumpLabelName.LabelName == followingLabel.LabelName) {
+                        input.RemoveAt(i);
+                    }
                 }
             }
         }

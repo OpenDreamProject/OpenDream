@@ -53,11 +53,9 @@ public class BytecodeOptimizer(DMCompiler compiler) {
      * <summary>Removes jumps for which the next element is the jump's destination</summary>
      */
     private void RemoveImmediateJumps(List<IAnnotatedBytecode> input) {
-        Dictionary<string, int> labelReferences = new();
-        for (int i = input.Count-2; i >= 0; i--) {
-            IAnnotatedBytecode curCode = input[i];
-            if (curCode is AnnotatedBytecodeInstruction instruction && instruction.Opcode == Bytecode.DreamProcOpcode.Jump) {
-                if (input[i+1] is AnnotatedBytecodeLabel followingLabel) {
+        for (int i = input.Count - 2; i >= 0; i--) {
+            if (input[i] is AnnotatedBytecodeInstruction { Opcode: Bytecode.DreamProcOpcode.Jump } instruction) {
+                if (input[i + 1] is AnnotatedBytecodeLabel followingLabel) {
                     AnnotatedBytecodeLabel jumpLabelName = instruction.GetArg<AnnotatedBytecodeLabel>(0);
                     if (jumpLabelName.LabelName == followingLabel.LabelName) {
                         input.RemoveAt(i);

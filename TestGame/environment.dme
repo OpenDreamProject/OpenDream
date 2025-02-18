@@ -6,9 +6,9 @@
 // BEGIN_PREFERENCES
 // END_PREFERENCES
 // BEGIN_INCLUDE
-#include "TestInterface.dmf"
 #include "code.dm"
 #include "renderer_tests.dm"
+#include "TestInterface.dmf"
 #include "map_z1.dmm"
 #include "map_z2.dmm"
 #include "map_z3.dmm"

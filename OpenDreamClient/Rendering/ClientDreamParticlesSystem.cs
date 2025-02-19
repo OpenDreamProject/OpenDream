@@ -1,8 +1,10 @@
 using JetBrains.Annotations;
 using OpenDreamShared.Rendering;
+using Pidgin;
 using Robust.Client.Graphics;
 using Robust.Client.ResourceManagement;
 using Robust.Shared.Random;
+using Robust.Shared.Timing;
 using Vector3 = Robust.Shared.Maths.Vector3;
 
 namespace OpenDreamClient.Rendering;
@@ -12,13 +14,19 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
 {
     [Dependency] private readonly ParticlesManager _particlesManager = default!;
     [Dependency] private readonly IResourceCache _resourceCache = default!;
+    [Dependency] private readonly IGameTiming _gameTiming = default!;
+    [Dependency] private readonly ClientAppearanceSystem _appearanceSystem = default!;
+    [Dependency] private readonly IClyde _clyde = default!;
+    public RenderTargetPool RenderTargetPool = default!;
     private Random random = new();
+    private RendererMetaData defaultRenderMetaData = new(); //used for icon GetTexture(), never needs anything but default settings
 
     public override void Initialize() {
         base.Initialize();
         SubscribeLocalEvent<DreamParticlesComponent, ComponentChange>(OnDreamParticlesComponentChange);
         SubscribeLocalEvent<DreamParticlesComponent, ComponentAdd>(HandleComponentAdd);
         SubscribeLocalEvent<DreamParticlesComponent, ComponentRemove>(HandleComponentRemove);
+        RenderTargetPool = new(_clyde);
     }
 
     private void OnDreamParticlesComponentChange(EntityUid uid, DreamParticlesComponent component, ref ComponentChange args)
@@ -42,20 +50,25 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
         Func<Texture> textureFunc;
         if(component.TextureList is null || component.TextureList.Length == 0)
             textureFunc = () => Texture.White;
-        else
-            textureFunc = () => _resourceCache.GetResource<TextureResource>(new Random().Pick(component.TextureList)); //TODO
-
+        else{
+            List<DreamIcon> icons = new(component.TextureList.Length);
+            foreach(var appearance in component.TextureList){
+                DreamIcon icon = new DreamIcon(RenderTargetPool, _gameTiming, _clyde, _appearanceSystem);
+                icon.SetAppearance(appearance.MustGetId());
+                icons.Add(icon);
+            }
+            textureFunc = () => random.Pick(icons).GetTexture(null!, null!, defaultRenderMetaData, null)!; //oh god, so hacky
+        }
         var result = new ParticleSystemArgs(textureFunc, new Vector2i(component.Width, component.Height), (uint)component.Count, component.Spawning);
-
         GeneratorFloat lifespan = new();
         result.Lifespan = GetGeneratorFloat(component.LifespanLow, component.LifespanHigh, component.LifespanType);
         result.Fadein = GetGeneratorFloat(component.FadeInLow, component.FadeInHigh, component.FadeInType);
         result.Fadeout = GetGeneratorFloat(component.FadeOutLow, component.FadeOutHigh, component.FadeOutType);
-        if(component.ColorList.Length > 0)
+        if(component.Gradient.Length > 0)
             result.Color = (float lifetime) => {
-                var colorIndex = (int)(lifetime * component.ColorList.Length);
-                colorIndex = Math.Clamp(colorIndex, 0, component.ColorList.Length - 1);
-                return component.ColorList[colorIndex];
+                var colorIndex = (int)(lifetime * component.Gradient.Length);
+                colorIndex = Math.Clamp(colorIndex, 0, component.Gradient.Length - 1);
+                return component.Gradient[colorIndex];
             };
         else
             result.Color = (float lifetime) => Color.White;

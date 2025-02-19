@@ -39,6 +39,7 @@ public sealed class DreamObjectTree {
     public TreeEntry DatabaseQuery { get; private set; }
     public TreeEntry Regex { get; private set; }
     public TreeEntry Filter { get; private set; }
+    public TreeEntry Vector { get; private set; }
     public TreeEntry Icon { get; private set; }
     public TreeEntry Image { get; private set; }
     public TreeEntry MutableAppearance { get; private set; }
@@ -177,6 +178,8 @@ public sealed class DreamObjectTree {
             throw new Exception("New turfs must be created by the map manager");
         if (type.ObjectDefinition.IsSubtypeOf(Exception))
             return new DreamObjectException(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Vector))
+            return new DreamObjectVector(type.ObjectDefinition);
 
         return new DreamObject(type.ObjectDefinition);
     }
@@ -294,6 +297,7 @@ public sealed class DreamObjectTree {
         DatabaseQuery = GetTreeEntry("/database/query");
         Regex = GetTreeEntry("/regex");
         Filter = GetTreeEntry("/dm_filter");
+        Vector = GetTreeEntry("/vector");
         Icon = GetTreeEntry("/icon");
         Image = GetTreeEntry("/image");
         MutableAppearance = GetTreeEntry("/mutable_appearance");

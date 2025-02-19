@@ -12,10 +12,10 @@ namespace OpenDreamShared.Rendering;
 
 [NetworkedComponent]
 public abstract partial class SharedDreamParticlesComponent : Component {
-    [ViewVariables(VVAccess.ReadWrite)] public int Width = 640;
-    [ViewVariables(VVAccess.ReadWrite)] public int Height = 480;
-    [ViewVariables(VVAccess.ReadWrite)] public int Count = 1000;
-    [ViewVariables(VVAccess.ReadWrite)] public float Spawning = 100;
+    [ViewVariables(VVAccess.ReadWrite)] public int Width;
+    [ViewVariables(VVAccess.ReadWrite)] public int Height;
+    [ViewVariables(VVAccess.ReadWrite)] public int Count;
+    [ViewVariables(VVAccess.ReadWrite)] public float Spawning;
     [ViewVariables(VVAccess.ReadWrite)] public Vector3 Bound1;
     [ViewVariables(VVAccess.ReadWrite)] public Vector3 Bound2;
     [ViewVariables(VVAccess.ReadWrite)] public Vector3 Gravity;
@@ -25,11 +25,11 @@ public abstract partial class SharedDreamParticlesComponent : Component {
     [ViewVariables(VVAccess.ReadWrite)] public float LifespanHigh;
     [ViewVariables(VVAccess.ReadWrite)] public float LifespanLow;
     [ViewVariables(VVAccess.ReadWrite)] public ParticlePropertyType LifespanType;
-    [ViewVariables(VVAccess.ReadWrite)] public int FadeInHigh = 0;
-    [ViewVariables(VVAccess.ReadWrite)] public int FadeInLow = 0;
+    [ViewVariables(VVAccess.ReadWrite)] public int FadeInHigh;
+    [ViewVariables(VVAccess.ReadWrite)] public int FadeInLow;
     [ViewVariables(VVAccess.ReadWrite)] public ParticlePropertyType FadeInType;
-    [ViewVariables(VVAccess.ReadWrite)] public int FadeOutHigh = 0;
-    [ViewVariables(VVAccess.ReadWrite)] public int FadeOutLow = 0;
+    [ViewVariables(VVAccess.ReadWrite)] public int FadeOutHigh;
+    [ViewVariables(VVAccess.ReadWrite)] public int FadeOutLow;
     [ViewVariables(VVAccess.ReadWrite)] public ParticlePropertyType FadeOutType;
 
     [ViewVariables(VVAccess.ReadWrite)] public Vector3 SpawnPositionHigh;
@@ -51,16 +51,16 @@ public abstract partial class SharedDreamParticlesComponent : Component {
     [ViewVariables(VVAccess.ReadWrite)] public Vector2 ScaleLow;
     [ViewVariables(VVAccess.ReadWrite)] public ParticlePropertyType ScaleType;
 	//Rotation applied to the particles in degrees
-    [ViewVariables(VVAccess.ReadWrite)] public float RotationHigh = 0;
-    [ViewVariables(VVAccess.ReadWrite)] public float RotationLow = 0;
+    [ViewVariables(VVAccess.ReadWrite)] public float RotationHigh;
+    [ViewVariables(VVAccess.ReadWrite)] public float RotationLow;
     [ViewVariables(VVAccess.ReadWrite)] public ParticlePropertyType RotationType;
 	//Increase in scale per second
     [ViewVariables(VVAccess.ReadWrite)] public Vector2 GrowthHigh;
     [ViewVariables(VVAccess.ReadWrite)] public Vector2 GrowthLow;
     [ViewVariables(VVAccess.ReadWrite)] public ParticlePropertyType GrowthType;
 	//Change in rotation per second
-    [ViewVariables(VVAccess.ReadWrite)] public float SpinHigh = 0;
-    [ViewVariables(VVAccess.ReadWrite)] public float SpinLow = 0;
+    [ViewVariables(VVAccess.ReadWrite)] public float SpinHigh;
+    [ViewVariables(VVAccess.ReadWrite)] public float SpinLow;
     [ViewVariables(VVAccess.ReadWrite)] public ParticlePropertyType SpinType;
     [ViewVariables(VVAccess.ReadWrite)] public Vector3 DriftHigh;
     [ViewVariables(VVAccess.ReadWrite)] public Vector3 DriftLow;

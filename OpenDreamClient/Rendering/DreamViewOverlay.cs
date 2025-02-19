@@ -379,10 +379,11 @@ internal sealed partial class DreamViewOverlay : Overlay {
 
         //query entity for particles component
         //if it has one, add it to the result list
-        if(_particlesManager.TryGetParticleSystem(current.Uid, out var particlesSystem)){
-            current.Particles ??= new();
-            current.Particles.Add(particlesSystem);
-        }
+        foreach(var particleNetEntity in icon.Appearance.Particles)
+            if(_particlesManager.TryGetParticleSystem(_entityManager.GetEntity(particleNetEntity), out var particlesSystem)){
+                current.Particles ??= new();
+                current.Particles.Add(particlesSystem);
+            }
 
         //flatten KeepTogetherGroup. Done here so we get implicit recursive iteration down the tree.
         if (current.KeepTogetherGroup?.Count > 0) {
@@ -461,15 +462,10 @@ internal sealed partial class DreamViewOverlay : Overlay {
         var pixelPosition = (iconMetaData.Position + positionOffset) * EyeManager.PixelsPerMeter;
 
         if(iconMetaData.Particles is not null) {
-
             foreach(var particleSystem in iconMetaData.Particles){
-                var particleRenderTarget = _renderTargetPool.Rent(particleSystem.RenderSize);
                 handle.UseShader(GetBlendAndColorShader(iconMetaData, ignoreColor: true));
                 particleSystem.Draw(handle, pixelPosition);
                 handle.SetTransform(CalculateDrawingMatrix(iconMetaData.TransformToApply, pixelPosition-particleSystem.RenderSize/2, particleSystem.RenderSize, renderTargetSize));
-                handle.DrawTextureRect(particleRenderTarget.Texture, Box2.FromDimensions(Vector2.Zero, particleSystem.RenderSize));
-
-                _renderTargetPool.ReturnAtEndOfFrame(particleRenderTarget);
             }
         }
         //if frame is null, this doesn't require a draw, so return NOP

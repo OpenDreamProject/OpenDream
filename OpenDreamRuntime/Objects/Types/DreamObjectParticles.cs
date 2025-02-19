@@ -17,11 +17,14 @@ public sealed class DreamObjectParticles : DreamObject {
     private List<string> _iconStates = new();
 
     public DreamObjectParticles(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
-        Entity = EntityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace)); //spawning an entity in nullspace means it never actually gets sent to any clients until it's placed on the map, or it gets a PVS override
+        Entity = EntityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace)); //spawning an entity in nullspace means it never actually gets sent to any clients until it's put in the particles list on an atom, when PVS override happens
         ParticlesComponent = EntityManager.AddComponent<DreamParticlesComponent>(Entity);
         //populate component with settings from type
+        foreach(KeyValuePair<string,DreamValue> kv in objectDefinition.Variables){
+            if(objectDefinition.ConstVariables is not null && !objectDefinition.ConstVariables.Contains(kv.Key))
+                SetVar(kv.Key, kv.Value);
+        }
         //check if I need to manually send update events to the component?
-        //collect entities client-side for the rendermetadata
     }
 
      protected override void SetVar(string varName, DreamValue value) {
@@ -285,6 +288,7 @@ public sealed class DreamObjectParticles : DreamObject {
                 }
                 break;
         }
+
         base.SetVar(varName, value); //all calls should set the internal vars, so GetVar() can just be default also
      }
 }

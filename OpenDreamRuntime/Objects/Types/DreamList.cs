@@ -858,6 +858,95 @@ public sealed class DreamVisContentsList : DreamList {
     }
 }
 
+// atom.particles list
+// Operates on an atom's appearance
+public sealed class DreamParticlesList : DreamList {
+    [Dependency] private readonly AtomManager _atomManager = default!;
+    [Dependency] private readonly IEntityManager _entityManager = default!;
+    private readonly PvsOverrideSystem? _pvsOverrideSystem;
+
+    private readonly List<DreamObjectParticles> _particles = new();
+    private readonly DreamObject _atom;
+
+    public DreamParticlesList(DreamObjectDefinition listDef, PvsOverrideSystem? pvsOverrideSystem, DreamObject atom) : base(listDef, 0) {
+        IoCManager.InjectDependencies(this);
+
+        _pvsOverrideSystem = pvsOverrideSystem;
+        _atom = atom;
+    }
+
+    public override List<DreamValue> GetValues() {
+        var values = new List<DreamValue>(_particles.Count);
+
+        foreach (var particlesObject in _particles) {
+            values.Add(new(particlesObject));
+        }
+
+        return values;
+    }
+
+    public override void Cut(int start = 1, int end = 0) {
+        int count = _particles.Count + 1;
+        if (end == 0 || end > count) end = count;
+
+        _particles.RemoveRange(start - 1, end - start);
+        _atomManager.UpdateAppearance(_atom, appearance => {
+            appearance.Particles.RemoveRange(start - 1, end - start);
+        });
+    }
+
+    public override DreamValue GetValue(DreamValue key) {
+        if (!key.TryGetValueAsInteger(out var particlesIndex) || particlesIndex < 1)
+            throw new Exception($"Invalid index into particles list: {key}");
+        if (particlesIndex > _particles.Count)
+            throw new Exception($"Atom only has {_particles.Count} particles element(s), cannot index {particlesIndex}");
+
+        return new DreamValue(_particles[particlesIndex - 1]);
+    }
+
+    public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
+        throw new Exception("Cannot write to an index of a particles list");
+    }
+
+    public override void AddValue(DreamValue value) {
+        EntityUid entity;
+        if (value.TryGetValueAsDreamObject<DreamObjectParticles>(out var particles)) {
+            if (_particles.Contains(particles))
+                return; // particles cannot contain duplicates
+            _particles.Add(particles);
+            entity = particles.Entity;
+        } else if (value == DreamValue.Null) {
+            return; // particles cannot contain nulls
+        } else {
+            throw new Exception($"Cannot add {value} to a particles list");
+        }
+
+        // TODO: Only override the entity's visibility if its parent atom is visible
+        if (entity != EntityUid.Invalid)
+            _pvsOverrideSystem?.AddGlobalOverride(entity);
+
+        _atomManager.UpdateAppearance(_atom, appearance => {
+            // Add even an invalid UID to keep this and _visContents in sync
+            appearance.Particles.Add(_entityManager.GetNetEntity(entity));
+        });
+    }
+
+    public override void RemoveValue(DreamValue value) {
+        if (!value.TryGetValueAsDreamObject<DreamObjectParticles>(out var particles))
+            return;
+
+        _particles.Remove(particles);
+        _atomManager.UpdateAppearance(_atom, appearance => {
+            appearance.Particles.Remove(_entityManager.GetNetEntity(particles.Entity));
+        });
+    }
+
+    public override int GetLength() {
+        return _particles.Count;
+    }
+}
+
+
 // atom.filters list
 // Operates on an object's appearance
 public sealed class DreamFilterList : DreamList {

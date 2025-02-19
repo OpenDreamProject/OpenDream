@@ -7,6 +7,7 @@ public class DreamObjectAtom : DreamObject {
     public readonly DreamOverlaysList Overlays;
     public readonly DreamOverlaysList Underlays;
     public readonly DreamVisContentsList VisContents;
+    public readonly DreamParticlesList Particles;
     public readonly DreamFilterList Filters;
     public DreamList? VisLocs; // TODO: Implement
 
@@ -14,6 +15,7 @@ public class DreamObjectAtom : DreamObject {
         Overlays = new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
         Underlays = new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
         VisContents = new(ObjectTree.List.ObjectDefinition, PvsOverrideSystem, this);
+        Particles = new(ObjectTree.List.ObjectDefinition, PvsOverrideSystem, this);
         Filters = new(ObjectTree.List.ObjectDefinition, this);
 
         AtomManager.AddAtom(this);
@@ -72,6 +74,9 @@ public class DreamObjectAtom : DreamObject {
                 return true;
             case "vis_contents":
                 value = new(VisContents);
+                return true;
+            case "particles":
+                value = new(Particles);
                 return true;
 
             default:
@@ -142,6 +147,20 @@ public class DreamObjectAtom : DreamObject {
                     }
                 } else if (!value.IsNull) {
                     VisContents.AddValue(value);
+                }
+
+                break;
+            }
+            case "particles": {
+                Particles.Cut();
+
+                if (value.TryGetValueAsDreamList(out var valueList)) {
+                    // TODO: This should postpone UpdateAppearance until after everything is added
+                    foreach (DreamValue particlesValue in valueList.GetValues()) {
+                        Particles.AddValue(particlesValue);
+                    }
+                } else if (!value.IsNull) {
+                    Particles.AddValue(value);
                 }
 
                 break;

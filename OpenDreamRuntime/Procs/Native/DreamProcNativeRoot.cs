@@ -1097,7 +1097,7 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("type", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("A", Type = DreamValueTypeFlag.DreamObject)]
     [DreamProcParameter("B", Type = DreamValueTypeFlag.DreamObject)]
-    [DreamProcParameter("rand", Type = DreamValueTypeFlag.Float)]
+    [DreamProcParameter("rand", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
     public static DreamValue NativeProc_generator(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
         string outputTypeString = bundle.GetArgument(0, "type").MustGetValueAsString();
         var A = bundle.GetArgument(1, "A");

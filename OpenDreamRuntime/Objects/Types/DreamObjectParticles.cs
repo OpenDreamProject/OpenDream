@@ -20,11 +20,8 @@ public sealed class DreamObjectParticles : DreamObject {
         Entity = EntityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace)); //spawning an entity in nullspace means it never actually gets sent to any clients until it's placed on the map, or it gets a PVS override
         ParticlesComponent = EntityManager.AddComponent<DreamParticlesComponent>(Entity);
         //populate component with settings from type
-        //do set/get var to grab those also
         //check if I need to manually send update events to the component?
-        //add entity array to appearance objects
         //collect entities client-side for the rendermetadata
-        //set up a special list type on /atom for /particles
     }
 
      protected override void SetVar(string varName, DreamValue value) {
@@ -167,8 +164,7 @@ public sealed class DreamObjectParticles : DreamObject {
                     ParticlesComponent.SpawnPositionHigh = new Vector3(dreamValues[0].MustGetValueAsFloat(), dreamValues[1].MustGetValueAsFloat(), dreamValues[2].MustGetValueAsFloat());
                     dreamValues = dreamObjectGenerator.A.MustGetValueAsDreamList().GetValues();
                     ParticlesComponent.SpawnPositionLow = new Vector3(dreamValues[0].MustGetValueAsFloat(), dreamValues[1].MustGetValueAsFloat(), dreamValues[2].MustGetValueAsFloat());
-                    ParticlesComponent.RotationLow = dreamObjectGenerator.A.MustGetValueAsFloat();
-                    ParticlesComponent.RotationType = ParticlePropertyType.RandomUniform; //TODO all the other distributions
+                    ParticlesComponent.SpawnPositionType = ParticlePropertyType.RandomUniform; //TODO all the other distributions
                 }
                 break;
             case "velocity": //num, list, vector, or generator
@@ -288,9 +284,7 @@ public sealed class DreamObjectParticles : DreamObject {
                     ParticlesComponent.DriftType = ParticlePropertyType.RandomUniform; //TODO all the other distributions
                 }
                 break;
-            default:
-                base.SetVar(varName, value);
-                break;
         }
+        base.SetVar(varName, value); //all calls should set the internal vars, so GetVar() can just be default also
      }
 }

@@ -51,6 +51,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
     [ViewVariables] public readonly ImmutableAppearance[] Overlays;
     [ViewVariables] public readonly ImmutableAppearance[] Underlays;
     [ViewVariables] public readonly Robust.Shared.GameObjects.NetEntity[] VisContents;
+    [ViewVariables] public readonly Robust.Shared.GameObjects.NetEntity[] Particles;
     [ViewVariables] public readonly DreamFilter[] Filters;
     [ViewVariables] public readonly int[] Verbs;
     [ViewVariables] public readonly ColorMatrix ColorMatrix = ColorMatrix.Identity;
@@ -106,6 +107,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         Underlays = appearance.Underlays.ToArray();
 
         VisContents = appearance.VisContents.ToArray();
+        Particles = appearance.Particles.ToArray();
         Filters = appearance.Filters.ToArray();
         Verbs = appearance.Verbs.ToArray();
         Override = appearance.Override;
@@ -168,6 +170,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         if (immutableAppearance.Overlays.Length != Overlays.Length) return false;
         if (immutableAppearance.Underlays.Length != Underlays.Length) return false;
         if (immutableAppearance.VisContents.Length != VisContents.Length) return false;
+        if (immutableAppearance.Particles.Length != Particles.Length) return false;
         if (immutableAppearance.Filters.Length != Filters.Length) return false;
         if (immutableAppearance.Verbs.Length != Verbs.Length) return false;
         if (immutableAppearance.Override != Override) return false;
@@ -193,6 +196,10 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
 
         for (int i = 0; i < Verbs.Length; i++) {
             if (immutableAppearance.Verbs[i] != Verbs[i]) return false;
+        }
+
+        for (int i = 0; i < Particles.Length; i++) {
+            if (immutableAppearance.Particles[i] != Particles[i]) return false;
         }
 
         for (int i = 0; i < 6; i++) {
@@ -258,6 +265,10 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
             hashCode.Add(visContent);
         }
 
+        foreach (int particlesObject in Particles) {
+            hashCode.Add(particlesObject);
+        }
+
         foreach (DreamFilter filter in Filters) {
             hashCode.Add(filter);
         }
@@ -279,7 +290,8 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         Underlays = [];
         VisContents = [];
         Filters = [];
-        Verbs =[];
+        Verbs = [];
+        Particles = [];
 
         var property = (IconAppearanceProperty)buffer.ReadByte();
         while (property != IconAppearanceProperty.End) {
@@ -392,6 +404,16 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
 
                     break;
                 }
+                case IconAppearanceProperty.Particles: {
+                    var particlesCount = buffer.ReadVariableInt32();
+
+                    Particles = new Robust.Shared.GameObjects.NetEntity[particlesCount];
+                    for (int particlesI = 0; particlesI < particlesCount; particlesI++) {
+                        Particles[particlesI] = buffer.ReadNetEntity();
+                    }
+
+                    break;
+                }
                 case IconAppearanceProperty.Filters: {
                     var filtersCount = buffer.ReadInt32();
 
@@ -485,11 +507,13 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         result.VisContents.EnsureCapacity(VisContents.Length);
         result.Filters.EnsureCapacity(Filters.Length);
         result.Verbs.EnsureCapacity(Verbs.Length);
+        result.Particles.EnsureCapacity(Particles.Length);
         result.Overlays.AddRange(Overlays);
         result.Underlays.AddRange(Underlays);
         result.VisContents.AddRange(VisContents);
         result.Filters.AddRange(Filters);
         result.Verbs.AddRange(Verbs);
+        result.Particles.AddRange(Particles);
         Array.Copy(Transform, result.Transform, 6);
 
         return result;
@@ -635,6 +659,15 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
 
             buffer.WriteVariableInt32(VisContents.Length);
             foreach (var item in VisContents) {
+                buffer.Write(item);
+            }
+        }
+
+        if (Particles.Length != 0) {
+            buffer.Write((byte)IconAppearanceProperty.Particles);
+
+            buffer.WriteVariableInt32(Particles.Length);
+            foreach (var item in Particles) {
                 buffer.Write(item);
             }
         }

@@ -29,6 +29,7 @@ proc/flist(Path) as /list
 proc/floor(A) as num
 proc/fract(n) as num
 proc/ftime(File, IsCreationTime = 0) as num
+proc/generator(type, A, B, rand) as /generator
 proc/get_step_to(Ref, Trg, Min=0) as num
 proc/get_steps_to(Ref, Trg, Min=0) as /list
 proc/gradient(A, index)

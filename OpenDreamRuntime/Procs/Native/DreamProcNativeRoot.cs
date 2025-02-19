@@ -23,6 +23,7 @@ using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
 using Robust.Server;
 using Robust.Shared.Asynchronous;
 using Vector4 = Robust.Shared.Maths.Vector4;
+using System.ComponentModel;
 
 namespace OpenDreamRuntime.Procs.Native;
 /// <remarks>
@@ -1090,6 +1091,67 @@ internal static class DreamProcNativeRoot {
 
         // Null if there are no steps
         return new(result.GetLength() > 0 ? result : null);
+    }
+
+    [DreamProc("generator")]
+    [DreamProcParameter("type", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("A", Type = DreamValueTypeFlag.DreamObject)]
+    [DreamProcParameter("B", Type = DreamValueTypeFlag.DreamObject)]
+    [DreamProcParameter("rand", Type = DreamValueTypeFlag.Float)]
+    public static DreamValue NativeProc_generator(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        string outputTypeString = bundle.GetArgument(0, "type").MustGetValueAsString();
+        var A = bundle.GetArgument(1, "A");
+        var B = bundle.GetArgument(2, "B");
+        var distNum = bundle.GetArgument(3, "rand").MustGetValueAsInteger();
+
+        GeneratorOutputType outputType;
+        GeneratorDistribution distribution;
+        switch(outputTypeString){
+            case "num":
+                outputType = GeneratorOutputType.Num;
+                break;
+            case "vector":
+                outputType = GeneratorOutputType.Vector;
+                break;
+            case "box":
+                outputType = GeneratorOutputType.Box;
+                break;
+            case "color":
+                outputType = GeneratorOutputType.Color;
+                break;
+            case "circle":
+                outputType = GeneratorOutputType.Circle;
+                break;
+            case "sphere":
+                outputType = GeneratorOutputType.Sphere;
+                break;
+            case "square":
+                outputType = GeneratorOutputType.Square;
+                break;
+            case "cube":
+                outputType = GeneratorOutputType.Cube;
+                break;
+            default:
+                throw new InvalidEnumArgumentException("Invalid output type specified in generator()");
+        }
+        switch(distNum){
+            case 0:
+                distribution = GeneratorDistribution.Uniform;
+                break;
+            case 1:
+                distribution = GeneratorDistribution.Normal;
+                break;
+            case 2:
+                distribution = GeneratorDistribution.Linear;
+                break;
+            case 3:
+                distribution = GeneratorDistribution.Square;
+                break;
+            default:
+                throw new InvalidEnumArgumentException("Invalid distribution type specified in generator()");
+        }
+        return new(new DreamObjectGenerator(bundle.ObjectTree.Generator.ObjectDefinition, A, B, outputType, distribution));
+
     }
 
     [DreamProc("hascall")]

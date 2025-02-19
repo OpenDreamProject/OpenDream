@@ -48,6 +48,8 @@ public sealed class DreamObjectTree {
     public TreeEntry Movable { get; private set; }
     public TreeEntry Obj { get; private set; }
     public TreeEntry Mob { get; private set; }
+    public TreeEntry Generator { get; private set; }
+    public TreeEntry Particles { get; private set; }
 
     private FrozenDictionary<string, TreeEntry> _pathToType = FrozenDictionary<string, TreeEntry>.Empty;
     private FrozenDictionary<string, int> _globalProcIds = FrozenDictionary<string, int>.Empty;
@@ -171,6 +173,10 @@ public sealed class DreamObjectTree {
             return new DreamObjectArea(type.ObjectDefinition);
         if (type.ObjectDefinition.IsSubtypeOf(Atom))
             return new DreamObjectAtom(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Generator))
+            throw new Exception("Cannot create objects of type /generator with the generator() proc");
+        if (type.ObjectDefinition.IsSubtypeOf(Particles))
+            return new DreamObjectParticles(type.ObjectDefinition);
         if (type.ObjectDefinition.IsSubtypeOf(Client))
             throw new Exception("Cannot create objects of type /client");
         if (type.ObjectDefinition.IsSubtypeOf(Turf))
@@ -303,6 +309,8 @@ public sealed class DreamObjectTree {
         Movable = GetTreeEntry("/atom/movable");
         Obj = GetTreeEntry("/obj");
         Mob = GetTreeEntry("/mob");
+        Particles = GetTreeEntry("/particles");
+        Generator = GetTreeEntry("/generator");
 
         // Load procs first so types can set their init proc's super proc
         LoadProcsFromJson(procs, globalProcs);

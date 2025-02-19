@@ -40,6 +40,8 @@ internal sealed partial class DreamViewOverlay : Overlay {
     [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
     [Dependency] private readonly IPlayerManager _playerManager = default!;
     [Dependency] private readonly IEntityManager _entityManager = default!;
+    [Dependency] private readonly ParticlesManager _particlesManager = default!;
+
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly IClyde _clyde = default!;
     [Dependency] private readonly IPrototypeManager _protoManager = default!;
@@ -57,6 +59,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
     private readonly ClientImagesSystem _clientImagesSystem;
 
     private readonly EntityQuery<DMISpriteComponent> _spriteQuery;
+    private readonly EntityQuery<DynamicParticlesComponent> _particlesQuery;
     private readonly EntityQuery<TransformComponent> _xformQuery;
     private readonly EntityQuery<DreamMobSightComponent> _mobSightQuery;
 
@@ -88,6 +91,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
         _clientImagesSystem = clientImagesSystem;
 
         _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
+        _particlesQuery = _entityManager.GetEntityQuery<DynamicParticlesComponent>();
         _xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
         _mobSightQuery = _entityManager.GetEntityQuery<DreamMobSightComponent>();
 
@@ -373,7 +377,12 @@ internal sealed partial class DreamViewOverlay : Overlay {
             result.Add(maptext);
         }
 
-        //TODO particles - colour and transform don't apply?
+        //query entity for particles component
+        //if it has one, add it to the result list
+        if(_particlesManager.TryGetParticleSystem(current.Uid, out var particlesSystem)){
+            current.Particles ??= new();
+            current.Particles.Add(particlesSystem);
+        }
 
         //flatten KeepTogetherGroup. Done here so we get implicit recursive iteration down the tree.
         if (current.KeepTogetherGroup?.Count > 0) {
@@ -451,6 +460,18 @@ internal sealed partial class DreamViewOverlay : Overlay {
         var frame = iconMetaData.GetTexture(this, handle);
         var pixelPosition = (iconMetaData.Position + positionOffset) * EyeManager.PixelsPerMeter;
 
+        if(iconMetaData.Particles is not null) {
+
+            foreach(var particleSystem in iconMetaData.Particles){
+                var particleRenderTarget = _renderTargetPool.Rent(particleSystem.RenderSize);
+                handle.UseShader(GetBlendAndColorShader(iconMetaData, ignoreColor: true));
+                particleSystem.Draw(handle, pixelPosition);
+                handle.SetTransform(CalculateDrawingMatrix(iconMetaData.TransformToApply, pixelPosition-particleSystem.RenderSize/2, particleSystem.RenderSize, renderTargetSize));
+                handle.DrawTextureRect(particleRenderTarget.Texture, Box2.FromDimensions(Vector2.Zero, particleSystem.RenderSize));
+
+                _renderTargetPool.ReturnAtEndOfFrame(particleRenderTarget);
+            }
+        }
         //if frame is null, this doesn't require a draw, so return NOP
         if (frame == null)
             return;
@@ -799,6 +820,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public Texture? TextureOverride;
     public string? Maptext;
     public Vector2i? MaptextSize;
+    public List<ParticleSystem>? Particles;
 
     public bool IsPlaneMaster => (AppearanceFlags & AppearanceFlags.PlaneMaster) != 0;
     public bool HasRenderSource => !string.IsNullOrEmpty(RenderSource);
@@ -830,6 +852,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         TextureOverride = null;
         Maptext = null;
         MaptextSize = null;
+        Particles = null;
     }
 
     public Texture? GetTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle) {

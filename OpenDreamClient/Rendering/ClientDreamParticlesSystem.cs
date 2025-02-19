@@ -23,13 +23,13 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
 
     public override void Initialize() {
         base.Initialize();
-        SubscribeLocalEvent<DreamParticlesComponent, ComponentChange>(OnDreamParticlesComponentChange);
+        SubscribeLocalEvent<DreamParticlesComponent, AfterAutoHandleStateEvent>(OnDreamParticlesComponentChange);
         SubscribeLocalEvent<DreamParticlesComponent, ComponentAdd>(HandleComponentAdd);
         SubscribeLocalEvent<DreamParticlesComponent, ComponentRemove>(HandleComponentRemove);
         RenderTargetPool = new(_clyde);
     }
 
-    private void OnDreamParticlesComponentChange(EntityUid uid, DreamParticlesComponent component, ref ComponentChange args)
+    private void OnDreamParticlesComponentChange(EntityUid uid, DreamParticlesComponent component, ref AfterAutoHandleStateEvent args)
     {
         if(_particlesManager.TryGetParticleSystem(uid, out var system))
             system.UpdateSystem(GetParticleSystemArgs(component));

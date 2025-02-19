@@ -66,6 +66,7 @@ internal class DMObjectTree(DMCompiler compiler) {
                 case "client":
                 case "datum":
                 case "list":
+                case "vector":
                 case "savefile":
                 case "world":
                     parent = GetOrCreateDMObject(DreamPath.Root);

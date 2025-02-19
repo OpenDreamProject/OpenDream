@@ -1448,20 +1448,33 @@ internal static class DreamProcNativeRoot {
                 writer.WriteEndArray();
             }
         } else if (value.TryGetValueAsDreamObject(out var dreamObject)) {
-            if (dreamObject == null)
-                writer.WriteNullValue();
-            else if (dreamObject is DreamObjectMatrix matrix) { // Special behaviour for /matrix values
-                writer.WriteStartArray();
+            switch (dreamObject) {
+                case null:
+                    writer.WriteNullValue();
+                    break;
+                case DreamObjectMatrix matrix: {
+                    writer.WriteStartArray();
 
-                foreach (var f in DreamObjectMatrix.EnumerateMatrix(matrix)) {
-                    writer.WriteNumberValue(f);
+                    foreach (var f in DreamObjectMatrix.EnumerateMatrix(matrix)) {
+                        writer.WriteNumberValue(f);
+                    }
+
+                    writer.WriteEndArray();
+                    // This doesn't have any corresponding snowflaking in CreateValueFromJsonElement()
+                    // because BYOND actually just forgets that this was a matrix after doing json encoding.
+                    break;
                 }
-
-                writer.WriteEndArray();
-                // This doesn't have any corresponding snowflaking in CreateValueFromJsonElement()
-                // because BYOND actually just forgets that this was a matrix after doing json encoding.
-            } else
-                writer.WriteStringValue(value.Stringify());
+                case DreamObjectVector vector: { // Special behaviour for /vector values
+                    if (vector.Is3D)
+                        writer.WriteStringValue($"vector({vector.X},{vector.Y},{vector.Z})");
+                    else
+                        writer.WriteStringValue($"vector({vector.X},{vector.Y})");
+                    break;
+                }
+                default:
+                    writer.WriteStringValue(value.Stringify());
+                    break;
+            }
         } else if (value.TryGetValueAsDreamResource(out var dreamResource)) {
             writer.WriteStringValue(dreamResource.ResourcePath);
         } else {

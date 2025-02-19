@@ -288,7 +288,7 @@ public sealed class DreamObjectParticles : DreamObject {
                 }
                 break;
         }
-
+        ParticlesSystem!.MarkDirty((Entity, ParticlesComponent));
         base.SetVar(varName, value); //all calls should set the internal vars, so GetVar() can just be default also
      }
 }

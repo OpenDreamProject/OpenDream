@@ -3167,8 +3167,7 @@ internal static class DreamProcNativeRoot {
 
             foreach (var (key,value) in assocValues) {
                 if (value.TryGetValueAsFloat(out var valFloat)) {
-                    switch (inclusive)
-                    {
+                    switch (inclusive) {
                         case true when under && valFloat <= min:
                         case true when !under && valFloat >= min:
                         case false when under && valFloat < min:

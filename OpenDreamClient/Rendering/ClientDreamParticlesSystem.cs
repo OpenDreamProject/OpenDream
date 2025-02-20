@@ -37,12 +37,11 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
 
     private void HandleComponentAdd(EntityUid uid, DreamParticlesComponent component, ref ComponentAdd args)
     {
-        component.particlesSystem = _particlesManager.CreateParticleSystem(uid, GetParticleSystemArgs(component));
+        _particlesManager.CreateParticleSystem(uid, GetParticleSystemArgs(component));
     }
 
     private void HandleComponentRemove(EntityUid uid, DreamParticlesComponent component, ref ComponentRemove args)
     {
-        component.particlesSystem = null;
         _particlesManager.DestroyParticleSystem(uid);
     }
 

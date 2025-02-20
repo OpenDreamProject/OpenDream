@@ -59,7 +59,6 @@ internal sealed partial class DreamViewOverlay : Overlay {
     private readonly ClientImagesSystem _clientImagesSystem;
 
     private readonly EntityQuery<DMISpriteComponent> _spriteQuery;
-    private readonly EntityQuery<DynamicParticlesComponent> _particlesQuery;
     private readonly EntityQuery<TransformComponent> _xformQuery;
     private readonly EntityQuery<DreamMobSightComponent> _mobSightQuery;
 
@@ -91,7 +90,6 @@ internal sealed partial class DreamViewOverlay : Overlay {
         _clientImagesSystem = clientImagesSystem;
 
         _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
-        _particlesQuery = _entityManager.GetEntityQuery<DynamicParticlesComponent>();
         _xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
         _mobSightQuery = _entityManager.GetEntityQuery<DreamMobSightComponent>();
 

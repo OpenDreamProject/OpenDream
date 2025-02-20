@@ -11,8 +11,8 @@ using Vector3 = Robust.Shared.Maths.Vector3;
 
 namespace OpenDreamShared.Rendering;
 
-[NetworkedComponent, AutoGenerateComponentState(true)]
-public abstract partial class SharedDreamParticlesComponent : Component {
+[RegisterComponent, NetworkedComponent, AutoGenerateComponentState(true)]
+public sealed partial class DreamParticlesComponent : Component {
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public int Width;
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public int Height;
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public int Count;

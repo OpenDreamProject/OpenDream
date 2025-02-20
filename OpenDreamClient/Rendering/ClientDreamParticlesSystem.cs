@@ -67,7 +67,7 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
             };
         else
             result.Color = (float lifetime) => Color.White;
-        result.Acceleration = (float _ ) => GetGeneratorVector3(component.AccelerationLow, component.AccelerationHigh, component.AccelerationType)();
+        result.Acceleration = (float _ , Vector3 velocity) => GetGeneratorVector3(component.AccelerationLow, component.AccelerationHigh, component.AccelerationType)() + GetGeneratorVector3(component.DriftLow, component.DriftHigh, component.DriftType)() - velocity*GetGeneratorVector3(component.FrictionLow, component.FrictionHigh, component.FrictionType)();
         result.SpawnPosition = GetGeneratorVector3(component.SpawnPositionLow, component.SpawnPositionHigh, component.SpawnPositionType);
         result.SpawnVelocity = GetGeneratorVector3(component.SpawnVelocityLow, component.SpawnVelocityHigh, component.SpawnVelocityType);
         result.Transform = (float lifetime) => {

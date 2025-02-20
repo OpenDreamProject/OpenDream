@@ -3,8 +3,10 @@ using OpenDreamShared.Rendering;
 using Pidgin;
 using Robust.Client.Graphics;
 using Robust.Client.ResourceManagement;
+using Robust.Shared.GameStates;
 using Robust.Shared.Random;
 using Robust.Shared.Timing;
+using static OpenDreamShared.Rendering.DreamParticlesComponent;
 using Vector3 = Robust.Shared.Maths.Vector3;
 
 namespace OpenDreamClient.Rendering;
@@ -22,14 +24,63 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
 
     public override void Initialize() {
         base.Initialize();
-        SubscribeLocalEvent<DreamParticlesComponent, AfterAutoHandleStateEvent>(OnDreamParticlesComponentChange);
+        SubscribeLocalEvent<DreamParticlesComponent, ComponentHandleState>(OnDreamParticlesComponentChange);
         SubscribeLocalEvent<DreamParticlesComponent, ComponentAdd>(HandleComponentAdd);
         SubscribeLocalEvent<DreamParticlesComponent, ComponentRemove>(HandleComponentRemove);
         RenderTargetPool = new(_clyde);
     }
 
-    private void OnDreamParticlesComponentChange(EntityUid uid, DreamParticlesComponent component, ref AfterAutoHandleStateEvent args)
+    private void OnDreamParticlesComponentChange(EntityUid uid, DreamParticlesComponent component, ref ComponentHandleState args)
     {
+        if (args.Current is not DreamParticlesComponentState state)
+                return;
+        component.Width = state.Width;
+        component.Width = state.Width;
+        component.Height = state.Height;
+        component.Count = state.Count;
+        component.Spawning = state.Spawning;
+        component.Bound1 = state.Bound1;
+        component.Bound2 = state.Bound2;
+        component.Gravity = state.Gravity;
+        component.Gradient = state.Gradient;
+        component.Transform = state.Transform;
+        component.TextureList = state.TextureList;
+        component.LifespanHigh = state.LifespanHigh;
+        component.LifespanLow = state.LifespanLow;
+        component.LifespanType = state.LifespanType;
+        component.FadeInHigh = state.FadeInHigh;
+        component.FadeInLow = state.FadeInLow;
+        component.FadeInType = state.FadeInType;
+        component.FadeOutHigh = state.FadeOutHigh;
+        component.FadeOutLow = state.FadeOutLow;
+        component.FadeOutType = state.FadeOutType;
+        component.SpawnPositionHigh = state.SpawnPositionHigh;
+        component.SpawnPositionLow = state.SpawnPositionLow;
+        component.SpawnPositionType = state.SpawnPositionType;
+        component.SpawnVelocityHigh = state.SpawnVelocityHigh;
+        component.SpawnVelocityLow = state.SpawnVelocityLow;
+        component.SpawnVelocityType = state.SpawnVelocityType;
+        component.AccelerationHigh = state.AccelerationHigh;
+        component.AccelerationLow = state.AccelerationLow;
+        component.AccelerationType = state.AccelerationType;
+        component.FrictionHigh = state.FrictionHigh;
+        component.FrictionLow = state.FrictionLow;
+        component.FrictionType = state.FrictionType;
+        component.ScaleHigh = state.ScaleHigh;
+        component.ScaleLow = state.ScaleLow;
+        component.ScaleType = state.ScaleType;
+        component.RotationHigh = state.RotationHigh;
+        component.RotationLow = state.RotationLow;
+        component.RotationType = state.RotationType;
+        component.GrowthHigh = state.GrowthHigh;
+        component.GrowthLow = state.GrowthLow;
+        component.GrowthType = state.GrowthType;
+        component.SpinHigh = state.SpinHigh;
+        component.SpinLow = state.SpinLow;
+        component.SpinType = state.SpinType;
+        component.DriftHigh = state.DriftHigh;
+        component.DriftLow = state.DriftLow;
+        component.DriftType = state.DriftType;
         if(_particlesManager.TryGetParticleSystem(uid, out var system))
             system.UpdateSystem(GetParticleSystemArgs(component));
     }

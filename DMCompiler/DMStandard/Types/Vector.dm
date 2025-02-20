@@ -1,9 +1,10 @@
 /vector
-	var/len as num
-	var/size as num
-	var/x as num
-	var/y as num
-	var/z as num
+	// TODO: Verify these default values
+	var/len = 2 as num
+	var/size = 0 as num
+	var/x = 0 as num
+	var/y = 0 as num
+	var/z = 0 as num
 
 	proc/New(x, y, z)
 	

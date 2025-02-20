@@ -17,8 +17,7 @@ public sealed class DreamObjectParticles : DreamObject {
     private List<string> _iconStates = new();
 
     public DreamObjectParticles(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
-        Entity = EntityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace)); //spawning an entity in nullspace means it never actually gets sent to any clients until it's put in the particles list on an atom, when PVS override happens
-        ParticlesComponent = EntityManager.AddComponent<DreamParticlesComponent>(Entity);
+        ParticlesComponent = new DreamParticlesComponent();
         //populate component with settings from type
         foreach(KeyValuePair<string,DreamValue> kv in objectDefinition.Variables){
             if(!(kv.Key == "parent_type" || kv.Key == "type" || kv.Key == "vars"))
@@ -279,7 +278,6 @@ public sealed class DreamObjectParticles : DreamObject {
                 }
                 break;
         }
-        ParticlesSystem!.MarkDirty((Entity, ParticlesComponent));
         base.SetVar(varName, value); //all calls should set the internal vars, so GetVar() can just be default also
      }
 

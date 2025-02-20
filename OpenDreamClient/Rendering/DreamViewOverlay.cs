@@ -375,13 +375,10 @@ internal sealed partial class DreamViewOverlay : Overlay {
             result.Add(maptext);
         }
 
-        //query entity for particles component
-        //if it has one, add it to the result list
-        foreach(var particleNetEntity in icon.Appearance.Particles)
-            if(_particlesManager.TryGetParticleSystem(_entityManager.GetEntity(particleNetEntity), out var particlesSystem)){
-                current.Particles ??= new();
-                current.Particles.Add(particlesSystem);
-            }
+        //query entity for particles component - check for parent to make sure this is the top level entity
+        if(parentIcon is null && _particlesManager.TryGetParticleSystem(uid, out var particlesSystem)){
+            current.Particles = particlesSystem;
+        }
 
         //flatten KeepTogetherGroup. Done here so we get implicit recursive iteration down the tree.
         if (current.KeepTogetherGroup?.Count > 0) {
@@ -460,13 +457,10 @@ internal sealed partial class DreamViewOverlay : Overlay {
         var pixelPosition = (iconMetaData.Position + positionOffset) * EyeManager.PixelsPerMeter;
 
         if(iconMetaData.Particles is not null) {
-            foreach(var particleSystem in iconMetaData.Particles){
-                var renderTarget = _renderTargetPool.Rent(particleSystem.RenderSize);
-
-                handle.UseShader(GetBlendAndColorShader(iconMetaData, ignoreColor: true));
-                particleSystem.Draw(handle, CalculateDrawingMatrix(iconMetaData.TransformToApply, pixelPosition, particleSystem.RenderSize, renderTargetSize));
-            }
+            handle.UseShader(GetBlendAndColorShader(iconMetaData, ignoreColor: true));
+            iconMetaData.Particles.Draw(handle, CalculateDrawingMatrix(iconMetaData.TransformToApply, pixelPosition, iconMetaData.Particles.RenderSize, renderTargetSize));
         }
+
         //if frame is null, this doesn't require a draw, so return NOP
         if (frame == null)
             return;
@@ -815,7 +809,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public Texture? TextureOverride;
     public string? Maptext;
     public Vector2i? MaptextSize;
-    public List<ParticleSystem>? Particles;
+    public ParticleSystem? Particles;
 
     public bool IsPlaneMaster => (AppearanceFlags & AppearanceFlags.PlaneMaster) != 0;
     public bool HasRenderSource => !string.IsNullOrEmpty(RenderSource);

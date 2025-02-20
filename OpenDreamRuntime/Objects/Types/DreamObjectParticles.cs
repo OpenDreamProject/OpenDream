@@ -24,7 +24,6 @@ public sealed class DreamObjectParticles : DreamObject {
             if(!(kv.Key == "parent_type" || kv.Key == "type" || kv.Key == "vars"))
                 SetVar(kv.Key, kv.Value);
         }
-        //check if I need to manually send update events to the component?
     }
 
      protected override void SetVar(string varName, DreamValue value) {
@@ -80,12 +79,16 @@ public sealed class DreamObjectParticles : DreamObject {
                 _icons.Clear();
                 if(value.TryGetValueAsDreamList(out var iconList)){
                     foreach(DreamValue iconValue in iconList.GetValues()){
-                        if(iconValue.TryGetValueAsDreamObject<DreamObjectIcon>(out var icon)){
-                            _icons.Add(AtomManager.MustGetAppearance(icon).ToMutable());
+                        if(DreamResourceManager.TryLoadIcon(iconValue, out var iconRsc)) {
+                            MutableAppearance iconAppearance = MutableAppearance.Get();
+                            iconAppearance.Icon = iconRsc.Id;
+                            _icons.Add(iconAppearance);
                         }
                     }
-                } else if(value.TryGetValueAsDreamObject<DreamObjectIcon>(out var dreamObjectIcon)) {
-                    _icons.Add(AtomManager.MustGetAppearance(dreamObjectIcon).ToMutable());
+                } else if(DreamResourceManager.TryLoadIcon(value, out var iconRsc)) {
+                    MutableAppearance iconAppearance = MutableAppearance.Get();
+                    iconAppearance.Icon = iconRsc.Id;
+                    _icons.Add(iconAppearance);
                 }
                 List<ImmutableAppearance> immutableAppearances = new();
                 foreach(var icon in _icons){

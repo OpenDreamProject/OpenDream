@@ -462,8 +462,9 @@ internal sealed partial class DreamViewOverlay : Overlay {
         if(iconMetaData.Particles is not null) {
             foreach(var particleSystem in iconMetaData.Particles){
                 handle.UseShader(GetBlendAndColorShader(iconMetaData, ignoreColor: true));
-                particleSystem.Draw(handle, pixelPosition);
                 handle.SetTransform(CalculateDrawingMatrix(iconMetaData.TransformToApply, pixelPosition-particleSystem.RenderSize/2, particleSystem.RenderSize, renderTargetSize));
+                particleSystem.Draw(handle, pixelPosition);
+
             }
         }
         //if frame is null, this doesn't require a draw, so return NOP

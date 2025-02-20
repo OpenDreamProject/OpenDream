@@ -25,7 +25,6 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
     public override void Initialize() {
         base.Initialize();
         SubscribeLocalEvent<DreamParticlesComponent, ComponentHandleState>(OnDreamParticlesComponentChange);
-        SubscribeLocalEvent<DreamParticlesComponent, ComponentAdd>(HandleComponentAdd);
         SubscribeLocalEvent<DreamParticlesComponent, ComponentRemove>(HandleComponentRemove);
         RenderTargetPool = new(_clyde);
     }
@@ -83,13 +82,9 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
         component.DriftType = state.DriftType;
         if(_particlesManager.TryGetParticleSystem(uid, out var system))
             system.UpdateSystem(GetParticleSystemArgs(component));
+        else
+            _particlesManager.CreateParticleSystem(uid, GetParticleSystemArgs(component));
     }
-
-    private void HandleComponentAdd(EntityUid uid, DreamParticlesComponent component, ref ComponentAdd args)
-    {
-        _particlesManager.CreateParticleSystem(uid, GetParticleSystemArgs(component));
-    }
-
     private void HandleComponentRemove(EntityUid uid, DreamParticlesComponent component, ref ComponentRemove args)
     {
         _particlesManager.DestroyParticleSystem(uid);
@@ -106,7 +101,7 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
                 icon.SetAppearance(appearance.MustGetId());
                 icons.Add(icon);
             }
-            textureFunc = () => random.Pick(icons).GetTexture(null!, null!, defaultRenderMetaData, null)!; //oh god, so hacky
+            textureFunc = () => random.Pick(icons).GetTexture(null!, null!, defaultRenderMetaData, null) ?? Texture.White; //oh god, so hacky
         }
         var result = new ParticleSystemArgs(textureFunc, new Vector2i(component.Width, component.Height), (uint)component.Count, component.Spawning);
         GeneratorFloat lifespan = new();

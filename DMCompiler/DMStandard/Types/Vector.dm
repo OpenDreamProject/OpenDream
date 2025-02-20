@@ -22,5 +22,5 @@
 	proc/Turn(angle)
 		set opendream_unimplemented = TRUE
 
-/proc/vector(x, y, z) as /vector
+/proc/vector(x, y, z)
 	return new /vector(x, y, z)

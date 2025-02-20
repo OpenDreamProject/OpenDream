@@ -139,6 +139,7 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         VisContents.Clear();
         Filters.Clear();
         Verbs.Clear();
+        Particles.Clear();
         Overlays.AddRange(appearance.Overlays);
         Underlays.AddRange(appearance.Underlays);
         VisContents.AddRange(appearance.VisContents);

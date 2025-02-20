@@ -456,11 +456,6 @@ internal sealed partial class DreamViewOverlay : Overlay {
         var frame = iconMetaData.GetTexture(this, handle);
         var pixelPosition = (iconMetaData.Position + positionOffset) * EyeManager.PixelsPerMeter;
 
-        if(iconMetaData.Particles is not null) {
-            handle.UseShader(GetBlendAndColorShader(iconMetaData, ignoreColor: true));
-            iconMetaData.Particles.Draw(handle, CalculateDrawingMatrix(iconMetaData.TransformToApply, pixelPosition, iconMetaData.Particles.RenderSize, renderTargetSize));
-        }
-
         //if frame is null, this doesn't require a draw, so return NOP
         if (frame == null)
             return;
@@ -472,6 +467,11 @@ internal sealed partial class DreamViewOverlay : Overlay {
 
         handle.SetTransform(CalculateDrawingMatrix(iconMetaData.TransformToApply, pixelPosition, frame.Size, renderTargetSize));
         handle.DrawTextureRect(frame, Box2.FromDimensions(Vector2.Zero, frame.Size));
+
+        if(iconMetaData.Particles is not null) {
+            handle.UseShader(GetBlendAndColorShader(iconMetaData, ignoreColor: true));
+            iconMetaData.Particles.Draw(handle, CalculateDrawingMatrix(iconMetaData.TransformToApply, pixelPosition, iconMetaData.Particles.RenderSize, renderTargetSize));
+        }
     }
 
     /// <summary>

@@ -858,8 +858,6 @@ public sealed class DreamVisContentsList : DreamList {
     }
 }
 
-
-
 // atom.filters list
 // Operates on an object's appearance
 public sealed class DreamFilterList : DreamList {

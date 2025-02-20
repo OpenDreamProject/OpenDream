@@ -1,12 +1,8 @@
 using JetBrains.Annotations;
 using OpenDreamShared.Rendering;
-using Pidgin;
 using Robust.Client.Graphics;
-using Robust.Client.ResourceManagement;
-using Robust.Shared.GameStates;
 using Robust.Shared.Random;
 using Robust.Shared.Timing;
-using static OpenDreamShared.Rendering.DreamParticlesComponent;
 using Vector3 = Robust.Shared.Maths.Vector3;
 
 namespace OpenDreamClient.Rendering;

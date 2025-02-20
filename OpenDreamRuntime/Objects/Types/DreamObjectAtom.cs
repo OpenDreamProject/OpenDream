@@ -9,6 +9,7 @@ public class DreamObjectAtom : DreamObject {
     public readonly DreamVisContentsList VisContents;
     public readonly DreamFilterList Filters;
     public DreamList? VisLocs; // TODO: Implement
+
     public DreamObjectAtom(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
         Overlays = new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
         Underlays = new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
@@ -72,6 +73,7 @@ public class DreamObjectAtom : DreamObject {
             case "vis_contents":
                 value = new(VisContents);
                 return true;
+
             default:
                 if (AtomManager.IsValidAppearanceVar(varName)) {
                     var appearance = AtomManager.MustGetAppearance(this);

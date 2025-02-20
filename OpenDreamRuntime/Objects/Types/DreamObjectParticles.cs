@@ -1,9 +1,6 @@
-using OpenDreamRuntime.Procs;
-using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Rendering;
-using Robust.Shared.Map;
 using Vector3 = Robust.Shared.Maths.Vector3;
 
 namespace OpenDreamRuntime.Objects.Types;

@@ -49,7 +49,6 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
     [ViewVariables] public List<ImmutableAppearance> Overlays;
     [ViewVariables] public List<ImmutableAppearance> Underlays;
     [ViewVariables] public List<Robust.Shared.GameObjects.NetEntity> VisContents;
-    [ViewVariables] public List<Robust.Shared.GameObjects.NetEntity> Particles;
     [ViewVariables] public List<DreamFilter> Filters;
     [ViewVariables] public List<int> Verbs;
     [ViewVariables] public Vector2i MaptextSize = new(32,32);
@@ -85,7 +84,6 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         VisContents = [];
         Filters = [];
         Verbs = [];
-        Particles = [];
     }
 
     public void Dispose() {
@@ -139,13 +137,11 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         VisContents.Clear();
         Filters.Clear();
         Verbs.Clear();
-        Particles.Clear();
         Overlays.AddRange(appearance.Overlays);
         Underlays.AddRange(appearance.Underlays);
         VisContents.AddRange(appearance.VisContents);
         Filters.AddRange(appearance.Filters);
         Verbs.AddRange(appearance.Verbs);
-        Particles.AddRange(appearance.Particles);
         Array.Copy(appearance.Transform, Transform, 6);
     }
 
@@ -180,7 +176,6 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         if (appearance.VisContents.Count != VisContents.Count) return false;
         if (appearance.Filters.Count != Filters.Count) return false;
         if (appearance.Verbs.Count != Verbs.Count) return false;
-        if (appearance.Particles.Count != Particles.Count) return false;
         if (appearance.Override != Override) return false;
         if (appearance.Maptext != Maptext) return false;
         if (appearance.MaptextSize != MaptextSize) return false;
@@ -204,10 +199,6 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
 
         for (int i = 0; i < Verbs.Count; i++) {
             if (appearance.Verbs[i] != Verbs[i]) return false;
-        }
-
-        for (int i = 0; i < Particles.Count; i++) {
-            if (appearance.Particles[i] != Particles[i]) return false;
         }
 
         for (int i = 0; i < 6; i++) {
@@ -289,10 +280,6 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
 
         foreach (int visContent in VisContents) {
             hashCode.Add(visContent);
-        }
-
-        foreach (int particlesObject in Particles) {
-            hashCode.Add(particlesObject);
         }
 
         foreach (DreamFilter filter in Filters) {
@@ -417,7 +404,6 @@ public enum IconAppearanceProperty : byte {
         Overlays,
         Underlays,
         VisContents,
-        Particles,
         Filters,
         Verbs,
         Transform,

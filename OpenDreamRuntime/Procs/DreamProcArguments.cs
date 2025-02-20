@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace OpenDreamRuntime.Procs;
 
@@ -29,6 +30,18 @@ public readonly ref struct DreamProcArguments {
     }
 
     public override string ToString() {
-        return $"<Arguments {Count}>";
+        var strBuilder = new StringBuilder((Count * 2 - 1) + 4);
+
+        strBuilder.Append("<Arguments ");
+        strBuilder.Append(Count);
+        strBuilder.Append(">(");
+        for (int i = 0; i < Count; i++) {
+            strBuilder.Append(Values[i]);
+            if (i != Count - 1)
+                strBuilder.Append(", ");
+        }
+
+        strBuilder.Append(')');
+        return strBuilder.ToString();
     }
 }

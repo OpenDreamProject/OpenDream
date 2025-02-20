@@ -136,6 +136,7 @@ proc/winset(player, control_id, params)
 #include "Types\Regex.dm"
 #include "Types\Savefile.dm"
 #include "Types\Sound.dm"
+#include "Types\Vector.dm"
 #include "Types\World.dm"
 #include "Types\Atoms\_Atom.dm"
 #include "Types\Atoms\Area.dm"

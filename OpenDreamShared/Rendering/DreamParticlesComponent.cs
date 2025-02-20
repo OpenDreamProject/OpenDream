@@ -49,8 +49,8 @@ public sealed partial class DreamParticlesComponent : Component {
     [ViewVariables(VVAccess.ReadWrite)] public Vector3 FrictionLow;
     [ViewVariables(VVAccess.ReadWrite)] public ParticlePropertyType FrictionType;
 	//Scaling applied to the particles in (x,y)
-    [ViewVariables(VVAccess.ReadWrite)] public Vector2 ScaleHigh;
-    [ViewVariables(VVAccess.ReadWrite)] public Vector2 ScaleLow;
+    [ViewVariables(VVAccess.ReadWrite)] public Vector2 ScaleHigh = Vector2.One;
+    [ViewVariables(VVAccess.ReadWrite)] public Vector2 ScaleLow = Vector2.One;
     [ViewVariables(VVAccess.ReadWrite)] public ParticlePropertyType ScaleType;
 	//Rotation applied to the particles in degrees
     [ViewVariables(VVAccess.ReadWrite)] public float RotationHigh;

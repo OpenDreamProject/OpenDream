@@ -127,6 +127,7 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
             return Matrix3x2.CreateScale(scale.X + growth.X, scale.Y + growth.Y) *
                 Matrix3x2.CreateRotation(rotation + spin);
         };
+        result.BaseTransform = Matrix3x2.Identity;
 
         return result;
     }

@@ -81,7 +81,7 @@
 	desc = "Such a beautiful smile."
 	gender = MALE
 	see_invisible = 101
-	particles = new /particles/swarm/bees
+	
 
 	New()
 		..()
@@ -90,6 +90,10 @@
 	Login()
 		world.log << "login ran"
 		src.client.screen += new /obj/order_test_item/plane_master //used for render tests
+
+	verb/add_particles()
+		particles = new /particles/swarm/bees	
+		usr << "not the bees!"
 
 	verb/winget_test()
 		usr << "windows: [json_encode(winget(usr, null, "windows"))]"

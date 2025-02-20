@@ -13,7 +13,6 @@ namespace OpenDreamClient.Rendering;
 public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
 {
     [Dependency] private readonly ParticlesManager _particlesManager = default!;
-    [Dependency] private readonly IResourceCache _resourceCache = default!;
     [Dependency] private readonly IGameTiming _gameTiming = default!;
     [Dependency] private readonly ClientAppearanceSystem _appearanceSystem = default!;
     [Dependency] private readonly IClyde _clyde = default!;

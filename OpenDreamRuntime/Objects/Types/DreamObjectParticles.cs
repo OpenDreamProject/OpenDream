@@ -21,7 +21,7 @@ public sealed class DreamObjectParticles : DreamObject {
         ParticlesComponent = EntityManager.AddComponent<DreamParticlesComponent>(Entity);
         //populate component with settings from type
         foreach(KeyValuePair<string,DreamValue> kv in objectDefinition.Variables){
-            if(objectDefinition.ConstVariables is not null && !objectDefinition.ConstVariables.Contains(kv.Key))
+            if(!(kv.Key == "parent_type" || kv.Key == "type" || kv.Key == "vars"))
                 SetVar(kv.Key, kv.Value);
         }
         //check if I need to manually send update events to the component?

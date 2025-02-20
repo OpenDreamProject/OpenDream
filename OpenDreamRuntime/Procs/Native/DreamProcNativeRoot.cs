@@ -2487,6 +2487,22 @@ internal static class DreamProcNativeRoot {
         return DreamValue.Null;
     }
 
+    [DreamProc("sign")]
+    [DreamProcParameter("A", Type = DreamValueTypeFlag.Float)]
+    public static DreamValue NativeProc_sign(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        if (bundle.Arguments.Length != 1) throw new Exception($"expected 1 argument (found {bundle.Arguments.Length})");
+        DreamValue arg = bundle.GetArgument(0, "A");
+
+        // Any non-num returns 0
+        if (!arg.TryGetValueAsFloat(out var value)) return new DreamValue(0);
+
+        return value switch {
+            0 => new DreamValue(0),
+            < 0 => new DreamValue(-1),
+            _ => new DreamValue(1)
+        };
+    }
+
     [DreamProc("sleep")]
     [DreamProcParameter("Delay", Type = DreamValueTypeFlag.Float)]
     public static async Task<DreamValue> NativeProc_sleep(AsyncNativeProc.State state) {
@@ -3272,6 +3288,29 @@ internal static class DreamProcNativeRoot {
         bundle.GetArgument(3, "Speed").TryGetValueAsInteger(out var speed);
 
         bundle.WalkManager.StartWalkTowards(refAtom, trgAtom, lag, speed);
+        return DreamValue.Null;
+    }
+
+    [DreamProc("walk_to")]
+    [DreamProcParameter("Ref", Type = DreamValueTypeFlag.DreamObject)]
+    [DreamProcParameter("Trg", Type = DreamValueTypeFlag.DreamObject)]
+    [DreamProcParameter("Min", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    [DreamProcParameter("Lag", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    [DreamProcParameter("Speed", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    public static DreamValue NativeProc_walk_to(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        if (!bundle.GetArgument(0, "Ref").TryGetValueAsDreamObject<DreamObjectMovable>(out var refAtom))
+            return DreamValue.Null;
+
+        if (!bundle.GetArgument(1, "Trg").TryGetValueAsDreamObject<DreamObjectAtom>(out var trgAtom)) {
+            bundle.WalkManager.StopWalks(refAtom);
+            return DreamValue.Null;
+        }
+
+        bundle.GetArgument(2, "Min").TryGetValueAsInteger(out var min);
+        bundle.GetArgument(3, "Lag").TryGetValueAsInteger(out var lag);
+        bundle.GetArgument(4, "Speed").TryGetValueAsInteger(out var speed);
+
+        bundle.WalkManager.StartWalkTo(refAtom, trgAtom, min, lag, speed);
         return DreamValue.Null;
     }
 

@@ -84,6 +84,7 @@ proc/roll(ndice = 1, sides) as num
 proc/round(A, B) as num
 proc/sha1(input) as text|null
 proc/shutdown(Addr,Natural = 0)
+proc/sign(A) as num
 proc/sleep(Delay)
 proc/sorttext(T1, T2) as num
 proc/sorttextEx(T1, T2) as num
@@ -113,7 +114,6 @@ proc/viewers(Depth, Center = usr) as /list
 proc/walk(Ref, Dir, Lag = 0, Speed = 0)
 proc/walk_rand(Ref,Lag = 0,Speed = 0)
 proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
-	set opendream_unimplemented = 1
 proc/walk_towards(Ref,Trg,Lag=0,Speed=0)
 proc/winclone(player, window_name, clone_name)
 proc/winexists(player, control_id) as text

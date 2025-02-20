@@ -1403,39 +1403,57 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
+        public static ProcStatus AsType(DMProcState state) {
+            DreamValue typeValue = state.Pop();
+            DreamValue value = state.Pop();
+
+            state.Push(TypecheckHelper(typeValue, value, true));
+
+            return ProcStatus.Continue;
+        }
+
         public static ProcStatus IsType(DMProcState state) {
             DreamValue typeValue = state.Pop();
             DreamValue value = state.Pop();
+
+            state.Push(TypecheckHelper(typeValue, value, false));
+
+            return ProcStatus.Continue;
+        }
+
+        private static DreamValue TypecheckHelper(DreamValue typeValue, DreamValue value, bool doCast) {
+            // astype() returns null, istype() returns false
+            DreamValue nullOrFalse = doCast ? DreamValue.Null : DreamValue.False;
             TreeEntry? type;
 
             if (typeValue.TryGetValueAsDreamObject(out var typeObject)) {
                 if (typeObject == null) {
-                    state.Push(DreamValue.False);
-                    return ProcStatus.Continue;
+                    return nullOrFalse;
                 }
 
                 type = typeObject.ObjectDefinition.TreeEntry;
             } else if (typeValue.TryGetValueAsAppearance(out _)) {
                 // /image matches an appearance
-                state.Push(value.TryGetValueAsDreamObject<DreamObjectImage>(out _)
-                    ? DreamValue.True
-                    : DreamValue.False);
+                if (value.TryGetValueAsDreamObject<DreamObjectImage>(out var imageObject)) {
+                    return doCast ? new DreamValue(imageObject) : DreamValue.True;
+                }
 
-                return ProcStatus.Continue;
+                return nullOrFalse;
             } else if (!typeValue.TryGetValueAsType(out type)) {
-                state.Push(DreamValue.False);
-
-                return ProcStatus.Continue;
+                return nullOrFalse;
             }
 
             if (value.TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
-                state.Push(new DreamValue(dreamObject.IsSubtypeOf(type) ? 1 : 0));
-            } else {
-                state.Push(DreamValue.False);
+                if (dreamObject.IsSubtypeOf(type)) {
+                    return doCast ? new DreamValue(dreamObject) : DreamValue.True;
+                }
+
+                return nullOrFalse;
             }
 
-            return ProcStatus.Continue;
+            return nullOrFalse;
         }
+
         #endregion Comparisons
 
         #region Flow

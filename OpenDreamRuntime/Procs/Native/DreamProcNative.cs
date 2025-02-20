@@ -85,6 +85,7 @@ internal static class DreamProcNative {
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_round);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_sha1);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_shutdown);
+        objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_sign);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_sleep);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_sorttext);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_sorttextEx);
@@ -114,6 +115,7 @@ internal static class DreamProcNative {
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_walk);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_walk_rand);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_walk_towards);
+        objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_walk_to);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_winclone);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_winexists);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_winget);
@@ -127,6 +129,7 @@ internal static class DreamProcNative {
         objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Join);
         objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Remove);
         objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_RemoveAll);
+        objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Splice);
         objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Swap);
 
         objectTree.SetNativeProc(objectTree.Matrix, DreamProcNativeMatrix.NativeProc_Add);

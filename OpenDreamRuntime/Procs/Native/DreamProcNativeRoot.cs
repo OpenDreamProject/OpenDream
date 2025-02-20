@@ -1452,7 +1452,7 @@ internal static class DreamProcNativeRoot {
                 case null:
                     writer.WriteNullValue();
                     break;
-                case DreamObjectMatrix matrix: {
+                case DreamObjectMatrix matrix: {  // Special behaviour for /matrix values
                     writer.WriteStartArray();
 
                     foreach (var f in DreamObjectMatrix.EnumerateMatrix(matrix)) {

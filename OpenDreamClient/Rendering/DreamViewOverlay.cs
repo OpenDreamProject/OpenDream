@@ -403,9 +403,10 @@ internal sealed partial class DreamViewOverlay : Overlay {
         ColorMatrix colorMatrix;
         if (ignoreColor)
             colorMatrix = ColorMatrix.Identity;
-        else if (iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity))
-            colorMatrix = new ColorMatrix(iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply));
-        else
+        else if (iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity)) {
+            float blendedAlpha = iconMetaData.ColorToApply.A * iconMetaData.AlphaToApply;
+            colorMatrix = new ColorMatrix(iconMetaData.ColorToApply.WithAlpha(blendedAlpha));
+        } else
             colorMatrix = iconMetaData.ColorMatrixToApply;
 
         // We can use no shader if everything is default

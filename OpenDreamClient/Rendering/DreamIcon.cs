@@ -507,7 +507,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             //we can use the color matrix shader here, since we don't need to blend
             //also because blend mode is none, we don't need to clear
             var colorMatrix = iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity)
-                ? new ColorMatrix(iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply))
+                ? new ColorMatrix(iconMetaData.ColorToApply.WithAlpha(iconMetaData.ColorToApply.A * iconMetaData.AlphaToApply))
                 : iconMetaData.ColorMatrixToApply;
 
             ShaderInstance colorShader = DreamViewOverlay.ColorInstance.Duplicate();

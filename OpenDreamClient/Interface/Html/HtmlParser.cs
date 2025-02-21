@@ -70,8 +70,13 @@ public static class HtmlParser {
                     string tagType = attributes[0].ToLowerInvariant();
 
                     currentText.Clear();
+                    bool isSelfClosing = IsSelfClosing(tagType, attributes);
                     if (closingTag) {
-                        if (tags.Count == 0) {
+                        if (isSelfClosing) {
+                            // ignore closing tags of void elements since they don't
+                            // do anything anyway. Should probably warn.
+                            return;
+                        } else if (tags.Count == 0) {
                             Sawmill.Error("Unexpected closing tag");
                             return;
                         } else if (tags.Peek() != tagType) {
@@ -82,9 +87,9 @@ public static class HtmlParser {
                         appendTo.Pop();
                         tags.Pop();
                     } else {
-                        tags.Push(tagType);
-
-                        bool isSelfClosing = IsSelfClosing(tagType, attributes);
+                        if (!isSelfClosing) {
+                            tags.Push(tagType);
+                        }
                         appendTo.PushTag(new MarkupNode(tagType, null, ParseAttributes(attributes)), selfClosing: isSelfClosing);
                     }
 

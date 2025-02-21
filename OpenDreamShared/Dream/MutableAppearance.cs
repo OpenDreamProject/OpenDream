@@ -308,6 +308,7 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         if (!ColorHelpers.TryParseColor(color, out Color)) {
             Color = Color.White;
         }
+        Alpha = (byte)(Color.A * 255);
     }
 
     /// <summary>

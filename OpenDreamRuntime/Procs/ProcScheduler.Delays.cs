@@ -52,7 +52,7 @@ public sealed partial class ProcScheduler {
         }
 
         var tcs = new TaskCompletionSource();
-
+        
         InsertTask(new DelayTicker(tcs) { TicksAt = _gameTiming.CurTick.Value + (uint)ticks }); //safe cast because ticks is always positive here
         return tcs.Task;
     }

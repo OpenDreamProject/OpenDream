@@ -1,5 +1,4 @@
 ﻿using OpenDreamShared.Common.DM;
-using OpenDreamShared.Dream;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Input;

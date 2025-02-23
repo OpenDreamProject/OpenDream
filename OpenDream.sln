@@ -102,7 +102,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenDreamPackageTool", "Ope
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Robust.Xaml", "RobustToolbox\Robust.Xaml\Robust.Xaml.csproj", "{62F71077-77A6-4F0F-9A47-AA341668E194}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenDreamCommon", "OpenDreamCommon\OpenDreamCommon.csproj", "{556A81FF-5A5F-4DC9-9E18-AFD9767FA082}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenDreamShared.Common", "OpenDreamCommon\OpenDreamShared.Common.csproj", "{556A81FF-5A5F-4DC9-9E18-AFD9767FA082}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenDreamNoClient", "OpenDreamNoClient\OpenDreamNoClient.csproj", "{CCBE231F-192D-4CDB-8931-555B04B56534}"
 EndProject

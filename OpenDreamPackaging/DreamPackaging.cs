@@ -24,7 +24,7 @@ public static class DreamPackaging {
             inputPass,
             contentDir,
             "Content.Client",
-            new[] { "OpenDreamClient", "OpenDreamShared", "OpenDreamCommon" },
+            new[] { "OpenDreamClient", "OpenDreamShared", "OpenDreamShared.Common" },
             cancel: cancel);
 
         await RobustClientPackaging.WriteClientResources(contentDir, inputPass, cancel);

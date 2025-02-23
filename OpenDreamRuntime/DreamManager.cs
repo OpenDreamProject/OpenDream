@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
-using OpenDreamShared.Common.Bytecode;
 using OpenDreamShared.Common.Json;
 using OpenDreamNoClient.Bytecode;
 using OpenDreamRuntime.Map;

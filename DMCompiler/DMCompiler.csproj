@@ -18,11 +18,6 @@
     <ProjectReference Include="..\OpenDreamNoClient\OpenDreamNoClient.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Bytecode\" />
-    <Folder Include="Json\" />
-  </ItemGroup>
-
   <Target Name="CopyDMStandard" AfterTargets="AfterBuild">
     <Copy SourceFiles="@(DMStandard)" DestinationFiles="@(DMStandard->'$(OutDir)\DMStandard\%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>

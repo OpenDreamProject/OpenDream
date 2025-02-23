@@ -1,7 +1,7 @@
 /datum
 	var/static/datum/three/three
 	var/text = "hello"
-	
+
 var/static/one = "one"
 
 /datum/three
@@ -9,7 +9,7 @@ var/static/one = "one"
 	text = "hi"
 	var/overridden_text = type::text
 	var/original_text = parent_type::text
-	
+
 /datum/three/proc/typetest()
 	// initial shorthand, type:: and parent_type::
 	ASSERT(text == "hi")
@@ -21,7 +21,7 @@ var/static/one = "one"
 	ASSERT(src::text == "hi")
 	ASSERT(src::overridden_text == "hi")
 	ASSERT(src::original_text == "hello")
-	
+
 	// proc reference
 	ASSERT(__PROC__ == /datum/three::typetest())
 
@@ -33,6 +33,11 @@ var/static/one = "one"
 
 /proc/return_two()
 	return "two"
+
+/datum/six
+	var/price = 60
+	better
+		price = parent_type::price + 40
 
 /proc/RunTest()
 	// global vars and procs
@@ -52,10 +57,12 @@ var/static/one = "one"
 	ASSERT(test::three::four.five::six == "3 4 5 6")
 	ASSERT(/datum::three::four.five::six == "3 4 5 6")
 
-	// this does not compile in BYOND, that is just a bug 
+	// this does not compile in BYOND, that is just a bug
 	test::three::four.five::six = "7 8 9 10"
 	ASSERT(test::three::four.five::six == "7 8 9 10")
 	ASSERT(/datum::three::four.five::six == "7 8 9 10")
-	
+
 	var/datum/three/threetest = new
 	threetest.typetest()
+
+	var/datum/six/better/test

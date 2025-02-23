@@ -202,10 +202,12 @@ proc/step_rand(atom/movable/Ref, Speed=0)
 	var/target = get_step_rand(Ref)
 	return Ref.Move(target, get_dir(Ref, target))
 
-proc/jointext(list/List as /list|text, Glue as text|null, Start = 1 as num, End = 0 as num) as text
+proc/jointext(list/List as /list|text, Glue as text|null, Start = 1 as num, End = 0 as num) as text|null
 	if(islist(List))
 		return List.Join(Glue, Start, End)
-	return List
+	if(istext(List))
+		return List
+	CRASH("jointext was passed a non-list, non-text value")
 
 proc/lentext(T) as num
 	return length(T)

@@ -41,6 +41,7 @@ var/static/one = "one"
 
 /proc/RunTest()
 	// global vars and procs
+	var/one = "not one"
 	ASSERT(::one == "one")
 	ASSERT(::return_two() == "two")
 
@@ -65,4 +66,5 @@ var/static/one = "one"
 	var/datum/three/threetest = new
 	threetest.typetest()
 
-	var/datum/six/better/test
+	var/datum/six/better/fourtest = new()
+	ASSERT(fourtest.price == 100)

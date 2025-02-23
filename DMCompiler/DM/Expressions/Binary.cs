@@ -5,8 +5,8 @@ using DMCompiler.Compiler;
 namespace DMCompiler.DM.Expressions;
 
 internal abstract class BinaryOp(Location location, DMExpression lhs, DMExpression rhs) : DMExpression(location) {
-    protected DMExpression LHS { get; } = lhs;
-    protected DMExpression RHS { get; } = rhs;
+    public DMExpression LHS { get; } = lhs;
+    public DMExpression RHS { get; } = rhs;
 
     public override DMComplexValueType ValType => LHS.ValType;
     public override bool PathIsFuzzy => true;

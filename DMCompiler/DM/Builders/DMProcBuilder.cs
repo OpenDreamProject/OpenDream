@@ -164,25 +164,52 @@ namespace DMCompiler.DM.Builders {
             }
         }
 
-        public void ProcessStatementExpression(DMASTProcStatementExpression statement) {
-            _exprBuilder.Emit(statement.Expression, out var expr);
-            var checkedExpression = statement.Expression.GetUnwrapped();
-
+        /// <summary>
+        /// Returns true if the expression has DMASTCallableSelf as the leftmost innermost expression.
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <returns></returns>
+        public void HandleCallableSelfLeft(DMASTExpression expr, ref DMComplexValueType currentReturnType, DMExpression realExpr, out bool isTemporary, bool checkConditions = false) {
+            isTemporary = false;
+            var checkedExpression = expr.GetUnwrapped();
             switch (checkedExpression) {
-                case DMASTAssign astAssignment:
-                    if (astAssignment.LHS is DMASTCallableSelf)
-                        CurrentReturnType = expr.ValType;
+                case DMASTNot:
+                    DMASTUnary astUnary = (DMASTUnary)checkedExpression;
+                    UnaryOp unaryExpr = (UnaryOp)realExpr;
+                    HandleCallableSelfLeft(astUnary.Value.GetUnwrapped(), ref currentReturnType, unaryExpr.Expr, out var _);
                     break;
-                case DMASTAppend:
+                case DMASTEqual astEqual: // a special case: we don't set it but we know lhs = rhs inside this block anyway
+                    if (!checkConditions) break;
+                    if (astEqual.LHS.GetUnwrapped() is DMASTCallableSelf) {
+                        isTemporary = true; // signal to the caller that this should be reset once we leave the current scope
+                        if (realExpr is IsNull) {
+                            // hate this, remove when it uses a bytecode op instead
+                            currentReturnType = DMValueType.Null;
+                            break;
+                        }
+                        Equal equalExpr = (Equal)realExpr;
+                        currentReturnType = equalExpr.RHS.ValType;
+                    }
+                    break;
+                case DMASTAssign astAssignment:
+                    Assignment assignExpr = (Assignment)realExpr;
+                    if (astAssignment.LHS.GetUnwrapped() is DMASTCallableSelf)
+                        currentReturnType = assignExpr.RHS.ValType;
+                    break;
                 case DMASTLogicalOrAssign:
                     DMASTBinary astBinary = (DMASTBinary)checkedExpression;
-                    if (astBinary.LHS is not DMASTCallableSelf)
+                    if (astBinary.LHS.GetUnwrapped() is not DMASTCallableSelf)
                         break;
-                    if (CurrentReturnType.Type != DMValueType.Null)
+                    if (currentReturnType.Type != DMValueType.Null)
                         break;
-                    CurrentReturnType = DMComplexValueType.MergeComplexValueTypes(compiler, CurrentReturnType, expr.ValType);
+                    currentReturnType = DMComplexValueType.MergeComplexValueTypes(compiler, currentReturnType, realExpr.ValType);
                     break;
+                }
             }
+
+        public void ProcessStatementExpression(DMASTProcStatementExpression statement) {
+            _exprBuilder.Emit(statement.Expression, out var expr);
+            HandleCallableSelfLeft(statement.Expression, ref CurrentReturnType, expr, out var _);
             proc.Pop();
         }
 
@@ -474,24 +501,9 @@ namespace DMCompiler.DM.Builders {
 
         public void ProcessStatementIf(DMASTProcStatementIf statement) {
             _exprBuilder.Emit(statement.Condition, out var expr);
-            var checkedCondition = statement.Condition.GetUnwrapped();
-
-            switch (checkedCondition) {
-                case DMASTAssign astAssignment:
-                    if (astAssignment.LHS is DMASTCallableSelf)
-                        CurrentReturnType = expr.ValType;
-                    break;
-                case DMASTAppend:
-                case DMASTLogicalOrAssign:
-                    DMASTBinary astBinary = (DMASTBinary)checkedCondition;
-                    if (astBinary.LHS is not DMASTCallableSelf)
-                        break;
-                    if (CurrentReturnType.Type != DMValueType.Null)
-                        break;
-                    CurrentReturnType = DMComplexValueType.MergeComplexValueTypes(compiler, CurrentReturnType, expr.ValType);
-                    break;
-            }
-            var oldReturnType = CurrentReturnType;
+            var prevReturnType = CurrentReturnType;
+            HandleCallableSelfLeft(statement.Condition, ref CurrentReturnType, expr, out var isTemporary, checkConditions: true);
+            var condReturnType = CurrentReturnType;
 
             if (statement.ElseBody == null) {
                 string endLabel = proc.NewLabelName();
@@ -500,7 +512,7 @@ namespace DMCompiler.DM.Builders {
                 proc.StartScope();
                 ProcessBlockInner(statement.Body);
                 proc.EndScope();
-                CurrentReturnType = oldReturnType;
+                CurrentReturnType = condReturnType;
                 proc.AddLabel(endLabel);
             } else {
                 string elseLabel = proc.NewLabelName();
@@ -511,7 +523,9 @@ namespace DMCompiler.DM.Builders {
                 proc.StartScope();
                 ProcessBlockInner(statement.Body);
                 proc.EndScope();
-                CurrentReturnType = oldReturnType;
+                CurrentReturnType = condReturnType;
+                if (isTemporary)
+                    CurrentReturnType = prevReturnType;
                 proc.Jump(endLabel);
 
                 proc.AddLabel(elseLabel);
@@ -522,6 +536,8 @@ namespace DMCompiler.DM.Builders {
                 proc.EndScope();
                 proc.AddLabel(endLabel);
             }
+            if (isTemporary)
+                CurrentReturnType = prevReturnType;
         }
 
         public void ProcessStatementFor(DMASTProcStatementFor statementFor) {
@@ -876,23 +892,8 @@ namespace DMCompiler.DM.Builders {
             DMASTProcBlockInner? defaultCaseBody = null;
 
             _exprBuilder.Emit(statementSwitch.Value, out var expr);
-            var checkedValue = statementSwitch.Value.GetUnwrapped();
-
-            switch (checkedValue) {
-                case DMASTAssign astAssignment:
-                    if (astAssignment.LHS is DMASTCallableSelf)
-                        CurrentReturnType = expr.ValType;
-                    break;
-                case DMASTAppend:
-                case DMASTLogicalOrAssign:
-                    DMASTBinary astBinary = (DMASTBinary)checkedValue;
-                    if (astBinary.LHS is not DMASTCallableSelf)
-                        break;
-                    if (CurrentReturnType.Type != DMValueType.Null)
-                        break;
-                    CurrentReturnType = DMComplexValueType.MergeComplexValueTypes(compiler, CurrentReturnType, expr.ValType);
-                    break;
-            }
+            HandleCallableSelfLeft(statementSwitch.Value, ref CurrentReturnType, expr, out var _);
+            // todo: some sort of return type inference based on cases for conditions switching on .
             foreach (DMASTProcStatementSwitch.SwitchCase switchCase in statementSwitch.Cases) {
                 if (switchCase is DMASTProcStatementSwitch.SwitchCaseValues switchCaseValues) {
                     string caseLabel = proc.NewLabelName();

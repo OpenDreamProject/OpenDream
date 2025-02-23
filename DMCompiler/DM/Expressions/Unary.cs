@@ -4,7 +4,7 @@ using DMCompiler.Bytecode;
 namespace DMCompiler.DM.Expressions;
 
 internal abstract class UnaryOp(Location location, DMExpression expr) : DMExpression(location) {
-    protected DMExpression Expr { get; } = expr;
+    public DMExpression Expr { get; } = expr;
 }
 
 // -x

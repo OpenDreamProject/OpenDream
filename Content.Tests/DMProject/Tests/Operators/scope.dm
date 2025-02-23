@@ -31,13 +31,13 @@ var/static/one = "one"
 /datum/five
 	var/static/six = "three four five six"
 
-/proc/return_two()
-	return "two"
-
 /datum/six
 	var/price = 60
 	better
 		price = parent_type::price + 40
+
+/proc/return_two()
+	return "two"
 
 /proc/RunTest()
 	// global vars and procs

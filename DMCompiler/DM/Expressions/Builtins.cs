@@ -561,6 +561,14 @@ internal sealed class Input(Location location, DMExpression[] arguments, DMValue
 
 // initial(x)
 internal class Initial(Location location, DMExpression expr) : DMExpression(location) {
+    public override DMComplexValueType ValType {
+        get {
+            if (Expression is LValue lValue) {
+                return lValue.ValType;
+            }
+            return DMValueType.Anything;
+        }
+    }
     protected DMExpression Expression { get; } = expr;
 
     public override void EmitPushValue(ExpressionContext ctx) {

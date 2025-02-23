@@ -1,4 +1,4 @@
-﻿namespace DMCompiler.DM;
+namespace DMCompiler.DM;
 
 // If you are modifying this, you must also modify OpenDreamShared.Dream.DreamValueType !!
 // Unfortunately the client needs this and it can't reference DMCompiler due to the sandbox
@@ -180,6 +180,15 @@ public class DMListValueTypes(DMComplexValueType nestedListKeyType, DMComplexVal
     public DMComplexValueType? NestedListValType => nestedListValType;
     public static DMListValueTypes MergeListValueTypes(DMCompiler compiler, DMListValueTypes type1, DMListValueTypes type2) {
         return new(DMComplexValueType.MergeComplexValueTypes(compiler, type1.NestedListKeyType, type2.NestedListKeyType), (type1.NestedListValType.HasValue && type2.NestedListValType.HasValue) ? DMComplexValueType.MergeComplexValueTypes(compiler, type1.NestedListValType.Value, type2.NestedListValType.Value) : (type1.NestedListValType ?? type2.NestedListValType));
+    }
+    public static DMComplexValueType GetKeyValType(DMListValueTypes? listValueTypes) {
+        if (listValueTypes is null) return DMValueType.Anything;
+        return listValueTypes.NestedListKeyType | DMValueType.Null;
+    }
+    public static DMComplexValueType GetValueValType(DMListValueTypes? listValueTypes) {
+        if (listValueTypes is null) return DMValueType.Anything;
+        if (listValueTypes.NestedListValType is null) return listValueTypes.NestedListKeyType; // non-assoc list, keys are also values
+        return (DMComplexValueType)(listValueTypes.NestedListValType | DMValueType.Null);
     }
     public override string ToString() {
         if (NestedListValType is not null)

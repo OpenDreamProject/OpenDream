@@ -77,6 +77,7 @@ internal sealed class Args(Location location) : LValue(location, DreamPath.List)
 
 // world
 internal sealed class World(Location location) : LValue(location, DreamPath.World) {
+    public override DMComplexValueType ValType => new DMComplexValueType(DMValueType.Instance, DreamPath.World);
     public override DMReference EmitReference(ExpressionContext ctx, string endLabel,
         ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
         return DMReference.World;
@@ -93,7 +94,7 @@ internal sealed class Local(Location location, DMProc.LocalVariable localVar, DM
             //todo: allow local variables to be param-typed again
             // WITHOUT having to pass procParameters through the whole parser chain
             //if (valType is not null) return proc.GetBaseProc().GetParameterValueTypes(valType.Value, null);
-            if (valType is not null) return valType.Value;
+            if (valType is not null && !valType.Value.IsAnything) return valType.Value;
             return LocalVar.Type is not null ? new DMComplexValueType(DMValueType.Instance | DMValueType.Path | DMValueType.Null, LocalVar.Type) : DMValueType.Anything;
         }
     }

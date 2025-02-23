@@ -60,27 +60,35 @@ internal class Dereference : LValue {
     public override DreamPath? Path { get; }
     public override DreamPath? NestedPath { get; }
     public override bool PathIsFuzzy => Path == null;
-    public override DMComplexValueType ValType { get; }
+    public override DMComplexValueType ValType {
+        get {
+            if (_valType is null) _valType = DetermineValType(_objectTree);
+            return _valType.Value;
+        }
+    }
+    private DMComplexValueType? _valType;
 
     private readonly DMExpression _expression;
     private readonly Operation[] _operations;
+    private readonly DMObjectTree _objectTree;
 
     public Dereference(DMObjectTree objectTree, Location location, DreamPath? path, DMExpression expression, Operation[] operations)
         : base(location, null) {
         _expression = expression;
         Path = path;
         _operations = operations;
+        _objectTree = objectTree;
 
         if (_operations.Length == 0) {
             throw new InvalidOperationException("deref expression has no operations");
         }
 
         NestedPath = _operations[^1].Path;
-        ValType = DetermineValType(objectTree);
     }
 
     private DMComplexValueType DetermineValType(DMObjectTree objectTree) {
         var type = _expression.ValType;
+        if (type.IsAnything && _expression.Path is not null) type = new DMComplexValueType(DMValueType.Instance, _expression.Path);
         var i = 0;
         while (!type.IsAnything && i < _operations.Length) {
             var operation = _operations[i++];
@@ -94,7 +102,7 @@ internal class Dereference : LValue {
 
             type = operation switch {
                 FieldOperation fieldOperation => dmObject.GetVariable(fieldOperation.Identifier)?.ValType ?? DMValueType.Anything,
-                IndexOperation indexOperation => indexOperation.UnnestValType(type.ListValueTypes), // TODO: Keys of assoc lists
+                IndexOperation indexOperation => indexOperation.UnnestValType(type.ListValueTypes),
                 CallOperation callOperation => dmObject.GetProcReturnTypes(callOperation.Identifier, callOperation.Parameters) ?? DMValueType.Anything,
                 _ => throw new InvalidOperationException("Unimplemented dereference operation")
             };

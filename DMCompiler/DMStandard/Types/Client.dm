@@ -49,7 +49,7 @@
 
 	proc/New(TopicData)
 		// Search every mob for one with our ckey
-		for (var/mob/M as mob in world)
+		for (var/mob/M in world)
 			if (M.key == key)
 				mob = M
 				break

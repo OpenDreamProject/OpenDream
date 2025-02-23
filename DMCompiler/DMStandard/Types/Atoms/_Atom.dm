@@ -16,19 +16,19 @@
 
 	var/tmp/atom/loc as /atom|null
 	var/dir = SOUTH as num
-	var/tmp/x = 0
-	var/tmp/y = 0
-	var/tmp/z = 0
-	var/pixel_x = 0
-	var/pixel_y = 0
-	var/pixel_z = 0
-	var/pixel_w = 0
+	var/tmp/x = 0 as num
+	var/tmp/y = 0 as num
+	var/tmp/z = 0 as num
+	var/pixel_x = 0 as num
+	var/pixel_y = 0 as num
+	var/pixel_z = 0 as num
+	var/pixel_w = 0 as num
 	
-	var/icon_w = 0 as opendream_unimplemented
-	var/icon_z = 0 as opendream_unimplemented
+	var/icon_w = 0 as num|opendream_unimplemented
+	var/icon_z = 0 as num|opendream_unimplemented
 
-	var/icon = null
-	var/icon_state = ""
+	var/icon = null as icon|null
+	var/icon_state = "" as text|null
 	var/layer = 2.0 as num
 	var/plane = 0 as num
 	var/alpha = 255 as num

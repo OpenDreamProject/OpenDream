@@ -25,7 +25,7 @@ public sealed class InterfaceMacroSet : InterfaceElement {
         _entitySystemManager = entitySystemManager;
         _uiManager = uiManager;
 
-        _inputContextName = $"{InputContextPrefix}{ElementDescriptor.Name}";
+        _inputContextName = $"{InputContextPrefix}{ElementDescriptor.Id}";
         if (inputManager.Contexts.TryGetContext(_inputContextName, out var existingContext)) {
             _inputContext = existingContext;
         } else {
@@ -45,7 +45,7 @@ public sealed class InterfaceMacroSet : InterfaceElement {
     }
 
     public void SetActive() {
-        _inputManager.Contexts.SetActiveContext($"{InputContextPrefix}{ElementDescriptor.Name}");
+        _inputManager.Contexts.SetActiveContext($"{InputContextPrefix}{ElementDescriptor.Id}");
     }
 }
 

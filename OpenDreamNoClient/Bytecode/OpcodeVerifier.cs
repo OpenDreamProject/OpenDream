@@ -11,7 +11,7 @@ public class OpcodeVerifier: IOpcodeVerifier {
     /// </summary>
     /// <returns>A MD5 hash string</returns>
     public string GetOpcodesHash() {
-        var allOpcodes = Enum.GetValues(typeof(DreamProcOpcode));
+        Array allOpcodes = Enum.GetValues(typeof(DreamProcOpcode));
         List<byte> opcodesBytes = new List<byte>();
 
         foreach (var value in allOpcodes) {

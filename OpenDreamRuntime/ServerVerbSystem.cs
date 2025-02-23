@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using System.Linq;
-using DMCompiler.DM;
+using OpenDreamShared.Common.DM;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamShared.Dream;

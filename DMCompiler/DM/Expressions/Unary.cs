@@ -1,5 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-using DMCompiler.Bytecode;
+using OpenDreamShared.Common.Bytecode;
 
 namespace DMCompiler.DM.Expressions;
 

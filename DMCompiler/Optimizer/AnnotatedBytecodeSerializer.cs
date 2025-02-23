@@ -1,7 +1,7 @@
 using System.IO;
-using DMCompiler.Bytecode;
 using DMCompiler.Compiler;
-using DMCompiler.Json;
+using OpenDreamShared.Common.Bytecode;
+using OpenDreamShared.Common.Json;
 
 namespace DMCompiler.Optimizer;
 

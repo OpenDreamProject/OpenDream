@@ -1,4 +1,4 @@
-﻿namespace DMCompiler.Json;
+﻿namespace OpenDreamShared.Common.Json;
 
 public sealed class DreamMapJson {
     public int MaxX { get; set; }

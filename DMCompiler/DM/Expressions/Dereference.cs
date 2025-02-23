@@ -1,7 +1,9 @@
-using DMCompiler.Bytecode;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using DMCompiler.Compiler;
+using OpenDreamShared.Common;
+using OpenDreamShared.Common.DM;
+using OpenDreamShared.Common.Bytecode;
 
 namespace DMCompiler.DM.Expressions;
 

@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
-using DMCompiler.Bytecode;
 using DMCompiler.Compiler.DM.AST;
+using OpenDreamShared.Common.Bytecode;
 
 namespace DMCompiler.Compiler.DM;
 

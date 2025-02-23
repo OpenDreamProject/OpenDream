@@ -1,10 +1,10 @@
-namespace DMCompiler.Bytecode;
+namespace OpenDreamShared.Common.Bytecode;
 
 /// <summary>
 /// Custom attribute for declaring <see cref="OpcodeMetadata"/> metadata for individual opcodes
 /// </summary>
 [AttributeUsage(AttributeTargets.Field)]
-internal sealed class OpcodeMetadataAttribute : Attribute {
+public sealed class OpcodeMetadataAttribute : Attribute {
     public OpcodeMetadata Metadata;
 
     public OpcodeMetadataAttribute(int stackDelta = 0, params OpcodeArgType[] requiredArgs) {
@@ -26,25 +26,6 @@ public struct OpcodeMetadata(int stackDelta = 0, bool variableArgs = false, para
     public readonly bool VariableArgs = variableArgs; // Whether this opcode takes a variable number of arguments
 }
 
-/// <summary>
-/// Automatically builds a cache of the <see cref="OpcodeMetadata"/> attribute for each opcode
-/// </summary>
-public static class OpcodeMetadataCache {
-    private static readonly OpcodeMetadata[] MetadataCache = new OpcodeMetadata[256];
-
-    static OpcodeMetadataCache() {
-        foreach (DreamProcOpcode opcode in Enum.GetValues(typeof(DreamProcOpcode))) {
-            var field = typeof(DreamProcOpcode).GetField(opcode.ToString());
-            var attribute = Attribute.GetCustomAttribute(field!, typeof(OpcodeMetadataAttribute));
-            var metadataAttribute = (OpcodeMetadataAttribute?)attribute;
-            MetadataCache[(byte)opcode] = metadataAttribute?.Metadata ?? new OpcodeMetadata();
-        }
-    }
-
-    public static OpcodeMetadata GetMetadata(DreamProcOpcode opcode) {
-        return MetadataCache[(byte)opcode];
-    }
-}
 
 public enum OpcodeArgType {
     ArgType,

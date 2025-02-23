@@ -1,4 +1,6 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using OpenDreamShared.Common;
+using OpenDreamShared.Common.DM;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DMCompiler.DM;
 

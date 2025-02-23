@@ -1,4 +1,5 @@
-﻿using OpenDreamShared.Dream;
+﻿using OpenDreamShared.Common.DM;
+using OpenDreamShared.Dream;
 using Robust.Client.UserInterface;
 
 namespace OpenDreamClient.Interface.Prompts;
@@ -6,7 +7,7 @@ namespace OpenDreamClient.Interface.Prompts;
 [Virtual]
 internal class InputWindow : PromptWindow {
     protected InputWindow(string title, string message, bool canCancel,
-        Action<DreamValueType, object?>? onClose) : base(title, message, onClose) {
+        Action<DMValueType, object?>? onClose) : base(title, message, onClose) {
         CreateButton("Ok", true);
         if (canCancel) CreateButton("Cancel", false);
     }
@@ -19,7 +20,7 @@ internal class InputWindow : PromptWindow {
 
     protected override void ButtonClicked(string button) {
         if (button == "Ok") OkButtonClicked();
-        else FinishPrompt(DreamValueType.Null, null);
+        else FinishPrompt(DMValueType.Null, null);
 
         base.ButtonClicked(button);
     }

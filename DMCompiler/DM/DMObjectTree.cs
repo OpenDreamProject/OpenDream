@@ -1,7 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Compiler;
 using DMCompiler.Compiler.DM.AST;
-using DMCompiler.Json;
+using OpenDreamShared.Common;
+using OpenDreamShared.Common.Json;
 
 namespace DMCompiler.DM;
 

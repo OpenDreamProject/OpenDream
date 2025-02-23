@@ -1,5 +1,6 @@
 ﻿using System;
 using Lidgren.Network;
+using OpenDreamShared.Common.DM;
 using OpenDreamShared.Dream;
 using Robust.Shared.Maths;
 using Robust.Shared.Network;
@@ -11,18 +12,18 @@ public sealed class MsgPromptResponse : NetMessage {
     public override MsgGroups MsgGroup => MsgGroups.EntityEvent;
 
     public int PromptId;
-    public DreamValueType Type;
+    public DMValueType Type;
     public object? Value;
 
     public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {
         PromptId = buffer.ReadVariableInt32();
-        Type = (DreamValueType)buffer.ReadUInt16();
+        Type = (DMValueType)buffer.ReadUInt16();
 
         Value = Type switch {
-            DreamValueType.Null => null,
-            DreamValueType.Text or DreamValueType.Message => buffer.ReadString(),
-            DreamValueType.Num => buffer.ReadSingle(),
-            DreamValueType.Color => new Color(buffer.ReadByte(), buffer.ReadByte(), buffer.ReadByte(), buffer.ReadByte()),
+            DMValueType.Null => null,
+            DMValueType.Text or DMValueType.Message => buffer.ReadString(),
+            DMValueType.Num => buffer.ReadSingle(),
+            DMValueType.Color => new Color(buffer.ReadByte(), buffer.ReadByte(), buffer.ReadByte(), buffer.ReadByte()),
             _ => throw new ArgumentOutOfRangeException()
         };
     }
@@ -32,14 +33,14 @@ public sealed class MsgPromptResponse : NetMessage {
 
         buffer.Write((ushort)Type);
         switch (Type) {
-            case DreamValueType.Null: break;
-            case DreamValueType.Text or DreamValueType.Message:
+            case DMValueType.Null: break;
+            case DMValueType.Text or DMValueType.Message:
                 buffer.Write((string)Value!);
                 break;
-            case DreamValueType.Num:
+            case DMValueType.Num:
                 buffer.Write((float)Value!);
                 break;
-            case DreamValueType.Color:
+            case DMValueType.Color:
                 var color = (Color)Value!;
                 buffer.Write(color.RByte);
                 buffer.Write(color.GByte);

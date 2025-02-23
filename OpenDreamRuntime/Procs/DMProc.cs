@@ -2,15 +2,14 @@ using System.Buffers;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
-using DMCompiler.Bytecode;
-using DMCompiler.DM;
-using DMCompiler.Json;
+using OpenDreamShared.Common.DM;
+using OpenDreamShared.Common.Json;
+using OpenDreamShared.Common.Bytecode;
 using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamRuntime.Resources;
-using OpenDreamShared.Dream;
 using Robust.Shared.Utility;
 
 namespace OpenDreamRuntime.Procs {
@@ -136,12 +135,12 @@ namespace OpenDreamRuntime.Procs {
             }
         }
 
-        private static List<DreamValueType>? GetArgumentTypes(ProcDefinitionJson json) {
+        private static List<DMValueType>? GetArgumentTypes(ProcDefinitionJson json) {
             if (json.Arguments == null) {
                 return null;
             } else {
-                var argumentTypes = new List<DreamValueType>(json.Arguments.Count);
-                argumentTypes.AddRange(json.Arguments.Select(a => (DreamValueType)a.Type));
+                var argumentTypes = new List<DMValueType>(json.Arguments.Count);
+                argumentTypes.AddRange(json.Arguments.Select(a => (DMValueType)a.Type));
                 return argumentTypes;
             }
         }

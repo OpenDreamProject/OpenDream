@@ -16,13 +16,13 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
-using DMCompiler.DM;
 using OpenDreamRuntime.Objects.Types;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
 using Robust.Server;
 using Robust.Shared.Asynchronous;
 using Vector4 = Robust.Shared.Maths.Vector4;
+using OpenDreamShared.Common.DM;
 
 namespace OpenDreamRuntime.Procs.Native;
 /// <remarks>

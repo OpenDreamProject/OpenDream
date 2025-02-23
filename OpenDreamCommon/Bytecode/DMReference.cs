@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace DMCompiler.Bytecode;
+namespace OpenDreamShared.Common.Bytecode;
 
 public struct DMReference {
     public static readonly DMReference Src = new() { RefType = Type.Src };

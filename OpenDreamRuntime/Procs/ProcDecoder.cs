@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Text;
-using DMCompiler.Bytecode;
-using OpenDreamShared.Dream;
+using OpenDreamShared.Common.Bytecode;
+using OpenDreamShared.Common.DM;
 
 namespace OpenDreamRuntime.Procs;
 
@@ -26,8 +26,8 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
         return value;
     }
 
-    public DreamValueType ReadValueType() {
-        return (DreamValueType) ReadInt();
+    public DMValueType ReadValueType() {
+        return (DMValueType) ReadInt();
     }
 
     public float ReadFloat() {

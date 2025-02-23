@@ -1,3 +1,4 @@
+using OpenDreamShared.Common.Bytecode;
 using System.Diagnostics.CodeAnalysis;
 
 namespace DMCompiler.Optimizer;
@@ -54,7 +55,7 @@ public class BytecodeOptimizer(DMCompiler compiler) {
      */
     private void RemoveImmediateJumps(List<IAnnotatedBytecode> input) {
         for (int i = input.Count - 2; i >= 0; i--) {
-            if (input[i] is AnnotatedBytecodeInstruction { Opcode: Bytecode.DreamProcOpcode.Jump } instruction) {
+            if (input[i] is AnnotatedBytecodeInstruction { Opcode: DreamProcOpcode.Jump } instruction) {
                 if (input[i + 1] is AnnotatedBytecodeLabel followingLabel) {
                     AnnotatedBytecodeLabel jumpLabelName = instruction.GetArg<AnnotatedBytecodeLabel>(0);
                     if (jumpLabelName.LabelName == followingLabel.LabelName) {

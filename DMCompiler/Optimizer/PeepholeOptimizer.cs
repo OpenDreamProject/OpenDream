@@ -1,5 +1,5 @@
 using System.Runtime.CompilerServices;
-using DMCompiler.Bytecode;
+using OpenDreamShared.Common.Bytecode;
 
 namespace DMCompiler.Optimizer;
 

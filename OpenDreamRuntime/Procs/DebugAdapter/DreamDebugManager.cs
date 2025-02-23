@@ -1,6 +1,6 @@
 using System.IO;
 using System.Linq;
-using DMCompiler.Bytecode;
+using OpenDreamShared.Common.Bytecode;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.DebugAdapter.Protocol;

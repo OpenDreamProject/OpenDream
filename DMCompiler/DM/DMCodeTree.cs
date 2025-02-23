@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Compiler;
 using DMCompiler.DM.Builders;
+using OpenDreamShared.Common;
 
 namespace DMCompiler.DM;
 

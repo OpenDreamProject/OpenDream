@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using OpenDreamClient.Interface;
 using OpenDreamClient.Rendering;
+using OpenDreamShared.Common.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Rendering;
 using Robust.Client.GameObjects;
@@ -138,7 +139,7 @@ public sealed class ClientVerbSystem : VerbSystem {
     /// <returns>The ID, src, and information of every executable verb</returns>
     public IEnumerable<(int Id, ClientObjectReference Src, VerbInfo VerbInfo)> GetExecutableVerbs(ClientObjectReference target) {
         foreach (var verb in GetExecutableVerbs()) {
-            DreamValueType? targetType = verb.VerbInfo.GetTargetType();
+            DMValueType? targetType = verb.VerbInfo.GetTargetType();
             if (targetType == null) {
                 // Verbs without a target but an "in view()/range()" accessibility will still show
                 if (verb.Src.Equals(target) &&
@@ -150,7 +151,7 @@ public sealed class ClientVerbSystem : VerbSystem {
                 continue;
             }
 
-            if (targetType == DreamValueType.Anything) {
+            if (targetType == DMValueType.Anything) {
                 yield return verb;
             } else {
                 switch (target.Type) {
@@ -158,14 +159,14 @@ public sealed class ClientVerbSystem : VerbSystem {
                         var entity = _entityManager.GetEntity(target.Entity);
                         var isMob = _entityManager.HasComponent<DreamMobSightComponent>(entity);
 
-                        if ((targetType & DreamValueType.Mob) != 0x0 && isMob)
+                        if ((targetType & DMValueType.Mob) != 0x0 && isMob)
                             yield return verb;
-                        if ((targetType & DreamValueType.Obj) != 0x0 && !isMob)
+                        if ((targetType & DMValueType.Obj) != 0x0 && !isMob)
                             yield return verb;
 
                         break;
                     case ClientObjectReference.RefType.Turf:
-                        if ((targetType & DreamValueType.Turf) != 0x0)
+                        if ((targetType & DMValueType.Turf) != 0x0)
                             yield return verb;
 
                         break;

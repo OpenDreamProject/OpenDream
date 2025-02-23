@@ -1,4 +1,6 @@
-﻿namespace DMCompiler.Compiler.DM;
+﻿using OpenDreamShared.Common;
+
+namespace DMCompiler.Compiler.DM;
 
 internal abstract class VarDeclInfo {
     public DreamPath? TypePath;

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
@@ -7,7 +7,8 @@
     <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DMCompiler\DMCompiler.csproj" />
+    <ProjectReference Include="..\OpenDreamCommon\OpenDreamCommon.csproj" />
+    <ProjectReference Include="..\OpenDreamNoClient\OpenDreamNoClient.csproj" />
     <ProjectReference Include="..\OpenDreamPackaging\OpenDreamPackaging.csproj" />
     <ProjectReference Include="..\OpenDreamShared\OpenDreamShared.csproj" />
     <ProjectReference Include="..\RobustToolbox\Robust.Server\Robust.Server.csproj" />

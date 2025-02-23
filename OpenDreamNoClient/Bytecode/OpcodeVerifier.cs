@@ -1,16 +1,17 @@
+using OpenDreamShared.Common.Bytecode;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace DMCompiler.Bytecode;
+namespace OpenDreamNoClient.Bytecode;
 
 // Dummy class-as-namespace because C# just kinda be like this
-public static class OpcodeVerifier {
+public class OpcodeVerifier: IOpcodeVerifier {
     /// <summary>
     /// Calculates a hash of all the <c>DreamProcOpcode</c>s for warning on incompatibilities.
     /// </summary>
     /// <returns>A MD5 hash string</returns>
-    public static string GetOpcodesHash() {
-        Array allOpcodes = Enum.GetValues(typeof(DreamProcOpcode));
+    public string GetOpcodesHash() {
+        var allOpcodes = Enum.GetValues(typeof(DreamProcOpcode));
         List<byte> opcodesBytes = new List<byte>();
 
         foreach (var value in allOpcodes) {

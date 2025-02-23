@@ -1,4 +1,4 @@
-using DMCompiler.Bytecode;
+using OpenDreamShared.Common.Bytecode;
 
 // ReSharper disable UnusedType.Global
 

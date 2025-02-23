@@ -1,4 +1,3 @@
-using DMCompiler.Bytecode;
 using DMCompiler.Compiler.DM;
 using DMCompiler.Compiler.DMM;
 using DMCompiler.Compiler.DMPreprocessor;
@@ -13,8 +12,12 @@ using System.Text.Json.Serialization;
 using DMCompiler.Compiler;
 using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM.Builders;
-using DMCompiler.Json;
 using DMCompiler.Optimizer;
+using OpenDreamShared.Common.DM;
+using OpenDreamShared.Common;
+using OpenDreamShared.Common.Json;
+using OpenDreamShared.Common.Bytecode;
+using OpenDreamNoClient.Bytecode;
 
 namespace DMCompiler;
 
@@ -78,7 +81,7 @@ public class DMCompiler {
             if (ErrorCount > 0) {
                 successfulCompile = false;
             } else {
-                var output = SaveJson(maps, preprocessor.IncludedInterface, outputFile);
+                var output = SaveJson(maps, preprocessor.IncludedInterface, outputFile, new OpcodeVerifier());
                 if (ErrorCount > 0) {
                     successfulCompile = false;
                 } else {
@@ -294,10 +297,10 @@ public class DMCompiler {
         return maps;
     }
 
-    private string SaveJson(List<DreamMapJson> maps, string interfaceFile, string outputFile) {
+    private string SaveJson(List<DreamMapJson> maps, string interfaceFile, string outputFile, IOpcodeVerifier verifier) {
         var jsonRep = DMObjectTree.CreateJsonRepresentation();
         var compiledDream = new DreamCompiledJson {
-            Metadata = new DreamCompiledJsonMetadata { Version = OpcodeVerifier.GetOpcodesHash() },
+            Metadata = new DreamCompiledJsonMetadata { Version = verifier.GetOpcodesHash() },
             Strings = DMObjectTree.StringTable,
             Resources = DMObjectTree.Resources.ToArray(),
             Maps = maps,
@@ -388,6 +391,26 @@ public class DMCompiler {
             throw new Exception($"Failed to find error level for code {code}");
 
         return ret;
+    }
+
+    public DMValueType? GetAtomType(DreamPath? path) {
+        if (path == null) {
+            return null;
+        }
+
+        if (!DMObjectTree.TryGetDMObject((DreamPath)path, out var dmType))
+            return DMValueType.Anything;
+
+        if (dmType.IsSubtypeOf(DreamPath.Obj))
+            return DMValueType.Obj;
+        if (dmType.IsSubtypeOf(DreamPath.Mob))
+            return DMValueType.Mob;
+        if (dmType.IsSubtypeOf(DreamPath.Turf))
+            return DMValueType.Turf;
+        if (dmType.IsSubtypeOf(DreamPath.Area))
+            return DMValueType.Area;
+
+        return DMValueType.Anything;
     }
 }
 

@@ -1,5 +1,5 @@
 using System.Linq;
-using OpenDreamShared.Dream;
+using OpenDreamShared.Common.DM;
 using Robust.Client.Graphics;
 using Robust.Client.ResourceManagement;
 using Robust.Client.UserInterface;
@@ -16,7 +16,7 @@ internal sealed class ColorPrompt : InputWindow {
     private readonly Color _originalColor;
 
     public ColorPrompt(string title, string message, string defaultValue, bool canCancel,
-        Action<DreamValueType, object?>? onClose, bool alpha = false) : base(title, message, canCancel, onClose) {
+        Action<DMValueType, object?>? onClose, bool alpha = false) : base(title, message, canCancel, onClose) {
         _originalColor = Color.FromHex(defaultValue, Color.White);
         _colorSelector = new() {
             Color = _originalColor,
@@ -76,7 +76,7 @@ internal sealed class ColorPrompt : InputWindow {
     }
 
     protected override void OkButtonClicked() {
-        FinishPrompt(DreamValueType.Color, _colorSelector.Color);
+        FinishPrompt(DMValueType.Color, _colorSelector.Color);
     }
 }
 

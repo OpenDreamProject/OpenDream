@@ -1,5 +1,5 @@
 using System.Linq;
-using DMCompiler.DM;
+using OpenDreamShared.Common.DM;
 
 namespace DMCompiler.Compiler.DM.AST;
 

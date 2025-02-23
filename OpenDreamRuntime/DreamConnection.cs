@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using System.Web;
+using OpenDreamShared.Common.DM;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.Native;
@@ -289,7 +290,7 @@ public sealed class DreamConnection {
         }
     }
 
-    public Task<DreamValue> Prompt(DreamValueType types, string title, string message, string defaultValue) {
+    public Task<DreamValue> Prompt(DMValueType types, string title, string message, string defaultValue) {
         var task = MakePromptTask(out var promptId);
         var msg = new MsgPrompt {
             PromptId = promptId,
@@ -303,18 +304,18 @@ public sealed class DreamConnection {
         return task;
     }
 
-    public async Task<DreamValue> PromptList(DreamValueType types, DreamList list, string title, string message, DreamValue defaultValue) {
+    public async Task<DreamValue> PromptList(DMValueType types, DreamList list, string title, string message, DreamValue defaultValue) {
         List<DreamValue> listValues = list.GetValues();
 
         List<string> promptValues = new(listValues.Count);
         foreach (var value in listValues) {
-            if (types.HasFlag(DreamValueType.Obj) && !value.TryGetValueAsDreamObject<DreamObjectMovable>(out _))
+            if (types.HasFlag(DMValueType.Obj) && !value.TryGetValueAsDreamObject<DreamObjectMovable>(out _))
                 continue;
-            if (types.HasFlag(DreamValueType.Mob) && !value.TryGetValueAsDreamObject<DreamObjectMob>(out _))
+            if (types.HasFlag(DMValueType.Mob) && !value.TryGetValueAsDreamObject<DreamObjectMob>(out _))
                 continue;
-            if (types.HasFlag(DreamValueType.Turf) && !value.TryGetValueAsDreamObject<DreamObjectTurf>(out _))
+            if (types.HasFlag(DMValueType.Turf) && !value.TryGetValueAsDreamObject<DreamObjectTurf>(out _))
                 continue;
-            if (types.HasFlag(DreamValueType.Area) && !value.TryGetValueAsDreamObject<DreamObjectArea>(out _))
+            if (types.HasFlag(DMValueType.Area) && !value.TryGetValueAsDreamObject<DreamObjectArea>(out _))
                 continue;
 
             promptValues.Add(value.Stringify());
@@ -328,7 +329,7 @@ public sealed class DreamConnection {
             PromptId = promptId,
             Title = title,
             Message = message,
-            CanCancel = (types & DreamValueType.Null) == DreamValueType.Null,
+            CanCancel = (types & DMValueType.Null) == DMValueType.Null,
             DefaultValue = defaultValue.Stringify(),
             Values = promptValues.ToArray()
         };
@@ -499,27 +500,27 @@ public sealed class DreamConnection {
         Session?.Channel.SendMessage(msg);
     }
 
-    public bool TryConvertPromptResponse(DreamValueType type, object? value, out DreamValue converted) {
-        bool CanBe(DreamValueType canBeType) => (type == DreamValueType.Anything) || ((type & canBeType) != 0x0);
+    public bool TryConvertPromptResponse(DMValueType type, object? value, out DreamValue converted) {
+        bool CanBe(DMValueType canBeType) => (type == DMValueType.Anything) || ((type & canBeType) != 0x0);
 
-        if (CanBe(DreamValueType.Null) && value == null) {
+        if (CanBe(DMValueType.Null) && value == null) {
             converted = DreamValue.Null;
             return true;
-        } else if (CanBe(DreamValueType.Text | DreamValueType.Message | DreamValueType.CommandText) && value is string strVal) {
+        } else if (CanBe(DMValueType.Text | DMValueType.Message | DMValueType.CommandText) && value is string strVal) {
             converted = new(strVal);
             return true;
-        } else if (CanBe(DreamValueType.Num) && value is float numVal) {
+        } else if (CanBe(DMValueType.Num) && value is float numVal) {
             converted = new DreamValue(numVal);
             return true;
-        } else if (CanBe(DreamValueType.Color) && value is Color colorVal) {
+        } else if (CanBe(DMValueType.Color) && value is Color colorVal) {
             converted = new DreamValue(colorVal.ToHexNoAlpha());
             return true;
-        } else if (CanBe(type & DreamValueType.AllAtomTypes) && value is ClientObjectReference clientRef) {
+        } else if (CanBe(type & DMValueType.AllAtomTypes) && value is ClientObjectReference clientRef) {
             var atom = _dreamManager.GetFromClientReference(this, clientRef);
 
             if (atom != null) {
-                if ((atom.IsSubtypeOf(_objectTree.Obj) && !CanBe(DreamValueType.Obj)) ||
-                    (atom.IsSubtypeOf(_objectTree.Mob) && !CanBe(DreamValueType.Mob))) {
+                if ((atom.IsSubtypeOf(_objectTree.Obj) && !CanBe(DMValueType.Obj)) ||
+                    (atom.IsSubtypeOf(_objectTree.Mob) && !CanBe(DMValueType.Mob))) {
                     converted = default;
                     return false;
                 }

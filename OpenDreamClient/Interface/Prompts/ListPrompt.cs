@@ -1,4 +1,5 @@
-﻿using OpenDreamShared.Dream;
+﻿using OpenDreamShared.Common.DM;
+using OpenDreamShared.Dream;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Input;
@@ -9,7 +10,7 @@ internal sealed class ListPrompt : InputWindow {
     private readonly ItemList _itemList;
 
     public ListPrompt(string title, string message, string defaultValue, bool canCancel, string[] values,
-        Action<DreamValueType, object?>? onClose) : base(title, message, canCancel, onClose) {
+        Action<DMValueType, object?>? onClose) : base(title, message, canCancel, onClose) {
         _itemList = new ItemList();
         // don't make it as long as the width
         // really this should check for fontHeight not hacky const 24
@@ -38,7 +39,7 @@ internal sealed class ListPrompt : InputWindow {
             if (!item.Selected)
                 continue;
 
-            FinishPrompt(DreamValueType.Num, (float)_itemList.IndexOf(item));
+            FinishPrompt(DMValueType.Num, (float)_itemList.IndexOf(item));
             return;
         }
 

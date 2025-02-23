@@ -3,8 +3,9 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
-using DMCompiler.Bytecode;
-using DMCompiler.Json;
+using OpenDreamShared.Common.Bytecode;
+using OpenDreamShared.Common.Json;
+using OpenDreamNoClient.Bytecode;
 using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
@@ -127,7 +128,7 @@ namespace OpenDreamRuntime {
             if (json == null)
                 return false;
 
-            if (!json.Metadata.Version.Equals(OpcodeVerifier.GetOpcodesHash())) {
+            if (!json.Metadata.Version.Equals(new OpcodeVerifier().GetOpcodesHash())) {
                 _sawmill.Error("Compiler opcode version does not match the runtime version!");
             }
 

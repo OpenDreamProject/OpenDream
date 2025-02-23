@@ -1,6 +1,6 @@
-﻿using DMCompiler.DM;
+﻿using OpenDreamShared.Common.DM;
 
-namespace DMCompiler.Json;
+namespace OpenDreamShared.Common.Json;
 
 public sealed class ProcDefinitionJson {
     public int OwningTypeId { get; init; }

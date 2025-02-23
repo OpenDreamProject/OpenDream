@@ -1,4 +1,4 @@
-﻿using OpenDreamShared.Dream;
+﻿using OpenDreamShared.Common.DM;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Utility;
 
@@ -8,7 +8,7 @@ internal sealed class MessagePrompt : InputWindow {
     private readonly TextEdit _textEdit;
 
     public MessagePrompt(string title, string message, string defaultValue, bool canCancel,
-        Action<DreamValueType, object?>? onClose) : base(title, message, canCancel, onClose) {
+        Action<DMValueType, object?>? onClose) : base(title, message, canCancel, onClose) {
         _textEdit = new TextEdit {
             TextRope = new Rope.Leaf(defaultValue),
 
@@ -21,6 +21,6 @@ internal sealed class MessagePrompt : InputWindow {
     }
 
     protected override void OkButtonClicked() {
-        FinishPrompt(DreamValueType.Message, Rope.Collapse(_textEdit.TextRope));
+        FinishPrompt(DMValueType.Message, Rope.Collapse(_textEdit.TextRope));
     }
 }

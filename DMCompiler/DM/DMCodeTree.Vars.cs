@@ -1,9 +1,11 @@
 using System.Diagnostics.CodeAnalysis;
-using DMCompiler.Bytecode;
 using DMCompiler.Compiler;
 using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM.Builders;
 using DMCompiler.DM.Expressions;
+using OpenDreamShared.Common;
+using OpenDreamShared.Common.Bytecode;
+using OpenDreamShared.Common.DM;
 using ScopeMode = DMCompiler.DM.Builders.DMExpressionBuilder.ScopeMode;
 
 namespace DMCompiler.DM;

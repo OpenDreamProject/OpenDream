@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <!-- Work around https://github.com/dotnet/project-system/issues/4314 -->
     <TargetFramework>$(TargetFramework)</TargetFramework>
@@ -24,6 +24,7 @@
     <ProjectReference Include="..\DMCompiler\DMCompiler.csproj" />
     <ProjectReference Include="..\OpenDreamClient\OpenDreamClient.csproj" />
     <ProjectReference Include="..\OpenDreamServer\OpenDreamServer.csproj" />
+    <ProjectReference Include="..\OpenDreamShared.Common\OpenDreamShared.Common.csproj" />
     <ProjectReference Include="..\OpenDreamShared\OpenDreamShared.csproj" />
     <ProjectReference Include="..\RobustToolbox\Robust.Client\Robust.Client.csproj" />
     <ProjectReference Include="..\RobustToolbox\Robust.Server\Robust.Server.csproj" />

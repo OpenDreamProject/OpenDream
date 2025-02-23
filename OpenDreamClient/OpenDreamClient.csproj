@@ -11,6 +11,7 @@
     <NoWarn>NU1507</NoWarn>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\OpenDreamShared.Common\OpenDreamShared.Common.csproj" />
     <ProjectReference Include="..\OpenDreamShared\OpenDreamShared.csproj" />
     <ProjectReference Include="..\RobustToolbox\Lidgren.Network\Lidgren.Network.csproj" />
     <ProjectReference Include="..\RobustToolbox\Robust.Client.WebView\Robust.Client.WebView.csproj" />

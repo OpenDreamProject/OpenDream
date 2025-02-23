@@ -15,7 +15,7 @@
     <PackageReference Include="JetBrains.Annotations" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\OpenDreamCommon\OpenDreamShared.Common.csproj" />
+    <ProjectReference Include="..\OpenDreamShared.Common\OpenDreamShared.Common.csproj" />
     <ProjectReference Include="..\RobustToolbox\Robust.Shared\Robust.Shared.csproj" />
   </ItemGroup>
   <Import Project="..\RobustToolbox\MSBuild\Robust.Properties.targets" />

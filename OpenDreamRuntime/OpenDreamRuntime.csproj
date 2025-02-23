@@ -7,9 +7,9 @@
     <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\OpenDreamCommon\OpenDreamShared.Common.csproj" />
     <ProjectReference Include="..\OpenDreamNoClient\OpenDreamNoClient.csproj" />
     <ProjectReference Include="..\OpenDreamPackaging\OpenDreamPackaging.csproj" />
+    <ProjectReference Include="..\OpenDreamShared.Common\OpenDreamShared.Common.csproj" />
     <ProjectReference Include="..\OpenDreamShared\OpenDreamShared.csproj" />
     <ProjectReference Include="..\RobustToolbox\Robust.Server\Robust.Server.csproj" />
   </ItemGroup>

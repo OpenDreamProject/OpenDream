@@ -14,8 +14,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\OpenDreamCommon\OpenDreamShared.Common.csproj" />
     <ProjectReference Include="..\OpenDreamNoClient\OpenDreamNoClient.csproj" />
+    <ProjectReference Include="..\OpenDreamShared.Common\OpenDreamShared.Common.csproj" />
   </ItemGroup>
 
   <Target Name="CopyDMStandard" AfterTargets="AfterBuild">

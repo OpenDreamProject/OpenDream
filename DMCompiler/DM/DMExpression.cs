@@ -138,10 +138,10 @@ internal sealed class ArgumentList(Location location, (string? Name, DMExpressio
     }
 }
 
-internal readonly struct ExpressionContext(DMCompiler compiler, DMObject type, DMProc proc) {
+internal readonly struct ExpressionContext(DMCompiler compiler, DMObject type, DMProc? proc) {
     public readonly DMCompiler Compiler = compiler;
     public readonly DMObject Type = type;
-    public readonly DMProc Proc = proc;
+    public readonly DMProc? Proc = proc;
 
     public DMObjectTree ObjectTree => Compiler.DMObjectTree;
 }

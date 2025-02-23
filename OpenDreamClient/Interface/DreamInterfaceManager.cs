@@ -22,6 +22,7 @@ using Robust.Shared.Utility;
 using SixLabors.ImageSharp;
 using System.Linq;
 using OpenDreamShared.Common.DM;
+using Robust.Shared.Map;
 
 namespace OpenDreamClient.Interface;
 
@@ -56,6 +57,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     public Dictionary<string, ControlWindow> Windows { get; } = new();
     public Dictionary<string, InterfaceMenu> Menus { get; } = new();
     public Dictionary<string, InterfaceMacroSet> MacroSets { get; } = new();
+    private Dictionary<WindowId, ControlWindow> ClydeWindowIdToControl { get; } = new();
 
     public ViewRange View {
         get => _view;
@@ -125,6 +127,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         _netManager.RegisterNetMessage<MsgLoadInterface>(RxLoadInterface);
         _netManager.RegisterNetMessage<MsgAckLoadInterface>();
         _netManager.RegisterNetMessage<MsgUpdateClientInfo>(RxUpdateClientInfo);
+        _clyde.OnWindowFocused += OnWindowFocused;
     }
 
     private void RxUpdateStatPanels(MsgUpdateStatPanels message) {
@@ -915,6 +918,24 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         LayoutContainer.SetAnchorBottom(DefaultWindow.UIElement, 1);
 
         _uiManager.StateRoot.AddChild(DefaultWindow.UIElement);
+
+        if (DefaultWindow.GetClydeWindow() is { } clydeWindow) {
+            ClydeWindowIdToControl.Add(clydeWindow.Id, DefaultWindow);
+        }
+    }
+
+    private void OnWindowFocused(WindowFocusedEventArgs args) {
+        if(ClydeWindowIdToControl.TryGetValue(args.Window.Id, out var controlWindow)){
+            _sawmill.Debug($"window id {controlWindow.Id} was {(args.Focused ? "focused" : "defocused")}");
+            WindowDescriptor descriptor = (WindowDescriptor) controlWindow.ElementDescriptor;
+            descriptor.Focus = new DMFPropertyBool(args.Focused);
+            if(args.Focused && MacroSets.TryGetValue(descriptor.Macro.AsRaw(), out var windowMacroSet)){
+                _sawmill.Debug($"Activating macroset {descriptor.Macro}");
+                windowMacroSet.SetActive();
+            }
+        }
+        else
+            _sawmill.Debug($"window id was not found (probably a modal) but was {(args.Focused ? "focused" : "defocused")}");
     }
 
     private void LoadDescriptor(ElementDescriptor descriptor) {
@@ -935,6 +956,10 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 Windows.Add(windowDescriptor.Id.Value, window);
                 if (window.IsDefault) {
                     DefaultWindow = window;
+                }
+
+                if (window.GetClydeWindow() is { } clydeWindow) {
+                    ClydeWindowIdToControl.Add(clydeWindow.Id, window);
                 }
 
                 break;

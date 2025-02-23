@@ -3,10 +3,6 @@ using OpenDreamShared.Common.DM;
 
 namespace DMCompiler.DM;
 
-// If you are modifying this, you must also modify OpenDreamShared.Dream.DreamValueType !!
-// Unfortunately the client needs this and it can't reference DMCompiler due to the sandbox
-
-
 /// <summary>
 /// Allows for more complex things than DMValueType does, such as supporting type paths
 /// </summary>

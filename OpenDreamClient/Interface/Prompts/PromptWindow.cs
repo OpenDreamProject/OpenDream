@@ -8,7 +8,7 @@ namespace OpenDreamClient.Interface.Prompts;
 
 public abstract class PromptWindow : OSWindow {
     protected readonly Control InputControl;
-    protected string DefaultButton;
+    protected string? DefaultButton;
 
     private readonly BoxContainer _buttonPanel;
     private bool _promptFinished;
@@ -57,7 +57,7 @@ public abstract class PromptWindow : OSWindow {
             Children = { new Label { Text = text, Margin = new Thickness(5, 2, 5, 2) } }
         };
 
-        if (isDefault)
+        if (isDefault || DefaultButton == null)
             DefaultButton = text;
 
         button.OnPressed += _ => ButtonClicked(text);

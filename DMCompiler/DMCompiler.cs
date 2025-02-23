@@ -297,7 +297,7 @@ public class DMCompiler {
         return maps;
     }
 
-    private string SaveJson(List<DreamMapJson> maps, string interfaceFile, string outputFile, IOpcodeVerifier verifier) {
+    private string SaveJson(List<DreamMapJson> maps, string? interfaceFile, string outputFile, IOpcodeVerifier verifier) {
         var jsonRep = DMObjectTree.CreateJsonRepresentation();
         var compiledDream = new DreamCompiledJson {
             Metadata = new DreamCompiledJsonMetadata { Version = verifier.GetOpcodesHash() },

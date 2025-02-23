@@ -48,7 +48,8 @@ internal sealed class ListPrompt : InputWindow {
     private void ItemList_KeyBindDown(GUIBoundKeyEventArgs e) {
         if (e.Function == EngineKeyFunctions.TextSubmit) {
             e.Handle();
-            ButtonClicked(DefaultButton);
+            if (DefaultButton != null)
+                ButtonClicked(DefaultButton);
         }
     }
 }

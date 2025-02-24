@@ -127,7 +127,7 @@ public sealed class DMProc : DreamProc {
         return false;
     }
 
-    private static List<string>? GetArgumentNames(ProcDefinitionJson json) {
+    private static List<string> GetArgumentNames(ProcDefinitionJson json) {
         if (json.Arguments == null) {
             return new();
         } else {
@@ -179,12 +179,12 @@ public sealed class DMProcState : ProcState {
 
     public static readonly Stack<DMProcState> Pool = new();
 
-    private static readonly ArrayPool<DreamValue> _dreamValuePool = ArrayPool<DreamValue>.Create();
+    private static readonly ArrayPool<DreamValue> DreamValuePool = ArrayPool<DreamValue>.Create();
 
     #region Opcode Handlers
 
-    //Human readable friendly version, which will be converted to a more efficient lookup at runtime.
-    private static readonly Dictionary<DreamProcOpcode, OpcodeHandler> _opcodeHandlers = new() {
+    //Human-readable friendly version, which will be converted to a more efficient lookup at runtime.
+    private static readonly Dictionary<DreamProcOpcode, OpcodeHandler> OpcodeHandlers = new() {
         {DreamProcOpcode.BitShiftLeft, DMOpcodeHandlers.BitShiftLeft},
         {DreamProcOpcode.PushType, DMOpcodeHandlers.PushType},
         {DreamProcOpcode.PushString, DMOpcodeHandlers.PushString},
@@ -331,7 +331,7 @@ public sealed class DMProcState : ProcState {
         {DreamProcOpcode.ReturnFloat, DMOpcodeHandlers.ReturnFloat}
     };
 
-    public static readonly unsafe delegate*<DMProcState, ProcStatus>[] OpcodeHandlers;
+    public static readonly unsafe delegate*<DMProcState, ProcStatus>[] OpcodeHandlersTable;
 
     #endregion
 
@@ -341,39 +341,40 @@ public sealed class DMProcState : ProcState {
 
     /// <summary> This stores our 'src' value. May be null!</summary>
     public DreamObject? Instance;
+
     public DreamObject? Usr;
     public int ArgumentCount;
     private readonly Stack<int> _catchPosition = new();
     private readonly Stack<int> _catchVarIndex = new();
-    public const int NoTryCatchVar = -1;
-    public IDreamValueEnumerator?[] Enumerators = new IDreamValueEnumerator?[16];
+    private const int NoTryCatchVar = -1;
+    public readonly IDreamValueEnumerator?[] Enumerators = new IDreamValueEnumerator?[16];
 
-    private int _pc = 0;
     public int ProgramCounter => _pc;
+    private int _pc;
 
     private bool _firstResume = true;
 
     // Contains both arguments (at index 0) and local vars (at index ArgumentCount)
-    private DreamValue[] _localVariables;
+    private DreamValue[] _localVariables = default!;
 
-    private DMProc _proc;
+    private DMProc _proc = default!;
     public override DMProc Proc => _proc;
 
     /// Static initializer for maintainer friendly OpcodeHandlers to performance friendly _opcodeHandlers
     static unsafe DMProcState() {
-        int maxOpcode = (int)_opcodeHandlers.Keys.Max();
+        int maxOpcode = (int)OpcodeHandlers.Keys.Max();
 
-        OpcodeHandlers = new delegate*<DMProcState, ProcStatus>[256];
-        foreach (var (dpo, handler) in _opcodeHandlers) {
-            OpcodeHandlers[(int) dpo] = (delegate*<DMProcState, ProcStatus>) handler.Method.MethodHandle.GetFunctionPointer();
+        OpcodeHandlersTable = new delegate*<DMProcState, ProcStatus>[256];
+        foreach (var (dpo, handler) in OpcodeHandlers) {
+            OpcodeHandlersTable[(int) dpo] = (delegate*<DMProcState, ProcStatus>) handler.Method.MethodHandle.GetFunctionPointer();
         }
 
         var invalid = DMOpcodeHandlers.Invalid;
         var invalidPtr = (delegate*<DMProcState, ProcStatus>)invalid.Method.MethodHandle.GetFunctionPointer();
 
-        OpcodeHandlers[0] = invalidPtr;
+        OpcodeHandlersTable[0] = invalidPtr;
         for (int i = maxOpcode + 1; i < 256; i++) {
-            OpcodeHandlers[i] = invalidPtr;
+            OpcodeHandlersTable[i] = invalidPtr;
         }
     }
 
@@ -389,8 +390,8 @@ public sealed class DMProcState : ProcState {
         _firstResume = false;
         Result = other.Result;
 
-        _stack = _dreamValuePool.Rent(other._stack.Length);
-        _localVariables = _dreamValuePool.Rent(other._localVariables.Length);
+        _stack = DreamValuePool.Rent(other._stack.Length);
+        _localVariables = DreamValuePool.Rent(other._localVariables.Length);
         Array.Copy(other._localVariables, _localVariables, other._localVariables.Length);
     }
 
@@ -400,8 +401,8 @@ public sealed class DMProcState : ProcState {
         Instance = instance;
         Usr = usr;
         ArgumentCount = Math.Max(arguments.Count, _proc.ArgumentNames?.Count ?? 0);
-        _localVariables = _dreamValuePool.Rent(256);
-        _stack = _dreamValuePool.Rent(maxStackSize);
+        _localVariables = DreamValuePool.Rent(256);
+        _stack = DreamValuePool.Rent(maxStackSize);
         _firstResume = true;
 
         for (int i = 0; i < ArgumentCount; i++) {
@@ -426,7 +427,7 @@ public sealed class DMProcState : ProcState {
         if (procBytecode.Length == 0)
             return ProcStatus.Returned;
 
-        fixed (delegate*<DMProcState, ProcStatus>* handlers = &OpcodeHandlers[0]) {
+        fixed (delegate*<DMProcState, ProcStatus>* handlers = &OpcodeHandlersTable[0]) {
             fixed (byte* bytecode = &procBytecode[0]) {
                 var l = procBytecode.Length; // The length never changes so we stick it in a register.
 
@@ -547,14 +548,14 @@ public sealed class DMProcState : ProcState {
         ArgumentCount = 0;
         Array.Clear(Enumerators);
         _pc = 0;
-        _proc = null;
+        _proc = null!;
 
-        _dreamValuePool.Return(_stack);
+        DreamValuePool.Return(_stack);
         _stackIndex = 0;
-        _stack = null;
+        _stack = null!;
 
-        _dreamValuePool.Return(_localVariables, true);
-        _localVariables = null;
+        DreamValuePool.Return(_localVariables, true);
+        _localVariables = null!;
 
         _catchPosition.Clear();
         _catchVarIndex.Clear();
@@ -574,8 +575,9 @@ public sealed class DMProcState : ProcState {
     }
 
     #region Stack
-    private DreamValue[] _stack;
-    private int _stackIndex = 0;
+
+    private DreamValue[] _stack = default!;
+    private int _stackIndex;
     public ReadOnlyMemory<DreamValue> DebugStack() => _stack.AsMemory(0, _stackIndex);
 
     public void Push(DreamValue value) {
@@ -622,9 +624,11 @@ public sealed class DMProcState : ProcState {
 
         return CreateProcArguments(values, proc, argumentsType, argumentStackSize);
     }
+
     #endregion
 
     #region Operands
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int ReadByte() {
         var r = _proc.Bytecode[_pc];
@@ -706,6 +710,9 @@ public sealed class DMProcState : ProcState {
     /// as well as what it's being indexed with.
     /// </summary>
     /// <param name="reference">A ListIndex DMReference</param>
+    /// <param name="index">What index is being accessed</param>
+    /// <param name="indexing">What is being indexed</param>
+    /// <param name="peek">Peek the stack instead of popping</param>
     public void GetIndexReferenceValues(DreamReference reference, out DreamValue index, out DreamValue indexing, bool peek = false) {
         if (reference.Type != DMReference.Type.ListIndex)
             ThrowReferenceNotListIndex();
@@ -873,7 +880,7 @@ public sealed class DMProcState : ProcState {
     }
 
     public DreamValue DereferenceField(DreamValue owner, string field) {
-        if (owner.TryGetValueAsDreamObject(out var ownerObj) && ownerObj != null) {
+        if (owner.TryGetValueAsDreamObject<DreamObject>(out var ownerObj)) {
             if (!ownerObj.TryGetVariable(field, out var fieldValue))
                 ThrowTypeHasNoField(field, ownerObj);
 
@@ -904,7 +911,7 @@ public sealed class DMProcState : ProcState {
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowTypeHasNoField(string field, DreamObject? ownerObj) {
+    private static void ThrowTypeHasNoField(string field, DreamObject ownerObj) {
         throw new Exception($"Type {ownerObj.ObjectDefinition.Type} has no field called \"{field}\"");
     }
 
@@ -951,6 +958,7 @@ public sealed class DMProcState : ProcState {
                 ++i;
             }
         }
+
         // If the caller supplied excess positional arguments, they have no
         // name, but the debugger should report them anyways.
         while (i < ArgumentCount) {
@@ -960,10 +968,6 @@ public sealed class DMProcState : ProcState {
     }
 
     public IEnumerable<(string, DreamValue)> DebugLocals() {
-        if (_proc.LocalNames is null) {
-            yield break;
-        }
-
         string[] names = new string[_localVariables.Length - ArgumentCount];
         int count = 0;
         foreach (var info in _proc.LocalNames) {

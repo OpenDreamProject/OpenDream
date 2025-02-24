@@ -43,6 +43,7 @@ public enum WarningCode {
 
     // 2000 - 2999 are reserved for compiler configuration of actual behaviour.
     SoftReservedKeyword = 2000, // For keywords that SHOULD be reserved, but don't have to be. 'null' and 'defined', for instance
+    ScopeOperandNamedType = 2001, // Scope operator is used on a var named type or parent_type, maybe unintentionally
     DuplicateVariable = 2100,
     DuplicateProcDefinition = 2101,
     PointlessParentCall = 2205,

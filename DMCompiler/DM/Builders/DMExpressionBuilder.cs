@@ -646,11 +646,18 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
         if (scopeIdentifier.Expression is DMASTIdentifier { Identifier: "type" or "parent_type" } identifier) {
             // This is the same behaviour as in BYOND, but BYOND simply raises an undefined var error.
             // We want to give end users an explanation at least.
-            if (scopeMode is Normal && ctx.Proc != null)
-                return BadExpression(WarningCode.BadExpression, identifier.Location,
-                    "Use of \"type::\" and \"parent_type::\" outside of a context is forbidden");
-
-            if (identifier.Identifier == "parent_type") {
+            if (scopeMode is Normal && ctx.Proc != null) {
+                if (ctx.Proc.GetLocalVariable(identifier.Identifier) != null) {
+                    // actually - it's referring to a local variable named "type" or "parent_type"... just do the usual thing
+                    Compiler.Emit(WarningCode.ScopeOperandNamedType, identifier.Location,
+                        $"Using scope operator :: on a variable named \"type\" or \"parent_type\" is ambiguous. Consider changing the variable name from \"{identifier.Identifier}\".");
+                    expression = BuildExpression(scopeIdentifier.Expression, inferredPath);
+                } else {
+                    return BadExpression(WarningCode.BadExpression, identifier.Location,
+                            "Use of \"type::\" and \"parent_type::\" inside an object proc is only valid when " +
+                            "there is a local variable named \"type\" or \"parent_type\"");
+                }
+            } else if (identifier.Identifier == "parent_type") {
                 if (ctx.Type.Parent == null)
                     return BadExpression(WarningCode.ItemDoesntExist, identifier.Location,
                         $"Type {ctx.Type.Path} does not have a parent");

@@ -142,7 +142,7 @@ public sealed class DMProc : DreamProc {
             return null;
         } else {
             var argumentTypes = new List<DMValueType>(json.Arguments.Count);
-            argumentTypes.AddRange(json.Arguments.Select(a => (DMValueType)a.Type));
+            argumentTypes.AddRange(json.Arguments.Select(a => a.Type));
             return argumentTypes;
         }
     }

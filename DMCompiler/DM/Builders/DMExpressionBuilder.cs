@@ -647,7 +647,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
             if (scopeMode is Normal && ctx.Proc != null) {
                 if (ctx.Proc.GetLocalVariable(identifier.Identifier) != null) {
                     // actually - it's referring to a local variable named "type" or "parent_type"... just do the usual thing
-                    Compiler.Emit(WarningCode.SoftReservedKeyword, identifier.Location,
+                    Compiler.Emit(WarningCode.ScopeOperandNamedType, identifier.Location,
                         $"Using scope operator :: on a variable named \"type\" or \"parent_type\" is ambiguous. Consider changing the variable name from \"{identifier.Identifier}\".");
                     expression = BuildExpression(scopeIdentifier.Expression, inferredPath);
                 } else {

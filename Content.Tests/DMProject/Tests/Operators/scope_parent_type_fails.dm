@@ -1,7 +1,7 @@
 // COMPILE ERROR OD0011
 
-/datum/thing
-	var/price = 60
-	better
+/datum/armor
+	var/toughness = 100
+	reinforced
 		proc/test_proc()
-			price = parent_type::price + 40
+			toughness = parent_type::toughness + 50

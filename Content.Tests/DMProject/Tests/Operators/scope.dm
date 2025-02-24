@@ -32,9 +32,9 @@ var/static/one = "one"
 	var/static/six = "three four five six"
 
 /datum/six
-	var/price = 60
-	better
-		price = parent_type::price + 40
+	var/toughness = 100
+	reinforced
+		toughness = parent_type::toughness + 50
 
 /proc/return_two()
 	return "two"
@@ -66,5 +66,5 @@ var/static/one = "one"
 	var/datum/three/threetest = new
 	threetest.typetest()
 
-	var/datum/six/better/fourtest = new()
-	ASSERT(fourtest.price == 100)
+	var/datum/six/reinforced/fourtest = new()
+	ASSERT(fourtest.toughness == 150)

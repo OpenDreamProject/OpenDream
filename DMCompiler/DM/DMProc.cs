@@ -581,11 +581,6 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Pop);
         }
 
-        public void PopReference(DMReference reference) {
-            WriteOpcode(DreamProcOpcode.PopReference);
-            WriteReference(reference, false);
-        }
-
         public void BooleanOr(string endLabel) {
             WriteOpcode(DreamProcOpcode.BooleanOr);
             WriteLabel(endLabel);

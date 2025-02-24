@@ -31,6 +31,19 @@ internal abstract class LValue(Location location, DreamPath? path) : DMExpressio
     }
 }
 
+/// <summary>
+/// Used when there was an error regarding L-Values
+/// </summary>
+/// <remarks>Emit an error code before creating!</remarks>
+internal sealed class BadLValue(Location location) : LValue(location, null) {
+    public override void EmitPushValue(ExpressionContext ctx) {
+        // It's normal to have this expression exist when there are errors in the code
+        // But in the runtime we say it's a compiler bug because the compiler should never have output it
+        ctx.Proc.PushString("Encountered a bad LValue (compiler bug!)");
+        ctx.Proc.Throw();
+    }
+}
+
 // global
 internal class Global(Location location) : LValue(location, null) {
     public override DMReference EmitReference(ExpressionContext ctx, string endLabel,

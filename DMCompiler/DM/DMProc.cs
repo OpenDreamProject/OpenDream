@@ -1,12 +1,14 @@
-using DMCompiler.Bytecode;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using DMCompiler.DM.Expressions;
 using DMCompiler.Compiler;
 using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM.Builders;
-using DMCompiler.Json;
 using DMCompiler.Optimizer;
+using OpenDreamShared.Common.Bytecode;
+using OpenDreamShared.Common.DM;
+using OpenDreamShared.Common;
+using OpenDreamShared.Common.Json;
 
 namespace DMCompiler.DM {
     internal sealed class DMProc {

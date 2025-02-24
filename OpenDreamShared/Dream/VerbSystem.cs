@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
+using OpenDreamShared.Common.DM;
 using Robust.Shared.Analyzers;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Serialization;
@@ -69,7 +70,7 @@ public class VerbSystem : EntitySystem {
 
         // If the verb's first argument is an atom type, it takes that type as a target
         [Pure]
-        public DreamValueType? GetTargetType() =>
+        public DMValueType? GetTargetType() =>
             (Arguments.Length != 0) ? Arguments[0].Types : null;
 
         public override string ToString() => GetCommandName();
@@ -85,7 +86,7 @@ public class VerbSystem : EntitySystem {
         /// <summary>
         /// Types the argument is allowed to be
         /// </summary>
-        public DreamValueType Types;
+        public DMValueType Types;
     }
 
     [Serializable, NetSerializable]

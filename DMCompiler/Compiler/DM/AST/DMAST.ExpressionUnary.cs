@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace DMCompiler.Compiler.DM.AST;
 
 public class DMASTUnary(Location location, DMASTExpression value) : DMASTExpression(location) {
@@ -17,6 +15,8 @@ public sealed class DMASTPreIncrement(Location location, DMASTExpression express
 public sealed class DMASTPreDecrement(Location location, DMASTExpression expression) : DMASTUnary(location, expression);
 public sealed class DMASTPostIncrement(Location location, DMASTExpression expression) : DMASTUnary(location, expression);
 public sealed class DMASTPostDecrement(Location location, DMASTExpression expression) : DMASTUnary(location, expression);
+public sealed class DMASTPointerRef(Location location, DMASTExpression expression) : DMASTUnary(location, expression);
+public sealed class DMASTPointerDeref(Location location, DMASTExpression expression) : DMASTUnary(location, expression);
 public sealed class DMASTSin(Location location, DMASTExpression expression) : DMASTUnary(location, expression);
 public sealed class DMASTCos(Location location, DMASTExpression expression) : DMASTUnary(location, expression);
 public sealed class DMASTTan(Location location, DMASTExpression expression) : DMASTUnary(location, expression);
@@ -31,6 +31,7 @@ public sealed class DMASTNameof(Location location, DMASTExpression expression) :
 public sealed class DMASTIsSaved(Location location, DMASTExpression expression) : DMASTUnary(location, expression);
 public sealed class DMASTIsNull(Location location, DMASTExpression value) : DMASTUnary(location, value);
 public sealed class DMASTLength(Location location, DMASTExpression value) : DMASTUnary(location, value);
+public sealed class DMASTImplicitAsType(Location location, DMASTExpression value) : DMASTUnary(location, value);
 public sealed class DMASTImplicitIsType(Location location, DMASTExpression value) : DMASTUnary(location, value);
 
 /// <summary>

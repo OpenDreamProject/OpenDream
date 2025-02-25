@@ -12,24 +12,20 @@ internal sealed partial class ContextMenuItem : PanelContainer {
     private static readonly StyleBox HoverStyle = new StyleBoxFlat(Color.Gray);
 
     public readonly ClientObjectReference Target;
-    public readonly MetaDataComponent EntityMetaData;
-    public readonly DMISpriteComponent? EntitySprite;
 
     private readonly ContextMenuPopup _menu;
 
-    public ContextMenuItem(ContextMenuPopup menu, ClientObjectReference target, MetaDataComponent metadata, DMISpriteComponent sprite) {
+    public ContextMenuItem(ContextMenuPopup menu, ClientObjectReference target, string name, DreamIcon icon) {
         IoCManager.InjectDependencies(this);
         RobustXamlLoader.Load(this);
 
         Target = target;
-        EntityMetaData = metadata;
-        EntitySprite = sprite;
         _menu = menu;
 
         NameLabel.Margin = new Thickness(2, 0, 4, 0);
-        NameLabel.Text = metadata.EntityName;
+        NameLabel.Text = name;
 
-        Icon.Texture = sprite.Icon.CurrentFrame;
+        Icon.Texture = icon.LastRenderedTexture;
     }
 
     protected override void MouseEntered() {

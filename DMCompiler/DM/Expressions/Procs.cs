@@ -1,202 +1,189 @@
-using System;
 using System.Linq;
 using DMCompiler.Bytecode;
 using DMCompiler.Compiler;
 
-namespace DMCompiler.DM.Expressions {
-    // x() (only the identifier)
-    sealed class Proc : DMExpression {
-        private readonly string _identifier;
+namespace DMCompiler.DM.Expressions;
 
-        public Proc(Location location, string identifier) : base(location) {
-            _identifier = identifier;
-        }
-
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            throw new CompileErrorException(Location, "attempt to use proc as value");
-        }
-
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
-            if (dmObject.HasProc(_identifier)) {
-                return DMReference.CreateSrcProc(_identifier);
-            } else if (DMObjectTree.TryGetGlobalProc(_identifier, out var globalProc)) {
-                return DMReference.CreateGlobalProc(globalProc.Id);
-            }
-
-            DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {dmObject.Path} does not have a proc named \"{_identifier}\"");
-            //Just... pretend there is one for the sake of argument.
-            return DMReference.CreateSrcProc(_identifier);
-        }
-
-        public DMProc? GetProc(DMObject dmObject) {
-            var procId = dmObject.GetProcs(_identifier)?[^1];
-            return procId is null ? null : DMObjectTree.AllProcs[procId.Value];
-        }
-
-        public DMComplexValueType GetReturnType(DMObject dmObject) {
-            return dmObject.GetReturnType(_identifier);
-        }
+// x() (only the identifier)
+internal sealed class Proc(Location location, string identifier) : DMExpression(location) {
+    public override void EmitPushValue(ExpressionContext ctx) {
+        ctx.Compiler.Emit(WarningCode.BadExpression, Location, "attempt to use proc as value");
+        ctx.Proc.Error();
     }
 
-    /// <remarks>
-    /// This doesn't actually contain the GlobalProc itself;
-    /// this is just a hopped-up string that we eventually deference to get the real global proc during compilation.
-    /// </remarks>
-    internal sealed class GlobalProc(Location location, string name) : DMExpression(location) {
-        public override DMComplexValueType ValType => GetProc().ReturnTypes;
-
-        public override string ToString() {
-            return $"{name}()";
-        }
-
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            DMCompiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"{name}\" as value");
-        }
-
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
-            DMProc globalProc = GetProc();
+    public override DMReference EmitReference(ExpressionContext ctx, string endLabel,
+        ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+        if (ctx.Type.HasProc(identifier)) {
+            return DMReference.CreateSrcProc(identifier);
+        } else if (ctx.ObjectTree.TryGetGlobalProc(identifier, out var globalProc)) {
             return DMReference.CreateGlobalProc(globalProc.Id);
         }
 
-        public DMProc GetProc() {
-            if (!DMObjectTree.TryGetGlobalProc(name, out var globalProc)) {
-                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"No global proc named \"{name}\"");
-                return DMObjectTree.GlobalInitProc; // Just give this, who cares
-            }
+        ctx.Compiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {ctx.Type.Path} does not have a proc named \"{identifier}\"");
+        //Just... pretend there is one for the sake of argument.
+        return DMReference.CreateSrcProc(identifier);
+    }
 
-            return globalProc;
+    public DMProc? GetProc(DMCompiler compiler, DMObject dmObject) {
+        var procId = dmObject.GetProcs(identifier)?[^1];
+        return procId is null ? null : compiler.DMObjectTree.AllProcs[procId.Value];
+    }
+
+    public DMComplexValueType GetReturnType(DMObject dmObject) {
+        return dmObject.GetReturnType(identifier);
+    }
+}
+
+internal sealed class GlobalProc(Location location, DMProc globalProc) : DMExpression(location) {
+    public override DMComplexValueType ValType => Proc.ReturnTypes;
+
+    public DMProc Proc => globalProc;
+
+    public override string ToString() {
+        return $"{globalProc.Name}()";
+    }
+
+    public override void EmitPushValue(ExpressionContext ctx) {
+        ctx.Compiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"{this}\" as value");
+    }
+
+    public override DMReference EmitReference(ExpressionContext ctx, string endLabel,
+        ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+        return DMReference.CreateGlobalProc(Proc.Id);
+    }
+}
+
+/// <summary>
+/// . <br/>
+/// This is an LValue _and_ a proc!
+/// </summary>
+internal sealed class ProcSelf(Location location, DMComplexValueType valType) : LValue(location, null) {
+    public override DMComplexValueType ValType => valType;
+
+    public override DMReference EmitReference(ExpressionContext ctx, string endLabel,
+        ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+        return DMReference.Self;
+    }
+}
+
+// ..
+internal sealed class ProcSuper(Location location, DMComplexValueType? valType) : DMExpression(location) {
+    public override DMComplexValueType ValType => valType ?? DMValueType.Anything;
+
+    public override void EmitPushValue(ExpressionContext ctx) {
+        ctx.Compiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"..\" as value");
+    }
+
+    public override DMReference EmitReference(ExpressionContext ctx, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+        if ((ctx.Proc.Attributes & ProcAttributes.IsOverride) != ProcAttributes.IsOverride) {
+            // Don't emit if lateral proc overrides exist
+            if (ctx.Type.GetProcs(ctx.Proc.Name)!.Count == 1) {
+                ctx.Compiler.Emit(WarningCode.PointlessParentCall, Location,
+                    "Calling parents via ..() in a proc definition does nothing");
+            }
         }
+
+        return DMReference.SuperProc;
+    }
+}
+
+// x(y, z, ...)
+internal sealed class ProcCall(Location location, DMExpression target, ArgumentList arguments, DMComplexValueType valType)
+    : DMExpression(location) {
+    public override bool PathIsFuzzy => Path == null;
+    public override DMComplexValueType ValType => valType.IsAnything ? target.ValType : valType;
+
+    public (DMObject? ProcOwner, DMProc? Proc) GetTargetProc(DMCompiler compiler, DMObject dmObject) {
+        return target switch {
+            Proc procTarget => (dmObject, procTarget.GetProc(compiler, dmObject)),
+            GlobalProc procTarget => (null, procTarget.Proc),
+            _ => (null, null)
+        };
+    }
+
+    public override string ToString() {
+        return target.ToString()!;
+    }
+
+    public override void EmitPushValue(ExpressionContext ctx) {
+        (DMObject? procOwner, DMProc? targetProc) = GetTargetProc(ctx.Compiler, ctx.Type);
+        DoCompileTimeLinting(ctx.Compiler, procOwner, targetProc);
+        if ((targetProc?.Attributes & ProcAttributes.Unimplemented) == ProcAttributes.Unimplemented) {
+            ctx.Compiler.UnimplementedWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}.{targetProc.Name}() is not implemented");
+        }
+
+        string endLabel = ctx.Proc.NewLabelName();
+
+        DMCallArgumentsType argumentsType;
+        int argumentStackSize;
+        if (arguments.Length == 0 && target is ProcSuper) {
+            argumentsType = DMCallArgumentsType.FromProcArguments;
+            argumentStackSize = 0;
+        } else {
+            (argumentsType, argumentStackSize) = arguments.EmitArguments(ctx, targetProc);
+        }
+
+        DMReference procRef = target.EmitReference(ctx, endLabel);
+
+        ctx.Proc.Call(procRef, argumentsType, argumentStackSize);
+        ctx.Proc.AddLabel(endLabel);
     }
 
     /// <summary>
-    /// . <br/>
-    /// This is an LValue _and_ a proc!
+    /// This is a good place to do some compile-time linting of any native procs that require it,
+    /// such as native procs that check ahead of time if the number of arguments is correct (like matrix() or sin())
     /// </summary>
-    sealed class ProcSelf(Location location, DreamPath? path, DMProc proc) : LValue(location, path) {
-        public override DMComplexValueType ValType => proc.ReturnTypes;
-
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
-            return DMReference.Self;
-        }
-    }
-
-    // ..
-    sealed class ProcSuper(Location location, DMObject _dmObject, DMProc _proc) : DMExpression(location) {
-        public override DMComplexValueType ValType => _dmObject.GetProcReturnTypes(_proc.Name) ?? DMValueType.Anything;
-
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            DMCompiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"..\" as value");
-        }
-
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
-            if ((proc.Attributes & ProcAttributes.IsOverride) != ProcAttributes.IsOverride)
-            {
-                // Don't emit if lateral proc overrides exist
-                if (dmObject.GetProcs(proc.Name)!.Count == 1) {
-                    DMCompiler.Emit(WarningCode.PointlessParentCall, Location, "Calling parents via ..() in a proc definition does nothing");
-                }
-
-            }
-            return DMReference.SuperProc;
-        }
-    }
-
-    // x(y, z, ...)
-    sealed class ProcCall(Location location, DMExpression target, ArgumentList arguments, DMComplexValueType valType) : DMExpression(location) {
-        public override bool PathIsFuzzy => Path == null;
-        public override DMComplexValueType ValType => valType.IsAnything ? target.ValType : valType;
-
-        public (DMObject? ProcOwner, DMProc? Proc) GetTargetProc(DMObject dmObject) {
-            return target switch {
-                Proc procTarget => (dmObject, procTarget.GetProc(dmObject)),
-                GlobalProc procTarget => (null, procTarget.GetProc()),
-                _ => (null, null)
-            };
-        }
-
-        public override string ToString() {
-            return target.ToString()!;
-        }
-
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            (DMObject? procOwner, DMProc? targetProc) = GetTargetProc(dmObject);
-            DoCompileTimeLinting(procOwner, targetProc);
-            if ((targetProc?.Attributes & ProcAttributes.Unimplemented) == ProcAttributes.Unimplemented) {
-                DMCompiler.UnimplementedWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}.{targetProc.Name}() is not implemented");
-            }
-
-            string endLabel = proc.NewLabelName();
-
-            DMCallArgumentsType argumentsType;
-            int argumentStackSize;
-            if (arguments.Length == 0 && target is ProcSuper) {
-                argumentsType = DMCallArgumentsType.FromProcArguments;
-                argumentStackSize = 0;
-            } else {
-                (argumentsType, argumentStackSize) = arguments.EmitArguments(dmObject, proc, targetProc);
-            }
-
-            DMReference procRef = target.EmitReference(dmObject, proc, endLabel);
-
-            proc.Call(procRef, argumentsType, argumentStackSize);
-            proc.AddLabel(endLabel);
-        }
-
-        /// <summary>
-        /// This is a good place to do some compile-time linting of any native procs that require it,
-        /// such as native procs that check ahead of time if the number of arguments is correct (like matrix() or sin())
-        /// </summary>
-        private void DoCompileTimeLinting(DMObject? procOwner, DMProc? targetProc) {
-            if(procOwner is null || procOwner.Path == DreamPath.Root) {
-                if (targetProc is null)
-                    return;
-                if(targetProc.Name == "matrix") {
-                    switch(arguments.Length) {
-                        case 0:
-                        case 1: // NOTE: 'case 1' also ends up referring to the arglist situation. FIXME: Make this lint work for that, too?
-                        case 6:
-                            break; // Normal cases
-                        case 2:
-                        case 3: // These imply that they're trying to use the undocumented matrix signatures.
-                        case 4: // The lint is to just check that the last argument is a numeric constant that is a valid matrix "opcode."
-                            var lastArg = arguments.Expressions.Last().Expr;
-                            if(lastArg.TryAsConstant(out var constant)) {
-                                if(constant is not Number opcodeNumber) {
-                                    DMCompiler.Emit(WarningCode.SuspiciousMatrixCall, arguments.Location,
+    private void DoCompileTimeLinting(DMCompiler compiler, DMObject? procOwner, DMProc? targetProc) {
+        if(procOwner is null || procOwner.Path == DreamPath.Root) {
+            if (targetProc is null)
+                return;
+            if(targetProc.Name == "matrix") {
+                switch(arguments.Length) {
+                    case 0:
+                    case 1: // NOTE: 'case 1' also ends up referring to the arglist situation. FIXME: Make this lint work for that, too?
+                    case 6:
+                        break; // Normal cases
+                    case 2:
+                    case 3: // These imply that they're trying to use the undocumented matrix signatures.
+                    case 4: // The lint is to just check that the last argument is a numeric constant that is a valid matrix "opcode."
+                        var lastArg = arguments.Expressions.Last().Expr;
+                        if(lastArg.TryAsConstant(compiler, out var constant)) {
+                            if(constant is not Number opcodeNumber) {
+                                compiler.Emit(WarningCode.SuspiciousMatrixCall, arguments.Location,
                                     "Arguments for matrix() are invalid - either opcode is invalid or not enough arguments");
-                                    break;
-                                }
-                                //Note that it is possible for the numeric value to not be an opcode itself,
-                                //but the call is still valid.
-                                //This is because of MATRIX_MODIFY; things like MATRIX_INVERT | MATRIX_MODIFY are okay!
-                                const int notModifyBits = ~(int)MatrixOpcode.Modify;
-                                if (!Enum.IsDefined((MatrixOpcode) ((int)opcodeNumber.Value & notModifyBits))) {
-                                    //NOTE: This still does let some certain weird opcodes through,
-                                    //like a MODIFY with no other operation present.
-                                    //Not sure if that is a parity behaviour or not!
-                                    DMCompiler.Emit(WarningCode.SuspiciousMatrixCall, arguments.Location,
-                                    "Arguments for matrix() are invalid - either opcode is invalid or not enough arguments");
-                                }
+                                break;
                             }
-                            break;
-                        case 5: // BYOND always runtimes but DOES compile, here
-                            DMCompiler.Emit(WarningCode.SuspiciousMatrixCall, arguments.Location,
-                                $"Calling matrix() with 5 arguments will always error when called at runtime");
-                            break;
-                        default: // BYOND always compiletimes here
-                            DMCompiler.Emit(WarningCode.InvalidArgumentCount, arguments.Location,
-                                $"Too many arguments to matrix() - got {arguments.Length} arguments, expecting 6 or less");
-                            break;
 
-                    }
+                            //Note that it is possible for the numeric value to not be an opcode itself,
+                            //but the call is still valid.
+                            //This is because of MATRIX_MODIFY; things like MATRIX_INVERT | MATRIX_MODIFY are okay!
+                            const int notModifyBits = ~(int)MatrixOpcode.Modify;
+                            if (!Enum.IsDefined((MatrixOpcode) ((int)opcodeNumber.Value & notModifyBits))) {
+                                //NOTE: This still does let some certain weird opcodes through,
+                                //like a MODIFY with no other operation present.
+                                //Not sure if that is a parity behaviour or not!
+                                compiler.Emit(WarningCode.SuspiciousMatrixCall, arguments.Location,
+                                    "Arguments for matrix() are invalid - either opcode is invalid or not enough arguments");
+                            }
+                        }
+
+                        break;
+                    case 5: // BYOND always runtimes but DOES compile, here
+                        compiler.Emit(WarningCode.SuspiciousMatrixCall, arguments.Location,
+                            "Calling matrix() with 5 arguments will always error when called at runtime");
+                        break;
+                    default: // BYOND always compiletimes here
+                        compiler.Emit(WarningCode.InvalidArgumentCount, arguments.Location,
+                            $"Too many arguments to matrix() - got {arguments.Length} arguments, expecting 6 or less");
+                        break;
                 }
             }
         }
+    }
 
-        public override bool TryAsJsonRepresentation(out object? json) {
-            json = null;
-            DMCompiler.UnimplementedWarning(Location, $"DMM overrides for expression {GetType()} are not implemented");
-            return true; //TODO
-        }
+    public override bool TryAsJsonRepresentation(DMCompiler compiler, out object? json) {
+        json = null;
+        compiler.UnimplementedWarning(Location, $"DMM overrides for expression {GetType()} are not implemented");
+        return true; //TODO
     }
 }

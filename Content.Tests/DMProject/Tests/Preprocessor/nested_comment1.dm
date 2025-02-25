@@ -1,4 +1,4 @@
-// COMPILE ERROR
+// COMPILE ERROR OD1200
 
 /proc/RunTest()
     /*

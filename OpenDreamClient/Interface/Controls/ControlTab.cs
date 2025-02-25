@@ -1,5 +1,7 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using OpenDreamClient.Interface.Descriptors;
+using OpenDreamClient.Interface.DMF;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 
@@ -23,24 +25,23 @@ internal sealed class ControlTab(ControlDescriptor controlDescriptor, ControlWin
 
         _tabs.Clear();
         _tab.RemoveAllChildren();
-        if (TabDescriptor.Tabs != null) {
-            var tabIds = TabDescriptor.Tabs.Split(',',
-                StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
 
-            foreach (var tabId in tabIds) {
-                if (!_interfaceManager.Windows.TryGetValue(tabId, out var pane))
-                    continue;
+        var tabIds = TabDescriptor.Tabs.Value.Split(',',
+            StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
 
-                TabContainer.SetTabTitle(pane.UIElement, pane.Title);
-                _tab.AddChild(pane.UIElement);
-                _tabs.Add(pane);
-                if (TabDescriptor.CurrentTab == pane.Title)
-                    _tab.CurrentTab = pane.UIElement.GetPositionInParent();
-            }
+        foreach (var tabId in tabIds) {
+            if (!_interfaceManager.Windows.TryGetValue(tabId, out var pane))
+                continue;
+
+            TabContainer.SetTabTitle(pane.UIElement, pane.Title);
+            _tab.AddChild(pane.UIElement);
+            _tabs.Add(pane);
+            if (TabDescriptor.CurrentTab.Value == pane.Title)
+                _tab.CurrentTab = pane.UIElement.GetPositionInParent();
         }
     }
 
-    public override bool TryGetProperty(string property, out string value) {
+    public override bool TryGetProperty(string property, [NotNullWhen(true)] out IDMFProperty? value) {
         switch (property) {
             case "current-tab":
                 var currentTab = _tab.GetChild(_tab.CurrentTab);

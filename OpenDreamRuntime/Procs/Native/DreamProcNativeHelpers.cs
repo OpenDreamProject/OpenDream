@@ -1,8 +1,9 @@
-﻿using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects;
 using OpenDreamShared.Dream;
 using System.Text.RegularExpressions;
 using OpenDreamRuntime.Objects.Types;
 using System.Text;
+using OpenDreamRuntime.Map;
 
 namespace OpenDreamRuntime.Procs.Native;
 
@@ -10,13 +11,19 @@ namespace OpenDreamRuntime.Procs.Native;
 /// A container of procs that act as helpers for a few native procs.
 /// </summary>
 internal static partial class DreamProcNativeHelpers {
-    private static readonly char[] radixArray = new char[36] {
+    private static readonly char[] RadixArray = [
         '0', '1', '2', '3', '4', '5', '6', '7',
         '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
         'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
         'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
         'w', 'x', 'y', 'z'
-    };
+    ];
+
+    private static readonly AtomDirection[] AtomDirs = [
+        AtomDirection.North, AtomDirection.South, AtomDirection.East, AtomDirection.West, AtomDirection.Northeast,
+        AtomDirection.Northwest, AtomDirection.Southeast, AtomDirection.Southwest
+    ];
+
     /// <summary>
     /// This is a helper proc for oview, view, orange, and range to do their strange iteration with.<br/>
     /// BYOND has a very strange, kinda-spiralling iteration pattern for the above procs, <br/>
@@ -171,7 +178,7 @@ internal static partial class DreamProcNativeHelpers {
                 if (!mapManager.TryGetCellAt((eyePos.X + deltaX, eyePos.Y + deltaY), eyePos.Z, out var cell))
                     continue;
 
-                var appearance = atomManager.MustGetAppearance(cell.Turf!)!;
+                var appearance = atomManager.MustGetAppearance(cell.Turf);
                 var tile = new ViewAlgorithm.Tile() {
                     Opaque = appearance.Opacity,
                     Luminosity = 0,
@@ -180,7 +187,7 @@ internal static partial class DreamProcNativeHelpers {
                 };
 
                 foreach (var movable in cell.Movables) {
-                    appearance = atomManager.MustGetAppearance(movable)!;
+                    appearance = atomManager.MustGetAppearance(movable);
 
                     tile.Opaque |= appearance.Opacity;
                 }
@@ -190,6 +197,127 @@ internal static partial class DreamProcNativeHelpers {
         }
 
         return tiles;
+    }
+
+    public static DreamValue HandleViewersHearers(NativeProc.Bundle bundle, DreamObject? usr, bool ignoreLight) {
+        DreamValue? depthValue = null;
+        DreamObjectAtom? center = null;
+
+        //Arguments are optional and can be passed in any order
+        if (bundle.Arguments.Length > 0) {
+            DreamValue firstArgument = bundle.GetArgument(0, "Depth");
+
+            if (firstArgument.TryGetValueAsDreamObject(out center)) {
+                if (bundle.Arguments.Length > 1) {
+                    depthValue = bundle.GetArgument(1, "Center");
+                }
+            } else {
+                depthValue = firstArgument;
+
+                if (bundle.Arguments.Length > 1) {
+                    bundle.GetArgument(1, "Center").TryGetValueAsDreamObject(out center);
+                }
+            }
+        }
+
+        center ??= usr as DreamObjectAtom;
+
+        DreamList view = bundle.ObjectTree.CreateList();
+        if (center == null)
+            return new(view);
+
+        var centerPos = bundle.AtomManager.GetAtomPosition(center);
+        if (depthValue is null || !depthValue.Value.TryGetValueAsInteger(out var depth))
+            depth = bundle.DreamManager.WorldInstance.DefaultView.Range;
+
+        foreach (var atom in bundle.AtomManager.EnumerateAtoms(bundle.ObjectTree.Mob)) {
+            var mob = (DreamObjectMob)atom;
+
+            if (centerPos.Z == mob.Z && Math.Abs(centerPos.X - mob.X) <= depth && Math.Abs(centerPos.Y - mob.Y) <= depth) {
+                (_, ViewRange range) = ResolveViewArguments(bundle.DreamManager, mob, bundle.Arguments);
+                var eyePos = bundle.AtomManager.GetAtomPosition(mob);
+                var viewData = CollectViewData(bundle.AtomManager, bundle.MapManager, eyePos, range);
+
+                ViewAlgorithm.CalculateVisibility(viewData, ignoreLight);
+
+                for (int x = 0; x < viewData.GetLength(0); x++) {
+                    for (int y = 0; y < viewData.GetLength(1); y++) {
+                        var tile = viewData[x, y];
+                        if (tile == null || tile.IsVisible == false)
+                            continue;
+
+                        if (centerPos.X == eyePos.X + tile.DeltaX && eyePos.Y + tile.DeltaY == centerPos.Y) {
+                            view.AddValue(new DreamValue(mob));
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        return new DreamValue(view);
+    }
+
+    public static DreamValue HandleOviewersOhearers(NativeProc.Bundle bundle, DreamObject? usr, bool ignoreLight) {
+        DreamValue? depthValue = null;
+        DreamObjectAtom? center = null;
+
+        //Arguments are optional and can be passed in any order
+        if (bundle.Arguments.Length > 0) {
+            DreamValue firstArgument = bundle.GetArgument(0, "Depth");
+
+            if (firstArgument.TryGetValueAsDreamObject(out center)) {
+                if (bundle.Arguments.Length > 1) {
+                    depthValue = bundle.GetArgument(1, "Center");
+                }
+            } else {
+                depthValue = firstArgument;
+
+                if (bundle.Arguments.Length > 1) {
+                    bundle.GetArgument(1, "Center").TryGetValueAsDreamObject(out center);
+                }
+            }
+        }
+
+        center ??= usr as DreamObjectAtom;
+
+        DreamList view = bundle.ObjectTree.CreateList();
+        if (center == null)
+            return new(view);
+
+        var centerPos = bundle.AtomManager.GetAtomPosition(center);
+        if (depthValue is null || !depthValue.Value.TryGetValueAsInteger(out var depth))
+            depth = bundle.DreamManager.WorldInstance.DefaultView.Range;
+
+        foreach (var atom in bundle.AtomManager.EnumerateAtoms(bundle.ObjectTree.Mob)) {
+            var mob = (DreamObjectMob)atom;
+
+            if (mob.X == centerPos.X && mob.Y == centerPos.Y)
+                continue;
+
+            if (centerPos.Z == mob.Z && Math.Abs(centerPos.X - mob.X) <= depth && Math.Abs(centerPos.Y - mob.Y) <= depth) {
+                (_, ViewRange range) = ResolveViewArguments(bundle.DreamManager, mob, bundle.Arguments);
+                var eyePos = bundle.AtomManager.GetAtomPosition(mob);
+                var viewData = CollectViewData(bundle.AtomManager, bundle.MapManager, eyePos, range);
+
+                ViewAlgorithm.CalculateVisibility(viewData, ignoreLight);
+
+                for (int x = 0; x < viewData.GetLength(0); x++) {
+                    for (int y = 0; y < viewData.GetLength(1); y++) {
+                        var tile = viewData[x, y];
+                        if (tile == null || tile.IsVisible == false)
+                            continue;
+
+                        if (centerPos.X == eyePos.X + tile.DeltaX && eyePos.Y + tile.DeltaY == centerPos.Y) {
+                            view.AddValue(new DreamValue(mob));
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        return new DreamValue(view);
     }
 
     /// <summary>
@@ -386,7 +514,7 @@ internal static partial class DreamProcNativeHelpers {
         }
 
         while (value > 0) {
-            resString.Insert(0, radixArray[value % radix]);
+            resString.Insert(0, RadixArray[value % radix]);
             value /= radix;
         }
 
@@ -414,21 +542,26 @@ internal static partial class DreamProcNativeHelpers {
         var loc1Pos = atomManager.GetAtomPosition(loc1);
         var loc2Pos = atomManager.GetAtomPosition(loc2);
 
-        if (loc1Pos.Z != loc2Pos.Z) // They must be on the same z-level
+        return GetDir(loc1Pos, loc2Pos);
+    }
+
+    /// <inheritdoc cref="GetDir(OpenDreamRuntime.AtomManager,OpenDreamRuntime.Objects.Types.DreamObjectAtom,OpenDreamRuntime.Objects.Types.DreamObjectAtom)"/>
+    public static AtomDirection GetDir((int X, int Y, int Z) loc1, (int X, int Y, int Z) loc2) {
+        if (loc1.Z != loc2.Z) // They must be on the same z-level
             return 0;
 
         AtomDirection direction = AtomDirection.None;
 
         // East or West
-        if (loc2Pos.X < loc1Pos.X)
+        if (loc2.X < loc1.X)
             direction |= AtomDirection.West;
-        else if (loc2Pos.X > loc1Pos.X)
+        else if (loc2.X > loc1.X)
             direction |= AtomDirection.East;
 
         // North or South
-        if (loc2Pos.Y < loc1Pos.Y)
+        if (loc2.Y < loc1.Y)
             direction |= AtomDirection.South;
-        else if (loc2Pos.Y > loc1Pos.Y)
+        else if (loc2.Y > loc1.Y)
             direction |= AtomDirection.North;
 
         return direction;
@@ -437,7 +570,8 @@ internal static partial class DreamProcNativeHelpers {
     /// <summary>
     /// Gets the turf 1 step away from an atom in the given direction
     /// </summary>
-    public static DreamObjectTurf? GetStep(AtomManager atomManager, IDreamMapManager mapManager, DreamObjectAtom loc, AtomDirection dir) {
+    public static DreamObjectTurf? GetStep(AtomManager atomManager, IDreamMapManager mapManager, DreamObjectAtom loc,
+        AtomDirection dir) {
         var dirInt = (int)dir;
         var locPos = atomManager.GetAtomPosition(loc);
 
@@ -462,4 +596,12 @@ internal static partial class DreamProcNativeHelpers {
 
     [GeneratedRegex("[\\^]|[^a-z0-9@]")]
     private static partial Regex CkeyRegex();
+
+    /// <summary>
+    /// Returns one of NORTH, SOUTH, EAST, WEST, NORTHEAST, NORTHWEST, SOUTHEAST, or SOUTHWEST
+    /// </summary>
+    public static AtomDirection GetRandomDirection(DreamManager dreamManager) {
+        var index = dreamManager.Random.Next(0, 8); // [0, 8). There's 8 options but arrays start at 0.
+        return AtomDirs[index];
+    }
 }

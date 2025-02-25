@@ -9,6 +9,10 @@
     <Configurations>Debug;Release;Tools</Configurations>
     <Platforms>AnyCPU</Platforms>
     <Nullable>enable</Nullable>
+    <NoWarn>NU1507</NoWarn>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RootNamespace>Content.Tests</RootNamespace>
+    <AssemblyName>Content.Tests</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="NUnit" />

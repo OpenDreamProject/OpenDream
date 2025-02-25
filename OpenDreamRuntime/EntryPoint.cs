@@ -42,7 +42,7 @@ namespace OpenDreamRuntime {
             componentFactory.GenerateNetIds();
 
             _configManager.OverrideDefault(CVars.NetLogLateMsg, false); // Disable since disabling prediction causes timing errors otherwise.
-            _configManager.OverrideDefault(CVars.GameAutoPauseEmpty, false); // TODO: world.sleep_offline can control this
+            _configManager.OverrideDefault(CVars.GameAutoPauseEmpty, false); // DreamObjectWorld sets this appropriately but we need to keep it disabled til then or it won't be reached
             _configManager.OverrideDefault(CVars.DiscordRichPresenceSecondIconId, "opendream");
             _configManager.SetCVar(CVars.GridSplitting, false); // Grid splitting should never be used
             if(String.IsNullOrEmpty(_configManager.GetCVar<string>(OpenDreamCVars.JsonPath))) //if you haven't set the jsonpath cvar, set it to the first valid file path passed as an arg

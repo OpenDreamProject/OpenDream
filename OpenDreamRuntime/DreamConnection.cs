@@ -29,8 +29,9 @@ public sealed class DreamConnection {
 
     [ViewVariables] public ICommonSession? Session { get; private set; }
     [ViewVariables] public DreamObjectClient? Client { get; private set; }
-    [ViewVariables]
-    public DreamObjectMob? Mob {
+    [ViewVariables] public string Key { get; private set; }
+
+    [ViewVariables] public DreamObjectMob? Mob {
         get => _mob;
         set {
             if (_mob != value) {
@@ -54,15 +55,14 @@ public sealed class DreamConnection {
                         _mob.Connection.Mob = null;
 
                     _mob.Connection = this;
-                    _mob.Key = Session!.Name;
+                    _mob.Key = Key;
                     _mob.SpawnProc("Login", usr: _mob);
                 }
             }
         }
     }
 
-    [ViewVariables]
-    public DreamObjectMovable? Eye {
+    [ViewVariables] public DreamObjectMovable? Eye {
         get => _eye;
         set {
             _eye = value;
@@ -74,27 +74,28 @@ public sealed class DreamConnection {
     public DreamValue StatObj { get; set; } // This can be just any DreamValue. Only atoms will function though.
 
     [ViewVariables] private string? _outputStatPanel;
-    [ViewVariables] private string _selectedStatPanel;
+    [ViewVariables] private string? _selectedStatPanel;
     [ViewVariables] private readonly Dictionary<int, Action<DreamValue>> _promptEvents = new();
     [ViewVariables] private int _nextPromptEvent = 1;
-
+    private readonly Dictionary<string, DreamResource> _permittedBrowseRscFiles = new();
     private DreamObjectMob? _mob;
     private DreamObjectMovable? _eye;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.connection");
 
-    public string SelectedStatPanel {
+    public string? SelectedStatPanel {
         get => _selectedStatPanel;
         set {
             _selectedStatPanel = value;
 
             var msg = new MsgSelectStatPanel() { StatPanel = value };
-            Session?.ConnectedClient.SendMessage(msg);
+            Session?.Channel.SendMessage(msg);
         }
     }
 
-    public DreamConnection() {
+    public DreamConnection(string key) {
         IoCManager.InjectDependencies(this);
+        Key = key;
 
         _entitySystemManager.TryGetEntitySystem(out _screenOverlaySystem);
         _entitySystemManager.TryGetEntitySystem(out _clientImagesSystem);
@@ -145,7 +146,7 @@ public sealed class DreamConnection {
                 await state.Call(statProc, Client, Mob);
                 if (Session.Status == SessionStatus.InGame) {
                     var msg = new MsgUpdateStatPanels(_statPanels);
-                    Session.ConnectedClient.SendMessage(msg);
+                    Session?.Channel.SendMessage(msg);
                 }
 
                 return DreamValue.Null;
@@ -157,10 +158,11 @@ public sealed class DreamConnection {
 
     public void SendClientInfoUpdate() {
         MsgUpdateClientInfo msg = new() {
-            View = Client!.View
+            View = Client!.View,
+            ShowPopupMenus = Client!.ShowPopupMenus
         };
 
-        Session?.ConnectedClient.SendMessage(msg);
+        Session?.Channel.SendMessage(msg);
     }
 
     public void SetOutputStatPanel(string name) {
@@ -210,11 +212,13 @@ public sealed class DreamConnection {
         if (value.TryGetValueAsDreamObject<DreamObjectSound>(out var outputObject)) {
             ushort channel = (ushort)outputObject.GetVariable("channel").GetValueAsInteger();
             ushort volume = (ushort)outputObject.GetVariable("volume").GetValueAsInteger();
+            float offset = outputObject.GetVariable("offset").UnsafeGetValueAsFloat();
             DreamValue file = outputObject.GetVariable("file");
 
             var msg = new MsgSound() {
                 Channel = channel,
-                Volume = volume
+                Volume = volume,
+                Offset = offset
             };
 
             if (!file.TryGetValueAsDreamResource(out var soundResource)) {
@@ -235,7 +239,7 @@ public sealed class DreamConnection {
                     throw new Exception($"Sound {value} is not a supported file type");
             }
 
-            Session?.ConnectedClient.SendMessage(msg);
+            Session?.Channel.SendMessage(msg);
             return;
         }
 
@@ -248,7 +252,7 @@ public sealed class DreamConnection {
             Control = control
         };
 
-        Session?.ConnectedClient.SendMessage(msg);
+        Session?.Channel.SendMessage(msg);
     }
 
     // TODO: Remove this. Vestigial and doesn't run all commands.
@@ -295,7 +299,7 @@ public sealed class DreamConnection {
             DefaultValue = defaultValue
         };
 
-        Session.ConnectedClient.SendMessage(msg);
+        Session?.Channel.SendMessage(msg);
         return task;
     }
 
@@ -329,7 +333,7 @@ public sealed class DreamConnection {
             Values = promptValues.ToArray()
         };
 
-        Session.ConnectedClient.SendMessage(msg);
+        Session?.Channel.SendMessage(msg);
 
         // The client returns the index of the selected item, this needs turned back into the DreamValue.
         var selectedIndex = await task;
@@ -349,7 +353,7 @@ public sealed class DreamConnection {
             ControlId = controlId
         };
 
-        Session.ConnectedClient.SendMessage(msg);
+        Session?.Channel.SendMessage(msg);
 
         return task;
     }
@@ -362,7 +366,7 @@ public sealed class DreamConnection {
             QueryValue = queryValue
         };
 
-        Session.ConnectedClient.SendMessage(msg);
+        Session?.Channel.SendMessage(msg);
 
         return task;
     }
@@ -378,7 +382,7 @@ public sealed class DreamConnection {
             Button3 = button3
         };
 
-        Session.ConnectedClient.SendMessage(msg);
+        Session?.Channel.SendMessage(msg);
         return task;
     }
 
@@ -399,10 +403,25 @@ public sealed class DreamConnection {
 
         var msg = new MsgBrowseResource() {
             Filename = filename,
-            Data = resource.ResourceData
+            DataHash = resource.ResourceData.Length //TODO: make a quick hash that can work clientside too
         };
+        _permittedBrowseRscFiles[filename] = resource;
 
-        Session?.ConnectedClient.SendMessage(msg);
+        Session?.Channel.SendMessage(msg);
+    }
+
+    public void HandleBrowseResourceRequest(string filename) {
+        if(_permittedBrowseRscFiles.TryGetValue(filename, out var dreamResource)) {
+            var msg = new MsgBrowseResourceResponse() {
+                Filename = filename,
+                Data = dreamResource.ResourceData! //honestly if this is null, something mega fucked up has happened and we should error hard
+            };
+            _permittedBrowseRscFiles.Remove(filename);
+            Session?.Channel.SendMessage(msg);
+        } else {
+            _sawmill.Error($"Client({Session}) requested a browse_rsc file they had not been permitted to request ({filename}).");
+        }
+
     }
 
     public void Browse(string? body, string? options) {
@@ -435,7 +454,7 @@ public sealed class DreamConnection {
             HtmlSource = body
         };
 
-        Session?.ConnectedClient.SendMessage(msg);
+        Session?.Channel.SendMessage(msg);
     }
 
     public void WinSet(string? controlId, string @params) {
@@ -444,13 +463,26 @@ public sealed class DreamConnection {
             Params = @params
         };
 
-        Session?.ConnectedClient.SendMessage(msg);
+        Session?.Channel.SendMessage(msg);
     }
 
     public void WinClone(string controlId, string cloneId) {
         var msg = new MsgWinClone() { ControlId = controlId, CloneId = cloneId };
 
-        Session?.ConnectedClient.SendMessage(msg);
+        Session?.Channel.SendMessage(msg);
+    }
+
+    /// <summary>
+    /// Sends a URL to the client to open.
+    /// Can be a website, a topic call, or another server to connect to.
+    /// </summary>
+    /// <param name="url">URL to open on the client's side</param>
+    public void SendLink(string url) {
+        var msg = new MsgLink {
+            Url = url
+        };
+
+        Session?.Channel.SendMessage(msg);
     }
 
     /// <summary>
@@ -464,7 +496,7 @@ public sealed class DreamConnection {
             SuggestedName = suggestedName
         };
 
-        Session?.ConnectedClient.SendMessage(msg);
+        Session?.Channel.SendMessage(msg);
     }
 
     public bool TryConvertPromptResponse(DreamValueType type, object? value, out DreamValue converted) {
@@ -473,7 +505,7 @@ public sealed class DreamConnection {
         if (CanBe(DreamValueType.Null) && value == null) {
             converted = DreamValue.Null;
             return true;
-        } else if (CanBe(DreamValueType.Text | DreamValueType.Message) && value is string strVal) {
+        } else if (CanBe(DreamValueType.Text | DreamValueType.Message | DreamValueType.CommandText) && value is string strVal) {
             converted = new(strVal);
             return true;
         } else if (CanBe(DreamValueType.Num) && value is float numVal) {

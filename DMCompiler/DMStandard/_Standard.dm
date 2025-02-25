@@ -1,5 +1,3 @@
-/var/world/world = /world as /world // Set to /world to suppress issues with Typemaker
-
 //These procs should be in alphabetical order, as in DreamProcNativeRoot.cs
 proc/alert(Usr = usr, Message, Title, Button1 = "Ok", Button2, Button3) as text
 proc/animate(Object, time, loop, easing, flags, delay, pixel_x, pixel_y, pixel_z, maptext, maptext_width, maptext_height, maptext_x, maptext_y, dir, alpha, transform, color, luminosity, infra_luminosity, layer, glide_size, icon, icon_state, invisibility, suffix) as null
@@ -10,6 +8,7 @@ proc/ckey(Key) as text|null
 proc/ckeyEx(Text) as text|null
 proc/clamp(Value, Low, High) as /list|num|null
 proc/cmptext(T1) as num
+proc/cmptextEx(T1) as num
 proc/copytext(T, Start = 1, End = 0) as text|null
 proc/copytext_char(T,Start=1,End=0) as text|null
 proc/CRASH(msg) as null
@@ -22,15 +21,19 @@ proc/file2text(File) as text|null
 proc/filter(type, ...)
 proc/findtext(Haystack, Needle, Start = 1, End = 0) as num
 proc/findtextEx(Haystack, Needle, Start = 1, End = 0) as num
-proc/findlasttext(Haystack, Needle, Start = 1, End = 0) as num
-proc/findlasttextEx(Haystack, Needle, Start = 1, End = 0) as num
+proc/findlasttext(Haystack, Needle, Start = 0, End = 1) as num
+proc/findlasttextEx(Haystack, Needle, Start = 0, End = 1) as num
 proc/flick(Icon, Object)
+	set opendream_unimplemented = 1
 proc/flist(Path) as /list
 proc/floor(A) as num
 proc/fract(n) as num
 proc/ftime(File, IsCreationTime = 0) as num
+proc/get_step_to(Ref, Trg, Min=0) as num
+proc/get_steps_to(Ref, Trg, Min=0) as /list
 proc/gradient(A, index)
 proc/hascall(Object, ProcName) as num
+proc/hearers(Depth = world.view, Center = usr) as /list
 proc/html_decode(HtmlText) as text
 proc/html_encode(PlainText) as text
 proc/icon_states(Icon, mode = 0) as text|null
@@ -58,11 +61,15 @@ proc/lowertext(T as text) as text
 proc/max(A) as num|text|null
 proc/md5(T) as text|null
 proc/min(A) as num|text|null
+proc/noise_hash(...) as num
+	set opendream_unimplemented = 1
+	return 0.5
 proc/nonspantext(Haystack, Needles, Start = 1) as num
 proc/num2text(N, A, B) as text
 proc/orange(Dist = 5, Center = usr) as /list|null // NOTE: Not sure if return types have BYOND parity
 proc/oview(Dist = 5, Center = usr) as /list
 proc/oviewers(Depth = 5, Center = usr) as /list
+proc/ohearers(Depth = world.view, Center = usr) as /list
 proc/params2list(Params) as /list
 proc/rand(L, H) as num
 proc/rand_seed(Seed) as null
@@ -76,6 +83,7 @@ proc/roll(ndice = 1, sides) as num
 proc/round(A, B) as num
 proc/sha1(input) as text|null
 proc/shutdown(Addr,Natural = 0)
+proc/sign(A) as num
 proc/sleep(Delay)
 proc/sorttext(T1, T2) as num
 proc/sorttextEx(T1, T2) as num
@@ -103,6 +111,7 @@ proc/url_encode(PlainText, format = 0) as text
 proc/view(Dist = 5, Center = usr) as /list
 proc/viewers(Depth, Center = usr) as /list
 proc/walk(Ref, Dir, Lag = 0, Speed = 0)
+proc/walk_rand(Ref,Lag = 0,Speed = 0)
 proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
 proc/walk_towards(Ref,Trg,Lag=0,Speed=0)
 proc/winclone(player, window_name, clone_name)
@@ -112,6 +121,7 @@ proc/winset(player, control_id, params)
 
 #include "Defines.dm"
 #include "Types\Client.dm"
+#include "Types\Database.dm"
 #include "Types\Datum.dm"
 #include "Types\Exception.dm"
 #include "Types\Filter.dm"
@@ -125,6 +135,7 @@ proc/winset(player, control_id, params)
 #include "Types\Regex.dm"
 #include "Types\Savefile.dm"
 #include "Types\Sound.dm"
+#include "Types\Vector.dm"
 #include "Types\World.dm"
 #include "Types\Atoms\_Atom.dm"
 #include "Types\Atoms\Area.dm"
@@ -154,14 +165,6 @@ proc/replacetextEx_char(Haystack as text, Needle, Replacement, Start = 1, End = 
 	var/step_dir = get_dir(Ref, Trg)
 	return step(Ref, step_dir, Speed)
 
-/proc/get_step_to(Ref, Trg, Min=0)
-	set opendream_unimplemented = TRUE
-	CRASH("/get_step_to() is not implemented")
-
-/proc/get_steps_to(Ref, Trg, Min=0) as /list
-	set opendream_unimplemented = TRUE
-	CRASH("/get_steps_to() is not implemented")
-
 /proc/walk_away(Ref,Trg,Max=5,Lag=0,Speed=0)
 	set opendream_unimplemented = TRUE
 	CRASH("/walk_away() is not implemented")
@@ -189,16 +192,6 @@ proc/get_step_rand(atom/movable/Ref)
 	var/dir = pick(NORTH, SOUTH, EAST, WEST, NORTHEAST, SOUTHEAST, SOUTHWEST, NORTHWEST)
 
 	return get_step(Ref, dir)
-
-proc/hearers(Depth = world.view, Center = usr) as /list
-	set opendream_unimplemented = TRUE
-	//TODO: Actual cursed hearers implementation
-	return viewers(Depth, Center)
-
-proc/ohearers(Depth = world.view, Center = usr) as /list
-	set opendream_unimplemented = TRUE
-	//TODO: Actual cursed ohearers implementation
-	return oviewers(Depth, Center)
 
 proc/step_towards(atom/movable/Ref as /atom/movable, /atom/Trg, Speed) as num
 	return Ref.Move(get_step_towards(Ref, Trg), get_dir(Ref, Trg))

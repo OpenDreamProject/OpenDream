@@ -334,11 +334,108 @@
 			animate(transform = matrix(), time = 5, easing=SINE_EASING)
 			animate(transform = matrix()*2, time = 5, easing=CIRCULAR_EASING)
 			animate(transform = matrix(), time = 5, easing=JUMP_EASING)
-		i++
-		if(i>5)
+		if(i==6)
+			usr << "relative color"
+			animate(usr, color="#ff0000", time=5, flags=ANIMATION_RELATIVE)
+			animate(color="#00ff00", time=5, flags=ANIMATION_RELATIVE)
+			animate(color="#0000ff", time=5, flags=ANIMATION_RELATIVE)
+		if(i==7)
+			usr << "relative transform"
+			animate(usr, transform = matrix()*2, time = 5, flags=ANIMATION_RELATIVE)
+			animate(transform = matrix()*0.5, time = 5, flags=ANIMATION_RELATIVE)
+		if(i==8)
+			usr << "more relative tests"
+			animate(usr, alpha=-125, pixel_x=16, time = 5, flags=ANIMATION_RELATIVE)
+			animate(alpha=125, pixel_x=-16, time = 5, flags=ANIMATION_RELATIVE)
+		i++;
+		if(i>8)
 			i = 0
+
 /obj/plaque/animation_test 
 	data = "<h3>Animation Test</h3><p>Click the button to apply a series of animations to your mob</p>"
+
+
+/obj/button/animation_turf_test
+	name = "Animation Turf Test"
+	desc = "Click me to animate the turfs around you!"
+	var/i = 0
+
+	push()
+		if(i==0)
+			//grow and fade
+			usr << "grow and fade"
+			for(var/turf/T in range(src, 2))
+				animate(T, transform = matrix()*2, alpha = 0, time = 5)
+				animate(transform = matrix(), alpha = 255, time = 5)
+			sleep(5)
+		if(i==1)
+			//spin
+			usr << "spin"
+			for(var/turf/T in range(src, 2))
+				animate(T, transform = turn(matrix(), 120), time = 2, loop = 5)
+				animate(transform = turn(matrix(), 240), time = 2)
+				animate(transform = null, time = 2)
+			sleep(14)
+		if(i==2)
+			//colour
+			usr << "colour"
+			for(var/turf/T in range(src, 2))
+				animate(T, color="#ff0000", time=5)
+				animate(color="#00ff00", time=5)
+				animate(color="#0000ff", time=5)
+				animate(color="#ffffff", time=5)
+			sleep(20)
+		if(i==3)
+			//colour matrix
+			usr << "colour matrix"
+			for(var/turf/T in range(src, 2))
+				animate(T, color=list(0,0,1,0, 1,0,0,0, 0,1,0,0, 0,0,0,1, 0,0,0,0), time=5)
+				animate(color=list(0,1,0,0, 0,0,1,0, 1,0,0,0, 0,0,0,1, 0,0,0,0), time=5)
+				animate(color=list(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1, 0,0,0,0), time=5)
+			sleep(15)
+		if(i==4)
+			//parallel
+			usr << "parallel"
+			for(var/turf/T in range(src, 2))
+				animate(T, color="#ff0000", time=4)
+				animate(T, transform = turn(matrix(), 120), time = 2, flags=ANIMATION_PARALLEL)
+				animate(transform = turn(matrix(), 240), time = 2)
+				animate(color="#ffffff", transform = null, time = 2)
+			sleep(6)
+		if(i==5)
+			//easings
+			usr << "easings"
+			for(var/turf/T in range(src, 2))
+				animate(T, transform = matrix()*2, time = 5, easing=BACK_EASING)
+				animate(transform = matrix(), time = 5, easing=BOUNCE_EASING)
+				animate(transform = matrix()*2, time = 5, easing=ELASTIC_EASING)
+				animate(transform = matrix(), time = 5, easing=QUAD_EASING)
+				animate(transform = matrix()*2, time = 5, easing=CUBIC_EASING)
+				animate(transform = matrix(), time = 5, easing=SINE_EASING)
+				animate(transform = matrix()*2, time = 5, easing=CIRCULAR_EASING)
+				animate(transform = matrix(), time = 5, easing=JUMP_EASING)
+		if(i==6)
+			usr << "relative color"
+			for(var/turf/T in range(src, 2))
+				animate(T, color="#ff0000", time=5, flags=ANIMATION_RELATIVE)
+				animate(color="#00ff00", time=5, flags=ANIMATION_RELATIVE)
+				animate(color="#0000ff", time=5, flags=ANIMATION_RELATIVE)
+		if(i==7)
+			usr << "relative transform"
+			for(var/turf/T in range(src, 2))
+				animate(T, transform = matrix()*2, time = 5, flags=ANIMATION_RELATIVE)
+				animate(transform = matrix()*0.5, time = 5, flags=ANIMATION_RELATIVE)
+		if(i==8)
+			usr << "more relative tests"
+			for(var/turf/T in range(src, 2))
+				animate(T, alpha=-125, pixel_x=16, time = 5, flags=ANIMATION_RELATIVE)
+				animate(alpha=125, pixel_x=-16, time = 5, flags=ANIMATION_RELATIVE)
+		i++;
+		if(i>8)
+			i = 0
+
+/obj/plaque/animation_turf_test 
+	data = "<h3>Animation Turf Test</h3><p>Click the button to apply a series of animations to the turfs your mob</p>"
 
 //render order sanity checks
 /obj/order_test
@@ -456,25 +553,28 @@
 	name = "float layer test"
 	icon = 'icons/hanoi.dmi'
 	icon_state = "5"
+	layer = OBJ_LAYER
 
 	New()
-		var/image/zero = image(icon = 'icons/hanoi.dmi', icon_state="0", layer=FLOAT_LAYER-10)
-		var/image/one = image(icon = 'icons/hanoi.dmi', icon_state="1", layer=FLOAT_LAYER-9)
-		var/image/two = image(icon = 'icons/hanoi.dmi', icon_state="2", layer=FLOAT_LAYER-8)
-		var/image/three = image(icon = 'icons/hanoi.dmi', icon_state="3", layer=FLOAT_LAYER-7)
-		var/image/four = image(icon = 'icons/hanoi.dmi', icon_state="4", layer=FLOAT_LAYER-6)
-		var/image/six = image(icon = 'icons/hanoi.dmi', icon_state="6", layer=FLOAT_LAYER-5)
-		var/image/seven = image(icon = 'icons/hanoi.dmi', icon_state="7", layer=FLOAT_LAYER-4)
-		var/image/eight = image(icon = 'icons/hanoi.dmi', icon_state="8", layer=FLOAT_LAYER-3)
-		var/image/nine = image(icon = 'icons/hanoi.dmi', icon_state="9", layer=FLOAT_LAYER-2)
+		var/image/zero = image(icon = 'icons/hanoi.dmi', icon_state="0", layer=FLOAT_LAYER)
+		var/image/one = image(icon = 'icons/hanoi.dmi', icon_state="1", layer=FLOAT_LAYER)
+		var/image/two = image(icon = 'icons/hanoi.dmi', icon_state="2", layer=FLOAT_LAYER)
+		var/image/three = image(icon = 'icons/hanoi.dmi', icon_state="3", layer=FLOAT_LAYER)
+		var/image/four = image(icon = 'icons/hanoi.dmi', icon_state="4", layer=FLOAT_LAYER)
+		var/image/six = image(icon = 'icons/hanoi.dmi', icon_state="6", layer=FLOAT_LAYER)
+		var/image/seven = image(icon = 'icons/hanoi.dmi', icon_state="7", layer=FLOAT_LAYER)
+		var/image/eight = image(icon = 'icons/hanoi.dmi', icon_state="8", layer=FLOAT_LAYER)
+		var/image/nine = image(icon = 'icons/hanoi.dmi', icon_state="9", layer=FLOAT_LAYER)
 
-		src.underlays += zero
-		src.underlays += one
-		src.underlays += two
-		src.underlays += three
+		one.underlays += zero
+		one.overlays += two
 		src.underlays += four
-		src.overlays += six
-		src.overlays += seven
-		src.overlays += eight
-		src.overlays += nine
+		src.underlays += three
+		src.underlays += one
+
+
+		eight.overlays += nine
+		seven.overlays += eight
+		six.overlays += seven
 		
+		src.overlays += six

@@ -22,6 +22,6 @@ internal sealed class ControlLabel : InterfaceControl {
         base.UpdateElementDescriptor();
 
         ControlDescriptorLabel controlDescriptor = (ControlDescriptorLabel)ElementDescriptor;
-        _label.Text = controlDescriptor.Text;
+        _label.Text = controlDescriptor.Text.AsRaw();
     }
 }

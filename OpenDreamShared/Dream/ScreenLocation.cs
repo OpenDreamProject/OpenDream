@@ -6,18 +6,23 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using Robust.Shared.Log;
+using Robust.Shared.Maths;
 
 namespace OpenDreamShared.Dream;
 
 public enum HorizontalAnchor {
+    West,
     Left,
     Center,
+    East,
     Right
 }
 
 public enum VerticalAnchor {
+    South,
     Bottom,
     Center,
+    North,
     Top
 }
 
@@ -35,13 +40,13 @@ public sealed class ScreenLocation {
 
     private static ISawmill Sawmill => Logger.GetSawmill("opendream.screen_loc_parser");
 
-    private static string[] _keywords = {
+    private static string[] _keywords = [
         "CENTER",
         "WEST", "EAST", "LEFT", "RIGHT",
         "NORTH", "SOUTH", "TOP", "BOTTOM",
         "TOPLEFT", "TOPRIGHT",
         "BOTTOMLEFT", "BOTTOMRIGHT"
-    };
+    ];
 
     public ScreenLocation(int x, int y, int pixelOffsetX, int pixelOffsetY, ScreenLocation? range = null) {
         X = x - 1;
@@ -66,20 +71,24 @@ public sealed class ScreenLocation {
         ParseScreenLoc(screenLocation);
     }
 
-    public Vector2 GetViewPosition(Vector2 viewOffset, ViewRange view, float iconSize) {
-        float x = (X + PixelOffsetX / iconSize);
+    public Vector2 GetViewPosition(Vector2 viewOffset, ViewRange view, float tileSize, Vector2i iconSize) {
+        // TODO: LEFT/RIGHT/TOP/BOTTOM need to stick to the edge of the visible map if the map's container is smaller than the map itself
+        
+        float x = (X + PixelOffsetX / tileSize);
         x += HorizontalAnchor switch {
-            HorizontalAnchor.Left => 0,
+            HorizontalAnchor.West or HorizontalAnchor.Left => 0,
             HorizontalAnchor.Center => view.CenterX,
-            HorizontalAnchor.Right => view.Width - 1,
+            HorizontalAnchor.East => view.Width - 1,
+            HorizontalAnchor.Right => view.Width - (iconSize.X / tileSize),
             _ => throw new Exception($"Invalid horizontal anchor {HorizontalAnchor}")
         };
 
-        float y = (Y + PixelOffsetY / iconSize);
+        float y = (Y + PixelOffsetY / tileSize);
         y += VerticalAnchor switch {
-            VerticalAnchor.Bottom => 0,
+            VerticalAnchor.South or VerticalAnchor.Bottom => 0,
             VerticalAnchor.Center => view.CenterY,
-            VerticalAnchor.Top => view.Height - 1,
+            VerticalAnchor.North => view.Height - 1,
+            VerticalAnchor.Top => view.Height - (iconSize.Y / tileSize),
             _ => throw new Exception($"Invalid vertical anchor {VerticalAnchor}")
         };
 
@@ -91,6 +100,10 @@ public sealed class ScreenLocation {
         string range = Range != null ? $" to {Range}" : string.Empty;
 
         return $"{mapControl}{HorizontalAnchor}+{X+1}:{PixelOffsetX},{VerticalAnchor}+{Y+1}:{PixelOffsetY}{range}";
+    }
+
+    public string ToCoordinates() {
+        return $"{X+1}:{PixelOffsetX},{Y+1}:{PixelOffsetY}";
     }
 
     private void ParseScreenLoc(string screenLoc) {
@@ -105,7 +118,7 @@ public sealed class ScreenLocation {
         if (mapControlSplitIndex > 0) {
             string mapControl = rangeSplit[0].Substring(0, mapControlSplitIndex);
 
-            if (char.IsAsciiLetter(mapControl[0]) && mapControl.IndexOfAny(new[] { '+', '-' }) == -1 && !_keywords.Contains(mapControl)) {
+            if (char.IsAsciiLetter(mapControl[0]) && mapControl.IndexOfAny(['+', '-']) == -1 && !_keywords.Contains(mapControl)) {
                 MapControl = mapControl;
                 coordinateSplit[0] = coordinateSplit[0].Substring(mapControlSplitIndex + 1);
             }
@@ -117,10 +130,14 @@ public sealed class ScreenLocation {
 
             (HorizontalAnchor, VerticalAnchor) = coordinateSplit[0].Trim() switch {
                 "CENTER" => (HorizontalAnchor.Center, VerticalAnchor.Center),
-                "NORTHWEST" or "TOPLEFT" => (HorizontalAnchor.Left, VerticalAnchor.Top),
-                "NORTHEAST" or "TOPRIGHT" => (HorizontalAnchor.Right, VerticalAnchor.Top),
-                "SOUTHWEST" or "BOTTOMLEFT" => (HorizontalAnchor.Left, VerticalAnchor.Bottom),
-                "SOUTHEAST" or "BOTTOMRIGHT" => (HorizontalAnchor.Right, VerticalAnchor.Bottom),
+                "NORTHWEST" => (HorizontalAnchor.West, VerticalAnchor.North),
+                "TOPLEFT" => (HorizontalAnchor.Left, VerticalAnchor.Top),
+                "NORTHEAST" => (HorizontalAnchor.East, VerticalAnchor.North),
+                "TOPRIGHT" => (HorizontalAnchor.Right, VerticalAnchor.Top),
+                "SOUTHWEST" => (HorizontalAnchor.West, VerticalAnchor.South),
+                "BOTTOMLEFT" => (HorizontalAnchor.Left, VerticalAnchor.Bottom),
+                "SOUTHEAST" => (HorizontalAnchor.East, VerticalAnchor.South),
+                "BOTTOMRIGHT" => (HorizontalAnchor.Right, VerticalAnchor.Bottom),
                 _ => throw new Exception($"Invalid screen_loc {screenLoc}")
             };
 
@@ -139,9 +156,7 @@ public sealed class ScreenLocation {
         List<string> pieces = new();
         StringBuilder currentPiece = new();
 
-        for (int i = 0; i < coordinate.Length; i++) {
-            char c = coordinate[i];
-
+        foreach (var c in coordinate) {
             switch (c) {
                 case ' ' or '\t':
                     continue;
@@ -189,23 +204,35 @@ public sealed class ScreenLocation {
 
                     break;
                 case "WEST":
-                case "LEFT":
                     // Yes, this sets the horizontal anchor regardless of the isHorizontal arg.
                     // Every macro sets their respective axis regardless of which coordinate it's in
-                    HorizontalAnchor = HorizontalAnchor.Left;
+                    HorizontalAnchor = HorizontalAnchor.West;
                     settingHorizontal = true;
                     break;
                 case "EAST":
+                    HorizontalAnchor = HorizontalAnchor.East;
+                    settingHorizontal = true;
+                    break;
+                case "NORTH":
+                    VerticalAnchor = VerticalAnchor.North;
+                    settingHorizontal = false;
+                    break;
+                case "SOUTH":
+                    VerticalAnchor = VerticalAnchor.South;
+                    settingHorizontal = false;
+                    break;
+                case "LEFT":
+                    HorizontalAnchor = HorizontalAnchor.Left;
+                    settingHorizontal = true;
+                    break;
                 case "RIGHT":
                     HorizontalAnchor = HorizontalAnchor.Right;
                     settingHorizontal = true;
                     break;
-                case "NORTH":
                 case "TOP":
                     VerticalAnchor = VerticalAnchor.Top;
                     settingHorizontal = false;
                     break;
-                case "SOUTH":
                 case "BOTTOM":
                     VerticalAnchor = VerticalAnchor.Bottom;
                     settingHorizontal = false;

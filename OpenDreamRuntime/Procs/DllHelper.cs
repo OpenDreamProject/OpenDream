@@ -31,7 +31,7 @@ namespace OpenDreamRuntime.Procs
                 return dll;
 
             if (!TryResolveDll(resource, dllName, out dll))
-                throw new DllNotFoundException($"FFI: Unable to load {dllName}, unknown error."); //unknown because NativeLibrary doesn't give any error information.
+                throw new DllNotFoundException($"FFI: Unable to load {dllName}, unknown error. Did you remember to build a 64-bit DLL instead of 32-bit?"); //unknown because NativeLibrary doesn't give any error information.
 
             LoadedDlls.Add(dllName, dll);
             return dll;

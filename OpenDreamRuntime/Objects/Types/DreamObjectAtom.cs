@@ -1,12 +1,9 @@
 ﻿using OpenDreamRuntime.Procs;
-using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.Types;
 
 [Virtual]
 public class DreamObjectAtom : DreamObject {
-    public string? Name;
-    public string? Desc;
     public readonly DreamOverlaysList Overlays;
     public readonly DreamOverlaysList Underlays;
     public readonly DreamVisContentsList VisContents;
@@ -22,15 +19,23 @@ public class DreamObjectAtom : DreamObject {
         AtomManager.AddAtom(this);
     }
 
-    public override void Initialize(DreamProcArguments args) {
-        ObjectDefinition.Variables["name"].TryGetValueAsString(out Name);
-        ObjectDefinition.Variables["desc"].TryGetValueAsString(out Desc);
-    }
+    protected override void HandleDeletion(bool possiblyThreaded) {
+        // SAFETY: RemoveAtom is not threadsafe.
+        if (possiblyThreaded) {
+            EnterIntoDelQueue();
+            return;
+        }
 
-    protected override void HandleDeletion() {
         AtomManager.RemoveAtom(this);
 
-        base.HandleDeletion();
+        base.HandleDeletion(possiblyThreaded);
+    }
+
+    public string GetRTEntityDesc() {
+        if (AtomManager.TryGetAppearance(this, out var appearance) && appearance.Desc != null)
+            return appearance.Desc;
+
+        return ObjectDefinition.Type;
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
@@ -44,15 +49,8 @@ public class DreamObjectAtom : DreamObject {
             case "loc":
                 value = DreamValue.Null;
                 return true;
-
-            case "name":
-                value = (Name != null) ? new(Name) : DreamValue.Null;
-                return true;
-            case "desc":
-                value = (Desc != null) ? new(Desc) : DreamValue.Null;
-                return true;
             case "appearance":
-                var appearanceCopy = new IconAppearance(AtomManager.MustGetAppearance(this)!);
+                var appearanceCopy = AtomManager.MustGetAppearance(this).ToMutable();
 
                 value = new(appearanceCopy);
                 return true;
@@ -78,7 +76,7 @@ public class DreamObjectAtom : DreamObject {
 
             default:
                 if (AtomManager.IsValidAppearanceVar(varName)) {
-                    var appearance = AtomManager.MustGetAppearance(this)!;
+                    var appearance = AtomManager.MustGetAppearance(this);
 
                     value = AtomManager.GetAppearanceVar(appearance, varName);
                     return true;
@@ -96,21 +94,15 @@ public class DreamObjectAtom : DreamObject {
             case "z":
             case "loc":
                 break;
-
-            case "name":
-                value.TryGetValueAsString(out Name);
-                break;
-            case "desc":
-                value.TryGetValueAsString(out Desc);
-                break;
             case "appearance":
                 if (!AtomManager.TryCreateAppearanceFrom(value, out var newAppearance))
                     return; // Ignore attempts to set an invalid appearance
 
                 // The dir does not get changed
-                newAppearance.Direction = AtomManager.MustGetAppearance(this)!.Direction;
+                newAppearance.Direction = AtomManager.MustGetAppearance(this).Direction;
 
                 AtomManager.SetAtomAppearance(this, newAppearance);
+                newAppearance.Dispose();
                 break;
             case "overlays": {
                 Overlays.Cut();
@@ -157,11 +149,12 @@ public class DreamObjectAtom : DreamObject {
             case "filters": {
                 Filters.Cut();
 
-                if (value.TryGetValueAsDreamList(out var valueList)) {
-                    // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue filterValue in valueList.GetValues()) {
-                        Filters.AddValue(filterValue);
-                    }
+                if (value.TryGetValueAsDreamList(out var valueList)) { // filters = list("type"=...)
+                    var filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, valueList);
+                    if (filterObject == null) // list() with invalid "type" is ignored
+                        break;
+
+                    Filters.AddValue(new(filterObject));
                 } else if (!value.IsNull) {
                     Filters.AddValue(value);
                 }
@@ -171,12 +164,7 @@ public class DreamObjectAtom : DreamObject {
             default:
                 if (AtomManager.IsValidAppearanceVar(varName)) {
                     // Basically AtomManager.UpdateAppearance() but without the performance impact of using actions
-                    var appearance = AtomManager.MustGetAppearance(this);
-
-                    // Clone the appearance
-                    // TODO: We can probably avoid cloning while the DMISpriteComponent is dirty
-                    appearance = (appearance != null) ? new(appearance) : new();
-
+                    using var appearance = AtomManager.MustGetAppearance(this).ToMutable();
                     AtomManager.SetAppearanceVar(appearance, varName, value);
                     AtomManager.SetAtomAppearance(this, appearance);
                     break;

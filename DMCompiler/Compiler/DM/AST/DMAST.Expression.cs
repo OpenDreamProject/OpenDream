@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Linq;
 using DMCompiler.DM;
 
@@ -15,6 +14,13 @@ public abstract class DMASTExpression(Location location) : DMASTNode(location) {
     /// </summary>
     public virtual DMASTExpression GetUnwrapped() {
         return this;
+    }
+
+    public override string ToStringNoLocation() {
+        var leaves = Leaves().ToList();
+        if (leaves.Count == 0)
+            return $"{GetType().Name}";
+        return $"{GetType().Name}({string.Join(", ", Leaves().Select(l => l.ToString(Location)))})";
     }
 }
 

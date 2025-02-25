@@ -1,9 +1,9 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
-using OpenDreamShared.Dream;
 using Robust.Server.GameObjects;
 using Robust.Server.GameStates;
 using Robust.Server.Player;
@@ -136,8 +136,8 @@ public sealed class DreamObjectDefinition {
         Variables[variableName] = value;
     }
 
-    public void SetProcDefinition(string procName, int procId) {
-        if (HasProc(procName)) {
+    public void SetProcDefinition(string procName, int procId, bool replace = false) {
+        if (HasProc(procName) && !replace) {
             var proc = ObjectTree.Procs[procId];
             proc.SuperProc = GetProc(procName);
             OverridingProcs[procName] = procId;

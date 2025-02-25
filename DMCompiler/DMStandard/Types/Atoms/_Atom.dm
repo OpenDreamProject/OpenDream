@@ -21,8 +21,11 @@
 	var/tmp/z = 0
 	var/pixel_x = 0
 	var/pixel_y = 0
-	var/pixel_z = 0 as opendream_unimplemented
-	var/pixel_w = 0 as opendream_unimplemented
+	var/pixel_z = 0
+	var/pixel_w = 0
+	
+	var/icon_w = 0 as opendream_unimplemented
+	var/icon_z = 0 as opendream_unimplemented
 
 	var/icon = null
 	var/icon_state = ""
@@ -41,15 +44,15 @@
 	var/gender = NEUTER
 	var/density = FALSE
 
-	var/maptext as opendream_unimplemented
+	var/maptext = null
 
 	var/list/filters = null
 	var/appearance
 	var/appearance_flags = 0
-	var/maptext_width as opendream_unimplemented
-	var/maptext_height as opendream_unimplemented
-	var/maptext_x = 32 as opendream_unimplemented
-	var/maptext_y = 32 as opendream_unimplemented
+	var/maptext_width = 32
+	var/maptext_height = 32 
+	var/maptext_x = 0
+	var/maptext_y = 0
 	var/step_x as opendream_unimplemented
 	var/step_y as opendream_unimplemented
 	var/render_source

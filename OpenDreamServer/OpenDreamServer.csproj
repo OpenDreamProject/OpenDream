@@ -10,6 +10,8 @@
     <OutputType Condition="'$(FullRelease)' != 'True'">Exe</OutputType>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ServerGarbageCollection>true</ServerGarbageCollection>
+    <NoWarn>NU1507</NoWarn>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\OpenDreamRuntime\OpenDreamRuntime.csproj" />

@@ -11,7 +11,7 @@
 	var/tag
 	var/const/type = /client
 
-	var/mob/mob as /mob|null
+	var/mob/mob // TODO: as /mob|null
 	var/atom/eye
 	var/lazy_eye = 0 as opendream_unimplemented
 	var/perspective = MOB_PERSPECTIVE
@@ -20,7 +20,7 @@
 	var/pixel_y = 0 as opendream_unimplemented
 	var/pixel_z = 0 as opendream_unimplemented
 	var/pixel_w = 0 as opendream_unimplemented
-	var/show_popup_menus = 1 as opendream_unimplemented
+	var/show_popup_menus = 1
 	var/show_verb_panel = 1 as opendream_unimplemented
 
 	var/byond_version = DM_VERSION

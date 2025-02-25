@@ -1,8 +1,10 @@
+/datum/var/name
+
 #define DEFINE_FLOORS(_PATH, _VARS) \
-	/obj/simulated/floor/_PATH{_VARS};\
-	/obj/unsimulated/floor/_PATH{_VARS};\
-	/obj/simulated/floor/airless/_PATH{_VARS};\
-	/obj/unsimulated/floor/airless/_PATH{_VARS};
+	/datum/simulated/floor/_PATH{_VARS};\
+	/datum/unsimulated/floor/_PATH{_VARS};\
+	/datum/simulated/floor/airless/_PATH{_VARS};\
+	/datum/unsimulated/floor/airless/_PATH{_VARS};
 
 var/list/gvars_datum_init_order = list()
 
@@ -42,8 +44,8 @@ proc/RunTest()
 	ASSERT(test.len == 4)	
 	InitGlobaltest2()
 	ASSERT(test2.len == 2)
-	var/obj/simulated/floor/carpet/regalcarpet/C1 = new()
-	var/obj/simulated/floor/carpet/regalcarpet/border/C2 = new()
+	var/datum/simulated/floor/carpet/regalcarpet/C1 = new()
+	var/datum/simulated/floor/carpet/regalcarpet/border/C2 = new()
 	ASSERT(C1.name == "regal carpet")
 	ASSERT(C2.name == "regal carpet border")
 	

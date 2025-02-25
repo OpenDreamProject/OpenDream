@@ -1,22 +1,34 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 
 namespace DMCompiler.Compiler;
 
-public class Lexer<SourceType> {
+internal class Lexer<TSourceType> {
+    /// <summary>
+    /// Location of token that'll be output by <see cref="GetCurrent"/>. If you skip through more
+    /// </summary>
     public Location CurrentLocation { get; protected set; }
-    public string SourceName { get; protected set; }
-    public IEnumerable<SourceType> Source { get; protected set; }
-    public bool AtEndOfSource { get; protected set; } = false;
 
+    /// <summary>
+    /// Location of a previous token.
+    /// </summary>
+    public Location PreviousLocation { get; private set; }
+
+    public IEnumerable<TSourceType> Source { get; }
+    public bool AtEndOfSource { get; private set; }
     protected Queue<Token> _pendingTokenQueue = new();
 
-    private readonly IEnumerator<SourceType> _sourceEnumerator;
-    private SourceType _current;
+    private readonly IEnumerator<TSourceType> _sourceEnumerator;
+    private TSourceType _current;
 
-    protected Lexer(string sourceName, IEnumerable<SourceType> source) {
+    /// <summary>
+    /// Given a stream of some type, allows to advance through it and create <see cref="Token"/> tokens
+    /// </summary>
+    /// <param name="sourceName">Used to build the initial Location, access through <see cref="CurrentLocation"/></param>
+    /// <param name="source">Source of <see cref="TSourceType"/> input</param>
+    /// <exception cref="FileNotFoundException">Thrown if <paramref name="source"/> is null</exception>
+    protected Lexer(string sourceName, IEnumerable<TSourceType> source) {
         CurrentLocation = new Location(sourceName, 1, 0);
-        SourceName = sourceName;
+        PreviousLocation = CurrentLocation;
         Source = source;
         if (source == null)
             throw new FileNotFoundException("Source file could not be read: " + sourceName);
@@ -27,7 +39,7 @@ public class Lexer<SourceType> {
         if (_pendingTokenQueue.Count > 0)
             return _pendingTokenQueue.Dequeue();
 
-        Token nextToken = ParseNextToken();
+        var nextToken = ParseNextToken();
         while (nextToken.Type == TokenType.Skip) nextToken = ParseNextToken();
 
         if (_pendingTokenQueue.Count > 0) {
@@ -42,19 +54,36 @@ public class Lexer<SourceType> {
         return CreateToken(TokenType.Unknown, GetCurrent()?.ToString() ?? string.Empty);
     }
 
-    protected Token CreateToken(TokenType type, string text, object? value = null) {
-        return new Token(type, text, CurrentLocation, value);
+    protected Token CreateToken(TokenType type, string text, Location location, object? value = null) {
+        var token = new Token(type, text, location, value);
+        return token;
     }
 
+    /// <summary>
+    /// Creates a new <see cref="Token"/> located at <see cref="PreviousLocation"/>
+    /// </summary>
+    /// <remarks>
+    /// If you have used <see cref="Advance"/> more than once, the <see cref="Location"/> will be incorrect,
+    /// and you'll need to use <see cref="CreateToken(TokenType, string, Location, object?)"/>
+    /// with a previously recorded <see cref="CurrentLocation"/>
+    /// </remarks>
+    protected Token CreateToken(TokenType type, string text, object? value = null) {
+        return CreateToken(type, text, PreviousLocation, value);
+    }
+
+    /// <inheritdoc cref="CreateToken(TokenType, string, object?)"/>
     protected Token CreateToken(TokenType type, char text, object? value = null) {
         return CreateToken(type, char.ToString(text), value);
     }
 
-    protected virtual SourceType GetCurrent() {
+    protected virtual TSourceType GetCurrent() {
         return _current;
     }
 
-    protected virtual SourceType Advance() {
+    /// <remarks>Call before CreateToken to make sure the location is correct</remarks>
+    protected virtual TSourceType Advance() {
+        PreviousLocation = CurrentLocation;
+
         if (_sourceEnumerator.MoveNext()) {
             _current = _sourceEnumerator.Current;
         } else {
@@ -65,56 +94,9 @@ public class Lexer<SourceType> {
     }
 }
 
-public class TextLexer : Lexer<char> {
-    protected string _source;
-    protected int _currentPosition = 0;
-
-    public TextLexer(string sourceName, string source) : base(sourceName, source) {
-        _source = source;
-
-        Advance();
-    }
-
-    protected override Token ParseNextToken() {
-        char c = GetCurrent();
-
-        Token token;
-        switch (c) {
-            case '\n': token = CreateToken(TokenType.Newline, c); Advance(); break;
-            case '\0': token = CreateToken(TokenType.EndOfFile, c); Advance(); break;
-            default: token = CreateToken(TokenType.Unknown, c); break;
-        }
-
-        return token;
-    }
-
-    protected override char GetCurrent() {
-        if (AtEndOfSource) return '\0';
-        else return base.GetCurrent();
-    }
-
-    protected override char Advance() {
-        if (GetCurrent() == '\n') {
-            CurrentLocation = new Location(
-                CurrentLocation.SourceFile,
-                CurrentLocation.Line + 1,
-                1
-            );
-        } else {
-            CurrentLocation = new Location(
-                CurrentLocation.SourceFile,
-                CurrentLocation.Line,
-                CurrentLocation.Column + 1
-            );
-        }
-
-        _currentPosition++;
-        return base.Advance();
-    }
-}
-
-public class TokenLexer : Lexer<Token> {
-    public TokenLexer(string sourceName, IEnumerable<Token> source) : base(sourceName, source) {
+internal class TokenLexer : Lexer<Token> {
+    /// <inheritdoc/>
+    protected TokenLexer(string sourceName, IEnumerable<Token> source) : base(sourceName, source) {
         Advance();
     }
 

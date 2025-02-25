@@ -6,6 +6,10 @@
     <IsPackable>false</IsPackable>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <LangVersion>12</LangVersion>
+    <NoWarn>NU1507</NoWarn>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RootNamespace>Content.IntegrationTests</RootNamespace>
+    <AssemblyName>Content.IntegrationTests</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="NUnit" />

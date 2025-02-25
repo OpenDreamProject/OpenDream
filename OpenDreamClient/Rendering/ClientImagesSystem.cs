@@ -6,8 +6,6 @@ using Vector3 = Robust.Shared.Maths.Vector3;
 namespace OpenDreamClient.Rendering;
 internal sealed class ClientImagesSystem : SharedClientImagesSystem {
     [Dependency] private readonly IEntityManager _entityManager = default!;
-    [Dependency] private readonly IGameTiming _gameTiming = default!;
-    [Dependency] private readonly ClientAppearanceSystem _appearanceSystem = default!;
 
     private readonly Dictionary<Vector3, List<NetEntity>> _turfClientImages = new();
     private readonly Dictionary<EntityUid, List<NetEntity>> _amClientImages = new();

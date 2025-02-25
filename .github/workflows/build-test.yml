@@ -28,11 +28,11 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 8.0.100
+        dotnet-version: 9.0.100
     - name: Install dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build --configuration Release --no-restore /m
+      run: dotnet build --property WarningLevel=${{ matrix.os == 'ubuntu-latest' && '4' || '0' }} --configuration Release --no-restore /m
     - name: Content.Tests
       shell: pwsh
       run: |
@@ -45,21 +45,26 @@ jobs:
         dotnet test --no-build Content.IntegrationTests/Content.IntegrationTests.csproj -v n
     - name: Publish OpenDream
       if: github.event_name == 'push'
-      run: dotnet run --project OpenDreamPackageTool --no-build --configuration Release -- --server --hybrid-acz --platform ${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }} --output output/
+      run: |
+        dotnet run --project OpenDreamPackageTool --no-build --configuration Release -- --server --hybrid-acz --configuration Release --platform ${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }} --output output_release/
+        dotnet run --project OpenDreamPackageTool --no-build --configuration Release -- --server --hybrid-acz --configuration Tools --platform ${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }} --output output_tools/
     - name: Publish DMCompiler
       if: github.event_name == 'push'
-      run: dotnet publish DMCompiler -c Release -o output/DMCompiler_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}
+      run: dotnet publish DMCompiler -c Release -o output_release/DMCompiler_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}
     - name: Gzip releases
       if: github.event_name == 'push'
       run: |
-        tar -czvf output/DMCompiler_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}.tar.gz -C output DMCompiler_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}
-        tar -czvf output/OpenDreamServer_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}.tar.gz -C output OpenDreamServer_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}
+        tar -czvf output_release/DMCompiler_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}.tar.gz -C output_release DMCompiler_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}
+        tar -czvf output_release/OpenDreamServer_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}.tar.gz -C output_release OpenDreamServer_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}
+        tar -czvf output_tools/OpenDreamServer_TOOLS_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}.tar.gz -C output_tools OpenDreamServer_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}
     - name: Upload artifact
       if: github.event_name == 'push'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: build-${{ matrix.os }}
-        path: output/*.tar.gz
+        path: |
+          output_release/*.tar.gz
+          output_tools/*.tar.gz
         retention-days: 1
 
   release:
@@ -68,7 +73,7 @@ jobs:
     if: github.event_name == 'push'
     steps:
     - name: Download artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         path: artifacts
     - name: Publish latest release
@@ -79,4 +84,5 @@ jobs:
         prerelease: true
         title: "Development Build"
         files: |
-          artifacts/*/*.tar.gz
+          artifacts/*/*/*.tar.gz
+

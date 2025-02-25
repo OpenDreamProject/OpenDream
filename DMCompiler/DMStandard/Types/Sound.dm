@@ -9,7 +9,11 @@
 	var/frequency = 0
 	var/pitch = 0 as opendream_unimplemented
 	var/pan = 0 as opendream_unimplemented
+	var/params = null as opendream_unimplemented
 	var/falloff = 1 as opendream_unimplemented
+	
+	var/atom/atom as opendream_unimplemented
+	var/transform as opendream_unimplemented
 	var/x as opendream_unimplemented
 	var/y as opendream_unimplemented
 	var/z as opendream_unimplemented
@@ -17,7 +21,7 @@
 	var/environment as opendream_unimplemented
 	var/echo as opendream_unimplemented
 	var/len as opendream_unimplemented
-	var/offset as opendream_unimplemented
+	var/offset
 
 	var/priority = 0 as opendream_unimplemented
 	var/status = 0 as opendream_unimplemented

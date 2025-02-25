@@ -4,6 +4,10 @@ binds: # These are all the current engine keybinds.
   type: State
   key: MouseLeft
   canFocus: true
+- function: MouseMiddle
+  type: State
+  key: MouseMiddle
+  canFocus: true
 - function: UIRightClick
   type: State
   key: MouseRight
@@ -177,6 +181,19 @@ binds: # These are all the current engine keybinds.
 - function: TextScrollToBottom
   type: State
   key: PageDown
+- function: TextTabComplete
+  type: State
+  key: Tab
+- function: TextCompleteNext
+  type: State
+  key: Down
+  priority: 1
+  canRepeat: true
+- function: TextCompletePrev
+  type: State
+  key: Up
+  priority: 1
+  canRepeat: true
 - function: TextDelete
   type: State
   key: Delete

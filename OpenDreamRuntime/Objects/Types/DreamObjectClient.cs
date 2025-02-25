@@ -12,6 +12,7 @@ public sealed class DreamObjectClient : DreamObject {
     public readonly ClientImagesList Images;
     public readonly ClientVerbsList ClientVerbs;
     public ViewRange View { get; private set; }
+    public bool ShowPopupMenus { get; private set; } = true;
 
     public DreamObjectClient(DreamObjectDefinition objectDefinition, DreamConnection connection, ServerScreenOverlaySystem? screenOverlaySystem, ServerClientImagesSystem? clientImagesSystem) : base(objectDefinition) {
         Connection = connection;
@@ -24,20 +25,26 @@ public sealed class DreamObjectClient : DreamObject {
         View = DreamManager.WorldInstance.DefaultView;
     }
 
-    protected override void HandleDeletion() {
-        Connection.Session?.ConnectedClient.Disconnect("Your client object was deleted");
+    protected override void HandleDeletion(bool possiblyThreaded) {
+        // SAFETY: Client hashset is not threadsafe, this is not a hot path so no reason to change this.
+        if (possiblyThreaded) {
+            EnterIntoDelQueue();
+            return;
+        }
+
+        Connection.Session?.Channel.Disconnect("Your client object was deleted");
         DreamManager.Clients.Remove(this);
 
-        base.HandleDeletion();
+        base.HandleDeletion(possiblyThreaded);
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
         switch (varName) {
             case "ckey":
-                value = new(DreamProcNativeHelpers.Ckey(Connection.Session!.Name));
+                value = new(DreamProcNativeHelpers.Ckey(Connection.Key));
                 return true;
             case "key":
-                value = new(Connection.Session!.Name);
+                value = new(Connection.Key);
                 return true;
             case "mob":
                 value = new(Connection.Mob);
@@ -61,14 +68,14 @@ public sealed class DreamObjectClient : DreamObject {
                 MD5 md5 = MD5.Create();
                 // Check on Robust.Shared.Network.NetUserData.HWId" if you want to seed from how RT does user identification.
                 // We don't use it here because it is probably not enough to ensure security, and (as of time of writing) only works on Windows machines.
-                byte[] brown = Encoding.UTF8.GetBytes(Connection.Session!.Name);
+                byte[] brown = Encoding.UTF8.GetBytes(Connection.Key);
                 byte[] hash = md5.ComputeHash(brown);
                 string hashStr = BitConverter.ToString(hash).Replace("-", "").ToLower().Substring(0,15); // Extracting the first 15 digits to ensure it'll fit in a 64-bit number
 
                 value = new(long.Parse(hashStr, System.Globalization.NumberStyles.HexNumber).ToString()); // Converts from hex to decimal. Output is in analogous format to BYOND's.
                 return true;
             case "address":
-                value = new(Connection.Session!.ConnectedClient.RemoteEndPoint.Address.ToString());
+                value = new(Connection.Session!.Channel.RemoteEndPoint.Address.ToString());
                 return true;
             case "inactivity":
                 value = new(0); // TODO
@@ -77,7 +84,7 @@ public sealed class DreamObjectClient : DreamObject {
                 value = new(0); // TODO
                 return true;
             case "statpanel":
-                value = new(Connection.SelectedStatPanel);
+                value = Connection.SelectedStatPanel is null ? DreamValue.Null : new(Connection.SelectedStatPanel);
                 return true;
             case "connection":
                 value = new("seeker");
@@ -87,6 +94,9 @@ public sealed class DreamObjectClient : DreamObject {
                 return true;
             case "verbs":
                 value = new(ClientVerbs);
+                return true;
+            case "show_popup_menus":
+                value = new(ShowPopupMenus ? 1 : 0);
                 return true;
             case "images":
                 value = new(Images);
@@ -123,6 +133,17 @@ public sealed class DreamObjectClient : DreamObject {
                     View = new(viewStr);
                 } else {
                     View = DreamManager.WorldInstance.DefaultView;
+                }
+
+                Connection.SendClientInfoUpdate();
+                break;
+            }
+            case "show_popup_menus": {
+                // TODO: See what BYOND does with non-integer values. Per the ref only 0 should disable, but this needs to be verified.
+                if (value.TryGetValueAsInteger(out var viewInt) && viewInt == 0) {
+                    ShowPopupMenus = false;
+                } else {
+                    ShowPopupMenus = true;
                 }
 
                 Connection.SendClientInfoUpdate();

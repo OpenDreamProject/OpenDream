@@ -8,7 +8,8 @@ namespace OpenDreamClient.Rendering;
 /// Disables RobustToolbox's transform lerping and replaces it with our own gliding
 /// </summary>
 public sealed class AtomGlideSystem : EntitySystem {
-    private sealed class Glide(TransformComponent transform, DMISpriteComponent sprite) {
+    private sealed class Glide(EntityUid uid, TransformComponent transform, DMISpriteComponent sprite) {
+        public readonly EntityUid Uid = uid;
         public readonly TransformComponent Transform = transform;
         public readonly DMISpriteComponent Sprite = sprite;
         public Vector2 EndPos;
@@ -27,8 +28,9 @@ public sealed class AtomGlideSystem : EntitySystem {
     private bool _ignoreMoveEvent;
 
     public override void Initialize() {
-        _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
+        UpdatesBefore.Add(typeof(SharedTransformSystem));
 
+        _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
 
         _transformSystem.OnGlobalMoveEvent += OnTransformMove;
     }
@@ -38,6 +40,11 @@ public sealed class AtomGlideSystem : EntitySystem {
     }
 
     public override void FrameUpdate(float frameTime) {
+        // As of writing, Reset() does nothing but clear the transform system's _lerpingTransforms list
+        // We update before SharedTransformSystem so this serves to disable RT's lerping, which fights our gliding
+        // TODO: This kinda fights RT. Would be nice to modify RT to make it play nicer.
+        _transformSystem.Reset();
+
         _ignoreMoveEvent = false;
 
         for (int i = 0; i < _currentGlides.Count; i++) {
@@ -76,12 +83,11 @@ public sealed class AtomGlideSystem : EntitySystem {
             }
 
             _ignoreMoveEvent = true;
-            _transformSystem.SetLocalPositionNoLerp(glide.Transform, newPos);
+            _transformSystem.SetLocalPositionNoLerp(glide.Uid, newPos, glide.Transform);
             _ignoreMoveEvent = false;
         }
     }
 
-    // TODO: This kinda fights RT. Would be nice to modify RT to make it play nicer.
     /// <summary>
     /// Disables RT lerping and sets up the entity's glide
     /// </summary>
@@ -118,12 +124,11 @@ public sealed class AtomGlideSystem : EntitySystem {
         }
 
         if (glide == null) {
-            glide = new(e.Component, sprite);
+            glide = new(e.Sender, e.Component, sprite);
             _currentGlides.Add(glide);
         }
 
         // Move the transform to our starting point
-        // Also serves the function of disabling RT's lerp
         _transformSystem.SetLocalPositionNoLerp(e.Sender, startingFrom, e.Component);
 
         glide.EndPos = glidingTo;

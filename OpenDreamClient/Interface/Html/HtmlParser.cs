@@ -7,6 +7,13 @@ namespace OpenDreamClient.Interface.Html;
 public static class HtmlParser {
     private const string TagNotClosedError = "HTML tag was not closed";
 
+    private static readonly ISawmill Sawmill;
+    private static readonly HashSet<string> WarnedAttributes = new();
+
+    static HtmlParser() {
+        Sawmill = IoCManager.Resolve<ILogManager>().GetSawmill("opendream.html_parser");
+    }
+
     public static void Parse(string text, FormattedMessage appendTo) {
         StringBuilder currentText = new();
         Stack<string> tags = new();
@@ -18,6 +25,9 @@ public static class HtmlParser {
         }
 
         void PushCurrentText() {
+            if (currentText.Length == 0)
+                return;
+
             appendTo.AddText(currentText.ToString());
             currentText.Clear();
         }
@@ -32,7 +42,7 @@ public static class HtmlParser {
                     i++;
                     SkipWhitespace();
                     if (i >= text.Length) {
-                        Logger.Error(TagNotClosedError);
+                        Sawmill.Error(TagNotClosedError);
                         return;
                     }
 
@@ -51,7 +61,7 @@ public static class HtmlParser {
                     } while (i < text.Length);
 
                     if (c != '>') {
-                        Logger.Error(TagNotClosedError);
+                        Sawmill.Error(TagNotClosedError);
                         return;
                     }
 
@@ -60,25 +70,68 @@ public static class HtmlParser {
                     string tagType = attributes[0].ToLowerInvariant();
 
                     currentText.Clear();
+                    bool isSelfClosing = IsSelfClosing(tagType, attributes);
                     if (closingTag) {
-                        if (tags.Count == 0) {
-                            Logger.Error("Unexpected closing tag");
+                        if (isSelfClosing) {
+                            // ignore closing tags of void elements since they don't
+                            // do anything anyway. Should probably warn.
+                            return;
+                        } else if (tags.Count == 0) {
+                            Sawmill.Error("Unexpected closing tag");
                             return;
                         } else if (tags.Peek() != tagType) {
-                            Logger.Error($"Invalid closing tag </{tagType}>, expected </{tags.Peek()}>");
+                            Sawmill.Error($"Invalid closing tag </{tagType}>, expected </{tags.Peek()}>");
                             return;
                         }
 
                         appendTo.Pop();
                         tags.Pop();
                     } else {
-                        tags.Push(tagType);
+                        if (!isSelfClosing) {
+                            tags.Push(tagType);
+                        }
+                        appendTo.PushTag(new MarkupNode(tagType, null, ParseAttributes(attributes)), selfClosing: isSelfClosing);
+                    }
 
-                        appendTo.PushTag(new MarkupNode(tagType, null, ParseAttributes(attributes)), selfClosing: attributes[^1] == "/");
+                    break;
+                case '&':
+                    // HTML named/numbered entity
+                    int end = text.IndexOf(';', i);
+                    if (end == -1) {
+                        // browsers usually allow for some fallibility here
+                        break;
+                    }
+
+                    string insideEntity = text.Substring(i + 1, end - (i + 1));
+                    i = end;
+
+                    if (insideEntity.StartsWith('#')) {
+                        if (int.TryParse(insideEntity.Substring(1), out int result)) {
+                            currentText.Append((char) result);
+                        }
+                    } else {
+                        switch (insideEntity) {
+                            case "nbsp": currentText.Append("\u00A0"); break;
+                            case "lt": currentText.Append("<"); break;
+                            case "gt": currentText.Append(">"); break;
+                            case "amp": currentText.Append("&"); break;
+                            case "quot": currentText.Append("\""); break;
+                            case "apos": currentText.Append("'"); break;
+                            case "cent": currentText.Append("¢"); break;
+                            case "pound": currentText.Append("£"); break;
+                            case "yen": currentText.Append("¥"); break;
+                            case "euro": currentText.Append("€"); break;
+                            case "copyright": currentText.Append("©"); break;
+                            case "trademark": currentText.Append("®"); break;
+                            default:
+                                currentText.Append("&" + insideEntity + ";");
+                                break;
+                        }
                     }
 
                     break;
                 case '\n':
+                    PushCurrentText();
                     appendTo.PushNewline();
                     break;
                 default:
@@ -90,6 +143,39 @@ public static class HtmlParser {
         PushCurrentText();
         while (tags.TryPop(out _))
             appendTo.Pop();
+    }
+
+    /**
+     * <summary>
+     * Returns if a tag is written in old self-closing form, or if the tag
+     * represents a void element, which must have no children
+     * </summary>
+     */
+    private static bool IsSelfClosing(string tagType, string[] attributes) {
+        if (attributes[^1] == "/") {
+            return true;
+        }
+
+        switch (tagType) {
+            case "area":
+            case "base":
+            case "br":
+            case "col":
+            case "embed":
+            case "hr":
+            case "img":
+            case "input":
+            case "link":
+            case "meta":
+            case "param":
+            case "source":
+            case "track":
+            case "wbr":
+                return true;
+
+            default:
+                return false;
+        }
     }
 
     private static Dictionary<string, MarkupParameter> ParseAttributes(string[] attributes) {
@@ -123,7 +209,8 @@ public static class HtmlParser {
                     parameter = new(color);
                     break;
                 default:
-                    Logger.Debug($"Unimplemented HTML attribute \"{attributeName}\"");
+                    if (WarnedAttributes.Add(attributeName))
+                        Sawmill.Debug($"Unimplemented HTML attribute \"{attributeName}\"");
                     continue;
             }
 

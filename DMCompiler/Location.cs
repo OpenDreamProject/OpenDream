@@ -2,12 +2,12 @@ using System.Text;
 
 namespace DMCompiler;
 
-public readonly struct Location(string filePath, int? line, int? column) {
+public readonly struct Location(string filePath, int? line, int? column, bool inDMStandard = false) {
     /// <summary>
     /// For when DM location information can't be determined.
     /// </summary>
     public static readonly Location Unknown = new();
-    
+
     /// <summary>
     /// For when internal OpenDream warnings/errors are raised or something internal needs to be passed a location.
     /// </summary>
@@ -16,6 +16,7 @@ public readonly struct Location(string filePath, int? line, int? column) {
     public string SourceFile { get; } = filePath;
     public int? Line { get; } = line;
     public int? Column { get; } = column;
+    public bool InDMStandard { get; } = inDMStandard;
 
     public override string ToString() {
         var builder = new StringBuilder(SourceFile ?? "<unknown>");

@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace DMCompiler.Compiler.DM.AST;
 
 public class DMASTBinary(Location location, DMASTExpression lhs, DMASTExpression rhs) : DMASTExpression(location) {
@@ -50,6 +48,7 @@ public sealed class DMASTPower(Location location, DMASTExpression a, DMASTExpres
 public sealed class DMASTAdd(Location location, DMASTExpression a, DMASTExpression b) : DMASTBinary(location, a, b);
 public sealed class DMASTSubtract(Location location, DMASTExpression a, DMASTExpression b) : DMASTBinary(location, a, b);
 public sealed class DMASTArctan2(Location location, DMASTExpression xExpression, DMASTExpression yExpression) : DMASTBinary(location, xExpression, yExpression);
+public sealed class DMASTAsType(Location location, DMASTExpression value, DMASTExpression type) : DMASTBinary(location, value, type);
 public sealed class DMASTIsType(Location location, DMASTExpression value, DMASTExpression type) : DMASTBinary(location, value, type);
 public sealed class DMASTGetStep(Location location, DMASTExpression refValue, DMASTExpression dir) : DMASTBinary(location, refValue, dir);
 public sealed class DMASTGetDir(Location location, DMASTExpression loc1, DMASTExpression loc2) : DMASTBinary(location, loc1, loc2);

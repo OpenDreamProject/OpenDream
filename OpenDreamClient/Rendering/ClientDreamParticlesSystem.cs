@@ -85,6 +85,12 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
                 return () => high;
             case ParticlePropertyType.RandomUniform:
                 return () => random.NextFloat(low, high);
+            case ParticlePropertyType.RandomNormal:
+                return () => (float) Math.Clamp(random.NextGaussian((low+high)/2, (high-low)/6), low, high);
+            case ParticlePropertyType.RandomLinear:
+                return () => MathF.Sqrt(random.NextFloat(0, 1)) * (high - low) + low;
+            case ParticlePropertyType.RandomSquare:
+                return () => MathF.Cbrt(random.NextFloat(0, 1)) * (high - low) + low;
             default:
                 throw new NotImplementedException();
         }
@@ -94,10 +100,8 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
         switch (type) {
             case ParticlePropertyType.HighValue:
                 return () => high;
-            case ParticlePropertyType.RandomUniform:
-                return () => new Vector2(random.NextFloat(low.X, high.X), random.NextFloat(low.Y, high.Y));
             default:
-                throw new NotImplementedException();
+                return () => new Vector2(GetGeneratorFloat(low.X, high.X, type)(), GetGeneratorFloat(low.Y, high.Y, type)());
         }
     }
 
@@ -105,10 +109,8 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
         switch (type) {
             case ParticlePropertyType.HighValue:
                 return () => high;
-            case ParticlePropertyType.RandomUniform:
-                return () => new Vector3(random.NextFloat(low.X, high.X), random.NextFloat(low.Y, high.Y), random.NextFloat(low.Z, high.Z));
             default:
-                throw new NotImplementedException();
+                return () => new Vector3(GetGeneratorFloat(low.X, high.X, type)(), GetGeneratorFloat(low.Y, high.Y, type)(), GetGeneratorFloat(low.Z, high.Z, type)());
         }
     }
 }

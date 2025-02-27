@@ -41,7 +41,7 @@
 	var/version
 	var/build
 
-var/const/lib = "E:/Projects/OpenDream/bin/Content.Tests/byondapitest.dll"
+var/const/lib = "../bin/Content.Tests/byondapitest.dll"
 
 /proc/RunTest()
 	var/datum/version/v = new

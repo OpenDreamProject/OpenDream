@@ -21,6 +21,10 @@ using Robust.Server.ServerStatus;
 using Robust.Shared.Asynchronous;
 using Robust.Shared.Configuration;
 using Robust.Shared.Timing;
+using static OpenDreamShared.Dream.ClientObjectReference;
+using YamlDotNet.Core.Tokens;
+using SixLabors.ImageSharp;
+using System.Diagnostics.CodeAnalysis;
 
 namespace OpenDreamRuntime {
     public sealed partial class DreamManager {
@@ -68,7 +72,7 @@ namespace OpenDreamRuntime {
 
         //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
         public void PreInitialize(string? jsonPath) {
-            ByondApi.Initialize(this);
+            ByondApi.Initialize(this, _dreamMapManager, _objectTree);
 
             _sawmill = Logger.GetSawmill("opendream");
 
@@ -120,6 +124,10 @@ namespace OpenDreamRuntime {
             while (DelQueue.TryTake(out var obj)) {
                 obj.Delete();
             }
+        }
+
+        public bool TryGetGlobalProc(string name, [NotNullWhen(true)] out DreamProc? proc) {
+            return _objectTree.TryGetGlobalProc(name, out proc);
         }
 
         public bool LoadJson(string? jsonPath) {
@@ -190,8 +198,32 @@ namespace OpenDreamRuntime {
             }
         }
 
+        public uint FindOrAddString(String str) {
+            var idx = FindString(str);
+            if (idx == null) {
+                _objectTree.Strings.Add(str);
+                idx = (uint)(_objectTree.Strings.Count - 1);
+            }
+
+            return (uint)idx;
+        }
+
+        public uint? FindString(String str) {
+            int idx = _objectTree.Strings.IndexOf(str);
+
+            if (idx < -1) {
+                return null;
+            }
+
+            return (uint)idx;
+        }
+
         public string CreateRef(DreamValue value) {
-            RefType refType;
+            return $"[0x{CreateRefInt(value, out _):x}]";
+        }
+
+
+        public uint CreateRefInt(DreamValue value, out RefType refType) {
             int idx;
 
             if (value.TryGetValueAsDreamObject(out var refObject)) {
@@ -257,7 +289,7 @@ namespace OpenDreamRuntime {
             }
 
             // The first digit is the type
-            return $"[0x{((int) refType+idx):x}]";
+            return (uint)((int)refType + idx);
         }
 
         /// <summary>
@@ -280,6 +312,53 @@ namespace OpenDreamRuntime {
             }
         }
 
+        public DreamValue RefIdToValue(int rawRefId) {
+            // The first one/two digits give the type, the last 6 give the index
+            var typeId = (RefType)(rawRefId & 0xFF000000);
+            var refId = (rawRefId & 0x00FFFFFF); // The ref minus its ref type prefix
+
+            switch (typeId) {
+                case RefType.Null:
+                    return DreamValue.Null;
+                case RefType.DreamObjectArea:
+                case RefType.DreamObjectClient:
+                case RefType.DreamObjectDatum:
+                case RefType.DreamObjectImage:
+                case RefType.DreamObjectFilter:
+                case RefType.DreamObjectList:
+                case RefType.DreamObjectMob:
+                case RefType.DreamObjectTurf:
+                case RefType.DreamObject:
+                    if (ReferenceIDsToDreamObject.TryGetValue(refId, out var weakRef) && weakRef.Target is { } dreamObject)
+                        return new(dreamObject);
+
+                    return DreamValue.Null;
+                case RefType.String:
+                    return _objectTree.Strings.Count > refId
+                        ? new DreamValue(_objectTree.Strings[refId])
+                        : DreamValue.Null;
+                case RefType.DreamType:
+                    return _objectTree.Types.Length > refId
+                        ? new DreamValue(_objectTree.Types[refId])
+                        : DreamValue.Null;
+                case RefType.DreamResourceIcon: // Alias of DreamResource for now. TODO: Does this *only* contain icon resources?
+                case RefType.DreamResource:
+                    if (!_dreamResourceManager.TryLoadResource(refId, out var resource))
+                        return DreamValue.Null;
+
+                    return new DreamValue(resource);
+                case RefType.DreamAppearance:
+                    _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
+                    return _appearanceSystem.TryGetAppearanceById((uint)refId, out ImmutableAppearance? appearance)
+                        ? new DreamValue(appearance.ToMutable())
+                        : DreamValue.Null;
+                case RefType.Proc:
+                    return new(_objectTree.Procs[refId]);
+                default:
+                    throw new Exception($"Invalid reference type for ref [0x{rawRefId:x}]");
+            }
+        }
+
         public DreamValue LocateRef(string refString) {
             bool canBePointer = false;
 
@@ -292,50 +371,7 @@ namespace OpenDreamRuntime {
             }
 
             if (canBePointer && int.TryParse(refString.Substring(2), System.Globalization.NumberStyles.HexNumber, null, out var refId)) {
-                // The first one/two digits give the type, the last 6 give the index
-                var typeId = (RefType) (refId & 0xFF000000);
-                refId = (refId & 0x00FFFFFF); // The ref minus its ref type prefix
-
-                switch (typeId) {
-                    case RefType.Null:
-                        return DreamValue.Null;
-                    case RefType.DreamObjectArea:
-                    case RefType.DreamObjectClient:
-                    case RefType.DreamObjectDatum:
-                    case RefType.DreamObjectImage:
-                    case RefType.DreamObjectFilter:
-                    case RefType.DreamObjectList:
-                    case RefType.DreamObjectMob:
-                    case RefType.DreamObjectTurf:
-                    case RefType.DreamObject:
-                        if (ReferenceIDsToDreamObject.TryGetValue(refId, out var weakRef) && weakRef.Target is {} dreamObject)
-                            return new(dreamObject);
-
-                        return DreamValue.Null;
-                    case RefType.String:
-                        return _objectTree.Strings.Count > refId
-                            ? new DreamValue(_objectTree.Strings[refId])
-                            : DreamValue.Null;
-                    case RefType.DreamType:
-                        return _objectTree.Types.Length > refId
-                            ? new DreamValue(_objectTree.Types[refId])
-                            : DreamValue.Null;
-                    case RefType.DreamResourceIcon: // Alias of DreamResource for now. TODO: Does this *only* contain icon resources?
-                    case RefType.DreamResource:
-                        if (!_dreamResourceManager.TryLoadResource(refId, out var resource))
-                            return DreamValue.Null;
-
-                        return new DreamValue(resource);
-                    case RefType.DreamAppearance:
-                        _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
-                        return _appearanceSystem.TryGetAppearanceById((uint) refId, out ImmutableAppearance? appearance)
-                            ? new DreamValue(appearance.ToMutable())
-                            : DreamValue.Null;
-                    case RefType.Proc:
-                        return new(_objectTree.Procs[refId]);
-                    default:
-                        throw new Exception($"Invalid reference type for ref {refString}");
-                }
+                return RefIdToValue(refId);
             }
 
             // Search for an object with this ref as its tag

@@ -4,19 +4,22 @@ use meowtonin::sys::{CByondValue,ByondValueData, Byond_GetVersion, ByondValue_Se
 #[macro_use]
 extern crate meowtonin;
 
-/*
+
 #[byond_fn]
 pub fn echo_get_version(mut obj: ByondValue) -> ByondResult<f32> {
-    let (version, build) = byond().get_version();
-
-    //obj.write_var("version", byondval!(version as f32))?;
-    //obj.write_var("build", byondval!(build as f32))?;
+    let mut version:u32 = 0;
+    let mut build:u32 = 0;
+    unsafe {
+        Byond_GetVersion(&mut version as *mut u32, &mut build as *mut u32);
+    }
+    obj.write_var("version", byondval!(version as f32))?;
+    obj.write_var("build", byondval!(build as f32))?;
 
     Ok(version as f32)
 }
-*/
 
 
+/*
 #[no_mangle]
 pub extern "C" fn echo_get_version(n: i32, v: *mut CByondValue) -> CByondValue {
     let mut version:u32 = 0;
@@ -31,6 +34,7 @@ pub extern "C" fn echo_get_version(n: i32, v: *mut CByondValue) -> CByondValue {
     }
     val
 }
+*/
 
 
 /*

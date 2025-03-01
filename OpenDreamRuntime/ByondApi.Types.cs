@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Runtime.InteropServices;
 
 namespace OpenDreamRuntime;
@@ -24,7 +25,10 @@ public static partial class ByondApi {
         List          = 0x0F,
         DatumTypePath = 0x20,
         Datum         = 0x21,
+        Proc          = 0x26,
+        Resource      = 0x27,
         Number        = 0x2A,
+        Appearance    = 0x3A,
         Pointer       = 0x3C
         // @formatter:on
     }
@@ -47,4 +51,6 @@ public static partial class ByondApi {
         public short x, y, z;
         public short junk;
     }
+
+    public const uint NONE = 0xFFFF;
 }

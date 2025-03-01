@@ -52,6 +52,25 @@
 		spawn(20)
 			toggleBlink()
 
+/particles/swarm/bees
+	icon = 'icons/bee.dmi'
+	icon_state = list("mini-bee"=1, "mini-bee2"=1)
+	friction = 0.1
+	count = 10
+	spawning = 0.35
+	fade = 5
+	fadein = 5
+	lifespan = generator("num", 50, 80, LINEAR_RAND)
+	width = 64
+	position = generator("box", list(-10,-10,0), list(10,10,50))
+	bound1 = list(-32, -32, -100)
+	bound2 = list(32, 32, 100)
+	gravity = list(0, -0.1)
+	drift = generator("box", list(-0.4, -0.1, 0), list(0.4, 0.15, 0))
+	velocity = generator("box", list(-2, -0.1, 0), list(2, 0.5, 0))
+	height = 64
+
+
 /mob
 	icon = 'icons/mob.dmi'
 	icon_state = "mob"
@@ -62,6 +81,7 @@
 	desc = "Such a beautiful smile."
 	gender = MALE
 	see_invisible = 101
+	
 
 	New()
 		..()
@@ -70,6 +90,10 @@
 	Login()
 		world.log << "login ran"
 		src.client.screen += new /obj/order_test_item/plane_master //used for render tests
+
+	verb/add_particles()
+		particles = new /particles/swarm/bees	
+		usr << "not the bees!"
 
 	verb/winget_test()
 		usr << "windows: [json_encode(winget(usr, null, "windows"))]"

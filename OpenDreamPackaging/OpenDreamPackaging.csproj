@@ -9,6 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\OpenDreamShared.Common\OpenDreamShared.Common.csproj" />
       <ProjectReference Include="..\RobustToolbox\Robust.Packaging\Robust.Packaging.csproj" />
     </ItemGroup>
 </Project>

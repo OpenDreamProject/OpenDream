@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace DMCompiler;
+namespace OpenDreamShared.Common;
 
 /// <summary>
 /// A class containing operations used by both the compiler and the server.

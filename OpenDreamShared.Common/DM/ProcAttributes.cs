@@ -1,4 +1,4 @@
-namespace DMCompiler.DM;
+namespace OpenDreamShared.Common.DM;
 
 [Flags]
 public enum ProcAttributes {

@@ -1,7 +1,9 @@
 ﻿using System.Linq;
-using DMCompiler.Bytecode;
 using DMCompiler.DM.Expressions;
-using DMCompiler.Json;
+using OpenDreamShared.Common;
+using OpenDreamShared.Common.Bytecode;
+using OpenDreamShared.Common.DM;
+using OpenDreamShared.Common.Json;
 
 namespace DMCompiler.DM;
 

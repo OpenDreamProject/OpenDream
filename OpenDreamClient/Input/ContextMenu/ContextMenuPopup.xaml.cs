@@ -46,7 +46,7 @@ internal sealed partial class ContextMenuPopup : Popup {
     public void RepopulateEntities(ClientObjectReference[] entities, uint? turfId) {
         ContextMenu.RemoveAllChildren();
 
-        if (_transformSystem == null)
+        if (_transformSystem == null || _clientSystem == null)
             return;
 
         foreach (var objectReference in entities) {

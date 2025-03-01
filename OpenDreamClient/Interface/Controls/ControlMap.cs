@@ -21,7 +21,6 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
     private ClientObjectReference? _atomUnderMouse;
 
     private ClientObjectReference? AtomUnderMouse {
-        get => _atomUnderMouse;
         set {
             if (!_atomUnderMouse.Equals(value)) {
                 _entitySystemManager.Resolve(ref _clientSystem);

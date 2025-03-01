@@ -14,8 +14,25 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
 
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
     private MouseInputSystem? _mouseInput;
+    private DreamClientSystem? _clientSystem;
 
     private ControlDescriptorMap MapDescriptor => (ControlDescriptorMap)ElementDescriptor;
+
+    private ClientObjectReference? _atomUnderMouse;
+
+    private ClientObjectReference? AtomUnderMouse {
+        get => _atomUnderMouse;
+        set {
+            if (!_atomUnderMouse.Equals(value)) {
+                _entitySystemManager.Resolve(ref _clientSystem);
+
+                var name = (value != null) ? _clientSystem.GetName(value.Value) : string.Empty;
+                Window?.SetStatus(name);
+            }
+
+            _atomUnderMouse = value;
+        }
+    }
 
     protected override void UpdateElementDescriptor() {
         base.UpdateElementDescriptor();
@@ -57,6 +74,8 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
         Viewport = new ScalingViewport { MouseFilter = Control.MouseFilterMode.Stop };
         Viewport.OnKeyBindDown += OnViewportKeyBindEvent;
         Viewport.OnKeyBindUp += OnViewportKeyBindEvent;
+        Viewport.OnMouseMove += OnViewportMouseMoveEvent;
+        Viewport.OnMouseExited += OnViewportMouseExitedEvent;
         Viewport.OnVisibilityChanged += (args) => {
             if (args.Visible) {
                 OnShowEvent();
@@ -64,6 +83,7 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
                 OnHideEvent();
             }
         };
+
         if(ControlDescriptor.IsVisible.Value)
             OnShowEvent();
         else
@@ -83,6 +103,18 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
                 e.Handle();
             }
         }
+    }
+
+    private void OnViewportMouseMoveEvent(GUIMouseMoveEventArgs e) {
+        if (_mouseInput == null)
+            return;
+
+        var underMouse = _mouseInput.GetAtomUnderMouse(Viewport, e.RelativePixelPosition, e.GlobalPixelPosition);
+        AtomUnderMouse = underMouse?.Atom;
+    }
+
+    private void OnViewportMouseExitedEvent(GUIMouseHoverEventArgs obj) {
+        AtomUnderMouse = null;
     }
 
     public void OnShowEvent() {

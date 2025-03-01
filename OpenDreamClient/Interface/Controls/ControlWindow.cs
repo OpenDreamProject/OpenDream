@@ -369,7 +369,7 @@ public sealed class ControlWindow : InterfaceControl {
         if (string.IsNullOrWhiteSpace(onStatusCommand))
             return;
 
-        onStatusCommand = onStatusCommand.Replace("[[*]]", new DMFPropertyString(status).AsEscaped());
+        onStatusCommand = onStatusCommand.Replace("[[*]]", new DMFPropertyString(status).AsArg());
         _interfaceManager.RunCommand(onStatusCommand);
     }
 }

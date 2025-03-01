@@ -78,17 +78,17 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
         RaiseNetworkEvent(new StatClickedEvent(atomRef, isRight, isMiddle, shift, ctrl, alt));
     }
 
-    private (ClientObjectReference Atom, Vector2i IconPosition)? GetAtomUnderMouse(ScalingViewport viewport, GUIBoundKeyEventArgs args) {
+    public (ClientObjectReference Atom, Vector2i IconPosition)? GetAtomUnderMouse(ScalingViewport viewport, Vector2 relativePos, ScreenCoordinates globalPos) {
         _dreamViewOverlay ??= _overlayManager.GetOverlay<DreamViewOverlay>();
         if(_dreamViewOverlay.MouseMap == null)
             return null;
 
         UIBox2i viewportBox = viewport.GetDrawBox();
-        if (!viewportBox.Contains((int)args.RelativePixelPosition.X, (int)args.RelativePixelPosition.Y))
+        if (!viewportBox.Contains((int)relativePos.X, (int)relativePos.Y))
             return null; // Was outside of the viewport
 
-        var mapCoords = viewport.ScreenToMap(args.PointerLocation.Position);
-        var mousePos = (args.RelativePixelPosition - viewportBox.TopLeft) / viewportBox.Size * viewport.ViewportSize;
+        var mapCoords = viewport.ScreenToMap(globalPos.Position);
+        var mousePos = (relativePos - viewportBox.TopLeft) / viewportBox.Size * viewport.ViewportSize;
 
         if(_configurationManager.GetCVar(CVars.DisplayCompat))
             return null; //Compat mode causes crashes with RT's GetPixel because OpenGL ES doesn't support GetTexImage()
@@ -161,7 +161,7 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
             return true;
         }
 
-        var underMouse = GetAtomUnderMouse(viewport, args);
+        var underMouse = GetAtomUnderMouse(viewport, args.RelativePixelPosition, args.PointerLocation);
         if (underMouse == null)
             return false;
 
@@ -179,7 +179,7 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
         if (!_selectedEntity.IsDrag) {
             RaiseNetworkEvent(new AtomClickedEvent(_selectedEntity.Atom, _selectedEntity.ClickParams));
         } else {
-            var overAtom = GetAtomUnderMouse(viewport, args);
+            var overAtom = GetAtomUnderMouse(viewport, args.RelativePixelPosition, args.PointerLocation);
 
             RaiseNetworkEvent(new AtomDraggedEvent(_selectedEntity.Atom, overAtom?.Atom, _selectedEntity.ClickParams));
         }

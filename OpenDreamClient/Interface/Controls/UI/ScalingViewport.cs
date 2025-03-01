@@ -13,6 +13,10 @@ namespace OpenDreamClient.Interface.Controls.UI;
 ///     Viewport control that has a fixed viewport size and scales it appropriately.
 /// </summary>
 public sealed class ScalingViewport : Control, IViewportControl {
+    public delegate void MouseMoveHandler(GUIMouseMoveEventArgs args);
+
+    public event MouseMoveHandler? OnMouseMove;
+
     [Dependency] private readonly IClyde _clyde = default!;
     [Dependency] private readonly IInputManager _inputManager = default!;
     [Dependency] private readonly IEntityManager _entityManager = default!;
@@ -291,6 +295,10 @@ public sealed class ScalingViewport : Control, IViewportControl {
             return Matrix3x2.Identity;
 
         return Matrix3Helpers.CreateTransform(GlobalPixelPosition + drawBox.TopLeft, 0, scaleFactor);
+    }
+
+    protected override void MouseMove(GUIMouseMoveEventArgs args) {
+        OnMouseMove?.Invoke(args);
     }
 }
 

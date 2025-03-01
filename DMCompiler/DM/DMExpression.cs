@@ -110,7 +110,6 @@ internal sealed class ArgumentList(Location location, (string? Name, DMExpressio
         // TODO: Make a separate "UnsetStaticType" pragma for whether we should care if it's Anything
         // TODO: We currently silently avoid typechecking "call()()" and "new" args (NewPath is handled)
         // TODO: We currently don't handle variadic args (e.g. min())
-        // TODO: Dereference.CallOperation does not pass targetProc
 
         DMProc.LocalVariable? param;
         if (name != null) {
@@ -131,7 +130,7 @@ internal sealed class ArgumentList(Location location, (string? Name, DMExpressio
 
         DMComplexValueType paramType = param.ExplicitValueType ?? DMValueType.Anything;
 
-        if (!expr.ValType.IsAnything && !paramType.MatchesType(compiler, expr.ValType)) {
+        if (!(compiler.Settings.SkipAnythingTypecheck && expr.ValType.IsAnything) && !paramType.MatchesType(compiler, expr.ValType)) {
             compiler.Emit(WarningCode.InvalidVarType, expr.Location,
                 $"{targetProc.Name}(...) argument \"{param.Name}\": Invalid var value type {expr.ValType}, expected {paramType}");
         }

@@ -56,6 +56,12 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
     [ViewVariables] public string? Maptext;
 
     /// <summary>
+    /// Used by atoms to mark what mouse events are enabled. Doesn't mean anything outside the context of atoms.
+    /// Intentionally left out of hash & equality!
+    /// </summary>
+    [ViewVariables] public AtomMouseEvents EnabledMouseEvents;
+
+    /// <summary>
     /// An appearance can gain a color matrix filter by two possible forces: <br/>
     /// 1. the /atom.color var is modified. <br/>
     /// 2. the /atom.filters var gets a new filter of type "color". <br/>
@@ -131,6 +137,7 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         Maptext = appearance.Maptext;
         MaptextSize = appearance.MaptextSize;
         MaptextOffset = appearance.MaptextOffset;
+        EnabledMouseEvents = appearance.EnabledMouseEvents;
 
         Overlays.Clear();
         Underlays.Clear();
@@ -379,6 +386,17 @@ public enum AnimationFlags {
     AnimationContinue = 512
 }
 
+[Flags]
+public enum AtomMouseEvents {
+    Down = 1,
+    Up = 2,
+    Drag = 4,
+    Enter = 8,
+    Exit = 16,
+    Move = 32,
+    Wheel = 64
+}
+
 //used for encoding for netmessages
 public enum IconAppearanceProperty : byte {
         Name,
@@ -412,6 +430,7 @@ public enum IconAppearanceProperty : byte {
         Maptext,
         MaptextSize,
         MaptextOffset,
+        EnabledMouseEvents,
         Id,
         End
     }

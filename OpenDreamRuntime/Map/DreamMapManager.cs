@@ -179,6 +179,8 @@ public sealed partial class DreamMapManager : IDreamMapManager {
     private readonly Dictionary<ValueTuple<MutableAppearance, uint>, MutableAppearance> _turfAreaLookup = new();
 
     public void SetTurfAppearance(DreamObjectTurf turf, MutableAppearance appearance) {
+        appearance.EnabledMouseEvents = _atomManager.GetEnabledMouseEvents(turf);
+
         if(turf.Cell.Area.Appearance != _appearanceSystem.DefaultAppearance)
             if(!appearance.Overlays.Contains(turf.Cell.Area.Appearance)) {
                 if(!_turfAreaLookup.TryGetValue((appearance, turf.Cell.Area.Appearance.MustGetId()), out var newAppearance)) {

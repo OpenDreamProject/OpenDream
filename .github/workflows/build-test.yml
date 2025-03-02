@@ -29,10 +29,42 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 9.0.100
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
     - name: Install dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build --property WarningLevel=${{ matrix.os == 'ubuntu-latest' && '4' || '0' }} --configuration Release --no-restore /m
+      run: |
+        dotnet build --property WarningLevel=${{ matrix.os == 'ubuntu-latest' && '4' || '0' }} --configuration Release --no-restore /m
+    - name: Build native assets # TODO: a real script
+      run: |
+        if [ "$RUNNER_OS" == "Windows" ]; then
+            cargo build --release --manifest-path=./byondapi/Cargo.toml -p trampoline
+            cp ./byondapi/target/release/byondcore.dll.lib meowtonin/crates/sys/link/windows/byondcore.dll.lib
+            cp ./byondapi/target/release/byondcore.dll ./bin/Content.Server/byondcore.dll
+            cp ./byondapi/target/release/byondcore.dll ./bin/Content.Tests/byondcore.dll
+            cp ./byondapi/target/release/byondcore.dll ./bin/Content.IntegrationTests/byondcore.dll
+
+            cargo build --release --manifest-path=./byondapi/Cargo.toml -p byondapitest
+            cp ./byondapi/target/release/byondapitest.dll ./bin/Content.Server/byondapitest.dll
+            cp ./byondapi/target/release/byondapitest.dll ./bin/Content.Tests/byondapitest.dll
+            cp ./byondapi/target/release/byondapitest.dll ./bin/Content.IntegrationTests/byondapitest.dll
+        elif [ "$RUNNER_OS" == "Linux" ]; then
+            cargo build --release --manifest-path=./byondapi/Cargo.toml -p trampoline
+            cp ./byondapi/target/release/libbyondcore.so meowtonin/crates/sys/link/linux/libbyondcore.so
+            cp ./byondapi/target/release/libbyondcore.so ./bin/Content.Server/libbyondcore.so
+            cp ./byondapi/target/release/libbyondcore.so ./bin/Content.Tests/libbyondcore.so
+            cp ./byondapi/target/release/libbyondcore.so ./bin/Content.IntegrationTests/libbyondcore.so
+
+            cargo build --release --manifest-path=./byondapi/Cargo.toml -p byondapitest
+            cp ./byondapi/target/release/libbyondapitest.so ./bin/Content.Server/byondapitest.so
+            cp ./byondapi/target/release/libbyondapitest.so ./bin/Content.Tests/byondapitest.so
+            cp ./byondapi/target/release/libbyondapitest.so ./bin/Content.IntegrationTests/byondapitest.so
+            ls -al ./bin/Content.Tests/byondapitest.so
+        else
+            # we only test windows/linux at time of writing
+            exit 1
+        fi
     - name: Content.Tests
       shell: pwsh
       run: |

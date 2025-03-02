@@ -37,9 +37,9 @@ pub extern "C" fn echo_get_version(n: i32, v: *mut CByondValue) -> CByondValue {
 */
 
 
-/*
+
 #[byond_fn]
 pub fn arithmetic_add(a: f32, b: f32) -> ByondResult<f32> {
     Ok(a + b)
 }
-*/
+

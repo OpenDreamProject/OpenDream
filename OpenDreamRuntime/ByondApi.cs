@@ -1,20 +1,20 @@
-﻿using DMCompiler;
+﻿using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Objects.Types;
-using OpenDreamRuntime.Resources;
 using Robust.Shared.Utility;
-using static OpenDreamRuntime.Objects.Types.DreamObjectSavefile;
-using static OpenDreamShared.Dream.ClientObjectReference;
 
 namespace OpenDreamRuntime;
 
 public static partial class ByondApi {
     private static DreamManager? _dreamManager;
+    private static IDreamMapManager? _dreamMapManager;
+    private static DreamObjectTree? _objectTree;
 
-    public static void Initialize(DreamManager dreamManager) {
+    public static void Initialize(DreamManager dreamManager, IDreamMapManager dreamMapManager, DreamObjectTree objectTree) {
         DebugTools.Assert(_dreamManager is null or { IsShutDown: true });
 
         _dreamManager = dreamManager;
+        _dreamMapManager = dreamMapManager;
+        _objectTree = objectTree;
 
         InitTrampoline();
     }

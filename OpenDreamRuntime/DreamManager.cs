@@ -23,6 +23,8 @@ using Robust.Shared.Configuration;
 using Robust.Shared.Timing;
 using static OpenDreamShared.Dream.ClientObjectReference;
 using YamlDotNet.Core.Tokens;
+using SixLabors.ImageSharp;
+using System.Diagnostics.CodeAnalysis;
 
 namespace OpenDreamRuntime {
     public sealed partial class DreamManager {
@@ -70,7 +72,7 @@ namespace OpenDreamRuntime {
 
         //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
         public void PreInitialize(string? jsonPath) {
-            ByondApi.Initialize(this);
+            ByondApi.Initialize(this, _dreamMapManager, _objectTree);
 
             _sawmill = Logger.GetSawmill("opendream");
 
@@ -122,6 +124,10 @@ namespace OpenDreamRuntime {
             while (DelQueue.TryTake(out var obj)) {
                 obj.Delete();
             }
+        }
+
+        public bool TryGetGlobalProc(string name, [NotNullWhen(true)] out DreamProc? proc) {
+            return _objectTree.TryGetGlobalProc(name, out proc);
         }
 
         public bool LoadJson(string? jsonPath) {
@@ -413,10 +419,6 @@ namespace OpenDreamRuntime {
             obj.File = new DreamValue(file);
 
             WorldInstance.SpawnProc("Error", usr: null, new DreamValue(obj));
-        }
-
-        public DreamList CreateList() {
-            return _objectTree.CreateList();
         }
     }
 

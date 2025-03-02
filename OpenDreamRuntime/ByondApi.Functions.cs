@@ -1,5 +1,8 @@
+using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs;
+using Robust.Shared.Serialization.Manager.Exceptions;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -22,12 +25,15 @@ public static unsafe partial class ByondApi {
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static uint Byond_GetDMBVersion() {
-        throw new NotImplementedException();
+        return 9001;
     }
 
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static CByondValue Byond_ThreadSync(delegate* unmanaged[Cdecl]<void*, CByondValue> callback, void* data, byte block) {
+        if (callback == null || data == null) {
+            return new CByondValue() { type = ByondValueType.Null, data = { @ref = 0 } };
+        }
         throw new NotImplementedException();
     }
 
@@ -586,6 +592,7 @@ public static unsafe partial class ByondApi {
                 case DreamValue.DreamValueType.DreamResource:
                     var r = srcValue.MustGetValueAsDreamResource();
                     if (r.ResourceData == null) {
+                        // null file, so fail?
                         return 0;
                     }
                     result->data.num = r.ResourceData.Length;
@@ -611,6 +618,7 @@ public static unsafe partial class ByondApi {
             return 1;
         }
 
+        /** <see cref="DMOpcodeHandlers.LocateCoord(DMProcState)"/> */
         List<CByondValue> list = new();
         try {
             if (_dreamMapManager.TryGetTurfAt(new Vector2i(xyz->x, xyz->y), xyz->z, out var turf)) {
@@ -629,43 +637,161 @@ public static unsafe partial class ByondApi {
 
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
-    private static byte Byond_New(CByondValue* type, CByondValue* arg, uint arg_count, CByondValue* result) {
-        throw new NotImplementedException();
+    private static byte Byond_New(CByondValue* cType, CByondValue* cArgs, uint arg_count, CByondValue* cResult) {
+        if (cType == null || cArgs == null || cResult == null) {
+            return 0;
+        }
+
+        /** <see cref="DMOpcodeHandlers.CreateObject(DMProcState)"/> */
+        try {
+            var typeVal = ValueFromDreamApi(*cType);
+            if (!typeVal.TryGetValueAsType(out TreeEntry? type)) return 0;
+
+            var objectDef = type.ObjectDefinition;
+            var newProc = objectDef.GetProc("New");
+
+            List<DreamValue> argList = new();
+            for (int i = 0; i < arg_count; i++) {
+                var arg = ValueFromDreamApi(cArgs[i]);
+                argList.Add(arg);
+            }
+
+            var args = new DreamProcArguments(CollectionsMarshal.AsSpan(argList));
+
+            if (objectDef.IsSubtypeOf(_objectTree.Turf)) {
+                // Turfs are special. They're never created outside of map initialization
+                // So instead this will replace an existing turf's type and return that same turf
+                DreamValue loc = args.GetArgument(0);
+                if (!loc.TryGetValueAsDreamObject<DreamObjectTurf>(out var turf)) {
+                    //ThrowInvalidTurfLoc(loc);
+                    return 0;
+                }
+
+                _dreamMapManager.SetTurf(turf, objectDef, args);
+                return 1;
+            }
+
+            var newObject = _objectTree.CreateObject(type);
+            // call new
+            var result = newProc.Spawn(newObject, args);
+        } catch (Exception e) {
+            return 0;
+        }
+        return 1;
     }
 
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
-    private static byte Byond_NewArglist(CByondValue* type, CByondValue* arglist, CByondValue* result) {
-        throw new NotImplementedException();
+    private static byte Byond_NewArglist(CByondValue* cType, CByondValue* cArglist, CByondValue* cResult) {
+        if (cType == null || cArglist == null || cResult == null) {
+            return 0;
+        }
+
+        /** <see cref="DMOpcodeHandlers.CreateObject(DMProcState)"/> */
+        try {
+            var typeVal = ValueFromDreamApi(*cType);
+            if (!typeVal.TryGetValueAsType(out var type)) return 0;
+
+            var objectDef = type.ObjectDefinition;
+            var newProc = objectDef.GetProc("New");
+
+            var arglistVal = ValueFromDreamApi(*cArglist);
+            if (!arglistVal.TryGetValueAsDreamList(out DreamList? arglist)) return 0;
+
+            var args = new DreamProcArguments(CollectionsMarshal.AsSpan(arglist.GetValues()));
+
+            if (objectDef.IsSubtypeOf(_objectTree.Turf)) {
+                // Turfs are special. They're never created outside of map initialization
+                // So instead this will replace an existing turf's type and return that same turf
+                DreamValue loc = args.GetArgument(0);
+                if (!loc.TryGetValueAsDreamObject<DreamObjectTurf>(out var turf)) {
+                    //ThrowInvalidTurfLoc(loc);
+                    return 0;
+                }
+
+                _dreamMapManager.SetTurf(turf, objectDef, args);
+                return 1;
+            }
+
+            var newObject = _objectTree.CreateObject(type);
+            // call new
+            var result = newProc.Spawn(newObject, args);
+        } catch (Exception e) {
+            return 0;
+        }
+        return 1;
     }
 
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_Refcount(CByondValue* src, uint* result) {
-        throw new NotImplementedException();
+        if (src == null || result == null) return 0;
+
+        // woah that's a lot of refs
+        // i wonder if it's true??
+        *result = 100;
+        // (it's not)
+
+        return 1;
     }
 
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_XYZ(CByondValue* src, CByondXYZ* xyz) {
-        throw new NotImplementedException();
+        if (src == null || xyz == null) return 0;
+        *xyz = new CByondXYZ();
+
+        try {
+            var srcVal = ValueFromDreamApi(*src);
+            if (!srcVal.TryGetValueAsDreamObject<DreamObjectAtom>(out var srcObj)) return 0;
+            try {
+                // byondapi.h mentions an off-map check. Should probably do something like that.
+
+                // certainly a better way than this...
+                var xObj = srcObj.GetVariable("X");
+                var x = xObj.MustGetValueAsInteger();
+                var yObj = srcObj.GetVariable("Y");
+                var y = yObj.MustGetValueAsInteger();
+                var zObj = srcObj.GetVariable("Z");
+                var z = zObj.MustGetValueAsInteger();
+
+                xyz->x = (short)x;
+                xyz->y = (short)y;
+                xyz->z = (short)z;
+            } catch (Exception e) {
+                return 1;
+            }
+        } catch (Exception e) {
+                return 0;
+        }
+
+        return 1;
     }
 
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static void ByondValue_IncRef(CByondValue* src) {
+        if (src == null) return;
         throw new NotImplementedException();
     }
 
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static void ByondValue_DecRef(CByondValue* src) {
+        if (src == null) return;
         throw new NotImplementedException();
     }
 
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_TestRef(CByondValue* src) {
-        throw new NotImplementedException();
+        if (src == null) return 0;
+        if (src->type == ByondValueType.Null) {
+            return 0;
+        }
+
+        var srcValue = _dreamManager.RefIdToValue((int)src->data.@ref);
+
+        return srcValue == DreamValue.Null ? (byte)0 : (byte)1;
     }
 }

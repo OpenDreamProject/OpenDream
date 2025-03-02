@@ -456,7 +456,8 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 // Everything after .winset, excluding the space and quotes
                 string winsetParams = fullCommand.Substring(7); //clip .winset
                 winsetParams = winsetParams.Trim(); //clip space
-                winsetParams = winsetParams.Trim('\"'); //clip quotes
+                if (winsetParams.StartsWith('"') && winsetParams.EndsWith('"'))
+                    winsetParams = winsetParams.Substring(1, winsetParams.Length - 2); //clip quotes
 
                 WinSet(null, winsetParams);
                 break;

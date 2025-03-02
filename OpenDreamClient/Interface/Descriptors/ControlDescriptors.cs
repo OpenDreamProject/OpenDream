@@ -90,6 +90,8 @@ public sealed partial class WindowDescriptor : ControlDescriptor {
     public DMFPropertyString CanScroll = new("none");
     [DataField("is-pane")]
     public DMFPropertyBool IsPane = new(false);
+    [DataField("on-status")]
+    public DMFPropertyString OnStatus = new("");
 
     public readonly List<ControlDescriptor> ControlDescriptors;
 

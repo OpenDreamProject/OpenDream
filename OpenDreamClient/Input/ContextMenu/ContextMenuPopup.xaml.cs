@@ -21,7 +21,6 @@ internal sealed partial class ContextMenuPopup : Popup {
     private readonly ClientAppearanceSystem? _appearanceSystem;
     private readonly TransformSystem? _transformSystem;
     private readonly ClientVerbSystem? _verbSystem;
-    private readonly DreamClientSystem? _clientSystem;
     private readonly EntityQuery<DMISpriteComponent> _spriteQuery;
     private readonly EntityQuery<TransformComponent> _xformQuery;
     private readonly EntityQuery<DreamMobSightComponent> _mobSightQuery;
@@ -37,7 +36,6 @@ internal sealed partial class ContextMenuPopup : Popup {
         _entitySystemManager.TryGetEntitySystem(out _transformSystem);
         _entitySystemManager.TryGetEntitySystem(out _verbSystem);
         _entitySystemManager.TryGetEntitySystem(out _appearanceSystem);
-        _entitySystemManager.TryGetEntitySystem(out _clientSystem);
         _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
         _xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
         _mobSightQuery = _entityManager.GetEntityQuery<DreamMobSightComponent>();
@@ -46,11 +44,11 @@ internal sealed partial class ContextMenuPopup : Popup {
     public void RepopulateEntities(ClientObjectReference[] entities, uint? turfId) {
         ContextMenu.RemoveAllChildren();
 
-        if (_transformSystem == null || _clientSystem == null)
+        if (_transformSystem == null || _appearanceSystem == null)
             return;
 
         foreach (var objectReference in entities) {
-            var name = _clientSystem.GetName(objectReference);
+            var name = _appearanceSystem.GetName(objectReference);
             DreamIcon? icon = null;
 
             switch (objectReference.Type) {
@@ -68,7 +66,7 @@ internal sealed partial class ContextMenuPopup : Popup {
                     icon = sprite.Icon;
                     break;
                 }
-                case ClientObjectReference.RefType.Turf when turfId is not null && _appearanceSystem is not null:
+                case ClientObjectReference.RefType.Turf when turfId is not null:
                     icon = _appearanceSystem.GetTurfIcon(turfId.Value);
                     break;
             }

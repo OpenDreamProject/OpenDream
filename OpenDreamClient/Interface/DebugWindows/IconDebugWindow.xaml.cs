@@ -67,6 +67,7 @@ internal sealed partial class IconDebugWindow : OSWindow {
         AddPropertyIfNotDefault("Map Text Offset", appearance.MaptextOffset, MutableAppearance.Default.MaptextOffset);
         AddPropertyIfNotDefault("Map Text Size", appearance.MaptextSize, MutableAppearance.Default.MaptextSize);
         AddPropertyIfNotDefault("Map Text", appearance.Maptext, MutableAppearance.Default.Maptext);
+        AddPropertyIfNotDefault("Mouse Events", appearance.EnabledMouseEvents, MutableAppearance.Default.EnabledMouseEvents);
 
         foreach (var overlay in _icon.Overlays) {
             AddDreamIconButton(OverlaysGrid, overlay);

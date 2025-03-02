@@ -27,6 +27,7 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
     [Dependency] private readonly MapSystem _mapSystem = default!;
     [Dependency] private readonly IConfigurationManager _configurationManager = default!;
     [Dependency] private readonly IDreamInterfaceManager _dreamInterfaceManager = default!;
+    [Dependency] private readonly ClientAppearanceSystem _appearanceSystem = default!;
 
     private DreamViewOverlay? _dreamViewOverlay;
     private ContextMenuPopup _contextMenu = default!;
@@ -76,6 +77,20 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
         bool alt = _inputManager.IsKeyDown(Keyboard.Key.Alt);
 
         RaiseNetworkEvent(new StatClickedEvent(atomRef, isRight, isMiddle, shift, ctrl, alt));
+    }
+
+    public void HandleAtomMouseEntered(ClientObjectReference atomRef) {
+        if (!HasMouseEventEnabled(atomRef, AtomMouseEvents.Enter))
+            return;
+
+        RaiseNetworkEvent(new MouseEnteredEvent(atomRef));
+    }
+
+    public void HandleAtomMouseExited(ClientObjectReference atomRef) {
+        if (!HasMouseEventEnabled(atomRef, AtomMouseEvents.Exit))
+            return;
+
+        RaiseNetworkEvent(new MouseExitedEvent(atomRef));
     }
 
     public (ClientObjectReference Atom, Vector2i IconPosition)? GetAtomUnderMouse(ScalingViewport viewport, Vector2 relativePos, ScreenCoordinates globalPos) {
@@ -201,5 +216,12 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
 
         // TODO: Take icon transformations into account for iconPos
         return new(screenLoc, right, middle, shift, ctrl, alt, iconPos.X, iconPos.Y);
+    }
+
+    private bool HasMouseEventEnabled(ClientObjectReference atomRef, AtomMouseEvents mouseEvent) {
+        if (!_appearanceSystem.TryGetAppearance(atomRef, out var appearance))
+            return false;
+
+        return appearance.EnabledMouseEvents.HasFlag(mouseEvent);
     }
 }

@@ -9,7 +9,9 @@ using OpenDreamRuntime;
 using OpenDreamRuntime.Objects;
 using Robust.Shared.Asynchronous;
 using Robust.Shared.IoC;
+using Robust.Shared.Log;
 using Robust.Shared.Timing;
+using Serilog.Events;
 
 namespace Content.Tests;
 
@@ -43,6 +45,7 @@ public sealed partial class DMTests : ContentUnitTest {
         Compile(dmCompiler, InitializeEnvironment);
         _dreamMan.PreInitialize(Path.ChangeExtension(InitializeEnvironment, "json"));
         _dreamMan.OnException += OnException;
+        Logger.GetSawmill("root").AddHandler(new TestLogHandler());
     }
 
     private string? Compile(DMCompiler.DMCompiler compiler, string sourceFile) {
@@ -241,4 +244,10 @@ public sealed partial class DMTests : ContentUnitTest {
         Assert.AreEqual(new DreamValue(2), result_2);
         Assert.That(_dreamMan.DMExceptionCount, Is.EqualTo(prev));
     }*/
+
+    private sealed class TestLogHandler : ILogHandler {
+        public void Log(string sawmillName, LogEvent message) {
+            TestContext.Out.WriteLine($"[{sawmillName}] {message.RenderMessage()}");
+        }
+    }
 }

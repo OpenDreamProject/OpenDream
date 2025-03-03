@@ -609,6 +609,9 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             string? elementOverride = winSets.FirstOrDefault(winSet => winSet.Element == null && winSet.Attribute == "id")?.Value;
 
             foreach (DMFWinSet winSet in winSets) {
+                if (winSet.Attribute == "id") // This is used to set the target, not an actual winset
+                    continue;
+
                 string? elementId = winSet.Element ?? elementOverride;
 
                 if (elementId == null) {

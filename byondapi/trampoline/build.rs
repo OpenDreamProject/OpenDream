@@ -8,7 +8,7 @@ fn main() {
     let bindings = bindgen::Builder::default()
         // The input header we would like to generate
         // bindings for.
-        .header("C:\\Program Files (x86)\\byond\\byondapi\\byondapi.h")
+        .header("byondapi.h")
         .clang_args(["-x", "c++"])
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.

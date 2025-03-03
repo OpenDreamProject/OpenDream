@@ -36,6 +36,12 @@ jobs:
     - name: Build
       run: |
         dotnet build --property WarningLevel=${{ matrix.os == 'ubuntu-latest' && '4' || '0' }} --configuration Release --no-restore /m
+    - name: Build windows native # just for now
+      run: |
+        if [ "$RUNNER_OS" != "Windows" ]; then
+            exit 1
+        fi
+
         cargo build --manifest-path=./byondapi/Cargo.toml -p trampoline
         cp ./byondapi/debug/byondcore.dll.lib meowtonin/crates/sys/link/windows/byondcore.dll.lib
         cp ./byondapi/debug/byondcore.dll ../bin/Content.Server/byondcore.dll

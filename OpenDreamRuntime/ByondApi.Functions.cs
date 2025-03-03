@@ -1,8 +1,6 @@
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs;
-using Robust.Shared.Serialization.Manager.Exceptions;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -28,7 +26,6 @@ public static unsafe partial class ByondApi {
         return 9001;
     }
 
-
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static CByondValue Byond_ThreadSync(delegate* unmanaged[Cdecl]<void*, CByondValue> callback, void* data, byte block) {
         if (callback == null || data == null) {
@@ -36,7 +33,6 @@ public static unsafe partial class ByondApi {
         }
         throw new NotImplementedException();
     }
-
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static uint Byond_GetStrId(byte* cstr) {
@@ -48,9 +44,8 @@ public static unsafe partial class ByondApi {
         if (str == null) {
             return NONE;
         }
-        return _dreamManager?.FindString(str) ?? 0;
+        return _dreamManager!.FindString(str) ?? 0;
     }
-
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static uint Byond_AddGetStrId(byte* cstr) {
@@ -62,9 +57,8 @@ public static unsafe partial class ByondApi {
         if (str == null) {
             return NONE;
         }
-        return _dreamManager?.FindOrAddString(str) ?? 0;
+        return _dreamManager!.FindOrAddString(str);
     }
-
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_ReadVar(CByondValue* loc, byte* varname, CByondValue* result) {
@@ -86,13 +80,12 @@ public static unsafe partial class ByondApi {
             var srcVar = srcObj.GetVariable(varName);
             var cSrcVar = ValueToByondApi(srcVar);
             *result = cSrcVar;
-        } catch (Exception e) {
+        } catch (Exception) {
              return 0;
         }
 
         return 1;
     }
-
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_ReadVarByStrId(CByondValue* loc, uint varname, CByondValue* result) {
@@ -101,7 +94,7 @@ public static unsafe partial class ByondApi {
         }
 
         try {
-            DreamValue varNameVal = _dreamManager.RefIdToValue((int)varname);
+            DreamValue varNameVal = _dreamManager!.RefIdToValue((int)varname);
             if (!varNameVal.TryGetValueAsString(out var varName)) return 0;
 
             DreamValue srcValue = ValueFromDreamApi(*loc);
@@ -111,13 +104,12 @@ public static unsafe partial class ByondApi {
             var srcVar = srcObj.GetVariable(varName);
             var cSrcVar = ValueToByondApi(srcVar);
             *result = cSrcVar;
-        } catch (Exception e) {
+        } catch (Exception) {
              return 0;
         }
 
         return 1;
     }
-
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_WriteVar(CByondValue* loc, byte* varname, CByondValue* val) {
@@ -137,18 +129,17 @@ public static unsafe partial class ByondApi {
             if (dstObj == null) return 0;
 
             dstObj.SetVariable(varName, srcValue);
-        } catch (Exception e) {
+        } catch (Exception) {
             return 0;
         }
 
         return 1;
     }
 
-
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_WriteVarByStrId(CByondValue* loc, uint varname, CByondValue* val) {
         try {
-            DreamValue varNameVal = _dreamManager.RefIdToValue((int)varname);
+            DreamValue varNameVal = _dreamManager!.RefIdToValue((int)varname);
             if (!varNameVal.TryGetValueAsString(out var varName)) return 0;
 
             DreamValue srcValue = ValueFromDreamApi(*val);
@@ -158,27 +149,25 @@ public static unsafe partial class ByondApi {
             if (dstObj == null) return 0;
 
             dstObj.SetVariable(varName, srcValue);
-        } catch (Exception e) {
+        } catch (Exception) {
             return 0;
         }
 
         return 1;
     }
-
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_CreateList(CByondValue* result) {
-        var newList = _objectTree.CreateList();
+        var newList = _objectTree!.CreateList();
         DreamValue val = new DreamValue(newList);
         try {
             *result = ValueToByondApi(val);
-        } catch(Exception e) {
+        } catch(Exception) {
             return 0;
         }
 
         return 1;
     }
-
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_ReadList(CByondValue* loc, CByondValue* list, uint* len) {
@@ -205,13 +194,12 @@ public static unsafe partial class ByondApi {
             for (int i = 0; i < length; i++) {
                 list[i] = ValueToByondApi(srcDreamVals[i]);
             }
-        } catch (Exception e) {
+        } catch (Exception) {
             return 0;
         }
 
         return 1;
     }
-
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_WriteList(CByondValue* loc, CByondValue* list, uint len) {
@@ -228,13 +216,12 @@ public static unsafe partial class ByondApi {
                 DreamValue srcValue = ValueFromDreamApi(list[i]);
                 dstListValue.AddValue(srcValue);
             }
-        } catch (Exception e) {
+        } catch (Exception) {
             return 0;
         }
 
         return 1;
     }
-
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_ReadListAssoc(CByondValue* loc, CByondValue* list, uint* len) {
@@ -264,13 +251,12 @@ public static unsafe partial class ByondApi {
                 list[i+1] = ValueToByondApi(entry.Value);
                 i += 2;
             }
-        } catch (Exception e) {
+        } catch (Exception) {
             return 0;
         }
 
         return 1;
     }
-
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_ReadListIndex(CByondValue* loc, CByondValue* cIdx, CByondValue* result) {
@@ -287,13 +273,12 @@ public static unsafe partial class ByondApi {
 
             var val = srcList.GetValue(idx);
             *result = ValueToByondApi(val);
-        } catch (Exception e) {
+        } catch (Exception) {
             return 0;
         }
 
         return 1;
     }
-
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_WriteListIndex(CByondValue* loc, CByondValue* cIdx, CByondValue* cVal) {
@@ -310,13 +295,12 @@ public static unsafe partial class ByondApi {
 
             var val = ValueFromDreamApi(*cVal);
             dstList.SetValue(idx, val, true);
-        } catch (Exception e) {
+        } catch (Exception) {
             return 0;
         }
 
         return 1;
     }
-
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_ReadPointer(CByondValue* cPtr, CByondValue* result) {
@@ -334,7 +318,6 @@ public static unsafe partial class ByondApi {
         }
         throw new NotImplementedException();
     }
-
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_CallProc(CByondValue* cSrc, byte* cName, CByondValue* cArgs, uint arg_count, CByondValue* cResult) {
@@ -369,13 +352,12 @@ public static unsafe partial class ByondApi {
             var result = proc.Spawn(srcObj, args);
 
             *cResult = ValueToByondApi(result);
-        } catch (Exception e) {
+        } catch (Exception) {
             return 0;
         }
 
         return 1;
     }
-
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_CallProcByStrId(CByondValue* cSrc, uint name, CByondValue* cArgs, uint arg_count, CByondValue* cResult) {
@@ -384,7 +366,7 @@ public static unsafe partial class ByondApi {
         }
 
         try {
-            DreamValue procNameVal = _dreamManager.RefIdToValue((int)name);
+            DreamValue procNameVal = _dreamManager!.RefIdToValue((int)name);
             if (!procNameVal.TryGetValueAsString(out var procName)) return 0;
 
             DreamValue src = ValueFromDreamApi(*cSrc);
@@ -408,13 +390,12 @@ public static unsafe partial class ByondApi {
             var result = proc.Spawn(srcObj, args);
 
             *cResult = ValueToByondApi(result);
-        } catch (Exception e) {
+        } catch (Exception) {
             return 0;
         }
 
         return 1;
     }
-
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_CallGlobalProc(byte* cName, CByondValue* cArgs, uint arg_count, CByondValue* cResult) {
@@ -428,7 +409,7 @@ public static unsafe partial class ByondApi {
                 return 0;
             }
 
-            if (!_dreamManager.TryGetGlobalProc(str, out var proc)) return 0;
+            if (!_dreamManager!.TryGetGlobalProc(str, out var proc)) return 0;
 
             List<DreamValue> argList = new List<DreamValue>((int)arg_count);
 
@@ -443,13 +424,12 @@ public static unsafe partial class ByondApi {
             var result = proc.Spawn(null, args);
 
             *cResult = ValueToByondApi(result);
-        } catch (Exception e) {
+        } catch (Exception) {
             return 0;
         }
 
         return 1;
     }
-
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_CallGlobalProcByStrId(uint cName, CByondValue* cArgs, uint arg_count, CByondValue* cResult) {
@@ -463,7 +443,7 @@ public static unsafe partial class ByondApi {
                 return 0;
             }
 
-            if (!_dreamManager.TryGetGlobalProc(str, out var proc)) return 0;
+            if (!_dreamManager!.TryGetGlobalProc(str, out var proc)) return 0;
 
             List<DreamValue> argList = new List<DreamValue>((int)arg_count);
 
@@ -478,13 +458,12 @@ public static unsafe partial class ByondApi {
             var result = proc.Spawn(null, args);
 
             *cResult = ValueToByondApi(result);
-        } catch (Exception e) {
+        } catch (Exception) {
             return 0;
         }
 
         return 1;
     }
-
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_ToString(CByondValue* src, byte* buf, uint* buflen) {
@@ -510,13 +489,12 @@ public static unsafe partial class ByondApi {
 
             Marshal.Copy(utf8, 0, (nint)buf, length);
             buf[length] = 0;
-        } catch (Exception e) {
+        } catch (Exception) {
             return 0;
         }
 
         return 1;
     }
-
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_Block(CByondXYZ* corner1, CByondXYZ* corner2, CByondValue* cList, uint* len) {
@@ -537,7 +515,7 @@ public static unsafe partial class ByondApi {
             for (int k = minZ; k <= maxZ; k++) {
                 for (int j = minY; j <= maxY; j++) {
                     for (int i = minX; i <= maxX; i++) {
-                        if (_dreamMapManager.TryGetTurfAt(new Vector2i(i, j), k, out var turf)) {
+                        if (_dreamMapManager!.TryGetTurfAt(new Vector2i(i, j), k, out var turf)) {
                             DreamValue val = new(turf);
                             var cVal = ValueToByondApi(val);
                             list.Add(cVal);
@@ -545,7 +523,7 @@ public static unsafe partial class ByondApi {
                     }
                 }
             }
-        } catch (Exception e) {
+        } catch (Exception) {
             return 0;
         }
 
@@ -561,7 +539,6 @@ public static unsafe partial class ByondApi {
 
         return 1;
     }
-
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_Length(CByondValue* src, CByondValue* result) {
@@ -598,30 +575,29 @@ public static unsafe partial class ByondApi {
                     result->data.num = r.ResourceData.Length;
                     break;
             }
-        } catch (Exception e) {
+        } catch (Exception) {
             return 0;
         }
 
         return 1;
     }
 
+    /** <see cref="DMOpcodeHandlers.Locate(DMProcState)"/> */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_LocateIn(CByondValue* type, CByondValue* list, CByondValue* result) {
         throw new NotImplementedException();
-        /** <see cref="DMOpcodeHandlers.Locate(DMProcState)"/> */
     }
 
-
+    /** <see cref="DMOpcodeHandlers.LocateCoord(DMProcState)"/> */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_LocateXYZ(CByondXYZ* xyz, CByondValue* result) {
         if (xyz == null || result == null) {
             return 1;
         }
 
-        /** <see cref="DMOpcodeHandlers.LocateCoord(DMProcState)"/> */
         List<CByondValue> list = new();
         try {
-            if (_dreamMapManager.TryGetTurfAt(new Vector2i(xyz->x, xyz->y), xyz->z, out var turf)) {
+            if (_dreamMapManager!.TryGetTurfAt(new Vector2i(xyz->x, xyz->y), xyz->z, out var turf)) {
                 DreamValue val = new(turf);
                 var cVal = ValueToByondApi(val);
                 *result = cVal;
@@ -629,20 +605,19 @@ public static unsafe partial class ByondApi {
             } else {
                 *result = ValueToByondApi(DreamValue.Null);
             }
-        } catch (Exception e) {
+        } catch (Exception) {
         }
 
         return 1;
     }
 
-
+    /** <see cref="DMOpcodeHandlers.CreateObject(DMProcState)"/> */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_New(CByondValue* cType, CByondValue* cArgs, uint arg_count, CByondValue* cResult) {
         if (cType == null || cArgs == null || cResult == null) {
             return 0;
         }
 
-        /** <see cref="DMOpcodeHandlers.CreateObject(DMProcState)"/> */
         try {
             var typeVal = ValueFromDreamApi(*cType);
             if (!typeVal.TryGetValueAsType(out TreeEntry? type)) return 0;
@@ -658,7 +633,7 @@ public static unsafe partial class ByondApi {
 
             var args = new DreamProcArguments(CollectionsMarshal.AsSpan(argList));
 
-            if (objectDef.IsSubtypeOf(_objectTree.Turf)) {
+            if (objectDef.IsSubtypeOf(_objectTree!.Turf)) {
                 // Turfs are special. They're never created outside of map initialization
                 // So instead this will replace an existing turf's type and return that same turf
                 DreamValue loc = args.GetArgument(0);
@@ -667,27 +642,27 @@ public static unsafe partial class ByondApi {
                     return 0;
                 }
 
-                _dreamMapManager.SetTurf(turf, objectDef, args);
+                _dreamMapManager!.SetTurf(turf, objectDef, args);
                 return 1;
             }
 
-            var newObject = _objectTree.CreateObject(type);
+            var newObject = _objectTree!.CreateObject(type);
             // call new
             var result = newProc.Spawn(newObject, args);
-        } catch (Exception e) {
+            *cResult = ValueToByondApi(result);
+        } catch (Exception) {
             return 0;
         }
         return 1;
     }
 
-
+    /** <see cref="DMOpcodeHandlers.CreateObject(DMProcState)"/> */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_NewArglist(CByondValue* cType, CByondValue* cArglist, CByondValue* cResult) {
         if (cType == null || cArglist == null || cResult == null) {
             return 0;
         }
 
-        /** <see cref="DMOpcodeHandlers.CreateObject(DMProcState)"/> */
         try {
             var typeVal = ValueFromDreamApi(*cType);
             if (!typeVal.TryGetValueAsType(out var type)) return 0;
@@ -700,7 +675,7 @@ public static unsafe partial class ByondApi {
 
             var args = new DreamProcArguments(CollectionsMarshal.AsSpan(arglist.GetValues()));
 
-            if (objectDef.IsSubtypeOf(_objectTree.Turf)) {
+            if (objectDef.IsSubtypeOf(_objectTree!.Turf)) {
                 // Turfs are special. They're never created outside of map initialization
                 // So instead this will replace an existing turf's type and return that same turf
                 DreamValue loc = args.GetArgument(0);
@@ -709,19 +684,19 @@ public static unsafe partial class ByondApi {
                     return 0;
                 }
 
-                _dreamMapManager.SetTurf(turf, objectDef, args);
+                _dreamMapManager!.SetTurf(turf, objectDef, args);
                 return 1;
             }
 
-            var newObject = _objectTree.CreateObject(type);
+            var newObject = _objectTree!.CreateObject(type);
             // call new
             var result = newProc.Spawn(newObject, args);
-        } catch (Exception e) {
+            *cResult = ValueToByondApi(result);
+        } catch (Exception) {
             return 0;
         }
         return 1;
     }
-
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_Refcount(CByondValue* src, uint* result) {
@@ -758,16 +733,15 @@ public static unsafe partial class ByondApi {
                 xyz->x = (short)x;
                 xyz->y = (short)y;
                 xyz->z = (short)z;
-            } catch (Exception e) {
+            } catch (Exception) {
                 return 1;
             }
-        } catch (Exception e) {
+        } catch (Exception) {
                 return 0;
         }
 
         return 1;
     }
-
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static void ByondValue_IncRef(CByondValue* src) {
@@ -775,13 +749,11 @@ public static unsafe partial class ByondApi {
         throw new NotImplementedException();
     }
 
-
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static void ByondValue_DecRef(CByondValue* src) {
         if (src == null) return;
         throw new NotImplementedException();
     }
-
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_TestRef(CByondValue* src) {
@@ -790,7 +762,7 @@ public static unsafe partial class ByondApi {
             return 0;
         }
 
-        var srcValue = _dreamManager.RefIdToValue((int)src->data.@ref);
+        var srcValue = _dreamManager!.RefIdToValue((int)src->data.@ref);
 
         return srcValue == DreamValue.Null ? (byte)0 : (byte)1;
     }

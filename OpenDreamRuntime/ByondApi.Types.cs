@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 namespace OpenDreamRuntime;
 
 public static partial class ByondApi {
+    // ReSharper disable InconsistentNaming
     public enum ByondValueType : byte {
         // These are the actual value type values used by BYOND.
         // Even though these are an implementation detail, ByondApi users rely on these.
@@ -37,6 +38,7 @@ public static partial class ByondApi {
     public struct ByondValueData {
         [FieldOffset(0)]
         public uint @ref;
+
         [FieldOffset(0)]
         public float num;
     }

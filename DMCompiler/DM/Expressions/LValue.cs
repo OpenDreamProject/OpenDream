@@ -90,6 +90,7 @@ internal sealed class Args(Location location) : LValue(location, DreamPath.List)
 
 // world
 internal sealed class World(Location location) : LValue(location, DreamPath.World) {
+    public override DMComplexValueType ValType => new DMComplexValueType(DMValueType.Instance, DreamPath.World);
     public override DMReference EmitReference(ExpressionContext ctx, string endLabel,
         ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
         return DMReference.World;
@@ -99,11 +100,17 @@ internal sealed class World(Location location) : LValue(location, DreamPath.Worl
 }
 
 // Identifier of local variable
-internal sealed class Local(Location location, DMProc.LocalVariable localVar) : LValue(location, localVar.Type) {
+internal sealed class Local(Location location, DMProc.LocalVariable localVar, DMComplexValueType? valType) : LValue(location, localVar.Type) {
     public DMProc.LocalVariable LocalVar { get; } = localVar;
-
-    // TODO: non-const local var static typing
-    public override DMComplexValueType ValType => LocalVar.ExplicitValueType ?? DMValueType.Anything;
+    public override DMComplexValueType ValType {
+        get {
+            //todo: allow local variables to be param-typed again
+            // WITHOUT having to pass procParameters through the whole parser chain
+            //if (valType is not null) return proc.GetBaseProc().GetParameterValueTypes(valType.Value, null);
+            if (valType is not null && !valType.Value.IsAnything) return valType.Value;
+            return LocalVar.Type is not null ? new DMComplexValueType(DMValueType.Instance | DMValueType.Path | DMValueType.Null, LocalVar.Type) : DMValueType.Anything;
+        }
+    }
 
     public override DMReference EmitReference(ExpressionContext ctx, string endLabel,
         ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {

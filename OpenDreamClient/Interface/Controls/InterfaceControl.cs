@@ -93,6 +93,7 @@ public abstract class InterfaceControl : InterfaceElement {
         switch (property) {
             case "size":
                 var size = new DMFPropertySize(value);
+                ControlDescriptor.Size = size;
 
                 // A size of 0 takes up the remaining space of the window as defined by the DMF
                 if (size.X == 0 && Window != null)
@@ -108,6 +109,7 @@ public abstract class InterfaceControl : InterfaceElement {
                 break;
             case "pos":
                 var pos = new DMFPropertyPos(value);
+                ControlDescriptor.Pos = pos;
 
                 LayoutContainer.SetMarginLeft(UIElement, pos.X);
                 LayoutContainer.SetMarginTop(UIElement, pos.Y);

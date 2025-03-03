@@ -79,18 +79,18 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
         RaiseNetworkEvent(new StatClickedEvent(atomRef, isRight, isMiddle, shift, ctrl, alt));
     }
 
-    public void HandleAtomMouseEntered(ClientObjectReference atomRef) {
+    public void HandleAtomMouseEntered(ScalingViewport viewport, Vector2 relativePos, ClientObjectReference atomRef, Vector2i iconPos) {
         if (!HasMouseEventEnabled(atomRef, AtomMouseEvents.Enter))
             return;
 
-        RaiseNetworkEvent(new MouseEnteredEvent(atomRef));
+        RaiseNetworkEvent(new MouseEnteredEvent(atomRef, CreateClickParams(viewport, relativePos, iconPos)));
     }
 
-    public void HandleAtomMouseExited(ClientObjectReference atomRef) {
+    public void HandleAtomMouseExited(ScalingViewport viewport, ClientObjectReference atomRef) {
         if (!HasMouseEventEnabled(atomRef, AtomMouseEvents.Exit))
             return;
 
-        RaiseNetworkEvent(new MouseExitedEvent(atomRef));
+        RaiseNetworkEvent(new MouseExitedEvent(atomRef, CreateClickParams(viewport, Vector2.Zero, Vector2i.Zero)));
     }
 
     public (ClientObjectReference Atom, Vector2i IconPosition)? GetAtomUnderMouse(ScalingViewport viewport, Vector2 relativePos, ScreenCoordinates globalPos) {
@@ -216,6 +216,20 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
 
         // TODO: Take icon transformations into account for iconPos
         return new(screenLoc, right, middle, shift, ctrl, alt, iconPos.X, iconPos.Y);
+    }
+
+    /// <summary>
+    /// <see cref="CreateClickParams(OpenDreamClient.Interface.Controls.UI.ScalingViewport,Robust.Client.UserInterface.GUIBoundKeyEventArgs,Robust.Shared.Maths.Vector2i)"/>
+    /// but without information about mouse/keyboard buttons
+    /// </summary>
+    private ClickParams CreateClickParams(ScalingViewport viewport, Vector2 relativePos, Vector2i iconPos) {
+        UIBox2i viewportBox = viewport.GetDrawBox();
+        Vector2 screenLocPos = (relativePos - viewportBox.TopLeft) / viewportBox.Size * viewport.ViewportSize;
+        float screenLocY = viewport.ViewportSize.Y - screenLocPos.Y; // Flip the Y
+        ScreenLocation screenLoc = new ScreenLocation((int) screenLocPos.X, (int) screenLocY, 32); // TODO: icon_size other than 32
+
+        // TODO: Take icon transformations into account for iconPos
+        return new(screenLoc, false, false, false, false, false, iconPos.X, iconPos.Y);
     }
 
     private bool HasMouseEventEnabled(ClientObjectReference atomRef, AtomMouseEvents mouseEvent) {

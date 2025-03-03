@@ -121,157 +121,168 @@ public sealed class DreamObjectParticles : DreamObject {
                 if(value.TryGetValueAsFloat(out float floatValue)){
                     ParticlesComponent.LifespanHigh = floatValue;
                     ParticlesComponent.LifespanLow = floatValue;
-                    ParticlesComponent.LifespanType = ParticlePropertyType.HighValue;
+                    ParticlesComponent.LifespanDist = GeneratorDistribution.Constant;
                 } else if(value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var dreamObjectGenerator)) {
                     ParticlesComponent.LifespanHigh = dreamObjectGenerator.B.MustGetValueAsFloat();
                     ParticlesComponent.LifespanLow = dreamObjectGenerator.A.MustGetValueAsFloat();
-                    ParticlesComponent.LifespanType = ParticlePropertyType.RandomUniform; //TODO all the other distributions
+                    ParticlesComponent.LifespanDist = dreamObjectGenerator.Distribution;
+                    ParticlesComponent.LifespanType = dreamObjectGenerator.OutputType;
                 }
                 break;
             case "fadein": //num or generator
                 if(value.TryGetValueAsInteger(out int intValue)){
                     ParticlesComponent.FadeInHigh = intValue;
                     ParticlesComponent.FadeInLow = intValue;
-                    ParticlesComponent.FadeInType = ParticlePropertyType.HighValue;
+                    ParticlesComponent.FadeInDist = GeneratorDistribution.Constant;
                 } else if(value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var dreamObjectGenerator)) {
                     ParticlesComponent.FadeInHigh = dreamObjectGenerator.B.MustGetValueAsInteger();
                     ParticlesComponent.FadeInLow = dreamObjectGenerator.A.MustGetValueAsInteger();
-                    ParticlesComponent.FadeInType = ParticlePropertyType.RandomUniform; //TODO all the other distributions
+                    ParticlesComponent.FadeInDist = dreamObjectGenerator.Distribution;
+                    ParticlesComponent.FadeInType = dreamObjectGenerator.OutputType;
                 }
                 break;
             case "fade": //num or generator
                 if(value.TryGetValueAsInteger(out intValue)){
                     ParticlesComponent.FadeOutHigh = intValue;
                     ParticlesComponent.FadeOutLow = intValue;
-                    ParticlesComponent.FadeOutType = ParticlePropertyType.HighValue;
+                    ParticlesComponent.FadeOutDist = GeneratorDistribution.Constant;
                 } else if(value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var dreamObjectGenerator)) {
                     ParticlesComponent.FadeOutHigh = dreamObjectGenerator.B.MustGetValueAsInteger();
                     ParticlesComponent.FadeOutLow = dreamObjectGenerator.A.MustGetValueAsInteger();
-                    ParticlesComponent.FadeOutType = ParticlePropertyType.RandomUniform; //TODO all the other distributions
+                    ParticlesComponent.FadeOutDist = dreamObjectGenerator.Distribution;
+                    ParticlesComponent.FadeOutType = dreamObjectGenerator.OutputType;
                 }
                 break;
             case "position": //num, list, vector, or generator
                 if(value.TryGetValueAsFloat(out floatValue)){
                     ParticlesComponent.SpawnPositionHigh = new Vector3(floatValue);
                     ParticlesComponent.SpawnPositionLow = new Vector3(floatValue);
-                    ParticlesComponent.SpawnPositionType = ParticlePropertyType.HighValue;
+                    ParticlesComponent.SpawnPositionDist = GeneratorDistribution.Constant;
                 }
                 if(value.TryGetValueAsDreamList(out var vectorList) && vectorList.GetLength() >= 3){
                     List<DreamValue> dreamValues = vectorList.GetValues();
                     ParticlesComponent.SpawnPositionHigh = new Vector3(dreamValues[0].MustGetValueAsFloat(), dreamValues[1].MustGetValueAsFloat(), dreamValues[2].MustGetValueAsFloat());
                     ParticlesComponent.SpawnPositionLow = new Vector3(dreamValues[0].MustGetValueAsFloat(), dreamValues[1].MustGetValueAsFloat(), dreamValues[2].MustGetValueAsFloat());
-                    ParticlesComponent.SpawnPositionType = ParticlePropertyType.HighValue;
+                    ParticlesComponent.SpawnPositionDist = GeneratorDistribution.Constant;
                 } else if(value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var dreamObjectGenerator)) {
                     ParticlesComponent.SpawnPositionHigh = GetGeneratorValueAsVector3(dreamObjectGenerator.B);
                     ParticlesComponent.SpawnPositionLow = GetGeneratorValueAsVector3(dreamObjectGenerator.A);
-                    ParticlesComponent.SpawnPositionType = ParticlePropertyType.RandomUniform; //TODO all the other distributions
+                    ParticlesComponent.SpawnPositionDist = dreamObjectGenerator.Distribution;
+                    ParticlesComponent.SpawnPositionType = dreamObjectGenerator.OutputType;
                 }
                 break;
             case "velocity": //num, list, vector, or generator
                 if(value.TryGetValueAsFloat(out floatValue)){
                     ParticlesComponent.SpawnVelocityHigh = new Vector3(floatValue);
                     ParticlesComponent.SpawnVelocityLow = new Vector3(floatValue);
-                    ParticlesComponent.SpawnVelocityType = ParticlePropertyType.HighValue;
+                    ParticlesComponent.SpawnVelocityDist = GeneratorDistribution.Constant;
                 }
                 if(value.TryGetValueAsDreamList(out vectorList) && vectorList.GetLength() >= 3){
                     List<DreamValue> dreamValues = vectorList.GetValues();
                     ParticlesComponent.SpawnVelocityHigh = new Vector3(dreamValues[0].MustGetValueAsFloat(), dreamValues[1].MustGetValueAsFloat(), dreamValues[2].MustGetValueAsFloat());
                     ParticlesComponent.SpawnVelocityLow = new Vector3(dreamValues[0].MustGetValueAsFloat(), dreamValues[1].MustGetValueAsFloat(), dreamValues[2].MustGetValueAsFloat());
-                    ParticlesComponent.SpawnVelocityType = ParticlePropertyType.HighValue;
+                    ParticlesComponent.SpawnVelocityDist = GeneratorDistribution.Constant;
                 } else if(value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var dreamObjectGenerator)) {
                     ParticlesComponent.SpawnVelocityHigh = GetGeneratorValueAsVector3(dreamObjectGenerator.B);
                     ParticlesComponent.SpawnVelocityLow = GetGeneratorValueAsVector3(dreamObjectGenerator.A);
-                    ParticlesComponent.SpawnVelocityType = ParticlePropertyType.RandomUniform; //TODO all the other distributions
+                    ParticlesComponent.SpawnVelocityDist = dreamObjectGenerator.Distribution;
+                    ParticlesComponent.SpawnVelocityType = dreamObjectGenerator.OutputType;
                 }
                 break;
             case "scale": //num, list, vector, or generator
                 if(value.TryGetValueAsFloat(out floatValue)){
                     ParticlesComponent.ScaleHigh = new Vector2(floatValue);
                     ParticlesComponent.ScaleLow = new Vector2(floatValue);
-                    ParticlesComponent.ScaleType = ParticlePropertyType.HighValue;
+                    ParticlesComponent.ScaleDist = GeneratorDistribution.Constant;
                 }
                 if(value.TryGetValueAsDreamList(out vectorList) && vectorList.GetLength() >= 2){
                     List<DreamValue> dreamValues = vectorList.GetValues();
                     ParticlesComponent.ScaleHigh = new Vector2(dreamValues[0].MustGetValueAsFloat(), dreamValues[1].MustGetValueAsFloat());
                     ParticlesComponent.ScaleLow = new Vector2(dreamValues[0].MustGetValueAsFloat(), dreamValues[1].MustGetValueAsFloat());
-                    ParticlesComponent.ScaleType = ParticlePropertyType.HighValue;
+                    ParticlesComponent.ScaleDist = GeneratorDistribution.Constant;
                 } else if(value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var dreamObjectGenerator)) {
                     ParticlesComponent.ScaleHigh = GetGeneratorValueAsVector2(dreamObjectGenerator.B);
                     ParticlesComponent.ScaleLow = GetGeneratorValueAsVector2(dreamObjectGenerator.A);
-                    ParticlesComponent.ScaleType = ParticlePropertyType.RandomUniform; //TODO all the other distributions
+                    ParticlesComponent.ScaleDist = dreamObjectGenerator.Distribution;
+                    ParticlesComponent.ScaleType = dreamObjectGenerator.OutputType;
                 }
                 break;
             case "grow": //num, list, vector, or generator
                 if(value.TryGetValueAsFloat(out floatValue)){
                     ParticlesComponent.GrowthHigh = new Vector2(floatValue);
                     ParticlesComponent.GrowthLow = new Vector2(floatValue);
-                    ParticlesComponent.GrowthType = ParticlePropertyType.HighValue;
+                    ParticlesComponent.GrowthDist = GeneratorDistribution.Constant;
                 }
                 if(value.TryGetValueAsDreamList(out vectorList) && vectorList.GetLength() >= 2){
                     List<DreamValue> dreamValues = vectorList.GetValues();
                     ParticlesComponent.GrowthHigh = new Vector2(dreamValues[0].MustGetValueAsFloat(), dreamValues[1].MustGetValueAsFloat());
                     ParticlesComponent.GrowthLow = new Vector2(dreamValues[0].MustGetValueAsFloat(), dreamValues[1].MustGetValueAsFloat());
-                    ParticlesComponent.GrowthType = ParticlePropertyType.HighValue;
+                    ParticlesComponent.GrowthDist = GeneratorDistribution.Constant;
                 } else if(value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var dreamObjectGenerator)) {
                     ParticlesComponent.GrowthHigh = GetGeneratorValueAsVector2(dreamObjectGenerator.B);
                     ParticlesComponent.GrowthLow = GetGeneratorValueAsVector2(dreamObjectGenerator.A);
-                    ParticlesComponent.GrowthType = ParticlePropertyType.RandomUniform; //TODO all the other distributions
+                    ParticlesComponent.GrowthDist = dreamObjectGenerator.Distribution;
+                    ParticlesComponent.GrowthType = dreamObjectGenerator.OutputType;
                 }
                 break;
             case "rotation": //num or generator
                 if(value.TryGetValueAsFloat(out floatValue)){
                     ParticlesComponent.RotationHigh = floatValue;
                     ParticlesComponent.RotationLow = floatValue;
-                    ParticlesComponent.RotationType = ParticlePropertyType.HighValue;
+                    ParticlesComponent.RotationDist = GeneratorDistribution.Constant;
                 } else if(value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var dreamObjectGenerator)) {
                     ParticlesComponent.RotationHigh = dreamObjectGenerator.B.MustGetValueAsFloat();
                     ParticlesComponent.RotationLow = dreamObjectGenerator.A.MustGetValueAsFloat();
-                    ParticlesComponent.RotationType = ParticlePropertyType.RandomUniform; //TODO all the other distributions
+                    ParticlesComponent.RotationDist = dreamObjectGenerator.Distribution;
+                    ParticlesComponent.RotationType = dreamObjectGenerator.OutputType;
                 }
                 break;
             case "spin": //num or generator
                 if(value.TryGetValueAsFloat(out floatValue)){
                     ParticlesComponent.SpinHigh = floatValue;
                     ParticlesComponent.SpinLow = floatValue;
-                    ParticlesComponent.SpinType = ParticlePropertyType.HighValue;
+                    ParticlesComponent.SpinDist = GeneratorDistribution.Constant;
                 } else if(value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var dreamObjectGenerator)) {
                     ParticlesComponent.SpinHigh = dreamObjectGenerator.B.MustGetValueAsFloat();
                     ParticlesComponent.SpinLow = dreamObjectGenerator.A.MustGetValueAsFloat();
-                    ParticlesComponent.SpinType = ParticlePropertyType.RandomUniform; //TODO all the other distributions
+                    ParticlesComponent.SpinDist = dreamObjectGenerator.Distribution;
+                    ParticlesComponent.SpinType = dreamObjectGenerator.OutputType;
                 }
                 break;
             case "friction": //num, vector, or generator
                 if(value.TryGetValueAsFloat(out floatValue)){
                     ParticlesComponent.FrictionHigh = new Vector3(floatValue);
                     ParticlesComponent.FrictionLow = new Vector3(floatValue);
-                    ParticlesComponent.FrictionType = ParticlePropertyType.HighValue;
+                    ParticlesComponent.FrictionDist = GeneratorDistribution.Constant;
                 }
                 if(value.TryGetValueAsDreamList(out vectorList) && vectorList.GetLength() >= 3){
                     List<DreamValue> dreamValues = vectorList.GetValues();
                     ParticlesComponent.FrictionHigh = new Vector3(dreamValues[0].MustGetValueAsFloat(), dreamValues[1].MustGetValueAsFloat(), dreamValues[2].MustGetValueAsFloat());
                     ParticlesComponent.FrictionLow = new Vector3(dreamValues[0].MustGetValueAsFloat(), dreamValues[1].MustGetValueAsFloat(), dreamValues[2].MustGetValueAsFloat());
-                    ParticlesComponent.FrictionType = ParticlePropertyType.HighValue;
+                    ParticlesComponent.FrictionDist = GeneratorDistribution.Constant;
                 } else if(value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var dreamObjectGenerator)) {
                     ParticlesComponent.FrictionHigh = GetGeneratorValueAsVector3(dreamObjectGenerator.B);
                     ParticlesComponent.FrictionLow =  GetGeneratorValueAsVector3(dreamObjectGenerator.A);
-                    ParticlesComponent.FrictionType = ParticlePropertyType.RandomUniform; //TODO all the other distributions
+                    ParticlesComponent.FrictionDist = dreamObjectGenerator.Distribution;
+                    ParticlesComponent.FrictionType = dreamObjectGenerator.OutputType;
                 }
                 break;
             case "drift": //num, vector, or generator
                 if(value.TryGetValueAsFloat(out floatValue)){
                     ParticlesComponent.DriftHigh = new Vector3(floatValue);
                     ParticlesComponent.DriftLow = new Vector3(floatValue);
-                    ParticlesComponent.DriftType = ParticlePropertyType.HighValue;
+                    ParticlesComponent.DriftDist = GeneratorDistribution.Constant;
                 }
                 if(value.TryGetValueAsDreamList(out vectorList) && vectorList.GetLength() >= 3){
                     List<DreamValue> dreamValues = vectorList.GetValues();
                     ParticlesComponent.DriftHigh = new Vector3(dreamValues[0].MustGetValueAsFloat(), dreamValues[1].MustGetValueAsFloat(), dreamValues[2].MustGetValueAsFloat());
                     ParticlesComponent.DriftLow = new Vector3(dreamValues[0].MustGetValueAsFloat(), dreamValues[1].MustGetValueAsFloat(), dreamValues[2].MustGetValueAsFloat());
-                    ParticlesComponent.DriftType = ParticlePropertyType.HighValue;
+                    ParticlesComponent.DriftDist = GeneratorDistribution.Constant;
                 } else if(value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var dreamObjectGenerator)) {
                     ParticlesComponent.DriftHigh = GetGeneratorValueAsVector3(dreamObjectGenerator.B);
                     ParticlesComponent.DriftLow = GetGeneratorValueAsVector3(dreamObjectGenerator.A);
-                    ParticlesComponent.DriftType = ParticlePropertyType.RandomUniform; //TODO all the other distributions
+                    ParticlesComponent.DriftDist = dreamObjectGenerator.Distribution;
+                    ParticlesComponent.DriftType = dreamObjectGenerator.OutputType;
                 }
                 break;
         }

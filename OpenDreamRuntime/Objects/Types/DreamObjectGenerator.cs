@@ -1,4 +1,5 @@
 using OpenDreamRuntime.Procs;
+using OpenDreamShared.Rendering;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -21,20 +22,3 @@ public sealed class DreamObjectGenerator : DreamObject {
     }
 }
 
-public enum GeneratorOutputType {
-    Num,
-    Vector,
-    Box,
-    Color,
-    Circle,
-    Sphere,
-    Square,
-    Cube
-}
-
-public enum GeneratorDistribution {
-    Uniform,
-    Normal,
-    Linear,
-    Square
-}

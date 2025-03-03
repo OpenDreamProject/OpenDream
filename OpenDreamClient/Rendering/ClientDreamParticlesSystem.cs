@@ -52,9 +52,9 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
         }
         var result = new ParticleSystemArgs(textureFunc, new Vector2i(component.Width, component.Height), (uint)component.Count, component.Spawning);
         GeneratorFloat lifespan = new();
-        result.Lifespan = GetGeneratorFloat(component.LifespanLow, component.LifespanHigh, component.LifespanType);
-        result.Fadein = GetGeneratorFloat(component.FadeInLow, component.FadeInHigh, component.FadeInType);
-        result.Fadeout = GetGeneratorFloat(component.FadeOutLow, component.FadeOutHigh, component.FadeOutType);
+        result.Lifespan = GetGeneratorFloat(component.LifespanLow, component.LifespanHigh, component.LifespanDist);
+        result.Fadein = GetGeneratorFloat(component.FadeInLow, component.FadeInHigh, component.FadeInDist);
+        result.Fadeout = GetGeneratorFloat(component.FadeOutLow, component.FadeOutHigh, component.FadeOutDist);
         if(component.Gradient.Length > 0)
             result.Color = (float lifetime) => {
                 var colorIndex = (int)(lifetime * component.Gradient.Length);
@@ -63,14 +63,14 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
             };
         else
             result.Color = (float lifetime) => Color.White;
-        result.Acceleration = (float _ , Vector3 velocity) => GetGeneratorVector3(component.AccelerationLow, component.AccelerationHigh, component.AccelerationType)() + GetGeneratorVector3(component.DriftLow, component.DriftHigh, component.DriftType)() - velocity*GetGeneratorVector3(component.FrictionLow, component.FrictionHigh, component.FrictionType)();
-        result.SpawnPosition = GetGeneratorVector3(component.SpawnPositionLow, component.SpawnPositionHigh, component.SpawnPositionType);
-        result.SpawnVelocity = GetGeneratorVector3(component.SpawnVelocityLow, component.SpawnVelocityHigh, component.SpawnVelocityType);
+        result.Acceleration = (float _ , Vector3 velocity) => GetGeneratorVector3(component.AccelerationLow, component.AccelerationHigh, component.AccelerationType, component.AccelerationDist)() + GetGeneratorVector3(component.DriftLow, component.DriftHigh, component.DriftType, component.DriftDist)() - velocity*GetGeneratorVector3(component.FrictionLow, component.FrictionHigh, component.FrictionType, component.FrictionDist)();
+        result.SpawnPosition = GetGeneratorVector3(component.SpawnPositionLow, component.SpawnPositionHigh, component.SpawnPositionType, component.SpawnPositionDist);
+        result.SpawnVelocity = GetGeneratorVector3(component.SpawnVelocityLow, component.SpawnVelocityHigh, component.SpawnVelocityType, component.SpawnVelocityDist);
         result.Transform = (float lifetime) => {
-            var scale = GetGeneratorVector2(component.ScaleLow, component.ScaleHigh, component.ScaleType)();
-            var rotation = GetGeneratorFloat(component.RotationLow, component.RotationHigh, component.RotationType)();
-            var growth = GetGeneratorVector2(component.GrowthLow, component.GrowthHigh, component.GrowthType)();
-            var spin = GetGeneratorFloat(component.SpinLow, component.SpinHigh, component.SpinType)();
+            var scale = GetGeneratorVector2(component.ScaleLow, component.ScaleHigh, component.ScaleType, component.ScaleDist)();
+            var rotation = GetGeneratorFloat(component.RotationLow, component.RotationHigh, component.RotationDist)();
+            var growth = GetGeneratorVector2(component.GrowthLow, component.GrowthHigh, component.GrowthType, component.GrowthDist)();
+            var spin = GetGeneratorFloat(component.SpinLow, component.SpinHigh, component.SpinDist)();
             return Matrix3x2.CreateScale(scale.X + growth.X, scale.Y + growth.Y) *
                 Matrix3x2.CreateRotation(rotation + spin);
         };
@@ -79,38 +79,56 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
         return result;
     }
 
-    private Func<float> GetGeneratorFloat(float low, float high, ParticlePropertyType type){
-        switch (type) {
-            case ParticlePropertyType.HighValue:
+    private Func<float> GetGeneratorFloat(float low, float high, GeneratorDistribution distribution){
+        switch (distribution) {
+            case GeneratorDistribution.Constant:
                 return () => high;
-            case ParticlePropertyType.RandomUniform:
+            case GeneratorDistribution.Uniform:
                 return () => random.NextFloat(low, high);
-            case ParticlePropertyType.RandomNormal:
+            case GeneratorDistribution.Normal:
                 return () => (float) Math.Clamp(random.NextGaussian((low+high)/2, (high-low)/6), low, high);
-            case ParticlePropertyType.RandomLinear:
+            case GeneratorDistribution.Linear:
                 return () => MathF.Sqrt(random.NextFloat(0, 1)) * (high - low) + low;
-            case ParticlePropertyType.RandomSquare:
+            case GeneratorDistribution.Square:
                 return () => MathF.Cbrt(random.NextFloat(0, 1)) * (high - low) + low;
             default:
                 throw new NotImplementedException();
         }
     }
 
-    private Func<Vector2> GetGeneratorVector2(Vector2 low, Vector2 high, ParticlePropertyType type){
+    private Func<Vector2> GetGeneratorVector2(Vector2 low, Vector2 high, GeneratorOutputType type, GeneratorDistribution distribution){
         switch (type) {
-            case ParticlePropertyType.HighValue:
-                return () => high;
+            case GeneratorOutputType.Num:
+                return () => new Vector2(GetGeneratorFloat(low.X, high.X, distribution)(), GetGeneratorFloat(low.Y, high.Y, distribution)());
+            case GeneratorOutputType.Vector:
+                return () => Vector2.Lerp(low, high, GetGeneratorFloat(0,1,distribution)());
+            case GeneratorOutputType.Box:
+                return () => new Vector2(GetGeneratorFloat(low.X, high.X, distribution)(), GetGeneratorFloat(low.Y, high.Y, distribution)());
+            case GeneratorOutputType.Circle:
+            case GeneratorOutputType.Sphere:
+            case GeneratorOutputType.Square:
+            case GeneratorOutputType.Cube:
             default:
-                return () => new Vector2(GetGeneratorFloat(low.X, high.X, type)(), GetGeneratorFloat(low.Y, high.Y, type)());
+                throw new NotImplementedException("Unimplemented generator output type");
         }
     }
 
-    private Func<Vector3> GetGeneratorVector3(Vector3 low, Vector3 high, ParticlePropertyType type){
+    private Func<Vector3> GetGeneratorVector3(Vector3 low, Vector3 high, GeneratorOutputType type, GeneratorDistribution distribution){
         switch (type) {
-            case ParticlePropertyType.HighValue:
-                return () => high;
+            case GeneratorOutputType.Num:
+                return () => new Vector3(GetGeneratorFloat(low.X, high.X, distribution)(), GetGeneratorFloat(low.Y, high.Y, distribution)(), GetGeneratorFloat(low.Z, high.Z, distribution)());
+            case GeneratorOutputType.Vector:
+                return () => Vector3.Lerp(low, high, GetGeneratorFloat(0,1,distribution)());
+            case GeneratorOutputType.Box:
+                return () => new Vector3(GetGeneratorFloat(low.X, high.X, distribution)(), GetGeneratorFloat(low.Y, high.Y, distribution)(), GetGeneratorFloat(low.Z, high.Z, distribution)());
+            case GeneratorOutputType.Circle:
+            case GeneratorOutputType.Sphere:
+            case GeneratorOutputType.Square:
+            case GeneratorOutputType.Cube:
             default:
-                return () => new Vector3(GetGeneratorFloat(low.X, high.X, type)(), GetGeneratorFloat(low.Y, high.Y, type)(), GetGeneratorFloat(low.Z, high.Z, type)());
+                throw new NotImplementedException("Unimplemented generator output type");
         }
     }
 }
+
+

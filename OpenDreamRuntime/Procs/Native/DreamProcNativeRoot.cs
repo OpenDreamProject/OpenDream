@@ -24,6 +24,7 @@ using Robust.Server;
 using Robust.Shared.Asynchronous;
 using Vector4 = Robust.Shared.Maths.Vector4;
 using System.ComponentModel;
+using OpenDreamShared.Rendering;
 
 namespace OpenDreamRuntime.Procs.Native;
 /// <remarks>

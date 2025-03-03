@@ -49,9 +49,9 @@ jobs:
             cp ./byondapi/debug/byondapitest.dll ../bin/Content.IntegrationTests/byondapitest.dll
         elif [ "$RUNNER_OS" == "Linux" ]; then
             cargo build --manifest-path=./byondapi/Cargo.toml -p trampoline
-            cp ./byondapi/debug/byondcore.so meowtonin/crates/sys/link/linux/byondcore.so
-            cp ./byondapi/debug/byondcore.so ../bin/Content.Server/byondcore.dll
-            cp ./byondapi/debug/byondcore.so ../bin/Content.IntegrationTests/byondcore.so
+            cp ./byondapi/debug/libbyondcore.so meowtonin/crates/sys/link/linux/libbyondcore.so
+            cp ./byondapi/debug/libbyondcore.so ../bin/Content.Server/libbyondcore.dll
+            cp ./byondapi/debug/libbyondcore.so ../bin/Content.IntegrationTests/libbyondcore.so
             cargo build --manifest-path=./byondapi/Cargo.toml -p byondapitest
             cp ./byondapi/debug/byondapitest.so ../bin/Content.Server/byondapitest.so
             cp ./byondapi/debug/byondapitest.so ../bin/Content.Tests/byondapitest.so

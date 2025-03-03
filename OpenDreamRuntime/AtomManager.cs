@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
+using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
@@ -32,6 +33,7 @@ public sealed class AtomManager {
 
     private readonly Dictionary<EntityUid, DreamObjectMovable> _entityToAtom = new();
     private readonly Dictionary<DreamObjectDefinition, MutableAppearance> _definitionAppearanceCache = new();
+    private readonly Dictionary<DreamObjectDefinition, AtomMouseEvents> _enabledMouseEvents = new();
 
     private ServerAppearanceSystem? AppearanceSystem {
         get {
@@ -593,15 +595,20 @@ public sealed class AtomManager {
     }
 
     public void SetAtomAppearance(DreamObject atom, MutableAppearance appearance) {
-        if (atom is DreamObjectTurf turf) {
-            _dreamMapManager.SetTurfAppearance(turf, appearance);
-        } else if (atom is DreamObjectMovable movable) {
-            DMISpriteSystem?.SetSpriteAppearance(new(movable.Entity, movable.SpriteComponent), appearance);
-        } else if (atom is DreamObjectImage image) {
+        if (atom is DreamObjectImage image) {
             if(image.IsMutableAppearance)
                 image.MutableAppearance = MutableAppearance.GetCopy(appearance); //this needs to be a copy
             else
                 DMISpriteSystem?.SetSpriteAppearance(new(image.Entity, image.SpriteComponent!), appearance);
+            return;
+        }
+
+        appearance.EnabledMouseEvents = GetEnabledMouseEvents(atom);
+
+        if (atom is DreamObjectTurf turf) {
+            _dreamMapManager.SetTurfAppearance(turf, appearance);
+        } else if (atom is DreamObjectMovable movable) {
+            DMISpriteSystem?.SetSpriteAppearance(new(movable.Entity, movable.SpriteComponent), appearance);
         } else if (atom is DreamObjectArea area) {
             _dreamMapManager.SetAreaAppearance(area, appearance);
         }
@@ -764,6 +771,33 @@ public sealed class AtomManager {
 
         _definitionAppearanceCache.Add(def, appearance);
         return appearance;
+    }
+
+    public AtomMouseEvents GetEnabledMouseEvents(DreamObject atom) {
+        var def = atom.ObjectDefinition;
+
+        if (!_enabledMouseEvents.TryGetValue(def, out var mouseEvents)) {
+            mouseEvents = 0;
+
+            if (def.TryGetProc("MouseDown", out var mouseDownProc) && mouseDownProc is DMProc {Bytecode.Length: > 0})
+                mouseEvents |= AtomMouseEvents.Down;
+            if (def.TryGetProc("MouseUp", out var mouseUpProc) && mouseUpProc is DMProc {Bytecode.Length: > 0})
+                mouseEvents |= AtomMouseEvents.Up;
+            if (def.TryGetProc("MouseDrag", out var mouseDragProc) && mouseDragProc is DMProc {Bytecode.Length: > 0})
+                mouseEvents |= AtomMouseEvents.Drag;
+            if (def.TryGetProc("MouseEntered", out var mouseEnterProc) && mouseEnterProc is DMProc {Bytecode.Length: > 0})
+                mouseEvents |= AtomMouseEvents.Enter;
+            if (def.TryGetProc("MouseExited", out var mouseExitProc) && mouseExitProc is DMProc {Bytecode.Length: > 0})
+                mouseEvents |= AtomMouseEvents.Exit;
+            if (def.TryGetProc("MouseMove", out var mouseMoveProc) && mouseMoveProc is DMProc {Bytecode.Length: > 0})
+                mouseEvents |= AtomMouseEvents.Move;
+            if (def.TryGetProc("MouseWheel", out var mouseWheelProc) && mouseWheelProc is DMProc {Bytecode.Length: > 0})
+                mouseEvents |= AtomMouseEvents.Wheel;
+
+            _enabledMouseEvents.Add(atom.ObjectDefinition, mouseEvents);
+        }
+
+        return mouseEvents;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

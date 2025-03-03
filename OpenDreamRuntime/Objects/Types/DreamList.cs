@@ -963,6 +963,18 @@ public sealed class DreamFilterList : DreamList {
         });
     }
 
+    public override void RemoveValue(DreamValue value) {
+        if (!value.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject))
+            return;
+
+        var filter = filterObject.Filter;
+
+        DreamObjectFilter.FilterAttachedTo.Remove(filter);
+        _atomManager.UpdateAppearance(_owner, appearance => {
+            appearance.Filters.Remove(filter);
+        });
+    }
+
     public override int GetLength() {
         return GetAppearance().Filters.Length;
     }

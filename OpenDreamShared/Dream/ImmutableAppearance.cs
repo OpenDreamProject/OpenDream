@@ -57,6 +57,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
     [ViewVariables] public Vector2i MaptextSize = MutableAppearance.Default.MaptextSize;
     [ViewVariables] public Vector2i MaptextOffset = MutableAppearance.Default.MaptextOffset;
     [ViewVariables] public string? Maptext = MutableAppearance.Default.Maptext;
+    [ViewVariables] public AtomMouseEvents EnabledMouseEvents;
 
     /// <summary> The Transform property of this appearance, in [a,d,b,e,c,f] order</summary>
     [ViewVariables] public readonly float[] Transform = [
@@ -101,6 +102,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         Maptext = appearance.Maptext;
         MaptextSize = appearance.MaptextSize;
         MaptextOffset = appearance.MaptextOffset;
+        EnabledMouseEvents = appearance.EnabledMouseEvents;
 
         Overlays = appearance.Overlays.ToArray();
         Underlays = appearance.Underlays.ToArray();
@@ -438,6 +440,10 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
                     MaptextOffset = (buffer.ReadVariableInt32(), buffer.ReadVariableInt32());
                     break;
                 }
+                case IconAppearanceProperty.EnabledMouseEvents: {
+                    EnabledMouseEvents = (AtomMouseEvents)buffer.ReadByte();
+                    break;
+                }
                 default:
                     throw new Exception($"Invalid property {property}");
             }
@@ -479,6 +485,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         result.Maptext = Maptext;
         result.MaptextOffset = MaptextOffset;
         result.MaptextSize = MaptextSize;
+        result.EnabledMouseEvents = EnabledMouseEvents;
 
         result.Overlays.EnsureCapacity(Overlays.Length);
         result.Underlays.EnsureCapacity(Underlays.Length);
@@ -685,6 +692,11 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
             buffer.Write((byte)IconAppearanceProperty.MaptextSize);
             buffer.WriteVariableInt32(MaptextSize.X);
             buffer.WriteVariableInt32(MaptextSize.Y);
+        }
+
+        if (EnabledMouseEvents != MutableAppearance.Default.EnabledMouseEvents) {
+            buffer.Write((byte)IconAppearanceProperty.EnabledMouseEvents);
+            buffer.Write((byte)EnabledMouseEvents);
         }
 
         buffer.Write((byte)IconAppearanceProperty.End);

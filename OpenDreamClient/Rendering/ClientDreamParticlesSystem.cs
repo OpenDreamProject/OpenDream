@@ -38,7 +38,7 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
     }
 
     private ParticleSystemArgs GetParticleSystemArgs(DreamParticlesComponent component){
-        Func<Texture> textureFunc;
+        Func<Texture?> textureFunc;
         if(component.TextureList is null || component.TextureList.Length == 0)
             textureFunc = () => Texture.White;
         else{
@@ -48,7 +48,7 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
                 icon.SetAppearance(appearance.MustGetId());
                 icons.Add(icon);
             }
-            textureFunc = () => random.Pick(icons).GetTexture(null!, null!, defaultRenderMetaData, null) ?? Texture.White; //oh god, so hacky
+            textureFunc = () => random.Pick(icons).GetTexture(null!, null!, defaultRenderMetaData, null); //oh god, so hacky
         }
         var result = new ParticleSystemArgs(textureFunc, new Vector2i(component.Width, component.Height), (uint)component.Count, component.Spawning);
         GeneratorFloat lifespan = new();

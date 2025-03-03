@@ -1,4 +1,4 @@
-﻿namespace DMCompiler.Json;
+﻿namespace OpenDreamShared.Common.Json;
 
 public enum JsonVariableType {
     Resource = 0,

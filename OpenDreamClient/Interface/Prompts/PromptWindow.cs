@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel;
-using OpenDreamShared.Dream;
+using OpenDreamShared.Common.DM;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
@@ -8,14 +8,14 @@ namespace OpenDreamClient.Interface.Prompts;
 
 public abstract class PromptWindow : OSWindow {
     protected readonly Control InputControl;
-    protected string DefaultButton;
+    protected string? DefaultButton;
 
     private readonly BoxContainer _buttonPanel;
     private bool _promptFinished;
 
-    private readonly Action<DreamValueType, object?>? _closeAction;
+    private readonly Action<DMValueType, object?>? _closeAction;
 
-    protected PromptWindow(string? title, string? message, Action<DreamValueType, object?>? onClose) {
+    protected PromptWindow(string? title, string? message, Action<DMValueType, object?>? onClose) {
         _closeAction = onClose;
 
         Title = !string.IsNullOrEmpty(title) ? title : "OpenDream";
@@ -57,7 +57,7 @@ public abstract class PromptWindow : OSWindow {
             Children = { new Label { Text = text, Margin = new Thickness(5, 2, 5, 2) } }
         };
 
-        if (isDefault)
+        if (isDefault || DefaultButton == null)
             DefaultButton = text;
 
         button.OnPressed += _ => ButtonClicked(text);
@@ -68,7 +68,7 @@ public abstract class PromptWindow : OSWindow {
         Close();
     }
 
-    protected void FinishPrompt(DreamValueType responseType, object? value) {
+    protected void FinishPrompt(DMValueType responseType, object? value) {
         if (_promptFinished) return;
         _promptFinished = true;
 

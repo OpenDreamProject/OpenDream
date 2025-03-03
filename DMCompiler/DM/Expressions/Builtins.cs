@@ -1,7 +1,9 @@
-using DMCompiler.Bytecode;
 using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Compiler;
-using DMCompiler.Json;
+using OpenDreamShared.Common;
+using OpenDreamShared.Common.Bytecode;
+using OpenDreamShared.Common.DM;
+using OpenDreamShared.Common.Json;
 
 namespace DMCompiler.DM.Expressions;
 
@@ -61,7 +63,7 @@ internal sealed class Arglist(Location location, DMExpression expr) : DMExpressi
 internal sealed class New(DMCompiler compiler, Location location, DMExpression expr, ArgumentList arguments) : DMExpression(location) {
     public override DreamPath? Path => expr.Path;
     public override bool PathIsFuzzy => Path == null;
-    public override DMComplexValueType ValType => !expr.ValType.IsAnything ? expr.ValType : (Path?.GetAtomType(compiler) ?? DMValueType.Anything);
+    public override DMComplexValueType ValType => !expr.ValType.IsAnything ? expr.ValType : (compiler.GetAtomType(Path) ?? DMValueType.Anything);
 
     public override void EmitPushValue(ExpressionContext ctx) {
         var argumentInfo = arguments.EmitArguments(ctx, null);
@@ -74,7 +76,7 @@ internal sealed class New(DMCompiler compiler, Location location, DMExpression e
 // new /x/y/z (...)
 internal sealed class NewPath(DMCompiler compiler, Location location, IConstantPath create, ArgumentList arguments) : DMExpression(location) {
     public override DreamPath? Path => (create is ConstantTypeReference typeReference) ? typeReference.Path : null;
-    public override DMComplexValueType ValType => Path?.GetAtomType(compiler) ?? DMValueType.Anything;
+    public override DMComplexValueType ValType => compiler.GetAtomType(Path) ?? DMValueType.Anything;
 
     public override void EmitPushValue(ExpressionContext ctx) {
         DMCallArgumentsType argumentsType;

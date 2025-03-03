@@ -99,7 +99,7 @@
 	scale = generator("box", list(0.1,0.1,1), list(0.3,0.3,1), UNIFORM_RAND)
 	rotation = generator("num", 0, 360, UNIFORM_RAND)
 	grow = list(0.01, 0)
-	fadein = 0icons/effects/lines.dmi
+	fadein = 0
 
 
 

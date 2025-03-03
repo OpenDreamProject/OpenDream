@@ -46,4 +46,20 @@ public class SharedMouseInputSystem : EntitySystem {
         // TODO: ScreenLoc doesn't appear at all in the click params
         public ClickParams Params { get; } = new(new(0, 0, 32), right, middle, shift, ctrl, alt, 0, 0);
     }
+
+    [Serializable, NetSerializable]
+    public sealed class MouseEnteredEvent(ClientObjectReference atom) : EntityEventArgs, IAtomMouseEvent {
+        public ClientObjectReference Atom = atom;
+
+        // TODO
+        public ClickParams Params { get; } = new(new(0, 0, 32), false, false, false, false, false, 0, 0);
+    }
+
+    [Serializable, NetSerializable]
+    public sealed class MouseExitedEvent(ClientObjectReference atom) : EntityEventArgs, IAtomMouseEvent {
+        public ClientObjectReference Atom = atom;
+
+        // TODO
+        public ClickParams Params { get; } = new(new(0, 0, 32), false, false, false, false, false, 0, 0);
+    }
 }

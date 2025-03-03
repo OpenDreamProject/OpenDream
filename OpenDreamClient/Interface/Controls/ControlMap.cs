@@ -1,6 +1,7 @@
 ﻿using OpenDreamClient.Input;
 using OpenDreamClient.Interface.Controls.UI;
 using OpenDreamClient.Interface.Descriptors;
+using OpenDreamClient.Rendering;
 using OpenDreamShared.Dream;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
@@ -14,8 +15,29 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
 
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
     private MouseInputSystem? _mouseInput;
+    private ClientAppearanceSystem? _appearanceSystem;
 
     private ControlDescriptorMap MapDescriptor => (ControlDescriptorMap)ElementDescriptor;
+
+    private ClientObjectReference? _atomUnderMouse;
+
+    private ClientObjectReference? AtomUnderMouse {
+        set {
+            if (!_atomUnderMouse.Equals(value)) {
+                _entitySystemManager.Resolve(ref _appearanceSystem);
+
+                var name = (value != null) ? _appearanceSystem.GetName(value.Value) : string.Empty;
+                Window?.SetStatus(name);
+
+                if (_atomUnderMouse != null)
+                    _mouseInput?.HandleAtomMouseExited(_atomUnderMouse.Value);
+                if (value != null)
+                    _mouseInput?.HandleAtomMouseEntered(value.Value);
+            }
+
+            _atomUnderMouse = value;
+        }
+    }
 
     protected override void UpdateElementDescriptor() {
         base.UpdateElementDescriptor();
@@ -57,6 +79,8 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
         Viewport = new ScalingViewport { MouseFilter = Control.MouseFilterMode.Stop };
         Viewport.OnKeyBindDown += OnViewportKeyBindEvent;
         Viewport.OnKeyBindUp += OnViewportKeyBindEvent;
+        Viewport.OnMouseMove += OnViewportMouseMoveEvent;
+        Viewport.OnMouseExited += OnViewportMouseExitedEvent;
         Viewport.OnVisibilityChanged += (args) => {
             if (args.Visible) {
                 OnShowEvent();
@@ -64,6 +88,7 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
                 OnHideEvent();
             }
         };
+
         if(ControlDescriptor.IsVisible.Value)
             OnShowEvent();
         else
@@ -83,6 +108,18 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
                 e.Handle();
             }
         }
+    }
+
+    private void OnViewportMouseMoveEvent(GUIMouseMoveEventArgs e) {
+        if (_mouseInput == null)
+            return;
+
+        var underMouse = _mouseInput.GetAtomUnderMouse(Viewport, e.RelativePixelPosition, e.GlobalPixelPosition);
+        AtomUnderMouse = underMouse?.Atom;
+    }
+
+    private void OnViewportMouseExitedEvent(GUIMouseHoverEventArgs obj) {
+        AtomUnderMouse = null;
     }
 
     public void OnShowEvent() {

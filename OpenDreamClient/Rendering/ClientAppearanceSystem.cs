@@ -1,10 +1,13 @@
-﻿using OpenDreamShared.Dream;
+﻿using System.Diagnostics.CodeAnalysis;
+using OpenDreamShared.Dream;
 using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
 using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Shared.Prototypes;
 using OpenDreamClient.Resources;
 using OpenDreamClient.Resources.ResourceTypes;
+using Robust.Client.Player;
+using Robust.Shared.Map;
 using Robust.Shared.Timing;
 
 namespace OpenDreamClient.Rendering;
@@ -22,6 +25,9 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     [Dependency] private readonly IGameTiming _gameTiming = default!;
     [Dependency] private readonly IClyde _clyde = default!;
     [Dependency] private readonly DMISpriteSystem _spriteSystem = default!;
+    [Dependency] private readonly IPlayerManager _playerManager = default!;
+    [Dependency] private readonly IMapManager _mapManager = default!;
+    [Dependency] private readonly MapSystem _mapSystem = default!;
 
     public override void Initialize() {
         SubscribeNetworkEvent<NewAppearanceEvent>(OnNewAppearance);
@@ -231,5 +237,47 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
 
     public override void RemoveAppearance(ImmutableAppearance appearance) {
         throw new NotImplementedException();
+    }
+
+    public bool TryGetAppearance(ClientObjectReference reference, [NotNullWhen(true)] out ImmutableAppearance? appearance) {
+        switch (reference.Type) {
+            case ClientObjectReference.RefType.Entity:
+                var entity = _entityManager.GetEntity(reference.Entity);
+                if (!_entityManager.TryGetComponent(entity, out DMISpriteComponent? sprite)) {
+                    appearance = null;
+                    return false;
+                }
+
+                appearance = sprite.Icon.Appearance;
+                return appearance != null;
+            case ClientObjectReference.RefType.Turf:
+                var mapCoords = new MapCoordinates(reference.TurfX, reference.TurfY, new(reference.TurfZ));
+                if (!_mapManager.TryFindGridAt(mapCoords, out _, out var grid))
+                    break;
+                if (!_mapSystem.TryGetTile(grid, new(reference.TurfX, reference.TurfY), out var tile))
+                    break;
+
+                var icon = GetTurfIcon((uint)tile.TypeId);
+                appearance = icon.Appearance;
+                return appearance != null;
+        }
+
+        appearance = null;
+        return false;
+    }
+
+    public string GetName(ClientObjectReference reference) {
+        switch (reference.Type) {
+            case ClientObjectReference.RefType.Client:
+                return _playerManager.LocalSession?.Name ?? "<unknown>";
+            case ClientObjectReference.RefType.Entity:
+            case ClientObjectReference.RefType.Turf:
+                if (!TryGetAppearance(reference, out var appearance))
+                    break;
+
+                return appearance.Name;
+        }
+
+        return "<unknown>";
     }
 }

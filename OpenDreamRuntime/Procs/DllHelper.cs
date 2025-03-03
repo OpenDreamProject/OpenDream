@@ -8,17 +8,21 @@ namespace OpenDreamRuntime.Procs
     {
         private static readonly Dictionary<string, nint> LoadedDlls = new();
 
-        public static unsafe delegate* unmanaged<int, byte**, byte*> ResolveDllTarget(
+        public static unsafe delegate* unmanaged[Cdecl]<int, byte**, byte*> ResolveDllTarget(
             DreamResourceManager resource,
             string dllName,
             string funcName)
         {
+            // stdcall convention
+            if (funcName.Contains('@'))
+                throw new NotSupportedException("Stdcall calling convention is not supported in OpenDream");
+
             var dll = GetDll(resource, dllName);
 
             if (!NativeLibrary.TryGetExport(dll, funcName, out var export))
                 throw new MissingMethodException($"FFI: Unable to find symbol {funcName} in library {dllName}");
 
-            return (delegate* unmanaged<int, byte**, byte*>)export;
+            return (delegate* unmanaged[Cdecl]<int, byte**, byte*>)export;
         }
 
         private static nint GetDll(DreamResourceManager resource, string dllName)
@@ -39,9 +43,11 @@ namespace OpenDreamRuntime.Procs
                 return true;
 
             // Simple load didn't pass, try next to dmb.
-            if(!File.Exists(dllName))
-                throw new DllNotFoundException($"FFI: Unable to load DLL {dllName}. File not found.");
-            return NativeLibrary.TryLoad(dllName, out dll);
+            var root = resource.RootPath;
+            var fullPath = Path.Combine(root, dllName);
+            if(!File.Exists(fullPath))
+                throw new DllNotFoundException($"FFI: Unable to load {dllName}. File not found at {fullPath}");
+            return NativeLibrary.TryLoad(fullPath, out dll);
         }
     }
 }

@@ -44,18 +44,18 @@ jobs:
             cp ./byondapi/target/debug/byondcore.dll ./bin/Content.Server/byondcore.dll
             cp ./byondapi/target/debug/byondcore.dll ./bin/Content.IntegrationTests/byondcore.dll
             cargo build --manifest-path=./byondapi/Cargo.toml -p byondapitest
-            cp ./byondapi/debug/byondapitest.dll ./bin/Content.Server/byondapitest.dll
-            cp ./byondapi/debug/byondapitest.dll ./bin/Content.Tests/byondapitest.dll
-            cp ./byondapi/debug/byondapitest.dll ./bin/Content.IntegrationTests/byondapitest.dll
+            cp ./byondapi/target/debug/byondapitest.dll ./bin/Content.Server/byondapitest.dll
+            cp ./byondapi/target/debug/byondapitest.dll ./bin/Content.Tests/byondapitest.dll
+            cp ./byondapi/target/debug/byondapitest.dll ./bin/Content.IntegrationTests/byondapitest.dll
         elif [ "$RUNNER_OS" == "Linux" ]; then
             cargo build --manifest-path=./byondapi/Cargo.toml -p trampoline
             cp ./byondapi/target/debug/libbyondcore.so meowtonin/crates/sys/link/linux/libbyondcore.so
             cp ./byondapi/target/debug/libbyondcore.so ./bin/Content.Server/libbyondcore.dll
             cp ./byondapi/target/debug/libbyondcore.so ./bin/Content.IntegrationTests/libbyondcore.so
             cargo build --manifest-path=./byondapi/Cargo.toml -p byondapitest
-            cp ./byondapi/target/debug/byondapitest.so ./bin/Content.Server/byondapitest.so
-            cp ./byondapi/target/debug/byondapitest.so ./bin/Content.Tests/byondapitest.so
-            cp ./byondapi/target/debug/byondapitest.so ./bin/Content.IntegrationTests/byondapitest.so
+            cp ./byondapi/target/debug/libbyondapitest.so ./bin/Content.Server/byondapitest.so
+            cp ./byondapi/target/debug/libbyondapitest.so ./bin/Content.Tests/byondapitest.so
+            cp ./byondapi/target/debug/libbyondapitest.so ./bin/Content.IntegrationTests/byondapitest.so
         else
             # we only test windows/linux at time of writing
             exit 1

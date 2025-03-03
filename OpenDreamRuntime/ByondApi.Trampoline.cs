@@ -45,7 +45,7 @@ public static unsafe partial class ByondApi {
         OpenDream_Internal_Init(&trampolines);
     }
 
-    [LibraryImport("byondcore.dll")]
+    [LibraryImport("byondcore")]
     private static partial void OpenDream_Internal_Init(Trampolines* trampolines);
 
     [SuppressMessage("ReSharper", "InconsistentNaming")]

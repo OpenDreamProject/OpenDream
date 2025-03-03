@@ -18,6 +18,11 @@ internal static partial class DMOpcodeHandlers {
 
         DreamProcArguments arguments = state.PopProcArguments(null, argumentsInfo.Type, argumentsInfo.StackSize);
 
+        // If we're on linux, we use a .so instead of a .dll
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && dllName.EndsWith(".dll")) {
+            dllName = dllName[..^"dll".Length] + "so";
+        }
+
         if (procName.StartsWith("byond:")) {
             return CallExtByond(state, dllName, procName, arguments);
         } else {

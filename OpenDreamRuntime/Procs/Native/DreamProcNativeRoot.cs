@@ -3137,6 +3137,151 @@ internal static class DreamProcNativeRoot {
         return new DreamValue(HttpUtility.UrlEncode(plainText));
     }
 
+    [DreamProc("values_cut_over")]
+    [DreamProcParameter("Alist", Type = DreamValueTypeFlag.DreamObject)]
+    [DreamProcParameter("Max", Type = DreamValueTypeFlag.Float)]
+    [DreamProcParameter("inclusive", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    public static DreamValue NativeProc_values_cut_over(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        if (bundle.Arguments.Length < 2 || bundle.Arguments.Length > 3) throw new Exception($"expected 2-3 arguments (found {bundle.Arguments.Length})");
+
+        DreamValue argList = bundle.GetArgument(0, "Alist");
+        DreamValue argMin = bundle.GetArgument(1, "Max");
+        DreamValue argInclusive = bundle.GetArgument(2, "inclusive");
+
+        return values_cut_helper(argList, argMin, argInclusive, false);
+    }
+
+    [DreamProc("values_cut_under")]
+    [DreamProcParameter("Alist", Type = DreamValueTypeFlag.DreamObject)]
+    [DreamProcParameter("Min", Type = DreamValueTypeFlag.Float)]
+    [DreamProcParameter("inclusive", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    public static DreamValue NativeProc_values_cut_under(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        if (bundle.Arguments.Length < 2 || bundle.Arguments.Length > 3) throw new Exception($"expected 2-3 arguments (found {bundle.Arguments.Length})");
+
+        DreamValue argList = bundle.GetArgument(0, "Alist");
+        DreamValue argMin = bundle.GetArgument(1, "Min");
+        DreamValue argInclusive = bundle.GetArgument(2, "inclusive");
+
+        return values_cut_helper(argList, argMin, argInclusive, true);
+    }
+
+    private static DreamValue values_cut_helper(DreamValue argList, DreamValue argMin, DreamValue argInclusive, bool under) {
+        // BYOND explicitly doesn't check for any truthy value
+        bool inclusive = argInclusive.TryGetValueAsFloat(out var inclusiveValue) && inclusiveValue >= 1;
+
+        var cutCount = 0; // number of values cut from the list
+        var min = argMin.UnsafeGetValueAsFloat();
+
+        if (argList.TryGetValueAsDreamList(out var list)) {
+            if (!list.IsAssociative) {
+                cutCount = list.GetLength();
+                list.Cut();
+                return new DreamValue(cutCount);
+            }
+
+            var values = list.GetValues();
+            var assocValues = list.GetAssociativeValues();
+
+            // Nuke any keys without values
+            if (values.Count != assocValues.Count) {
+                for (var index = 0; index < values.Count; index++) {
+                    var val = values[index];
+                    if (!assocValues.ContainsKey(val)) {
+                        cutCount += 1;
+                        index -= 1;
+                        list.RemoveValue(val);
+                    }
+                }
+            }
+
+            foreach (var (key,value) in assocValues) {
+                if (value.TryGetValueAsFloat(out var valFloat)) {
+                    switch (inclusive) {
+                        case true when under && valFloat <= min:
+                        case true when !under && valFloat >= min:
+                        case false when under && valFloat < min:
+                        case false when !under && valFloat > min:
+                            list.RemoveValue(key);
+                            cutCount += 1;
+                            break;
+                    }
+                } else {
+                    list.RemoveValue(key); // Keys without numeric values seem to always be removed
+                    cutCount += 1;
+                }
+            }
+        }
+
+        return new DreamValue(cutCount);
+    }
+
+    [DreamProc("values_dot")]
+    [DreamProcParameter("A", Type = DreamValueTypeFlag.DreamObject)]
+    [DreamProcParameter("B", Type = DreamValueTypeFlag.DreamObject)]
+    public static DreamValue NativeProc_values_dot(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        if (bundle.Arguments.Length != 2) throw new Exception("expected 2 arguments");
+
+        DreamValue argA = bundle.GetArgument(0, "A");
+        DreamValue argB = bundle.GetArgument(1, "B");
+
+        float sum = 0; // Default return is 0 for invalid args
+
+        if (argA.TryGetValueAsDreamList(out var listA) && listA.IsAssociative && argB.TryGetValueAsDreamList(out var listB) && listB.IsAssociative) {
+            var aValues = listA.GetAssociativeValues();
+            var bValues = listB.GetAssociativeValues();
+
+            // sum += valueA * valueB
+            // for each assoc value whose key exists in both lists
+            // and when both assoc values are floats
+            foreach (var (key,value) in aValues) {
+                if (value.TryGetValueAsFloat(out var aFloat) && bValues.TryGetValue(key, out var bVal) &&
+                    bVal.TryGetValueAsFloat(out var bFloat)) {
+                    sum += (aFloat * bFloat);
+                }
+            }
+        }
+
+        return new DreamValue(sum);
+    }
+
+    [DreamProc("values_product")]
+    [DreamProcParameter("Alist", Type = DreamValueTypeFlag.DreamObject)]
+    public static DreamValue NativeProc_values_product(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        if (bundle.Arguments.Length != 1) throw new Exception("expected 1 argument");
+
+        DreamValue arg = bundle.GetArgument(0, "Alist");
+
+        float product = 1; // Default return is 1 for invalid args
+
+        if (arg.TryGetValueAsDreamList(out var list) && list.IsAssociative) {
+            var assocValues = list.GetAssociativeValues();
+            foreach (var (_,value) in assocValues) {
+                if(value.TryGetValueAsFloat(out var valFloat)) product *= valFloat;
+            }
+        }
+
+        return new DreamValue(product);
+    }
+
+    [DreamProc("values_sum")]
+    [DreamProcParameter("Alist", Type = DreamValueTypeFlag.DreamObject)]
+    public static DreamValue NativeProc_values_sum(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        if (bundle.Arguments.Length != 1) throw new Exception("expected 1 argument");
+
+        DreamValue arg = bundle.GetArgument(0, "Alist");
+
+        float sum = 0; // Default return is 0 for invalid args
+
+        if (arg.TryGetValueAsDreamList(out var list) && list.IsAssociative) {
+            var assocValues = list.GetAssociativeValues();
+            foreach (var (_,value) in assocValues) {
+                if(value.TryGetValueAsFloat(out var valFloat)) sum += valFloat;
+            }
+        }
+
+        return new DreamValue(sum);
+    }
+
     [DreamProc("view")]
     [DreamProcParameter("Dist", Type = DreamValueTypeFlag.Float, DefaultValue = 5)]
     [DreamProcParameter("Center", Type = DreamValueTypeFlag.DreamObject)]

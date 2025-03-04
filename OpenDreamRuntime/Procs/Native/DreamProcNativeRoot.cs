@@ -3155,9 +3155,8 @@ internal static class DreamProcNativeRoot {
 
             // Nuke any keys without values
             if (values.Count != assocValues.Count) {
-                // We need to copy the list so we can modify while enumerating
-                var listCopy = new List<DreamValue>(values);
-                foreach (var val in listCopy) {
+                for (var index = 0; index < values.Count; index++) {
+                    var val = values[index];
                     if (!assocValues.ContainsKey(val)) {
                         cutCount += 1;
                         list.RemoveValue(val);

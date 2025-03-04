@@ -57,9 +57,10 @@ jobs:
             cp ./byondapi/target/release/libbyondcore.so ./bin/Content.IntegrationTests/libbyondcore.so
 
             cargo build --release --manifest-path=./byondapi/Cargo.toml -p byondapitest
-            cp ./byondapi/target/release/libbyondapitest.so ./bin/Content.Server/libbyondapitest.so
-            cp ./byondapi/target/release/libbyondapitest.so ./bin/Content.Tests/libbyondapitest.so
-            cp ./byondapi/target/release/libbyondapitest.so ./bin/Content.IntegrationTests/libbyondapitest.so
+            cp ./byondapi/target/release/libbyondapitest.so ./bin/Content.Server/byondapitest.so
+            cp ./byondapi/target/release/libbyondapitest.so ./bin/Content.Tests/byondapitest.so
+            cp ./byondapi/target/release/libbyondapitest.so ./bin/Content.IntegrationTests/byondapitest.so
+            ls -al ./bin/Content.Tests/byondapitest.so
         else
             # we only test windows/linux at time of writing
             exit 1

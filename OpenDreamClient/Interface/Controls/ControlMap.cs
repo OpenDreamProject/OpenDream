@@ -1,6 +1,7 @@
 ﻿using OpenDreamClient.Input;
 using OpenDreamClient.Interface.Controls.UI;
 using OpenDreamClient.Interface.Descriptors;
+using OpenDreamClient.Rendering;
 using OpenDreamShared.Dream;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
@@ -14,7 +15,7 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
 
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
     private MouseInputSystem? _mouseInput;
-    private DreamClientSystem? _clientSystem;
+    private ClientAppearanceSystem? _appearanceSystem;
 
     private ControlDescriptorMap MapDescriptor => (ControlDescriptorMap)ElementDescriptor;
 
@@ -23,10 +24,15 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
     private ClientObjectReference? AtomUnderMouse {
         set {
             if (!_atomUnderMouse.Equals(value)) {
-                _entitySystemManager.Resolve(ref _clientSystem);
+                _entitySystemManager.Resolve(ref _appearanceSystem);
 
-                var name = (value != null) ? _clientSystem.GetName(value.Value) : string.Empty;
+                var name = (value != null) ? _appearanceSystem.GetName(value.Value) : string.Empty;
                 Window?.SetStatus(name);
+
+                if (_atomUnderMouse != null)
+                    _mouseInput?.HandleAtomMouseExited(_atomUnderMouse.Value);
+                if (value != null)
+                    _mouseInput?.HandleAtomMouseEntered(value.Value);
             }
 
             _atomUnderMouse = value;

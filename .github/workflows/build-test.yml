@@ -50,16 +50,16 @@ jobs:
             cp ./byondapi/target/release/byondapitest.dll ./bin/Content.Tests/byondapitest.dll
             cp ./byondapi/target/release/byondapitest.dll ./bin/Content.IntegrationTests/byondapitest.dll
         elif [ "$RUNNER_OS" == "Linux" ]; then
-            cargo build --target=x86_64-unknown-linux-gnu --release --manifest-path=./byondapi/Cargo.toml -p trampoline
+            cargo build --release --manifest-path=./byondapi/Cargo.toml -p trampoline
             cp ./byondapi/target/release/libbyondcore.so meowtonin/crates/sys/link/linux/libbyondcore.so
             cp ./byondapi/target/release/libbyondcore.so ./bin/Content.Server/libbyondcore.so
             cp ./byondapi/target/release/libbyondcore.so ./bin/Content.Tests/libbyondcore.so
             cp ./byondapi/target/release/libbyondcore.so ./bin/Content.IntegrationTests/libbyondcore.so
 
-            cargo build --target=x86_64-unknown-linux-gnu --release --manifest-path=./byondapi/Cargo.toml -p byondapitest
-            cp ./byondapi/target/release/libbyondapitest.so ./bin/Content.Server/byondapitest.so
-            cp ./byondapi/target/release/libbyondapitest.so ./bin/Content.Tests/byondapitest.so
-            cp ./byondapi/target/release/libbyondapitest.so ./bin/Content.IntegrationTests/byondapitest.so
+            cargo build --release --manifest-path=./byondapi/Cargo.toml -p byondapitest
+            cp ./byondapi/target/release/libbyondapitest.so ./bin/Content.Server/libbyondapitest.so
+            cp ./byondapi/target/release/libbyondapitest.so ./bin/Content.Tests/libbyondapitest.so
+            cp ./byondapi/target/release/libbyondapitest.so ./bin/Content.IntegrationTests/libbyondapitest.so
         else
             # we only test windows/linux at time of writing
             exit 1

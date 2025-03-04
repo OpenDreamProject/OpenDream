@@ -21,6 +21,7 @@
 	var/list/three = list(a=1,b=3,c="hi")
 	ASSERT((one ~! two) == TRUE)
 	ASSERT((one ~= three) == TRUE)
+	ASSERT(list(a=null) ~= list("a"))
 
 	var/matrix/m1 = matrix(1,2,3,4,5,6)
 	var/matrix/m2 = matrix(-1,-2,-3,-4,-5,6)

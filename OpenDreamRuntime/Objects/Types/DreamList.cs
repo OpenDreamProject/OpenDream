@@ -372,23 +372,24 @@ public class DreamList : DreamObject {
             return DreamValue.False;
         if (GetLength() != secondList.GetLength())
             return DreamValue.False;
-        if(IsAssociative && (!secondList.IsAssociative || secondList.GetAssociativeValues().Count != GetAssociativeValues().Count))
-            return DreamValue.False;
 
         var firstValues = GetValues();
         var secondValues = secondList.GetValues();
-        for (var i = 0; i < firstValues.Count; i++) {
-            if (!firstValues[i].Equals(secondValues[i]))
-                return DreamValue.False;
-        }
 
-        // Starting with 516, equivalence checks assoc values
-        if (IsAssociative) {
-            var secondListAssoc = secondList.GetAssociativeValues();
-            foreach (var kvp in GetAssociativeValues()) {
-                if(!secondListAssoc.TryGetValue(kvp.Key, out var assocValue) || !assocValue.Equals(kvp.Value))
+        var firstListAssoc = GetAssociativeValues();
+        var secondListAssoc = secondList.GetAssociativeValues();
+
+        for (var i = 0; i < firstValues.Count; i++) {
+            // Starting with 516, equivalence checks assoc values
+            if (IsAssociative || secondList.IsAssociative) {
+                if(!firstListAssoc.TryGetValue(firstValues[i], out var firstAssocVal)) firstAssocVal = DreamValue.Null;
+                if(!secondListAssoc.TryGetValue(firstValues[i], out var secondAssocVal)) secondAssocVal = DreamValue.Null;
+                if (!firstAssocVal.Equals(secondAssocVal))
                     return DreamValue.False;
             }
+
+            if (!firstValues[i].Equals(secondValues[i]))
+                return DreamValue.False;
         }
 
         return DreamValue.True;

@@ -378,12 +378,13 @@ namespace DMCompiler.DM {
             }
         }
 
-        public void EnumerateAssoc(DMReference outputRef, DMReference assocRef) {
+        public void EnumerateAssoc(DMReference outputRef, DMReference assocRef, DMReference listRef) {
             if (_loopStack?.TryPeek(out var peek) ?? false) {
                 WriteOpcode(DreamProcOpcode.EnumerateAssoc);
                 WriteEnumeratorId(_enumeratorIdCounter - 1);
                 WriteReference(outputRef);
                 WriteReference(assocRef);
+                WriteReference(listRef);
                 WriteLabel($"{peek}_end");
             } else {
                 _compiler.ForcedError(Location, "Cannot peek empty loop stack");

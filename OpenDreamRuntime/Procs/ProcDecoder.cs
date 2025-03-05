@@ -167,7 +167,7 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
             case DreamProcOpcode.Enumerate:
                 return (opcode, ReadInt(), ReadReference(), ReadInt());
             case DreamProcOpcode.EnumerateAssoc:
-                return (opcode, ReadInt(), ReadReference(), ReadReference(), ReadInt());
+                return (opcode, ReadInt(), ReadReference(), ReadReference(), ReadReference(), ReadInt());
 
             case DreamProcOpcode.CreateFilteredListEnumerator:
             case DreamProcOpcode.EnumerateNoAssign:
@@ -298,10 +298,12 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
                 text.Append(' ');
                 text.Append(jumpPosition);
                 break;
-            case (DreamProcOpcode.EnumerateAssoc, DMReference reference, DMReference assocReference, int jumpPosition):
+            case (DreamProcOpcode.EnumerateAssoc, DMReference reference, DMReference assocReference, DMReference listReference, int jumpPosition):
                 text.Append(reference);
                 text.Append(' ');
                 text.Append(assocReference);
+                text.Append(' ');
+                text.Append(listReference);
                 text.Append(' ');
                 text.Append(jumpPosition);
                 break;
@@ -414,7 +416,7 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
                 return jumpPosition;
             case (DreamProcOpcode.Enumerate, DMReference, int jumpPosition):
                 return jumpPosition;
-            case (DreamProcOpcode.EnumerateAssoc, DMReference, DMReference, int jumpPosition):
+            case (DreamProcOpcode.EnumerateAssoc, DMReference, DMReference, DMReference, int jumpPosition):
                 return jumpPosition;
             default:
                 return null;

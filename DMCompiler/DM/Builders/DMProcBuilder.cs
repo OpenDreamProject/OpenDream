@@ -453,7 +453,37 @@ namespace DMCompiler.DM.Builders {
                     ProcessStatementVarDeclaration(new DMASTProcStatementVarDeclaration(statementFor.Location, decl.DeclPath, null, DMValueType.Anything));
                 }
 
-                if (statementFor.Expression2 != null || statementFor.Expression3 != null) {
+                if (statementFor.Expression2 is DMASTExpressionIn dmastIn && statementFor.Expression3 is null) {
+                    var expr2 = statementFor.Expression2 != null ? _exprBuilder.CreateIgnoreUnknownReference(statementFor.Expression2) : null;
+                    if (expr2 is UnknownReference unknownRef) {
+                        if(statementFor.Expression1 is not DMASTVarDeclExpression || dmastIn.LHS is not DMASTIdentifier ident)
+                            unknownRef.EmitCompilerError(compiler);
+                        else {
+                            ProcessStatementVarDeclaration(new DMASTProcStatementVarDeclaration(statementFor.Location, new DMASTPath(statementFor.Location, new DreamPath(ident.Identifier)), null, DMValueType.Anything));
+                            expr2 = _exprBuilder.Create(statementFor.Expression2);
+                        }
+                    }
+
+                    DMASTExpression outputExpr;
+                    if (statementFor.Expression1 is DMASTVarDeclExpression decl) {
+                        outputExpr = new DMASTIdentifier(decl.Location, decl.DeclPath.Path.LastElement);
+                    } else {
+                        outputExpr = statementFor.Expression1;
+                    }
+
+                    var outputVar = _exprBuilder.Create(outputExpr);
+                    var list = _exprBuilder.Create(dmastIn.RHS);
+
+                    if (outputVar is Local outputLocal) {
+                        outputLocal.LocalVar.ExplicitValueType = statementFor.DMTypes;
+                        if(outputLocal.LocalVar is DMProc.LocalConstVariable)
+                            compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, "Cannot change constant value");
+                    } else if (outputVar is Field { IsConst: true })
+                        compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, "Cannot change constant value");
+
+                    ProcessStatementForList(list, outputVar, _exprBuilder.Create(dmastIn.LHS), statementFor.DMTypes, statementFor.Body);
+                }
+                else if (statementFor.Expression2 != null || statementFor.Expression3 != null) {
                     var initializer = statementFor.Expression1 != null ? _exprBuilder.Create(statementFor.Expression1) : null;
                     var comparator = statementFor.Expression2 != null ? _exprBuilder.Create(statementFor.Expression2) : null;
                     var incrementor = statementFor.Expression3 != null ? _exprBuilder.Create(statementFor.Expression3) : null;
@@ -530,7 +560,7 @@ namespace DMCompiler.DM.Builders {
                             } else if (outputVar is Field { IsConst: true })
                                 compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, "Cannot change constant value");
 
-                            ProcessStatementForList(list, outputVar, statementFor.DMTypes, statementFor.Body);
+                            ProcessStatementForList(list, outputVar, null, statementFor.DMTypes, statementFor.Body);
                             break;
                         }
                         default:
@@ -584,7 +614,7 @@ namespace DMCompiler.DM.Builders {
             proc.EndScope();
         }
 
-        public void ProcessLoopAssignment(LValue lValue) {
+        public void ProcessLoopAssignment(LValue lValue, LValue? assocValue = null) {
             if (lValue.CanReferenceShortCircuit()) {
                 string endLabel = proc.NewLabelName();
                 string endLabel2 = proc.NewLabelName();
@@ -598,15 +628,27 @@ namespace DMCompiler.DM.Builders {
                 proc.AddLabel(endLabel2);
             } else {
                 DMReference outputRef = lValue.EmitReference(ExprContext, null);
-                proc.Enumerate(outputRef);
+                if (assocValue != null) {
+                    DMReference assocRef = assocValue.EmitReference(ExprContext, null);
+                    proc.EnumerateAssoc(outputRef, assocRef);
+                } else {
+                    proc.Enumerate(outputRef);
+                }
             }
         }
 
-        public void ProcessStatementForList(DMExpression list, DMExpression outputVar, DMComplexValueType? typeCheck, DMASTProcBlockInner body) {
+        public void ProcessStatementForList(DMExpression list, DMExpression outputVar, DMExpression? outputAssocVar, DMComplexValueType? typeCheck, DMASTProcBlockInner body) {
             if (outputVar is not LValue lValue) {
                 compiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
                 lValue = new BadLValue(outputVar.Location);
             }
+
+            if (outputAssocVar is not LValue && outputAssocVar is not null) {
+                compiler.Emit(WarningCode.BadExpression, outputAssocVar.Location, "Invalid output var");
+                lValue = new BadLValue(outputAssocVar.Location);
+            }
+
+            LValue? outputValue = (LValue)outputAssocVar!;
 
             // Having no "as [types]" will use the var's type for the type filter
             if (typeCheck == null && lValue.Path != null) {
@@ -636,7 +678,7 @@ namespace DMCompiler.DM.Builders {
                 {
                     proc.MarkLoopContinue(loopLabel);
 
-                    ProcessLoopAssignment(lValue);
+                    ProcessLoopAssignment(lValue, outputValue);
 
                     // "as mob|etc" will insert code equivalent to "if(!(istype(X, mob) || istype(X, etc))) continue;"
                     // It would be ideal if the type filtering could be done by the interpreter, like it does when the var has a type

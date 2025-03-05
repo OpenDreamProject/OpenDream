@@ -241,6 +241,7 @@ public sealed class DMProcState : ProcState {
         {DreamProcOpcode.ModulusReference, DMOpcodeHandlers.ModulusReference},
         {DreamProcOpcode.CreateListEnumerator, DMOpcodeHandlers.CreateListEnumerator},
         {DreamProcOpcode.Enumerate, DMOpcodeHandlers.Enumerate},
+        {DreamProcOpcode.EnumerateAssoc, DMOpcodeHandlers.EnumerateAssoc},
         {DreamProcOpcode.DestroyEnumerator, DMOpcodeHandlers.DestroyEnumerator},
         {DreamProcOpcode.Browse, DMOpcodeHandlers.Browse},
         {DreamProcOpcode.BrowseResource, DMOpcodeHandlers.BrowseResource},

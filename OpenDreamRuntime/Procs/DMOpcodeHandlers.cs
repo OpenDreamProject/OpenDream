@@ -267,6 +267,20 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
+        public static ProcStatus EnumerateAssoc(DMProcState state) {
+            // TODO
+
+            var enumeratorId = state.ReadInt();
+            var outputRef = state.ReadReference();
+            var jumpToIfFailure = state.ReadInt();
+
+            var enumerator = state.Enumerators[enumeratorId];
+            if (enumerator == null || !enumerator.Enumerate(state, outputRef))
+                state.Jump(jumpToIfFailure);
+
+            return ProcStatus.Continue;
+        }
+
         public static ProcStatus EnumerateNoAssign(DMProcState state) {
             var enumeratorId = state.ReadInt();
             var enumerator = state.Enumerators[enumeratorId];

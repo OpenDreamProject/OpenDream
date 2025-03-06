@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Linq;
 using DMCompiler.Bytecode;
 using DMCompiler.Compiler;
 using DMCompiler.Compiler.DM;
@@ -18,6 +19,10 @@ namespace DMCompiler.DM.Builders {
         /// </summary>
         // Starts null; marks that we've never seen one before and should just error like normal people.
         private Constant? _previousSetStatementValue;
+        /// <summary>
+        /// This tracks the current return type.
+        /// </summary>
+        private DMComplexValueType CurrentReturnType = DMValueType.Null;
 
         private ExpressionContext ExprContext => new(compiler, dmObject, proc);
 
@@ -46,7 +51,41 @@ namespace DMCompiler.DM.Builders {
             }
 
             ProcessBlockInner(procDefinition.Body, silenceEmptyBlockWarning : true);
+            // implicit return
+            CheckBlockReturnRecursive(procDefinition.Body);
             proc.ResolveLabels();
+        }
+
+        private void CheckBlockReturnRecursive(DMASTProcBlockInner block) {
+            if (block.Statements.Length <= 0) {
+                proc.ValidateReturnType(CurrentReturnType, null, block.Location);
+                return;
+            }
+            var lastStatement = block.Statements[^1];
+            switch (lastStatement) {
+                case DMASTProcStatementIf ifStatement:
+                    CheckBlockReturnRecursive(ifStatement.Body);
+                    if (ifStatement.ElseBody is not null)
+                        CheckBlockReturnRecursive(ifStatement.ElseBody);
+                    else // if statement is non-exhaustive, so check for an implicit return after
+                        proc.ValidateReturnType(CurrentReturnType, null, lastStatement.Location);
+                    break;
+                case DMASTProcStatementSwitch switchStatement:
+                    if (!switchStatement.Cases.Any()) // No cases to check?
+                        break;
+                    foreach (var switchCase in switchStatement.Cases) {
+                        CheckBlockReturnRecursive(switchCase.Body);
+                    }
+                    if (!switchStatement.Cases.Any(x => x is DMASTProcStatementSwitch.SwitchCaseDefault)) // non-exhaustive, implicit return
+                        proc.ValidateReturnType(CurrentReturnType, null, switchStatement.Cases.Last().Body.Location);
+                    break;
+                case DMASTProcStatementReturn:
+                case DMASTProcStatementExpression expression when expression.Expression is DMASTAssign assign && assign.LHS is DMASTCallableSelf:
+                    break; // already checked elsewhere
+                default:
+                    proc.ValidateReturnType(CurrentReturnType, null, lastStatement.Location);
+                    break;
+            }
         }
 
         /// <param name="silenceEmptyBlockWarning">Used to avoid emitting noisy warnings about procs with nothing in them. <br/>
@@ -62,13 +101,13 @@ namespace DMCompiler.DM.Builders {
                 ProcessStatement(stmt);
             }
 
-            if(!silenceEmptyBlockWarning && block.Statements.Length == 0) { // If this block has no real statements
+            if (!silenceEmptyBlockWarning && block.Statements.Length == 0) { // If this block has no real statements
                 // Not an error in BYOND, but we do have an emission for this!
                 if (block.SetStatements.Length != 0) {
                     // Give a more articulate message about this, since it's kinda weird
-                    compiler.Emit(WarningCode.EmptyBlock,block.Location,"Empty block detected - set statements are executed outside of, before, and unconditional to, this block");
+                    compiler.Emit(WarningCode.EmptyBlock, block.Location, "Empty block detected - set statements are executed outside of, before, and unconditional to, this block");
                 } else {
-                    compiler.Emit(WarningCode.EmptyBlock,block.Location,"Empty block detected");
+                    compiler.Emit(WarningCode.EmptyBlock, block.Location, "Empty block detected");
                 }
 
                 return;
@@ -125,8 +164,52 @@ namespace DMCompiler.DM.Builders {
             }
         }
 
+        /// <summary>
+        /// Returns true if the expression has DMASTCallableSelf as the leftmost innermost expression.
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <returns></returns>
+        public void HandleCallableSelfLeft(DMASTExpression expr, ref DMComplexValueType currentReturnType, DMExpression realExpr, out bool isTemporary, bool checkConditions = false) {
+            isTemporary = false;
+            var checkedExpression = expr.GetUnwrapped();
+            switch (checkedExpression) {
+                case DMASTNot:
+                    DMASTUnary astUnary = (DMASTUnary)checkedExpression;
+                    UnaryOp unaryExpr = (UnaryOp)realExpr;
+                    HandleCallableSelfLeft(astUnary.Value.GetUnwrapped(), ref currentReturnType, unaryExpr.Expr, out var _);
+                    break;
+                case DMASTEqual astEqual: // a special case: we don't set it but we know lhs = rhs inside this block anyway
+                    if (!checkConditions) break;
+                    if (astEqual.LHS.GetUnwrapped() is DMASTCallableSelf) {
+                        isTemporary = true; // signal to the caller that this should be reset once we leave the current scope
+                        if (realExpr is IsNull) {
+                            // hate this, remove when it uses a bytecode op instead
+                            currentReturnType = DMValueType.Null;
+                            break;
+                        }
+                        Equal equalExpr = (Equal)realExpr;
+                        currentReturnType = equalExpr.RHS.ValType;
+                    }
+                    break;
+                case DMASTAssign astAssignment:
+                    Assignment assignExpr = (Assignment)realExpr;
+                    if (astAssignment.LHS.GetUnwrapped() is DMASTCallableSelf)
+                        currentReturnType = assignExpr.RHS.ValType;
+                    break;
+                case DMASTLogicalOrAssign:
+                    DMASTBinary astBinary = (DMASTBinary)checkedExpression;
+                    if (astBinary.LHS.GetUnwrapped() is not DMASTCallableSelf)
+                        break;
+                    if (currentReturnType.Type != DMValueType.Null)
+                        break;
+                    currentReturnType = DMComplexValueType.MergeComplexValueTypes(compiler, currentReturnType, realExpr.ValType);
+                    break;
+                }
+            }
+
         public void ProcessStatementExpression(DMASTProcStatementExpression statement) {
-            _exprBuilder.Emit(statement.Expression);
+            _exprBuilder.Emit(statement.Expression, out var expr);
+            HandleCallableSelfLeft(statement.Expression, ref CurrentReturnType, expr, out var _);
             proc.Pop();
         }
 
@@ -365,10 +448,9 @@ namespace DMCompiler.DM.Builders {
             if (varDeclaration.Value != null) {
                 value = _exprBuilder.Create(varDeclaration.Value, varDeclaration.Type);
 
-                if (!varDeclaration.ValType.MatchesType(compiler, value.ValType)) {
+                if (!varDeclaration.ValType.MatchesType(compiler, value.ValType) && (!value.ValType.IsAnything || !compiler.Settings.SkipAnythingTypecheck))
                     compiler.Emit(WarningCode.InvalidVarType, varDeclaration.Location,
                         $"{varDeclaration.Name}: Invalid var value {value.ValType}, expected {varDeclaration.ValType}");
-                }
             } else {
                 value = new Null(varDeclaration.Location);
             }
@@ -382,7 +464,7 @@ namespace DMCompiler.DM.Builders {
 
                 successful = proc.TryAddLocalConstVariable(varDeclaration.Name, varDeclaration.Type, constValue);
             } else {
-                successful = proc.TryAddLocalVariable(varDeclaration.Name, varDeclaration.Type, varDeclaration.ValType);
+                successful = proc.TryAddLocalVariable(varDeclaration.Name, varDeclaration.Type, varDeclaration.ExplicitValType);
             }
 
             if (!successful) {
@@ -396,7 +478,7 @@ namespace DMCompiler.DM.Builders {
         }
 
         public void ProcessStatementReturn(DMASTProcStatementReturn statement) {
-            if (statement.Value != null) {
+            if (statement.Value is not null and not DMASTCallableSelf) {
                 var expr = _exprBuilder.Create(statement.Value);
 
                 // Don't type-check unimplemented procs
@@ -410,6 +492,7 @@ namespace DMCompiler.DM.Builders {
 
                 expr.EmitPushValue(ExprContext);
             } else {
+                proc.ValidateReturnType(CurrentReturnType, null, statement.Location);
                 proc.PushReferenceValue(DMReference.Self); //Default return value
             }
 
@@ -417,7 +500,10 @@ namespace DMCompiler.DM.Builders {
         }
 
         public void ProcessStatementIf(DMASTProcStatementIf statement) {
-            _exprBuilder.Emit(statement.Condition);
+            _exprBuilder.Emit(statement.Condition, out var expr);
+            var prevReturnType = CurrentReturnType;
+            HandleCallableSelfLeft(statement.Condition, ref CurrentReturnType, expr, out var isTemporary, checkConditions: true);
+            var condReturnType = CurrentReturnType;
 
             if (statement.ElseBody == null) {
                 string endLabel = proc.NewLabelName();
@@ -426,6 +512,7 @@ namespace DMCompiler.DM.Builders {
                 proc.StartScope();
                 ProcessBlockInner(statement.Body);
                 proc.EndScope();
+                CurrentReturnType = condReturnType;
                 proc.AddLabel(endLabel);
             } else {
                 string elseLabel = proc.NewLabelName();
@@ -436,21 +523,28 @@ namespace DMCompiler.DM.Builders {
                 proc.StartScope();
                 ProcessBlockInner(statement.Body);
                 proc.EndScope();
+                CurrentReturnType = condReturnType;
+                if (isTemporary)
+                    CurrentReturnType = prevReturnType;
                 proc.Jump(endLabel);
 
                 proc.AddLabel(elseLabel);
+                // else bodies are exhaustive, don't reset returntype
+                // if it's an elseif that's handled in ProcessBlockInner
                 proc.StartScope();
                 ProcessBlockInner(statement.ElseBody);
                 proc.EndScope();
                 proc.AddLabel(endLabel);
             }
+            if (isTemporary)
+                CurrentReturnType = prevReturnType;
         }
 
         public void ProcessStatementFor(DMASTProcStatementFor statementFor) {
             proc.StartScope();
             {
                 foreach (var decl in FindVarDecls(statementFor.Expression1)) {
-                    ProcessStatementVarDeclaration(new DMASTProcStatementVarDeclaration(statementFor.Location, decl.DeclPath, null, DMValueType.Anything));
+                    ProcessStatementVarDeclaration(new DMASTProcStatementVarDeclaration(statementFor.Location, decl.DeclPath, null, null));
                 }
 
                 if (statementFor.Expression2 != null || statementFor.Expression3 != null) {
@@ -524,7 +618,10 @@ namespace DMCompiler.DM.Builders {
                             var list = _exprBuilder.Create(exprIn.RHS);
 
                             if (outputVar is Local outputLocal) {
-                                outputLocal.LocalVar.ExplicitValueType = statementFor.DMTypes;
+                                if (statementFor.DMTypes is not null)
+                                    outputLocal.LocalVar.ExplicitValueType = statementFor.DMTypes;
+                                else if (list.ValType.IsList && list.ValType.ListValueTypes is not null)
+                                    outputLocal.LocalVar.ExplicitValueType = list.ValType.ListValueTypes.NestedListKeyType;
                             if(outputLocal.LocalVar is DMProc.LocalConstVariable)
                                 compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, "Cannot change constant value");
                             } else if (outputVar is Field { IsConst: true })
@@ -822,7 +919,9 @@ namespace DMCompiler.DM.Builders {
             List<(string CaseLabel, DMASTProcBlockInner CaseBody)> valueCases = new();
             DMASTProcBlockInner? defaultCaseBody = null;
 
-            _exprBuilder.Emit(statementSwitch.Value);
+            _exprBuilder.Emit(statementSwitch.Value, out var expr);
+            HandleCallableSelfLeft(statementSwitch.Value, ref CurrentReturnType, expr, out var _);
+            // todo: some sort of return type inference based on cases for conditions switching on .
             foreach (DMASTProcStatementSwitch.SwitchCase switchCase in statementSwitch.Cases) {
                 if (switchCase is DMASTProcStatementSwitch.SwitchCaseValues switchCaseValues) {
                     string caseLabel = proc.NewLabelName();
@@ -879,25 +978,33 @@ namespace DMCompiler.DM.Builders {
             }
             proc.Pop();
 
+            DMComplexValueType oldReturnType = CurrentReturnType;
+            DMComplexValueType? defaultCaseReturnType = null;
             if (defaultCaseBody != null) {
+                // if a default case exists, the switch is exhaustive so we go with its returntype
                 proc.StartScope();
                 {
                     ProcessBlockInner(defaultCaseBody);
                 }
                 proc.EndScope();
+                defaultCaseReturnType = CurrentReturnType;
+                CurrentReturnType = oldReturnType; // the default case hasn't taken effect for the rest of the cases
             }
             proc.Jump(endLabel);
 
             foreach ((string CaseLabel, DMASTProcBlockInner CaseBody) valueCase in valueCases) {
                 proc.AddLabel(valueCase.CaseLabel);
+                oldReturnType = CurrentReturnType;
                 proc.StartScope();
                 {
                     ProcessBlockInner(valueCase.CaseBody);
                 }
                 proc.EndScope();
+                CurrentReturnType = oldReturnType;
                 proc.Jump(endLabel);
             }
 
+            CurrentReturnType = defaultCaseReturnType ?? oldReturnType;
             proc.AddLabel(endLabel);
         }
 
@@ -990,7 +1097,7 @@ namespace DMCompiler.DM.Builders {
             if (tryCatch.CatchParameter != null) {
                 var param = tryCatch.CatchParameter as DMASTProcStatementVarDeclaration;
 
-                if (!proc.TryAddLocalVariable(param.Name, param.Type, param.ValType)) {
+                if (!proc.TryAddLocalVariable(param.Name, param.Type, param.ExplicitValType)) {
                     compiler.Emit(WarningCode.DuplicateVariable, param.Location, $"Duplicate var {param.Name}");
                 }
 

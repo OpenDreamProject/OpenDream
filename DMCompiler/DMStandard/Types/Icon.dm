@@ -44,5 +44,5 @@
 
 	proc/Width()
 
-proc/icon(icon, icon_state, dir, frame, moving)
+proc/icon(icon, icon_state, dir, frame, moving) as icon
 	return new /icon(icon, icon_state, dir, frame, moving)

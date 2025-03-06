@@ -93,6 +93,13 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
         RaiseNetworkEvent(new MouseExitedEvent(atomRef, CreateClickParams(viewport, Vector2.Zero, Vector2i.Zero)));
     }
 
+    public void HandleAtomMouseMove(ScalingViewport viewport, Vector2 relativePos, ClientObjectReference atomRef, Vector2i iconPos) {
+        if (!HasMouseEventEnabled(atomRef, AtomMouseEvents.Move))
+            return;
+
+        RaiseNetworkEvent(new MouseMoveEvent(atomRef, CreateClickParams(viewport, relativePos, iconPos)));
+    }
+
     public (ClientObjectReference Atom, Vector2i IconPosition)? GetAtomUnderMouse(ScalingViewport viewport, Vector2 relativePos, ScreenCoordinates globalPos) {
         _dreamViewOverlay ??= _overlayManager.GetOverlay<DreamViewOverlay>();
         if(_dreamViewOverlay.MouseMap == null)

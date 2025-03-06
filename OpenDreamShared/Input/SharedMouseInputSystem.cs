@@ -58,4 +58,10 @@ public class SharedMouseInputSystem : EntitySystem {
         public ClientObjectReference Atom = atom;
         public ClickParams Params { get; } = clickParams;
     }
+
+    [Serializable, NetSerializable]
+    public sealed class MouseMoveEvent(ClientObjectReference atom, ClickParams clickParams) : EntityEventArgs, IAtomMouseEvent {
+        public ClientObjectReference Atom = atom;
+        public ClickParams Params { get; } = clickParams;
+    }
 }

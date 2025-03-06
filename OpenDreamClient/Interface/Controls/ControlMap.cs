@@ -141,6 +141,8 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
                 _mouseInput?.HandleAtomMouseExited(Viewport, _atomUnderMouse.Value);
             if (atom != null)
                 _mouseInput?.HandleAtomMouseEntered(Viewport, relativePos, atom.Value, iconPos);
+        } else if (atom.HasValue) {
+            _mouseInput?.HandleAtomMouseMove(Viewport, relativePos, atom.Value, iconPos);
         }
 
         _atomUnderMouse = atom;

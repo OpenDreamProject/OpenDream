@@ -211,7 +211,7 @@ namespace OpenDreamRuntime {
         public uint? FindString(String str) {
             int idx = _objectTree.Strings.IndexOf(str);
 
-            if (idx < -1) {
+            if (idx < 0) {
                 return null;
             }
 

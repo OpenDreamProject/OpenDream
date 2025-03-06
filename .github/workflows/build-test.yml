@@ -37,43 +37,55 @@ jobs:
       run: |
         dotnet build --property WarningLevel=${{ matrix.os == 'ubuntu-latest' && '4' || '0' }} --configuration Release --no-restore /m
     - name: Build native assets # TODO: a real script
+      shell: bash
       run: |
         if [ "$RUNNER_OS" == "Windows" ]; then
-            cargo build --release --manifest-path=./byondapi/Cargo.toml -p trampoline
-            cp ./byondapi/target/release/byondcore.dll.lib meowtonin/crates/sys/link/windows/byondcore.dll.lib
-            cp ./byondapi/target/release/byondcore.dll ./bin/Content.Server/byondcore.dll
-            cp ./byondapi/target/release/byondcore.dll ./bin/Content.Tests/byondcore.dll
-            cp ./byondapi/target/release/byondcore.dll ./bin/Content.IntegrationTests/byondcore.dll
+          cargo build --release --manifest-path=./byondapi/Cargo.toml -p trampoline
+          cp ./byondapi/target/release/byondcore.dll.lib meowtonin/crates/sys/link/windows/byondapi.lib
+          cp ./byondapi/target/release/byondcore.dll ./bin/Content.Server/byondcore.dll
+          cp ./byondapi/target/release/byondcore.dll ./bin/Content.Tests/byondcore.dll
+          cp ./byondapi/target/release/byondcore.dll ./bin/Content.IntegrationTests/byondcore.dll
 
-            cargo build --release --manifest-path=./byondapi/Cargo.toml -p byondapitest
-            cp ./byondapi/target/release/byondapitest.dll ./bin/Content.Server/byondapitest.dll
-            cp ./byondapi/target/release/byondapitest.dll ./bin/Content.Tests/byondapitest.dll
-            cp ./byondapi/target/release/byondapitest.dll ./bin/Content.IntegrationTests/byondapitest.dll
+          cargo build --release --manifest-path=./byondapi/Cargo.toml -p byondapitest
+          cp ./byondapi/target/release/byondapitest.dll ./bin/Content.Server/byondapitest.dll
+          cp ./byondapi/target/release/byondapitest.dll ./bin/Content.Tests/byondapitest.dll
+          cp ./byondapi/target/release/byondapitest.dll ./bin/Content.IntegrationTests/byondapitest.dll
         elif [ "$RUNNER_OS" == "Linux" ]; then
-            cargo build --release --manifest-path=./byondapi/Cargo.toml -p trampoline
-            cp ./byondapi/target/release/libbyondcore.so meowtonin/crates/sys/link/linux/libbyondcore.so
-            cp ./byondapi/target/release/libbyondcore.so ./bin/Content.Server/libbyondcore.so
-            cp ./byondapi/target/release/libbyondcore.so ./bin/Content.Tests/libbyondcore.so
-            cp ./byondapi/target/release/libbyondcore.so ./bin/Content.IntegrationTests/libbyondcore.so
+          cargo build --release --manifest-path=./byondapi/Cargo.toml -p trampoline
+          cp ./byondapi/target/release/libbyondcore.so meowtonin/crates/sys/link/linux/libbyond.so
+          cp ./byondapi/target/release/libbyondcore.so libbyond.so
 
-            cargo build --release --manifest-path=./byondapi/Cargo.toml -p byondapitest
-            cp ./byondapi/target/release/libbyondapitest.so ./bin/Content.Server/byondapitest.so
-            cp ./byondapi/target/release/libbyondapitest.so ./bin/Content.Tests/byondapitest.so
-            cp ./byondapi/target/release/libbyondapitest.so ./bin/Content.IntegrationTests/byondapitest.so
-            ls -al ./bin/Content.Tests/byondapitest.so
+          cargo build --release --manifest-path=./byondapi/Cargo.toml -p byondapitest
+          cp ./byondapi/target/release/libbyondapitest.so ./bin/Content.Server/byondapitest.so
+          cp ./byondapi/target/release/libbyondapitest.so ./bin/Content.Tests/byondapitest.so
+          cp ./byondapi/target/release/libbyondapitest.so ./bin/Content.IntegrationTests/byondapitest.so
+
+          # what the actual heck is preventing github from loading this
+          #ls -al ./bin/Content.Tests/byondapitest.so
+          #echo "ldd ./bin/Content.Tests/byondapitest.so"
+          #ldd ./bin/Content.Tests/byondapitest.so
+          #echo "ldd search paths:"
+          #sudo ldconfig -v | grep -v ^$'\t'
+
         else
-            # we only test windows/linux at time of writing
-            exit 1
+          # we only test windows/linux at time of writing
+          exit 1
         fi
     - name: Content.Tests
       shell: pwsh
       run: |
         $env:COMPlus_gcServer=1
+        if ($env:RUNNER_OS -eq "Linux") {
+          $env:LD_LIBRARY_PATH=$PWD.Path + ":" + $env:LD_LIBRARY_PATH
+        }
         dotnet test --no-build Content.Tests/Content.Tests.csproj -v n
     - name: Content.IntegrationTests
       shell: pwsh
       run: |
         $env:COMPlus_gcServer=1
+        if ($env:RUNNER_OS -eq "Linux") {
+          $env:LD_LIBRARY_PATH=$PWD.Path + ":" + $env:LD_LIBRARY_PATH
+        }
         dotnet test --no-build Content.IntegrationTests/Content.IntegrationTests.csproj -v n
     - name: Publish OpenDream
       if: github.event_name == 'push'

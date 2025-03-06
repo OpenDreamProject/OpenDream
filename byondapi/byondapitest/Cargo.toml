@@ -10,4 +10,4 @@ name = "byondapitest"
 crate-type = ["cdylib"]
 
 [dependencies]
-meowtonin = { path = "../../meowtonin/crates/core", features  = [ "opendream" ] }
+meowtonin = { path = "../../meowtonin/crates/core" }

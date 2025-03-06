@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Runtime.InteropServices;
 
 namespace OpenDreamRuntime;
@@ -42,11 +43,26 @@ public static unsafe partial class ByondApi {
             Byond_TestRef = &Byond_TestRef,
         };
 
+        NativeLibrary.SetDllImportResolver(Assembly.GetExecutingAssembly(), DllImportResolver);
         OpenDream_Internal_Init(&trampolines);
     }
 
-    [LibraryImport("byondcore")]
+    [LibraryImport("byond")]
     private static partial void OpenDream_Internal_Init(Trampolines* trampolines);
+
+
+
+    private static IntPtr DllImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath) {
+        if (libraryName == "byond") {
+            // On systems with AVX2 support, load a different library.
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+                return NativeLibrary.Load("byondcore", assembly, searchPath);
+            }
+        }
+
+        // Otherwise, fallback to default import resolver.
+        return IntPtr.Zero;
+    }
 
     [SuppressMessage("ReSharper", "InconsistentNaming")]
     [SuppressMessage("ReSharper", "NotAccessedField.Local")]

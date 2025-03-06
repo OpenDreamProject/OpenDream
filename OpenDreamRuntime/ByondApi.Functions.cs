@@ -34,32 +34,54 @@ public static unsafe partial class ByondApi {
         throw new NotImplementedException();
     }
 
+    /** byondapi.h comment:
+     * Returns a reference to an existing string ID, but does not create a new string ID.
+     * Blocks if not on the main thread.
+     * @param str Null-terminated string
+     * @return ID of string; NONE if string does not exist
+     */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static uint Byond_GetStrId(byte* cstr) {
         if (cstr == null) {
-            return 0;
+            return NONE;
         }
 
         string? str = Marshal.PtrToStringUTF8((nint)cstr);
         if (str == null) {
             return NONE;
         }
-        return _dreamManager!.FindString(str) ?? 0;
+
+        return _dreamManager!.FindString(str) ?? NONE;
     }
 
+    /** byondapi.h comment:
+     * Returns a reference to an existing string ID or creates a new string ID with a temporary reference.
+     * Blocks if not on the main thread.
+     * @param str Null-terminated string
+     * @return ID of string; NONE if string creation failed
+     */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static uint Byond_AddGetStrId(byte* cstr) {
         if (cstr == null) {
-            return 0;
+            return NONE;
         }
 
         string? str = Marshal.PtrToStringUTF8((nint)cstr);
         if (str == null) {
             return NONE;
         }
+
         return _dreamManager!.FindOrAddString(str);
     }
 
+    /** byondapi.h comment:
+     * Reads an object variable by name.
+     * Blocks if not on the main thread.
+     * @param loc Object that owns the var
+     * @param varname Var name as null-terminated string
+     * @param result Pointer to accept result
+     * @return True on success
+     */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_ReadVar(CByondValue* loc, byte* varname, CByondValue* result) {
         if (loc == null || varname == null || result == null) {
@@ -87,6 +109,16 @@ public static unsafe partial class ByondApi {
         return 1;
     }
 
+    /** byondapi.h comment:
+     * Reads an object variable by the string ID of its var name.
+     * ID can be cached ahead of time for performance.
+     * Blocks if not on the main thread.
+     * @param loc Object that owns the var
+     * @param varname Var name as string ID
+     * @param result Pointer to accept result
+     * @return True on success
+     * @see Byond_GetStrId()
+     */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_ReadVarByStrId(CByondValue* loc, uint varname, CByondValue* result) {
         if (loc == null || result == null) {
@@ -111,6 +143,14 @@ public static unsafe partial class ByondApi {
         return 1;
     }
 
+    /** byondapi.h comment:
+     * Writes an object variable by name.
+     * Blocks if not on the main thread.
+     * @param loc Object that owns the var
+     * @param varname Var name as null-terminated string
+     * @param val New value
+     * @return True on success
+     */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_WriteVar(CByondValue* loc, byte* varname, CByondValue* val) {
         if (loc == null || varname == null || val == null) {
@@ -136,6 +176,15 @@ public static unsafe partial class ByondApi {
         return 1;
     }
 
+    /** byondapi.h comment:
+     * Writes an object variable by the string ID of its var name.
+     * ID can be cached ahead of time for performance.
+     * Blocks if not on the main thread.
+     * @param loc Object that owns the var
+     * @param varname Var name as string ID
+     * @param val New value
+     * @return True on success
+     */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_WriteVarByStrId(CByondValue* loc, uint varname, CByondValue* val) {
         try {
@@ -156,6 +205,12 @@ public static unsafe partial class ByondApi {
         return 1;
     }
 
+    /** byondapi.h comment:
+     * Creates an empty list with a temporary reference. Equivalent to list().
+     * Blocks if not on the main thread.
+     * @param result Result
+     * @return True on success
+     */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_CreateList(CByondValue* result) {
         var newList = _objectTree!.CreateList();

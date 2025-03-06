@@ -1,9 +1,11 @@
 using System.Diagnostics;
-using DMCompiler.Bytecode;
 using DMCompiler.Compiler;
 using DMCompiler.Compiler.DM;
 using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM.Expressions;
+using OpenDreamShared.Common;
+using OpenDreamShared.Common.Bytecode;
+using OpenDreamShared.Common.DM;
 
 namespace DMCompiler.DM.Builders {
     internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMProc proc) {

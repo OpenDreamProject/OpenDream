@@ -1,4 +1,4 @@
-﻿namespace DMCompiler.Bytecode;
+﻿namespace OpenDreamShared.Common.Bytecode;
 
 // ReSharper disable MissingBlankLines
 public enum DreamProcOpcode : byte {

@@ -2,9 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using DMCompiler.DM;
-using DMCompiler.Json;
 using JetBrains.Annotations;
+using OpenDreamShared.Common.Json;
+using OpenDreamShared.Common.DM;
 
 namespace DMDisassembler;
 

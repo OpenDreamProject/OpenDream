@@ -1,4 +1,5 @@
 using DMCompiler.DM;
+using OpenDreamShared.Common;
 
 namespace DMCompiler.Compiler.DM.AST;
 

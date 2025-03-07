@@ -52,10 +52,10 @@ jobs:
         elif [ "$RUNNER_OS" == "Linux" ]; then
             cargo build --release --manifest-path=./byondapi/Cargo.toml -p trampoline
             cp ./byondapi/target/release/libbyondcore.so meowtonin/crates/sys/link/linux/libbyondcore.so
-            cp ./byondapi/target/release/libbyondcore.so ./bin/Content.Server/libbyondcore.so
-            cp ./byondapi/target/release/libbyondcore.so ./bin/Content.Tests/libbyondcore.so
-            cp ./byondapi/target/release/libbyondcore.so ./bin/Content.IntegrationTests/libbyondcore.so
-            sudo cp ./byondapi/target/release/libbyondcore.so /usr/lib64/libbyondcore.so
+            #cp ./byondapi/target/release/libbyondcore.so ./bin/Content.Server/libbyondcore.so
+            #cp ./byondapi/target/release/libbyondcore.so ./bin/Content.Tests/libbyondcore.so
+            #cp ./byondapi/target/release/libbyondcore.so ./bin/Content.IntegrationTests/libbyondcore.so
+            sudo cp ./byondapi/target/release/libbyondcore.so /usr/lib/x86_64-linux-gnu/libbyondcore.so
 
             cargo build --release --manifest-path=./byondapi/Cargo.toml -p byondapitest
             cp ./byondapi/target/release/libbyondapitest.so ./bin/Content.Server/byondapitest.so

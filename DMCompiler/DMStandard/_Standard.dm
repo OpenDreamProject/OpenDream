@@ -109,6 +109,11 @@ proc/typesof(Item1) as /list
 proc/uppertext(T as text) as text
 proc/url_decode(UrlText) as text
 proc/url_encode(PlainText, format = 0) as text
+proc/values_cut_over(Alist, Max, inclusive = 0) as num
+proc/values_cut_under(Alist, Min, inclusive = 0) as num
+proc/values_dot(A, B) as num
+proc/values_product(Alist) as num
+proc/values_sum(Alist) as num
 proc/view(Dist = 5, Center = usr) as /list
 proc/viewers(Depth, Center = usr) as /list
 proc/walk(Ref, Dir, Lag = 0, Speed = 0)

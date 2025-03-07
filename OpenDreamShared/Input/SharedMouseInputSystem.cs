@@ -48,18 +48,20 @@ public class SharedMouseInputSystem : EntitySystem {
     }
 
     [Serializable, NetSerializable]
-    public sealed class MouseEnteredEvent(ClientObjectReference atom) : EntityEventArgs, IAtomMouseEvent {
+    public sealed class MouseEnteredEvent(ClientObjectReference atom, ClickParams clickParams) : EntityEventArgs, IAtomMouseEvent {
         public ClientObjectReference Atom = atom;
-
-        // TODO
-        public ClickParams Params { get; } = new(new(0, 0, 32), false, false, false, false, false, 0, 0);
+        public ClickParams Params { get; } = clickParams;
     }
 
     [Serializable, NetSerializable]
-    public sealed class MouseExitedEvent(ClientObjectReference atom) : EntityEventArgs, IAtomMouseEvent {
+    public sealed class MouseExitedEvent(ClientObjectReference atom, ClickParams clickParams) : EntityEventArgs, IAtomMouseEvent {
         public ClientObjectReference Atom = atom;
+        public ClickParams Params { get; } = clickParams;
+    }
 
-        // TODO
-        public ClickParams Params { get; } = new(new(0, 0, 32), false, false, false, false, false, 0, 0);
+    [Serializable, NetSerializable]
+    public sealed class MouseMoveEvent(ClientObjectReference atom, ClickParams clickParams) : EntityEventArgs, IAtomMouseEvent {
+        public ClientObjectReference Atom = atom;
+        public ClickParams Params { get; } = clickParams;
     }
 }

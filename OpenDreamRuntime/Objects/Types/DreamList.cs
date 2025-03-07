@@ -375,7 +375,19 @@ public class DreamList : DreamObject {
 
         var firstValues = GetValues();
         var secondValues = secondList.GetValues();
+
+        var firstListAssoc = GetAssociativeValues();
+        var secondListAssoc = secondList.GetAssociativeValues();
+
         for (var i = 0; i < firstValues.Count; i++) {
+            // Starting with 516, equivalence checks assoc values
+            if (IsAssociative || secondList.IsAssociative) {
+                if(!firstListAssoc.TryGetValue(firstValues[i], out var firstAssocVal)) firstAssocVal = DreamValue.Null;
+                if(!secondListAssoc.TryGetValue(firstValues[i], out var secondAssocVal)) secondAssocVal = DreamValue.Null;
+                if (!firstAssocVal.Equals(secondAssocVal))
+                    return DreamValue.False;
+            }
+
             if (!firstValues[i].Equals(secondValues[i]))
                 return DreamValue.False;
         }

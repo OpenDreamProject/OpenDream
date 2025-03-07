@@ -1,6 +1,8 @@
-﻿using OpenDreamClient.Input;
+﻿using System.Diagnostics.CodeAnalysis;
+using OpenDreamClient.Input;
 using OpenDreamClient.Interface.Controls.UI;
 using OpenDreamClient.Interface.Descriptors;
+using OpenDreamClient.Interface.DMF;
 using OpenDreamClient.Rendering;
 using OpenDreamShared.Dream;
 using Robust.Client.Graphics;
@@ -20,24 +22,6 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
     private ControlDescriptorMap MapDescriptor => (ControlDescriptorMap)ElementDescriptor;
 
     private ClientObjectReference? _atomUnderMouse;
-
-    private ClientObjectReference? AtomUnderMouse {
-        set {
-            if (!_atomUnderMouse.Equals(value)) {
-                _entitySystemManager.Resolve(ref _appearanceSystem);
-
-                var name = (value != null) ? _appearanceSystem.GetName(value.Value) : string.Empty;
-                Window?.SetStatus(name);
-
-                if (_atomUnderMouse != null)
-                    _mouseInput?.HandleAtomMouseExited(_atomUnderMouse.Value);
-                if (value != null)
-                    _mouseInput?.HandleAtomMouseEntered(value.Value);
-            }
-
-            _atomUnderMouse = value;
-        }
-    }
 
     protected override void UpdateElementDescriptor() {
         base.UpdateElementDescriptor();
@@ -115,11 +99,11 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
             return;
 
         var underMouse = _mouseInput.GetAtomUnderMouse(Viewport, e.RelativePixelPosition, e.GlobalPixelPosition);
-        AtomUnderMouse = underMouse?.Atom;
+        UpdateAtomUnderMouse(underMouse?.Atom, e.RelativePixelPosition, underMouse?.IconPosition ?? Vector2i.Zero);
     }
 
-    private void OnViewportMouseExitedEvent(GUIMouseHoverEventArgs obj) {
-        AtomUnderMouse = null;
+    private void OnViewportMouseExitedEvent(GUIMouseHoverEventArgs e) {
+        UpdateAtomUnderMouse(null, Vector2.Zero, Vector2i.Zero);
     }
 
     public void OnShowEvent() {
@@ -134,5 +118,33 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
         if (!string.IsNullOrWhiteSpace(controlDescriptor.OnHideCommand.Value)) {
             _interfaceManager.RunCommand(controlDescriptor.OnHideCommand.AsRaw());
         }
+    }
+
+    public override bool TryGetProperty(string property, [NotNullWhen(true)] out IDMFProperty? value) {
+        switch (property) {
+            case "view-size": // Size of the final viewport (resized and all) rather than the whole container
+                value = new DMFPropertyVec2(Viewport.GetDrawBox().Size);
+                return true;
+            default:
+                return base.TryGetProperty(property, out value);
+        }
+    }
+
+    private void UpdateAtomUnderMouse(ClientObjectReference? atom, Vector2 relativePos, Vector2i iconPos) {
+        if (!_atomUnderMouse.Equals(atom)) {
+            _entitySystemManager.Resolve(ref _appearanceSystem);
+
+            var name = (atom != null) ? _appearanceSystem.GetName(atom.Value) : string.Empty;
+            Window?.SetStatus(name);
+
+            if (_atomUnderMouse != null)
+                _mouseInput?.HandleAtomMouseExited(Viewport, _atomUnderMouse.Value);
+            if (atom != null)
+                _mouseInput?.HandleAtomMouseEntered(Viewport, relativePos, atom.Value, iconPos);
+        } else if (atom.HasValue) {
+            _mouseInput?.HandleAtomMouseMove(Viewport, relativePos, atom.Value, iconPos);
+        }
+
+        _atomUnderMouse = atom;
     }
 }

@@ -37,6 +37,7 @@ jobs:
       run: |
         dotnet build --property WarningLevel=${{ matrix.os == 'ubuntu-latest' && '4' || '0' }} --configuration Release --no-restore /m
     - name: Build native assets # TODO: a real script
+      shell: bash
       run: |
         if [ "$RUNNER_OS" == "Windows" ]; then
             cargo build --release --manifest-path=./byondapi/Cargo.toml -p trampoline

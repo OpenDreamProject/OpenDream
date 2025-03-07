@@ -51,6 +51,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
     [ViewVariables] public readonly ImmutableAppearance[] Overlays;
     [ViewVariables] public readonly ImmutableAppearance[] Underlays;
     [ViewVariables] public readonly Robust.Shared.GameObjects.NetEntity[] VisContents;
+    [ViewVariables] public int VisContentsPlaneOffset;
     [ViewVariables] public readonly DreamFilter[] Filters;
     [ViewVariables] public readonly int[] Verbs;
     [ViewVariables] public readonly ColorMatrix ColorMatrix = ColorMatrix.Identity;
@@ -103,6 +104,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         MaptextSize = appearance.MaptextSize;
         MaptextOffset = appearance.MaptextOffset;
         EnabledMouseEvents = appearance.EnabledMouseEvents;
+        VisContentsPlaneOffset = appearance.VisContentsPlaneOffset;
 
         Overlays = appearance.Overlays.ToArray();
         Underlays = appearance.Underlays.ToArray();
@@ -170,6 +172,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         if (immutableAppearance.Overlays.Length != Overlays.Length) return false;
         if (immutableAppearance.Underlays.Length != Underlays.Length) return false;
         if (immutableAppearance.VisContents.Length != VisContents.Length) return false;
+        if (immutableAppearance.VisContentsPlaneOffset != VisContentsPlaneOffset) return false;
         if (immutableAppearance.Filters.Length != Filters.Length) return false;
         if (immutableAppearance.Verbs.Length != Verbs.Length) return false;
         if (immutableAppearance.Override != Override) return false;
@@ -247,6 +250,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         hashCode.Add(Maptext);
         hashCode.Add(MaptextOffset);
         hashCode.Add(MaptextSize);
+        hashCode.Add(VisContentsPlaneOffset);
 
         foreach (ImmutableAppearance overlay in Overlays) {
             hashCode.Add(overlay.GetHashCode());
@@ -444,6 +448,10 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
                     EnabledMouseEvents = (AtomMouseEvents)buffer.ReadByte();
                     break;
                 }
+                case IconAppearanceProperty.VisContentsPlaneOffset: {
+                    VisContentsPlaneOffset = buffer.ReadVariableInt32();
+                    break;
+                }
                 default:
                     throw new Exception($"Invalid property {property}");
             }
@@ -486,6 +494,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         result.MaptextOffset = MaptextOffset;
         result.MaptextSize = MaptextSize;
         result.EnabledMouseEvents = EnabledMouseEvents;
+        result.VisContentsPlaneOffset = VisContentsPlaneOffset;
 
         result.Overlays.EnsureCapacity(Overlays.Length);
         result.Underlays.EnsureCapacity(Underlays.Length);
@@ -697,6 +706,11 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         if (EnabledMouseEvents != MutableAppearance.Default.EnabledMouseEvents) {
             buffer.Write((byte)IconAppearanceProperty.EnabledMouseEvents);
             buffer.Write((byte)EnabledMouseEvents);
+        }
+
+        if(VisContentsPlaneOffset != MutableAppearance.Default.VisContentsPlaneOffset){
+            buffer.Write((byte)IconAppearanceProperty.VisContentsPlaneOffset);
+            buffer.WriteVariableInt32(VisContentsPlaneOffset);
         }
 
         buffer.Write((byte)IconAppearanceProperty.End);

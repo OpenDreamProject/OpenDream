@@ -339,6 +339,12 @@
 		set category = "Input Test"
 		src << input("Input test: list") as null|anything in list("option 1", "option 2", "option 3", "option 4", "option 5")
 		
+	verb/vis_contents_test()
+		src << "adding a vis_contents thing as the first object in range(2)"
+		for(var/atom/movable/A in orange(2, src))
+			src.vis_contents += A
+			break
+		src.vis_contents_plane_offset = 10
 
 /mob/Stat()
 	if (statpanel("Status"))

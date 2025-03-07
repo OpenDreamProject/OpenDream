@@ -265,6 +265,7 @@ public sealed class AtomManager {
             case "maptext_height":
             case "maptext_x":
             case "maptext_y":
+            case "vis_contents_plane_offset":
                 return true;
 
             // Get/SetAppearanceVar doesn't handle filters right now
@@ -422,6 +423,9 @@ public sealed class AtomManager {
             case "maptext_y":
                 value.TryGetValueAsInteger(out appearance.MaptextOffset.Y);
                 break;
+            case "vis_contents_plane_offset":
+                value.TryGetValueAsInteger(out appearance.VisContentsPlaneOffset);
+                break;
             case "appearance":
                 throw new Exception("Cannot assign the appearance var on an appearance");
 
@@ -530,6 +534,8 @@ public sealed class AtomManager {
                 return new(appearance.MaptextOffset.X);
             case "maptext_y":
                 return new(appearance.MaptextOffset.Y);
+            case "vis_contents_plane_offset":
+                return new(appearance.VisContentsPlaneOffset);
             case "appearance":
                 MutableAppearance appearanceCopy = appearance.ToMutable(); // Return a copy
                 return new(appearanceCopy);

@@ -174,7 +174,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
     }
 
     //handles underlays, overlays, appearance flags, images. Adds them to the result list, so they can be sorted and drawn with DrawIcon()
-    private void ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, bool isScreen, ref int tieBreaker, List<RendererMetaData> result, sbyte seeVis, RendererMetaData? parentIcon = null, bool keepTogether = false, Vector3? turfCoords = null) {
+    private void ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, bool isScreen, ref int tieBreaker, List<RendererMetaData> result, sbyte seeVis, RendererMetaData? parentIcon = null, bool keepTogether = false, Vector3? turfCoords = null, int planeOffset = 0) {
         if (icon.Appearance is null) //in the event that appearance hasn't loaded yet
             return;
 
@@ -237,6 +237,8 @@ internal sealed partial class DreamViewOverlay : Overlay {
             current.Plane = icon.Appearance.Plane;
             current.Layer = Math.Max(0, icon.Appearance.Layer); //float layers are invalid for icons with no parent
         }
+
+        current.Plane += planeOffset;
 
         //special handling for EFFECTS_LAYER and BACKGROUND_LAYER
         //SO IT TURNS OUT EFFECTS_LAYER IS JUST A LIE *scream
@@ -337,7 +339,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
             if (!sprite.IsVisible(transform, seeVis))
                 continue;
 
-            ProcessIconComponents(sprite.Icon, position, visContentEntity, false, ref tieBreaker, result, seeVis, current, keepTogether);
+            ProcessIconComponents(sprite.Icon, position, visContentEntity, false, ref tieBreaker, result, seeVis, current, keepTogether, planeOffset:icon.Appearance.VisContentsPlaneOffset);
 
             // TODO: click uid should be set to current.uid again
             // TODO: vis_flags

@@ -49,6 +49,8 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
     [ViewVariables] public List<ImmutableAppearance> Overlays;
     [ViewVariables] public List<ImmutableAppearance> Underlays;
     [ViewVariables] public List<Robust.Shared.GameObjects.NetEntity> VisContents;
+    [ViewVariables] public int VisContentsPlaneOffset;
+
     [ViewVariables] public List<DreamFilter> Filters;
     [ViewVariables] public List<int> Verbs;
     [ViewVariables] public Vector2i MaptextSize = new(32,32);
@@ -138,6 +140,7 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         MaptextSize = appearance.MaptextSize;
         MaptextOffset = appearance.MaptextOffset;
         EnabledMouseEvents = appearance.EnabledMouseEvents;
+        VisContentsPlaneOffset = appearance.VisContentsPlaneOffset;
 
         Overlays.Clear();
         Underlays.Clear();
@@ -181,6 +184,7 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         if (appearance.Overlays.Count != Overlays.Count) return false;
         if (appearance.Underlays.Count != Underlays.Count) return false;
         if (appearance.VisContents.Count != VisContents.Count) return false;
+        if (appearance.VisContentsPlaneOffset != VisContentsPlaneOffset) return false;
         if (appearance.Filters.Count != Filters.Count) return false;
         if (appearance.Verbs.Count != Verbs.Count) return false;
         if (appearance.Override != Override) return false;
@@ -276,6 +280,7 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         hashCode.Add(Maptext);
         hashCode.Add(MaptextOffset);
         hashCode.Add(MaptextSize);
+        hashCode.Add(VisContentsPlaneOffset);
 
         foreach (var overlay in Overlays) {
             hashCode.Add(overlay.GetHashCode());
@@ -424,6 +429,7 @@ public enum IconAppearanceProperty : byte {
         Overlays,
         Underlays,
         VisContents,
+        VisContentsPlaneOffset,
         Filters,
         Verbs,
         Transform,

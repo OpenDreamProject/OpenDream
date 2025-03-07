@@ -44,6 +44,7 @@ namespace OpenDreamRuntime.Objects {
         protected PvsOverrideSystem? PvsOverrideSystem => ObjectDefinition.PvsOverrideSystem;
         protected MetaDataSystem? MetaDataSystem => ObjectDefinition.MetaDataSystem;
         protected ServerVerbSystem? VerbSystem => ObjectDefinition.VerbSystem;
+        protected ServerDreamParticlesSystem? ParticlesSystem => ObjectDefinition.ParticlesSystem;
 
         protected Dictionary<string, DreamValue>? Variables;
         //handle to the list of vars on this object so that it's only created once and refs to object.vars are consistent

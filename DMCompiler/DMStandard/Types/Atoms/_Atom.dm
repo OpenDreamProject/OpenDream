@@ -62,6 +62,8 @@
 	var/render_target
 	var/vis_flags as opendream_unimplemented
 
+	var/vis_contents_plane_offset = 0 //opendream only
+
 	proc/Click(location, control, params)
 	proc/MouseDrop(over_object,src_location,over_location,src_control,over_control,params)
 	proc/MouseEntered(location,control,params)

@@ -65,7 +65,6 @@ pub fn get_existent_id() -> ByondResult<u32> {
     let c_str = CString::new("this string exists").unwrap();
     let c_pchar : *const c_char = c_str.as_ptr() as *const c_char;
     unsafe {
-        println!("test");
         Ok(Byond_GetStrId(c_pchar))
     }
 }

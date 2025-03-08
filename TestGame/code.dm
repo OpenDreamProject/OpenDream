@@ -41,13 +41,21 @@
 	var/version
 	var/build
 
-var/const/lib = "../bin/Content.Tests/byondapitest.dll"
+
+var/const/lib = "byondapitest.dll"
 
 /proc/RunTest()
-	var/datum/version/v = new
-	var/result = call_ext(lib, "byond:echo_get_version")(v)
-	world.log << "Result: [result]"
-	world.log << "V: [v.version], [v.build]"
+	var/result = call_ext(lib, "byond:get_nonexistent_id")()
+	world.log << "result: [result]"
+	ASSERT(result == 0)
+
+	var/exists = "this string exists";
+	result = call_ext(lib, "byond:get_existent_id")()
+	result = "\[0x6" + num2text(result,6,16) + "\]"
+	var/theref = ref(exists)
+	ASSERT(result == ref(exists))
+
+
 
 /area/withicon
 	icon = 'icons/objects.dmi'

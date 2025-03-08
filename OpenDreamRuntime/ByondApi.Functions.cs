@@ -34,29 +34,37 @@ public static unsafe partial class ByondApi {
         throw new NotImplementedException();
     }
 
+    /** byondapi.h comment:
+     * Returns a reference to an existing string ID, but does not create a new string ID.
+     * Blocks if not on the main thread.
+     * @param str Null-terminated string
+     * @return ID of string; NONE if string does not exist
+     */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static uint Byond_GetStrId(byte* cstr) {
         if (cstr == null) {
-            return 0;
+            return NONE;
         }
 
         string? str = Marshal.PtrToStringUTF8((nint)cstr);
         if (str == null) {
             return NONE;
         }
-        return _dreamManager!.FindString(str) ?? 0;
+
+        return _dreamManager!.FindString(str) ?? NONE;
     }
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static uint Byond_AddGetStrId(byte* cstr) {
         if (cstr == null) {
-            return 0;
+            return NONE;
         }
 
         string? str = Marshal.PtrToStringUTF8((nint)cstr);
         if (str == null) {
             return NONE;
         }
+
         return _dreamManager!.FindOrAddString(str);
     }
 

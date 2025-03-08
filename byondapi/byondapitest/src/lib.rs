@@ -1,5 +1,8 @@
 use meowtonin::{ByondResult, ByondValue, byond_version};
-use meowtonin::sys::{CByondValue,ByondValueData, Byond_GetVersion, ByondValue_SetNum};
+use meowtonin::sys::{NONE, u4c, CByondValue,ByondValueData, Byond_GetVersion, ByondValue_SetNum, Byond_GetStrId};
+//use meowtonin::strid::{lookup_string_id};
+use std::ffi::CString;
+use std::os::raw::c_char;
 
 #[macro_use]
 extern crate meowtonin;
@@ -41,5 +44,29 @@ pub extern "C" fn echo_get_version(n: i32, v: *mut CByondValue) -> CByondValue {
 #[byond_fn]
 pub fn arithmetic_add(a: f32, b: f32) -> ByondResult<f32> {
     Ok(a + b)
+}
+
+// 0 = succeed, 1 = fail
+#[byond_fn]
+pub fn get_nonexistent_id() -> ByondResult<i32> {
+    let c_str = CString::new("this string does not exist").unwrap();
+    let c_pchar : *const c_char = c_str.as_ptr() as *const c_char;
+    unsafe {
+        let x = Byond_GetStrId(c_pchar);
+        match x == NONE as u32 {
+            true => Ok(0),
+            false => Ok(1)
+        }
+    }
+}
+
+#[byond_fn]
+pub fn get_existent_id() -> ByondResult<u32> {
+    let c_str = CString::new("this string exists").unwrap();
+    let c_pchar : *const c_char = c_str.as_ptr() as *const c_char;
+    unsafe {
+        println!("test");
+        Ok(Byond_GetStrId(c_pchar))
+    }
 }
 

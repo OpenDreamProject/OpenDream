@@ -268,15 +268,22 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus EnumerateAssoc(DMProcState state) {
-            // TODO
-
             var enumeratorId = state.ReadInt();
             var outputRef = state.ReadReference();
+            var assocRef = state.ReadReference();
+            var listRef = state.ReadReference();
             var jumpToIfFailure = state.ReadInt();
 
             var enumerator = state.Enumerators[enumeratorId];
             if (enumerator == null || !enumerator.Enumerate(state, outputRef))
                 state.Jump(jumpToIfFailure);
+            else {
+                var outputVal = state.GetReferenceValue(outputRef, peek: true);
+                var listVal = state.GetReferenceValue(listRef, peek: true);
+                var indexVal = state.GetIndex(listVal, outputVal, state);
+
+                state.AssignReference(assocRef, indexVal);
+            }
 
             return ProcStatus.Continue;
         }

@@ -131,7 +131,7 @@ public enum DreamProcOpcode : byte {
     CreateFilteredListEnumerator = 0x41,
     [OpcodeMetadata(-1)]
     Power = 0x42,
-    [OpcodeMetadata(0, OpcodeArgType.EnumeratorId, OpcodeArgType.Reference, OpcodeArgType.Reference,  OpcodeArgType.Label)]
+    [OpcodeMetadata(0, OpcodeArgType.EnumeratorId, OpcodeArgType.Reference, OpcodeArgType.Reference, OpcodeArgType.Reference, OpcodeArgType.Label)]
     EnumerateAssoc = 0x43,
     [OpcodeMetadata(-2)]
     Link = 0x44,

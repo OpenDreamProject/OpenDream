@@ -455,18 +455,23 @@ namespace DMCompiler.DM.Builders {
 
                 if (statementFor.Expression2 is DMASTExpressionIn dmastIn && statementFor.Expression3 is null) {
                     var expr2 = statementFor.Expression2 != null ? _exprBuilder.CreateIgnoreUnknownReference(statementFor.Expression2) : null;
+
+                    // TODO: Wow this sucks
                     if (expr2 is UnknownReference unknownRef) {
                         if(statementFor.Expression1 is not DMASTVarDeclExpression || dmastIn.LHS is not DMASTIdentifier ident)
                             unknownRef.EmitCompilerError(compiler);
                         else {
                             ProcessStatementVarDeclaration(new DMASTProcStatementVarDeclaration(statementFor.Location, new DMASTPath(statementFor.Location, new DreamPath(ident.Identifier)), null, DMValueType.Anything));
-                            expr2 = _exprBuilder.Create(statementFor.Expression2);
+                            var meep = dmastIn.LHS;
+                            expr2 = _exprBuilder.Create(meep);
                         }
+                    } else {
+                        expr2 = _exprBuilder.Create(dmastIn.LHS);
                     }
 
                     DMASTExpression outputExpr;
                     if (statementFor.Expression1 is DMASTVarDeclExpression decl) {
-                        outputExpr = new DMASTIdentifier(decl.Location, decl.DeclPath.Path.LastElement);
+                        outputExpr = new DMASTIdentifier(decl.Location, decl.DeclPath.Path.LastElement!);
                     } else {
                         outputExpr = statementFor.Expression1;
                     }
@@ -474,14 +479,39 @@ namespace DMCompiler.DM.Builders {
                     var outputVar = _exprBuilder.Create(outputExpr);
                     var list = _exprBuilder.Create(dmastIn.RHS);
 
-                    if (outputVar is Local outputLocal) {
-                        outputLocal.LocalVar.ExplicitValueType = statementFor.DMTypes;
-                        if(outputLocal.LocalVar is DMProc.LocalConstVariable)
+                    switch (outputVar)
+                    {
+                        case Local outputLocal:
+                        {
+                            outputLocal.LocalVar.ExplicitValueType = statementFor.DMTypes;
+                            if(outputLocal.LocalVar is DMProc.LocalConstVariable)
+                                compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, "Cannot change constant value");
+                            break;
+                        }
+                        case Field { IsConst: true }:
+                        {
                             compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, "Cannot change constant value");
-                    } else if (outputVar is Field { IsConst: true })
-                        compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, "Cannot change constant value");
+                            break;
+                        }
+                    }
 
-                    ProcessStatementForList(list, outputVar, _exprBuilder.Create(dmastIn.LHS), statementFor.DMTypes, statementFor.Body);
+                    switch (expr2)
+                    {
+                        case Local assocLocal:
+                        {
+                            assocLocal.LocalVar.ExplicitValueType = statementFor.DMTypes;
+                            if(assocLocal.LocalVar is DMProc.LocalConstVariable)
+                                compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, "Cannot change constant value");
+                            break;
+                        }
+                        case Field { IsConst: true }:
+                        {
+                            compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, "Cannot change constant value");
+                            break;
+                        }
+                    }
+
+                    ProcessStatementForList(list, outputVar, expr2, statementFor.DMTypes, statementFor.Body);
                 }
                 else if (statementFor.Expression2 != null || statementFor.Expression3 != null) {
                     var initializer = statementFor.Expression1 != null ? _exprBuilder.Create(statementFor.Expression1) : null;
@@ -679,7 +709,7 @@ namespace DMCompiler.DM.Builders {
                 {
                     proc.MarkLoopContinue(loopLabel);
 
-                    ProcessLoopAssignment(lValue, outputValue);
+                    ProcessLoopAssignment(lValue, outputValue, list);
 
                     // "as mob|etc" will insert code equivalent to "if(!(istype(X, mob) || istype(X, etc))) continue;"
                     // It would be ideal if the type filtering could be done by the interpreter, like it does when the var has a type

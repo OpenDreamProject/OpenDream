@@ -51,6 +51,9 @@ namespace OpenDreamRuntime {
                         break;
                     }
 
+            if(_configManager.GetCVar(OpenDreamCVars.TracyEnable))
+                Profiler.Activate();
+
             _prototypeManager.LoadDirectory(new ResPath("/Resources/Prototypes"));
 
             _serverInfoManager.Initialize();

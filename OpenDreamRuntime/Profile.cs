@@ -13,6 +13,7 @@ public static class Profiler{
     // seealso Tracy docs section 3.1
     private static readonly Dictionary<string, CString> PlotNameCache = new();
 
+    private static bool _isActivated;
     /// <summary>
     /// Begins a new <see cref="ProfilerZone"/> and returns the handle to that zone. Time
     /// spent inside a zone is calculated by Tracy and shown in the profiler. A zone is
@@ -48,6 +49,9 @@ public static class Profiler{
         #if !TOOLS
         return null;
         #else
+        //if we're in a tools build, we still don't want the perf hit unless it's requested
+        if (!_isActivated)
+            return null;
 
         using var filestr = GetCString(filePath, out var fileln);
         using var memberstr = GetCString(memberName, out var memberln);
@@ -70,12 +74,26 @@ public static class Profiler{
         #if !TOOLS
         return null;
         #else
+        //if we're in a tools build, we still don't want the perf hit unless it's requested
+        if (!_isActivated)
+            return null;
+
         var namestr = name is null ? GetPlotCString("null") : GetPlotCString(name);
         unsafe {
             return new ProfilerMemory((void*)(Interlocked.Add(ref _memoryUid, size)-size), size, namestr);
         }
         #endif
     }
+
+    public static void Activate(){
+        _isActivated = true;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsActivated(){
+        return _isActivated;
+    }
+
 
     /// <summary>
     /// Configure how Tracy will display plotted values.
@@ -152,6 +170,9 @@ public static class Profiler{
     /// Tracy Cpp API and docs refer to this as the <c>FrameMark</c> macro.
     /// </remarks>
     public static void EmitFrameMark(){
+        //if we're in a tools build, we still don't want the perf hit unless it's requested
+        if (!_isActivated)
+            return;
         TracyEmitFrameMark(null);
     }
 

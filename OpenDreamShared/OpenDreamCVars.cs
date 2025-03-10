@@ -60,4 +60,10 @@ public abstract class OpenDreamCVars {
     public static readonly CVarDef<string> InfoLinksWiki =
         CVarDef.Create("infolinks.wiki", "", CVar.SERVER | CVar.REPLICATED);
 
+    /// <summary>
+    /// If Tracy should be enabled. ONLY FUNCTIONS IN TOOLS BUILD.
+    /// </summary>
+    public static readonly CVarDef<bool> TracyEnable =
+        CVarDef.Create("opendream.enable_tracy", false, CVar.SERVERONLY);
+
 }

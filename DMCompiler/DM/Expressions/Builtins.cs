@@ -291,6 +291,30 @@ internal sealed class IsSaved(Location location, DMExpression expr) : DMExpressi
     }
 }
 
+// astype(x, y)
+internal sealed class AsType(Location location, DMExpression expr, DMExpression path) : DMExpression(location) {
+    public override void EmitPushValue(ExpressionContext ctx) {
+        expr.EmitPushValue(ctx);
+        path.EmitPushValue(ctx);
+        ctx.Proc.AsType();
+    }
+}
+
+// astype(x)
+internal sealed class AsTypeInferred(Location location, DMExpression expr, DreamPath path) : DMExpression(location) {
+    public override void EmitPushValue(ExpressionContext ctx) {
+        if (!ctx.ObjectTree.TryGetTypeId(path, out var typeId)) {
+            ctx.Compiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {path} does not exist");
+
+            return;
+        }
+
+        expr.EmitPushValue(ctx);
+        ctx.Proc.PushType(typeId);
+        ctx.Proc.AsType();
+    }
+}
+
 // istype(x, y)
 internal sealed class IsType(Location location, DMExpression expr, DMExpression path) : DMExpression(location) {
     public override DMComplexValueType ValType => DMValueType.Num;

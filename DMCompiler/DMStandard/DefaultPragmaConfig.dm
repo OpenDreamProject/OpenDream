@@ -5,6 +5,7 @@
 #pragma FileAlreadyIncluded warning
 #pragma MissingIncludedFile error
 #pragma InvalidWarningCode warning
+#pragma InvalidFileDirDefine warning
 #pragma MisplacedDirective error
 #pragma UndefineMissingDirective warning
 #pragma DefinedMissingParen error
@@ -14,6 +15,7 @@
 
 //2000-2999
 #pragma SoftReservedKeyword error
+#pragma ScopeOperandNamedType warning
 #pragma DuplicateVariable warning
 #pragma DuplicateProcDefinition error
 #pragma PointlessParentCall warning

@@ -8,6 +8,7 @@ proc/ckey(Key) as text|null
 proc/ckeyEx(Text) as text|null
 proc/clamp(Value, Low, High) as /list|num|null
 proc/cmptext(T1) as num
+proc/cmptextEx(T1) as num
 proc/copytext(T, Start = 1, End = 0) as text|null
 proc/copytext_char(T,Start=1,End=0) as text|null
 proc/CRASH(msg) as null
@@ -28,6 +29,8 @@ proc/flist(Path) as /list
 proc/floor(A) as num
 proc/fract(n) as num
 proc/ftime(File, IsCreationTime = 0) as num
+proc/get_step_to(Ref, Trg, Min=0) as num
+proc/get_steps_to(Ref, Trg, Min=0) as /list
 proc/gradient(A, index)
 proc/hascall(Object, ProcName) as num
 proc/hearers(Depth = world.view, Center = usr) as /list
@@ -80,6 +83,7 @@ proc/roll(ndice = 1, sides) as num
 proc/round(A, B) as num
 proc/sha1(input) as text|null
 proc/shutdown(Addr,Natural = 0)
+proc/sign(A) as num
 proc/sleep(Delay)
 proc/sorttext(T1, T2) as num
 proc/sorttextEx(T1, T2) as num
@@ -104,12 +108,16 @@ proc/typesof(Item1) as /list
 proc/uppertext(T as text) as text
 proc/url_decode(UrlText) as text
 proc/url_encode(PlainText, format = 0) as text
+proc/values_cut_over(Alist, Max, inclusive = 0) as num
+proc/values_cut_under(Alist, Min, inclusive = 0) as num
+proc/values_dot(A, B) as num
+proc/values_product(Alist) as num
+proc/values_sum(Alist) as num
 proc/view(Dist = 5, Center = usr) as /list
 proc/viewers(Depth, Center = usr) as /list
 proc/walk(Ref, Dir, Lag = 0, Speed = 0)
 proc/walk_rand(Ref,Lag = 0,Speed = 0)
 proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
-	set opendream_unimplemented = 1
 proc/walk_towards(Ref,Trg,Lag=0,Speed=0)
 proc/winclone(player, window_name, clone_name)
 proc/winexists(player, control_id) as text
@@ -132,6 +140,7 @@ proc/winset(player, control_id, params)
 #include "Types\Regex.dm"
 #include "Types\Savefile.dm"
 #include "Types\Sound.dm"
+#include "Types\Vector.dm"
 #include "Types\World.dm"
 #include "Types\Atoms\_Atom.dm"
 #include "Types\Atoms\Area.dm"
@@ -160,14 +169,6 @@ proc/replacetextEx_char(Haystack as text, Needle, Replacement, Start = 1, End = 
 
 	var/step_dir = get_dir(Ref, Trg)
 	return step(Ref, step_dir, Speed)
-
-/proc/get_step_to(Ref, Trg, Min=0)
-	set opendream_unimplemented = TRUE
-	CRASH("/get_step_to() is not implemented")
-
-/proc/get_steps_to(Ref, Trg, Min=0) as /list
-	set opendream_unimplemented = TRUE
-	CRASH("/get_steps_to() is not implemented")
 
 /proc/walk_away(Ref,Trg,Max=5,Lag=0,Speed=0)
 	set opendream_unimplemented = TRUE

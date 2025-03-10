@@ -1,7 +1,7 @@
-﻿using System.Collections.Specialized;
-using System.Text;
-using System.Web;
+﻿using System.Text;
+using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects.Types;
+using OpenDreamShared.Dream;
 using OpenDreamShared.Input;
 
 namespace OpenDreamRuntime.Input;
@@ -17,6 +17,9 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
         SubscribeNetworkEvent<AtomClickedEvent>(OnAtomClicked);
         SubscribeNetworkEvent<AtomDraggedEvent>(OnAtomDragged);
         SubscribeNetworkEvent<StatClickedEvent>(OnStatClicked);
+        SubscribeNetworkEvent<MouseEnteredEvent>(OnMouseEntered);
+        SubscribeNetworkEvent<MouseExitedEvent>(OnMouseExited);
+        SubscribeNetworkEvent<MouseMoveEvent>(OnMouseMove);
     }
 
     private void OnAtomClicked(AtomClickedEvent e, EntitySessionEventArgs sessionEvent) {
@@ -65,6 +68,48 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
             return;
 
         HandleAtomClick(e, dreamObject, sessionEvent);
+    }
+
+    private void OnMouseEntered(MouseEnteredEvent e, EntitySessionEventArgs sessionEvent) {
+        var connection = _dreamManager.GetConnectionBySession(sessionEvent.SenderSession);
+        var atom = _dreamManager.GetFromClientReference(connection, e.Atom);
+        if (atom is not DreamObjectAtom)
+            return;
+        if (!_atomManager.GetEnabledMouseEvents(atom).HasFlag(AtomMouseEvents.Enter))
+            return;
+
+        atom.SpawnProc("MouseEntered", usr: connection.Mob,
+            atom.GetVariable("loc"),
+            DreamValue.Null,
+            new DreamValue(ConstructClickParams(e.Params)));
+    }
+
+    private void OnMouseExited(MouseExitedEvent e, EntitySessionEventArgs sessionEvent) {
+        var connection = _dreamManager.GetConnectionBySession(sessionEvent.SenderSession);
+        var atom = _dreamManager.GetFromClientReference(connection, e.Atom);
+        if (atom is not DreamObjectAtom)
+            return;
+        if (!_atomManager.GetEnabledMouseEvents(atom).HasFlag(AtomMouseEvents.Exit))
+            return;
+
+        atom.SpawnProc("MouseExited", usr: connection.Mob,
+            atom.GetVariable("loc"),
+            DreamValue.Null,
+            new DreamValue(ConstructClickParams(e.Params)));
+    }
+
+    private void OnMouseMove(MouseMoveEvent e, EntitySessionEventArgs sessionEvent) {
+        var connection = _dreamManager.GetConnectionBySession(sessionEvent.SenderSession);
+        var atom = _dreamManager.GetFromClientReference(connection, e.Atom);
+        if (atom is not DreamObjectAtom)
+            return;
+        if (!_atomManager.GetEnabledMouseEvents(atom).HasFlag(AtomMouseEvents.Move))
+            return;
+
+        atom.SpawnProc("MouseMove", usr: connection.Mob,
+            atom.GetVariable("loc"),
+            DreamValue.Null,
+            new DreamValue(ConstructClickParams(e.Params)));
     }
 
     private void HandleAtomClick(IAtomMouseEvent e, DreamObjectAtom atom, EntitySessionEventArgs sessionEvent) {

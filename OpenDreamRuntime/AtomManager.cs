@@ -1,7 +1,9 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
+using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
@@ -31,6 +33,7 @@ public sealed class AtomManager {
 
     private readonly Dictionary<EntityUid, DreamObjectMovable> _entityToAtom = new();
     private readonly Dictionary<DreamObjectDefinition, MutableAppearance> _definitionAppearanceCache = new();
+    private readonly Dictionary<DreamObjectDefinition, AtomMouseEvents> _enabledMouseEvents = new();
 
     private ServerAppearanceSystem? AppearanceSystem {
         get {
@@ -232,6 +235,7 @@ public sealed class AtomManager {
     public bool IsValidAppearanceVar(string name) {
         switch (name) {
             case "name":
+            case "desc":
             case "icon":
             case "icon_state":
             case "dir":
@@ -256,6 +260,11 @@ public sealed class AtomManager {
             case "verbs":
             case "overlays":
             case "underlays":
+            case "maptext":
+            case "maptext_width":
+            case "maptext_height":
+            case "maptext_x":
+            case "maptext_y":
                 return true;
 
             // Get/SetAppearanceVar doesn't handle filters right now
@@ -270,6 +279,10 @@ public sealed class AtomManager {
             case "name":
                 value.TryGetValueAsString(out var name);
                 appearance.Name = name ?? string.Empty;
+                break;
+            case "desc":
+                value.TryGetValueAsString(out var desc);
+                appearance.Desc = desc;
                 break;
             case "icon":
                 if (_resourceManager.TryLoadIcon(value, out var icon)) {
@@ -391,6 +404,24 @@ public sealed class AtomManager {
                 }
 
                 break;
+            case "maptext":
+                if(value == DreamValue.Null)
+                    appearance.Maptext = null;
+                else
+                    value.TryGetValueAsString(out appearance.Maptext);
+                break;
+            case "maptext_height":
+                value.TryGetValueAsInteger(out appearance.MaptextSize.Y);
+                break;
+            case "maptext_width":
+                value.TryGetValueAsInteger(out appearance.MaptextSize.X);
+                break;
+            case "maptext_x":
+                value.TryGetValueAsInteger(out appearance.MaptextOffset.X);
+                break;
+            case "maptext_y":
+                value.TryGetValueAsInteger(out appearance.MaptextOffset.Y);
+                break;
             case "appearance":
                 throw new Exception("Cannot assign the appearance var on an appearance");
 
@@ -415,6 +446,10 @@ public sealed class AtomManager {
         switch (varName) {
             case "name":
                 return new(appearance.Name);
+            case "desc":
+                if (appearance.Desc == null)
+                    return DreamValue.Null;
+                return new(appearance.Desc);
             case "icon":
                 if (appearance.Icon == null)
                     return DreamValue.Null;
@@ -483,6 +518,18 @@ public sealed class AtomManager {
                     transform[1], transform[3], transform[5]);
 
                 return new(matrix);
+            case "maptext":
+                return (appearance.Maptext != null)
+                    ? new DreamValue(appearance.Maptext)
+                    : DreamValue.Null;
+            case "maptext_height":
+                return new(appearance.MaptextSize.Y);
+            case "maptext_width":
+                return new(appearance.MaptextSize.X);
+            case "maptext_x":
+                return new(appearance.MaptextOffset.X);
+            case "maptext_y":
+                return new(appearance.MaptextOffset.Y);
             case "appearance":
                 MutableAppearance appearanceCopy = appearance.ToMutable(); // Return a copy
                 return new(appearanceCopy);
@@ -515,9 +562,9 @@ public sealed class AtomManager {
     /// <param name="atom">The atom to find the appearance of.</param>
     public ImmutableAppearance MustGetAppearance(DreamObject atom) {
         return atom switch {
+            DreamObjectArea area => area.Appearance,
             DreamObjectTurf turf => turf.Appearance,
             DreamObjectMovable movable => movable.SpriteComponent.Appearance!,
-            DreamObjectArea area => area.Appearance,
             DreamObjectImage image => image.IsMutableAppearance ? AppearanceSystem!.AddAppearance(image.MutableAppearance!, registerAppearance: false) : image.SpriteComponent!.Appearance!,
             _ => throw new Exception($"Cannot get appearance of {atom}")
         };
@@ -527,16 +574,15 @@ public sealed class AtomManager {
     /// Optionally looks up for an appearance. Does not try to create a new one when one is not found for this atom.
     /// </summary>
     public bool TryGetAppearance(DreamObject atom, [NotNullWhen(true)] out ImmutableAppearance? appearance) {
-        if (atom is DreamObjectTurf turf)
-            appearance = turf.Appearance;
-        else if (atom is DreamObjectMovable { SpriteComponent.Appearance: not null } movable)
-            appearance = movable.SpriteComponent.Appearance;
-        else if (atom is DreamObjectImage image)
-            appearance = image.IsMutableAppearance ? AppearanceSystem!.AddAppearance(image.MutableAppearance!, registerAppearance: false) : image.SpriteComponent?.Appearance;
-        else if (atom is DreamObjectArea area)
-            appearance = area.Appearance;
-        else
-            appearance = null;
+        appearance = atom switch {
+            DreamObjectArea area => area.Appearance,
+            DreamObjectTurf turf => turf.Appearance,
+            DreamObjectMovable { SpriteComponent.Appearance: { } movableAppearance } => movableAppearance,
+            DreamObjectImage image => image.IsMutableAppearance
+                ? AppearanceSystem!.AddAppearance(image.MutableAppearance!, registerAppearance: false)
+                : image.SpriteComponent?.Appearance,
+            _ => null
+        };
 
         return appearance is not null;
     }
@@ -549,15 +595,20 @@ public sealed class AtomManager {
     }
 
     public void SetAtomAppearance(DreamObject atom, MutableAppearance appearance) {
-        if (atom is DreamObjectTurf turf) {
-            _dreamMapManager.SetTurfAppearance(turf, appearance);
-        } else if (atom is DreamObjectMovable movable) {
-            DMISpriteSystem?.SetSpriteAppearance(new(movable.Entity, movable.SpriteComponent), appearance);
-        } else if (atom is DreamObjectImage image) {
+        if (atom is DreamObjectImage image) {
             if(image.IsMutableAppearance)
                 image.MutableAppearance = MutableAppearance.GetCopy(appearance); //this needs to be a copy
             else
                 DMISpriteSystem?.SetSpriteAppearance(new(image.Entity, image.SpriteComponent!), appearance);
+            return;
+        }
+
+        appearance.EnabledMouseEvents = GetEnabledMouseEvents(atom);
+
+        if (atom is DreamObjectTurf turf) {
+            _dreamMapManager.SetTurfAppearance(turf, appearance);
+        } else if (atom is DreamObjectMovable movable) {
+            DMISpriteSystem?.SetSpriteAppearance(new(movable.Entity, movable.SpriteComponent), appearance);
         } else if (atom is DreamObjectArea area) {
             _dreamMapManager.SetAreaAppearance(area, appearance);
         }
@@ -656,6 +707,7 @@ public sealed class AtomManager {
             return appearance;
 
         def.TryGetVariable("name", out var nameVar);
+        def.TryGetVariable("desc", out var descVar);
         def.TryGetVariable("icon", out var iconVar);
         def.TryGetVariable("icon_state", out var stateVar);
         def.TryGetVariable("color", out var colorVar);
@@ -673,9 +725,15 @@ public sealed class AtomManager {
         def.TryGetVariable("render_target", out var renderTargetVar);
         def.TryGetVariable("blend_mode", out var blendModeVar);
         def.TryGetVariable("appearance_flags", out var appearanceFlagsVar);
+        def.TryGetVariable("maptext", out var maptextVar);
+        def.TryGetVariable("maptext_width", out var maptextWidthVar);
+        def.TryGetVariable("maptext_height", out var maptextHeightVar);
+        def.TryGetVariable("maptext_x", out var maptextXVar);
+        def.TryGetVariable("maptext_y", out var maptextYVar);
 
         appearance = MutableAppearance.Get();
         SetAppearanceVar(appearance, "name", nameVar);
+        SetAppearanceVar(appearance, "desc", descVar);
         SetAppearanceVar(appearance, "icon", iconVar);
         SetAppearanceVar(appearance, "icon_state", stateVar);
         SetAppearanceVar(appearance, "color", colorVar);
@@ -693,6 +751,11 @@ public sealed class AtomManager {
         SetAppearanceVar(appearance, "render_target", renderTargetVar);
         SetAppearanceVar(appearance, "blend_mode", blendModeVar);
         SetAppearanceVar(appearance, "appearance_flags", appearanceFlagsVar);
+        SetAppearanceVar(appearance, "maptext", maptextVar);
+        SetAppearanceVar(appearance, "maptext_width", maptextWidthVar);
+        SetAppearanceVar(appearance, "maptext_height", maptextHeightVar);
+        SetAppearanceVar(appearance, "maptext_x", maptextXVar);
+        SetAppearanceVar(appearance, "maptext_y", maptextYVar);
 
         if (def.TryGetVariable("transform", out var transformVar) && transformVar.TryGetValueAsDreamObject<DreamObjectMatrix>(out var transformMatrix)) {
             appearance.Transform = DreamObjectMatrix.MatrixToTransformFloatArray(transformMatrix);
@@ -708,6 +771,33 @@ public sealed class AtomManager {
 
         _definitionAppearanceCache.Add(def, appearance);
         return appearance;
+    }
+
+    public AtomMouseEvents GetEnabledMouseEvents(DreamObject atom) {
+        var def = atom.ObjectDefinition;
+
+        if (!_enabledMouseEvents.TryGetValue(def, out var mouseEvents)) {
+            mouseEvents = 0;
+
+            if (def.TryGetProc("MouseDown", out var mouseDownProc) && mouseDownProc is DMProc {Bytecode.Length: > 0})
+                mouseEvents |= AtomMouseEvents.Down;
+            if (def.TryGetProc("MouseUp", out var mouseUpProc) && mouseUpProc is DMProc {Bytecode.Length: > 0})
+                mouseEvents |= AtomMouseEvents.Up;
+            if (def.TryGetProc("MouseDrag", out var mouseDragProc) && mouseDragProc is DMProc {Bytecode.Length: > 0})
+                mouseEvents |= AtomMouseEvents.Drag;
+            if (def.TryGetProc("MouseEntered", out var mouseEnterProc) && mouseEnterProc is DMProc {Bytecode.Length: > 0})
+                mouseEvents |= AtomMouseEvents.Enter;
+            if (def.TryGetProc("MouseExited", out var mouseExitProc) && mouseExitProc is DMProc {Bytecode.Length: > 0})
+                mouseEvents |= AtomMouseEvents.Exit;
+            if (def.TryGetProc("MouseMove", out var mouseMoveProc) && mouseMoveProc is DMProc {Bytecode.Length: > 0})
+                mouseEvents |= AtomMouseEvents.Move;
+            if (def.TryGetProc("MouseWheel", out var mouseWheelProc) && mouseWheelProc is DMProc {Bytecode.Length: > 0})
+                mouseEvents |= AtomMouseEvents.Wheel;
+
+            _enabledMouseEvents.Add(atom.ObjectDefinition, mouseEvents);
+        }
+
+        return mouseEvents;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

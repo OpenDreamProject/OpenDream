@@ -26,6 +26,7 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
     private static Stack<MutableAppearance> _mutableAppearancePool = new();
 
     [ViewVariables] public string Name = string.Empty;
+    [ViewVariables] public string? Desc = string.Empty;
     [ViewVariables] public int? Icon;
     [ViewVariables] public string? IconState;
     [ViewVariables] public AtomDirection Direction = AtomDirection.South;
@@ -50,6 +51,15 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
     [ViewVariables] public List<Robust.Shared.GameObjects.NetEntity> VisContents;
     [ViewVariables] public List<DreamFilter> Filters;
     [ViewVariables] public List<int> Verbs;
+    [ViewVariables] public Vector2i MaptextSize = new(32,32);
+    [ViewVariables] public Vector2i MaptextOffset = new(0,0);
+    [ViewVariables] public string? Maptext;
+
+    /// <summary>
+    /// Used by atoms to mark what mouse events are enabled. Doesn't mean anything outside the context of atoms.
+    /// Intentionally left out of hash & equality!
+    /// </summary>
+    [ViewVariables] public AtomMouseEvents EnabledMouseEvents;
 
     /// <summary>
     /// An appearance can gain a color matrix filter by two possible forces: <br/>
@@ -103,6 +113,7 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
 
     public void CopyFrom(MutableAppearance appearance) {
         Name = appearance.Name;
+        Desc = appearance.Desc;
         Icon = appearance.Icon;
         IconState = appearance.IconState;
         Direction = appearance.Direction;
@@ -123,6 +134,10 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         Opacity = appearance.Opacity;
         MouseOpacity = appearance.MouseOpacity;
         Override = appearance.Override;
+        Maptext = appearance.Maptext;
+        MaptextSize = appearance.MaptextSize;
+        MaptextOffset = appearance.MaptextOffset;
+        EnabledMouseEvents = appearance.EnabledMouseEvents;
 
         Overlays.Clear();
         Underlays.Clear();
@@ -143,6 +158,7 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         if (appearance == null) return false;
 
         if (appearance.Name != Name) return false;
+        if (appearance.Desc != Desc) return false;
         if (appearance.Icon != Icon) return false;
         if (appearance.IconState != IconState) return false;
         if (appearance.Direction != Direction) return false;
@@ -168,6 +184,9 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         if (appearance.Filters.Count != Filters.Count) return false;
         if (appearance.Verbs.Count != Verbs.Count) return false;
         if (appearance.Override != Override) return false;
+        if (appearance.Maptext != Maptext) return false;
+        if (appearance.MaptextSize != MaptextSize) return false;
+        if (appearance.MaptextOffset != MaptextOffset) return false;
 
         for (int i = 0; i < Filters.Count; i++) {
             if (appearance.Filters[i] != Filters[i]) return false;
@@ -228,10 +247,12 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
     }
 
     //it is *ESSENTIAL* that this matches the hashcode of the equivelant ImmutableAppearance. There's a debug assert and everything.
+    [SuppressMessage("ReSharper", "NonReadonlyMemberInGetHashCode")]
     public override int GetHashCode() {
         HashCode hashCode = new HashCode();
 
         hashCode.Add(Name);
+        hashCode.Add(Desc);
         hashCode.Add(Icon);
         hashCode.Add(IconState);
         hashCode.Add(Direction);
@@ -252,6 +273,9 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         hashCode.Add(RenderTarget);
         hashCode.Add(BlendMode);
         hashCode.Add(AppearanceFlags);
+        hashCode.Add(Maptext);
+        hashCode.Add(MaptextOffset);
+        hashCode.Add(MaptextSize);
 
         foreach (var overlay in Overlays) {
             hashCode.Add(overlay.GetHashCode());
@@ -291,6 +315,8 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         if (!ColorHelpers.TryParseColor(color, out Color)) {
             Color = Color.White;
         }
+
+        Alpha = (byte)(Color.A * 255);
     }
 
     /// <summary>
@@ -360,9 +386,21 @@ public enum AnimationFlags {
     AnimationContinue = 512
 }
 
+[Flags]
+public enum AtomMouseEvents {
+    Down = 1,
+    Up = 2,
+    Drag = 4,
+    Enter = 8,
+    Exit = 16,
+    Move = 32,
+    Wheel = 64
+}
+
 //used for encoding for netmessages
 public enum IconAppearanceProperty : byte {
         Name,
+        Desc,
         Icon,
         IconState,
         Direction,
@@ -389,6 +427,10 @@ public enum IconAppearanceProperty : byte {
         Filters,
         Verbs,
         Transform,
+        Maptext,
+        MaptextSize,
+        MaptextOffset,
+        EnabledMouseEvents,
         Id,
         End
     }

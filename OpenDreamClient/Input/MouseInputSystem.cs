@@ -27,6 +27,7 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
     [Dependency] private readonly MapSystem _mapSystem = default!;
     [Dependency] private readonly IConfigurationManager _configurationManager = default!;
     [Dependency] private readonly IDreamInterfaceManager _dreamInterfaceManager = default!;
+    [Dependency] private readonly ClientAppearanceSystem _appearanceSystem = default!;
 
     private DreamViewOverlay? _dreamViewOverlay;
     private ContextMenuPopup _contextMenu = default!;
@@ -78,17 +79,38 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
         RaiseNetworkEvent(new StatClickedEvent(atomRef, isRight, isMiddle, shift, ctrl, alt));
     }
 
-    private (ClientObjectReference Atom, Vector2i IconPosition)? GetAtomUnderMouse(ScalingViewport viewport, GUIBoundKeyEventArgs args) {
+    public void HandleAtomMouseEntered(ScalingViewport viewport, Vector2 relativePos, ClientObjectReference atomRef, Vector2i iconPos) {
+        if (!HasMouseEventEnabled(atomRef, AtomMouseEvents.Enter))
+            return;
+
+        RaiseNetworkEvent(new MouseEnteredEvent(atomRef, CreateClickParams(viewport, relativePos, iconPos)));
+    }
+
+    public void HandleAtomMouseExited(ScalingViewport viewport, ClientObjectReference atomRef) {
+        if (!HasMouseEventEnabled(atomRef, AtomMouseEvents.Exit))
+            return;
+
+        RaiseNetworkEvent(new MouseExitedEvent(atomRef, CreateClickParams(viewport, Vector2.Zero, Vector2i.Zero)));
+    }
+
+    public void HandleAtomMouseMove(ScalingViewport viewport, Vector2 relativePos, ClientObjectReference atomRef, Vector2i iconPos) {
+        if (!HasMouseEventEnabled(atomRef, AtomMouseEvents.Move))
+            return;
+
+        RaiseNetworkEvent(new MouseMoveEvent(atomRef, CreateClickParams(viewport, relativePos, iconPos)));
+    }
+
+    public (ClientObjectReference Atom, Vector2i IconPosition)? GetAtomUnderMouse(ScalingViewport viewport, Vector2 relativePos, ScreenCoordinates globalPos) {
         _dreamViewOverlay ??= _overlayManager.GetOverlay<DreamViewOverlay>();
         if(_dreamViewOverlay.MouseMap == null)
             return null;
 
         UIBox2i viewportBox = viewport.GetDrawBox();
-        if (!viewportBox.Contains((int)args.RelativePixelPosition.X, (int)args.RelativePixelPosition.Y))
+        if (!viewportBox.Contains((int)relativePos.X, (int)relativePos.Y))
             return null; // Was outside of the viewport
 
-        var mapCoords = viewport.ScreenToMap(args.PointerLocation.Position);
-        var mousePos = (args.RelativePixelPosition - viewportBox.TopLeft) / viewportBox.Size * viewport.ViewportSize;
+        var mapCoords = viewport.ScreenToMap(globalPos.Position);
+        var mousePos = (relativePos - viewportBox.TopLeft) / viewportBox.Size * viewport.ViewportSize;
 
         if(_configurationManager.GetCVar(CVars.DisplayCompat))
             return null; //Compat mode causes crashes with RT's GetPixel because OpenGL ES doesn't support GetTexImage()
@@ -161,7 +183,7 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
             return true;
         }
 
-        var underMouse = GetAtomUnderMouse(viewport, args);
+        var underMouse = GetAtomUnderMouse(viewport, args.RelativePixelPosition, args.PointerLocation);
         if (underMouse == null)
             return false;
 
@@ -179,7 +201,7 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
         if (!_selectedEntity.IsDrag) {
             RaiseNetworkEvent(new AtomClickedEvent(_selectedEntity.Atom, _selectedEntity.ClickParams));
         } else {
-            var overAtom = GetAtomUnderMouse(viewport, args);
+            var overAtom = GetAtomUnderMouse(viewport, args.RelativePixelPosition, args.PointerLocation);
 
             RaiseNetworkEvent(new AtomDraggedEvent(_selectedEntity.Atom, overAtom?.Atom, _selectedEntity.ClickParams));
         }
@@ -201,5 +223,26 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
 
         // TODO: Take icon transformations into account for iconPos
         return new(screenLoc, right, middle, shift, ctrl, alt, iconPos.X, iconPos.Y);
+    }
+
+    /// <summary>
+    /// <see cref="CreateClickParams(OpenDreamClient.Interface.Controls.UI.ScalingViewport,Robust.Client.UserInterface.GUIBoundKeyEventArgs,Robust.Shared.Maths.Vector2i)"/>
+    /// but without information about mouse/keyboard buttons
+    /// </summary>
+    private ClickParams CreateClickParams(ScalingViewport viewport, Vector2 relativePos, Vector2i iconPos) {
+        UIBox2i viewportBox = viewport.GetDrawBox();
+        Vector2 screenLocPos = (relativePos - viewportBox.TopLeft) / viewportBox.Size * viewport.ViewportSize;
+        float screenLocY = viewport.ViewportSize.Y - screenLocPos.Y; // Flip the Y
+        ScreenLocation screenLoc = new ScreenLocation((int) screenLocPos.X, (int) screenLocY, 32); // TODO: icon_size other than 32
+
+        // TODO: Take icon transformations into account for iconPos
+        return new(screenLoc, false, false, false, false, false, iconPos.X, iconPos.Y);
+    }
+
+    private bool HasMouseEventEnabled(ClientObjectReference atomRef, AtomMouseEvents mouseEvent) {
+        if (!_appearanceSystem.TryGetAppearance(atomRef, out var appearance))
+            return false;
+
+        return appearance.EnabledMouseEvents.HasFlag(mouseEvent);
     }
 }

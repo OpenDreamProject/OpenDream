@@ -479,6 +479,10 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.OutputControl);
         }
 
+        public void Link() {
+            WriteOpcode(DreamProcOpcode.Link);
+        }
+
         public void Ftp() {
             WriteOpcode(DreamProcOpcode.Ftp);
         }
@@ -573,11 +577,6 @@ namespace DMCompiler.DM {
 
         public void Pop() {
             WriteOpcode(DreamProcOpcode.Pop);
-        }
-
-        public void PopReference(DMReference reference) {
-            WriteOpcode(DreamProcOpcode.PopReference);
-            WriteReference(reference, false);
         }
 
         public void BooleanOr(string endLabel) {
@@ -963,6 +962,10 @@ namespace DMCompiler.DM {
 
         public void IsSaved() {
             WriteOpcode(DreamProcOpcode.IsSaved);
+        }
+
+        public void AsType() {
+            WriteOpcode(DreamProcOpcode.AsType);
         }
 
         public void IsType() {

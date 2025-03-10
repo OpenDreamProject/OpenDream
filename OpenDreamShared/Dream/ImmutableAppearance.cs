@@ -23,13 +23,12 @@ namespace OpenDreamShared.Dream;
  */
 
 // TODO: Wow this is huge! Probably look into splitting this by most used/least used to reduce the size of these
-[Serializable]
+[Serializable, NetSerializable]
 public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
     private uint? _registeredId;
-    private bool _needsFinalizer;
-    private int? _storedHashCode;
-    private readonly SharedAppearanceSystem? _appearanceSystem;
+
     [ViewVariables] public readonly string Name = MutableAppearance.Default.Name;
+    [ViewVariables] public readonly string? Desc = MutableAppearance.Default.Desc;
     [ViewVariables] public readonly int? Icon = MutableAppearance.Default.Icon;
     [ViewVariables] public readonly string? IconState = MutableAppearance.Default.IconState;
     [ViewVariables] public readonly AtomDirection Direction = MutableAppearance.Default.Direction;
@@ -55,6 +54,10 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
     [ViewVariables] public readonly DreamFilter[] Filters;
     [ViewVariables] public readonly int[] Verbs;
     [ViewVariables] public readonly ColorMatrix ColorMatrix = ColorMatrix.Identity;
+    [ViewVariables] public Vector2i MaptextSize = MutableAppearance.Default.MaptextSize;
+    [ViewVariables] public Vector2i MaptextOffset = MutableAppearance.Default.MaptextOffset;
+    [ViewVariables] public string? Maptext = MutableAppearance.Default.Maptext;
+    [ViewVariables] public AtomMouseEvents EnabledMouseEvents;
 
     /// <summary> The Transform property of this appearance, in [a,d,b,e,c,f] order</summary>
     [ViewVariables] public readonly float[] Transform = [
@@ -66,6 +69,9 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
     // PixelOffset2 behaves the same as PixelOffset in top-down mode, so this is used
     public Vector2i TotalPixelOffset => PixelOffset + PixelOffset2;
 
+    [NonSerialized] private readonly SharedAppearanceSystem? _appearanceSystem;
+    [NonSerialized] private bool _needsFinalizer;
+    [NonSerialized] private int? _storedHashCode;
     [NonSerialized] private List<uint>? _overlayIDs;
     [NonSerialized] private List<uint>? _underlayIDs;
 
@@ -73,6 +79,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         _appearanceSystem = serverAppearanceSystem;
 
         Name = appearance.Name;
+        Desc = appearance.Desc;
         Icon = appearance.Icon;
         IconState = appearance.IconState;
         Direction = appearance.Direction;
@@ -92,6 +99,10 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         Invisibility = appearance.Invisibility;
         Opacity = appearance.Opacity;
         MouseOpacity = appearance.MouseOpacity;
+        Maptext = appearance.Maptext;
+        MaptextSize = appearance.MaptextSize;
+        MaptextOffset = appearance.MaptextOffset;
+        EnabledMouseEvents = appearance.EnabledMouseEvents;
 
         Overlays = appearance.Overlays.ToArray();
         Underlays = appearance.Underlays.ToArray();
@@ -136,6 +147,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         if (immutableAppearance == null) return false;
 
         if (immutableAppearance.Name != Name) return false;
+        if (immutableAppearance.Desc != Desc) return false;
         if (immutableAppearance.Icon != Icon) return false;
         if (immutableAppearance.IconState != IconState) return false;
         if (immutableAppearance.Direction != Direction) return false;
@@ -144,9 +156,9 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         if (immutableAppearance.PixelOffset2 != PixelOffset2) return false;
         if (immutableAppearance.Color != Color) return false;
         if (immutableAppearance.Alpha != Alpha) return false;
-        if (immutableAppearance.GlideSize != GlideSize) return false;
+        if (!immutableAppearance.GlideSize.Equals(GlideSize)) return false;
         if (!immutableAppearance.ColorMatrix.Equals(ColorMatrix)) return false;
-        if (immutableAppearance.Layer != Layer) return false;
+        if (!immutableAppearance.Layer.Equals(Layer)) return false;
         if (immutableAppearance.Plane != Plane) return false;
         if (immutableAppearance.RenderSource != RenderSource) return false;
         if (immutableAppearance.RenderTarget != RenderTarget) return false;
@@ -161,6 +173,9 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         if (immutableAppearance.Filters.Length != Filters.Length) return false;
         if (immutableAppearance.Verbs.Length != Verbs.Length) return false;
         if (immutableAppearance.Override != Override) return false;
+        if (immutableAppearance.Maptext != Maptext) return false;
+        if (immutableAppearance.MaptextSize != MaptextSize) return false;
+        if (immutableAppearance.MaptextOffset != MaptextOffset) return false;
 
         for (int i = 0; i < Filters.Length; i++) {
             if (immutableAppearance.Filters[i] != Filters[i]) return false;
@@ -200,6 +215,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         return _registeredId is not null;
     }
 
+    [SuppressMessage("ReSharper", "NonReadonlyMemberInGetHashCode")]
     public override int GetHashCode() {
         if(_storedHashCode is not null) //because everything is readonly, this only needs to be done once
             return (int)_storedHashCode;
@@ -207,6 +223,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         HashCode hashCode = new HashCode();
 
         hashCode.Add(Name);
+        hashCode.Add(Desc);
         hashCode.Add(Icon);
         hashCode.Add(IconState);
         hashCode.Add(Direction);
@@ -227,6 +244,9 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         hashCode.Add(RenderTarget);
         hashCode.Add(BlendMode);
         hashCode.Add(AppearanceFlags);
+        hashCode.Add(Maptext);
+        hashCode.Add(MaptextOffset);
+        hashCode.Add(MaptextSize);
 
         foreach (ImmutableAppearance overlay in Overlays) {
             hashCode.Add(overlay.GetHashCode());
@@ -268,6 +288,9 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
             switch (property) {
                 case IconAppearanceProperty.Name:
                     Name = buffer.ReadString();
+                    break;
+                case IconAppearanceProperty.Desc:
+                    Desc = buffer.ReadString();
                     break;
                 case IconAppearanceProperty.Id:
                     _registeredId = buffer.ReadVariableUInt32();
@@ -405,6 +428,22 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
 
                     break;
                 }
+                case IconAppearanceProperty.Maptext: {
+                    Maptext = buffer.ReadString();
+                    break;
+                }
+                case IconAppearanceProperty.MaptextSize: {
+                    MaptextSize = (buffer.ReadVariableInt32(), buffer.ReadVariableInt32());
+                    break;
+                }
+                case IconAppearanceProperty.MaptextOffset: {
+                    MaptextOffset = (buffer.ReadVariableInt32(), buffer.ReadVariableInt32());
+                    break;
+                }
+                case IconAppearanceProperty.EnabledMouseEvents: {
+                    EnabledMouseEvents = (AtomMouseEvents)buffer.ReadByte();
+                    break;
+                }
                 default:
                     throw new Exception($"Invalid property {property}");
             }
@@ -422,6 +461,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         MutableAppearance result = MutableAppearance.Get();
 
         result.Name = Name;
+        result.Desc = Desc;
         result.Icon = Icon;
         result.IconState = IconState;
         result.Direction = Direction;
@@ -442,6 +482,10 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         result.Opacity = Opacity;
         result.MouseOpacity = MouseOpacity;
         result.Override = Override;
+        result.Maptext = Maptext;
+        result.MaptextOffset = MaptextOffset;
+        result.MaptextSize = MaptextSize;
+        result.EnabledMouseEvents = EnabledMouseEvents;
 
         result.Overlays.EnsureCapacity(Overlays.Length);
         result.Underlays.EnsureCapacity(Underlays.Length);
@@ -465,6 +509,11 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         if (Name != MutableAppearance.Default.Name) {
             buffer.Write((byte)IconAppearanceProperty.Name);
             buffer.Write(Name);
+        }
+
+        if (Desc != MutableAppearance.Default.Desc) {
+            buffer.Write((byte)IconAppearanceProperty.Desc);
+            buffer.Write(Desc);
         }
 
         if (Icon != null) {
@@ -626,6 +675,28 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
             for (int i = 0; i < 6; i++) {
                 buffer.Write(Transform[i]);
             }
+        }
+
+        if(!string.IsNullOrEmpty(Maptext)){
+            buffer.Write((byte) IconAppearanceProperty.Maptext);
+            buffer.Write(Maptext);
+        }
+
+        if (MaptextOffset != MutableAppearance.Default.MaptextOffset) {
+            buffer.Write((byte)IconAppearanceProperty.MaptextOffset);
+            buffer.WriteVariableInt32(MaptextOffset.X);
+            buffer.WriteVariableInt32(MaptextOffset.Y);
+        }
+
+        if (MaptextSize != MutableAppearance.Default.MaptextSize) {
+            buffer.Write((byte)IconAppearanceProperty.MaptextSize);
+            buffer.WriteVariableInt32(MaptextSize.X);
+            buffer.WriteVariableInt32(MaptextSize.Y);
+        }
+
+        if (EnabledMouseEvents != MutableAppearance.Default.EnabledMouseEvents) {
+            buffer.Write((byte)IconAppearanceProperty.EnabledMouseEvents);
+            buffer.Write((byte)EnabledMouseEvents);
         }
 
         buffer.Write((byte)IconAppearanceProperty.End);

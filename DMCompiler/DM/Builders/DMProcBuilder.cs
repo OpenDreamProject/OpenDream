@@ -101,6 +101,7 @@ namespace DMCompiler.DM.Builders {
                 case DMASTProcStatementBrowse statementBrowse: ProcessStatementBrowse(statementBrowse); break;
                 case DMASTProcStatementBrowseResource statementBrowseResource: ProcessStatementBrowseResource(statementBrowseResource); break;
                 case DMASTProcStatementOutputControl statementOutputControl: ProcessStatementOutputControl(statementOutputControl); break;
+                case DMASTProcStatementLink statementLink: ProcessStatementLink(statementLink); break;
                 case DMASTProcStatementFtp statementFtp: ProcessStatementFtp(statementFtp); break;
                 case DMASTProcStatementOutput statementOutput: ProcessStatementOutput(statementOutput); break;
                 case DMASTProcStatementInput statementInput: ProcessStatementInput(statementInput); break;
@@ -601,37 +602,30 @@ namespace DMCompiler.DM.Builders {
             }
         }
 
-        public void ProcessStatementForList(DMExpression list, DMExpression outputVar, DMComplexValueType? dmTypes, DMASTProcBlockInner body) {
+        public void ProcessStatementForList(DMExpression list, DMExpression outputVar, DMComplexValueType? typeCheck, DMASTProcBlockInner body) {
             if (outputVar is not LValue lValue) {
                 compiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
-                lValue = null;
+                lValue = new BadLValue(outputVar.Location);
             }
 
-            // Depending on the var's type and possibly a given "as [types]", an implicit istype() check is performed
-            DreamPath? implicitTypeCheck = null;
-            if (dmTypes == null) {
-                // No "as" means the var's type will be used
-                implicitTypeCheck = lValue?.Path;
-            } else if (dmTypes.Value.TypePath != null) {
-                // "as /datum" will perform a check for /datum
-                implicitTypeCheck = dmTypes.Value.TypePath;
-            } else if (!dmTypes.Value.IsAnything) {
-                // "as anything" performs no check. Other values are unimplemented.
-                compiler.UnimplementedWarning(outputVar.Location,
-                    $"As type {dmTypes} in for loops is unimplemented. No type check will be performed.");
+            // Having no "as [types]" will use the var's type for the type filter
+            if (typeCheck == null && lValue.Path != null) {
+                typeCheck = lValue.Path;
             }
 
+            bool performingImplicitIsType = false;
             list.EmitPushValue(ExprContext);
-            if (implicitTypeCheck != null) {
-                if (compiler.DMObjectTree.TryGetTypeId(implicitTypeCheck.Value, out var filterTypeId)) {
+            if (typeCheck?.TypePath is { } typeCheckPath) { // We have a specific type to filter for
+                if (compiler.DMObjectTree.TryGetTypeId(typeCheckPath, out var filterTypeId)) {
                     // Create an enumerator that will do the implicit istype() for us
-                    proc.CreateFilteredListEnumerator(filterTypeId, implicitTypeCheck.Value);
+                    proc.CreateFilteredListEnumerator(filterTypeId, typeCheckPath);
                 } else {
                     compiler.Emit(WarningCode.ItemDoesntExist, outputVar.Location,
-                        $"Cannot filter enumeration by type {implicitTypeCheck.Value}, it does not exist");
+                        $"Cannot filter enumeration by type {typeCheckPath}, it does not exist");
                     proc.CreateListEnumerator();
                 }
-            } else {
+            } else { // Either no type filter or we're using the slower "as [types]"
+                performingImplicitIsType = !(typeCheck is null || typeCheck.Value.IsAnything);
                 proc.CreateListEnumerator();
             }
 
@@ -642,8 +636,43 @@ namespace DMCompiler.DM.Builders {
                 {
                     proc.MarkLoopContinue(loopLabel);
 
-                    if (lValue != null) {
-                        ProcessLoopAssignment(lValue);
+                    ProcessLoopAssignment(lValue);
+
+                    // "as mob|etc" will insert code equivalent to "if(!(istype(X, mob) || istype(X, etc))) continue;"
+                    // It would be ideal if the type filtering could be done by the interpreter, like it does when the var has a type
+                    // But the code currently isn't structured in a way that it could be done nicely
+                    if (performingImplicitIsType) {
+                        var afterTypeCheckIf = proc.NewLabelName();
+                        var afterTypeCheckExpr = proc.NewLabelName();
+
+                        void CheckType(DMValueType type, DreamPath path, ref bool doOr) {
+                            if (!typeCheck!.Value.Type.HasFlag(type))
+                                return;
+                            if (!compiler.DMObjectTree.TryGetTypeId(path, out var typeId))
+                                return;
+
+                            if (doOr)
+                                proc.BooleanOr(afterTypeCheckExpr);
+                            doOr = true;
+
+                            lValue.EmitPushValue(ExprContext);
+                            proc.PushType(typeId);
+                            proc.IsType();
+                        }
+
+                        bool doOr = false; // Only insert BooleanOr after the first type
+                        CheckType(DMValueType.Area, DreamPath.Area, ref doOr);
+                        CheckType(DMValueType.Turf, DreamPath.Turf, ref doOr);
+                        CheckType(DMValueType.Obj, DreamPath.Obj, ref doOr);
+                        CheckType(DMValueType.Mob, DreamPath.Mob, ref doOr);
+                        proc.AddLabel(afterTypeCheckExpr);
+                        if (doOr) {
+                            proc.Not();
+                            proc.JumpIfFalse(afterTypeCheckIf);
+                            proc.Continue();
+                        }
+
+                        proc.AddLabel(afterTypeCheckIf);
                     }
 
                     ProcessBlockInner(body);
@@ -891,6 +920,12 @@ namespace DMCompiler.DM.Builders {
             _exprBuilder.Emit(statementOutputControl.Message);
             _exprBuilder.Emit(statementOutputControl.Control);
             proc.OutputControl();
+        }
+
+        public void ProcessStatementLink(DMASTProcStatementLink statementLink) {
+            _exprBuilder.Emit(statementLink.Receiver);
+            _exprBuilder.Emit(statementLink.Url);
+            proc.Link();
         }
 
         public void ProcessStatementFtp(DMASTProcStatementFtp statementFtp) {

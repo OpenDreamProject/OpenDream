@@ -1,4 +1,4 @@
-﻿using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
 using Robust.Shared.Map;
@@ -18,20 +18,21 @@ public class DreamObjectMovable : DreamObjectAtom {
     public int Z => (int)_transformComponent.MapID;
 
     private readonly TransformComponent _transformComponent;
-
+    private readonly MovableContentsList _contents;
+    private string? _screenLoc;
 
     private string? ScreenLoc {
         get => _screenLoc;
         set => SetScreenLoc(value);
     }
 
-    private string? _screenLoc;
-
     public DreamObjectMovable(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
         Entity = AtomManager.CreateMovableEntity(this);
         SpriteComponent = EntityManager.GetComponent<DMISpriteComponent>(Entity);
         AtomManager.SetSpriteAppearance((Entity, SpriteComponent), AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
+
         _transformComponent = EntityManager.GetComponent<TransformComponent>(Entity);
+        _contents = new MovableContentsList(ObjectTree.List.ObjectDefinition, this, _transformComponent);
     }
 
     public override void Initialize(DreamProcArguments args) {
@@ -42,7 +43,7 @@ public class DreamObjectMovable : DreamObjectAtom {
 
         if (EntityManager.TryGetComponent(Entity, out MetaDataComponent? metaData)) {
             MetaDataSystem?.SetEntityName(Entity, GetDisplayName(), metaData);
-            MetaDataSystem?.SetEntityDescription(Entity, Desc ?? string.Empty, metaData);
+            MetaDataSystem?.SetEntityDescription(Entity, GetRTEntityDesc(), metaData);
         }
 
         args.GetArgument(0).TryGetValueAsDreamObject<DreamObjectAtom>(out var loc);
@@ -76,22 +77,15 @@ public class DreamObjectMovable : DreamObjectAtom {
             case "loc":
                 value = new(Loc);
                 return true;
+            case "bound_width":
+            case "bound_height":
+                value = new(32); // TODO: Custom bounds support
+                return true;
             case "screen_loc":
                 value = (ScreenLoc != null) ? new(ScreenLoc) : DreamValue.Null;
                 return true;
             case "contents":
-                DreamList contents = ObjectTree.CreateList();
-
-                using (var childEnumerator = _transformComponent.ChildEnumerator) {
-                    while (childEnumerator.MoveNext(out EntityUid child)) {
-                        if (!AtomManager.TryGetMovableFromEntity(child, out var childAtom))
-                            continue;
-
-                        contents.AddValue(new DreamValue(childAtom));
-                    }
-                }
-
-                value = new(contents);
+                value = new(_contents);
                 return true;
             case "locs":
                 // Unimplemented; just return a list containing src.loc
@@ -150,7 +144,7 @@ public class DreamObjectMovable : DreamObjectAtom {
         }
     }
 
-    private void SetLoc(DreamObjectAtom? loc) {
+    public void SetLoc(DreamObjectAtom? loc) {
         Loc = loc;
         if (TransformSystem == null)
             return;

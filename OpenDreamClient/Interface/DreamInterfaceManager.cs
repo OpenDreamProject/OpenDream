@@ -21,6 +21,7 @@ using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 using SixLabors.ImageSharp;
 using System.Linq;
+using Robust.Shared.Map;
 
 namespace OpenDreamClient.Interface;
 
@@ -40,6 +41,8 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     [Dependency] private readonly IUserInterfaceManager _uiManager = default!;
     [Dependency] private readonly IRobustRandom _random = default!;
     [Dependency] private readonly ITimerManager _timerManager = default!;
+    [Dependency] private readonly IUriOpener _uriOpener = default!;
+    [Dependency] private readonly IGameController _gameController = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.interface");
 
@@ -53,6 +56,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     public Dictionary<string, ControlWindow> Windows { get; } = new();
     public Dictionary<string, InterfaceMenu> Menus { get; } = new();
     public Dictionary<string, InterfaceMacroSet> MacroSets { get; } = new();
+    private Dictionary<WindowId, ControlWindow> ClydeWindowIdToControl { get; } = new();
 
     public ViewRange View {
         get => _view;
@@ -117,10 +121,12 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         _netManager.RegisterNetMessage<MsgWinClone>(RxWinClone);
         _netManager.RegisterNetMessage<MsgWinExists>(RxWinExists);
         _netManager.RegisterNetMessage<MsgWinGet>(RxWinGet);
+        _netManager.RegisterNetMessage<MsgLink>(RxLink);
         _netManager.RegisterNetMessage<MsgFtp>(RxFtp);
         _netManager.RegisterNetMessage<MsgLoadInterface>(RxLoadInterface);
         _netManager.RegisterNetMessage<MsgAckLoadInterface>();
         _netManager.RegisterNetMessage<MsgUpdateClientInfo>(RxUpdateClientInfo);
+        _clyde.OnWindowFocused += OnWindowFocused;
     }
 
     private void RxUpdateStatPanels(MsgUpdateStatPanels message) {
@@ -254,6 +260,29 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
             _netManager.ClientSendMessage(response);
         }));
+    }
+
+    private void RxLink(MsgLink message) {
+        Uri uri;
+        try {
+            uri = new Uri(message.Url);
+        } catch (Exception e) {
+            _sawmill.Error($"Received link \"{message.Url}\" which failed to parse as a valid URI: {e.Message}");
+            return;
+        }
+
+        // TODO: This can be a topic call
+
+        if (uri.Scheme is "http" or "https") {
+            _uriOpener.OpenUri(message.Url);
+        } else if (uri.Scheme is "ss14" or "ss14s") {
+            if (_gameController.LaunchState.FromLauncher)
+                _gameController.Redial(message.Url, "link() used to connect to another server.");
+            else
+                _sawmill.Warning("link() only supports connecting to other servers when utilizing the launcher. Ignoring.");
+        } else {
+            _sawmill.Warning($"Received link \"{message.Url}\" which is not supported. Ignoring.");
+        }
     }
 
     private void RxFtp(MsgFtp message) {
@@ -427,7 +456,8 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 // Everything after .winset, excluding the space and quotes
                 string winsetParams = fullCommand.Substring(7); //clip .winset
                 winsetParams = winsetParams.Trim(); //clip space
-                winsetParams = winsetParams.Trim('\"'); //clip quotes
+                if (winsetParams.StartsWith('"') && winsetParams.EndsWith('"'))
+                    winsetParams = winsetParams.Substring(1, winsetParams.Length - 2); //clip quotes
 
                 WinSet(null, winsetParams);
                 break;
@@ -579,6 +609,9 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             string? elementOverride = winSets.FirstOrDefault(winSet => winSet.Element == null && winSet.Attribute == "id")?.Value;
 
             foreach (DMFWinSet winSet in winSets) {
+                if (winSet.Attribute == "id") // This is used to set the target, not an actual winset
+                    continue;
+
                 string? elementId = winSet.Element ?? elementOverride;
 
                 if (elementId == null) {
@@ -888,6 +921,24 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         LayoutContainer.SetAnchorBottom(DefaultWindow.UIElement, 1);
 
         _uiManager.StateRoot.AddChild(DefaultWindow.UIElement);
+
+        if (DefaultWindow.GetClydeWindow() is { } clydeWindow) {
+            ClydeWindowIdToControl.Add(clydeWindow.Id, DefaultWindow);
+        }
+    }
+
+    private void OnWindowFocused(WindowFocusedEventArgs args) {
+        if(ClydeWindowIdToControl.TryGetValue(args.Window.Id, out var controlWindow)){
+            _sawmill.Debug($"window id {controlWindow.Id} was {(args.Focused ? "focused" : "defocused")}");
+            WindowDescriptor descriptor = (WindowDescriptor) controlWindow.ElementDescriptor;
+            descriptor.Focus = new DMFPropertyBool(args.Focused);
+            if(args.Focused && MacroSets.TryGetValue(descriptor.Macro.AsRaw(), out var windowMacroSet)){
+                _sawmill.Debug($"Activating macroset {descriptor.Macro}");
+                windowMacroSet.SetActive();
+            }
+        }
+        else
+            _sawmill.Debug($"window id was not found (probably a modal) but was {(args.Focused ? "focused" : "defocused")}");
     }
 
     private void LoadDescriptor(ElementDescriptor descriptor) {
@@ -908,6 +959,10 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 Windows.Add(windowDescriptor.Id.Value, window);
                 if (window.IsDefault) {
                     DefaultWindow = window;
+                }
+
+                if (window.GetClydeWindow() is { } clydeWindow) {
+                    ClydeWindowIdToControl.Add(clydeWindow.Id, window);
                 }
 
                 break;

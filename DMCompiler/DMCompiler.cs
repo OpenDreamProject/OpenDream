@@ -21,12 +21,13 @@ namespace DMCompiler;
 public class DMCompiler {
     public int ErrorCount;
     public int WarningCount;
-    public HashSet<WarningCode> UniqueEmissions = new();
+    public readonly HashSet<WarningCode> UniqueEmissions = new();
     public DMCompilerSettings Settings;
     public IReadOnlyList<string> ResourceDirectories => _resourceDirectories;
 
     private readonly DMCompilerConfiguration Config = new();
     private readonly List<string> _resourceDirectories = new();
+    private string _codeDirectory;
     private DateTime _compileStartTime;
 
     internal readonly DMCodeTree DMCodeTree;
@@ -97,8 +98,13 @@ public class DMCompiler {
         return successfulCompile;
     }
 
-    public void AddResourceDirectory(string dir) {
+    public void AddResourceDirectory(string dir, Location loc) {
         dir = dir.Replace('\\', Path.DirectorySeparatorChar);
+        if (!Directory.Exists(dir)) {
+            Emit(WarningCode.InvalidFileDirDefine, loc,
+                $"Folder \"{Path.GetRelativePath(_codeDirectory, dir)}\" does not exist");
+            return;
+        }
 
         _resourceDirectories.Add(dir);
     }
@@ -128,6 +134,12 @@ public class DMCompiler {
                 preproc.IncludeFile(includeDir, fileName, false);
             }
 
+            // Adds the root of the DM project to FILE_DIR
+            _codeDirectory = Path.GetDirectoryName(files[0]) ?? "";
+            if (string.IsNullOrWhiteSpace(_codeDirectory))
+                _codeDirectory = Path.GetFullPath(".");
+            compiler.AddResourceDirectory(_codeDirectory, Location.Internal);
+
             string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
             string dmStandardDirectory = Path.Join(compilerDirectory, "DMStandard");
 
@@ -139,7 +151,7 @@ public class DMCompiler {
             // Push the pragma config file to the tippy-top of the stack, super-duper prioritizing it, since it governs some compiler behaviour.
             string pragmaName;
             string pragmaDirectory;
-            if(Settings.PragmaFileOverride is not null) {
+            if (Settings.PragmaFileOverride is not null) {
                 pragmaDirectory = Path.GetDirectoryName(Settings.PragmaFileOverride);
                 pragmaName = Path.GetFileName(Settings.PragmaFileOverride);
             } else {
@@ -147,7 +159,7 @@ public class DMCompiler {
                 pragmaName = "DefaultPragmaConfig.dm";
             }
 
-            if(!File.Exists(Path.Join(pragmaDirectory,pragmaName))) {
+            if (!File.Exists(Path.Join(pragmaDirectory, pragmaName))) {
                 ForcedError($"Configuration file '{pragmaName}' not found.");
                 return null;
             }
@@ -336,7 +348,7 @@ public class DMCompiler {
 
             try {
                 JsonSerializer.Serialize(outputFileHandle, compiledDream,
-                    new JsonSerializerOptions() {DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault});
+                    new JsonSerializerOptions() { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault });
 
                 return $"Saved to {outputFile}";
             } catch (Exception e) {
@@ -349,7 +361,7 @@ public class DMCompiler {
 
     public void DefineFatalErrors() {
         foreach (WarningCode code in Enum.GetValues<WarningCode>()) {
-            if((int)code < 1_000) {
+            if ((int)code < 1_000) {
                 Config.ErrorConfig[code] = ErrorLevel.Error;
             }
         }
@@ -359,7 +371,7 @@ public class DMCompiler {
     /// This method also enforces the rule that all emissions with codes less than 1000 are mandatory errors.
     /// </summary>
     public void CheckAllPragmasWereSet() {
-        foreach(WarningCode code in Enum.GetValues<WarningCode>()) {
+        foreach (WarningCode code in Enum.GetValues<WarningCode>()) {
             if (!Config.ErrorConfig.ContainsKey(code)) {
                 ForcedWarning($"Warning #{(int)code:d4} '{code.ToString()}' was never declared as error, warning, notice, or disabled.");
                 Config.ErrorConfig.Add(code, ErrorLevel.Disabled);

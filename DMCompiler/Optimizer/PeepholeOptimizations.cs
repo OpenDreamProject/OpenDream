@@ -638,6 +638,11 @@ internal sealed class AssignAndPushReferenceValue : IOptimization {
         AnnotatedBytecodeReference assignTarget = firstInstruction.GetArg<AnnotatedBytecodeReference>(0);
         AnnotatedBytecodeReference pushTarget = secondInstruction.GetArg<AnnotatedBytecodeReference>(0);
 
+        // Assigning certain values to certain vars (e.g. setting a SrcField like "dir" to null)
+        // actually causes the value to be coerced to something different than the value on the stack.
+        // We don't have a good way to identify those vars at this point, so just restrict the opt to locals and args since those shouldn't have side effects
+        if (pushTarget.RefType != DMReference.Type.Local && pushTarget.RefType != DMReference.Type.Argument) return false;
+
         return assignTarget.Equals(pushTarget);
     }
 

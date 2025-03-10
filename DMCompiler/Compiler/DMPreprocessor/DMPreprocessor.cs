@@ -304,7 +304,7 @@ internal sealed class DMPreprocessor(DMCompiler compiler, bool enableDirectives)
 
             DMPreprocessorLexer currentLexer = _lexerStack.Peek();
             string dir = Path.Combine(currentLexer.IncludeDirectory, dirTokenValue);
-            compiler.AddResourceDirectory(dir);
+            compiler.AddResourceDirectory(dir, dirToken.Location);
 
             // In BYOND it goes on to set the FILE_DIR macro's value to the added directory
             // I don't see any reason to do that

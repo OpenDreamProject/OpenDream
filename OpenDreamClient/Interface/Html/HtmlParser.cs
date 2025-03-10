@@ -8,6 +8,7 @@ public static class HtmlParser {
     private const string TagNotClosedError = "HTML tag was not closed";
 
     private static readonly ISawmill Sawmill;
+    private static readonly HashSet<string> WarnedAttributes = new();
 
     static HtmlParser() {
         Sawmill = IoCManager.Resolve<ILogManager>().GetSawmill("opendream.html_parser");
@@ -24,6 +25,9 @@ public static class HtmlParser {
         }
 
         void PushCurrentText() {
+            if (currentText.Length == 0)
+                return;
+
             appendTo.AddText(currentText.ToString());
             currentText.Clear();
         }
@@ -66,8 +70,13 @@ public static class HtmlParser {
                     string tagType = attributes[0].ToLowerInvariant();
 
                     currentText.Clear();
+                    bool isSelfClosing = IsSelfClosing(tagType, attributes);
                     if (closingTag) {
-                        if (tags.Count == 0) {
+                        if (isSelfClosing) {
+                            // ignore closing tags of void elements since they don't
+                            // do anything anyway. Should probably warn.
+                            return;
+                        } else if (tags.Count == 0) {
                             Sawmill.Error("Unexpected closing tag");
                             return;
                         } else if (tags.Peek() != tagType) {
@@ -78,14 +87,12 @@ public static class HtmlParser {
                         appendTo.Pop();
                         tags.Pop();
                     } else {
-                        tags.Push(tagType);
-
-                        appendTo.PushTag(new MarkupNode(tagType, null, ParseAttributes(attributes)), selfClosing: attributes[^1] == "/");
+                        if (!isSelfClosing) {
+                            tags.Push(tagType);
+                        }
+                        appendTo.PushTag(new MarkupNode(tagType, null, ParseAttributes(attributes)), selfClosing: isSelfClosing);
                     }
 
-                    break;
-                case '\n':
-                    appendTo.PushNewline();
                     break;
                 case '&':
                     // HTML named/numbered entity
@@ -123,6 +130,10 @@ public static class HtmlParser {
                     }
 
                     break;
+                case '\n':
+                    PushCurrentText();
+                    appendTo.PushNewline();
+                    break;
                 default:
                     currentText.Append(c);
                     break;
@@ -132,6 +143,39 @@ public static class HtmlParser {
         PushCurrentText();
         while (tags.TryPop(out _))
             appendTo.Pop();
+    }
+
+    /**
+     * <summary>
+     * Returns if a tag is written in old self-closing form, or if the tag
+     * represents a void element, which must have no children
+     * </summary>
+     */
+    private static bool IsSelfClosing(string tagType, string[] attributes) {
+        if (attributes[^1] == "/") {
+            return true;
+        }
+
+        switch (tagType) {
+            case "area":
+            case "base":
+            case "br":
+            case "col":
+            case "embed":
+            case "hr":
+            case "img":
+            case "input":
+            case "link":
+            case "meta":
+            case "param":
+            case "source":
+            case "track":
+            case "wbr":
+                return true;
+
+            default:
+                return false;
+        }
     }
 
     private static Dictionary<string, MarkupParameter> ParseAttributes(string[] attributes) {
@@ -165,7 +209,8 @@ public static class HtmlParser {
                     parameter = new(color);
                     break;
                 default:
-                    Sawmill.Debug($"Unimplemented HTML attribute \"{attributeName}\"");
+                    if (WarnedAttributes.Add(attributeName))
+                        Sawmill.Debug($"Unimplemented HTML attribute \"{attributeName}\"");
                     continue;
             }
 

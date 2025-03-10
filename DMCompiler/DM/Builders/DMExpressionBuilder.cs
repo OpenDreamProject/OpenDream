@@ -74,6 +74,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
             case DMASTNotEqual notEqual: result = BuildNotEqual(notEqual, inferredPath); break;
             case DMASTDereference deref: result = BuildDereference(deref, inferredPath); break;
             case DMASTLocate locate: result = BuildLocate(locate, inferredPath); break;
+            case DMASTImplicitAsType implicitAsType: result = BuildImplicitAsType(implicitAsType, inferredPath); break;
             case DMASTImplicitIsType implicitIsType: result = BuildImplicitIsType(implicitIsType, inferredPath); break;
             case DMASTList list: result = BuildList(list, inferredPath); break;
             case DMASTDimensionalList dimensionalList: result = BuildDimensionalList(dimensionalList, inferredPath); break;
@@ -338,25 +339,21 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                     BuildExpression(locateCoordinates.Y, inferredPath),
                     BuildExpression(locateCoordinates.Z, inferredPath));
                 break;
+            case DMASTAsType asType: {
+                var lhs = BuildExpression(asType.LHS, inferredPath);
+                var rhs = BuildExpression(asType.RHS, lhs.Path);
+
+                result = new AsType(asType.Location, lhs, rhs);
+                break;
+            }
             case DMASTIsSaved isSaved:
                 result = new IsSaved(isSaved.Location, BuildExpression(isSaved.Value, inferredPath));
                 break;
             case DMASTIsType isType: {
-                if (isType.RHS is DMASTIdentifier { Identifier: "__IMPLIED_TYPE__" }) {
-                    var expr = BuildExpression(isType.LHS, inferredPath);
-                    if (expr.Path is null) {
-                        result = BadExpression(WarningCode.BadExpression, isType.Location,
-                            "A type could not be inferred!");
-                        break;
-                    }
+                var lhs = BuildExpression(isType.LHS, inferredPath);
+                var rhs = BuildExpression(isType.RHS, lhs.Path);
 
-                    result = new IsTypeInferred(isType.Location, expr, expr.Path.Value);
-                    break;
-                }
-
-                result = new IsType(isType.Location,
-                    BuildExpression(isType.LHS, inferredPath),
-                    BuildExpression(isType.RHS, inferredPath));
+                result = new IsType(isType.Location, lhs, rhs);
                 break;
             }
 
@@ -647,11 +644,18 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
         if (scopeIdentifier.Expression is DMASTIdentifier { Identifier: "type" or "parent_type" } identifier) {
             // This is the same behaviour as in BYOND, but BYOND simply raises an undefined var error.
             // We want to give end users an explanation at least.
-            if (scopeMode is Normal && ctx.Proc != null)
-                return BadExpression(WarningCode.BadExpression, identifier.Location,
-                    "Use of \"type::\" and \"parent_type::\" outside of a context is forbidden");
-
-            if (identifier.Identifier == "parent_type") {
+            if (scopeMode is Normal && ctx.Proc != null) {
+                if (ctx.Proc.GetLocalVariable(identifier.Identifier) != null) {
+                    // actually - it's referring to a local variable named "type" or "parent_type"... just do the usual thing
+                    Compiler.Emit(WarningCode.ScopeOperandNamedType, identifier.Location,
+                        $"Using scope operator :: on a variable named \"type\" or \"parent_type\" is ambiguous. Consider changing the variable name from \"{identifier.Identifier}\".");
+                    expression = BuildExpression(scopeIdentifier.Expression, inferredPath);
+                } else {
+                    return BadExpression(WarningCode.BadExpression, identifier.Location,
+                            "Use of \"type::\" and \"parent_type::\" inside an object proc is only valid when " +
+                            "there is a local variable named \"type\" or \"parent_type\"");
+                }
+            } else if (identifier.Identifier == "parent_type") {
                 if (ctx.Type.Parent == null)
                     return BadExpression(WarningCode.ItemDoesntExist, identifier.Location,
                         $"Type {ctx.Type.Path} does not have a parent");
@@ -1070,6 +1074,16 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
 
         var pathExpr = BuildExpression(locate.Expression, inferredPath);
         return new Locate(locate.Location, pathExpr, container);
+    }
+
+    private DMExpression BuildImplicitAsType(DMASTImplicitAsType asType, DreamPath? inferredPath) {
+        var expr = BuildExpression(asType.Value, inferredPath);
+
+        if (inferredPath is null) {
+            return BadExpression(WarningCode.BadExpression, asType.Location, "Could not infer a type");
+        }
+
+        return new AsTypeInferred(asType.Location, expr, inferredPath.Value);
     }
 
     private DMExpression BuildImplicitIsType(DMASTImplicitIsType isType, DreamPath? inferredPath) {

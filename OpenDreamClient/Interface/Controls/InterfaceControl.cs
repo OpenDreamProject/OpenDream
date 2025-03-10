@@ -23,14 +23,13 @@ public abstract class InterfaceControl : InterfaceElement {
     public Vector2i AnchorPosition = Vector2i.Zero;
 
     protected ControlDescriptor ControlDescriptor => (ControlDescriptor) ElementDescriptor;
-
-    private readonly ControlWindow? _window;
+    protected readonly ControlWindow? Window;
 
     [SuppressMessage("ReSharper", "VirtualMemberCallInConstructor")]
     protected InterfaceControl(ControlDescriptor controlDescriptor, ControlWindow? window) : base(controlDescriptor) {
         IoCManager.InjectDependencies(this);
 
-        _window = window;
+        Window = window;
         UIElement = CreateUIElement();
 
         SetProperty("size", ControlDescriptor.Size.AsRaw());
@@ -94,27 +93,29 @@ public abstract class InterfaceControl : InterfaceElement {
         switch (property) {
             case "size":
                 var size = new DMFPropertySize(value);
+                ControlDescriptor.Size = size;
 
                 // A size of 0 takes up the remaining space of the window as defined by the DMF
-                if (size.X == 0 && _window != null)
-                    size.X = _window.Size.X - ControlDescriptor.Pos.X;
-                if (size.Y == 0 && _window != null)
-                    size.Y = _window.Size.Y - ControlDescriptor.Pos.Y;
+                if (size.X == 0 && Window != null)
+                    size.X = Window.Size.X - ControlDescriptor.Pos.X;
+                if (size.Y == 0 && Window != null)
+                    size.Y = Window.Size.Y - ControlDescriptor.Pos.Y;
 
                 value = size.AsRaw(); // May have been modified by the above
                 UIElement.SetSize = size.Vector;
 
                 if (manualWinset)
-                    _window?.UpdateAnchorPosition(this);
+                    Window?.UpdateAnchorPosition(this);
                 break;
             case "pos":
                 var pos = new DMFPropertyPos(value);
+                ControlDescriptor.Pos = pos;
 
                 LayoutContainer.SetMarginLeft(UIElement, pos.X);
                 LayoutContainer.SetMarginTop(UIElement, pos.Y);
 
                 if (manualWinset)
-                    _window?.UpdateAnchorPosition(this);
+                    Window?.UpdateAnchorPosition(this);
                 break;
         }
 

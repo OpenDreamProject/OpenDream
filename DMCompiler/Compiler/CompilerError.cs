@@ -22,6 +22,7 @@ public enum WarningCode {
     ItemDoesntExist = 404,
     DanglingOverride = 405,
     StaticOverride = 406,
+    FinalOverride = 407,
     // ReSharper disable once InconsistentNaming
     IAmATeaPot = 418, // TODO: Implement the HTCPC protocol for OD
     HardConstContext = 500,
@@ -32,6 +33,7 @@ public enum WarningCode {
     FileAlreadyIncluded = 1000,
     MissingIncludedFile = 1001,
     InvalidWarningCode = 1002,
+    InvalidFileDirDefine = 1003,
     MisplacedDirective = 1100,
     UndefineMissingDirective = 1101,
     DefinedMissingParen = 1150,
@@ -41,6 +43,7 @@ public enum WarningCode {
 
     // 2000 - 2999 are reserved for compiler configuration of actual behaviour.
     SoftReservedKeyword = 2000, // For keywords that SHOULD be reserved, but don't have to be. 'null' and 'defined', for instance
+    ScopeOperandNamedType = 2001, // Scope operator is used on a var named type or parent_type, maybe unintentionally
     DuplicateVariable = 2100,
     DuplicateProcDefinition = 2101,
     PointlessParentCall = 2205,

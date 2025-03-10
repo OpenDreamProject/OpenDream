@@ -1,17 +1,16 @@
 ﻿using OpenDreamShared.Dream;
 using Robust.Server.Player;
 using Robust.Shared.Enums;
-using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
 using System.Diagnostics.CodeAnalysis;
 using OpenDreamShared.Network.Messages;
 using Robust.Shared.Player;
-using Robust.Shared.Network;
 using System.Diagnostics;
+using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
 
 namespace OpenDreamRuntime.Rendering;
 
 public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
-    public readonly ImmutableAppearance DefaultAppearance;
+    public ImmutableAppearance DefaultAppearance = default!;
 
     /// <summary>
     /// Each appearance gets a unique ID when marked as registered. Here we store these as a key -> weakref in a weaktable, which does not count
@@ -28,10 +27,9 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     private readonly Dictionary<uint, ProxyWeakRef> _idToAppearance = new();
     private uint _counter;
 
-    [Dependency] private readonly IServerNetManager _networkManager = default!;
     [Dependency] private readonly IPlayerManager _playerManager = default!;
 
-    public ServerAppearanceSystem() {
+    public override void Initialize() {
         DefaultAppearance = new ImmutableAppearance(MutableAppearance.Default, this);
         DefaultAppearance.MarkRegistered(_counter++); //first appearance registered gets id 0, this is the blank default appearance
         ProxyWeakRef proxyWeakRef = new(DefaultAppearance);
@@ -40,9 +38,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         //leaving this in as a sanity check for mutable and immutable appearance hashcodes covering all the same vars
         //if this debug assert fails, you've probably changed appearance var and not updated its counterpart
         Debug.Assert(DefaultAppearance.GetHashCode() == MutableAppearance.Default.GetHashCode());
-    }
 
-    public override void Initialize() {
         _playerManager.PlayerStatusChanged += OnPlayerStatusChanged;
     }
 
@@ -75,7 +71,8 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         ProxyWeakRef proxyWeakRef = new(immutableAppearance);
         _appearanceLookup.Add(proxyWeakRef);
         _idToAppearance.Add(immutableAppearance.MustGetId(), proxyWeakRef);
-        _networkManager.ServerSendToAll(new MsgNewAppearance(immutableAppearance));
+
+        RaiseNetworkEvent(new NewAppearanceEvent(immutableAppearance));
     }
 
     public ImmutableAppearance AddAppearance(MutableAppearance appearance, bool registerAppearance = true) {
@@ -98,6 +95,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     }
 
     //this should only be called by the ImmutableAppearance's finalizer
+    [Access(typeof(ImmutableAppearance))]
     public override void RemoveAppearance(ImmutableAppearance appearance) {
         lock (_lock) {
             ProxyWeakRef proxyWeakRef = new(appearance);

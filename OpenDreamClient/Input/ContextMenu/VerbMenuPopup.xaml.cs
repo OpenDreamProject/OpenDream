@@ -95,7 +95,7 @@ internal sealed partial class VerbMenuPopup : Popup {
 
     private void AddVerb(int verbId, ClientObjectReference verbSrc, VerbSystem.VerbInfo verbInfo) {
         var button = AddButton(verbInfo.Name);
-        var takesTargetArg = verbInfo.GetTargetType() != null && !verbSrc.Equals(_target);
+        var takesTargetArg = verbInfo.GetTargetType() != null;
 
         button.OnPressed += _ => {
             _verbSystem?.ExecuteVerb(verbSrc, verbId, takesTargetArg ? [_target] : []);

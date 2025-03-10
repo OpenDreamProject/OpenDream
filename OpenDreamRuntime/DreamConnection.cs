@@ -212,11 +212,13 @@ public sealed class DreamConnection {
         if (value.TryGetValueAsDreamObject<DreamObjectSound>(out var outputObject)) {
             ushort channel = (ushort)outputObject.GetVariable("channel").GetValueAsInteger();
             ushort volume = (ushort)outputObject.GetVariable("volume").GetValueAsInteger();
+            float offset = outputObject.GetVariable("offset").UnsafeGetValueAsFloat();
             DreamValue file = outputObject.GetVariable("file");
 
             var msg = new MsgSound() {
                 Channel = channel,
-                Volume = volume
+                Volume = volume,
+                Offset = offset
             };
 
             if (!file.TryGetValueAsDreamResource(out var soundResource)) {
@@ -466,6 +468,19 @@ public sealed class DreamConnection {
 
     public void WinClone(string controlId, string cloneId) {
         var msg = new MsgWinClone() { ControlId = controlId, CloneId = cloneId };
+
+        Session?.Channel.SendMessage(msg);
+    }
+
+    /// <summary>
+    /// Sends a URL to the client to open.
+    /// Can be a website, a topic call, or another server to connect to.
+    /// </summary>
+    /// <param name="url">URL to open on the client's side</param>
+    public void SendLink(string url) {
+        var msg = new MsgLink {
+            Url = url
+        };
 
         Session?.Channel.SendMessage(msg);
     }

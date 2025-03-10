@@ -109,6 +109,13 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             TextureRenderOffset = Vector2.Zero;
             return frame;
         } else {
+            if (textureOverride is not null) { //no caching in the presence of overrides
+                var texture = FullRenderTexture(viewOverlay, handle, iconMetaData, frame);
+
+                renderTargetPool.ReturnAtEndOfFrame(texture);
+                return texture.Texture;
+            }
+
             CachedTexture = FullRenderTexture(viewOverlay, handle, iconMetaData, frame);
         }
 
@@ -323,11 +330,9 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
                 _animatedAppearance.IconState = endAppearance.IconState;
             if (endAppearance.Invisibility != _appearance.Invisibility)
                 _animatedAppearance.Invisibility = endAppearance.Invisibility;
+            if (endAppearance.Maptext != _appearance.Maptext)
+                _animatedAppearance.Maptext = endAppearance.Maptext;
 
-            /* TODO maptext
-            if (endAppearance.MapText != _appearance.MapText)
-                appearance.MapText = endAppearance.MapText;
-            */
             /* TODO suffix
             if (endAppearance.Suffix != _appearance.Suffix)
                 appearance.Suffix = endAppearance.Suffix;
@@ -383,34 +388,30 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             }
             */
 
-            /* TODO maptext
-            if (endAppearance.MapTextWidth != _appearance.MapTextWidth) {
-                appearance.MapTextWidth = (ushort)Math.Clamp(((1-factor) * _appearance.MapTextWidth) + (factor * endAppearance.MapTextWidth), 0, 65535);
+            if (endAppearance.MaptextSize != _appearance.MaptextSize) {
+                Vector2 startingOffset = _appearance.MaptextSize;
+                Vector2 newMaptextSize = Vector2.Lerp(startingOffset, endAppearance.MaptextSize, factor);
+
+                _animatedAppearance.MaptextSize = (Vector2i)newMaptextSize;
             }
 
-            if (endAppearance.MapTextHeight != _appearance.MapTextHeight) {
-                appearance.MapTextHeight = (ushort)Math.Clamp(((1-factor) * _appearance.MapTextHeight) + (factor * endAppearance.MapTextHeight), 0, 65535);
-            }
+            if (endAppearance.MaptextOffset != _appearance.MaptextOffset) {
+                Vector2 startingOffset = _appearance.MaptextOffset;
+                Vector2 newMaptextOffset = Vector2.Lerp(startingOffset, endAppearance.MaptextOffset, factor);
 
-            if (endAppearance.MapTextX != _appearance.MapTextX) {
-                appearance.MapTextX = (short)Math.Clamp(((1-factor) * _appearance.MapTextX) + (factor * endAppearance.MapTextX), -32768, 32767);
+                _animatedAppearance.MaptextOffset = (Vector2i)newMaptextOffset;
             }
-
-            if (endAppearance.MapTextY != _appearance.MapTextY) {
-                appearance.MapTextY = (short)Math.Clamp(((1-factor) * _appearance.MapTextY) + (factor * endAppearance.MapTextY), -32768, 32767);
-            }
-            */
 
             if (endAppearance.PixelOffset != _appearance.PixelOffset) {
                 Vector2 startingOffset = _appearance.PixelOffset;
-                Vector2 newPixelOffset = Vector2.Lerp(startingOffset, endAppearance.PixelOffset, 1.0f-factor);
+                Vector2 newPixelOffset = Vector2.Lerp(startingOffset, endAppearance.PixelOffset, factor);
 
                 _animatedAppearance.PixelOffset = (Vector2i)newPixelOffset;
             }
 
             if (endAppearance.PixelOffset2 != _appearance.PixelOffset2) {
                 Vector2 startingOffset = _appearance.PixelOffset2;
-                Vector2 newPixelOffset = Vector2.Lerp(startingOffset, endAppearance.PixelOffset2, 1.0f-factor);
+                Vector2 newPixelOffset = Vector2.Lerp(startingOffset, endAppearance.PixelOffset2, factor);
 
                 _animatedAppearance.PixelOffset2 = (Vector2i)newPixelOffset;
             }

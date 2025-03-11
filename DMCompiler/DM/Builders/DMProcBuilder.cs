@@ -492,10 +492,8 @@ namespace DMCompiler.DM.Builders {
                         }
                     }
 
-                    switch (expr2)
-                    {
-                        case Local assocLocal:
-                        {
+                    switch (expr2) {
+                        case Local assocLocal: {
                             assocLocal.LocalVar.ExplicitValueType = statementFor.DMTypes;
                             if(assocLocal.LocalVar is DMProc.LocalConstVariable)
                                 compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, "Cannot change constant value");

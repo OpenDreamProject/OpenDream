@@ -479,10 +479,8 @@ namespace DMCompiler.DM.Builders {
                     var outputVar = _exprBuilder.Create(outputExpr);
                     var list = _exprBuilder.Create(dmastIn.RHS);
 
-                    switch (outputVar)
-                    {
-                        case Local outputLocal:
-                        {
+                    switch (outputVar) {
+                        case Local outputLocal: {
                             outputLocal.LocalVar.ExplicitValueType = statementFor.DMTypes;
                             if(outputLocal.LocalVar is DMProc.LocalConstVariable)
                                 compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, "Cannot change constant value");

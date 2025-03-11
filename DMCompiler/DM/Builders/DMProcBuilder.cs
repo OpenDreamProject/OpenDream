@@ -506,8 +506,7 @@ namespace DMCompiler.DM.Builders {
                     }
 
                     ProcessStatementForList(list, outputVar, expr2, statementFor.DMTypes, statementFor.Body);
-                }
-                else if (statementFor.Expression2 != null || statementFor.Expression3 != null) {
+                } else if (statementFor.Expression2 != null || statementFor.Expression3 != null) {
                     var initializer = statementFor.Expression1 != null ? _exprBuilder.Create(statementFor.Expression1) : null;
                     var comparator = statementFor.Expression2 != null ? _exprBuilder.Create(statementFor.Expression2) : null;
                     var incrementor = statementFor.Expression3 != null ? _exprBuilder.Create(statementFor.Expression3) : null;

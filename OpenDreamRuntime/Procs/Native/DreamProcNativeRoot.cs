@@ -1565,18 +1565,12 @@ internal static class DreamProcNativeRoot {
         if (!valFactor.TryGetValueAsFloatCoerceNull(out var factor))
             throw new Exception($"lerp factor {valFactor} is not a num");
 
-        if (valA == DreamValue.Null) valA = new DreamValue(0);
-
         // TODO: Support non-num arguments like vectors
-        switch (valA.Type) {
-            case DreamValueType.Float when valB.TryGetValueAsFloatCoerceNull(out var floatB): {
-                var floatA = valA.MustGetValueAsFloat();
-                return new DreamValue(floatA + (floatB - floatA) * factor);
-            }
-            default:
-                // TODO: Change this to a type mismatch runtime once the other valid arg types are supported
-                throw new NotImplementedException($"lerp() currently only supports nums and null; got {valA} and {valB}");
-        }
+        if (valA.TryGetValueAsFloatCoerceNull(out var floatA) && valB.TryGetValueAsFloatCoerceNull(out var floatB)) {
+            return new DreamValue(floatA + (floatB - floatA) * factor);
+
+        // TODO: Change this to a type mismatch runtime once the other valid arg types are supported
+        throw new NotImplementedException($"lerp() currently only supports nums and null; got {valA} and {valB}");
     }
 
     [DreamProc("list2params")]

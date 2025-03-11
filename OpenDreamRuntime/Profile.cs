@@ -1,6 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Threading;
 using bottlenoselabs.C2CS.Runtime;
+using Robust.Shared.Console;
 using static Tracy.PInvoke;
 
 namespace OpenDreamRuntime;
@@ -266,5 +267,29 @@ public sealed unsafe class ProfilerMemory {
 
     ~ProfilerMemory(){
         ReleaseMemory();
+    }
+}
+
+
+public sealed class ActivateProfilerCommand : IConsoleCommand {
+    // ReSharper disable once StringLiteralTypo
+    public string Command => "activatetracy";
+    public string Description => "Enable the Tracy profiler for the server.";
+    public string Help => "";
+    public bool RequireServerOrSingleplayer => true;
+
+    public void Execute(IConsoleShell shell, string argStr, string[] args) {
+        if(!shell.IsLocal) {
+            shell.WriteError("You cannot use this command as a client. Execute it on the server console.");
+            return;
+        }
+
+        if(Profiler.IsActivated()){
+            shell.WriteError("Tracy is already activated.");
+            return;
+        }
+
+        Profiler.Activate();
+        shell.WriteLine("Tracy activated. You can now use the profiler.");
     }
 }

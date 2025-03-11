@@ -278,8 +278,9 @@ namespace OpenDreamRuntime.Procs {
             if (enumerator == null || !enumerator.Enumerate(state, outputRef))
                 state.Jump(jumpToIfFailure);
             else {
-                var outputVal = state.GetReferenceValue(outputRef, peek: true);
-                var listVal = state.GetReferenceValue(listRef, peek: true);
+                var outputVal = state.GetReferenceValue(outputRef);
+                state.GetReferenceValue(assocRef);
+                var listVal = state.GetReferenceValue(listRef);
                 var indexVal = state.GetIndex(listVal, outputVal, state);
 
                 state.AssignReference(assocRef, indexVal);

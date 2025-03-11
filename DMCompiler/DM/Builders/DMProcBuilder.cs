@@ -486,8 +486,7 @@ namespace DMCompiler.DM.Builders {
                                 compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, "Cannot change constant value");
                             break;
                         }
-                        case Field { IsConst: true }:
-                        {
+                        case Field { IsConst: true }: {
                             compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, "Cannot change constant value");
                             break;
                         }

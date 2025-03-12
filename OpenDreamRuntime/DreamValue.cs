@@ -194,6 +194,15 @@ public struct DreamValue : IEquatable<DreamValue> {
         return Type == DreamValueType.Float;
     }
 
+    /// <summary>
+    /// Identical to <see cref="TryGetValueAsFloat"/> except null is treated as zero and returns true
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public readonly bool TryGetValueAsFloatCoerceNull(out float value) {
+        value = _floatValue;
+        return (Type == DreamValueType.Float || this == Null) ;
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public float MustGetValueAsFloat() {
         if (Type != DreamValueType.Float)

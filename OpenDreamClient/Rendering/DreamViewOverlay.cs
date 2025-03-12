@@ -434,7 +434,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
         }
 
         //Maptext
-        if(iconMetaData.Maptext != null) {
+        if (!string.IsNullOrWhiteSpace(iconMetaData.Maptext)) {
             var maptextSize = iconMetaData.MaptextSize!.Value;
             if (maptextSize.X == 0)
                 maptextSize.X = 32;

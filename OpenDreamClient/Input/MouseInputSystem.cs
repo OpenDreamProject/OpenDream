@@ -111,6 +111,8 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
 
         var mapCoords = viewport.ScreenToMap(globalPos.Position);
         var mousePos = (relativePos - viewportBox.TopLeft) / viewportBox.Size * viewport.ViewportSize;
+        if (mousePos.X >= _dreamViewOverlay.MouseMap.Size.X || mousePos.Y >= _dreamViewOverlay.MouseMap.Size.Y)
+            return null;
 
         if(_configurationManager.GetCVar(CVars.DisplayCompat))
             return null; //Compat mode causes crashes with RT's GetPixel because OpenGL ES doesn't support GetTexImage()

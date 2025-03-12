@@ -3,7 +3,7 @@
 namespace OpenDreamClient.Rendering;
 
 internal sealed class ClientScreenOverlaySystem : SharedScreenOverlaySystem {
-    public HashSet<EntityUid> ScreenObjects = new();
+    public readonly HashSet<EntityUid> ScreenObjects = new();
 
     [Dependency] private readonly IEntityManager _entityManager = default!;
 

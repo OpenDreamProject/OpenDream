@@ -1568,7 +1568,7 @@ internal static class DreamProcNativeRoot {
         // TODO: Support non-num arguments like vectors
         if (valA.TryGetValueAsFloatCoerceNull(out var floatA) && valB.TryGetValueAsFloatCoerceNull(out var floatB)) {
             return new DreamValue(floatA + (floatB - floatA) * factor);
-
+        }
         // TODO: Change this to a type mismatch runtime once the other valid arg types are supported
         throw new NotImplementedException($"lerp() currently only supports nums and null; got {valA} and {valB}");
     }

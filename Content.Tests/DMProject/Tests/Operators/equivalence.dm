@@ -14,6 +14,14 @@
 	ASSERT((l1 ~! l2) == TRUE)
 	ASSERT((l1 ~! l3) == TRUE)
 	ASSERT((l1 ~! l4) == TRUE)
+	
+	// As of BYOND 516, we now care about assoc values for equivalence
+	var/list/one = list(a=1,b=3,c="hi")
+	var/list/two = list(a=1,b=2,c="hi")
+	var/list/three = list(a=1,b=3,c="hi")
+	ASSERT((one ~! two) == TRUE)
+	ASSERT((one ~= three) == TRUE)
+	ASSERT(list(a=null) ~= list("a"))
 
 	var/matrix/m1 = matrix(1,2,3,4,5,6)
 	var/matrix/m2 = matrix(-1,-2,-3,-4,-5,6)

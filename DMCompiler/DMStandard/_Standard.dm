@@ -56,6 +56,7 @@ proc/isturf(Loc1) as num
 proc/json_decode(JSON)
 proc/json_encode(Value, flags)
 proc/length_char(E) as num
+proc/lerp(A, B, factor)
 proc/list2params(List) as text
 proc/lowertext(T as text) as text
 proc/max(A) as num|text|null

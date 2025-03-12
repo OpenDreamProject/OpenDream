@@ -1553,6 +1553,26 @@ internal static class DreamProcNativeRoot {
         return _length(value, false);
     }
 
+    [DreamProc("lerp")]
+    [DreamProcParameter("A")]
+    [DreamProcParameter("B")]
+    [DreamProcParameter("factor", Type = DreamValueTypeFlag.Float)]
+    public static DreamValue NativeProc_lerp(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        DreamValue valA = bundle.GetArgument(0, "A");
+        DreamValue valB = bundle.GetArgument(1, "B");
+        DreamValue valFactor = bundle.GetArgument(2, "factor");
+
+        if (!valFactor.TryGetValueAsFloatCoerceNull(out var factor))
+            throw new Exception($"lerp factor {valFactor} is not a num");
+
+        // TODO: Support non-num arguments like vectors
+        if (valA.TryGetValueAsFloatCoerceNull(out var floatA) && valB.TryGetValueAsFloatCoerceNull(out var floatB)) {
+            return new DreamValue(floatA + (floatB - floatA) * factor);
+        }
+        // TODO: Change this to a type mismatch runtime once the other valid arg types are supported
+        throw new NotImplementedException($"lerp() currently only supports nums and null; got {valA} and {valB}");
+    }
+
     [DreamProc("list2params")]
     [DreamProcParameter("List")]
     public static DreamValue NativeProc_list2params(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {

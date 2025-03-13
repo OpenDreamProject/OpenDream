@@ -580,6 +580,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
                         plane.Master.TextureOverride = plane.RenderTarget.Texture;
                         DrawIcon(handle, _baseRenderTarget!.Size, plane.Master, Vector2.Zero);
                     } else {
+                        handle.UseShader(null);
                         handle.SetTransform(CreateRenderTargetFlipMatrix(_baseRenderTarget!.Size, Vector2.Zero));
                         handle.DrawTextureRect(plane.RenderTarget.Texture, Box2.FromTwoPoints(Vector2.Zero, _baseRenderTarget.Size));
                     }

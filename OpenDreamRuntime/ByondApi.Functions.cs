@@ -224,6 +224,14 @@ public static unsafe partial class ByondApi {
         return 1;
     }
 
+    /** byondapi.h comment:
+     * Reads items from a list.
+     * Blocks if not on the main thread.
+     * @param loc The list to read
+     * @param list CByondValue array, allocated by caller (can be null if querying length)
+     * @param len Pointer to length of array (in items); receives the number of items read on success, or required length of array if not big enough
+     * @return True on success; false with *len=0 for failure; false with *len=required size if array is not big enough
+     */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_ReadList(CByondValue* loc, CByondValue* list, uint* len) {
         if (len == null) {
@@ -256,6 +264,14 @@ public static unsafe partial class ByondApi {
         return 1;
     }
 
+    /** byondapi.h comment:
+     * Writes items to a list, in place of old contents.
+     * Blocks if not on the main thread.
+     * @param loc The list to fill
+     * @param list CByondValue array of items to write
+     * @param len Number of items to write
+     * @return True on success
+     */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_WriteList(CByondValue* loc, CByondValue* list, uint len) {
         if (list == null || loc == null) {
@@ -267,6 +283,7 @@ public static unsafe partial class ByondApi {
             if (!dstValue.TryGetValueAsDreamList(out DreamList? dstListValue)) {
                 return 0;
             }
+            dstListValue.Cut();
             for (int i = 0; i < len; i++) {
                 DreamValue srcValue = ValueFromDreamApi(list[i]);
                 dstListValue.AddValue(srcValue);

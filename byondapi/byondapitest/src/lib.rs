@@ -1,7 +1,7 @@
-use meowtonin::{ByondResult, ByondValue, byond_version};
+use meowtonin::{ByondResult, ByondValue, byond_version, FromByond};
 use meowtonin::sys::{
-    NONE, u4c, CByondValue,ByondValueData, Byond_GetVersion, ByondValue_SetNum, Byond_AddGetStrId, Byond_GetStrId,
-    Byond_ReadVar, Byond_ReadVarByStrId, Byond_WriteVar, Byond_WriteVarByStrId, Byond_CreateList
+    NONE, CByondValue, Byond_GetVersion, Byond_AddGetStrId, Byond_GetStrId,
+   Byond_ReadVarByStrId, Byond_WriteVar, Byond_WriteVarByStrId
 };
 //use meowtonin::strid::{lookup_string_id};
 use std::ffi::CString;
@@ -329,23 +329,36 @@ pub fn byondapitest_writevarbystrid_nonexistent_var(loc: ByondValue, key: ByondV
 // return empty list = success
 #[byond_fn]
 pub fn byondapitest_createlist() -> ByondResult<ByondValue> {
-    let mut c_result: CByondValue = ByondValue::null().into_inner();
-    unsafe {
-        Byond_CreateList(&mut c_result);
+    return Ok(ByondValue::new_list()?);
+}
+
+// 0 = succeed, 1 = fail
+#[byond_fn]
+pub fn byondapitest_readlist_valid(list: ByondValue) -> ByondResult<i32> {
+    let list = list.read_list()?;
+    match (list[0].get_number()?, list[1].get_string()?.as_str(), list.len()) {
+        (0.0,"one",2) => Ok(0),
+        _ => Ok(1)
     }
-    return Ok(ByondValue(c_result));
 }
 
-// TODO
+// 0 = succeed, 1 = fail
 #[byond_fn]
-pub fn byondapitest_readlist() -> ByondResult<i32> {
-    Ok(0)
+pub fn byondapitest_readlist_invalid(list: ByondValue) -> ByondResult<i32> {
+    match list.read_list() {
+        Ok(_) => Ok(1),
+        _ => Ok(0)
+    }
 }
 
-// TODO
+// 0 = succeed, 1 = fail
+// needs to check outside if elements of list_send were put in list_rcv
 #[byond_fn]
-pub fn byondapitest_writelist() -> ByondResult<i32> {
-    Ok(0)
+pub fn byondapitest_writelist(mut list_rcv: ByondValue, list_send: ByondValue) -> ByondResult<i32> {
+    match list_rcv.write_list(Vec::from_byond(&list_send)?) {
+        Ok(()) => Ok(0),
+        _ => Ok(1)
+    }
 }
 
 // TODO

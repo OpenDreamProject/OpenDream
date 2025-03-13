@@ -4,6 +4,8 @@ using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM.Expressions;
 using static DMCompiler.DM.Builders.DMExpressionBuilder.ScopeMode;
 using String = DMCompiler.DM.Expressions.String;
+using OpenDreamShared.Common;
+using OpenDreamShared.Common.DM;
 
 namespace DMCompiler.DM.Builders;
 

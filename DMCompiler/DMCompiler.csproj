@@ -13,6 +13,11 @@
     <DMStandard Include="DMStandard\**" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\OpenDreamNoClient\OpenDreamNoClient.csproj" />
+    <ProjectReference Include="..\OpenDreamShared.Common\OpenDreamShared.Common.csproj" />
+  </ItemGroup>
+
   <Target Name="CopyDMStandard" AfterTargets="AfterBuild">
     <Copy SourceFiles="@(DMStandard)" DestinationFiles="@(DMStandard->'$(OutDir)\DMStandard\%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>

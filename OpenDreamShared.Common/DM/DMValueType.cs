@@ -1,16 +1,11 @@
-using System;
-
-namespace OpenDreamShared.Dream;
-
-// If you are modifying this, you must also modify DMCompiler.DM.DMValueType !!
-// Unfortunately the client needs this and it can't reference DMCompiler due to the sandbox
+﻿namespace OpenDreamShared.Common.DM;
 
 ///<summary>
 ///Stores any explicit casting done via the "as" keyword. Also stores compiler hints for DMStandard.<br/>
 ///is a [Flags] enum because it's possible for something to have multiple values (especially with the quirky DMStandard ones)
 /// </summary>
 [Flags]
-public enum DreamValueType {
+public enum DMValueType {
     AllAtomTypes = Obj | Mob | Turf | Area,
 
     Anything = 0x0,
@@ -27,8 +22,10 @@ public enum DreamValueType {
     CommandText = 0x400,
     Sound = 0x800,
     Icon = 0x1000,
+    Path = 0x2000, // For proc return types
 
     //Byond here be dragons
-    Unimplemented = 0x2000, // Marks that a method or property is not implemented. Throws a compiler warning if accessed.
-    CompiletimeReadonly = 0x4000, // Marks that a property can only ever be read from, never written to. This is a const-ier version of const, for certain standard values like list.type
+    Unimplemented = 0x4000, // Marks that a method or property is not implemented. Throws a compiler warning if accessed.
+    CompiletimeReadonly = 0x8000, // Marks that a property can only ever be read from, never written to. This is a const-ier version of const, for certain standard values like list.type
+    NoConstFold = 0x10000 // Marks that a const var cannot be const-folded during compile
 }

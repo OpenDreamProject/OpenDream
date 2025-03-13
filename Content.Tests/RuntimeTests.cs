@@ -1,6 +1,6 @@
 ﻿using System;
-using DMCompiler.Bytecode;
 using NUnit.Framework;
+using OpenDreamShared.Common.Bytecode;
 
 namespace Content.Tests;
 

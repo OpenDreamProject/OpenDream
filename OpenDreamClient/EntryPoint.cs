@@ -79,7 +79,9 @@ public sealed class EntryPoint : GameClient {
         _lightManager.Enabled = false;
 
         // In PostInit() since the engine stylesheet gets set in Init()
-        IoCManager.Resolve<IUserInterfaceManager>().Stylesheet = DreamStylesheet.Make();
+        var uimanager = IoCManager.Resolve<IUserInterfaceManager>();
+        uimanager.Stylesheet = DreamStylesheet.Make();
+        uimanager.MainViewport.Visible = false;
 
         _dreamInterface.Initialize();
         IoCManager.Resolve<IDreamSoundEngine>().Initialize();

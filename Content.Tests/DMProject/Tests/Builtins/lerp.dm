@@ -1,0 +1,11 @@
+
+/proc/RunTest()
+	ASSERT(lerp(1,5,null) == 1)
+	ASSERT(lerp(1,5,1) == 5)
+	ASSERT(lerp(1,5.68,0.25) == 2.17)
+	ASSERT(lerp(null,5,0.25) == 1.25)
+	ASSERT(lerp(1,0,0.25) == 0.75)
+	ASSERT(lerp(1,1,0.25) == 1)
+	ASSERT(lerp(1,-5,0.25) == -0.5)
+	ASSERT(lerp(1,5,-1) == -3)
+	ASSERT(lerp(1,5,2) == 9)

@@ -295,6 +295,14 @@ public static unsafe partial class ByondApi {
         return 1;
     }
 
+    /** byondapi.h comment:
+     * Reads items as key,value pairs from an associative list, storing them sequentially as key1, value1, key2, value2, etc.
+     * Blocks if not on the main thread.
+     * @param loc The list to read
+     * @param list CByondValue array, allocated by caller (can be null if querying length)
+     * @param len Pointer to length of array (in items); receives the number of items read on success, or required length of array if not big enough
+     * @return True on success; false with *len=0 for failure; false with *len=required size if array is not big enough
+     */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_ReadListAssoc(CByondValue* loc, CByondValue* list, uint* len) {
         if (len == null) {

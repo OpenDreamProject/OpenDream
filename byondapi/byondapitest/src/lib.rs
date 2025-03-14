@@ -1,7 +1,7 @@
-use meowtonin::{ByondResult, ByondValue, byond_version, FromByond};
+use meowtonin::{ByondResult, ByondValue, byond_version, FromByond, ToByond};
 use meowtonin::sys::{
     NONE, CByondValue, Byond_GetVersion, Byond_AddGetStrId, Byond_GetStrId,
-   Byond_ReadVarByStrId, Byond_WriteVar, Byond_WriteVarByStrId
+   Byond_ReadVarByStrId, Byond_WriteVar, Byond_WriteVarByStrId, Byond_ReadListAssoc
 };
 //use meowtonin::strid::{lookup_string_id};
 use std::ffi::CString;
@@ -9,11 +9,6 @@ use std::os::raw::c_char;
 
 #[macro_use]
 extern crate meowtonin;
-
-#[byond_fn]
-pub fn byondapitest_arithmetic_add(a: f32, b: f32) -> ByondResult<f32> {
-    Ok(a + b)
-}
 
 // TODO
 #[byond_fn]
@@ -361,10 +356,66 @@ pub fn byondapitest_writelist(mut list_rcv: ByondValue, list_send: ByondValue) -
     }
 }
 
-// TODO
+// 0 = succeed, 1 = fail
 #[byond_fn]
-pub fn byondapitest_readlistassoc() -> ByondResult<i32> {
-    Ok(0)
+pub fn byondapitest_readlistassoc_sufficient_size(l: ByondValue) -> ByondResult<i32> {
+    let mut v: [CByondValue;6] = [Default::default(); 6];
+    let mut c: usize = 6;
+    unsafe {
+        let result = Byond_ReadListAssoc(&l.into_inner(), v.as_mut_ptr(), &mut c);
+        match (
+            result,c,
+            String::from_byond(&ByondValue(v[0]))?.as_str(),
+            String::from_byond(&ByondValue(v[1]))?.as_str(),
+            String::from_byond(&ByondValue(v[2]))?.as_str(),
+            i32::from_byond(&ByondValue(v[3]))?
+            ) {
+            (true,4,"one","first_item", "2", 2i32) => return Ok(0),
+            _ => Ok(1)
+        }
+    }
+    /* works only in byond at last time of running... in OD ends up calling CallGlobalProcByStrId
+     * and failing. Also just fails if alist(...) is used
+    let v = l.read_assoc_list()?;
+    match (
+        v.len(),
+        String::from_byond(&v[0][0])?.as_str(),
+        String::from_byond(&v[0][1])?.as_str(),
+        f32::from_byond(&v[1][0])?,
+        f32::from_byond(&v[1][1])?
+        ) {
+        (2,"one","first_item",2f32,2f32) => Ok(0),
+        _ => Ok(1)
+    }*/
+}
+
+// 0 = succeed, 1 = fail
+#[byond_fn]
+pub fn byondapitest_readlistassoc_insufficient_size(l: ByondValue) -> ByondResult<i32> {
+    let mut v: [CByondValue;2] = [Default::default(); 2];
+    let mut c: usize = 2;
+    unsafe {
+        let result = Byond_ReadListAssoc(&l.into_inner(), v.as_mut_ptr(), &mut c);
+        match (result,c) {
+            (false,4) => return Ok(0),
+            _ => Ok(1)
+        }
+    }
+}
+
+// 0 = succeed, 1 = fail
+#[byond_fn]
+pub fn byondapitest_readlistassoc_invalid_list() -> ByondResult<i32> {
+    let mut v: [CByondValue;2] = [Default::default(); 2];
+    let mut c: usize = 2;
+    let not_l = i32::to_byond(&1)?;
+    unsafe {
+        let result = Byond_ReadListAssoc(&not_l.into_inner(), v.as_mut_ptr(), &mut c);
+        match (result,c) {
+            (false,0) => return Ok(0),
+            _ => Ok(1)
+        }
+    }
 }
 
 // TODO

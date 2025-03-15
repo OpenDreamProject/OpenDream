@@ -1,10 +1,11 @@
-use meowtonin::{ByondResult, ByondValue, byond_version, FromByond, ToByond};
+use meowtonin::{ByondResult, ByondValue, FromByond, ToByond};
 use meowtonin::misc::block;
 use meowtonin::ByondXYZ;
 use meowtonin::sys::{
-    NONE, CByondValue, Byond_GetVersion, Byond_AddGetStrId, Byond_GetStrId,
+    NONE, CByondValue, Byond_GetVersion, Byond_AddGetStrId, Byond_GetStrId, ByondValueData,
     Byond_ReadVarByStrId, Byond_WriteVar, Byond_WriteVarByStrId, Byond_ReadListAssoc,
-    Byond_CallProc, Byond_CallProcByStrId, Byond_CallGlobalProc, Byond_CallGlobalProcByStrId
+    Byond_CallProc, Byond_CallProcByStrId, Byond_CallGlobalProc, Byond_CallGlobalProcByStrId,
+    ByondValue_Clear
 };
 //use meowtonin::strid::{lookup_string_id};
 use std::ffi::CString;
@@ -39,10 +40,34 @@ pub fn byondapitest_getdmbversion() -> ByondResult<i32> {
     Ok(0)
 }
 
-// TODO
+// 0 = succeed, 1 = fail
 #[byond_fn]
 pub fn byondapitest_clear() -> ByondResult<i32> {
-    Ok(0)
+    let mut x = CByondValue {
+        type_: 123,
+        junk1: 1,
+        junk2: 1,
+        junk3: 0,
+        data: ByondValueData{
+            ref_: 1234
+        }
+    };
+
+    unsafe {
+        ByondValue_Clear(&mut x);
+
+        //panic!("{} {} {} {} {}",x.type_, x.junk1, x.junk2, x.junk3, x.data.ref_);
+        match x {
+            CByondValue {
+                type_: 0,
+                junk1: _,
+                junk2: _,
+                junk3: _,
+                data: ByondValueData { ref_: 0}
+            } => Ok(0),
+            _ => Ok(1)
+        }
+    }
 }
 
 // TODO
@@ -114,9 +139,7 @@ pub fn byondapitest_setref() -> ByondResult<i32> {
 // needs to check outside for appropriate equality
 #[byond_fn]
 pub fn byondapitest_equals(a: ByondValue, b: ByondValue) -> ByondResult<bool> {
-    unsafe {
-        Ok(a.eq(&b))
-    }
+    Ok(a.eq(&b))
 }
 
 // TODO
@@ -474,16 +497,16 @@ pub fn byondapitest_writepointer() -> ByondResult<i32> {
 // 0 = succeed, 1 = fail
 #[byond_fn]
 pub fn byondapitest_callproc(src:ByondValue, arg1:ByondValue, arg2:ByondValue) -> ByondResult<i32> {
-    let mut resVal = ByondValue::null().into_inner();
+    let mut res_val = ByondValue::null().into_inner();
     let c_procname = CString::new("proc_name").unwrap();
     let c_pchar_procname : *const c_char = c_procname.as_ptr() as *const c_char;
 
     let args: [CByondValue;2] = [arg1.into_inner(),arg2.into_inner()];
 
     unsafe {
-        let res: bool = Byond_CallProc(&src.into_inner(), c_pchar_procname, args.as_ptr(), 2, &mut resVal);
+        let res: bool = Byond_CallProc(&src.into_inner(), c_pchar_procname, args.as_ptr(), 2, &mut res_val);
 
-        match (res, i32::from_byond(&ByondValue(resVal))?) {
+        match (res, i32::from_byond(&ByondValue(res_val))?) {
             (true,1) => Ok(0),
             _ => Ok(1)
         }
@@ -494,15 +517,15 @@ pub fn byondapitest_callproc(src:ByondValue, arg1:ByondValue, arg2:ByondValue) -
 #[byond_fn]
 pub fn byondapitest_callprocbystrid(src:ByondValue, proc_name: ByondValue, arg1:ByondValue,
     arg2:ByondValue) -> ByondResult<i32> {
-    let mut resVal = ByondValue::null().into_inner();
+    let mut res_val = ByondValue::null().into_inner();
 
     let args: [CByondValue;2] = [arg1.into_inner(),arg2.into_inner()];
 
     unsafe {
         let res: bool = Byond_CallProcByStrId(&src.into_inner(), proc_name.into_inner().data.ref_, args.as_ptr(), 2,
-        &mut resVal);
+        &mut res_val);
 
-        match (res, i32::from_byond(&ByondValue(resVal))?) {
+        match (res, i32::from_byond(&ByondValue(res_val))?) {
             (true,1) => Ok(0),
             _ => Ok(1)
         }
@@ -512,16 +535,16 @@ pub fn byondapitest_callprocbystrid(src:ByondValue, proc_name: ByondValue, arg1:
 // 0 = succeed, 1 = fail
 #[byond_fn]
 pub fn byondapitest_callglobalproc(arg1:ByondValue, arg2:ByondValue) -> ByondResult<i32> {
-    let mut resVal = ByondValue::null().into_inner();
+    let mut res_val = ByondValue::null().into_inner();
     let c_procname = CString::new("proc_name").unwrap();
     let c_pchar_procname : *const c_char = c_procname.as_ptr() as *const c_char;
 
     let args: [CByondValue;2] = [arg1.into_inner(),arg2.into_inner()];
 
     unsafe {
-        let res: bool = Byond_CallGlobalProc(c_pchar_procname, args.as_ptr(), 2, &mut resVal);
+        let res: bool = Byond_CallGlobalProc(c_pchar_procname, args.as_ptr(), 2, &mut res_val);
 
-        match (res, i32::from_byond(&ByondValue(resVal))?) {
+        match (res, i32::from_byond(&ByondValue(res_val))?) {
             (true,1) => Ok(0),
             _ => Ok(1)
         }
@@ -531,15 +554,15 @@ pub fn byondapitest_callglobalproc(arg1:ByondValue, arg2:ByondValue) -> ByondRes
 // 0 = succeed, 1 = fail
 #[byond_fn]
 pub fn byondapitest_callglobalprocbystrid(proc_name: ByondValue, arg1:ByondValue, arg2:ByondValue) -> ByondResult<i32> {
-    let mut resVal = ByondValue::null().into_inner();
+    let mut res_val = ByondValue::null().into_inner();
 
     let args: [CByondValue;2] = [arg1.into_inner(),arg2.into_inner()];
 
     unsafe {
         let res: bool = Byond_CallGlobalProcByStrId(proc_name.into_inner().data.ref_, args.as_ptr(), 2,
-        &mut resVal);
+        &mut res_val);
 
-        match (res, i32::from_byond(&ByondValue(resVal))?) {
+        match (res, i32::from_byond(&ByondValue(res_val))?) {
             (true,1) => Ok(0),
             _ => Ok(1)
         }

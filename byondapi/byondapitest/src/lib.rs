@@ -418,10 +418,26 @@ pub fn byondapitest_readlistassoc_invalid_list() -> ByondResult<i32> {
     }
 }
 
-// TODO
+// 0 = succeed, 1 = fail
 #[byond_fn]
-pub fn byondapitest_readlistindex() -> ByondResult<i32> {
-    Ok(0)
+pub fn byondapitest_readlistindex_normal_list(loc: ByondValue) -> ByondResult<i32> {
+    let first: String = loc.read_list_index(&1)?;
+    let second: i32 = loc.read_list_index(&2)?;
+    match (first.as_str(),second) {
+        ("first",2) => Ok(0),
+        _ => Ok(1)
+    }
+}
+
+// 0 = succeed, 1 = fail
+#[byond_fn]
+pub fn byondapitest_readlistindex_assoc_list(loc: ByondValue, key1: ByondValue, key2: ByondValue) -> ByondResult<i32> {
+    let first: String = loc.read_list_index(&key1)?;
+    let second: i32 = loc.read_list_index(&key2)?;
+    match (first.as_str(),second) {
+        ("first",2) => Ok(0),
+        _ => Ok(1)
+    }
 }
 
 // TODO

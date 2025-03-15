@@ -132,7 +132,6 @@ unsafe extern "C" fn ByondValue_SetNum(v: *mut CByondValue, f: f32) {
     }
 }
 
-// TODO: ref counting
 /** byondapi.h comment:
  * Creates a string and sets CByondValue to a reference to that string, and increases the reference count. See REFERENCE COUNTING in byondapi.h.
  * Blocks if not on the main thread. If string creation fails, the struct is set to null.
@@ -148,7 +147,8 @@ unsafe extern "C" fn ByondValue_SetStr(v: *mut CByondValue, str: *const c_char) 
         junk2: 0,
         junk3: 0,
         data: ByondValueData { ref_: Byond_AddGetStrId(str) },
-    }
+    };
+    ByondValue_IncRef(v);
 }
 
 #[no_mangle]

@@ -338,6 +338,14 @@ public static unsafe partial class ByondApi {
         return 1;
     }
 
+    /** byondapi.h comment:
+     * Reads an item from a list.
+     * Blocks if not on the main thread.
+     * @param loc The list
+     * @param idx The index in the list (may be a number, or a non-number if using associative lists)
+     * @param result Pointer to accept result
+     * @return True on success
+     */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_ReadListIndex(CByondValue* loc, CByondValue* cIdx, CByondValue* result) {
         if (loc == null || cIdx == null || result == null) {

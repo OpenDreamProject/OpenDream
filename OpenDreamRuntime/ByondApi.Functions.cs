@@ -12,9 +12,26 @@ using System.Threading.Tasks;
 namespace OpenDreamRuntime;
 
 public static unsafe partial class ByondApi {
+    /** byondapi.h comment:
+     * Determines if a value is logically true or false
+     *
+     * @param v Pointer to CByondValue
+     * @return Truthiness of value
+     */
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
+    private static byte ByondValue_IsTrue(CByondValue* v) {
+        return ValueFromDreamApi(*v).IsTruthy() ? (byte)1 : (byte)0;
+    }
+
+    /** byondapi.h comment:
+     * Compares two values for equality
+     * @param a Pointer to CByondValue
+     * @param b Pointer to CByondValue
+     * @return True if values are equal
+     */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte ByondValue_Equals(CByondValue* a, CByondValue* b) {
-        return ValueFromDreamApi(*a).Equals(ValueFromDreamApi(*b)) ? (byte)1: (byte)0;
+        return ValueFromDreamApi(*a).Equals(ValueFromDreamApi(*b)) ? (byte)1 : (byte)0;
     }
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]

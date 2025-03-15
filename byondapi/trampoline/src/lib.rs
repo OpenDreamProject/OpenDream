@@ -92,11 +92,6 @@ unsafe extern "C" fn ByondValue_IsList(v: *const CByondValue) -> bool {
     (*v).type_ == TYPE_LIST
 }
 
-#[no_mangle]
-unsafe extern "C" fn ByondValue_IsTrue(v: *const CByondValue) -> bool {
-    unimplemented!()
-}
-
 //
 // ByondValue access
 //
@@ -151,13 +146,26 @@ unsafe extern "C" fn ByondValue_SetStr(v: *mut CByondValue, str: *const c_char) 
     ByondValue_IncRef(v);
 }
 
+/** byondapi.h comment:
+ * Fills a CByondValue struct with a reference (object) type. Does not validate.
+ * @param v Pointer to CByondValue
+ * @param type 1-byte teference type
+ * @param ref 4-byte reference ID; for most types, an ID of NONE is invalid
+ * @see Byond_TestRef()
+ */
 #[no_mangle]
 unsafe extern "C" fn ByondValue_SetRef(
-    v: *const CByondValue,
+    v: *mut CByondValue,
     r#type: ByondValueType,
     r#ref: u4c,
 ) {
-    unimplemented!()
+    *v = CByondValue{
+        type_: r#type,
+        junk1: 0,
+        junk2: 0,
+        junk3: 0,
+        data: ByondValueData { ref_: r#ref },
+    };
 }
 
 //
@@ -166,6 +174,7 @@ unsafe extern "C" fn ByondValue_SetRef(
 
 trampolines! {
     // ByondValue functions
+    fn ByondValue_IsTrue(v: *const CByondValue) -> bool;
     fn ByondValue_Equals(a: *const CByondValue, b: *const CByondValue) -> bool;
 
     // Regular functions

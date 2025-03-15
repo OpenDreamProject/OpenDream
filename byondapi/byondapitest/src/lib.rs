@@ -1,4 +1,4 @@
-use meowtonin::{ByondResult, ByondValue, FromByond, ToByond};
+use meowtonin::{ByondResult, ByondValue, FromByond, ToByond, ByondValueType};
 use meowtonin::misc::block;
 use meowtonin::ByondXYZ;
 use meowtonin::sys::{
@@ -100,10 +100,10 @@ pub fn byondapitest_islist() -> ByondResult<i32> {
     Ok(0)
 }
 
-// TODO
+// needs to check outside for appropriate equality
 #[byond_fn]
-pub fn byondapitest_istrue() -> ByondResult<i32> {
-    Ok(0)
+pub fn byondapitest_istrue(v: ByondValue) -> ByondResult<bool> {
+    Ok(v.eq(&true))
 }
 
 // TODO
@@ -130,10 +130,16 @@ pub fn byondapitest_setstr() -> ByondResult<i32> {
     Ok(0)
 }
 
-// TODO
+// 0 = succeed, 1 = fail
 #[byond_fn]
 pub fn byondapitest_setref() -> ByondResult<i32> {
-    Ok(0)
+    unsafe {
+        let x = ByondValue::new_ref_unchecked(ByondValueType::MOB, 1234);
+        match x.into_inner().data.ref_ {
+            1234 => Ok(0),
+            _ => Ok(1)
+        }
+    }
 }
 
 // needs to check outside for appropriate equality

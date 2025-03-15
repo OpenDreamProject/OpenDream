@@ -408,6 +408,18 @@ public static unsafe partial class ByondApi {
         throw new NotImplementedException();
     }
 
+    // TODO: make sure return happens immediately if the callee sleeps
+    /** byondapi.h comment:
+     * Calls an object proc by name.
+     * The proc call is treated as waitfor=0 and will return immediately on sleep.
+     * Blocks if not on the main thread.
+     * @param src The object that owns the proc
+     * @param name Proc name as null-terminated string
+     * @param arg Array of arguments
+     * @param arg_count Number of arguments
+     * @param result Pointer to accept result
+     * @return True on success
+     */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_CallProc(CByondValue* cSrc, byte* cName, CByondValue* cArgs, uint arg_count, CByondValue* cResult) {
         if (cSrc == null || cArgs == null || cResult == null) {
@@ -436,6 +448,7 @@ public static unsafe partial class ByondApi {
 
             var args = new DreamProcArguments(CollectionsMarshal.AsSpan(argList));
 
+            // TODO
             // Can we know the user?
             var result = proc.Spawn(srcObj, args);
 
@@ -462,8 +475,7 @@ public static unsafe partial class ByondApi {
 
             if (srcObj == null) return 0;
 
-            var srcVar = srcObj.GetVariable(procName);
-            if (!srcVar.TryGetValueAsProc(out var proc)) return 0;
+            if (!srcObj.TryGetProc(procName, out var proc)) return 0;
 
             List<DreamValue> argList = new List<DreamValue>((int)arg_count);
 
@@ -485,6 +497,18 @@ public static unsafe partial class ByondApi {
         return 1;
     }
 
+    /** byondapi.h comment:
+     * Calls an object proc by name, where the name is a string ID.
+     * The proc call is treated as waitfor=0 and will return immediately on sleep.
+     * Blocks if not on the main thread.
+     * @param src The object that owns the proc
+     * @param name Proc name as string ID
+     * @param arg Array of arguments
+     * @param arg_count Number of arguments
+     * @param result Pointer to accept result
+     * @return True on success
+     * @see Byond_GetStrId()
+     */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_CallGlobalProc(byte* cName, CByondValue* cArgs, uint arg_count, CByondValue* cResult) {
         if (cArgs == null || cResult == null) {

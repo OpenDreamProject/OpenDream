@@ -2,7 +2,7 @@ use meowtonin::{ByondResult, ByondValue, byond_version, FromByond, ToByond};
 use meowtonin::sys::{
     NONE, CByondValue, Byond_GetVersion, Byond_AddGetStrId, Byond_GetStrId,
     Byond_ReadVarByStrId, Byond_WriteVar, Byond_WriteVarByStrId, Byond_ReadListAssoc,
-    Byond_CallProc
+    Byond_CallProc, Byond_CallProcByStrId
 };
 //use meowtonin::strid::{lookup_string_id};
 use std::ffi::CString;
@@ -486,10 +486,23 @@ pub fn byondapitest_callproc(src:ByondValue, arg1:ByondValue, arg2:ByondValue) -
     }
 }
 
-// TODO
+// 0 = succeed, 1 = fail
 #[byond_fn]
-pub fn byondapitest_callprocbystrid() -> ByondResult<i32> {
-    Ok(0)
+pub fn byondapitest_callprocbystrid(src:ByondValue, proc_name: ByondValue, arg1:ByondValue,
+    arg2:ByondValue) -> ByondResult<i32> {
+    let mut resVal = ByondValue::null().into_inner();
+
+    let args: [CByondValue;2] = [arg1.into_inner(),arg2.into_inner()];
+
+    unsafe {
+        let res: bool = Byond_CallProcByStrId(&src.into_inner(), proc_name.into_inner().data.ref_, args.as_ptr(), 2,
+        &mut resVal);
+
+        match (res, i32::from_byond(&ByondValue(resVal))?) {
+            (true,1) => Ok(0),
+            _ => Ok(1)
+        }
+    }
 }
 
 // TODO

@@ -285,7 +285,11 @@ internal sealed partial class DreamViewOverlay : Overlay {
 
             tieBreaker++;
 
-            if (!keepTogether || (underlay.Appearance.AppearanceFlags & AppearanceFlags.KeepApart) != 0) { //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
+            // KEEP_APART flag or on a different plane than the parent atom (implicitly treated as KEEP_APART)
+            var keepApart = underlay.Appearance.Plane != icon.Appearance.Plane ||
+                            (underlay.Appearance.AppearanceFlags & AppearanceFlags.KeepApart) != 0;
+
+            if (!keepTogether || keepApart) { //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
                 ProcessIconComponents(underlay, current.Position, uid, isScreen, ref tieBreaker, result, seeVis, current);
             } else {
                 current.KeepTogetherGroup ??= new();
@@ -303,7 +307,11 @@ internal sealed partial class DreamViewOverlay : Overlay {
 
             tieBreaker++;
 
-            if (!keepTogether || (overlay.Appearance.AppearanceFlags & AppearanceFlags.KeepApart) != 0) { //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
+            // KEEP_APART flag or on a different plane than the parent atom (implicitly treated as KEEP_APART)
+            var keepApart = overlay.Appearance.Plane != icon.Appearance.Plane ||
+                            (overlay.Appearance.AppearanceFlags & AppearanceFlags.KeepApart) != 0;
+
+            if (!keepTogether || keepApart) { //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
                 ProcessIconComponents(overlay, current.Position, uid, isScreen, ref tieBreaker, result, seeVis, current);
             } else {
                 current.KeepTogetherGroup ??= new();

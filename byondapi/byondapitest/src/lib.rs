@@ -440,10 +440,18 @@ pub fn byondapitest_readlistindex_assoc_list(loc: ByondValue, key1: ByondValue, 
     }
 }
 
-// TODO
+// needs to check outside if loc[1] was set to val1 and loc[2] was set to val2
 #[byond_fn]
-pub fn byondapitest_writelistindex() -> ByondResult<i32> {
-    Ok(0)
+pub fn byondapitest_writelistindex_normal_list(mut loc: ByondValue, val1: ByondValue, val2: ByondValue) {
+    let _ = loc.write_list_index(1,val1);
+    let _ = loc.write_list_index(2,val2);
+}
+
+// needs to check outside if loc[key1] was set to val1 and loc[key2] was set to val2
+#[byond_fn]
+pub fn byondapitest_writelistindex_assoc_list(mut loc: ByondValue, key1: ByondValue, val1: ByondValue, key2:ByondValue, val2: ByondValue) {
+    let _ = loc.write_list_index(key1,val1);
+    let _ = loc.write_list_index(key2,val2);
 }
 
 // TODO

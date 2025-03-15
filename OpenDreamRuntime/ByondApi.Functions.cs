@@ -713,6 +713,13 @@ public static unsafe partial class ByondApi {
         return 1;
     }
 
+    /** byondapi.h comment:
+     * Equivalent to calling length(value).
+     * Blocks if not on the main thread.
+     * @param src The value
+     * @param result Pointer to accept result as a CByondValue (intended for future possible override of length)
+     * @return True on success
+     */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_Length(CByondValue* src, CByondValue* result) {
         *result = new CByondValue();
@@ -725,14 +732,16 @@ public static unsafe partial class ByondApi {
         try {
             switch (srcValue.Type) {
                 default:
-                    return 0;
+                    result->data.num = 0;
+                    return 1;
                 case DreamValue.DreamValueType.DreamObject:
                     if (srcValue.TryGetValueAsDreamList(out var list)) {
                         result->data.num = list.GetLength();
                     } else if (srcValue.TryGetValueAsDreamObject<DreamObjectVector>(out var vec)) {
                         result->data.num = vec.Size;
                     } else {
-                        return 0;
+                        result->data.num = 0;
+                        return 1;
                     }
                     break;
                 case DreamValue.DreamValueType.String:

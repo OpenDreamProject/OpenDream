@@ -5,11 +5,12 @@ use meowtonin::sys::{
     NONE, CByondValue, Byond_GetVersion, Byond_AddGetStrId, Byond_GetStrId, ByondValueData,
     Byond_ReadVarByStrId, Byond_WriteVar, Byond_WriteVarByStrId, Byond_ReadListAssoc,
     Byond_CallProc, Byond_CallProcByStrId, Byond_CallGlobalProc, Byond_CallGlobalProcByStrId,
-    ByondValue_Clear
+    ByondValue_Clear, Byond_Length
 };
 //use meowtonin::strid::{lookup_string_id};
 use std::ffi::CString;
 use std::os::raw::c_char;
+use std::mem::MaybeUninit;
 
 #[macro_use]
 extern crate meowtonin;
@@ -594,10 +595,20 @@ pub fn byondapitest_block(mut rcv: ByondValue) -> ByondResult<()> {
     Ok(())
 }
 
-// TODO
+// 0 = succeed, 1 = fail
 #[byond_fn]
-pub fn byondapitest_length() -> ByondResult<i32> {
-    Ok(0)
+pub fn byondapitest_length(l: ByondValue, exp_len: ByondValue) -> ByondResult<i32> {
+    let mut calc_len = MaybeUninit::uninit();
+
+    unsafe {
+        let res = Byond_Length(&l.into_inner(), calc_len.as_mut_ptr());
+        if res == false { return Ok(1); }
+
+        match ByondValue(calc_len.assume_init()) {
+            _x if _x.eq(&exp_len) => Ok(0),
+            _ => Ok(1)
+        }
+    }
 }
 
 // TODO

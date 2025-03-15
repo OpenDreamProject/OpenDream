@@ -597,6 +597,14 @@ public static unsafe partial class ByondApi {
         return 1;
     }
 
+    /** byondapi.h comment:
+     * Uses BYOND's internals to represent a value as text
+     * Blocks if not on the main thread.
+     * @param src The value to convert to text
+     * @param buf char array, allocated by caller (can be null if querying length)
+     * @param buflen Pointer to length of array in bytes; receives the string length (including trailing null) on success, or required length of array if not big enough
+     * @return True on success; false with *buflen=0 for failure; false with *buflen=required size if array is not big enough
+     */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_ToString(CByondValue* src, byte* buf, uint* buflen) {
         if (src == null || buf == null || buflen == null) {
@@ -628,6 +636,15 @@ public static unsafe partial class ByondApi {
         return 1;
     }
 
+    /** byondapi.h comment:
+     * Equivalent to calling block(x1,y1,z1, x2,y2,z2).
+     * Blocks if not on the main thread.
+     * @param corner1 One corner of the block
+     * @param corner2 Another corner of the block
+     * @param list CByondValue array, allocated by caller (can be null if querying length)
+     * @param len Pointer to length of array (in items); receives the number of items read on success, or required length of array if not big enough
+     * @return True on success; false with *len=0 for failure; false with *len=required size if array is not big enough
+     */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_Block(CByondXYZ* corner1, CByondXYZ* corner2, CByondValue* cList, uint* len) {
         if (corner1 == null || corner2 == null || cList == null || len == null) {

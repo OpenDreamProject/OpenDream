@@ -1,4 +1,6 @@
 use meowtonin::{ByondResult, ByondValue, byond_version, FromByond, ToByond};
+use meowtonin::misc::block;
+use meowtonin::ByondXYZ;
 use meowtonin::sys::{
     NONE, CByondValue, Byond_GetVersion, Byond_AddGetStrId, Byond_GetStrId,
     Byond_ReadVarByStrId, Byond_WriteVar, Byond_WriteVarByStrId, Byond_ReadListAssoc,
@@ -542,16 +544,23 @@ pub fn byondapitest_callglobalprocbystrid(proc_name: ByondValue, arg1:ByondValue
     }
 }
 
-// TODO
+// 0 = succeed, 1 = fail
 #[byond_fn]
-pub fn byondapitest_tostring() -> ByondResult<i32> {
-    Ok(0)
+pub fn byondapitest_tostring(s: ByondValue) -> ByondResult<i32> {
+    match s.get_string_bytes()?.as_slice() {
+        [b'a',b'b',b'c',b'\0'] => Ok(0),
+        _ => Ok(1)
+    }
 }
 
-// TODO
+// needs to check outside if result equals block(0,0,0,1,2,1)
 #[byond_fn]
-pub fn byondapitest_block() -> ByondResult<i32> {
-    Ok(0)
+pub fn byondapitest_block(mut rcv: ByondValue) -> ByondResult<()> {
+    let corner_a = ByondXYZ::new(1,1,1);
+    let corner_b = ByondXYZ::new(2,3,2);
+    let _ = rcv.write_list(block(corner_a, corner_b)?);
+
+    Ok(())
 }
 
 // TODO

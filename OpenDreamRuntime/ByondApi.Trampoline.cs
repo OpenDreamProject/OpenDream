@@ -7,6 +7,7 @@ namespace OpenDreamRuntime;
 public static unsafe partial class ByondApi {
     private static void InitTrampoline() {
         var trampolines = new Trampolines {
+            ByondValue_Equals = &ByondValue_Equals,
             Byond_LastError = &Byond_LastError,
             Byond_GetVersion = &Byond_GetVersion,
             Byond_GetDMBVersion = &Byond_GetDMBVersion,
@@ -68,6 +69,7 @@ public static unsafe partial class ByondApi {
     [SuppressMessage("ReSharper", "NotAccessedField.Local")]
     [SuppressMessage("ReSharper", "MemberHidesStaticFromOuterClass")]
     private struct Trampolines {
+        public delegate* unmanaged[Cdecl]<CByondValue*, CByondValue*, byte> ByondValue_Equals;
         public delegate* unmanaged[Cdecl]<byte*> Byond_LastError;
         public delegate* unmanaged[Cdecl]<uint*, uint*, void> Byond_GetVersion;
         public delegate* unmanaged[Cdecl]<uint> Byond_GetDMBVersion;

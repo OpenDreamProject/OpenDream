@@ -111,10 +111,12 @@ pub fn byondapitest_setref() -> ByondResult<i32> {
     Ok(0)
 }
 
-// TODO
+// needs to check outside for appropriate equality
 #[byond_fn]
-pub fn byondapitest_equals() -> ByondResult<i32> {
-    Ok(0)
+pub fn byondapitest_equals(a: ByondValue, b: ByondValue) -> ByondResult<bool> {
+    unsafe {
+        Ok(a.eq(&b))
+    }
 }
 
 // TODO
@@ -553,7 +555,7 @@ pub fn byondapitest_tostring(s: ByondValue) -> ByondResult<i32> {
     }
 }
 
-// needs to check outside if result equals block(0,0,0,1,2,1)
+// needs to check outside if result equals block(1,1,1,2,3,2)
 #[byond_fn]
 pub fn byondapitest_block(mut rcv: ByondValue) -> ByondResult<()> {
     let corner_a = ByondXYZ::new(1,1,1);

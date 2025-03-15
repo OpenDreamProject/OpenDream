@@ -160,16 +160,15 @@ unsafe extern "C" fn ByondValue_SetRef(
     unimplemented!()
 }
 
-#[no_mangle]
-unsafe extern "C" fn ByondValue_Equals(a: *const CByondValue, b: *const CByondValue) -> bool {
-    unimplemented!()
-}
-
 //
 // Byond functions
 //
 
 trampolines! {
+    // ByondValue functions
+    fn ByondValue_Equals(a: *const CByondValue, b: *const CByondValue) -> bool;
+
+    // Regular functions
     fn Byond_LastError() -> *const c_char;
     fn Byond_GetVersion(version: *mut u4c, build: *mut u4c);
     fn Byond_GetDMBVersion() -> u4c;

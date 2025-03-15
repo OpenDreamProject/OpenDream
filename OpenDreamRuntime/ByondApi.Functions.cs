@@ -1,15 +1,22 @@
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs;
+using Robust.Shared.Timing;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading.Tasks;
 
 // ReSharper disable InconsistentNaming
 
 namespace OpenDreamRuntime;
 
 public static unsafe partial class ByondApi {
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
+    private static byte ByondValue_Equals(CByondValue* a, CByondValue* b) {
+        return ValueFromDreamApi(*a).Equals(ValueFromDreamApi(*b)) ? (byte)1: (byte)0;
+    }
+
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte* Byond_LastError() {
         return PinningIsNotReal("no error"u8);

@@ -4,7 +4,6 @@ using OpenDreamRuntime.Procs;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
 
 // ReSharper disable InconsistentNaming
 
@@ -460,6 +459,18 @@ public static unsafe partial class ByondApi {
         return 1;
     }
 
+    /** byondapi.h comment:
+     * Calls an object proc by name, where the name is a string ID.
+     * The proc call is treated as waitfor=0 and will return immediately on sleep.
+     * Blocks if not on the main thread.
+     * @param src The object that owns the proc
+     * @param name Proc name as string ID
+     * @param arg Array of arguments
+     * @param arg_count Number of arguments
+     * @param result Pointer to accept result
+     * @return True on success
+     * @see Byond_GetStrId()
+     */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_CallProcByStrId(CByondValue* cSrc, uint name, CByondValue* cArgs, uint arg_count, CByondValue* cResult) {
         if (cSrc == null || cArgs == null || cResult == null) {
@@ -498,16 +509,14 @@ public static unsafe partial class ByondApi {
     }
 
     /** byondapi.h comment:
-     * Calls an object proc by name, where the name is a string ID.
+     * Calls a global proc by name.
      * The proc call is treated as waitfor=0 and will return immediately on sleep.
      * Blocks if not on the main thread.
-     * @param src The object that owns the proc
-     * @param name Proc name as string ID
+     * @param name Proc name as null-terminated string
      * @param arg Array of arguments
-     * @param arg_count Number of arguments
+     * @param arg_count  Number of arguments
      * @param result Pointer to accept result
      * @return True on success
-     * @see Byond_GetStrId()
      */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_CallGlobalProc(byte* cName, CByondValue* cArgs, uint arg_count, CByondValue* cResult) {
@@ -532,6 +541,7 @@ public static unsafe partial class ByondApi {
 
             var args = new DreamProcArguments(CollectionsMarshal.AsSpan(argList));
 
+            // TODO
             // src? usr?
             var result = proc.Spawn(null, args);
 
@@ -543,19 +553,28 @@ public static unsafe partial class ByondApi {
         return 1;
     }
 
+    /** byondapi.h comment:
+     * Calls a global proc by name, where the name is a string ID.
+     * The proc call is treated as waitfor=0 and will return immediately on sleep.
+     * Blocks if not on the main thread.
+     * @param name Proc name as string ID
+     * @param arg Array of arguments
+     * @param arg_count Number of arguments
+     * @param result Pointer to accept result
+     * @return True on success
+     * @see Byond_GetStrId()
+     */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
-    private static byte Byond_CallGlobalProcByStrId(uint cName, CByondValue* cArgs, uint arg_count, CByondValue* cResult) {
+    private static byte Byond_CallGlobalProcByStrId(uint name, CByondValue* cArgs, uint arg_count, CByondValue* cResult) {
         if (cArgs == null || cResult == null) {
             return 0;
         }
 
         try {
-            string? str = Marshal.PtrToStringUTF8((nint)cName);
-            if (str == null) {
-                return 0;
-            }
+            DreamValue procNameVal = _dreamManager!.RefIdToValue((int)name);
+            if (!procNameVal.TryGetValueAsString(out var procName)) return 0;
 
-            if (!_dreamManager!.TryGetGlobalProc(str, out var proc)) return 0;
+            if (!_dreamManager!.TryGetGlobalProc(procName, out var proc)) return 0;
 
             List<DreamValue> argList = new List<DreamValue>((int)arg_count);
 
@@ -566,6 +585,7 @@ public static unsafe partial class ByondApi {
 
             var args = new DreamProcArguments(CollectionsMarshal.AsSpan(argList));
 
+            // TODO
             // src? usr?
             var result = proc.Spawn(null, args);
 

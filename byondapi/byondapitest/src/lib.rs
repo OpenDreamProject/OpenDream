@@ -1,7 +1,8 @@
 use meowtonin::{ByondResult, ByondValue, byond_version, FromByond, ToByond};
 use meowtonin::sys::{
     NONE, CByondValue, Byond_GetVersion, Byond_AddGetStrId, Byond_GetStrId,
-   Byond_ReadVarByStrId, Byond_WriteVar, Byond_WriteVarByStrId, Byond_ReadListAssoc
+    Byond_ReadVarByStrId, Byond_WriteVar, Byond_WriteVarByStrId, Byond_ReadListAssoc,
+    Byond_CallProc
 };
 //use meowtonin::strid::{lookup_string_id};
 use std::ffi::CString;
@@ -466,15 +467,40 @@ pub fn byondapitest_writepointer() -> ByondResult<i32> {
     Ok(0)
 }
 
-// TODO
+// 0 = succeed, 1 = fail
 #[byond_fn]
-pub fn byondapitest_callproc() -> ByondResult<i32> {
-    Ok(0)
+pub fn byondapitest_callproc(src:ByondValue, arg1:ByondValue, arg2:ByondValue) -> ByondResult<i32> {
+    let mut resVal = ByondValue::null().into_inner();
+    let c_procname = CString::new("proc_name").unwrap();
+    let c_pchar_procname : *const c_char = c_procname.as_ptr() as *const c_char;
+
+    let args: [CByondValue;2] = [arg1.into_inner(),arg2.into_inner()];
+
+    unsafe {
+        let res: bool = Byond_CallProc(&src.into_inner(), c_pchar_procname, args.as_ptr(), 2, &mut resVal);
+
+        match (res, i32::from_byond(&ByondValue(resVal))?) {
+            (true,1) => Ok(0),
+            _ => Ok(1)
+        }
+    }
 }
 
 // TODO
 #[byond_fn]
 pub fn byondapitest_callprocbystrid() -> ByondResult<i32> {
+    Ok(0)
+}
+
+// TODO
+#[byond_fn]
+pub fn byondapitest_callglobalproc() -> ByondResult<i32> {
+    Ok(0)
+}
+
+// TODO
+#[byond_fn]
+pub fn byondapitest_callglobalprocbystrid() -> ByondResult<i32> {
     Ok(0)
 }
 

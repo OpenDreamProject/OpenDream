@@ -4,6 +4,7 @@ using OpenDreamRuntime.Procs;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading.Tasks;
 
 // ReSharper disable InconsistentNaming
 
@@ -424,8 +425,7 @@ public static unsafe partial class ByondApi {
 
             if (srcObj == null) return 0;
 
-            var srcVar = srcObj.GetVariable(str);
-            if (!srcVar.TryGetValueAsProc(out var proc)) return 0;
+            if (!srcObj.TryGetProc(str, out var proc)) return 0;
 
             List<DreamValue> argList = new List<DreamValue>((int)arg_count);
 

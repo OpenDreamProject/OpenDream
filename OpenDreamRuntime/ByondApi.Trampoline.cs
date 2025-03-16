@@ -40,6 +40,8 @@ public static unsafe partial class ByondApi {
             Byond_NewArglist = &Byond_NewArglist,
             Byond_Refcount = &Byond_Refcount,
             Byond_XYZ = &Byond_XYZ,
+            //Byond_PixLoc = &Byond_PixLoc,
+            //Byond_BoundPixLoc = &Byond_BoundPixLoc,
             ByondValue_IncRef = &ByondValue_IncRef,
             ByondValue_DecRef = &ByondValue_DecRef,
             Byond_TestRef = &Byond_TestRef,
@@ -103,6 +105,8 @@ public static unsafe partial class ByondApi {
         public delegate* unmanaged[Cdecl]<CByondValue*, CByondValue*, CByondValue*, byte> Byond_NewArglist;
         public delegate* unmanaged[Cdecl]<CByondValue*, uint*, byte> Byond_Refcount;
         public delegate* unmanaged[Cdecl]<CByondValue*, CByondXYZ*, byte> Byond_XYZ;
+        //public delegate* unmanaged[Cdecl]<CByondValue*, CByondPixLoc*, byte> Byond_PixLoc;
+        //public delegate* unmanaged[Cdecl]<CByondValue*, byte, CByondPixLoc*, byte> Byond_BoundPixLoc;
         public delegate* unmanaged[Cdecl]<CByondValue*, void> ByondValue_IncRef;
         public delegate* unmanaged[Cdecl]<CByondValue*, void> ByondValue_DecRef;
         public delegate* unmanaged[Cdecl]<CByondValue*, byte> Byond_TestRef;

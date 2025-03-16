@@ -26,7 +26,9 @@ const TYPE_DATUM: u8 = 0x21;
 const TYPE_NUMBER: u8 = 0x2A;
 const TYPE_POINTER: u8 = 0x3C;
 
-use api::{u4c, ByondValueData, ByondValueType, CByondValue, CByondXYZ, ByondCallback};
+use api::{u4c, ByondValueData, ByondValueType, CByondValue, CByondXYZ, ByondCallback,
+//CByondPixLoc
+};
 use std::ffi::{c_char, c_void};
 use std::sync::OnceLock;
 
@@ -217,3 +219,5 @@ trampolines! {
     fn ByondValue_DecRef(src: *const CByondValue);
     fn Byond_TestRef(src: *mut CByondValue) -> bool;
 }
+    //fn Byond_PixLoc(src: *const CByondValue, pixloc: *mut CByondPixLoc) -> bool;
+    //fn Byond_BoundPixLoc(src: *const CByondValue, dir: u8, pixloc: *mut CByondPixLoc) -> bool;

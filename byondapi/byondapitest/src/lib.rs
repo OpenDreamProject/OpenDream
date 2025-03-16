@@ -5,7 +5,7 @@ use meowtonin::sys::{
     NONE, CByondValue, Byond_GetVersion, Byond_AddGetStrId, Byond_GetStrId, ByondValueData,
     Byond_ReadVarByStrId, Byond_WriteVar, Byond_WriteVarByStrId, Byond_ReadListAssoc,
     Byond_CallProc, Byond_CallProcByStrId, Byond_CallGlobalProc, Byond_CallGlobalProcByStrId,
-    ByondValue_Clear, Byond_Length, Byond_New, Byond_NewArglist
+    ByondValue_Clear, Byond_Length, Byond_New, Byond_NewArglist, Byond_XYZ, Byond_TestRef
 };
 //use meowtonin::strid::{lookup_string_id};
 use std::ffi::CString;
@@ -655,9 +655,31 @@ pub fn byondapitest_refcount() -> ByondResult<i32> {
     Ok(0)
 }
 
+// 0 = succeed, 1 = fail
+#[byond_fn]
+pub fn byondapitest_xyz(atom: ByondValue, exp_x: ByondValue, exp_y: ByondValue, exp_z: ByondValue) -> ByondResult<i32> {
+
+    unsafe {
+        let mut result = MaybeUninit::uninit();
+        Byond_XYZ(&atom.into_inner(), result.as_mut_ptr());
+        let xyz = ByondXYZ::from(result.assume_init());
+        let exp = ByondXYZ::new(i16::from_byond(&exp_x)?,i16::from_byond(&exp_y)?,i16::from_byond(&exp_z)?);
+        match xyz {
+            _x if _x.eq(&exp) => Ok(0),
+            _ => Ok(1)
+        }
+    }
+}
+
 // TODO
 #[byond_fn]
-pub fn byondapitest_xyz() -> ByondResult<i32> {
+pub fn byondapitest_pixloc() -> ByondResult<i32> {
+    Ok(0)
+}
+
+// TODO
+#[byond_fn]
+pub fn byondapitest_boundpixloc() -> ByondResult<i32> {
     Ok(0)
 }
 
@@ -673,8 +695,50 @@ pub fn byondapitest_decref() -> ByondResult<i32> {
     Ok(0)
 }
 
-// TODO
+// 0 = succeed, 1 = fail
 #[byond_fn]
-pub fn byondapitest_testref() -> ByondResult<i32> {
-    Ok(0)
+pub fn byondapitest_testref_valid(val: ByondValue) -> ByondResult<i32> {
+    let mut cval = val.into_inner();
+
+    unsafe {
+        let res = Byond_TestRef(&mut cval);
+        match (res,cval.data.ref_) {
+            (true,r) if r !=0 => Ok(0),
+            _ => Ok(1)
+        }
+    }
+}
+
+// 0 = succeed, 1 = fail
+#[byond_fn]
+pub fn byondapitest_testref_invalid() -> ByondResult<i32> {
+    let mut cval = CByondValue{
+        type_: 0x0F,
+        junk1: 0,
+        junk2: 0,
+        junk3: 0,
+        data: ByondValueData { ref_: 0x0F999599 }
+    };
+
+    unsafe {
+        let res = Byond_TestRef(&mut cval);
+        match (res,cval.data.ref_) {
+            (false,0) => Ok(0),
+            _ => Ok(1)
+        }
+    }
+}
+
+// 0 = succeed, 1 = fail
+#[byond_fn]
+pub fn byondapitest_testref_null() -> ByondResult<i32> {
+    let mut cval = ByondValue::null().into_inner();
+
+    unsafe {
+        let res = Byond_TestRef(&mut cval);
+        match (res,cval.data.ref_) {
+            (true,0) => Ok(0),
+            _ => Ok(1)
+        }
+    }
 }

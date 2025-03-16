@@ -947,7 +947,13 @@ public static unsafe partial class ByondApi {
         return 1;
     }
 
-
+    /** byondapi.h comment:
+     * Get x,y,z coords of an atom
+     * Blocks if not on the main thread.
+     * @param src The object to read
+     * @param xyz Pointer to accept CByondXYZ result
+     * @return True on success
+     */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_XYZ(CByondValue* src, CByondXYZ* xyz) {
         if (src == null || xyz == null) return 0;
@@ -959,7 +965,7 @@ public static unsafe partial class ByondApi {
             try {
                 // byondapi.h mentions an off-map check. Should probably do something like that.
 
-                // certainly a better way than this...
+                // there is surely a better way than this...
                 var xObj = srcObj.GetVariable("X");
                 var x = xObj.MustGetValueAsInteger();
                 var yObj = srcObj.GetVariable("Y");
@@ -980,6 +986,34 @@ public static unsafe partial class ByondApi {
         return 1;
     }
 
+    /** byondapi.h comment:
+     * Get pixloc coords of an atom
+     * Blocks if not on the main thread.
+     * @param src The object to read
+     * @param pixloc Pointer to accept CByondPixLoc result
+     * @return True on success
+     */
+    /*[UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
+    private static byte Byond_PixLoc(CByondValue* src, CByondPixLoc *pixLoc) {
+        if (src == null) return 0;
+        throw new NotImplementedException();
+    }*/
+
+    /** byondapi.h comment:
+     * Get pixloc coords of an atom based on its bounding box
+     * Blocks if not on the main thread.
+     * @param src The object to read
+     * @param dir The direction
+     * @param pixloc Pointer to accept CByondPixLoc result
+     * @return True on success
+     */
+    /*[UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
+    private static byte Byond_BoundPixLoc(CByondValue* src, byte dir, CByondPixLoc* pixLoc) {
+        if (src == null) return 0;
+        throw new NotImplementedException();
+    }
+    */
+
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static void ByondValue_IncRef(CByondValue* src) {
         if (src == null) return;
@@ -992,15 +1026,29 @@ public static unsafe partial class ByondApi {
         throw new NotImplementedException();
     }
 
+    /** byondapi.h comment:
+     * Test if a reference-type CByondValue is valid
+     * Blocks if not on the main thread.
+     * @param src Pointer to the reference to test; will be filled with null if the reference is invalid
+     * @return True if ref is valid; false if not
+     */
+    // Returns true if the ref is valid.
+    // Returns false if the ref was not valid and had to be changed to null.
+    // This only applies to ref types, not null/num/string which are always valid.
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_TestRef(CByondValue* src) {
         if (src == null) return 0;
         if (src->type == ByondValueType.Null) {
-            return 0;
+            return 1;
         }
 
         var srcValue = _dreamManager!.RefIdToValue((int)src->data.@ref);
 
-        return srcValue == DreamValue.Null ? (byte)0 : (byte)1;
+        if (srcValue == DreamValue.Null) {
+            src->type = 0;
+            src->data.@ref = 0;
+            return (byte)0;
+        }
+        return (byte)1;
     }
 }

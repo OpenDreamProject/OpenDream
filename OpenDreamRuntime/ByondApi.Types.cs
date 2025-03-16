@@ -54,5 +54,11 @@ public static partial class ByondApi {
         public short junk;
     }
 
+    public struct CByondPixLoc {
+        public float x, y;
+        public short z;
+        public short junk;
+    };
+
     public const uint NONE = 0xFFFF;
 }

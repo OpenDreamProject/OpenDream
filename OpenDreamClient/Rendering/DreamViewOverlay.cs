@@ -900,6 +900,13 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
             }
         }
 
+        // All else being the same, group them by icon.
+        // This allows Clyde to batch the draw calls more efficiently.
+        val = (MainIcon?.Appearance?.Icon ?? 0) - (other.MainIcon?.Appearance?.Icon ?? 0);
+        if (val != 0) {
+            return val;
+        }
+
         return TieBreaker.CompareTo(other.TieBreaker);
     }
 }

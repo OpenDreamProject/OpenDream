@@ -248,8 +248,10 @@ internal sealed partial class DreamViewOverlay : Overlay {
 
         keepTogether |= ((current.AppearanceFlags & AppearanceFlags.KeepTogether) != 0); //KEEP_TOGETHER
 
-        //if the render-target starts with *, we don't render it. If it doesn't we create a placeholder RenderMetaData to position it correctly
-        if (!string.IsNullOrEmpty(current.RenderTarget) && current.RenderTarget[0] != '*') {
+        // If the render-target starts with *, we don't render it to the base render target.
+        // If it doesn't we create a placeholder RenderMetaData to position it correctly.
+        // Ignore plane masters here, they're handled in DrawPlanes()
+        if (!string.IsNullOrEmpty(current.RenderTarget) && current.RenderTarget[0] != '*' && !current.IsPlaneMaster) {
             RendererMetaData renderTargetPlaceholder = RentRendererMetaData();
 
             //transform, color, alpha, filters - they should all already have been applied, so we leave them null in the placeholder
@@ -263,16 +265,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
             renderTargetPlaceholder.Layer = current.Layer;
             renderTargetPlaceholder.RenderSource = current.RenderTarget;
             renderTargetPlaceholder.MouseOpacity = current.MouseOpacity;
-            if((current.AppearanceFlags & AppearanceFlags.PlaneMaster) != 0){ //Plane masters with render targets get special handling
-                renderTargetPlaceholder.TransformToApply = current.TransformToApply;
-                renderTargetPlaceholder.ColorToApply = current.ColorToApply;
-                renderTargetPlaceholder.ColorMatrixToApply = current.ColorMatrixToApply;
-                renderTargetPlaceholder.AlphaToApply = current.AlphaToApply;
-                renderTargetPlaceholder.BlendMode = current.BlendMode;
-            }
-
             renderTargetPlaceholder.AppearanceFlags = current.AppearanceFlags;
-            current.AppearanceFlags &= ~AppearanceFlags.PlaneMaster; //only the placeholder should be marked as master
             result.Add(renderTargetPlaceholder);
         }
 
@@ -472,11 +465,11 @@ internal sealed partial class DreamViewOverlay : Overlay {
         if (_baseRenderTarget == null || _baseRenderTarget.Size != size) {
             _baseRenderTarget?.Dispose();
             _mouseMapRenderTarget?.Dispose();
-            _baseRenderTarget = _clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8Srgb));
-            _mouseMapRenderTarget = _clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8Srgb));
+            _baseRenderTarget = _clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8Srgb), name: "Base Render Target");
+            _mouseMapRenderTarget = _clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8Srgb), name: "MouseMap");
 
-            foreach (var plane in _planes.Values) {
-                plane.SetMainRenderTarget(_clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8Srgb)));
+            foreach (var (planeId, plane) in _planes) {
+                plane.SetMainRenderTarget(_clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8Srgb), name: $"Plane {planeId}"));
             }
         } else {
             // Clear the mouse map lookup dictionary
@@ -506,7 +499,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
         if (_planes.TryGetValue(planeIndex, out var plane))
             return plane;
 
-        var renderTarget = _clyde.CreateRenderTarget(viewportSize, new(RenderTargetColorFormat.Rgba8Srgb));
+        var renderTarget = _clyde.CreateRenderTarget(viewportSize, new(RenderTargetColorFormat.Rgba8Srgb), name: $"Plane {planeIndex}");
 
         plane = new(renderTarget);
         _planes.Add(planeIndex, plane);
@@ -573,8 +566,8 @@ internal sealed partial class DreamViewOverlay : Overlay {
                     plane.Draw(this, handle, worldAABB);
 
                     if (plane.Master != null) {
-                        // Don't draw this to the base render target if this itself is a render target
-                        if (!string.IsNullOrEmpty(plane.Master.RenderTarget))
+                        // Don't draw this to the base render target if it has a RenderTarget starting with '*'
+                        if (plane.Master.RenderTarget?.StartsWith('*') is true)
                             continue;
 
                         plane.Master.TextureOverride = plane.RenderTarget.Texture;

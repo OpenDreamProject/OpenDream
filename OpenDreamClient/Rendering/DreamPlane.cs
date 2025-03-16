@@ -59,9 +59,18 @@ internal sealed class DreamPlane(IRenderTexture mainRenderTarget) : IDisposable 
         if (_temporaryRenderTarget != null) {
             // Draw again, but with the color applied
             handle.RenderInRenderTarget(_temporaryRenderTarget, () => {
+                if (Master == null)
+                    return;
+
+                Master.TextureOverride = mainRenderTarget.Texture;
+                var texture = Master.GetTexture(overlay, handle);
+                Master.TextureOverride = null;
+                if (texture == null)
+                    return;
+
                 handle.UseShader(overlay.GetBlendAndColorShader(Master, useOverlayMode: true));
-                handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(_temporaryRenderTarget.Size, Vector2.Zero));
-                handle.DrawTextureRect(mainRenderTarget.Texture, new Box2(Vector2.Zero, mainRenderTarget.Size));
+                handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(_temporaryRenderTarget.Size, Master.MainIcon?.TextureRenderOffset ?? Vector2.Zero));
+                handle.DrawTextureRect(texture, new Box2(Vector2.Zero, texture.Size));
             }, new Color());
         }
     }

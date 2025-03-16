@@ -42,8 +42,10 @@ public sealed partial class ProcScheduler {
         return task;
     }
 
-    public void Process() {
-        UpdateDelays();
+    public void Process(bool updateDelays) {
+        if (updateDelays) {
+            UpdateDelays();
+        }
 
         // Update all asynchronous tasks that have finished waiting and are ready to resume.
         //

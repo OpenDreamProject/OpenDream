@@ -59,16 +59,8 @@ jobs:
           cp ./byondapi/target/release/libbyondapitest.so ./bin/Content.Server/byondapitest.so
           cp ./byondapi/target/release/libbyondapitest.so ./bin/Content.Tests/byondapitest.so
           cp ./byondapi/target/release/libbyondapitest.so ./bin/Content.IntegrationTests/byondapitest.so
-
-          # what the actual heck is preventing github from loading this
-          #ls -al ./bin/Content.Tests/byondapitest.so
-          #echo "ldd ./bin/Content.Tests/byondapitest.so"
-          #ldd ./bin/Content.Tests/byondapitest.so
-          #echo "ldd search paths:"
-          #sudo ldconfig -v | grep -v ^$'\t'
-
         else
-          # we only test windows/linux at time of writing
+          # we only test windows/linux
           exit 1
         fi
     - name: Content.Tests

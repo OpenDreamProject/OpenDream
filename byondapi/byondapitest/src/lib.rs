@@ -1,11 +1,11 @@
 use meowtonin::{ByondResult, ByondValue, FromByond, ToByond, ByondValueType};
-use meowtonin::misc::block;
+use meowtonin::misc::{block,locate_xyz};
 use meowtonin::ByondXYZ;
 use meowtonin::sys::{
     NONE, CByondValue, Byond_GetVersion, Byond_AddGetStrId, Byond_GetStrId, ByondValueData,
     Byond_ReadVarByStrId, Byond_WriteVar, Byond_WriteVarByStrId, Byond_ReadListAssoc,
     Byond_CallProc, Byond_CallProcByStrId, Byond_CallGlobalProc, Byond_CallGlobalProcByStrId,
-    ByondValue_Clear, Byond_Length
+    ByondValue_Clear, Byond_Length, Byond_New, Byond_NewArglist
 };
 //use meowtonin::strid::{lookup_string_id};
 use std::ffi::CString;
@@ -617,22 +617,36 @@ pub fn byondapitest_locatein() -> ByondResult<i32> {
     Ok(0)
 }
 
-// TODO
+// needs to check outside if result equals locate(x,y,z)
 #[byond_fn]
-pub fn byondapitest_locatexyz() -> ByondResult<i32> {
-    Ok(0)
+pub fn byondapitest_locatexyz(x: ByondValue, y: ByondValue, z: ByondValue) -> ByondResult<ByondValue> {
+    let pos = ByondXYZ::new(
+        i16::from_byond(&x)?,
+        i16::from_byond(&y)?,
+        i16::from_byond(&z)?);
+    locate_xyz(pos)
 }
 
-// TODO
+// needs to check outside if the new call was made
 #[byond_fn]
-pub fn byondapitest_new() -> ByondResult<i32> {
-    Ok(0)
+pub fn byondapitest_new(path: ByondValue, args: ByondValue) -> ByondResult<ByondValue> {
+    //ByondValue::new(String::from_byond(&path)?,Vec::<ByondValue>::from_byond(&args)?)
+    unsafe {
+        let mut result = MaybeUninit::uninit();
+        let argvec: Vec<_> = Vec::<ByondValue>::from_byond(&args)?.into_iter().map(|x|x.into_inner()).collect();
+        Byond_New(&path.into_inner(), argvec.as_ptr(), args.length::<usize>()?, result.as_mut_ptr());
+        Ok(ByondValue(result.assume_init()))
+    }
 }
 
-// TODO
+// needs to check outside if the new call was made
 #[byond_fn]
-pub fn byondapitest_newarglist() -> ByondResult<i32> {
-    Ok(0)
+pub fn byondapitest_newarglist(path: ByondValue, args: ByondValue) -> ByondResult<ByondValue> {
+    unsafe {
+        let mut result = MaybeUninit::uninit();
+        Byond_NewArglist(&path.into_inner(), &args.into_inner(), result.as_mut_ptr());
+        Ok(ByondValue(result.assume_init()))
+    }
 }
 
 // TODO

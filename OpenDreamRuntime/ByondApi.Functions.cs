@@ -2,6 +2,7 @@ using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs;
 using Robust.Shared.Timing;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -770,6 +771,14 @@ public static unsafe partial class ByondApi {
         throw new NotImplementedException();
     }
 
+    /** byondapi.h comment:
+    * Equivalent to calling locate(x,y,z)
+    * Blocks if not on the main thread.
+    * Result is null if coords are invalid.
+    * @param xyz The x,y,z coords
+    * @param result Pointer to accept result
+    * @return True (always)
+    */
     /** <see cref="DMOpcodeHandlers.LocateCoord(DMProcState)"/> */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_LocateXYZ(CByondXYZ* xyz, CByondValue* result) {
@@ -793,6 +802,15 @@ public static unsafe partial class ByondApi {
         return 1;
     }
 
+    /** byondapi.h comment:
+     * Equivalent to calling new type(...)
+     * Blocks if not on the main thread.
+     * @param type The type to create (type path or string)
+     * @param arg Array of arguments
+     * @param arg_count Number of arguments
+     * @param result Pointer to accept result
+     * @return True on success
+     */
     /** <see cref="DMOpcodeHandlers.CreateObject(DMProcState)"/> */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_New(CByondValue* cType, CByondValue* cArgs, uint arg_count, CByondValue* cResult) {
@@ -802,9 +820,22 @@ public static unsafe partial class ByondApi {
 
         try {
             var typeVal = ValueFromDreamApi(*cType);
-            if (!typeVal.TryGetValueAsType(out TreeEntry? type)) return 0;
 
-            var objectDef = type.ObjectDefinition;
+            TreeEntry? treeEntry = null;
+            switch (typeVal.Type) {
+                default:
+                    return 0;
+                case DreamValue.DreamValueType.String:
+                    if (!typeVal.TryGetValueAsString(out var pathString)) return 0;
+                    if (!_objectTree.TryGetTreeEntry(pathString, out treeEntry)) return 0;
+                    break;
+                case DreamValue.DreamValueType.DreamType:
+                    if (!typeVal.TryGetValueAsType(out var pathType)) return 0;
+                    treeEntry = _objectTree.GetTreeEntry(pathType.Id);
+                    break;
+            }
+
+            var objectDef = treeEntry.ObjectDefinition;
             var newProc = objectDef.GetProc("New");
 
             List<DreamValue> argList = new();
@@ -828,16 +859,25 @@ public static unsafe partial class ByondApi {
                 return 1;
             }
 
-            var newObject = _objectTree!.CreateObject(type);
-            // call new
-            var result = newProc.Spawn(newObject, args);
-            *cResult = ValueToByondApi(result);
+            var newObject = _objectTree!.CreateObject(treeEntry);
+
+
+            newObject.InitSpawn(args);
+            *cResult = ValueToByondApi(new DreamValue(newObject));
         } catch (Exception) {
             return 0;
         }
         return 1;
     }
 
+    /** byondapi.h comment:
+     * Equivalent to calling new type(arglist)
+     * Blocks if not on the main thread.
+     * @param type The type to create (type path or string)
+     * @param arglist Arguments, as a reference to an arglist
+     * @param result Pointer to accept result
+     * @return True on success
+     */
     /** <see cref="DMOpcodeHandlers.CreateObject(DMProcState)"/> */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_NewArglist(CByondValue* cType, CByondValue* cArglist, CByondValue* cResult) {
@@ -847,9 +887,22 @@ public static unsafe partial class ByondApi {
 
         try {
             var typeVal = ValueFromDreamApi(*cType);
-            if (!typeVal.TryGetValueAsType(out var type)) return 0;
 
-            var objectDef = type.ObjectDefinition;
+            TreeEntry? treeEntry = null;
+            switch (typeVal.Type) {
+                default:
+                    return 0;
+                case DreamValue.DreamValueType.String:
+                    if (!typeVal.TryGetValueAsString(out var pathString)) return 0;
+                    if (!_objectTree.TryGetTreeEntry(pathString, out treeEntry)) return 0;
+                    break;
+                case DreamValue.DreamValueType.DreamType:
+                    if (!typeVal.TryGetValueAsType(out var pathType)) return 0;
+                    treeEntry = _objectTree.GetTreeEntry(pathType.Id);
+                    break;
+            }
+
+            var objectDef = treeEntry.ObjectDefinition;
             var newProc = objectDef.GetProc("New");
 
             var arglistVal = ValueFromDreamApi(*cArglist);
@@ -870,10 +923,12 @@ public static unsafe partial class ByondApi {
                 return 1;
             }
 
-            var newObject = _objectTree!.CreateObject(type);
-            // call new
-            var result = newProc.Spawn(newObject, args);
-            *cResult = ValueToByondApi(result);
+            var newObject = _objectTree!.CreateObject(treeEntry);
+            if (newObject == null) return 0;
+
+
+            newObject.InitSpawn(args);
+            *cResult = ValueToByondApi(new DreamValue(newObject));
         } catch (Exception) {
             return 0;
         }
@@ -928,7 +983,7 @@ public static unsafe partial class ByondApi {
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static void ByondValue_IncRef(CByondValue* src) {
         if (src == null) return;
-        throw new NotImplementedException();
+        //throw new NotImplementedException();
     }
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]

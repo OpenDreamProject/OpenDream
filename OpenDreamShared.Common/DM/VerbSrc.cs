@@ -1,4 +1,4 @@
-﻿namespace DMCompiler.DM;
+﻿namespace OpenDreamShared.Common.DM;
 
 /// <summary>
 /// The value of "set src = ..." in a verb

@@ -1,4 +1,4 @@
-﻿using OpenDreamShared.Dream;
+﻿using OpenDreamShared.Common.DM;
 using Robust.Client.UserInterface.Controls;
 
 namespace OpenDreamClient.Interface.Prompts;
@@ -7,7 +7,7 @@ internal sealed class TextPrompt : InputWindow {
     private readonly LineEdit _textEdit;
 
     public TextPrompt(string title, string message, string defaultValue, bool canCancel,
-        Action<DreamValueType, object?>? onClose) : base(title, message, canCancel, onClose) {
+        Action<DMValueType, object?>? onClose) : base(title, message, canCancel, onClose) {
         MinHeight = 100;
 
         _textEdit = new LineEdit {
@@ -20,7 +20,7 @@ internal sealed class TextPrompt : InputWindow {
     }
 
     protected override void OkButtonClicked() {
-        FinishPrompt(DreamValueType.Text, _textEdit.Text);
+        FinishPrompt(DMValueType.Text, _textEdit.Text);
     }
 
     private void TextEdit_TextEntered(LineEdit.LineEditEventArgs e) {

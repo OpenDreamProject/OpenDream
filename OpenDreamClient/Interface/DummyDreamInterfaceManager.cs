@@ -1,4 +1,5 @@
 using OpenDreamClient.Interface.Controls;
+using OpenDreamShared.Common.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Network.Messages;
 using Robust.Shared.Network;
@@ -46,10 +47,10 @@ public sealed class DummyDreamInterfaceManager : IDreamInterfaceManager {
         return string.Empty;
     }
 
-    public void OpenAlert(string title, string message, string button1, string? button2, string? button3, Action<DreamValueType, object?>? onClose) {
+    public void OpenAlert(string title, string message, string button1, string? button2, string? button3, Action<DMValueType, object?>? onClose) {
     }
 
-    public void Prompt(DreamValueType types, string title, string message, string defaultValue, Action<DreamValueType, object?>? onClose) {
+    public void Prompt(DMValueType types, string title, string message, string defaultValue, Action<DMValueType, object?>? onClose) {
     }
 
     public void RunCommand(string fullCommand) {

@@ -21,6 +21,7 @@ using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 using SixLabors.ImageSharp;
 using System.Linq;
+using OpenDreamShared.Common.DM;
 using Robust.Shared.Map;
 
 namespace OpenDreamClient.Interface;
@@ -149,7 +150,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             (responseType, response) => OnPromptFinished(message.PromptId, responseType, response));
     }
 
-    public void OpenAlert(string title, string message, string button1, string? button2, string? button3, Action<DreamValueType, object?>? onClose) {
+    public void OpenAlert(string title, string message, string button1, string? button2, string? button3, Action<DMValueType, object?>? onClose) {
         var alert = new AlertWindow(
             title,
             message,
@@ -161,7 +162,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     }
 
     private void RxPrompt(MsgPrompt pPrompt) {
-        void OnPromptClose(DreamValueType responseType, object? response) {
+        void OnPromptClose(DMValueType responseType, object? response) {
             OnPromptFinished(pPrompt.PromptId, responseType, response);
         }
 
@@ -242,7 +243,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         InterfaceElement? element = FindElementWithId(message.ControlId);
         MsgPromptResponse response = new() {
             PromptId = message.PromptId,
-            Type = DreamValueType.Text,
+            Type = DMValueType.Text,
             Value = element?.Type.Value ?? string.Empty
         };
 
@@ -254,7 +255,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         _timerManager.AddTimer(new Timer(100, false, () => {
             MsgPromptResponse response = new() {
                 PromptId = message.PromptId,
-                Type = DreamValueType.Text,
+                Type = DMValueType.Text,
                 Value = WinGet(message.ControlId, message.QueryValue, forceSnowflake:true)
             };
 
@@ -418,17 +419,17 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         });
     }
 
-    public void Prompt(DreamValueType types, string title, string message, string defaultValue, Action<DreamValueType, object?>? onClose) {
+    public void Prompt(DMValueType types, string title, string message, string defaultValue, Action<DMValueType, object?>? onClose) {
         PromptWindow? prompt = null;
-        bool canCancel = (types & DreamValueType.Null) == DreamValueType.Null;
+        bool canCancel = (types & DMValueType.Null) == DMValueType.Null;
 
-        if ((types & DreamValueType.Text) == DreamValueType.Text) {
+        if ((types & DMValueType.Text) == DMValueType.Text) {
             prompt = new TextPrompt(title, message, defaultValue, canCancel, onClose);
-        } else if ((types & DreamValueType.Num) == DreamValueType.Num) {
+        } else if ((types & DMValueType.Num) == DMValueType.Num) {
             prompt = new NumberPrompt(title, message, defaultValue, canCancel, onClose);
-        } else if ((types & DreamValueType.Message) == DreamValueType.Message) {
+        } else if ((types & DMValueType.Message) == DMValueType.Message) {
             prompt = new MessagePrompt(title, message, defaultValue, canCancel, onClose);
-        } else if ((types & DreamValueType.Color) == DreamValueType.Color) {
+        } else if ((types & DMValueType.Color) == DMValueType.Color) {
             prompt = new ColorPrompt(title, message, defaultValue, canCancel, onClose);
         }
 
@@ -521,11 +522,11 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
                     var arguments = new object?[verbInfo.Arguments.Length];
                     for (int i = 0; i < verbInfo.Arguments.Length; i++) {
-                        DreamValueType argumentType = verbInfo.Arguments[i].Types;
+                        DMValueType argumentType = verbInfo.Arguments[i].Types;
 
-                        if (argumentType is DreamValueType.Text or DreamValueType.Message or DreamValueType.CommandText) {
+                        if (argumentType is DMValueType.Text or DMValueType.Message or DMValueType.CommandText) {
                             arguments[i] = args[i];
-                        } else if (argumentType == DreamValueType.Num) {
+                        } else if (argumentType == DMValueType.Num) {
                             if (!float.TryParse(args[i], out var numArg)) {
                                 _sawmill.Error(
                                     $"Invalid number argument \"{args[i]}\"; ignoring command ({fullCommand})");
@@ -969,7 +970,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         }
     }
 
-    private void OnPromptFinished(int promptId, DreamValueType responseType, object? response) {
+    private void OnPromptFinished(int promptId, DMValueType responseType, object? response) {
         var msg = new MsgPromptResponse {
             PromptId = promptId,
             Type = responseType,
@@ -997,8 +998,8 @@ public interface IDreamInterfaceManager {
     void SaveScreenshot(bool openDialog);
     void LoadInterfaceFromSource(string source);
 
-    public void OpenAlert(string title, string message, string button1, string? button2, string? button3, Action<DreamValueType, object?>? onClose);
-    public void Prompt(DreamValueType types, string title, string message, string defaultValue, Action<DreamValueType, object?>? onClose);
+    public void OpenAlert(string title, string message, string button1, string? button2, string? button3, Action<DMValueType, object?>? onClose);
+    public void Prompt(DMValueType types, string title, string message, string defaultValue, Action<DMValueType, object?>? onClose);
     public void RunCommand(string fullCommand);
     public void StartRepeatingCommand(string command);
     public void StopRepeatingCommand(string command);

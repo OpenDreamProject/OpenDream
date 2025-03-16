@@ -1,6 +1,8 @@
-using DMCompiler.Bytecode;
 using DMCompiler.Compiler;
 using DMCompiler.DM;
+using OpenDreamShared.Common;
+using OpenDreamShared.Common.Bytecode;
+using OpenDreamShared.Common.DM;
 
 namespace DMCompiler.Optimizer;
 

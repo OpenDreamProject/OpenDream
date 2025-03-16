@@ -2,6 +2,8 @@ using DMCompiler.Compiler.DMPreprocessor;
 using System.Linq;
 using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM;
+using OpenDreamShared.Common;
+using OpenDreamShared.Common.DM;
 
 namespace DMCompiler.Compiler.DM {
     internal partial class DMParser(DMCompiler compiler, DMLexer lexer) : Parser<Token>(compiler, lexer) {

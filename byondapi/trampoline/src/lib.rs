@@ -26,7 +26,7 @@ const TYPE_DATUM: u8 = 0x21;
 const TYPE_NUMBER: u8 = 0x2A;
 const TYPE_POINTER: u8 = 0x3C;
 
-use api::{u4c, ByondValueData, ByondValueType, CByondValue, CByondXYZ, ByondCallback,
+use api::{u1c, u4c, ByondValueData, ByondValueType, CByondValue, CByondXYZ, ByondCallback,
 //CByondPixLoc
 };
 use std::ffi::{c_char, c_void};
@@ -203,6 +203,8 @@ trampolines! {
     fn Byond_CallGlobalProc(name: *const c_char, arg: *const CByondValue, arg_count: u4c, result: *mut CByondValue) -> bool;
     fn Byond_CallGlobalProcByStrId(name: u4c, arg: *const CByondValue, arg_count: u4c, result: *mut CByondValue) -> bool;
     fn Byond_ToString(src: *const CByondValue, buf: *mut c_char, buflen: *mut u4c) -> bool;
+    fn Byond_PixLoc(src: *const CByondValue, pixLoc: *mut CByondValue) -> bool;
+    fn Byond_BoundPixLoc(src: *const CByondValue, dir: u1c, pixLoc: *mut CByondValue) -> bool;
 
     // "Proc calls"
     fn Byond_Block(corner1: *const CByondXYZ, corner2: *const CByondXYZ, list: *mut CByondValue, len: *mut u4c) -> bool;

@@ -6,13 +6,15 @@ namespace OpenDreamRuntime;
 
 public static partial class ByondApi {
     private static DreamManager? _dreamManager;
+    private static AtomManager? _atomManager;
     private static IDreamMapManager? _dreamMapManager;
     private static DreamObjectTree? _objectTree;
 
-    public static void Initialize(DreamManager dreamManager, IDreamMapManager dreamMapManager, DreamObjectTree objectTree) {
+    public static void Initialize(DreamManager dreamManager, AtomManager atomManager, IDreamMapManager dreamMapManager, DreamObjectTree objectTree) {
         DebugTools.Assert(_dreamManager is null or { IsShutDown: true });
 
         _dreamManager = dreamManager;
+        _atomManager = atomManager;
         _dreamMapManager = dreamMapManager;
         _objectTree = objectTree;
 
@@ -22,7 +24,6 @@ public static partial class ByondApi {
     public static DreamValue ValueFromDreamApi(CByondValue value) {
         var cdata = value.data;
         var ctype = value.type;
-        RefType outType;
 
         switch (ctype) {
             default:
@@ -54,7 +55,7 @@ public static partial class ByondApi {
             case ByondValueType.World:
             case ByondValueType.Proc:
                 int refId = (int)cdata.@ref;
-                return _dreamManager.RefIdToValue(refId);
+                return _dreamManager!.RefIdToValue(refId);
         }
     }
 
@@ -74,10 +75,10 @@ public static partial class ByondApi {
             case DreamValue.DreamValueType.DreamType:
             case DreamValue.DreamValueType.Appearance:
             case DreamValue.DreamValueType.DreamProc:
-                var refid = _dreamManager.CreateRefInt(value, out RefType refType);
-                ByondValueType type = ByondValueType.Null;
-                ByondValueData data = new ByondValueData();
-                data.@ref = refid;
+                var refid = _dreamManager!.CreateRefInt(value, out RefType refType);
+                ByondValueType type;
+                ByondValueData data = new ByondValueData { @ref = refid };
+
                 switch (refType) {
                     default:
                         throw new Exception($"Invalid reference type for type {refType}");
@@ -125,6 +126,7 @@ public static partial class ByondApi {
                         type = ByondValueType.Proc;
                         break;
                 }
+
                 return new CByondValue {
                     data = data,
                     type = type

@@ -72,7 +72,7 @@ namespace OpenDreamRuntime {
 
         //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
         public void PreInitialize(string? jsonPath) {
-            ByondApi.Initialize(this, _dreamMapManager, _objectTree);
+            ByondApi.Initialize(this, _atomManager, _dreamMapManager, _objectTree);
 
             _sawmill = Logger.GetSawmill("opendream");
 
@@ -198,7 +198,7 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public uint FindOrAddString(String str) {
+        public uint FindOrAddString(string str) {
             var idx = FindString(str);
             if (idx == null) {
                 _objectTree.Strings.Add(str);
@@ -208,7 +208,7 @@ namespace OpenDreamRuntime {
             return (uint)idx;
         }
 
-        public uint? FindString(String str) {
+        public uint? FindString(string str) {
             int idx = _objectTree.Strings.IndexOf(str);
 
             if (idx < 0) {
@@ -221,7 +221,6 @@ namespace OpenDreamRuntime {
         public string CreateRef(DreamValue value) {
             return $"[0x{CreateRefInt(value, out _):x}]";
         }
-
 
         public uint CreateRefInt(DreamValue value, out RefType refType) {
             int idx;

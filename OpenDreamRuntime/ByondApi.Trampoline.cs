@@ -32,6 +32,8 @@ public static unsafe partial class ByondApi {
             Byond_CallGlobalProc = &Byond_CallGlobalProc,
             Byond_CallGlobalProcByStrId = &Byond_CallGlobalProcByStrId,
             Byond_ToString = &Byond_ToString,
+            Byond_PixLoc = &Byond_PixLoc,
+            Byond_BoundPixLoc = &Byond_BoundPixLoc,
             Byond_Block = &Byond_Block,
             Byond_Length = &Byond_Length,
             Byond_LocateIn = &Byond_LocateIn,
@@ -40,8 +42,6 @@ public static unsafe partial class ByondApi {
             Byond_NewArglist = &Byond_NewArglist,
             Byond_Refcount = &Byond_Refcount,
             Byond_XYZ = &Byond_XYZ,
-            //Byond_PixLoc = &Byond_PixLoc,
-            //Byond_BoundPixLoc = &Byond_BoundPixLoc,
             ByondValue_IncRef = &ByondValue_IncRef,
             ByondValue_DecRef = &ByondValue_DecRef,
             Byond_TestRef = &Byond_TestRef,
@@ -53,8 +53,6 @@ public static unsafe partial class ByondApi {
 
     [LibraryImport("byond")]
     private static partial void OpenDream_Internal_Init(Trampolines* trampolines);
-
-
 
     private static IntPtr DllImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath) {
         if (libraryName == "byond") {
@@ -97,6 +95,8 @@ public static unsafe partial class ByondApi {
         public delegate* unmanaged[Cdecl]<byte*, CByondValue*, uint, CByondValue*, byte> Byond_CallGlobalProc;
         public delegate* unmanaged[Cdecl]<uint, CByondValue*, uint, CByondValue*, byte> Byond_CallGlobalProcByStrId;
         public delegate* unmanaged[Cdecl]<CByondValue*, byte*, uint*, byte> Byond_ToString;
+        public delegate* unmanaged[Cdecl]<CByondValue*, CByondPixLoc*, byte> Byond_PixLoc;
+        public delegate* unmanaged[Cdecl]<CByondValue*, byte, CByondPixLoc*, byte> Byond_BoundPixLoc;
         public delegate* unmanaged[Cdecl]<CByondXYZ*, CByondXYZ*, CByondValue*, uint*, byte> Byond_Block;
         public delegate* unmanaged[Cdecl]<CByondValue*, CByondValue*, byte> Byond_Length;
         public delegate* unmanaged[Cdecl]<CByondValue*, CByondValue*, CByondValue*, byte> Byond_LocateIn;
@@ -105,8 +105,6 @@ public static unsafe partial class ByondApi {
         public delegate* unmanaged[Cdecl]<CByondValue*, CByondValue*, CByondValue*, byte> Byond_NewArglist;
         public delegate* unmanaged[Cdecl]<CByondValue*, uint*, byte> Byond_Refcount;
         public delegate* unmanaged[Cdecl]<CByondValue*, CByondXYZ*, byte> Byond_XYZ;
-        //public delegate* unmanaged[Cdecl]<CByondValue*, CByondPixLoc*, byte> Byond_PixLoc;
-        //public delegate* unmanaged[Cdecl]<CByondValue*, byte, CByondPixLoc*, byte> Byond_BoundPixLoc;
         public delegate* unmanaged[Cdecl]<CByondValue*, void> ByondValue_IncRef;
         public delegate* unmanaged[Cdecl]<CByondValue*, void> ByondValue_DecRef;
         public delegate* unmanaged[Cdecl]<CByondValue*, byte> Byond_TestRef;

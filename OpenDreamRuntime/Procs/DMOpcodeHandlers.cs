@@ -2612,9 +2612,8 @@ namespace OpenDreamRuntime.Procs {
         #endregion Others
 
         #region Helpers
-
         [SuppressMessage("ReSharper", "CompareOfFloatsByEqualityOperator")]
-        private static bool IsEqual(DreamValue first, DreamValue second) {
+        public static bool IsEqual(DreamValue first, DreamValue second) {
             // null should only ever be equal to null
             if (first.IsNull) return second.IsNull;
             if (second.IsNull) return false; // If this were ever true the above condition would have handled it

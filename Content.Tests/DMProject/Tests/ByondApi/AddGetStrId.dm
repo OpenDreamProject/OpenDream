@@ -6,5 +6,5 @@ var/const/lib = "../../../byondapitest.dll"
 
 	var/exists = "this string exists";
 	result = call_ext(lib, "byond:byondapitest_addgetstrid_existent_id")()
-	result = "\[0x6" + num2text(result,6,16) + "\]"
+	result = "\[0x" + num2text(result,7,16) + "\]"
 	ASSERT(result == ref(exists))

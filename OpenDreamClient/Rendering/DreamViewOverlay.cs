@@ -30,6 +30,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
     public bool MouseMapRenderEnabled;
 
     public Texture? MouseMap => _mouseMapRenderTarget?.Texture;
+    public readonly Dictionary<int, DreamPlane> Planes = new();
     public readonly ShaderInstance BlockColorInstance;
     public readonly Dictionary<Color, RendererMetaData> MouseMapLookup = new();
     public readonly Dictionary<string, IRenderTexture> RenderSourceLookup = new();
@@ -60,7 +61,6 @@ internal sealed partial class DreamViewOverlay : Overlay {
     private readonly EntityQuery<TransformComponent> _xformQuery;
     private readonly EntityQuery<DreamMobSightComponent> _mobSightQuery;
 
-    private readonly Dictionary<int, DreamPlane> _planes = new();
     private readonly List<RendererMetaData> _spriteContainer = new();
 
     private readonly Dictionary<BlendMode, ShaderInstance> _blendModeInstances;
@@ -476,7 +476,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
             _baseRenderTarget = _clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8Srgb), name: "Base Render Target");
             _mouseMapRenderTarget = _clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8Srgb), name: "MouseMap");
 
-            foreach (var (planeId, plane) in _planes) {
+            foreach (var (planeId, plane) in Planes) {
                 plane.SetMainRenderTarget(_clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8Srgb), name: $"Plane {planeId}"));
             }
         } else {
@@ -489,13 +489,13 @@ internal sealed partial class DreamViewOverlay : Overlay {
     }
 
     private void ClearPlanes() {
-        foreach (var pair in _planes) {
+        foreach (var pair in Planes) {
             var plane = pair.Value;
 
             // We can remove the plane if there was nothing on it last frame
             if (plane.Sprites.Count == 0 && plane.Master == null) {
                 plane.Dispose();
-                _planes.Remove(pair.Key);
+                Planes.Remove(pair.Key);
                 continue;
             }
 
@@ -504,13 +504,13 @@ internal sealed partial class DreamViewOverlay : Overlay {
     }
 
     private DreamPlane GetPlane(int planeIndex, Vector2i viewportSize) {
-        if (_planes.TryGetValue(planeIndex, out var plane))
+        if (Planes.TryGetValue(planeIndex, out var plane))
             return plane;
 
         var renderTarget = _clyde.CreateRenderTarget(viewportSize, new(RenderTargetColorFormat.Rgba8Srgb), name: $"Plane {planeIndex}");
 
         plane = new(renderTarget);
-        _planes.Add(planeIndex, plane);
+        Planes.Add(planeIndex, plane);
         _sawmill.Verbose($"Created plane {planeIndex}");
         return plane;
     }
@@ -568,8 +568,8 @@ internal sealed partial class DreamViewOverlay : Overlay {
     private void DrawPlanes(DrawingHandleWorld handle, Box2 worldAABB) {
         using (var _ = _prof.Group("draw planes map")) {
             handle.RenderInRenderTarget(_baseRenderTarget!, () => {
-                foreach (int planeIndex in _planes.Keys.Order()) {
-                    var plane = _planes[planeIndex];
+                foreach (int planeIndex in Planes.Keys.Order()) {
+                    var plane = Planes[planeIndex];
 
                     plane.Draw(this, handle, worldAABB);
 
@@ -592,8 +592,8 @@ internal sealed partial class DreamViewOverlay : Overlay {
         // TODO: Can this only be done once the user clicks?
         using (_prof.Group("draw planes mouse map")) {
             handle.RenderInRenderTarget(_mouseMapRenderTarget!, () => {
-                foreach (int planeIndex in _planes.Keys.Order())
-                    _planes[planeIndex].DrawMouseMap(handle, this, _mouseMapRenderTarget!.Size, worldAABB);
+                foreach (int planeIndex in Planes.Keys.Order())
+                    Planes[planeIndex].DrawMouseMap(handle, this, _mouseMapRenderTarget!.Size, worldAABB);
             }, null);
         }
     }
@@ -779,142 +779,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
     }
 }
 
-internal sealed class RendererMetaData : IComparable<RendererMetaData> {
-    public DreamIcon? MainIcon;
-    public Vector2 Position;
-    public int Plane; //true plane value may be different from appearance plane value, due to special flags
-    public float Layer; //ditto for layer
-    public EntityUid Uid;
-    public EntityUid ClickUid; //the UID of the object clicks on this should be passed to (ie, for overlays)
-    public bool IsScreen;
-    public int TieBreaker; //Used for biasing render order (ie, for overlays)
-    public Color ColorToApply;
-    public ColorMatrix ColorMatrixToApply;
-    public float AlphaToApply;
-    public Matrix3x2 TransformToApply;
-    public string? RenderSource;
-    public string? RenderTarget;
-    public List<RendererMetaData>? KeepTogetherGroup;
-    public AppearanceFlags AppearanceFlags;
-    public BlendMode BlendMode;
-    public MouseOpacity MouseOpacity;
-    public Texture? TextureOverride;
-    public string? Maptext;
-    public Vector2i? MaptextSize;
-
-    public bool IsPlaneMaster => (AppearanceFlags & AppearanceFlags.PlaneMaster) != 0;
-    public bool HasRenderSource => !string.IsNullOrEmpty(RenderSource);
-    public bool ShouldPassMouse => HasRenderSource && (AppearanceFlags & AppearanceFlags.PassMouse) != 0;
-
-    public RendererMetaData() {
-        Reset();
-    }
-
-    public void Reset() {
-        MainIcon = null;
-        Position = Vector2.Zero;
-        Plane = 0;
-        Layer = 0;
-        Uid = EntityUid.Invalid;
-        ClickUid = EntityUid.Invalid;
-        IsScreen = false;
-        TieBreaker = 0;
-        ColorToApply = Color.White;
-        ColorMatrixToApply = ColorMatrix.Identity;
-        AlphaToApply = 1.0f;
-        TransformToApply = Matrix3x2.Identity;
-        RenderSource = "";
-        RenderTarget = "";
-        KeepTogetherGroup = null; //don't actually need to allocate this 90% of the time
-        AppearanceFlags = AppearanceFlags.None;
-        BlendMode = BlendMode.Default;
-        MouseOpacity = MouseOpacity.Transparent;
-        TextureOverride = null;
-        Maptext = null;
-        MaptextSize = null;
-    }
-
-    public Texture? GetTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle) {
-        if (MainIcon == null)
-            return null;
-
-        var texture = MainIcon.GetTexture(viewOverlay, handle, this, TextureOverride);
-        MainIcon.LastRenderedTexture = texture;
-        return texture;
-    }
-
-    public int CompareTo(RendererMetaData? other) {
-        if (other == null)
-            return 1;
-
-        //Render target and source ordering is done first.
-        //Anything with a render target goes first
-        int val = (!string.IsNullOrEmpty(RenderTarget)).CompareTo(!string.IsNullOrEmpty(other.RenderTarget));
-        if (val != 0) {
-            return -val;
-        }
-
-        //Anything with a render source which points to a render target must come *after* that render_target
-        if (HasRenderSource && RenderSource == other.RenderTarget) {
-            return 1;
-        }
-
-        //We now return to your regularly scheduled sprite render order
-
-        //Plane
-        val =  Plane.CompareTo(other.Plane);
-        if (val != 0) {
-            return val;
-        }
-
-        //Plane master objects go first for any given plane
-        val = IsPlaneMaster.CompareTo(IsPlaneMaster);
-        if (val != 0) {
-            return -val; //sign flip because we want 1 < -1
-        }
-
-        //sub-plane (ie, HUD vs not HUD)
-        val = IsScreen.CompareTo(other.IsScreen);
-        if (val != 0) {
-            return val;
-        }
-
-        //depending on world.map_format, either layer or physical position
-        //TODO
-        val = Layer.CompareTo(other.Layer);
-        if (val != 0) {
-            return val;
-        }
-
-        //Finally, tie-breaker - in BYOND, this is order of creation of the sprites
-        //for us, we use EntityUID, with a tie-breaker (for underlays/overlays)
-        val = Uid.CompareTo(other.Uid);
-        if (val != 0) {
-            return val;
-        }
-
-        //FLOAT_LAYER must be sorted local to the thing they're floating on, and since all overlays/underlays share their parent's UID, we
-        //can do that here.
-        if (MainIcon?.Appearance?.Layer < -1 && other.MainIcon?.Appearance?.Layer < -1) { //if these are FLOAT_LAYER, sort amongst them
-            val = MainIcon.Appearance.Layer.CompareTo(other.MainIcon.Appearance.Layer);
-            if (val != 0) {
-                return val;
-            }
-        }
-
-        // All else being the same, group them by icon.
-        // This allows Clyde to batch the draw calls more efficiently.
-        val = (MainIcon?.Appearance?.Icon ?? 0) - (other.MainIcon?.Appearance?.Icon ?? 0);
-        if (val != 0) {
-            return val;
-        }
-
-        return TieBreaker.CompareTo(other.TieBreaker);
-    }
-}
-
 #region Render Toggle Commands
-
 public sealed class ToggleScreenOverlayCommand : IConsoleCommand {
     // ReSharper disable once StringLiteralTypo
     public string Command => "togglescreenoverlay";
@@ -954,5 +819,4 @@ public sealed class ToggleMouseOverlayCommand : IConsoleCommand {
         }
     }
 }
-
 #endregion

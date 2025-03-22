@@ -87,6 +87,10 @@ internal sealed partial class IconDebugWindow : OSWindow {
                 VisContentsGrid.AddChild(new Label { Text = $"Failed to get sprite component for {visContentEntity}" });
             }
         }
+
+        TabContainer.SetTabVisible(OverlaysTab, OverlaysGrid.ChildCount != 0);
+        TabContainer.SetTabVisible(UnderlaysTab, UnderlaysGrid.ChildCount != 0);
+        TabContainer.SetTabVisible(VisContentsTab, VisContentsGrid.ChildCount != 0);
     }
 
     private void AddPropertyIfNotDefault(string propertyName, object? value, object? defaultValue) {

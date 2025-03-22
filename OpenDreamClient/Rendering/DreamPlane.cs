@@ -7,6 +7,7 @@ namespace OpenDreamClient.Rendering;
 internal sealed class DreamPlane(IRenderTexture mainRenderTarget) : IDisposable {
     public IRenderTexture RenderTarget => _temporaryRenderTarget ?? mainRenderTarget;
     public RendererMetaData? Master;
+    public bool Enabled = true;
 
     public readonly List<RendererMetaData> Sprites = new();
 
@@ -46,6 +47,9 @@ internal sealed class DreamPlane(IRenderTexture mainRenderTarget) : IDisposable 
     public void Draw(DreamViewOverlay overlay, DrawingHandleWorld handle, Box2 worldAABB) {
         // Draw all icons
         handle.RenderInRenderTarget(mainRenderTarget, () => {
+            if (!Enabled) // Inside the RenderInRenderTarget() to ensure it gets cleared
+                return;
+
             foreach (var sprite in Sprites) {
                 if (sprite.HasRenderSource && overlay.RenderSourceLookup.TryGetValue(sprite.RenderSource!, out var renderSourceTexture)) {
                     sprite.TextureOverride = renderSourceTexture.Texture;
@@ -59,7 +63,7 @@ internal sealed class DreamPlane(IRenderTexture mainRenderTarget) : IDisposable 
         if (_temporaryRenderTarget != null) {
             // Draw again, but with the color applied
             handle.RenderInRenderTarget(_temporaryRenderTarget, () => {
-                if (Master == null)
+                if (Master == null || !Enabled)
                     return;
 
                 Master.TextureOverride = mainRenderTarget.Texture;
@@ -79,7 +83,7 @@ internal sealed class DreamPlane(IRenderTexture mainRenderTarget) : IDisposable 
     /// Draws this plane's mouse map onto the current render target
     /// </summary>
     public void DrawMouseMap(DrawingHandleWorld handle, DreamViewOverlay overlay, Vector2i renderTargetSize, Box2 worldAABB) {
-        if (Master?.MouseOpacity == MouseOpacity.Transparent)
+        if (Master?.MouseOpacity == MouseOpacity.Transparent || !Enabled)
             return;
 
         handle.UseShader(overlay.BlockColorInstance);

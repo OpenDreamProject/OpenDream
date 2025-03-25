@@ -41,6 +41,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
     [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
     [Dependency] private readonly IPlayerManager _playerManager = default!;
     [Dependency] private readonly IEntityManager _entityManager = default!;
+    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly IClyde _clyde = default!;
     [Dependency] private readonly IPrototypeManager _protoManager = default!;
@@ -55,7 +56,8 @@ internal sealed partial class DreamViewOverlay : Overlay {
     private readonly EntityLookupSystem _lookupSystem;
     private readonly ClientAppearanceSystem _appearanceSystem;
     private readonly ClientScreenOverlaySystem _screenOverlaySystem;
-    private readonly ClientImagesSystem _clientImagesSystem;
+    private readonly ClientImagesSystem _imagesSystem;
+    private readonly DMISpriteSystem _spriteSystem;
 
     private readonly EntityQuery<DMISpriteComponent> _spriteQuery;
     private readonly EntityQuery<TransformComponent> _xformQuery;
@@ -76,16 +78,16 @@ internal sealed partial class DreamViewOverlay : Overlay {
         M22 = -1
     };
 
-    public DreamViewOverlay(RenderTargetPool renderTargetPool, TransformSystem transformSystem, MapSystem mapSystem, EntityLookupSystem lookupSystem,
-        ClientAppearanceSystem appearanceSystem, ClientScreenOverlaySystem screenOverlaySystem, ClientImagesSystem clientImagesSystem) {
+    public DreamViewOverlay(RenderTargetPool renderTargetPool) {
         IoCManager.InjectDependencies(this);
         _renderTargetPool = renderTargetPool;
-        _transformSystem = transformSystem;
-        _mapSystem = mapSystem;
-        _lookupSystem = lookupSystem;
-        _appearanceSystem = appearanceSystem;
-        _screenOverlaySystem = screenOverlaySystem;
-        _clientImagesSystem = clientImagesSystem;
+        _transformSystem = _entitySystemManager.GetEntitySystem<TransformSystem>();
+        _mapSystem = _entitySystemManager.GetEntitySystem<MapSystem>();
+        _lookupSystem = _entitySystemManager.GetEntitySystem<EntityLookupSystem>();
+        _appearanceSystem = _entitySystemManager.GetEntitySystem<ClientAppearanceSystem>();
+        _screenOverlaySystem = _entitySystemManager.GetEntitySystem<ClientScreenOverlaySystem>();
+        _imagesSystem = _entitySystemManager.GetEntitySystem<ClientImagesSystem>();
+        _spriteSystem = _entitySystemManager.GetEntitySystem<DMISpriteSystem>();
 
         _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
         _xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
@@ -102,6 +104,13 @@ internal sealed partial class DreamViewOverlay : Overlay {
             {BlendMode.Multiply, _protoManager.Index<ShaderPrototype>("blend_multiply").InstanceUnique()}, //BLEND_MULTIPLY
             {BlendMode.InsertOverlay, _protoManager.Index<ShaderPrototype>("blend_inset_overlay").InstanceUnique()} //BLEND_INSET_OVERLAY //TODO
         };
+
+        // Set the default parameters for each blend mode
+        foreach (var shader in _blendModeInstances.Values) {
+            shader.SetParameter("colorMatrix", ColorMatrix.Identity.GetMatrix4());
+            shader.SetParameter("offsetVector", ColorMatrix.Identity.GetOffsetVector());
+            shader.SetParameter("isPlaneMaster", false);
+        }
 
         _mapTextRenderer = new(_resourceCache, _tagManager);
     }
@@ -151,7 +160,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
 
         using (_prof.Group("lookup")) {
             //TODO use a sprite tree.
-            //the scaling is to attempt to prevent pop-in, by rendering sprites that are *just* offscreen
+            //the scaling is to attempt to prevent pop-in, by getting sprites that are *just* offscreen
             _lookupSystem.GetEntitiesIntersecting(args.MapId, worldAABB.Scale(1.2f), EntitiesInView, MapLookupFlags);
         }
 
@@ -315,7 +324,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
         //client images act as either an overlay or replace the main icon
         //notably they cannot be applied to overlays, so don't check for them if this is an under/overlay
         //note also that we use turfCoords and not current.Position because we want world-coordinates, not screen coordinates. This is only used for turfs.
-        if(parentIcon == null && _clientImagesSystem.TryGetClientImages(current.Uid, turfCoords, out List<NetEntity>? attachedClientImages)){
+        if(parentIcon == null && _imagesSystem.TryGetClientImages(current.Uid, turfCoords, out List<NetEntity>? attachedClientImages)){
             foreach(NetEntity ciNetEntity in attachedClientImages) {
                 EntityUid imageEntity = _entityManager.GetEntity(ciNetEntity);
                 if (!_spriteQuery.TryGetComponent(imageEntity, out var sprite))
@@ -335,7 +344,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
             if (!_spriteQuery.TryGetComponent(visContentEntity, out var sprite))
                 continue;
             var transform = _xformQuery.GetComponent(visContentEntity);
-            if (!sprite.IsVisible(transform, seeVis))
+            if (!_spriteSystem.IsVisible(sprite, transform, seeVis, null))
                 continue;
 
             ProcessIconComponents(sprite.Icon, position, visContentEntity, false, ref tieBreaker, result, seeVis, current, keepTogether);
@@ -394,11 +403,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
         result.Add(current);
     }
 
-    private void ClearRenderTarget(IRenderTexture target, DrawingHandleWorld handle, Color clearColor) {
-        handle.RenderInRenderTarget(target, () => {}, clearColor);
-    }
-
-    public ShaderInstance? GetBlendAndColorShader(RendererMetaData iconMetaData, bool ignoreColor = false, bool useOverlayMode = false) {
+    public ShaderInstance GetBlendAndColorShader(RendererMetaData iconMetaData, bool ignoreColor = false, bool useOverlayMode = false) {
         BlendMode blendMode = useOverlayMode ? BlendMode.Overlay : iconMetaData.BlendMode;
 
         ColorMatrix colorMatrix;
@@ -409,12 +414,12 @@ internal sealed partial class DreamViewOverlay : Overlay {
         else
             colorMatrix = iconMetaData.ColorMatrixToApply;
 
-        // We can use no shader if everything is default
-        if (!iconMetaData.IsPlaneMaster && blendMode is BlendMode.Default or BlendMode.Overlay &&
-            colorMatrix.Equals(ColorMatrix.Identity))
-            return null;
+        var blendAndColor = _blendModeInstances[blendMode];
+        if (!iconMetaData.IsPlaneMaster && colorMatrix.Equals(ColorMatrix.Identity)) // We can get away with no duplication
+            return blendAndColor;
 
-        var blendAndColor = _blendModeInstances[blendMode].Duplicate();
+        // RT's batching is a little broken and so we must duplicate the shader if we modify its parameters
+        blendAndColor = blendAndColor.Duplicate();
         blendAndColor.SetParameter("colorMatrix", colorMatrix.GetMatrix4());
         blendAndColor.SetParameter("offsetVector", colorMatrix.GetOffsetVector());
         blendAndColor.SetParameter("isPlaneMaster", iconMetaData.IsPlaneMaster);
@@ -482,9 +487,6 @@ internal sealed partial class DreamViewOverlay : Overlay {
         } else {
             // Clear the mouse map lookup dictionary
             MouseMapLookup.Clear();
-
-            ClearRenderTarget(_baseRenderTarget, handle, new Color());
-            ClearRenderTarget(_mouseMapRenderTarget!, handle, new Color());
         }
     }
 
@@ -525,8 +527,8 @@ internal sealed partial class DreamViewOverlay : Overlay {
             if (!string.IsNullOrEmpty(sprite.RenderTarget)) {
                 //if this sprite has a render target, draw it to a slate instead. If it needs to be drawn on the map, a second sprite instance will already have been created for that purpose
                 if (!RenderSourceLookup.TryGetValue(sprite.RenderTarget, out var tmpRenderTarget)) {
-                    tmpRenderTarget = _renderTargetPool.Rent(viewportSize);
-                    ClearRenderTarget(tmpRenderTarget, handle, new Color());
+                    var size = sprite.IsPlaneMaster ? viewportSize : sprite.MainIcon?.DMI?.IconSize ?? viewportSize;
+                    tmpRenderTarget = _renderTargetPool.Rent(size);
                     RenderSourceLookup.Add(sprite.RenderTarget, tmpRenderTarget);
                     _renderTargetPool.ReturnAtEndOfFrame(tmpRenderTarget);
                 }
@@ -562,7 +564,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
         handle.RenderInRenderTarget(renderTarget, () => {
             //draw the sprite centered on the RenderTarget
             DrawIcon(handle, renderTarget.Size, sprite, ((worldAABB.Size/2)-sprite.Position)-new Vector2(0.5f,0.5f));
-        }, null);
+        }, new Color());
     }
 
     private void DrawPlanes(DrawingHandleWorld handle, Box2 worldAABB) {
@@ -586,7 +588,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
                         handle.DrawTextureRect(plane.RenderTarget.Texture, Box2.FromTwoPoints(Vector2.Zero, _baseRenderTarget.Size));
                     }
                 }
-            }, null);
+            }, new Color());
         }
 
         // TODO: Can this only be done once the user clicks?
@@ -594,7 +596,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
             handle.RenderInRenderTarget(_mouseMapRenderTarget!, () => {
                 foreach (int planeIndex in Planes.Keys.Order())
                     Planes[planeIndex].DrawMouseMap(handle, this, _mouseMapRenderTarget!.Size, worldAABB);
-            }, null);
+            }, new Color());
         }
     }
 
@@ -630,7 +632,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
                     continue;
 
                 var transform = _xformQuery.GetComponent(entity);
-                if (!sprite.IsVisible(transform, seeVis))
+                if (!_spriteSystem.IsVisible(sprite, transform, seeVis, worldAABB))
                     continue;
 
                 var worldPos = _transformSystem.GetWorldPosition(transform);
@@ -659,7 +661,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
             foreach (EntityUid uid in _screenOverlaySystem.ScreenObjects) {
                 if (!_entityManager.TryGetComponent(uid, out DMISpriteComponent? sprite) || sprite.ScreenLocation == null)
                     continue;
-                if (!sprite.IsVisible(null, seeVis))
+                if (!_spriteSystem.IsVisible(sprite, null, seeVis, null))
                     continue;
                 if (sprite.ScreenLocation.MapControl != null) // Don't render screen objects meant for other map controls
                     continue;
@@ -728,6 +730,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
         //but keep the handle to the final KT group's render target so we don't override it later in the render cycle
         IRenderTexture ktTexture = _renderTargetPool.Rent(tempTexture.Size);
         handle.RenderInRenderTarget(ktTexture, () => {
+            handle.UseShader(null);
             handle.SetTransform(CreateRenderTargetFlipMatrix(tempTexture.Size, Vector2.Zero));
             handle.DrawTextureRect(tempTexture.Texture, new Box2(Vector2.Zero, tempTexture.Size));
         }, Color.Transparent);

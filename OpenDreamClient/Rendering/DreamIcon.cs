@@ -1,4 +1,5 @@
-﻿using OpenDreamClient.Resources;
+﻿using System.Diagnostics.CodeAnalysis;
+using OpenDreamClient.Resources;
 using OpenDreamClient.Resources.ResourceTypes;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
@@ -498,9 +499,17 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
     /// </summary>
     /// <remarks>In a separate method to avoid closure allocations when not executed</remarks>
     /// <returns>The final texture</returns>
+    [SuppressMessage("ReSharper", "AccessToModifiedClosure")] // RenderInRenderTarget executes immediately, shouldn't be an issue
     private IRenderTexture FullRenderTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData, Texture frame) {
-        // TODO: This should determine the size from the filters and their settings, not just double the original
-        var ping = renderTargetPool.Rent(frame.Size * 2);
+        Vector2 requiredRenderSpace = frame.Size;
+        foreach (var filter in iconMetaData.MainIcon!.Appearance!.Filters) {
+            var requiredSpace = filter.CalculateRequiredRenderSpace(frame.Size,
+                renderSource => viewOverlay.RenderSourceLookup.GetValueOrDefault(renderSource)?.Size ?? new(0, 0));
+
+            requiredRenderSpace = Vector2.Max(requiredRenderSpace, requiredSpace);
+        }
+
+        var ping = renderTargetPool.Rent((Vector2i)requiredRenderSpace);
         var pong = renderTargetPool.Rent(ping.Size);
 
         handle.RenderInRenderTarget(pong, () => {
@@ -516,7 +525,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             colorShader.SetParameter("isPlaneMaster",iconMetaData.IsPlaneMaster);
             handle.UseShader(colorShader);
 
-            handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(pong.Size, frame.Size / 2));
+            handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(pong.Size, (pong.Size/2 - frame.Size/2)));
             handle.DrawTextureRect(frame, new Box2(Vector2.Zero, frame.Size));
         }, Color.Black.WithAlpha(0));
 

@@ -1,4 +1,4 @@
-﻿/world
+/world
 	var/list/contents = null
 	var/list/vars
 
@@ -117,6 +117,10 @@
 		set opendream_unimplemented = TRUE
 		return 0
 
+	proc/Tick()
+		set waitfor = FALSE
+		return null
+	
 	proc/ODHotReloadInterface()
 
 	proc/ODHotReloadResource(var/file_name)

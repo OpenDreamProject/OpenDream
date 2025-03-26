@@ -335,7 +335,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
             if (!_spriteQuery.TryGetComponent(visContentEntity, out var sprite))
                 continue;
             var transform = _xformQuery.GetComponent(visContentEntity);
-            if (!sprite.IsVisible(transform, seeVis))
+            if (!sprite.IsVisible(isScreen ? null : transform, seeVis))
                 continue;
 
             ProcessIconComponents(sprite.Icon, position, visContentEntity, false, ref tieBreaker, result, seeVis, current, keepTogether);

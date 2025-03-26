@@ -4,9 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
-using DMCompiler.Bytecode;
-using DMCompiler.Json;
 using JetBrains.Annotations;
+using OpenDreamShared.Common.Bytecode;
+using OpenDreamShared.Common.Json;
 
 namespace DMDisassembler;
 

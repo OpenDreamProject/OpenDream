@@ -1,7 +1,8 @@
 ﻿using DMCompiler.Compiler.DM;
 using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM.Builders;
-using DMCompiler.Json;
+using OpenDreamShared.Common;
+using OpenDreamShared.Common.Json;
 
 namespace DMCompiler.Compiler.DMM;
 

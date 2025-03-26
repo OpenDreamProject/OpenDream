@@ -1,9 +1,7 @@
 using System.Diagnostics.Contracts;
-using System.Linq;
 using System.Text.Json.Serialization;
-using DMCompiler.DM;
 
-namespace DMCompiler;
+namespace OpenDreamShared.Common;
 
 // TODO: This is fairly ugly structure and should probably be removed/redone with something much nicer.
 //          It's heavily embedded into a lot of corners of the compiler though.
@@ -92,22 +90,6 @@ public struct DreamPath {
         _pathString = null;
 
         Normalize(true);
-    }
-
-    internal DMValueType GetAtomType(DMCompiler compiler) {
-        if (!compiler.DMObjectTree.TryGetDMObject(this, out var dmType))
-            return DMValueType.Anything;
-
-        if (dmType.IsSubtypeOf(Obj))
-            return DMValueType.Obj;
-        if (dmType.IsSubtypeOf(Mob))
-            return DMValueType.Mob;
-        if (dmType.IsSubtypeOf(Turf))
-            return DMValueType.Turf;
-        if (dmType.IsSubtypeOf(Area))
-            return DMValueType.Area;
-
-        return DMValueType.Anything;
     }
 
     public void SetFromString(string rawPath) {

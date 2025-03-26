@@ -11,6 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\OpenDreamShared.Common\OpenDreamShared.Common.csproj" />
     <ProjectReference Include="..\OpenDreamShared\OpenDreamShared.csproj" />
     <ProjectReference Include="..\OpenDreamRuntime\OpenDreamRuntime.csproj" />
   </ItemGroup>

@@ -180,6 +180,7 @@ public class DMCompiler {
 
             File.WriteAllText(outputPath, result.ToString());
             Console.WriteLine($"Preprocessor output dumped to {outputPath}");
+            return null;
         }
 
         return Build();

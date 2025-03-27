@@ -6,6 +6,7 @@ using System.Text;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamShared.Network.Messages;
 using OpenDreamShared.Resources;
+using Robust.Server.ServerStatus;
 using Robust.Shared.Network;
 using Robust.Shared.Utility;
 using SixLabors.ImageSharp;
@@ -15,9 +16,12 @@ namespace OpenDreamRuntime.Resources;
 
 public sealed class DreamResourceManager {
     [Dependency] private readonly IServerNetManager _netManager = default!;
+    [Dependency] private readonly IStatusHost _statusHost = default!;
+    [Dependency] private readonly IDependencyCollection _dependencyCollection = default!;
 
     public string RootPath { get; private set; } = default!;
 
+    private DreamAczProvider _aczProvider = default!;
     private readonly List<DreamResource> _resourceCache = new();
     private readonly Dictionary<string, int> _resourcePathToId = new();
     private readonly Dictionary<string, IconResource> _md5ToGeneratedIcon = new();
@@ -53,6 +57,10 @@ public sealed class DreamResourceManager {
             // Resource IDs must be consistent with the ordering, or else packaged resources will mismatch.
             DebugTools.Assert(loaded.Id == i + 1, "Resource IDs not consistent!");
         }
+
+        _aczProvider = new DreamAczProvider(_dependencyCollection, rootPath, resources);
+        _statusHost.SetMagicAczProvider(_aczProvider);
+        _statusHost.SetFullHybridAczProvider(_aczProvider);
     }
 
     public bool DoesFileExist(string resourcePath) {
@@ -143,6 +151,7 @@ public sealed class DreamResourceManager {
         DreamResource resource = new DreamResource(resourceId, data);
 
         _resourceCache.Add(resource);
+        _aczProvider.AddResource(resourceId, data);
         return resource;
     }
 
@@ -163,6 +172,7 @@ public sealed class DreamResourceManager {
         IconResource resource = new IconResource(resourceId, data, texture, dmi);
         _resourceCache.Add(resource);
         _md5ToGeneratedIcon[md5] = resource; // Would override in the case of collisions, but whatever
+        _aczProvider.AddResource(resourceId, data);
         return resource;
     }
 
@@ -181,6 +191,7 @@ public sealed class DreamResourceManager {
         IconResource resource = new IconResource(resourceId, data);
         _resourceCache.Add(resource);
         _md5ToGeneratedIcon[md5] = resource;  // Would override in the case of collisions, but whatever
+        _aczProvider.AddResource(resourceId, data);
         return resource;
     }
 

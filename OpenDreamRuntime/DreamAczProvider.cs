@@ -10,12 +10,25 @@ namespace OpenDreamRuntime;
 
 public sealed class DreamAczProvider(IDependencyCollection dependencies, string rootPath, string[] resources) : IMagicAczProvider, IFullHybridAczProvider {
     /// <summary>
+    /// How many bytes of resources should be added before the ACZ is repackaged
+    /// </summary>
+    private const int AczInvalidateThreshold = 2 * 1024 * 1024; // Invalidate every 2MB of new resources
+
+    /// <summary>
     /// Resources created at runtime rather than coming from disk
     /// </summary>
     private readonly Dictionary<int, byte[]> _extraResources = new();
 
+    private int _nextInvalidate = AczInvalidateThreshold;
+
     public void AddResource(int resourceId, byte[] data) {
         _extraResources.Add(resourceId, data);
+
+        _nextInvalidate -= data.Length;
+        if (_nextInvalidate <= 0) {
+            _nextInvalidate = AczInvalidateThreshold;
+            dependencies.Resolve<IStatusHost>().InvalidateAcz();
+        }
     }
 
     public async Task Package(AssetPass pass, IPackageLogger logger, CancellationToken cancel) {

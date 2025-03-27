@@ -8,21 +8,20 @@ using Robust.Server.ServerStatus;
 
 namespace OpenDreamRuntime;
 
-public sealed class DreamAczProvider : IMagicAczProvider, IFullHybridAczProvider {
-    private readonly IDependencyCollection _dependencies;
-    private readonly string _rootPath;
-    private readonly string[] _resources;
+public sealed class DreamAczProvider(IDependencyCollection dependencies, string rootPath, string[] resources) : IMagicAczProvider, IFullHybridAczProvider {
+    /// <summary>
+    /// Resources created at runtime rather than coming from disk
+    /// </summary>
+    private readonly Dictionary<int, byte[]> _extraResources = new();
 
-    public DreamAczProvider(IDependencyCollection dependencies, string rootPath, string[] resources) {
-        _dependencies = dependencies;
-        _rootPath = rootPath;
-        _resources = resources;
+    public void AddResource(int resourceId, byte[] data) {
+        _extraResources.Add(resourceId, data);
     }
 
     public async Task Package(AssetPass pass, IPackageLogger logger, CancellationToken cancel) {
-        var contentDir = DefaultMagicAczProvider.FindContentRootPath(_dependencies);
+        var contentDir = DefaultMagicAczProvider.FindContentRootPath(dependencies);
 
-        await DreamPackaging.WriteResources(contentDir, _rootPath, _resources, pass, logger, cancel);
+        await DreamPackaging.WriteResources(contentDir, rootPath, resources, pass, logger, cancel);
     }
 
     public Task Package(AssetPass hybridPackageInput, AssetPass output, IPackageLogger logger, CancellationToken cancel) {
@@ -35,7 +34,7 @@ public sealed class DreamAczProvider : IMagicAczProvider, IFullHybridAczProvider
             clientAssetGraph.AllPasses.Concat(new[] { hybridPackageInput, output }).ToArray(),
             logger);
 
-        DreamPackaging.WriteRscResources(_rootPath, _resources, resourceInput);
+        DreamPackaging.WriteRscResources(rootPath, resources, _extraResources, resourceInput);
         resourceInput.InjectFinished();
 
         return Task.CompletedTask;

@@ -343,8 +343,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
             EntityUid visContentEntity = _entityManager.GetEntity(visContent);
             if (!_spriteQuery.TryGetComponent(visContentEntity, out var sprite))
                 continue;
-            var transform = _xformQuery.GetComponent(visContentEntity);
-            if (!_spriteSystem.IsVisible(sprite, transform, seeVis, null))
+            if (!_spriteSystem.IsVisible(sprite, isScreen ? null : _xformQuery.GetComponent(visContentEntity), seeVis, null))
                 continue;
 
             ProcessIconComponents(sprite.Icon, position, visContentEntity, false, ref tieBreaker, result, seeVis, current, keepTogether);

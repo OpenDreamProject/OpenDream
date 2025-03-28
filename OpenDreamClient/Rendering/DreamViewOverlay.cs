@@ -538,7 +538,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
                     plane.SetTemporaryRenderTarget(tmpRenderTarget);
                 } else { //if not a plane master, draw the sprite to the render target
                     //note we don't draw this to the mouse-map because that's handled when the RenderTarget is used as a source later
-                    DrawOnRenderTarget(handle, tmpRenderTarget, sprite, worldAABB);
+                    DrawOnRenderTarget(handle, tmpRenderTarget, sprite);
                 }
             } else { //We are no longer dealing with RenderTargets, just regular old planes, so we collect the draw actions for batching
                 //if this is a plane master then we don't render it, we just set it as the plane's master
@@ -559,10 +559,10 @@ internal sealed partial class DreamViewOverlay : Overlay {
     /// Used by <see cref="ProcessSprites"/> to render an icon onto its render_target.
     /// In a separate method to prevent unused closure allocations.
     /// </summary>
-    private void DrawOnRenderTarget(DrawingHandleWorld handle, IRenderTarget renderTarget, RendererMetaData sprite, Box2 worldAABB) {
+    private void DrawOnRenderTarget(DrawingHandleWorld handle, IRenderTarget renderTarget, RendererMetaData sprite) {
         handle.RenderInRenderTarget(renderTarget, () => {
             //draw the sprite centered on the RenderTarget
-            DrawIcon(handle, renderTarget.Size, sprite, ((worldAABB.Size/2)-sprite.Position)-new Vector2(0.5f,0.5f));
+            DrawIcon(handle, renderTarget.Size, sprite, -sprite.Position);
         }, new Color());
     }
 

@@ -100,7 +100,6 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
         }
 
         var canSkipFullRender = Appearance?.Filters.Length is 0 or null &&
-                                    iconMetaData.ColorToApply == Color.White &&
                                     iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity) &&
                                     iconMetaData.AlphaToApply.Equals(1.0f);
 
@@ -515,9 +514,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
         handle.RenderInRenderTarget(pong, () => {
             //we can use the color matrix shader here, since we don't need to blend
             //also because blend mode is none, we don't need to clear
-            var colorMatrix = iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity)
-                ? new ColorMatrix(iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply))
-                : iconMetaData.ColorMatrixToApply;
+            var colorMatrix = iconMetaData.ColorMatrixToApply;
 
             ShaderInstance colorShader = DreamViewOverlay.ColorInstance.Duplicate();
             colorShader.SetParameter("colorMatrix", colorMatrix.GetMatrix4());

@@ -408,8 +408,6 @@ internal sealed partial class DreamViewOverlay : Overlay {
         ColorMatrix colorMatrix;
         if (ignoreColor)
             colorMatrix = ColorMatrix.Identity;
-        else if (iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity))
-            colorMatrix = new ColorMatrix(iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply));
         else
             colorMatrix = iconMetaData.ColorMatrixToApply;
 
@@ -466,7 +464,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
         handle.UseShader(GetBlendAndColorShader(iconMetaData, ignoreColor: true));
 
         handle.SetTransform(CalculateDrawingMatrix(iconMetaData.TransformToApply, pixelPosition, frame.Size, renderTargetSize));
-        handle.DrawTextureRect(frame, Box2.FromDimensions(Vector2.Zero, frame.Size));
+        handle.DrawTextureRect(frame, Box2.FromDimensions(Vector2.Zero, frame.Size), iconMetaData.ColorToApply);
     }
 
     /// <summary>

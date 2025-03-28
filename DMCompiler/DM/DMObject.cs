@@ -97,16 +97,21 @@ internal sealed class DMObject(DMCompiler compiler, int id, DreamPath path, DMOb
     }
 
     public DMComplexValueType? GetProcReturnTypes(string name) {
+
+        return GetProcReturnTypes(name, null);
+    }
+
+    public DMComplexValueType? GetProcReturnTypes(string name, ArgumentList? arguments) {
         if (this == compiler.DMObjectTree.Root && compiler.DMObjectTree.TryGetGlobalProc(name, out var globalProc))
-            return globalProc.RawReturnTypes;
+            return globalProc.GetParameterValueTypes(arguments);
         if (GetProcs(name) is not { } procs)
-            return Parent?.GetProcReturnTypes(name);
+            return Parent?.GetProcReturnTypes(name, arguments);
 
         var proc = compiler.DMObjectTree.AllProcs[procs[0]];
         if ((proc.Attributes & ProcAttributes.IsOverride) != 0)
-            return Parent?.GetProcReturnTypes(name) ?? DMValueType.Anything;
+            return Parent?.GetProcReturnTypes(name, arguments) ?? DMValueType.Anything;
 
-        return proc.RawReturnTypes;
+        return proc.GetParameterValueTypes(arguments);
     }
 
     public void AddVerb(DMProc verb) {
@@ -232,14 +237,12 @@ internal sealed class DMObject(DMCompiler compiler, int id, DreamPath path, DMOb
         return Parent != null && Parent.IsSubtypeOf(path);
     }
 
-    public DMValueType GetDMValueType() {
-        if (IsSubtypeOf(DreamPath.Mob))
-            return DMValueType.Mob;
-        if (IsSubtypeOf(DreamPath.Obj))
-            return DMValueType.Obj;
-        if (IsSubtypeOf(DreamPath.Area))
-            return DMValueType.Area;
-
-        return DMValueType.Anything;
+    public DreamPath GetLastCommonAncestor(DMObject other) {
+        if(other.IsSubtypeOf(Path)) {
+            return Path;
+        } else if(IsSubtypeOf(other.Path)) {
+            return other.Path;
+        }
+        return Parent?.GetLastCommonAncestor(other) ?? DreamPath.Root;
     }
 }

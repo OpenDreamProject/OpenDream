@@ -51,12 +51,14 @@ internal sealed class DreamPlane(IRenderTexture mainRenderTarget) : IDisposable 
                 return;
 
             foreach (var sprite in Sprites) {
+                var positionOffset = -worldAABB.BottomLeft;
+
                 if (sprite.HasRenderSource && overlay.RenderSourceLookup.TryGetValue(sprite.RenderSource!, out var renderSourceTexture)) {
+                    positionOffset -= renderSourceTexture.Size / 2 / EyeManager.PixelsPerMeter;
                     sprite.TextureOverride = renderSourceTexture.Texture;
-                    overlay.DrawIcon(handle, mainRenderTarget.Size, sprite, (-worldAABB.BottomLeft)-(worldAABB.Size/2)+new Vector2(0.5f,0.5f));
-                } else {
-                    overlay.DrawIcon(handle, mainRenderTarget.Size, sprite, -worldAABB.BottomLeft);
                 }
+
+                overlay.DrawIcon(handle, mainRenderTarget.Size, sprite, positionOffset);
             }
         }, new Color());
 
@@ -74,7 +76,7 @@ internal sealed class DreamPlane(IRenderTexture mainRenderTarget) : IDisposable 
 
                 handle.UseShader(overlay.GetBlendAndColorShader(Master, useOverlayMode: true));
                 handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(_temporaryRenderTarget.Size, Master.MainIcon?.TextureRenderOffset ?? Vector2.Zero));
-                handle.DrawTextureRect(texture, new Box2(Vector2.Zero, texture.Size));
+                handle.DrawTextureRect(texture, new Box2(Vector2.Zero, texture.Size), Master.ColorToApply);
             }, new Color());
         }
     }

@@ -63,12 +63,13 @@ public class DMCompiler {
         ForcedWarning("This compiler was compiled in the Debug .NET configuration. This will impact compile speed.");
 #endif
 
-        if (settings.SuppressUnimplementedWarnings) {
-            ForcedWarning("Unimplemented proc & var warnings are currently suppressed");
-        }
-
         DMPreprocessor preprocessor = Preprocess(this, settings.Files, settings.MacroDefines);
         bool successfulCompile = preprocessor is not null && Compile(preprocessor);
+
+        if (settings.SuppressUnimplementedWarnings) {
+            Emit(WarningCode.UnimplementedAccess, Location.Internal,
+                "Unimplemented proc & var warnings are currently suppressed");
+        }
 
         if (successfulCompile) {
             //Output file is the first file with the extension changed to .json
@@ -225,7 +226,11 @@ public class DMCompiler {
     /// <summary> Emits the given warning, according to its ErrorLevel as set in our config. </summary>
     /// <returns> True if the warning was an error, false if not.</returns>
     public bool Emit(WarningCode code, Location loc, string message) {
-        ErrorLevel level = Config.ErrorConfig[code];
+        if (!Config.ErrorConfig.TryGetValue(code, out var level)) {
+            ForcedError(loc, $"Unknown warning code \"{code}\". Is it being used before the preprocessor has set it? Emission: \"{message}\"");
+            return true;
+        }
+
         Emit(new CompilerEmission(level, code, loc, message));
         return level == ErrorLevel.Error;
     }

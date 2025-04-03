@@ -25,6 +25,10 @@ public sealed class DreamObjectWorld : DreamObject {
     public readonly ViewRange DefaultView;
     public DreamResource? Log;
 
+    // DM code may request this info a *lot* so we use the more performant Environment.TickCount64 over RT's stopwatches
+    public float TickUsage =>
+        (Environment.TickCount64 - DreamManager.CurrentTickStart) / (float)(_gameTiming.TickPeriod.TotalMilliseconds) * 100;
+
     private double TickLag {
         get => _gameTiming.TickPeriod.TotalMilliseconds / 100;
         set => _gameTiming.TickRate = (byte)(1000 / (value * 100));
@@ -157,9 +161,7 @@ public sealed class DreamObjectWorld : DreamObject {
                 return true;
 
             case "tick_usage":
-                var tickUsage = (_gameTiming.RealTime - _gameTiming.LastTick) / _gameTiming.TickPeriod;
-
-                value = new DreamValue(tickUsage * 100);
+                value = new DreamValue(TickUsage);
                 return true;
 
             case "maxx":

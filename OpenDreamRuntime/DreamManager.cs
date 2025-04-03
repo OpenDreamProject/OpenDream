@@ -45,21 +45,27 @@ public sealed partial class DreamManager {
     public DreamValue[] Globals { get; set; } = Array.Empty<DreamValue>();
     public List<string> GlobalNames { get; private set; } = new();
     public ConcurrentDictionary<int, WeakDreamRef> ReferenceIDsToDreamObject { get; } = new();
-    public HashSet<DreamObject> Clients { get; set; } = new();
+    public HashSet<DreamObject> Clients { get; } = new();
 
     // I solemnly swear this benefits from being a linked list (constant remove times without relying on object hash) --kaylie
-    public LinkedList<WeakDreamRef> Datums { get; set; } = new();
-    public ConcurrentBag<DreamObject> DelQueue = new();
+    public LinkedList<WeakDreamRef> Datums { get; } = new();
+    public readonly ConcurrentBag<DreamObject> DelQueue = new();
     public Random Random { get; set; } = new();
     public Dictionary<string, List<DreamObject>> Tags { get; set; } = new();
     public DreamProc ImageConstructor, ImageFactoryProc;
-    private int _dreamObjectRefIdCounter;
 
-    private DreamCompiledJson _compiledJson;
     public bool Initialized { get; private set; }
     public GameTick InitializedTick { get; private set; }
 
+    /// <summary>
+    /// A millisecond count of when the current tick started.
+    /// Set to Environment.TickCount64 at the beginning of every tick.
+    /// </summary>
+    public long CurrentTickStart { get; private set; }
+
     private ISawmill _sawmill = default!;
+    private DreamCompiledJson _compiledJson = default!;
+    private int _dreamObjectRefIdCounter;
 
     //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
     public void PreInitialize(string? jsonPath) {
@@ -77,6 +83,7 @@ public sealed partial class DreamManager {
         // It is now OK to call user code, like /New procs.
         Initialized = true;
         InitializedTick = _gameTiming.CurTick;
+        CurrentTickStart = Environment.TickCount64;
 
         // Call global <init> with waitfor=FALSE
         _objectTree.GlobalInitProc?.Spawn(WorldInstance, new());
@@ -100,6 +107,7 @@ public sealed partial class DreamManager {
         if (!Initialized)
             return;
 
+        CurrentTickStart = Environment.TickCount64;
         _procScheduler.Process();
         UpdateStat();
         _dreamMapManager.UpdateTiles();

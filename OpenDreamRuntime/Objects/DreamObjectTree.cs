@@ -182,7 +182,7 @@ public sealed class DreamObjectTree {
             if (type.ObjectDefinition.IsSubtypeOf(Vector))
                 return new DreamObjectVector(type.ObjectDefinition);
 
-                return new DreamObject(type.ObjectDefinition);
+            return new DreamObject(type.ObjectDefinition);
         }
     }
 

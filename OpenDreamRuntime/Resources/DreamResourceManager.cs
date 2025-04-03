@@ -20,6 +20,7 @@ public sealed class DreamResourceManager {
     [Dependency] private readonly IDependencyCollection _dependencyCollection = default!;
 
     public string RootPath { get; private set; } = default!;
+    public DreamResource? InterfaceFile { get; private set; }
 
     private DreamAczProvider _aczProvider = default!;
     private readonly List<DreamResource> _resourceCache = new();
@@ -35,7 +36,7 @@ public sealed class DreamResourceManager {
         _netManager.RegisterNetMessage<MsgNotifyResourceUpdate>();
     }
 
-    public void Initialize(string rootPath, string[] resources) {
+    public void Initialize(string rootPath, string[] resources, string? interfaceFile) {
         _resourceCache.Clear();
         _resourcePathToId.Clear();
 
@@ -49,6 +50,13 @@ public sealed class DreamResourceManager {
         Directory.SetCurrentDirectory(RootPath);
 
         _sawmill.Debug($"Resource root path set to {RootPath}");
+
+        if (!string.IsNullOrWhiteSpace(interfaceFile)) {
+            if (DoesFileExist(interfaceFile))
+                InterfaceFile = LoadResource(interfaceFile);
+            else
+                throw new FileNotFoundException("Interface DMF not found at " + Path.Join(rootPath, interfaceFile));
+        }
 
         // Immediately build list of resources from rsc.
         for (var i = 0; i < resources.Length; i++) {
@@ -67,7 +75,7 @@ public sealed class DreamResourceManager {
         return File.Exists(resourcePath);
     }
 
-    public DreamResource LoadResource(string resourcePath, bool forceReload = false) {
+    public DreamResource LoadResource(string resourcePath) {
         DreamResource resource;
         int resourceId;
 
@@ -93,17 +101,13 @@ public sealed class DreamResourceManager {
             return resource;
         }
 
-        if (!forceReload && _resourcePathToId.TryGetValue(resourcePath, out resourceId)) {
+        if (_resourcePathToId.TryGetValue(resourcePath, out resourceId)) {
             resource = _resourceCache[resourceId];
-        } else if(!forceReload) {
+        } else {
             resourceId = _resourceCache.Count;
             resource = GetResource();
             _resourceCache.Add(resource);
             _resourcePathToId.Add(resourcePath, resourceId);
-        } else {
-            resourceId = _resourcePathToId[resourcePath];
-            resource = GetResource();
-            _resourceCache[resourceId] = resource;
         }
 
         return resource;

@@ -29,6 +29,8 @@ public sealed class DreamObjectWorld : DreamObject {
     public float TickUsage =>
         (Environment.TickCount64 - DreamManager.CurrentTickStart) / (float)(_gameTiming.TickPeriod.TotalMilliseconds) * 100;
 
+    public float Cpu { get; set; }
+
     private double TickLag {
         get => _gameTiming.TickPeriod.TotalMilliseconds / 100;
         set => _gameTiming.TickRate = (byte)(1000 / (value * 100));
@@ -162,6 +164,10 @@ public sealed class DreamObjectWorld : DreamObject {
 
             case "tick_usage":
                 value = new DreamValue(TickUsage);
+                return true;
+
+            case "cpu":
+                value = new DreamValue(Cpu);
                 return true;
 
             case "maxx":

@@ -38,6 +38,8 @@ public sealed partial class DreamMapManager : IDreamMapManager {
     private MapObjectJson _defaultArea = default!;
     private TreeEntry _defaultTurf = default!;
 
+    private List<DreamMapJson>? _jsonMaps = new();
+
     public void Initialize() {
         _appearanceSystem = _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
         _mapSystem = _entitySystemManager.GetEntitySystem<MapSystem>();
@@ -104,6 +106,8 @@ public sealed partial class DreamMapManager : IDreamMapManager {
         SetZLevels(maxZ);
 
         if (maps != null) {
+            _jsonMaps = maps;
+
             // Load turfs and areas of compiled-in maps, recursively calling <init>, but suppressing all New
             foreach (var map in maps) {
                 foreach (MapBlockJson block in map.Blocks) {
@@ -113,7 +117,7 @@ public sealed partial class DreamMapManager : IDreamMapManager {
         }
     }
 
-    public void InitializeAtoms(List<DreamMapJson>? maps) {
+    public void InitializeAtoms() {
         // Call New() on all /area in this particular order, each with waitfor=FALSE
         var seenAreas = new HashSet<DreamObject>();
         for (var z = 1; z <= Levels; ++z) {
@@ -144,13 +148,16 @@ public sealed partial class DreamMapManager : IDreamMapManager {
             }
         }
 
-        if (maps != null) {
+        if (_jsonMaps != null) {
             // new() up /objs and /mobs from compiled-in maps
-            foreach (var map in maps) {
+            foreach (var map in _jsonMaps) {
                 foreach (MapBlockJson block in map.Blocks) {
                     LoadMapObjectsAndMobs(block, map.CellDefinitions);
                 }
             }
+
+            // No longer needed
+            _jsonMaps = null;
         }
     }
 
@@ -342,7 +349,7 @@ public sealed partial class DreamMapManager : IDreamMapManager {
         } else if (levels < Levels) {
             _levels.RemoveRange(levels, Levels - levels);
             for (int z = Levels; z > levels; z--) {
-                _mapManager.DeleteMap(new MapId(z));
+                _mapSystem.DeleteMap(new MapId(z));
             }
         }
     }
@@ -488,7 +495,7 @@ public interface IDreamMapManager {
 
     public void Initialize();
     public void LoadMaps(List<DreamMapJson>? maps);
-    public void InitializeAtoms(List<DreamMapJson>? maps);
+    public void InitializeAtoms();
     public void UpdateTiles();
 
     public void SetTurf(DreamObjectTurf turf, DreamObjectDefinition type, DreamProcArguments creationArguments);

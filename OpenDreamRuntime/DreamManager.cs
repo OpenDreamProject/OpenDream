@@ -23,19 +23,6 @@ using Robust.Shared.Timing;
 namespace OpenDreamRuntime;
 
 public sealed partial class DreamManager {
-    [Dependency] private readonly AtomManager _atomManager = default!;
-    [Dependency] private readonly IPlayerManager _playerManager = default!;
-    [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
-    [Dependency] private readonly ProcScheduler _procScheduler = default!;
-    [Dependency] private readonly DreamResourceManager _dreamResourceManager = default!;
-    [Dependency] private readonly ITaskManager _taskManager = default!;
-    [Dependency] private readonly IGameTiming _gameTiming = default!;
-    [Dependency] private readonly DreamObjectTree _objectTree = default!;
-    [Dependency] private readonly IEntityManager _entityManager = default!;
-    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-
-    private ServerAppearanceSystem? _appearanceSystem;
-
     public DreamObjectWorld WorldInstance { get; set; }
     public Exception? LastDMException { get; set; }
 
@@ -51,7 +38,7 @@ public sealed partial class DreamManager {
     public LinkedList<WeakDreamRef> Datums { get; } = new();
     public readonly ConcurrentBag<DreamObject> DelQueue = new();
     public Random Random { get; set; } = new();
-    public Dictionary<string, List<DreamObject>> Tags { get; set; } = new();
+    public Dictionary<string, List<DreamObject>> Tags { get; } = new();
     public DreamProc ImageConstructor, ImageFactoryProc;
 
     public bool Initialized { get; private set; }
@@ -64,8 +51,20 @@ public sealed partial class DreamManager {
     public long CurrentTickStart { get; private set; }
 
     private ISawmill _sawmill = default!;
-    private DreamCompiledJson _compiledJson = default!;
     private int _dreamObjectRefIdCounter;
+
+    [Dependency] private readonly AtomManager _atomManager = default!;
+    [Dependency] private readonly IPlayerManager _playerManager = default!;
+    [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
+    [Dependency] private readonly ProcScheduler _procScheduler = default!;
+    [Dependency] private readonly DreamResourceManager _dreamResourceManager = default!;
+    [Dependency] private readonly ITaskManager _taskManager = default!;
+    [Dependency] private readonly IGameTiming _gameTiming = default!;
+    [Dependency] private readonly DreamObjectTree _objectTree = default!;
+    [Dependency] private readonly IEntityManager _entityManager = default!;
+    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+
+    private ServerAppearanceSystem? _appearanceSystem;
 
     //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
     public void PreInitialize(string? jsonPath) {
@@ -90,7 +89,7 @@ public sealed partial class DreamManager {
 
         // Call New() on all /area and /turf that exist, each with waitfor=FALSE separately. If <global init> created any /area, call New a SECOND TIME
         // new() up /objs and /mobs from compiled-in maps [order: (1,1) then (2,1) then (1,2) then (2,2)]
-        _dreamMapManager.InitializeAtoms(_compiledJson.Maps);
+        _dreamMapManager.InitializeAtoms();
 
         // Call world.New()
         WorldInstance.SpawnProc("New");
@@ -112,7 +111,7 @@ public sealed partial class DreamManager {
         UpdateStat();
         _dreamMapManager.UpdateTiles();
         DreamObjectSavefile.FlushAllUpdates();
-        WorldInstance.SetVariableValue("cpu", WorldInstance.GetVariable("tick_usage"));
+        WorldInstance.Cpu = WorldInstance.TickUsage;
         ProcessDelQueue();
     }
 
@@ -135,12 +134,9 @@ public sealed partial class DreamManager {
             _sawmill.Error("Compiler opcode version does not match the runtime version!");
         }
 
-        _compiledJson = json;
         var rootPath = Path.GetFullPath(Path.GetDirectoryName(jsonPath)!);
-        var resources = _compiledJson.Resources ?? Array.Empty<string>();
-        _dreamResourceManager.Initialize(rootPath, resources);
-        if(!string.IsNullOrEmpty(_compiledJson.Interface) && !_dreamResourceManager.DoesFileExist(_compiledJson.Interface))
-            throw new FileNotFoundException("Interface DMF not found at "+Path.Join(rootPath,_compiledJson.Interface));
+        var resources = json.Resources ?? Array.Empty<string>();
+        _dreamResourceManager.Initialize(rootPath, resources, json.Interface);
 
         _objectTree.LoadJson(json);
         DreamProcNative.SetupNativeProcs(_objectTree);
@@ -153,7 +149,7 @@ public sealed partial class DreamManager {
         // Call /world/<init>. This is an IMPLEMENTATION DETAIL and non-DMStandard should NOT be run here.
         WorldInstance.InitSpawn(new());
 
-        if (_compiledJson.Globals is GlobalListJson jsonGlobals) {
+        if (json.Globals is { } jsonGlobals) {
             Globals = new DreamValue[jsonGlobals.GlobalCount];
             GlobalNames = jsonGlobals.Names;
 
@@ -163,7 +159,7 @@ public sealed partial class DreamManager {
             }
         }
 
-        _dreamMapManager.LoadMaps(_compiledJson.Maps);
+        _dreamMapManager.LoadMaps(json.Maps);
         return true;
     }
 
@@ -258,7 +254,7 @@ public sealed partial class DreamManager {
     /// <summary>
     /// Iterates the list of datums
     /// </summary>
-    /// <returns>Datum enumerater</returns>
+    /// <returns>Datum enumerator</returns>
     /// <remarks>As it's a convenient time, this will collect any dead datum refs as it finds them.</remarks>
     public IEnumerable<DreamObject> IterateDatums() {
         // This isn't a common operation so we'll use this time to also do some pruning.

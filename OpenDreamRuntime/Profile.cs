@@ -95,7 +95,6 @@ public static class Profiler{
         return _isActivated;
     }
 
-
     /// <summary>
     /// Configure how Tracy will display plotted values.
     /// </summary>

@@ -453,7 +453,7 @@ namespace DMCompiler.DM.Builders {
                     ProcessStatementVarDeclaration(new DMASTProcStatementVarDeclaration(statementFor.Location, decl.DeclPath, null, DMValueType.Anything));
                 }
 
-                if (statementFor.Expression2 is DMASTExpressionIn dmastIn && statementFor.Expression3 is null) {
+                if (statementFor is { Expression2: DMASTExpressionIn dmastIn, Expression3: null }) {
                     var expr2 = statementFor.Expression2 != null ? _exprBuilder.CreateIgnoreUnknownReference(statementFor.Expression2) : null;
 
                     // TODO: Wow this sucks
@@ -672,7 +672,7 @@ namespace DMCompiler.DM.Builders {
                 lValue = new BadLValue(outputAssocVar.Location);
             }
 
-            LValue? outputValue = (LValue)outputAssocVar!;
+            LValue? outputValue = (LValue?)outputAssocVar;
 
             // Having no "as [types]" will use the var's type for the type filter
             if (typeCheck == null && lValue.Path != null) {

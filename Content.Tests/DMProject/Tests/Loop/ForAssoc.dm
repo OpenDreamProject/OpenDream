@@ -20,3 +20,13 @@
 		i++
 
 	ASSERT(i == 4)
+	
+	i = 1
+	
+	var/list/WriteInto = list(null,null)
+	for (WriteInto[1],WriteInto[2] in L)
+		ASSERT(WriteInto[1] == L[i])
+		ASSERT(WriteInto[2] == L[WriteInto[1]])
+		i++
+	
+	ASSERT(i == 4)

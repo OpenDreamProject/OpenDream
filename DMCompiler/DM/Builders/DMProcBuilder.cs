@@ -650,12 +650,13 @@ namespace DMCompiler.DM.Builders {
                 proc.EnumerateNoAssign();
                 proc.AddLabel(endLabel2);
             } else {
-                DMReference outputRef = lValue.EmitReference(ExprContext, null);
                 if (assocValue != null && list != null) {
-                    DMReference listRef = list.EmitReference(ExprContext, null);
                     DMReference assocRef = assocValue.EmitReference(ExprContext, null);
-                    proc.EnumerateAssoc(outputRef, listRef, assocRef);
+                    DMReference listRef = list.EmitReference(ExprContext, null);
+                    DMReference outputRef = lValue.EmitReference(ExprContext, null);
+                    proc.EnumerateAssoc(assocRef, listRef, outputRef);
                 } else {
+                    DMReference outputRef = lValue.EmitReference(ExprContext, null);
                     proc.Enumerate(outputRef);
                 }
             }

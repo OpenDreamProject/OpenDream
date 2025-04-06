@@ -261,7 +261,7 @@ namespace OpenDreamRuntime.Procs {
             var jumpToIfFailure = state.ReadInt();
 
             var enumerator = state.Enumerators[enumeratorId];
-            if (enumerator == null || !enumerator.Enumerate(state, outputRef))
+            if (enumerator == null || !enumerator.Enumerate(state, outputRef, false))
                 state.Jump(jumpToIfFailure);
 
             return ProcStatus.Continue;
@@ -270,16 +270,20 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus EnumerateAssoc(DMProcState state) {
             var enumeratorId = state.ReadInt();
             var outputRef = state.ReadReference();
-            var assocRef = state.ReadReference();
             var listRef = state.ReadReference();
+            var assocRef = state.ReadReference();
             var jumpToIfFailure = state.ReadInt();
 
             var enumerator = state.Enumerators[enumeratorId];
-            if (enumerator == null || !enumerator.Enumerate(state, outputRef))
-                state.Jump(jumpToIfFailure);
-            else {
-                var outputVal = state.GetReferenceValue(outputRef);
+            if (enumerator == null || !enumerator.Enumerate(state, outputRef, true)) {
+                // Ensure relevant stack values are popped
+                state.GetReferenceValue(outputRef);
+                state.GetReferenceValue(listRef);
                 state.GetReferenceValue(assocRef);
+
+                state.Jump(jumpToIfFailure);
+            } else {
+                var outputVal = state.GetReferenceValue(outputRef);
                 var listVal = state.GetReferenceValue(listRef);
                 var indexVal = state.GetIndex(listVal, outputVal, state);
 
@@ -294,7 +298,7 @@ namespace OpenDreamRuntime.Procs {
             var enumerator = state.Enumerators[enumeratorId];
             var jumpToIfFailure = state.ReadInt();
 
-            if (enumerator == null || !enumerator.Enumerate(state, null))
+            if (enumerator == null || !enumerator.Enumerate(state, null, false))
                 state.Jump(jumpToIfFailure);
 
             return ProcStatus.Continue;

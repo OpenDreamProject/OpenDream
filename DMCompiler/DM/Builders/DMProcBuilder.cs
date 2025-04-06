@@ -638,7 +638,7 @@ namespace DMCompiler.DM.Builders {
         }
 
         public void ProcessLoopAssignment(LValue lValue, LValue? assocValue = null, DMExpression? list = null) {
-            if (lValue.CanReferenceShortCircuit()) {
+            if (lValue.CanReferenceShortCircuit()) { // TODO: If assocValue short circuits?
                 string endLabel = proc.NewLabelName();
                 string endLabel2 = proc.NewLabelName();
 
@@ -652,9 +652,9 @@ namespace DMCompiler.DM.Builders {
             } else {
                 DMReference outputRef = lValue.EmitReference(ExprContext, null);
                 if (assocValue != null && list != null) {
-                    DMReference assocRef = assocValue.EmitReference(ExprContext, null);
                     DMReference listRef = list.EmitReference(ExprContext, null);
-                    proc.EnumerateAssoc(outputRef, assocRef, listRef);
+                    DMReference assocRef = assocValue.EmitReference(ExprContext, null);
+                    proc.EnumerateAssoc(outputRef, listRef, assocRef);
                 } else {
                     proc.Enumerate(outputRef);
                 }

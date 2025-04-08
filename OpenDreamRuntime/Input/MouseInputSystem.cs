@@ -3,6 +3,7 @@ using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Input;
+using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime.Input;
 
@@ -10,6 +11,9 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
     [Dependency] private readonly AtomManager _atomManager = default!;
     [Dependency] private readonly DreamManager _dreamManager = default!;
     [Dependency] private readonly IDreamMapManager _mapManager = default!;
+    [Dependency] private readonly IGameTiming _timing = default!;
+
+    private readonly TimeSpan _doubleClickDelay = TimeSpan.FromMilliseconds(250);
 
     public override void Initialize() {
         base.Initialize();
@@ -117,11 +121,24 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
         var connection = _dreamManager.GetConnectionBySession(session);
         var usr = connection.Mob;
 
+        var clickParams = ConstructClickParams(e.Params);
+
+        // Double click fires before the second Click() fires
+        if (_timing.RealTime - connection.LastClickTime <= _doubleClickDelay) {
+            connection.Client?.SpawnProc("DblClick", usr: usr,
+                new DreamValue(atom),
+                DreamValue.Null,
+                DreamValue.Null,
+                new DreamValue(clickParams));
+        }
+
         connection.Client?.SpawnProc("Click", usr: usr,
             new DreamValue(atom),
             DreamValue.Null,
             DreamValue.Null,
-            new DreamValue(ConstructClickParams(e.Params)));
+            new DreamValue(clickParams));
+
+        connection.LastClickTime = _timing.RealTime;
     }
 
     private string ConstructClickParams(ClickParams clickParams) {

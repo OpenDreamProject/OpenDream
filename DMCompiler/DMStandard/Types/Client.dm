@@ -123,7 +123,6 @@
 		object.Click(location, control, params)
 
 	proc/DblClick(atom/object, location, control, params)
-		set opendream_unimplemented = TRUE
 		object.DblClick(location,control,params)
 
 	proc/MouseDown(atom/object, location, control, params)

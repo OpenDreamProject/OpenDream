@@ -11,7 +11,7 @@
 	var/tag
 	var/const/type = /client
 
-	var/mob/mob // TODO: as /mob|null
+	var/mob/mob as /mob|null
 	var/atom/eye
 	var/lazy_eye = 0 as opendream_unimplemented
 	var/perspective = MOB_PERSPECTIVE
@@ -49,8 +49,7 @@
 
 	proc/New(TopicData)
 		// Search every mob for one with our ckey
-		// TODO: This /mob|mob thing is kinda silly huh?
-		for (var/mob/M as /mob|mob in world)
+		for (var/mob/M in world)
 			if (M.key == key)
 				mob = M
 				break
@@ -89,7 +88,7 @@
 	proc/MeasureText(text, style, width=0)
 		set opendream_unimplemented = TRUE
 
-	proc/Move(loc, dir)
+	proc/Move(loc, dir as num)
 		mob.Move(loc, dir)
 
 	proc/North()

@@ -3,7 +3,6 @@ using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Input;
-using Robust.Shared;
 using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime.Input;

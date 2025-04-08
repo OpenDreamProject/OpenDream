@@ -121,20 +121,22 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
         var connection = _dreamManager.GetConnectionBySession(session);
         var usr = connection.Mob;
 
+        var clickParams = ConstructClickParams(e.Params);
+
         // Double click fires before the second Click() fires
         if (_timing.RealTime - connection.LastClickTime <= _doubleClickDelay) {
             connection.Client?.SpawnProc("DblClick", usr: usr,
                 new DreamValue(atom),
                 DreamValue.Null,
                 DreamValue.Null,
-                new DreamValue(ConstructClickParams(e.Params)));
+                new DreamValue(clickParams));
         }
 
         connection.Client?.SpawnProc("Click", usr: usr,
             new DreamValue(atom),
             DreamValue.Null,
             DreamValue.Null,
-            new DreamValue(ConstructClickParams(e.Params)));
+            new DreamValue(clickParams));
 
         connection.LastClickTime = _timing.RealTime;
     }

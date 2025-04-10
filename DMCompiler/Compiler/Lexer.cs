@@ -2,7 +2,7 @@
 
 namespace DMCompiler.Compiler;
 
-internal class Lexer<TSourceType> {
+public class Lexer<TSourceType> {
     /// <summary>
     /// Location of token that'll be output by <see cref="GetCurrent"/>. If you skip through more
     /// </summary>
@@ -94,7 +94,7 @@ internal class Lexer<TSourceType> {
     }
 }
 
-internal class TokenLexer : Lexer<Token> {
+public class TokenLexer : Lexer<Token> {
     /// <inheritdoc/>
     protected TokenLexer(string sourceName, IEnumerable<Token> source) : base(sourceName, source) {
         Advance();

@@ -6,7 +6,7 @@ using DMCompiler.Compiler.DM.AST;
 
 namespace DMCompiler.Compiler.DM;
 
-internal partial class DMParser {
+public partial class DMParser {
     /// <summary>
     /// If the expression is null, emit an error and set it to a new <see cref="DMASTInvalidExpression" />
     /// </summary>

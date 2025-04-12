@@ -6,7 +6,7 @@ namespace DMDisassembler;
 internal class DMType {
     public string Path;
     public DreamTypeJson Json;
-    public DMProc InitProc;
+    public DMProc? InitProc;
     public Dictionary<string, DMProc> Procs;
 
     public DMType(DreamTypeJson json) {

@@ -10,7 +10,7 @@ namespace DMCompiler.Compiler.DMPreprocessor;
 /// The master class for handling DM preprocessing.
 /// This is an <see cref="IEnumerable"/>, and is usually accessed via its <see cref="Token"/> output in a for-loop.
 /// </summary>
-internal sealed class DMPreprocessor(DMCompiler compiler, bool enableDirectives) : IEnumerable<Token> {
+public sealed class DMPreprocessor(DMCompiler compiler, bool enableDirectives) : IEnumerable<Token> {
     private readonly DMPreprocessorParser _dmPreprocessorParser = new(compiler);
     public readonly List<string> IncludedMaps = new(8);
     public string? IncludedInterface;

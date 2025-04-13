@@ -74,6 +74,7 @@ namespace DMCompiler.DM.Builders {
                 return;
             }
 
+            proc.ResizeSourceInfo(block.Statements.Length);
             foreach (DMASTProcStatement statement in block.Statements) {
                 proc.DebugSource(statement.Location);
                 ProcessStatement(statement);

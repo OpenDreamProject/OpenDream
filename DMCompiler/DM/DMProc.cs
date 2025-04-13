@@ -255,7 +255,8 @@ namespace DMCompiler.DM {
         }
 
         public bool TryGetParameterByName(string name, [NotNullWhen(true)] out LocalVariable? param) {
-            return _parameters.TryGetValue(name, out param);
+            param = null;
+            return _parameters?.TryGetValue(name, out param) ?? false;
         }
 
         public bool TryGetParameterAtIndex(int index, [NotNullWhen(true)] out LocalVariable? param) {
@@ -265,10 +266,11 @@ namespace DMCompiler.DM {
             }
 
             var name = _astDefinition.Parameters[index].Name;
-            return _parameters.TryGetValue(name, out param);
+            param = null;
+            return _parameters?.TryGetValue(name, out param) ?? false;
         }
 
-        public string MakePlaceholderLabel() => $"PLACEHOLDER_{_pendingLabelReferences.Count}_LABEL";
+        public string MakePlaceholderLabel() => $"PLACEHOLDER_{_pendingLabelReferences?.Count ?? 0}_LABEL";
 
         public CodeLabel? TryAddCodeLabel(string name) {
             if (_scopes.Peek().LocalCodeLabels.ContainsKey(name)) {

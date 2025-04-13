@@ -64,6 +64,7 @@ namespace DMCompiler.DM {
 
         public string Name => _astDefinition?.Name ?? "<init>";
         public bool IsVerb => _astDefinition?.IsVerb ?? false;
+        public bool IsFinal => _astDefinition?.IsFinal ?? false;
         public List<string> Parameters = new();
         public Location Location;
         public ProcAttributes Attributes;

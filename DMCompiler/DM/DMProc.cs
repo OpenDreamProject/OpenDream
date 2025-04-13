@@ -341,7 +341,7 @@ namespace DMCompiler.DM {
             // Only write the source file if it has changed
             if (_lastSourceFile != sourceFile) {
                 sourceInfo.File = _compiler.DMObjectTree.AddString(sourceFile);
-            } else if (_sourceInfo is not null && _sourceInfo.Count > 0 && sourceInfo.Line == _sourceInfo[^1].Line) {
+            } else if (_sourceInfo.Count > 0 && sourceInfo.Line == _sourceInfo[^1].Line) {
                 // Don't need to write this source info if it's the same source & line as the last
                 return;
             }

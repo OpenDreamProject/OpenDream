@@ -32,13 +32,10 @@ internal partial class DMCodeTree {
             if (procDef.IsOverride) {
                 var procs = dmObject.GetProcs(procDef.Name);
                 if (procs != null) {
-                    foreach (var procId in procs) {
-                        var parent = compiler.DMObjectTree.AllProcs[procId];
-                        if (parent.IsFinal)
-                            compiler.Emit(WarningCode.FinalOverride, procDef.Location,
-                                $"Proc \"{procDef.Name}()\" is final and cannot be overridden. Final declaration: {parent.Location}");
-                        break;
-                    }
+                      var parent = compiler.DMObjectTree.AllProcs[procs[0]];
+                      if (parent.IsFinal)
+                          compiler.Emit(WarningCode.FinalOverride, procDef.Location,
+                              $"Proc \"{procDef.Name}()\" is final and cannot be overridden. Final declaration: {parent.Location}");
                 }
             }
 

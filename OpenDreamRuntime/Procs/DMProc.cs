@@ -246,6 +246,7 @@ public sealed class DMProcState : ProcState {
         {DreamProcOpcode.ModulusReference, DMOpcodeHandlers.ModulusReference},
         {DreamProcOpcode.CreateListEnumerator, DMOpcodeHandlers.CreateListEnumerator},
         {DreamProcOpcode.Enumerate, DMOpcodeHandlers.Enumerate},
+        {DreamProcOpcode.EnumerateAssoc, DMOpcodeHandlers.EnumerateAssoc},
         {DreamProcOpcode.DestroyEnumerator, DMOpcodeHandlers.DestroyEnumerator},
         {DreamProcOpcode.Browse, DMOpcodeHandlers.Browse},
         {DreamProcOpcode.BrowseResource, DMOpcodeHandlers.BrowseResource},
@@ -740,7 +741,7 @@ public sealed class DMProcState : ProcState {
         throw new ArgumentException("Reference was not a ListIndex type");
     }
 
-    public void AssignReference(DreamReference reference, DreamValue value) {
+    public void AssignReference(DreamReference reference, DreamValue value, bool peek = false) {
         switch (reference.Type) {
             case DMReference.Type.Self: Result = value; break;
             case DMReference.Type.Argument: SetArgument(reference.Value, value); break;
@@ -762,7 +763,7 @@ public sealed class DMProcState : ProcState {
 
                 break;
             case DMReference.Type.Field: {
-                DreamValue owner = Pop();
+                DreamValue owner = peek ? Peek() : Pop();
                 if (!owner.TryGetValueAsDreamObject(out var ownerObj) || ownerObj == null)
                     ThrowCannotAssignFieldOn(reference, owner);
 
@@ -770,7 +771,7 @@ public sealed class DMProcState : ProcState {
                 break;
             }
             case DMReference.Type.ListIndex: {
-                GetIndexReferenceValues(reference, out var index, out var indexing);
+                GetIndexReferenceValues(reference, out var index, out var indexing, peek);
 
                 if (indexing.TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
                     dreamObject.OperatorIndexAssign(index, this, value);

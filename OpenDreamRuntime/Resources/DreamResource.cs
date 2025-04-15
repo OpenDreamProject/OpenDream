@@ -5,40 +5,38 @@ using System.Text;
 namespace OpenDreamRuntime.Resources;
 
 [Virtual]
-public class DreamResource {
-    public readonly string? ResourcePath;
-    public readonly int Id;
+public class DreamResource(int id, string? filePath, string? resourcePath) {
+    public readonly string? ResourcePath = resourcePath;
+    public readonly int Id = id;
+
     public byte[]? ResourceData {
         get {
-            if (_resourceData == null && File.Exists(_filePath)) {
-                _resourceData = File.ReadAllBytes(_filePath);
+            if (_resourceData == null && File.Exists(filePath)) {
+                _resourceData = File.ReadAllBytes(filePath);
             }
 
             return _resourceData;
         }
     }
 
-    private readonly string? _filePath;
     private byte[]? _resourceData;
     #if TOOLS
     private ProfilerMemory? _tracyMemoryId;
     #endif
 
-    public DreamResource(int id, string? filePath, string? resourcePath) {
-        Id = id;
-        ResourcePath = resourcePath;
-        _filePath = filePath;
-        #if TOOLS
-        _tracyMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamResource>() + (ResourceData?.Length ?? 0)), "resource");
-        #endif
-    }
-
-    public DreamResource(int id, byte[] data) {
-        Id = id;
+    public DreamResource(int id, byte[] data) : this(id, null, null) {
         _resourceData = data;
         #if TOOLS
         _tracyMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamResource>() + (ResourceData is null? 0 : ResourceData.Length)), "resource");
         #endif
+    }
+
+    /// <summary>
+    /// Invalidates any caching this resource may have, causing it to be re-read from disk.
+    /// Calling this alone will not update what clients are holding.
+    /// </summary>
+    public void ReloadFromDisk() {
+        _resourceData = null;
     }
 
     public virtual string? ReadAsString() {
@@ -51,11 +49,11 @@ public class DreamResource {
     }
 
     public void Clear() {
-        if (string.IsNullOrEmpty(_filePath))
+        if (string.IsNullOrEmpty(filePath))
             return;
 
         CreateDirectory();
-        File.WriteAllText(_filePath, string.Empty);
+        File.WriteAllText(filePath, string.Empty);
     }
 
     public virtual void Output(DreamValue value) {
@@ -75,10 +73,10 @@ public class DreamResource {
     }
 
     private void CreateDirectory() {
-        if (_filePath == null)
+        if (filePath == null)
             return;
 
-        string? directory = Path.GetDirectoryName(_filePath);
+        string? directory = Path.GetDirectoryName(filePath);
         if (string.IsNullOrEmpty(directory))
             return;
 

@@ -29,6 +29,16 @@ internal partial class DMCodeTree {
 
             DMProc proc = compiler.DMObjectTree.CreateDMProc(dmObject, procDef);
 
+            if (procDef.IsOverride) {
+                var procs = dmObject.GetProcs(procDef.Name);
+                if (procs != null) {
+                      var parent = compiler.DMObjectTree.AllProcs[procs[0]];
+                      if (parent.IsFinal)
+                          compiler.Emit(WarningCode.FinalOverride, procDef.Location,
+                              $"Proc \"{procDef.Name}()\" is final and cannot be overridden. Final declaration: {parent.Location}");
+                }
+            }
+
             if (dmObject == compiler.DMObjectTree.Root) { // Doesn't belong to a type, this is a global proc
                 if(IsOverride) {
                     compiler.Emit(WarningCode.InvalidOverride, procDef.Location,

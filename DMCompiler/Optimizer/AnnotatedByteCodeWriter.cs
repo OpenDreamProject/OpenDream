@@ -66,7 +66,6 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
     [MethodImpl(MethodImplOptions.NoInlining)]
     private string GetArgErrorMessage(OpcodeArgType argType) {
         return $"Expected {argType.ToString()} argument";
-        //return $"Expected {Enum.GetName(typeof(OpcodeArgType), argType)} argument";
     }
 
     /// <summary>

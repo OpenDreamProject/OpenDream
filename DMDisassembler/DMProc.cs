@@ -18,7 +18,7 @@ internal class DMProc(ProcDefinitionJson json) {
     public int OwningTypeId = json.OwningTypeId;
     public byte[] Bytecode = json.Bytecode ?? Array.Empty<byte>();
     public bool IsOverride = (json.Attributes & ProcAttributes.IsOverride) != 0;
-    public Exception exception;
+    public Exception? Exception;
 
     public string Decompile() {
         List<DecompiledOpcode> decompiled = GetDecompiledOpcodes(out var labeledPositions);
@@ -40,8 +40,8 @@ internal class DMProc(ProcDefinitionJson json) {
             result.AppendLine();
         }
 
-        if (exception != null) {
-            result.Append(exception);
+        if (Exception != null) {
+            result.Append(Exception);
         }
 
         return result.ToString();
@@ -59,14 +59,13 @@ internal class DMProc(ProcDefinitionJson json) {
                 }
             }
         } catch (Exception ex) {
-            exception = ex;
+            Exception = ex;
         }
 
         return decompiled;
     }
 
-    [CanBeNull]
-    public string[] GetArguments() {
+    public string[]? GetArguments() {
         if (json.Arguments is null || json.Arguments.Count == 0) return null;
 
         string[] argNames = new string[json.Arguments.Count];

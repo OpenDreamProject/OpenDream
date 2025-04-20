@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import re
 
 re_pointer = re.compile(r"\*\s*(?:const|mut)\s+(?P<type>.+)")
@@ -7,6 +9,7 @@ TYPE_MAP = {
     "bool": "byte",
     "c_char": "byte",
     "c_void": "void",
+    "u1c": "byte",
     "u4c": "uint",
     "ByondCallback": "delegate* unmanaged[Cdecl]<void*, CByondValue>"
 }

@@ -1,0 +1,13 @@
+[package]
+name = "byondapi-test-byondapi-rs"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+byondapi = { path = "../../../byondapi-rs/crates/byondapi-rs", default-features = false, features = [
+    "byond-516-1651",
+    "opendream",
+] }

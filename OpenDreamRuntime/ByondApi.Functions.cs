@@ -913,6 +913,12 @@ public static unsafe partial class ByondApi {
         //throw new NotImplementedException();
     }
 
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
+    private static void ByondValue_DecTempRef(CByondValue* src) {
+        //if (src == null) return;
+        //throw new NotImplementedException();
+    }
+
     /** byondapi.h comment:
      * Test if a reference-type CByondValue is valid
      * Blocks if not on the main thread.

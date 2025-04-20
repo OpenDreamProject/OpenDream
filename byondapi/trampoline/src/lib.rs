@@ -26,8 +26,8 @@ const TYPE_DATUM: u8 = 0x21;
 const TYPE_NUMBER: u8 = 0x2A;
 const TYPE_POINTER: u8 = 0x3C;
 
-use api::{u1c, u4c, ByondValueData, ByondValueType, CByondValue, CByondXYZ, ByondCallback,
-//CByondPixLoc
+use api::{
+    u1c, u4c, ByondCallback, ByondValueData, ByondValueType, CByondPixLoc, CByondValue, CByondXYZ,
 };
 use std::ffi::{c_char, c_void};
 use std::sync::OnceLock;
@@ -57,7 +57,10 @@ macro_rules! trampolines {
 
 #[no_mangle]
 unsafe extern "C" fn OpenDream_Internal_Init(trampolines: *const Trampolines) {
-    TRAMPOLINES.set(*trampolines).map_err(|_| ()).expect("OpenDream_Internal_Init can only be called once!");
+    TRAMPOLINES
+        .set(*trampolines)
+        .map_err(|_| ())
+        .expect("OpenDream_Internal_Init can only be called once!");
 }
 
 #[no_mangle]
@@ -143,9 +146,29 @@ unsafe extern "C" fn ByondValue_SetStr(v: *mut CByondValue, str: *const c_char) 
         junk1: 0,
         junk2: 0,
         junk3: 0,
-        data: ByondValueData { ref_: Byond_AddGetStrId(str) },
+        data: ByondValueData {
+            ref_: Byond_AddGetStrId(str),
+        },
     };
     ByondValue_IncRef(v);
+}
+
+/** byondapi.h comment:
+ * Fills a CByondValue struct with a reference to a string with a given ID. Does not validate, and does not increase the reference count.
+ * If the strid is NONE, it will be changed to 0.
+ * @param v Pointer to CByondValue
+ * @param strid 4-byte string ID
+ * @see Byond_TestRef()
+ */
+#[no_mangle]
+extern "C" fn ByondValue_SetStrId(v: &mut CByondValue, strid: u4c) {
+    *v = CByondValue {
+        type_: TYPE_STRING,
+        junk1: 0,
+        junk2: 0,
+        junk3: 0,
+        data: ByondValueData { ref_: strid },
+    };
 }
 
 /** byondapi.h comment:
@@ -156,18 +179,19 @@ unsafe extern "C" fn ByondValue_SetStr(v: *mut CByondValue, str: *const c_char) 
  * @see Byond_TestRef()
  */
 #[no_mangle]
-unsafe extern "C" fn ByondValue_SetRef(
-    v: *mut CByondValue,
-    r#type: ByondValueType,
-    r#ref: u4c,
-) {
-    *v = CByondValue{
+unsafe extern "C" fn ByondValue_SetRef(v: *mut CByondValue, r#type: ByondValueType, r#ref: u4c) {
+    *v = CByondValue {
         type_: r#type,
         junk1: 0,
         junk2: 0,
         junk3: 0,
         data: ByondValueData { ref_: r#ref },
     };
+}
+
+#[no_mangle]
+extern "C" fn Byond_CRASH(message: *const c_char) {
+    unimplemented!();
 }
 
 //
@@ -203,8 +227,6 @@ trampolines! {
     fn Byond_CallGlobalProc(name: *const c_char, arg: *const CByondValue, arg_count: u4c, result: *mut CByondValue) -> bool;
     fn Byond_CallGlobalProcByStrId(name: u4c, arg: *const CByondValue, arg_count: u4c, result: *mut CByondValue) -> bool;
     fn Byond_ToString(src: *const CByondValue, buf: *mut c_char, buflen: *mut u4c) -> bool;
-    fn Byond_PixLoc(src: *const CByondValue, pixLoc: *mut CByondValue) -> bool;
-    fn Byond_BoundPixLoc(src: *const CByondValue, dir: u1c, pixLoc: *mut CByondValue) -> bool;
 
     // "Proc calls"
     fn Byond_Block(corner1: *const CByondXYZ, corner2: *const CByondXYZ, list: *mut CByondValue, len: *mut u4c) -> bool;
@@ -215,11 +237,12 @@ trampolines! {
     fn Byond_NewArglist(r#type: *const CByondValue, arglist: *const CByondValue, result: *mut CByondValue) -> bool;
     fn Byond_Refcount(src: *const CByondValue, result: *mut u4c) -> bool;
     fn Byond_XYZ(src: *const CByondValue, xyz: *mut CByondXYZ) -> bool;
+    fn Byond_PixLoc(src: *const CByondValue, pixLoc: *mut CByondPixLoc) -> bool;
+    fn Byond_BoundPixLoc(src: *const CByondValue, dir: u1c, pixLoc: *mut CByondPixLoc) -> bool;
 
     // Ref counting
     fn ByondValue_IncRef(src: *const CByondValue);
     fn ByondValue_DecRef(src: *const CByondValue);
+    fn ByondValue_DecTempRef(src: *const CByondValue);
     fn Byond_TestRef(src: *mut CByondValue) -> bool;
 }
-    //fn Byond_PixLoc(src: *const CByondValue, pixloc: *mut CByondPixLoc) -> bool;
-    //fn Byond_BoundPixLoc(src: *const CByondValue, dir: u8, pixloc: *mut CByondPixLoc) -> bool;

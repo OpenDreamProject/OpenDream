@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
@@ -32,8 +33,6 @@ public static unsafe partial class ByondApi {
             Byond_CallGlobalProc = &Byond_CallGlobalProc,
             Byond_CallGlobalProcByStrId = &Byond_CallGlobalProcByStrId,
             Byond_ToString = &Byond_ToString,
-            Byond_PixLoc = &Byond_PixLoc,
-            Byond_BoundPixLoc = &Byond_BoundPixLoc,
             Byond_Block = &Byond_Block,
             Byond_Length = &Byond_Length,
             Byond_LocateIn = &Byond_LocateIn,
@@ -42,8 +41,11 @@ public static unsafe partial class ByondApi {
             Byond_NewArglist = &Byond_NewArglist,
             Byond_Refcount = &Byond_Refcount,
             Byond_XYZ = &Byond_XYZ,
+            Byond_PixLoc = &Byond_PixLoc,
+            Byond_BoundPixLoc = &Byond_BoundPixLoc,
             ByondValue_IncRef = &ByondValue_IncRef,
             ByondValue_DecRef = &ByondValue_DecRef,
+            ByondValue_DecTempRef = &ByondValue_DecTempRef,
             Byond_TestRef = &Byond_TestRef,
         };
 
@@ -56,15 +58,32 @@ public static unsafe partial class ByondApi {
 
     private static IntPtr DllImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath) {
         if (libraryName == "byond") {
-            // On systems with AVX2 support, load a different library.
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
                 return NativeLibrary.Load("byondcore", assembly, searchPath);
+            }
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+                // Need to load as RTLD_GLOBAL, otherwise byondapi-rs can't find the symbols.
+                var attempt = dlopen("libbyond.so", RTLD_LAZY | RTLD_GLOBAL);
+                if (attempt != 0)
+                    return attempt;
+
+                var path = Path.Combine(Path.GetDirectoryName(assembly.Location), "libbyond.so");
+                attempt = dlopen(path, RTLD_LAZY | RTLD_GLOBAL);
+                if (attempt != 0)
+                    return attempt;
             }
         }
 
         // Otherwise, fallback to default import resolver.
         return IntPtr.Zero;
     }
+
+    private const int RTLD_LAZY = 0x1;
+    private const int RTLD_GLOBAL = 0x100;
+
+    [LibraryImport("libc", StringMarshalling=StringMarshalling.Utf8)]
+    private static partial nint dlopen(string filename, int flags);
 
     [SuppressMessage("ReSharper", "InconsistentNaming")]
     [SuppressMessage("ReSharper", "NotAccessedField.Local")]
@@ -95,8 +114,6 @@ public static unsafe partial class ByondApi {
         public delegate* unmanaged[Cdecl]<byte*, CByondValue*, uint, CByondValue*, byte> Byond_CallGlobalProc;
         public delegate* unmanaged[Cdecl]<uint, CByondValue*, uint, CByondValue*, byte> Byond_CallGlobalProcByStrId;
         public delegate* unmanaged[Cdecl]<CByondValue*, byte*, uint*, byte> Byond_ToString;
-        public delegate* unmanaged[Cdecl]<CByondValue*, CByondPixLoc*, byte> Byond_PixLoc;
-        public delegate* unmanaged[Cdecl]<CByondValue*, byte, CByondPixLoc*, byte> Byond_BoundPixLoc;
         public delegate* unmanaged[Cdecl]<CByondXYZ*, CByondXYZ*, CByondValue*, uint*, byte> Byond_Block;
         public delegate* unmanaged[Cdecl]<CByondValue*, CByondValue*, byte> Byond_Length;
         public delegate* unmanaged[Cdecl]<CByondValue*, CByondValue*, CByondValue*, byte> Byond_LocateIn;
@@ -105,8 +122,11 @@ public static unsafe partial class ByondApi {
         public delegate* unmanaged[Cdecl]<CByondValue*, CByondValue*, CByondValue*, byte> Byond_NewArglist;
         public delegate* unmanaged[Cdecl]<CByondValue*, uint*, byte> Byond_Refcount;
         public delegate* unmanaged[Cdecl]<CByondValue*, CByondXYZ*, byte> Byond_XYZ;
+        public delegate* unmanaged[Cdecl]<CByondValue*, CByondPixLoc*, byte> Byond_PixLoc;
+        public delegate* unmanaged[Cdecl]<CByondValue*, byte, CByondPixLoc*, byte> Byond_BoundPixLoc;
         public delegate* unmanaged[Cdecl]<CByondValue*, void> ByondValue_IncRef;
         public delegate* unmanaged[Cdecl]<CByondValue*, void> ByondValue_DecRef;
+        public delegate* unmanaged[Cdecl]<CByondValue*, void> ByondValue_DecTempRef;
         public delegate* unmanaged[Cdecl]<CByondValue*, byte> Byond_TestRef;
     }
 }

@@ -1,8 +1,5 @@
 [workspace]
-members = [
-    "trampoline",
-    "byondapitest"
-]
+members = ["trampoline", "byondapitest", "byondapi-test-byondapi-rs"]
 resolver = "2"
 
 #[profile.dev]

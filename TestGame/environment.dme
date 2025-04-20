@@ -8,6 +8,7 @@
 // BEGIN_INCLUDE
 #include "TestInterface.dmf"
 #include "code.dm"
+#include "byondapi.dm"
 #include "renderer_tests.dm"
 #include "map_z1.dmm"
 #include "map_z2.dmm"

@@ -18,7 +18,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
     private Location _location;
     private int _maxStackSize;
     private bool _negativeStackSizeError;
-    private int _requiredArgIdx = 0;
+    private int _requiredArgIdx;
     private OpcodeMetadata? _currentMetadata;
     private Dictionary<string, long> _labels = new();
 

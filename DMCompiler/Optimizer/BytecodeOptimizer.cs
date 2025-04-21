@@ -57,6 +57,7 @@ public class BytecodeOptimizer(DMCompiler compiler) {
                     input.RemoveAt(i);
                     i -= 1;
                 }
+                
                 labelCount -= 1;
                 if (labelCount <= 0) break;
             }

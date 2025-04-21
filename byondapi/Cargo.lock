@@ -893,6 +893,7 @@ name = "trampoline"
 version = "0.1.0"
 dependencies = [
  "bindgen 0.69.4",
+ "cc",
 ]
 
 [[package]]

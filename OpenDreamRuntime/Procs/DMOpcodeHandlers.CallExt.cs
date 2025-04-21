@@ -48,10 +48,7 @@ internal static partial class DMOpcodeHandlers {
             args[i] = ByondApi.ValueToByondApi(arg);
         }
 
-        ByondApi.CByondValue result;
-        fixed (ByondApi.CByondValue* argV = args) {
-            result = entryPoint((uint)arguments.Count, argV);
-        }
+        var result = ByondApi.DoCall(entryPoint, args);
 
         state.Push(ByondApi.ValueFromDreamApi(result));
         return ProcStatus.Continue;

@@ -34,6 +34,22 @@ use std::sync::OnceLock;
 
 static TRAMPOLINES: OnceLock<Trampolines> = OnceLock::new();
 
+type ByondApiFunction = unsafe extern "C-unwind" fn(argc: u4c, argv: *const CByondValue) -> CByondValue;
+
+#[link(name = "trampoline_error_handler")]
+unsafe extern "C" {
+    unsafe fn OpenDream_Internal_ErrorHandlerCallExt(
+        func: ByondApiFunction,
+        argc: u4c,
+        argv: *const CByondValue,
+    ) -> CByondValue;
+}
+
+#[link(name = "trampoline_error_handler")]
+unsafe extern "C-unwind" {
+    unsafe fn OpenDream_Internal_ErrorHandlerCrash() -> !;
+}
+
 macro_rules! trampolines {
     ( $( fn $name:ident ( $( $param:ident: $paramType:ty ),* ) $(-> $ret:ty )? );* $(;)? ) => {
         $(
@@ -61,6 +77,15 @@ unsafe extern "C" fn OpenDream_Internal_Init(trampolines: *const Trampolines) {
         .set(*trampolines)
         .map_err(|_| ())
         .expect("OpenDream_Internal_Init can only be called once!");
+}
+
+#[no_mangle]
+unsafe extern "C" fn OpenDream_Internal_CallExt(
+    func: ByondApiFunction,
+    argc: u4c,
+    argv: *const CByondValue,
+) -> CByondValue {
+    OpenDream_Internal_ErrorHandlerCallExt(func, argc, argv)
 }
 
 #[no_mangle]
@@ -190,8 +215,12 @@ unsafe extern "C" fn ByondValue_SetRef(v: *mut CByondValue, r#type: ByondValueTy
 }
 
 #[no_mangle]
-extern "C" fn Byond_CRASH(message: *const c_char) {
-    unimplemented!();
+unsafe extern "C-unwind" fn Byond_CRASH(message: *const c_char) -> ! {
+    unsafe {
+        // TODO: Verify that we are indeed on the main thread when Byond_CRASH is called.
+        OpenDream_Internal_SetCrash(message);
+        OpenDream_Internal_ErrorHandlerCrash()
+    }
 }
 
 //
@@ -245,4 +274,7 @@ trampolines! {
     fn ByondValue_DecRef(src: *const CByondValue);
     fn ByondValue_DecTempRef(src: *const CByondValue);
     fn Byond_TestRef(src: *mut CByondValue) -> bool;
+
+    // OpenDream internal. Technically putting this stuff here exports it publicly, but we don't care.
+    fn OpenDream_Internal_SetCrash(message: *const c_char);
 }

@@ -9,3 +9,10 @@ fn example() -> Result<ByondValue, ()> {
     );
     Ok(ByondValue::null())
 }
+
+#[byondapi::bind]
+fn example_crash() -> Result<ByondValue, ()> {
+    byondapi::runtime::byond_runtime("Heck");
+
+    unreachable!();
+}

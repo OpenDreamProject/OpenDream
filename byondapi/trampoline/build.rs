@@ -23,4 +23,11 @@ fn main() {
     bindings
         .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings!");
+
+    println!("cargo::rerun-if-changed=src/error_handler.cpp");
+    cc::Build::new()
+        .cpp(true)
+        .includes(["."]) // byondapi.h
+        .file("src/error_handler.cpp")
+        .compile("trampoline_error_handler");
 }

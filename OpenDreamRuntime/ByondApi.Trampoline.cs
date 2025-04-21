@@ -47,6 +47,7 @@ public static unsafe partial class ByondApi {
             ByondValue_DecRef = &ByondValue_DecRef,
             ByondValue_DecTempRef = &ByondValue_DecTempRef,
             Byond_TestRef = &Byond_TestRef,
+            OpenDream_Internal_SetCrash = &OpenDream_Internal_SetCrash,
         };
 
         NativeLibrary.SetDllImportResolver(Assembly.GetExecutingAssembly(), DllImportResolver);
@@ -128,5 +129,6 @@ public static unsafe partial class ByondApi {
         public delegate* unmanaged[Cdecl]<CByondValue*, void> ByondValue_DecRef;
         public delegate* unmanaged[Cdecl]<CByondValue*, void> ByondValue_DecTempRef;
         public delegate* unmanaged[Cdecl]<CByondValue*, byte> Byond_TestRef;
+        public delegate* unmanaged[Cdecl]<byte*, void> OpenDream_Internal_SetCrash;
     }
 }

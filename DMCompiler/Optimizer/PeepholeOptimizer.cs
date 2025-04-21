@@ -41,6 +41,7 @@ internal enum OptPass : byte {
 // ReSharper disable once ClassNeverInstantiated.Global
 internal sealed class PeepholeOptimizer {
     private readonly DMCompiler _compiler;
+    private bool _optTreeCreated = false; // Prevents rebuilding the optimizaition tree
 
     private class OptimizationTreeEntry {
         public IOptimization? Optimization;
@@ -68,6 +69,10 @@ internal sealed class PeepholeOptimizer {
 
     /// Setup <see cref="_optimizationTrees"/> for each <see cref="OptPass"/>
     private void GetOptimizations() {
+        // Don't rebuild the optimization tree on every proc
+        if(_optTreeCreated) return;
+        _optTreeCreated = true;
+
         foreach (var optType in typeof(IOptimization).Assembly.GetTypes()) {
             if (!typeof(IOptimization).IsAssignableFrom(optType) ||
                 optType is not { IsClass: true, IsAbstract: false })

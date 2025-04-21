@@ -57,15 +57,10 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ValidateArgument(Location location, OpcodeArgType argType) {
         if (_currentMetadata!.Value.RequiredArgs.Count == 0 || _requiredArgIdx >= _currentMetadata.Value.RequiredArgs.Count || _currentMetadata.Value.RequiredArgs[_requiredArgIdx] != argType) {
-            PrintArgErrorMessage(location, argType);
+            compiler.ForcedError(location, $"Expected {argType.ToString()} argument");
         }
 
         _requiredArgIdx += 1;
-    }
-
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private void PrintArgErrorMessage(Location location, OpcodeArgType argType) {
-        compiler.ForcedError(location, $"Expected {argType.ToString()} argument");
     }
 
     /// <summary>

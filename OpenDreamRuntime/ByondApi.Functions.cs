@@ -78,7 +78,12 @@ public static unsafe partial class ByondApi {
             return NONE;
         }
 
-        return _dreamManager!.FindString(str) ?? NONE;
+        var strId = _dreamManager!.FindString(str);
+        if (strId != null) {
+            return (uint)RefType.String | strId.Value;
+        } else {
+            return NONE;
+        }
     }
 
     /** byondapi.h comment:

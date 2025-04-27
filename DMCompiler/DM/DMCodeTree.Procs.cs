@@ -20,6 +20,10 @@ internal partial class DMCodeTree {
 
             _defined = true;
 
+            // The name of every proc gets a string ID.
+            // BYOND assigns the ID after every string inside the proc is assigned, but we aren't replicating that here.
+            compiler.DMObjectTree.AddString(ProcName);
+
             bool hasProc = dmObject.HasProc(ProcName);
             if (hasProc && !IsOverride && !dmObject.OwnsProc(ProcName) && !procDef.Location.InDMStandard) {
                 compiler.Emit(WarningCode.DuplicateProcDefinition, procDef.Location,

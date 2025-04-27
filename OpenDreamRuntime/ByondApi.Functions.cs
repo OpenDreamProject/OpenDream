@@ -38,7 +38,7 @@ public static unsafe partial class ByondApi {
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte* Byond_LastError() {
-        return PinningIsNotReal("no error"u8);
+        return null;
     }
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
@@ -868,7 +868,7 @@ public static unsafe partial class ByondApi {
             xyz->y = (short)y;
             xyz->z = (short)z;
         } catch (Exception) {
-                return 0;
+            return 0;
         }
 
         return 1;

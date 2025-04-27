@@ -55,8 +55,6 @@ macro_rules! trampolines {
         $(
             #[no_mangle]
             unsafe extern "C" fn $name( $( $param: $paramType, )* ) $(-> $ret )? {
-                // TOOD: Remove me when done w/ testing
-                println!(stringify!($name));
                 return (TRAMPOLINES.get().unwrap().$name)($( $param, )*);
             }
         )*

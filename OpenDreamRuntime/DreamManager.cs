@@ -243,12 +243,18 @@ public sealed partial class DreamManager {
         }  else if (value.TryGetValueAsProc(out var proc)) {
             refType = RefType.Proc;
             idx = proc.Id;
+        } else if (value.TryGetValueAsFloat(out var floatValue)) {
+            refType = RefType.Number;
+
+            // Yes, this combines with the refType and produces an invalid ref.
+            // This is BYOND behavior (as of writing at least, on 516.1661).
+            idx = BitConverter.SingleToInt32Bits(floatValue);
         } else {
             throw new NotImplementedException($"Ref for {value} is unimplemented");
         }
 
-        // The first digit is the type
-        return $"[0x{((int) refType+idx):x}]";
+        // The highest byte is the type
+        return $"[0x{((uint)refType| (uint)idx):x}]";
     }
 
     /// <summary>
@@ -393,5 +399,6 @@ public enum RefType : uint {
     DreamType = 0x9000000, //in byond type is from 0x8 to 0xb, but fuck that
     DreamResource = 0x27000000, //Equivalent to file
     DreamAppearance = 0x3A000000,
-    Proc = 0x26000000
+    Proc = 0x26000000,
+    Number = 0x2A000000
 }

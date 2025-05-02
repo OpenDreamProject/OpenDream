@@ -6,6 +6,9 @@
     <Configurations>Debug;Release;Tools</Configurations>
     <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(TgsEngineBuild)'=='True'">
+    <DefineConstants>$(DefineConstants);DISABLE_BYOND_API</DefineConstants>
+  </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\DMCompiler\DMCompiler.csproj" />
     <ProjectReference Include="..\OpenDreamPackaging\OpenDreamPackaging.csproj" />

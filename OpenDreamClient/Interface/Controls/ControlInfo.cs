@@ -11,13 +11,13 @@ using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Input;
 using Robust.Shared.Network;
 using Robust.Shared.Utility;
+using Robust.Shared.Log;
 
 namespace OpenDreamClient.Interface.Controls;
 
 [Virtual]
 internal class InfoPanel : Control {
     public string PanelName { get; }
-
     protected InfoPanel(string name) {
         PanelName = name;
         TabContainer.SetTabTitle(this, name);
@@ -31,7 +31,6 @@ internal sealed class StatPanel : InfoPanel {
     private sealed class StatEntry {
         public readonly RichTextLabel NameLabel = new();
         public readonly RichTextLabel ValueLabel = new();
-
         private readonly ControlInfo _owner;
         private readonly IEntitySystemManager _entitySystemManager;
         private readonly FormattedMessage _nameText = new();
@@ -83,6 +82,7 @@ internal sealed class StatPanel : InfoPanel {
             _valueText.Clear();
 
             // Use the default color and font
+            SetTextColor(_owner.InfoDescriptor.TextColor.Value);
             _nameText.PushColor(_textColor);
             _valueText.PushColor(_textColor);
             _nameText.PushTag(new MarkupNode("font", null, null));
@@ -137,9 +137,7 @@ internal sealed class StatPanel : InfoPanel {
 
     public override void UpdateElementDescriptor(ControlDescriptorInfo descriptor) {
         base.UpdateElementDescriptor(descriptor);
-
         var textColor = (descriptor.TextColor.Value != Color.Transparent) ? descriptor.TextColor.Value : Color.Black;
-
         foreach (var entry in _entries) {
             entry.SetTextColor(textColor);
         }
@@ -148,10 +146,8 @@ internal sealed class StatPanel : InfoPanel {
     public void UpdateLines(List<(string Name, string Value, string? AtomRef)> lines) {
         for (int i = 0; i < Math.Max(_entries.Count, lines.Count); i++) {
             var entry = GetEntry(i);
-
             if (i < lines.Count) {
                 var line = lines[i];
-
                 entry.SetLabels(line.Name, line.Value, line.AtomRef);
             } else {
                 entry.Clear();
@@ -207,7 +203,6 @@ internal sealed class VerbPanel : InfoPanel {
 
         _highlightColor = descriptor.HighlightColor.Value;
         _textColor = (descriptor.TextColor.Value != Color.Transparent) ? descriptor.TextColor.Value : Color.Black;
-
         foreach (var child in _grid.Children) {
             if (child is not Button button)
                 continue;
@@ -287,7 +282,7 @@ public sealed class ControlInfo : InterfaceControl {
             }
         };
 
-        if(ControlDescriptor.IsVisible.Value)
+        if (ControlDescriptor.IsVisible.Value)
             OnShowEvent();
         else
             OnHideEvent();
@@ -388,11 +383,11 @@ public sealed class ControlInfo : InterfaceControl {
 
     private void SortPanels() {
         _tabControl.Children.Clear();
-        foreach(var (_, statPanel) in _statPanels) {
+        foreach (var (_, statPanel) in _statPanels) {
             _tabControl.AddChild(statPanel);
         }
 
-        foreach(var (_, verbPanel) in _verbPanels) {
+        foreach (var (_, verbPanel) in _verbPanels) {
             _tabControl.AddChild(verbPanel);
         }
     }

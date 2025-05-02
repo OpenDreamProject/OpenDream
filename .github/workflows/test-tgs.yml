@@ -13,6 +13,7 @@ concurrency:
 env:
   OD_DOTNET_VERSION: 9
   TGS_DOTNET_VERSION: 8
+  TGS_NODE_VERSION: 20.x
   TGS_REFERENCE: dev
   TGS_TEST_GITHUB_TOKEN: ${{ github.token }}
 
@@ -40,6 +41,14 @@ jobs:
         dotnet-version: |
           ${{ env.TGS_DOTNET_VERSION }}.0.x
           ${{ env.OD_DOTNET_VERSION }}.0.x
+
+    - name: Setup Node.JS
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.TGS_NODE_VERSION }}
+
+    - name: Enable Corepack
+      run: corepack enable
 
     - name: Checkout OpenDream
       uses: actions/checkout@v4

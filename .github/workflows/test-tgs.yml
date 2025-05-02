@@ -28,11 +28,11 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
 
-    - name: Install gdb
+    - name: Install gdb and libgdiplus
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y gdb
+        sudo apt-get install -y gdb libgdiplus
 
     - name: Setup dotnet
       uses: actions/setup-dotnet@v4

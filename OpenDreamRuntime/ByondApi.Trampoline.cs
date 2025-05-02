@@ -65,7 +65,11 @@ public static unsafe partial class ByondApi {
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
                 // Need to load as RTLD_GLOBAL, otherwise byondapi-rs can't find the symbols.
-                var attempt = dlopen("libbyond.so", RTLD_LAZY | RTLD_GLOBAL);
+                var attempt = dlopen("runtimes/linux-x64/native/libbyond.so", RTLD_LAZY | RTLD_GLOBAL);
+                if (attempt != 0)
+                    return attempt;
+
+                attempt = dlopen("libbyond.so", RTLD_LAZY | RTLD_GLOBAL);
                 if (attempt != 0)
                     return attempt;
 

@@ -64,6 +64,7 @@ namespace DMCompiler.DM {
 
         public string Name => _astDefinition?.Name ?? "<init>";
         public bool IsVerb => _astDefinition?.IsVerb ?? false;
+        public bool IsFinal => _astDefinition?.IsFinal ?? false;
         public List<string> Parameters = new();
         public Location Location;
         public ProcAttributes Attributes;
@@ -372,6 +373,19 @@ namespace DMCompiler.DM {
                 WriteOpcode(DreamProcOpcode.Enumerate);
                 WriteEnumeratorId(_enumeratorIdCounter - 1);
                 WriteReference(reference);
+                WriteLabel($"{peek}_end");
+            } else {
+                _compiler.ForcedError(Location, "Cannot peek empty loop stack");
+            }
+        }
+
+        public void EnumerateAssoc(DMReference assocRef, DMReference listRef, DMReference outputRef) {
+            if (_loopStack?.TryPeek(out var peek) ?? false) {
+                WriteOpcode(DreamProcOpcode.EnumerateAssoc);
+                WriteEnumeratorId(_enumeratorIdCounter - 1);
+                WriteReference(assocRef);
+                WriteReference(listRef);
+                WriteReference(outputRef);
                 WriteLabel($"{peek}_end");
             } else {
                 _compiler.ForcedError(Location, "Cannot peek empty loop stack");

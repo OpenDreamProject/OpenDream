@@ -18,9 +18,10 @@ internal sealed partial class ContextMenuPopup : Popup {
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly IUserInterfaceManager _uiManager = default!;
-    private readonly ClientAppearanceSystem? _appearanceSystem;
-    private readonly TransformSystem? _transformSystem;
-    private readonly ClientVerbSystem? _verbSystem;
+    private readonly ClientAppearanceSystem _appearanceSystem;
+    private readonly TransformSystem _transformSystem;
+    private readonly ClientVerbSystem _verbSystem;
+    private readonly DMISpriteSystem _spriteSystem;
     private readonly EntityQuery<DMISpriteComponent> _spriteQuery;
     private readonly EntityQuery<TransformComponent> _xformQuery;
     private readonly EntityQuery<DreamMobSightComponent> _mobSightQuery;
@@ -33,9 +34,10 @@ internal sealed partial class ContextMenuPopup : Popup {
         IoCManager.InjectDependencies(this);
         RobustXamlLoader.Load(this);
 
-        _entitySystemManager.TryGetEntitySystem(out _transformSystem);
-        _entitySystemManager.TryGetEntitySystem(out _verbSystem);
-        _entitySystemManager.TryGetEntitySystem(out _appearanceSystem);
+        _transformSystem = _entitySystemManager.GetEntitySystem<TransformSystem>();
+        _verbSystem = _entitySystemManager.GetEntitySystem<ClientVerbSystem>();
+        _appearanceSystem = _entitySystemManager.GetEntitySystem<ClientAppearanceSystem>();
+        _spriteSystem = _entitySystemManager.GetEntitySystem<DMISpriteSystem>();
         _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
         _xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
         _mobSightQuery = _entityManager.GetEntityQuery<DreamMobSightComponent>();
@@ -43,9 +45,6 @@ internal sealed partial class ContextMenuPopup : Popup {
 
     public void RepopulateEntities(ClientObjectReference[] entities, uint? turfId) {
         ContextMenu.RemoveAllChildren();
-
-        if (_transformSystem == null || _appearanceSystem == null)
-            return;
 
         foreach (var objectReference in entities) {
             var name = _appearanceSystem.GetName(objectReference);
@@ -60,7 +59,7 @@ internal sealed partial class ContextMenuPopup : Popup {
                         continue;
                     if (sprite.Icon.Appearance?.MouseOpacity == MouseOpacity.Transparent) // Not transparent to mouse clicks
                         continue;
-                    if (!sprite.IsVisible(transform, GetSeeInvisible())) // Not invisible
+                    if (!_spriteSystem.IsVisible(sprite, transform, GetSeeInvisible(), null)) // Not invisible
                         continue;
 
                     icon = sprite.Icon;

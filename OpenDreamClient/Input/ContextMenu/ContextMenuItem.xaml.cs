@@ -26,6 +26,7 @@ internal sealed partial class ContextMenuItem : PanelContainer {
         NameLabel.Text = name;
 
         Icon.Texture = icon.LastRenderedTexture;
+        Icon.Modulate = icon.Appearance?.Color ?? Color.White;
     }
 
     protected override void MouseEntered() {

@@ -1,6 +1,6 @@
 namespace DMCompiler.Compiler;
 
-internal class Parser<TSourceType> {
+public class Parser<TSourceType> {
     protected readonly Lexer<TSourceType> Lexer;
     protected readonly DMCompiler Compiler;
 

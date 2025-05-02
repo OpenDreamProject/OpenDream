@@ -29,12 +29,13 @@ public static class DreamPackaging {
 
         await RobustClientPackaging.WriteClientResources(contentDir, inputPass, cancel);
 
-        WriteRscResources(dreamRootDir, resources, inputPass);
+        WriteRscResources(dreamRootDir, resources, null, inputPass);
 
         inputPass.InjectFinished();
     }
 
-    public static void WriteRscResources(string dreamRootDir, string[] resources, AssetPassPipe inputPass) {
+    public static void WriteRscResources(string dreamRootDir, string[] resources,
+        Dictionary<int, byte[]>? extraResources, AssetPassPipe inputPass) {
         for (var i = 0; i < resources.Length; i++) {
             var resource = resources[i].Replace('\\', Path.DirectorySeparatorChar);
             // The game client only knows a resource ID, so that's what we name the files.
@@ -43,6 +44,15 @@ public static class DreamPackaging {
             var diskPath = Path.Combine(dreamRootDir, resource);
 
             inputPass.InjectFileFromDisk(path, diskPath);
+        }
+
+        if (extraResources == null)
+            return;
+
+        foreach (var (resourceId, data) in extraResources) {
+            var path = $"Rsc/{resourceId}";
+
+            inputPass.InjectFileFromMemory(path, data);
         }
     }
 }

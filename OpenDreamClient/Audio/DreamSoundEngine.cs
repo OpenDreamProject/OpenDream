@@ -68,7 +68,6 @@ public sealed class DreamSoundEngine : IDreamSoundEngine {
         _channels[channel - 1] = new DreamSoundChannel(_audioSystem, source.Value);
     }
 
-
     public void StopChannel(int channel) {
         ref DreamSoundChannel? ch = ref _channels[channel - 1];
 

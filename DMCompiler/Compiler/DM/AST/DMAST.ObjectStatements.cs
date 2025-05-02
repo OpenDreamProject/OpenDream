@@ -32,6 +32,7 @@ public sealed class DMASTProcDefinition : DMASTStatement {
     public readonly string Name;
     public readonly bool IsOverride;
     public readonly bool IsVerb;
+    public readonly bool IsFinal;
     public readonly DMASTDefinitionParameter[] Parameters;
     public readonly DMASTProcBlockInner? Body;
     public readonly DMComplexValueType? ReturnTypes;
@@ -48,6 +49,14 @@ public sealed class DMASTProcDefinition : DMASTStatement {
         }
 
         if (procElementIndex != -1) path = path.RemoveElement(procElementIndex);
+
+        int finalElementIndex = path.FindElement("final");
+        if (!IsOverride && finalElementIndex != -1 && finalElementIndex != path.Elements.Length && finalElementIndex == procElementIndex) { // Removing "proc" should've moved "final" to the index of "proc"
+            IsFinal = true;
+            path = path.RemoveElement(finalElementIndex);
+        } else {
+            IsFinal = false;
+        }
 
         ObjectPath = (path.Elements.Length > 1) ? path.FromElements(0, -2) : DreamPath.Root;
         Name = path.LastElement;

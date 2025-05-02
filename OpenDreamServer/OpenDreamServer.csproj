@@ -13,6 +13,9 @@
     <NoWarn>NU1507</NoWarn>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(DISABLE_BYOND_API)'!=''">
+    <DefineConstants>$(DefineConstants);DISABLE_BYOND_API</DefineConstants>
+  </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\OpenDreamRuntime\OpenDreamRuntime.csproj" />
     <ProjectReference Include="..\OpenDreamShared\OpenDreamShared.csproj" />

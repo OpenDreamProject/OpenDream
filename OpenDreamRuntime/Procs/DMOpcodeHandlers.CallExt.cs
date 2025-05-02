@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using DMCompiler.Bytecode;
+using Api = OpenDreamRuntime.ByondApi.ByondApi;
 
 namespace OpenDreamRuntime.Procs;
 
@@ -45,12 +46,12 @@ internal static partial class DMOpcodeHandlers {
 
         for (var i = 0; i < args.Length; i++) {
             var arg = arguments.GetArgument(i);
-            args[i] = ByondApi.ValueToByondApi(arg);
+            args[i] = Api.ValueToByondApi(arg);
         }
 
-        var result = ByondApi.DoCall(entryPoint, args);
+        var result = Api.DoCall(entryPoint, args);
 
-        state.Push(ByondApi.ValueFromDreamApi(result));
+        state.Push(Api.ValueFromDreamApi(result));
         return ProcStatus.Continue;
     }
 

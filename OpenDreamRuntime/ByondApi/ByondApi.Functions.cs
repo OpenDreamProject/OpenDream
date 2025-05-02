@@ -1,16 +1,18 @@
-using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Objects.Types;
-using OpenDreamRuntime.Procs;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects.Types;
+using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.Native;
 
 // ReSharper disable InconsistentNaming
 
-namespace OpenDreamRuntime;
+namespace OpenDreamRuntime.ByondApi;
 
 public static unsafe partial class ByondApi {
+    public const uint NONE = 0xFFFF;
+
     /** byondapi.h comment:
      * Determines if a value is logically true or false
      *

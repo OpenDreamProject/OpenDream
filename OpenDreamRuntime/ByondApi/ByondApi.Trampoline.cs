@@ -3,7 +3,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-namespace OpenDreamRuntime;
+namespace OpenDreamRuntime.ByondApi;
 
 public static unsafe partial class ByondApi {
     private static void InitTrampoline() {

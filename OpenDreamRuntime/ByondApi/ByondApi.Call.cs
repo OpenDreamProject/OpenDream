@@ -1,19 +1,16 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace OpenDreamRuntime;
+namespace OpenDreamRuntime.ByondApi;
 
 public static partial class ByondApi {
     public static string? CrashMessage;
 
-    public unsafe static CByondValue DoCall(
-        delegate* unmanaged[Cdecl]<uint, ByondApi.CByondValue*, ByondApi.CByondValue> func,
-        ReadOnlySpan<CByondValue> args) {
-
+    public static unsafe CByondValue DoCall(delegate* unmanaged[Cdecl]<uint, CByondValue*, CByondValue> func, ReadOnlySpan<CByondValue> args) {
         CrashMessage = null;
 
-        ByondApi.CByondValue result;
-        fixed (ByondApi.CByondValue* argV = args) {
+        CByondValue result;
+        fixed (CByondValue* argV = args) {
             result = OpenDream_Internal_CallExt(func, (uint)args.Length, argV);
         }
 
@@ -25,13 +22,13 @@ public static partial class ByondApi {
     }
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
-    private unsafe static void OpenDream_Internal_SetCrash(byte* message) {
+    private static unsafe void OpenDream_Internal_SetCrash(byte* message) {
         CrashMessage = Marshal.PtrToStringUTF8((nint) message);
     }
 
     [LibraryImport("byond")]
     private static unsafe partial CByondValue OpenDream_Internal_CallExt(
-        delegate* unmanaged[Cdecl]<uint, ByondApi.CByondValue*, ByondApi.CByondValue> func,
+        delegate* unmanaged[Cdecl]<uint, CByondValue*, CByondValue> func,
         uint argc,
         CByondValue* argv);
 }

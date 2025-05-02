@@ -2,7 +2,7 @@
 using OpenDreamRuntime.Objects;
 using Robust.Shared.Utility;
 
-namespace OpenDreamRuntime;
+namespace OpenDreamRuntime.ByondApi;
 
 public static partial class ByondApi {
     private static DreamManager? _dreamManager;

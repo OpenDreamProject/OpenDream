@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  OD_DOTNET_VERSION: 8
+  OD_DOTNET_VERSION: 9
   TGS_DOTNET_VERSION: 8
   TGS_REFERENCE: dev
   TGS_TEST_GITHUB_TOKEN: ${{ github.token }}

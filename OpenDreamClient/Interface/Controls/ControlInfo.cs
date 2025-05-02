@@ -11,13 +11,13 @@ using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Input;
 using Robust.Shared.Network;
 using Robust.Shared.Utility;
-using Robust.Shared.Log;
 
 namespace OpenDreamClient.Interface.Controls;
 
 [Virtual]
 internal class InfoPanel : Control {
     public string PanelName { get; }
+
     protected InfoPanel(string name) {
         PanelName = name;
         TabContainer.SetTabTitle(this, name);
@@ -31,6 +31,7 @@ internal sealed class StatPanel : InfoPanel {
     private sealed class StatEntry {
         public readonly RichTextLabel NameLabel = new();
         public readonly RichTextLabel ValueLabel = new();
+
         private readonly ControlInfo _owner;
         private readonly IEntitySystemManager _entitySystemManager;
         private readonly FormattedMessage _nameText = new();
@@ -146,8 +147,10 @@ internal sealed class StatPanel : InfoPanel {
     public void UpdateLines(List<(string Name, string Value, string? AtomRef)> lines) {
         for (int i = 0; i < Math.Max(_entries.Count, lines.Count); i++) {
             var entry = GetEntry(i);
+
             if (i < lines.Count) {
                 var line = lines[i];
+
                 entry.SetLabels(line.Name, line.Value, line.AtomRef);
             } else {
                 entry.Clear();
@@ -203,6 +206,7 @@ internal sealed class VerbPanel : InfoPanel {
 
         _highlightColor = descriptor.HighlightColor.Value;
         _textColor = (descriptor.TextColor.Value != Color.Transparent) ? descriptor.TextColor.Value : Color.Black;
+
         foreach (var child in _grid.Children) {
             if (child is not Button button)
                 continue;

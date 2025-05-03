@@ -49,6 +49,9 @@ internal sealed class StatPanel : InfoPanel {
             //       I couldn't find a way to do this without recreating the FormattedMessage
             ValueLabel.MouseFilter = MouseFilterMode.Stop;
             ValueLabel.OnKeyBindDown += OnKeyBindDown;
+            if (_owner.InfoDescriptor.TextColor.Value != Color.Black) {
+                _textColor = _owner.InfoDescriptor.TextColor.Value;
+            }
         }
 
         public void Clear() {
@@ -83,7 +86,6 @@ internal sealed class StatPanel : InfoPanel {
             _valueText.Clear();
 
             // Use the default color and font
-            SetTextColor(_owner.InfoDescriptor.TextColor.Value);
             _nameText.PushColor(_textColor);
             _valueText.PushColor(_textColor);
             _nameText.PushTag(new MarkupNode("font", null, null));

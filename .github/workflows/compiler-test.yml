@@ -100,3 +100,11 @@ jobs:
         path: aurora
     - name: Compile Aurora Master
       run: main\bin\DMCompiler\DMCompiler.exe aurora\aurorastation.dme --suppress-unimplemented --version=516.1655
+    - name: Checkout Daedalus Master
+      uses: actions/checkout@v2
+      with:
+        repository: DaedalusDock/daedalusdock
+        ref: master
+        path: daedalus
+    - name: Compile Daedalus Master
+      run: main\bin\DMCompiler\DMCompiler.exe daedalus\daedalus.dme --suppress-unimplemented

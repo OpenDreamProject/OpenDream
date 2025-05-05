@@ -2299,6 +2299,8 @@ namespace OpenDreamRuntime.Procs {
                     return;
 
                 dreamObject.OperatorOutput(b);
+            } else if (a.TryGetValueAsFloatCoerceNull(out _)) { // no-op
+                // TODO: When we have runtime pragmas we should probably emit a no-op runtime. They probably meant to do <<= not <<
             } else {
                 throw new NotImplementedException($"Unimplemented output operation between {a} and {b}");
             }

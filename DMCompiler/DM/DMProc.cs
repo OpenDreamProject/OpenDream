@@ -7,6 +7,7 @@ using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM.Builders;
 using DMCompiler.Json;
 using DMCompiler.Optimizer;
+using VerbSrcEnum = DMCompiler.DM.VerbSrc;
 
 namespace DMCompiler.DM {
     internal sealed class DMProc {
@@ -102,6 +103,16 @@ namespace DMCompiler.DM {
 
         private Location _writerLocation;
 
+        /// <summary>
+        /// BYOND currently has a ridiculous behaviour, where, <br/>
+        /// sometimes when a set statement has a right-hand side that is non-constant, <br/>
+        /// no error is emitted and instead its value is just, whatever the last well-evaluated set statement's value was. <br/>
+        /// This behaviour is nonsense but for harsh parity we sometimes may need to carry it out to hold up a codebase; <br/>
+        /// Yogstation (at time of writing) actually errors on OD if we don't implement this.
+        /// </summary>
+        // Starts null; marks that we've never seen one before and should just error like normal people.
+        private static Constant? _previousSetStatementValue;
+
         public DMProc(DMCompiler compiler, int id, DMObject dmObject, DMASTProcDefinition? astDefinition) {
             AnnotatedBytecode = new(compiler);
             _compiler = compiler;
@@ -113,8 +124,18 @@ namespace DMCompiler.DM {
             _scopes.Push(new DMProcScope());
 
             if (_astDefinition is not null) {
-                foreach (DMASTDefinitionParameter parameter in _astDefinition!.Parameters) {
+                foreach (var parameter in _astDefinition!.Parameters) {
                     AddParameter(parameter.Name, parameter.Type, parameter.ObjectType);
+                }
+
+                foreach (var statement in _astDefinition!.Body?.SetStatements ?? Array.Empty<DMASTProcStatementSet>()) {
+                    if (statement is DMASTAggregate<DMASTProcStatementSet> setAggregate) {
+                        foreach (var setStatement in setAggregate.Statements) {
+                            ProcessSetStatement(setStatement);
+                        }
+                    } else if (statement is DMASTProcStatementSet setStatement) {
+                        ProcessSetStatement(setStatement);
+                    }
                 }
             }
         }
@@ -249,6 +270,180 @@ namespace DMCompiler.DM {
             } else {
                 Parameters.Add(name);
                 _parameters.Add(name, new LocalVariable(name, _parameters.Count, true, type, valueType));
+            }
+        }
+
+        public void ProcessSetStatement(DMASTProcStatementSet statementSet) {
+            var attribute = statementSet.Attribute.ToLower();
+
+            if(attribute == "src") {
+                // TODO: Would be much better if the parser was just more strict with the expression
+                switch (statementSet.Value) {
+                    case DMASTIdentifier {Identifier: "usr"}:
+                        VerbSrc = statementSet.WasInKeyword ? VerbSrcEnum.InUsr : VerbSrcEnum.Usr;
+                        break;
+                    case DMASTDereference {Expression: DMASTIdentifier{Identifier: "usr"}, Operations: var operations}:
+                        if (operations is not [DMASTDereference.FieldOperation {Identifier: var deref}])
+                            goto default;
+
+                        if (deref == "contents") {
+                            VerbSrc = VerbSrcEnum.InUsr;
+                        }  else if (deref == "loc") {
+                            VerbSrc = VerbSrcEnum.UsrLoc;
+                            _compiler.UnimplementedWarning(statementSet.Location,
+                                "'set src = usr.loc' is unimplemented");
+                        } else if (deref == "group") {
+                            VerbSrc = VerbSrcEnum.UsrGroup;
+                            _compiler.UnimplementedWarning(statementSet.Location,
+                                "'set src = usr.group' is unimplemented");
+                        } else {
+                            goto default;
+                        }
+
+                        break;
+                    case DMASTIdentifier {Identifier: "world"}:
+                        VerbSrc = statementSet.WasInKeyword ? VerbSrcEnum.InWorld : VerbSrcEnum.World;
+                        if (statementSet.WasInKeyword)
+                            _compiler.UnimplementedWarning(statementSet.Location,
+                                "'set src = world.contents' is unimplemented");
+                        else
+                            _compiler.UnimplementedWarning(statementSet.Location,
+                                "'set src = world' is unimplemented");
+                        break;
+                    case DMASTDereference {Expression: DMASTIdentifier{Identifier: "world"}, Operations: var operations}:
+                        if (operations is not [DMASTDereference.FieldOperation {Identifier: "contents"}])
+                            goto default;
+
+                        VerbSrc = VerbSrcEnum.InWorld;
+                        _compiler.UnimplementedWarning(statementSet.Location,
+                            "'set src = world.contents' is unimplemented");
+                        break;
+                    case DMASTProcCall {Callable: DMASTCallableProcIdentifier {Identifier: { } viewType and ("view" or "oview")}}:
+                        // TODO: Ranges
+                        if (statementSet.WasInKeyword)
+                            VerbSrc = viewType == "view" ? VerbSrcEnum.InView : VerbSrcEnum.InOView;
+                        else
+                            VerbSrc = viewType == "view" ? VerbSrcEnum.View : VerbSrcEnum.OView;
+                        break;
+                    // range() and orange() are undocumented, but they work
+                    case DMASTProcCall {Callable: DMASTCallableProcIdentifier {Identifier: { } viewType and ("range" or "orange")}}:
+                        // TODO: Ranges
+                        if (statementSet.WasInKeyword)
+                            VerbSrc = viewType == "range" ? VerbSrcEnum.InRange : VerbSrcEnum.InORange;
+                        else
+                            VerbSrc = viewType == "range" ? VerbSrcEnum.Range : VerbSrcEnum.ORange;
+                        break;
+                    default:
+                        _compiler.Emit(WarningCode.BadExpression, statementSet.Value.Location, "Invalid verb src");
+                        break;
+                }
+
+                return;
+            }
+
+            var exprBuilder = new DMExpressionBuilder(new ExpressionContext(_compiler, _dmObject, this));
+            if (!exprBuilder.TryConstant(statementSet.Value, out var constant)) { // If this set statement's rhs is not constant
+                bool didError = _compiler.Emit(WarningCode.InvalidSetStatement, statementSet.Location, $"'{attribute}' attribute should be a constant");
+                if (didError) // if this is an error
+                    return; // don't do the cursed thing
+
+                constant = _previousSetStatementValue;
+            } else {
+                _previousSetStatementValue = constant;
+            }
+
+            // oh no.
+            if (constant is null) {
+                _compiler.Emit(WarningCode.BadExpression, statementSet.Location, $"'{attribute}' attribute must be a constant");
+                return;
+            }
+
+            // Check if it was 'set x in y' or whatever
+            // (which is illegal for everything except setting src to something)
+            if (statementSet.WasInKeyword) {
+                _compiler.Emit(WarningCode.BadToken, statementSet.Location, "Use of 'in' keyword is illegal here. Did you mean '='?");
+                //fallthrough into normal behaviour because this error is kinda pedantic
+            }
+
+            switch (statementSet.Attribute.ToLower()) {
+                case "waitfor": {
+                    WaitFor(constant.IsTruthy());
+                    break;
+                }
+                case "opendream_unimplemented": {
+                    if (constant.IsTruthy())
+                        Attributes |= ProcAttributes.Unimplemented;
+                    else
+                        Attributes &= ~ProcAttributes.Unimplemented;
+                    break;
+                }
+                case "hidden":
+                    if (constant.IsTruthy())
+                        Attributes |= ProcAttributes.Hidden;
+                    else
+                        Attributes &= ~ProcAttributes.Hidden;
+                    break;
+                case "popup_menu":
+                    if (constant.IsTruthy()) // The default is to show it so we flag it if it's hidden
+                        Attributes &= ~ProcAttributes.HidePopupMenu;
+                    else
+                        Attributes |= ProcAttributes.HidePopupMenu;
+                    break;
+                case "instant":
+                    if (constant.IsTruthy())
+                        Attributes |= ProcAttributes.Instant;
+                    else
+                        Attributes &= ~ProcAttributes.Instant;
+
+                    _compiler.UnimplementedWarning(statementSet.Location, "set instant is not implemented");
+                    break;
+                case "background":
+                    if (constant.IsTruthy())
+                        Attributes |= ProcAttributes.Background;
+                    else
+                        Attributes &= ~ProcAttributes.Background;
+                    break;
+                case "name":
+                    if (constant is not Expressions.String nameStr) {
+                        _compiler.Emit(WarningCode.BadExpression, constant.Location, "name attribute must be a string");
+                        break;
+                    }
+
+                    VerbName = nameStr.Value;
+                    break;
+                case "category":
+                    if (constant is Expressions.String str) {
+                        VerbCategory = str.Value;
+                    } else if (constant is Null) {
+                        VerbCategory = null;
+                    } else {
+                        _compiler.Emit(WarningCode.BadExpression, constant.Location,
+                            "category attribute must be a string or null");
+                    }
+
+                    break;
+                case "desc":
+                    // TODO: verb.desc is supposed to be printed when you type the verb name and press F1. Check the ref for details.
+                    if (constant is not Expressions.String descStr) {
+                        _compiler.Emit(WarningCode.BadExpression, constant.Location, "desc attribute must be a string");
+                        break;
+                    }
+
+                    VerbDesc = descStr.Value;
+                    break;
+                case "invisibility":
+                    // The ref says 0-101 for atoms and 0-100 for verbs
+                    // BYOND doesn't clamp the actual var value but it does seem to treat out-of-range values as their extreme
+                    if (constant is not Number invisNum) {
+                        _compiler.Emit(WarningCode.BadExpression, constant.Location, "invisibility attribute must be an int");
+                        break;
+                    }
+
+                    Invisibility = Convert.ToSByte(Math.Clamp(MathF.Floor(invisNum.Value), 0f, 100f));
+                    break;
+                case "src":
+                    _compiler.UnimplementedWarning(statementSet.Location, "set src is not implemented");
+                    break;
             }
         }
 

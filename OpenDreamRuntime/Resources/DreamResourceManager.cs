@@ -51,24 +51,25 @@ public sealed class DreamResourceManager {
 
         _sawmill.Debug($"Resource root path set to {RootPath}");
 
-        if (!string.IsNullOrWhiteSpace(interfaceFile)) {
-            if (DoesFileExist(interfaceFile))
-                InterfaceFile = LoadResource(interfaceFile);
-            else
-                throw new FileNotFoundException("Interface DMF not found at " + Path.Join(rootPath, interfaceFile));
-        }
-
         // Immediately build list of resources from rsc.
         for (var i = 0; i < resources.Length; i++) {
             var resource = resources[i];
             var loaded = LoadResource(resource);
             // Resource IDs must be consistent with the ordering, or else packaged resources will mismatch.
+            // First resource is the hardcoded console resource
             DebugTools.Assert(loaded.Id == i + 1, "Resource IDs not consistent!");
         }
 
         _aczProvider = new DreamAczProvider(_dependencyCollection, rootPath, resources);
         _statusHost.SetMagicAczProvider(_aczProvider);
         _statusHost.SetFullHybridAczProvider(_aczProvider);
+
+        if (!string.IsNullOrWhiteSpace(interfaceFile)) {
+            if (DoesFileExist(interfaceFile))
+                InterfaceFile = LoadResource(interfaceFile);
+            else
+                throw new FileNotFoundException("Interface DMF not found at " + Path.Join(rootPath, interfaceFile));
+        }
     }
 
     public bool DoesFileExist(string resourcePath) {

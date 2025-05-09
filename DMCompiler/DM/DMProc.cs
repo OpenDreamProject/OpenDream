@@ -65,12 +65,12 @@ namespace DMCompiler.DM {
 
         public string Name => _astDefinition?.Name ?? "<init>";
         public bool IsVerb => _astDefinition?.IsVerb ?? false;
+        public List<string>? Parameters;
         public bool IsFinal => _astDefinition?.IsFinal ?? false;
-        public List<string> Parameters = new();
         public Location Location;
         public ProcAttributes Attributes;
         public readonly int Id;
-        public readonly Dictionary<string, int> GlobalVariables = new();
+        public Dictionary<string, int>? GlobalVariables;
 
         public VerbSrc? VerbSrc;
         public string? VerbName;
@@ -81,10 +81,10 @@ namespace DMCompiler.DM {
         private readonly DMCompiler _compiler;
         private readonly DMObject _dmObject;
         private readonly DMASTProcDefinition? _astDefinition;
-        private readonly Stack<CodeLabelReference> _pendingLabelReferences = new();
+        private Stack<CodeLabelReference>? _pendingLabelReferences;
         private Stack<string>? _loopStack;
-        private readonly Stack<DMProcScope> _scopes = new();
-        private readonly Dictionary<string, LocalVariable> _parameters = new();
+        private readonly Stack<DMProcScope> _scopes = new(1);
+        private Dictionary<string, LocalVariable>? _parameters;
         private int _labelIdCounter;
         private int _enumeratorIdCounter;
 
@@ -123,11 +123,14 @@ namespace DMCompiler.DM {
             Location = astDefinition?.Location ?? Location.Unknown;
             _scopes.Push(new DMProcScope());
 
+            if (_astDefinition is not null && _astDefinition.Parameters.Length > 0) {
+                AddParameters(_astDefinition!.Parameters);
             if (_astDefinition is not null) {
-                foreach (var parameter in _astDefinition!.Parameters) {
-                    AddParameter(parameter.Name, parameter.Type, parameter.ObjectType);
+                if (_astDefinition.Parameters.Length > 0) {
+                    foreach (var parameter in _astDefinition!.Parameters) {
+                        AddParameter(parameter.Name, parameter.Type, parameter.ObjectType);
+                    }
                 }
-
                 foreach (var statement in _astDefinition!.Body?.SetStatements ?? Array.Empty<DMASTProcStatementSet>()) {
                     if (statement is DMASTAggregate<DMASTProcStatementSet> setAggregate) {
                         foreach (var setStatement in setAggregate.Statements) {
@@ -197,7 +200,7 @@ namespace DMCompiler.DM {
             _compiler.BytecodeOptimizer.Optimize(AnnotatedBytecode.GetAnnotatedBytecode());
 
             List<ProcArgumentJson>? arguments = null;
-            if (_parameters.Count > 0) {
+            if (_parameters?.Count > 0) {
                 arguments = new List<ProcArgumentJson>(_parameters.Count);
 
                 foreach (var parameter in _parameters.Values) {
@@ -253,23 +256,28 @@ namespace DMCompiler.DM {
         }
 
         public void AddGlobalVariable(DMVariable global, int id) {
+            GlobalVariables ??= new Dictionary<string, int>();
             GlobalVariables[global.Name] = id;
         }
 
         public int? GetGlobalVariableId(string name) {
-            if (GlobalVariables.TryGetValue(name, out int id)) {
+            if (GlobalVariables is not null && GlobalVariables.TryGetValue(name, out int id)) {
                 return id;
             }
 
             return null;
         }
 
-        public void AddParameter(string name, DMComplexValueType? valueType, DreamPath? type) {
-            if (_parameters.ContainsKey(name)) {
-                _compiler.Emit(WarningCode.DuplicateVariable, _astDefinition.Location, $"Duplicate argument \"{name}\"");
-            } else {
-                Parameters.Add(name);
-                _parameters.Add(name, new LocalVariable(name, _parameters.Count, true, type, valueType));
+        public void AddParameters(DMASTDefinitionParameter[] parameters) {
+            Parameters = new List<string>(parameters.Length);
+            _parameters = new Dictionary<string, LocalVariable>(parameters.Length);
+            foreach (DMASTDefinitionParameter parameter in _astDefinition!.Parameters) {
+                if (_parameters.ContainsKey(parameter.Name)) {
+                    _compiler.Emit(WarningCode.DuplicateVariable, _astDefinition.Location, $"Duplicate argument \"{parameter.Name}\"");
+                } else {
+                    Parameters.Add(parameter.Name);
+                    _parameters.Add(parameter.Name, new LocalVariable(parameter.Name, _parameters.Count, true, parameter.ObjectType, parameter.Type));
+                }
             }
         }
 
@@ -448,7 +456,8 @@ namespace DMCompiler.DM {
         }
 
         public bool TryGetParameterByName(string name, [NotNullWhen(true)] out LocalVariable? param) {
-            return _parameters.TryGetValue(name, out param);
+            param = null;
+            return _parameters?.TryGetValue(name, out param) ?? false;
         }
 
         public bool TryGetParameterAtIndex(int index, [NotNullWhen(true)] out LocalVariable? param) {
@@ -458,10 +467,11 @@ namespace DMCompiler.DM {
             }
 
             var name = _astDefinition.Parameters[index].Name;
-            return _parameters.TryGetValue(name, out param);
+            param = null;
+            return _parameters?.TryGetValue(name, out param) ?? false;
         }
 
-        public string MakePlaceholderLabel() => $"PLACEHOLDER_{_pendingLabelReferences.Count}_LABEL";
+        public string MakePlaceholderLabel() => $"PLACEHOLDER_{_pendingLabelReferences?.Count ?? 0}_LABEL";
 
         public CodeLabel? TryAddCodeLabel(string name) {
             if (_scopes.Peek().LocalCodeLabels.ContainsKey(name)) {
@@ -475,7 +485,7 @@ namespace DMCompiler.DM {
         }
 
         public bool TryAddLocalVariable(string name, DreamPath? type, DMComplexValueType valType) {
-            if (_parameters.ContainsKey(name)) //Parameters and local vars cannot share a name
+            if (_parameters?.ContainsKey(name) ?? false) //Parameters and local vars cannot share a name
                 return false;
 
             int localVarId = AllocLocalVariable(name);
@@ -483,7 +493,7 @@ namespace DMCompiler.DM {
         }
 
         public bool TryAddLocalConstVariable(string name, DreamPath? type, Expressions.Constant value) {
-            if (_parameters.ContainsKey(name)) //Parameters and local vars cannot share a name
+            if (_parameters?.ContainsKey(name) ?? false) //Parameters and local vars cannot share a name
                 return false;
 
             int localVarId = AllocLocalVariable(name);
@@ -491,7 +501,7 @@ namespace DMCompiler.DM {
         }
 
         public LocalVariable? GetLocalVariable(string name) {
-            if (_parameters.TryGetValue(name, out var parameter)) {
+            if (_parameters?.TryGetValue(name, out var parameter) ?? false) {
                 return parameter;
             }
 
@@ -514,6 +524,10 @@ namespace DMCompiler.DM {
 
         public void Error() {
             WriteOpcode(DreamProcOpcode.Error);
+        }
+
+        public void ResizeSourceInfo(int size) {
+            _sourceInfo.EnsureCapacity(size);
         }
 
         public void DebugSource(Location location) {
@@ -775,6 +789,7 @@ namespace DMCompiler.DM {
 
         public void Goto(DMASTIdentifier label) {
             var placeholder = MakePlaceholderLabel();
+            _pendingLabelReferences ??= new Stack<CodeLabelReference>();
             _pendingLabelReferences.Push(new CodeLabelReference(
                 label.Identifier,
                 placeholder,

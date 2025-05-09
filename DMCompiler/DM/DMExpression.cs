@@ -121,7 +121,7 @@ internal sealed class ArgumentList(Location location, (string? Name, DMExpressio
 
         if (param == null) {
             // TODO: Remove this check once variadic args are properly supported
-            if (targetProc.Name != "animate" && index < targetProc.Parameters.Count) {
+            if (targetProc.Name != "animate" && index < targetProc.Parameters?.Count) {
                 compiler.Emit(WarningCode.InvalidVarType, expr.Location,
                     $"{targetProc.Name}(...): Unknown argument {(name is null ? $"at index {index}" : $"\"{name}\"")}, typechecking failed");
             }

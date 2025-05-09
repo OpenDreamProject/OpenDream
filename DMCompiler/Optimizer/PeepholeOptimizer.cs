@@ -64,6 +64,8 @@ internal sealed class PeepholeOptimizer {
         for (int i = 0; i < _optimizationTrees.Length; i++) {
             _optimizationTrees[i] = new Dictionary<DreamProcOpcode, OptimizationTreeEntry>();
         }
+
+        GetOptimizations();
     }
 
     /// Setup <see cref="_optimizationTrees"/> for each <see cref="OptPass"/>
@@ -107,7 +109,6 @@ internal sealed class PeepholeOptimizer {
     }
 
     public void RunPeephole(List<IAnnotatedBytecode> input) {
-        GetOptimizations();
         foreach (var optPass in _passes) {
             RunPass((byte)optPass, input);
         }

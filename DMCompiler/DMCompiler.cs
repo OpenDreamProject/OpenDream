@@ -300,15 +300,21 @@ public class DMCompiler {
     }
 
     private string SaveJson(List<DreamMapJson> maps, string interfaceFile, string outputFile) {
+        if (!string.IsNullOrWhiteSpace(interfaceFile) &&
+                Path.GetDirectoryName(Path.GetFullPath(outputFile)) is { } interfaceDirectory) {
+            interfaceFile = Path.GetRelativePath(interfaceDirectory, interfaceFile);
+            DMObjectTree.Resources.Add(interfaceFile); // Ensure the DMF is included in the list of resources
+        } else {
+            interfaceFile = string.Empty;
+        }
+
         var jsonRep = DMObjectTree.CreateJsonRepresentation();
         var compiledDream = new DreamCompiledJson {
             Metadata = new DreamCompiledJsonMetadata { Version = OpcodeVerifier.GetOpcodesHash() },
             Strings = DMObjectTree.StringTable,
             Resources = DMObjectTree.Resources.ToArray(),
             Maps = maps,
-            Interface = string.IsNullOrEmpty(interfaceFile)
-                ? ""
-                : Path.GetRelativePath(Path.GetDirectoryName(Path.GetFullPath(outputFile)), interfaceFile),
+            Interface = interfaceFile,
             Types = jsonRep.Item1,
             Procs = jsonRep.Item2
         };

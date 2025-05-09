@@ -6,9 +6,7 @@ using OpenDreamClient.Resources;
 using OpenDreamClient.States;
 using OpenDreamShared;
 using OpenDreamShared.Network.Messages;
-using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
-using Robust.Client.Map;
 using Robust.Client.UserInterface;
 using Robust.Client.WebView;
 using Robust.Shared;
@@ -22,7 +20,6 @@ namespace OpenDreamClient;
 public sealed class EntryPoint : GameClient {
     [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
     [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
-    [Dependency] private readonly IOverlayManager _overlayManager = default!;
     [Dependency] private readonly ILightManager _lightManager = default!;
     [Dependency] private readonly IConfigurationManager _configurationManager = default!;
     [Dependency] private readonly IClientNetManager _netManager = default!;
@@ -38,11 +35,11 @@ public sealed class EntryPoint : GameClient {
         // SS14 supports fullscreen, but it breaks us horribly. This disables fullscreen if it's already set.
         config.SetCVar(CVars.DisplayWindowMode, 0);
 
+        config.SetCVar(CVars.RenderTileEdges, false);
+
         if (config.GetCVar(OpenDreamCVars.SpoofIEUserAgent)) {
             config.OverrideDefault(WCVars.WebUserAgentOverride, UserAgent);
         }
-
-        IoCManager.Resolve<IEntitySystemManager>().SystemLoaded += OnEntitySystemLoaded;
     }
 
     public override void Init() {
@@ -112,16 +109,5 @@ public sealed class EntryPoint : GameClient {
         }
 
         clientAppearanceSystem.SetAllAppearances(message.AllAppearances);
-    }
-
-    // As of RobustToolbox v0.90.0.0 there's a TileEdgeOverlay that breaks our rendering
-    // because we don't have an ITileDefinition for each tile.
-    // This removes that overlay immediately after MapSystem adds it.
-    // TODO: Fix this engine-side
-    private void OnEntitySystemLoaded(object? sender, SystemChangedArgs e) {
-        if (e.System is not MapSystem)
-            return;
-
-        _overlayManager.RemoveOverlay<TileEdgeOverlay>();
     }
 }

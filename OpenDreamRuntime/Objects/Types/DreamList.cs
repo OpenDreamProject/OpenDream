@@ -14,7 +14,9 @@ namespace OpenDreamRuntime.Objects.Types;
 public class DreamList : DreamObject {
     private readonly List<DreamValue> _values;
     private Dictionary<DreamValue, DreamValue>? _associativeValues;
-
+    #if TOOLS
+    private ProfilerMemory? _tracyContentsMemoryId;
+    #endif
     public override bool ShouldCallNew => false;
 
     public virtual bool IsAssociative => (_associativeValues != null && _associativeValues.Count > 0);
@@ -29,6 +31,10 @@ public class DreamList : DreamObject {
     public DreamList(DreamObjectDefinition listDef, List<DreamValue> values, Dictionary<DreamValue, DreamValue>? associativeValues) : base(listDef) {
         _values = values;
         _associativeValues = associativeValues;
+        #if TOOLS
+        _tracyMemoryId = Profiler.BeginMemoryZone(1, "/list instance");
+        _tracyContentsMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamList>() + _values.Count * Unsafe.SizeOf<DreamValue>() + (_associativeValues?.Count ?? 0) * Unsafe.SizeOf<DreamValue>()), "/list contents");
+        #endif
     }
 
     public override void Initialize(DreamProcArguments args) {
@@ -128,6 +134,10 @@ public class DreamList : DreamObject {
             _associativeValues ??= new Dictionary<DreamValue, DreamValue>(1);
             _associativeValues[key] = value;
         }
+        #if TOOLS
+        _tracyContentsMemoryId?.ReleaseMemory();
+        _tracyContentsMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamList>() + _values.Count * Unsafe.SizeOf<DreamValue>() + (_associativeValues?.Count ?? 0) * Unsafe.SizeOf<DreamValue>()), "/list contents");
+        #endif
     }
 
     public virtual void RemoveValue(DreamValue value) {
@@ -137,10 +147,18 @@ public class DreamList : DreamObject {
             _associativeValues?.Remove(value);
             _values.RemoveAt(valueIndex);
         }
+        #if TOOLS
+        _tracyContentsMemoryId?.ReleaseMemory();
+        _tracyContentsMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamList>() + _values.Count * Unsafe.SizeOf<DreamValue>() + (_associativeValues?.Count ?? 0) * Unsafe.SizeOf<DreamValue>()), "/list contents");
+        #endif
     }
 
     public virtual void AddValue(DreamValue value) {
         _values.Add(value);
+        #if TOOLS
+        _tracyContentsMemoryId?.ReleaseMemory();
+        _tracyContentsMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamList>() + _values.Count * Unsafe.SizeOf<DreamValue>() + (_associativeValues?.Count ?? 0) * Unsafe.SizeOf<DreamValue>()), "/list contents");
+        #endif
     }
 
     //Does not include associations
@@ -177,10 +195,18 @@ public class DreamList : DreamObject {
 
         if (end > start)
             _values.RemoveRange(start - 1, end - start);
+        #if TOOLS
+        _tracyContentsMemoryId?.ReleaseMemory();
+        _tracyContentsMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamList>() + _values.Count * Unsafe.SizeOf<DreamValue>() + (_associativeValues?.Count ?? 0) * Unsafe.SizeOf<DreamValue>()), "/list contents");
+        #endif
     }
 
     public void Insert(int index, DreamValue value) {
         _values.Insert(index - 1, value);
+        #if TOOLS
+        _tracyContentsMemoryId?.ReleaseMemory();
+        _tracyContentsMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamList>() + _values.Count * Unsafe.SizeOf<DreamValue>() + (_associativeValues?.Count ?? 0) * Unsafe.SizeOf<DreamValue>()), "/list contents");
+        #endif
     }
 
     public void Swap(int index1, int index2) {
@@ -200,6 +226,10 @@ public class DreamList : DreamObject {
         } else {
             Cut(size + 1);
         }
+        #if TOOLS
+        _tracyContentsMemoryId?.ReleaseMemory();
+        _tracyContentsMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamList>() + _values.Count * Unsafe.SizeOf<DreamValue>() + (_associativeValues?.Count ?? 0) * Unsafe.SizeOf<DreamValue>()), "/list contents");
+        #endif
     }
 
     public virtual int GetLength() {

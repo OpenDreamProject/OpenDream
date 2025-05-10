@@ -25,6 +25,7 @@ public class DreamResource(int id, string? filePath, string? resourcePath) {
             _tracyMemoryId?.ReleaseMemory();
             _tracyMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamResource>() + (value?.Length ?? 0)), "resource");
             #endif
+            _resourceDataBacking = value;
         }
     }
 

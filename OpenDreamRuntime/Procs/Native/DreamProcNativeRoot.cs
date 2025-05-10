@@ -17,6 +17,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
 using DMCompiler.DM;
+using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects.Types;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
@@ -391,6 +392,36 @@ internal static class DreamProcNativeRoot {
         return new DreamValue(char.ConvertFromUtf32(asciiValue));
     }
 
+    public static DreamList Block(DreamObjectTree objectTree, IDreamMapManager mapManager,
+        DreamObjectTurf corner1, DreamObjectTurf corner2) {
+        return Block(objectTree, mapManager, corner1.X, corner1.Y, corner1.Z, corner2.X, corner2.Y, corner2.Z);
+    }
+
+    public static DreamList Block(DreamObjectTree objectTree, IDreamMapManager mapManager,
+        int x1, int y1, int z1, int x2, int y2, int z2) {
+        int startX = Math.Min(x1, x2);
+        int startY = Math.Min(y1, y2);
+        int startZ = Math.Min(z1, z2);
+        int endX = Math.Max(x1, x2);
+        int endY = Math.Max(y1, y2);
+        int endZ = Math.Max(z1, z2);
+
+        DreamList turfs = objectTree.CreateList((endX - startX + 1) * (endY - startY + 1) * (endZ - startZ + 1));
+
+        // Collected in z-y-x order
+        for (int z = startZ; z <= endZ; z++) {
+            for (int y = startY; y <= endY; y++) {
+                for (int x = startX; x <= endX; x++) {
+                    if (mapManager.TryGetTurfAt((x, y), z, out var turf)) {
+                        turfs.AddValue(new DreamValue(turf));
+                    }
+                }
+            }
+        }
+
+        return turfs;
+    }
+
     [DreamProc("block")]
     [DreamProcParameter("Start", Type = DreamValueTypeFlag.DreamObject | DreamValueTypeFlag.Float)]
     [DreamProcParameter("End", Type = DreamValueTypeFlag.DreamObject | DreamValueTypeFlag.Float)]
@@ -399,61 +430,35 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("EndY", Type = DreamValueTypeFlag.Float)]
     [DreamProcParameter("EndZ", Type = DreamValueTypeFlag.Float)]
     public static DreamValue NativeProc_block(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-        (int X, int Y, int Z) startPos;
-        (int X, int Y, int Z) endPos;
-        if (bundle.GetArgument(0, "Start").TryGetValueAsDreamObject<DreamObjectTurf>(out var startT)) {
-            if (!bundle.GetArgument(1, "End").TryGetValueAsDreamObject<DreamObjectTurf>(out var endT))
+        var arg1 = bundle.GetArgument(0, "Start");
+        var arg2 = bundle.GetArgument(1, "End");
+
+        if (arg1.TryGetValueAsDreamObject<DreamObjectTurf>(out var startT)) {
+            if (!arg2.TryGetValueAsDreamObject<DreamObjectTurf>(out var endT))
                 return new DreamValue(bundle.ObjectTree.CreateList());
 
-            startPos = (startT.X, startT.Y, startT.Z);
-            endPos = (endT.X, endT.Y, endT.Z);
+            return new(Block(bundle.ObjectTree, bundle.MapManager, startT, endT));
         } else {
             // Need to check that we weren't passed something like block("cat", turf) which should return an empty list
-            if (bundle.GetArgument(1, "End").TryGetValueAsDreamObject<DreamObjectTurf>(out _)) {
+            if (arg2.TryGetValueAsDreamObject<DreamObjectTurf>(out _))
                 return new DreamValue(bundle.ObjectTree.CreateList());
-            }
+
             // coordinate-style
-            if (!bundle.GetArgument(0, "Start").TryGetValueAsInteger(out startPos.X)) {
-                startPos.X = 1; // First three default to 1 when passed null or invalid
-            }
-            if (!bundle.GetArgument(1, "End").TryGetValueAsInteger(out startPos.Y)) {
-                startPos.Y = 1;
-            }
-            if (!bundle.GetArgument(2, "StartZ").TryGetValueAsInteger(out startPos.Z)) {
-                startPos.Z = 1;
-            }
-            if (!bundle.GetArgument(3, "EndX").TryGetValueAsInteger(out endPos.X)) {
-                endPos.X = startPos.X; // Last three default to the start coords if null or invalid
-            }
-            if (!bundle.GetArgument(4, "EndY").TryGetValueAsInteger(out endPos.Y)) {
-                endPos.Y = startPos.Y;
-            }
-            if (!bundle.GetArgument(5, "EndZ").TryGetValueAsInteger(out endPos.Z)) {
-                endPos.Z = startPos.Z;
-            }
+            if (!arg1.TryGetValueAsInteger(out var x1))
+                x1 = 1; // First three default to 1 when passed null or invalid
+            if (!arg2.TryGetValueAsInteger(out var y1))
+                y1 = 1;
+            if (!bundle.GetArgument(2, "StartZ").TryGetValueAsInteger(out var z1))
+                z1 = 1;
+            if (!bundle.GetArgument(3, "EndX").TryGetValueAsInteger(out var x2))
+                x2 = x1; // Last three default to the start coords if null or invalid
+            if (!bundle.GetArgument(4, "EndY").TryGetValueAsInteger(out var y2))
+                y2 = y1;
+            if (!bundle.GetArgument(5, "EndZ").TryGetValueAsInteger(out var z2))
+                z2 = z1;
+
+            return new(Block(bundle.ObjectTree, bundle.MapManager, x1, y1, z1, x2, y2, z2));
         }
-
-        int startX = Math.Min(startPos.X, endPos.X);
-        int startY = Math.Min(startPos.Y, endPos.Y);
-        int startZ = Math.Min(startPos.Z, endPos.Z);
-        int endX = Math.Max(startPos.X, endPos.X);
-        int endY = Math.Max(startPos.Y, endPos.Y);
-        int endZ = Math.Max(startPos.Z, endPos.Z);
-
-        DreamList turfs = bundle.ObjectTree.CreateList((endX - startX + 1) * (endY - startY + 1) * (endZ - startZ + 1));
-
-        // Collected in z-y-x order
-        for (int z = startZ; z <= endZ; z++) {
-            for (int y = startY; y <= endY; y++) {
-                for (int x = startX; x <= endX; x++) {
-                    if (bundle.MapManager.TryGetTurfAt((x, y), z, out var turf)) {
-                        turfs.AddValue(new DreamValue(turf));
-                    }
-                }
-            }
-        }
-
-        return new DreamValue(turfs);
     }
 
     [DreamProc("ceil")]

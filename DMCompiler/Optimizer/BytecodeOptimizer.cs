@@ -27,14 +27,11 @@ public class BytecodeOptimizer(DMCompiler compiler) {
 
     private void RemoveUnreferencedLabels(List<IAnnotatedBytecode> input) {
         Dictionary<string, int>? labelReferences = null;
-        var labelCount = 0;
         for (int i = 0; i < input.Count; i++) {
-            switch (input[i])
-            {
+            switch (input[i]) {
                 case AnnotatedBytecodeLabel label:
                     labelReferences ??= new Dictionary<string, int>();
                     labelReferences.TryAdd(label.LabelName, 0);
-                    labelCount += 1;
                     break;
                 case AnnotatedBytecodeInstruction instruction: {
                     if (TryGetLabelName(instruction, out string? labelName)) {
@@ -50,6 +47,7 @@ public class BytecodeOptimizer(DMCompiler compiler) {
         }
 
         if (labelReferences == null) return;
+        var labelCount = labelReferences.Count;
 
         for (int i = 0; i < input.Count; i++) {
             if (input[i] is AnnotatedBytecodeLabel label) {
@@ -57,7 +55,7 @@ public class BytecodeOptimizer(DMCompiler compiler) {
                     input.RemoveAt(i);
                     i -= 1;
                 }
-                
+
                 labelCount -= 1;
                 if (labelCount <= 0) break;
             }

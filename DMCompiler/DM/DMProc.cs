@@ -123,14 +123,10 @@ namespace DMCompiler.DM {
             Location = astDefinition?.Location ?? Location.Unknown;
             _scopes.Push(new DMProcScope());
 
-            if (_astDefinition is not null && _astDefinition.Parameters.Length > 0) {
-                AddParameters(_astDefinition!.Parameters);
             if (_astDefinition is not null) {
-                if (_astDefinition.Parameters.Length > 0) {
-                    foreach (var parameter in _astDefinition!.Parameters) {
-                        AddParameter(parameter.Name, parameter.Type, parameter.ObjectType);
-                    }
-                }
+                if (_astDefinition.Parameters.Length > 0)
+                    AddParameters(_astDefinition!.Parameters);
+
                 foreach (var statement in _astDefinition!.Body?.SetStatements ?? Array.Empty<DMASTProcStatementSet>()) {
                     if (statement is DMASTAggregate<DMASTProcStatementSet> setAggregate) {
                         foreach (var setStatement in setAggregate.Statements) {

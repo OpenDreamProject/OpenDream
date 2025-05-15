@@ -49,7 +49,7 @@ public sealed class DMASTStringFormat(Location location, string value, DMASTExpr
 
 public sealed class DMASTList(Location location, DMASTCallParameter[] values, bool isAList) : DMASTExpression(location) {
     public readonly DMASTCallParameter[] Values = values;
-    public readonly bool IsAList; // list() or alist()
+    public readonly bool IsAList = isAList; // list() or alist()
 
     public bool AllValuesConstant() {
         return Values.All(

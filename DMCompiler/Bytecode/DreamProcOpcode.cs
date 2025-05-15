@@ -26,7 +26,8 @@ public enum DreamProcOpcode : byte {
     MultiplyReference = 0xB,
     [OpcodeMetadata(-1, OpcodeArgType.Label)]
     JumpIfFalse = 0xC,
-    // 0xD
+    [OpcodeMetadata(0, OpcodeArgType.ListSize)]
+    CreateStrictAssociativeList = 0xD,
     [OpcodeMetadata(0, OpcodeArgType.Label)]
     Jump = 0xE,
     [OpcodeMetadata(-1)]

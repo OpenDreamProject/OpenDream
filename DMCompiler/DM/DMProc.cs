@@ -425,6 +425,12 @@ namespace DMCompiler.DM {
             WriteListSize(size);
         }
 
+        public void CreateStrictAssociativeList(int size) {
+            ResizeStack(-(size * 2 - 1)); //Shrinks by twice the size of the alist, grows by 1
+            WriteOpcode(DreamProcOpcode.CreateStrictAssociativeList);
+            WriteListSize(size);
+        }
+
         public string NewLabelName() {
             return "label" + _labelIdCounter++;
         }

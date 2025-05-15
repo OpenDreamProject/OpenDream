@@ -2545,7 +2545,8 @@ namespace DMCompiler.Compiler.DM {
 
                 switch (procName) {
                     // Any number of arguments
-                    case "list": return new DMASTList(callLoc, callParameters);
+                    case "list": return new DMASTList(callLoc, callParameters, false);
+                    case "alist": return new DMASTList(callLoc, callParameters, true);
                     case "newlist": return new DMASTNewList(callLoc, callParameters);
                     case "addtext": return new DMASTAddText(callLoc, callParameters);
                     case "gradient": return new DMASTGradient(callLoc, callParameters);

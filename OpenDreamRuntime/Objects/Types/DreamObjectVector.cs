@@ -139,7 +139,19 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
     }
 
     public override DreamValue OperatorMultiplyRef(DreamValue b, DMProcState state) {
-        return OperatorMultiply(b, state);
+        if (b.TryGetValueAsFloat(out float scalar)) {
+            X *= scalar;
+            Y *= scalar;
+            Z *= scalar;
+            return new DreamValue(this);
+        } else if (b.TryGetValueAsDreamObject<DreamObjectVector>(out var right)) {
+            X *= right.X;
+            Y *= right.Y;
+            Z *= right.Z;
+            return new DreamValue(this);
+        }
+
+        return base.OperatorMultiplyRef(b, state);
     }
 
     public override DreamValue OperatorDivide(DreamValue b, DMProcState state) {
@@ -171,7 +183,22 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
     }
 
     public override DreamValue OperatorDivideRef(DreamValue b, DMProcState state) {
-        return OperatorDivide(b, state);
+        if (b.TryGetValueAsFloat(out float scalar)) {
+            if (scalar == 0) throw new DivideByZeroException("Cannot divide vector by zero");
+            X /= scalar;
+            Y /= scalar;
+            Z /= scalar;
+            return new DreamValue(this);
+        } else if (b.TryGetValueAsDreamObject<DreamObjectVector>(out var right)) {
+            if (right.X == 0 || right.Y == 0 || (Is3D && right.Z == 0))
+                throw new DivideByZeroException("Cannot divide vector by zero vector component");
+            X /= right.X;
+            Y /= right.Y;
+            Z = right.Z == 0 ? 0 : Z / right.Z;
+            return new DreamValue(this);
+        }
+
+        return base.OperatorDivideRef(b, state);
     }
 
     public override DreamValue OperatorAppend(DreamValue b) {

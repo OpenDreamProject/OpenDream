@@ -88,7 +88,7 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
 
     public override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
         if (b.TryGetValueAsDreamObject<DreamObjectVector>(out var right)) {
-            DreamObjectVector output = new(ObjectDefinition);
+            var output = new DreamObjectVector(ObjectDefinition);
             output.X = X + right.X;
             output.Y = Y + right.Y;
             output.Is3D = Is3D || right.Is3D;
@@ -102,7 +102,7 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
 
     public override DreamValue OperatorSubtract(DreamValue b, DMProcState state) {
         if (b.TryGetValueAsDreamObject<DreamObjectVector>(out var right)) {
-            DreamObjectVector output = new(ObjectDefinition);
+            var output = new DreamObjectVector(ObjectDefinition);
             output.X = X - right.X;
             output.Y = Y - right.Y;
             output.Is3D = Is3D || right.Is3D;
@@ -116,14 +116,14 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
 
     public override DreamValue OperatorMultiply(DreamValue b, DMProcState state) {
         if (b.TryGetValueAsFloat(out float scalar)) {
-            DreamObjectVector output = new(ObjectDefinition);
+            var output = new DreamObjectVector(ObjectDefinition);
             output.X = X * scalar;
             output.Y = Y * scalar;
             output.Is3D = Is3D;
             output.Z = Z * scalar;
             return new DreamValue(output);
         } else if (b.TryGetValueAsDreamObject<DreamObjectVector>(out var right)) {
-            DreamObjectVector output = new(ObjectDefinition);
+            var output = new DreamObjectVector(ObjectDefinition);
             output.X = X * right.X;
             output.Y = Y * right.Y;
             output.Z = Z * right.Z;
@@ -141,7 +141,7 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
         if (b.TryGetValueAsFloat(out float scalar)) {
             if (scalar == 0) throw new DivideByZeroException("Cannot divide vector by zero");
 
-            DreamObjectVector output = new(ObjectDefinition);
+            var output = new DreamObjectVector(ObjectDefinition);
             output.X = X / scalar;
             output.Y = Y / scalar;
             output.Is3D = Is3D;
@@ -152,7 +152,7 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
             if (right.X == 0 || right.Y == 0 || (Is3D && right.Z == 0))
                 throw new DivideByZeroException("Cannot divide vector by zero vector component");
 
-            DreamObjectVector output = new(ObjectDefinition);
+            var output = new DreamObjectVector(ObjectDefinition);
             output.X = X / right.X;
             output.Y = Y / right.Y;
             output.Is3D = Is3D;

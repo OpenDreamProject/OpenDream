@@ -293,6 +293,8 @@ internal sealed class IsSaved(Location location, DMExpression expr) : DMExpressi
 
 // astype(x, y)
 internal sealed class AsType(Location location, DMExpression expr, DMExpression path) : DMExpression(location) {
+    public override DreamPath? Path => path.Path;
+
     public override void EmitPushValue(ExpressionContext ctx) {
         expr.EmitPushValue(ctx);
         path.EmitPushValue(ctx);
@@ -302,6 +304,8 @@ internal sealed class AsType(Location location, DMExpression expr, DMExpression 
 
 // astype(x)
 internal sealed class AsTypeInferred(Location location, DMExpression expr, DreamPath path) : DMExpression(location) {
+    public override DreamPath? Path => path;
+
     public override void EmitPushValue(ExpressionContext ctx) {
         if (!ctx.ObjectTree.TryGetTypeId(path, out var typeId)) {
             ctx.Compiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {path} does not exist");

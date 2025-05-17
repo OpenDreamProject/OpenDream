@@ -88,11 +88,12 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
 
     public override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
         if (b.TryGetValueAsDreamObject<DreamObjectVector>(out var right)) {
-            var output = new DreamObjectVector(ObjectDefinition);
-            output.X = X + right.X;
-            output.Y = Y + right.Y;
-            output.Is3D = Is3D || right.Is3D;
-            output.Z = Z + right.Z;
+            var output = new DreamObjectVector(ObjectDefinition) {
+                X = X + right.X,
+                Y = Y + right.Y,
+                Is3D = Is3D || right.Is3D,
+                Z = Z + right.Z
+            };
 
             return new DreamValue(output);
         }
@@ -102,11 +103,12 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
 
     public override DreamValue OperatorSubtract(DreamValue b, DMProcState state) {
         if (b.TryGetValueAsDreamObject<DreamObjectVector>(out var right)) {
-            var output = new DreamObjectVector(ObjectDefinition);
-            output.X = X - right.X;
-            output.Y = Y - right.Y;
-            output.Is3D = Is3D || right.Is3D;
-            output.Z = Z - right.Z;
+            var output = new DreamObjectVector(ObjectDefinition) {
+                X = X - right.X,
+                Y = Y - right.Y,
+                Is3D = Is3D || right.Is3D,
+                Z = Z - right.Z
+            };
 
             return new DreamValue(output);
         }
@@ -116,17 +118,20 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
 
     public override DreamValue OperatorMultiply(DreamValue b, DMProcState state) {
         if (b.TryGetValueAsFloat(out float scalar)) {
-            var output = new DreamObjectVector(ObjectDefinition);
-            output.X = X * scalar;
-            output.Y = Y * scalar;
-            output.Is3D = Is3D;
-            output.Z = Z * scalar;
+            var output = new DreamObjectVector(ObjectDefinition) {
+                X = X * scalar,
+                Y = Y * scalar,
+                Is3D = Is3D,
+                Z = Z * scalar
+            };
             return new DreamValue(output);
         } else if (b.TryGetValueAsDreamObject<DreamObjectVector>(out var right)) {
-            var output = new DreamObjectVector(ObjectDefinition);
-            output.X = X * right.X;
-            output.Y = Y * right.Y;
-            output.Z = Z * right.Z;
+            var output = new DreamObjectVector(ObjectDefinition) {
+                X = X * right.X,
+                Y = Y * right.Y,
+                Is3D = Is3D || right.Is3D,
+                Z = Z * right.Z
+            };
             return new DreamValue(output);
         }
 
@@ -141,22 +146,24 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
         if (b.TryGetValueAsFloat(out float scalar)) {
             if (scalar == 0) throw new DivideByZeroException("Cannot divide vector by zero");
 
-            var output = new DreamObjectVector(ObjectDefinition);
-            output.X = X / scalar;
-            output.Y = Y / scalar;
-            output.Is3D = Is3D;
-            output.Z = Z / scalar;
+            var output = new DreamObjectVector(ObjectDefinition) {
+                X = X / scalar,
+                Y = Y / scalar,
+                Is3D = Is3D,
+                Z = Z / scalar
+            };
 
             return new DreamValue(output);
         } else if (b.TryGetValueAsDreamObject<DreamObjectVector>(out var right)) {
             if (right.X == 0 || right.Y == 0 || (Is3D && right.Z == 0))
                 throw new DivideByZeroException("Cannot divide vector by zero vector component");
 
-            var output = new DreamObjectVector(ObjectDefinition);
-            output.X = X / right.X;
-            output.Y = Y / right.Y;
-            output.Is3D = Is3D;
-            output.Z = right.Z == 0 ? 0 : Z / right.Z;
+            var output = new DreamObjectVector(ObjectDefinition) {
+                X = X / right.X,
+                Y = Y / right.Y,
+                Is3D = Is3D || right.Is3D,
+                Z = right.Z == 0 ? 0 : Z / right.Z
+            };
             return new DreamValue(output);
         }
 

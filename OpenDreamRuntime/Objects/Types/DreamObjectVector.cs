@@ -4,9 +4,9 @@ using OpenDreamRuntime.Procs;
 namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamObject(definition) {
-    public float X, Y;
+    public double X, Y;
 
-    public float Z {
+    public double Z {
         get => Is3D ? _z : 0;
         set {
             if (!Is3D)
@@ -17,8 +17,8 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
 
     public bool Is3D { get; private set; }
 
-    public float Size {
-        get => MathF.Sqrt(X * X + Y * Y + Z * Z);
+    public double Size {
+        get => Math.Sqrt(X * X + Y * Y + Z * Z);
         set {
             if (X == 0 && Y == 0 && Z == 0)
                 return;
@@ -30,7 +30,7 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
         }
     }
 
-    private float _z;
+    private double _z;
 
     public override void Initialize(DreamProcArguments args) {
         base.Initialize(args);

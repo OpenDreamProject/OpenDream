@@ -1,6 +1,6 @@
 /vector
-	var/len = null as num
-	var/size = null as num
+	var/len = null as num|null
+	var/size = null as num|null
 	var/x = 0 as num
 	var/y = 0 as num
 	var/z = 0 as num

@@ -199,7 +199,6 @@ internal sealed partial class DreamViewOverlay : Overlay {
         current.RenderTarget = icon.Appearance.RenderTarget;
         current.AppearanceFlags = icon.Appearance.AppearanceFlags;
         current.BlendMode = icon.Appearance.BlendMode;
-        current.MouseOpacity = icon.Appearance.MouseOpacity;
 
         //reverse rotation transforms because of 180 flip from RenderTarget->world transform
         Matrix3x2 iconAppearanceTransformMatrix = new Matrix3x2(
@@ -208,18 +207,23 @@ internal sealed partial class DreamViewOverlay : Overlay {
             icon.Appearance.Transform[4], icon.Appearance.Transform[5]
         );
 
-        if (parentIcon != null) {
+        if (parentIcon != null)
+        {
             current.ClickUid = parentIcon.ClickUid;
-            if ((icon.Appearance.AppearanceFlags & AppearanceFlags.ResetColor) != 0 || keepTogether) { //RESET_COLOR
+            current.MouseOpacity = parentIcon.MouseOpacity;
+            if ((icon.Appearance.AppearanceFlags & AppearanceFlags.ResetColor) != 0 || keepTogether)
+            { //RESET_COLOR
                 current.ColorToApply = icon.Appearance.Color;
                 current.ColorMatrixToApply = icon.Appearance.ColorMatrix;
-            } else {
+            }
+            else
+            {
                 current.ColorToApply = parentIcon.ColorToApply * icon.Appearance.Color;
                 ColorMatrix.Multiply(in parentIcon.ColorMatrixToApply, in icon.Appearance.ColorMatrix, out current.ColorMatrixToApply);
             }
 
             if ((icon.Appearance.AppearanceFlags & AppearanceFlags.ResetAlpha) != 0 || keepTogether) //RESET_ALPHA
-                current.AlphaToApply = icon.Appearance.Alpha/255.0f;
+                current.AlphaToApply = icon.Appearance.Alpha / 255.0f;
             else
                 current.AlphaToApply = parentIcon.AlphaToApply * (icon.Appearance.Alpha / 255.0f);
 
@@ -241,10 +245,11 @@ internal sealed partial class DreamViewOverlay : Overlay {
         } else {
             current.ColorToApply = icon.Appearance.Color;
             current.ColorMatrixToApply = icon.Appearance.ColorMatrix;
-            current.AlphaToApply = icon.Appearance.Alpha/255.0f;
+            current.AlphaToApply = icon.Appearance.Alpha / 255.0f;
             current.TransformToApply = iconAppearanceTransformMatrix;
             current.Plane = icon.Appearance.Plane;
             current.Layer = Math.Max(0, icon.Appearance.Layer); //float layers are invalid for icons with no parent
+            current.MouseOpacity = icon.Appearance.MouseOpacity;
         }
 
         //special handling for EFFECTS_LAYER and BACKGROUND_LAYER

@@ -294,6 +294,7 @@ internal sealed class IsSaved(Location location, DMExpression expr) : DMExpressi
 // astype(x, y)
 internal sealed class AsType(Location location, DMExpression expr, DMExpression path) : DMExpression(location) {
     public override DreamPath? Path => path.Path;
+    public override bool PathIsFuzzy => path is not ConstantTypeReference;
 
     public override void EmitPushValue(ExpressionContext ctx) {
         expr.EmitPushValue(ctx);

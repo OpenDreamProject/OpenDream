@@ -792,7 +792,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 case "url":
                     return _netManager.ServerChannel?.RemoteEndPoint.ToString() ?? string.Empty; // TODO: Port should be 0 "if connected to a local .dmb file"
                 case "dpi":
-                    return (_clyde.DefaultWindowScale.X.ToString());
+                    return (_clyde.DefaultWindowScale.X.ToString(CultureInfo.InvariantCulture));
                 default:
                     _sawmill.Error($"Special winget \"{queryValue}\" is not implemented");
                     return string.Empty;

@@ -73,7 +73,7 @@ public class DMCompiler {
         if (settings.SuppressUnsupportedAccessWarnings)
         {
             Emit(WarningCode.UnsupportedAccess, Location.Internal,
-                "Unimplemented proc & var warnings are currently suppressed");
+                "Unsupported proc & var warnings are currently suppressed");
         }
 
         if (successfulCompile)

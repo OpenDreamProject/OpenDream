@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Text;
+using System.Globalization;
 using OpenDreamShared.Network.Messages;
 using OpenDreamClient.Interface.Controls;
 using OpenDreamClient.Interface.Descriptors;

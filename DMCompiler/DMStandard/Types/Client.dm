@@ -43,7 +43,7 @@
 	var/preload_rsc = 1 as opendream_unimplemented
 	var/fps = 0 as opendream_unimplemented
 	var/dir = NORTH as opendream_unimplemented
-	var/gender = "neuter" as opendream_unimplemented
+	var/gender = "neuter" as opendream_unsupported
 	var/glide_size as opendream_unimplemented
 	var/virtual_eye as opendream_unimplemented
 
@@ -157,16 +157,16 @@
 		object.MouseWheel(delta_x,delta_y,location,control,params)
 
 	proc/IsByondMember()
-		set opendream_unimplemented = TRUE
+		set opendream_unsupported = "Opendream has no premium tier."
 		return FALSE
 	proc/CheckPassport(passport_identifier)
-		set opendream_unimplemented = TRUE
+		set opendream_unsupported = "Opendream does not support subscribing to games"
 	proc/SendPage(msg, recipient, options)
-		set opendream_unimplemented = TRUE
+		set opendream_unsupported = "Opendream does not implement a pager"
 	proc/GetAPI(Api, Name)
-		set opendream_unimplemented = TRUE
+		set opendream_unimplemented = "Steam Achievements API will not be supported"
 	proc/SetAPI(Api, Key, Value)
-		set opendream_unimplemented = TRUE
+		set opendream_unimplemented = "Steam Achievements API will not be supported"
 	proc/RenderIcon(object)
 		set opendream_unimplemented = TRUE
 		return object

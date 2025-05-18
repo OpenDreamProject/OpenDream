@@ -70,19 +70,31 @@ public class DMCompiler {
             Emit(WarningCode.UnimplementedAccess, Location.Internal,
                 "Unimplemented proc & var warnings are currently suppressed");
         }
+        if (settings.SuppressUnsupportedAccessWarnings)
+        {
+            Emit(WarningCode.UnsupportedAccess, Location.Internal,
+                "Unimplemented proc & var warnings are currently suppressed");
+        }
 
-        if (successfulCompile) {
+        if (successfulCompile)
+        {
             //Output file is the first file with the extension changed to .json
             string outputFile = Path.ChangeExtension(settings.Files[0], "json");
             List<DreamMapJson> maps = ConvertMaps(this, preprocessor.IncludedMaps);
 
-            if (ErrorCount > 0) {
+            if (ErrorCount > 0)
+            {
                 successfulCompile = false;
-            } else {
+            }
+            else
+            {
                 var output = SaveJson(maps, preprocessor.IncludedInterface, outputFile);
-                if (ErrorCount > 0) {
+                if (ErrorCount > 0)
+                {
                     successfulCompile = false;
-                } else {
+                }
+                else
+                {
                     Console.WriteLine($"Compilation succeeded with {WarningCount} warnings");
                     Console.WriteLine(output);
                 }
@@ -271,7 +283,15 @@ public class DMCompiler {
         Emit(WarningCode.UnimplementedAccess, loc, message);
     }
 
-    public void VerbosePrint(string message) {
+    public void Unsupportedwarning(Location loc, string message) {
+        if (Settings.SuppressUnsupportedAccessWarnings)
+            return;
+
+        Emit(WarningCode.UnsupportedAccess, loc, message);
+    }
+
+    public void VerbosePrint(string message)
+    {
         if (!Settings.Verbose) return;
 
         TimeSpan duration = DateTime.Now - _compileStartTime;
@@ -405,6 +425,7 @@ public class DMCompiler {
 public struct DMCompilerSettings {
     public List<string>? Files = null;
     public bool SuppressUnimplementedWarnings = false;
+    public bool SuppressUnsupportedAccessWarnings = false;
     /// <summary> Typechecking won't fail if the RHS type is "as anything" to ease migration, thus only emitting for explicit mismatches (e.g. "num" and "text") </summary>
     public bool SkipAnythingTypecheck = false;
     public bool NoticesEnabled = false;

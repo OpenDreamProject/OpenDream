@@ -68,6 +68,7 @@ public enum WarningCode {
     ImplicitNullType = 2703, //  Raised when a null variable isn't explicitly statically typed as nullable
     LostTypeInfo = 2704, // An operation led to lost type information
     UnimplementedAccess = 2800, // When accessing unimplemented procs and vars
+    UnsupportedAccess  = 2801, // accessing procs and vars that wont be implemented
 
     // 3000 - 3999 are reserved for stylistic configuration.
     EmptyBlock = 3100,

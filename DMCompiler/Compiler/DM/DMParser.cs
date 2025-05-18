@@ -2848,6 +2848,7 @@ namespace DMCompiler.Compiler.DM {
                 case "icon": return DMValueType.Icon;
                 case "path": return DMValueType.Path;
                 case "opendream_unimplemented": return DMValueType.Unimplemented;
+                case "opendream_unsupported": return DMValueType.Unsupported;
                 case "opendream_compiletimereadonly": return DMValueType.CompiletimeReadonly;
                 case "opendream_noconstfold": return DMValueType.NoConstFold;
                 default:

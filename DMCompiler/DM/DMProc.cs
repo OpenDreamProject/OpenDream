@@ -377,6 +377,12 @@ namespace DMCompiler.DM {
                         Attributes &= ~ProcAttributes.Unimplemented;
                     break;
                 }
+                case "opendream_unsupported":
+                    if (constant.IsTruthy())
+                        Attributes |= ProcAttributes.Unsupported;
+                    else
+                        Attributes &= ~ProcAttributes.Unsupported;
+                    break;
                 case "hidden":
                     if (constant.IsTruthy())
                         Attributes |= ProcAttributes.Hidden;

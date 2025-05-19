@@ -207,17 +207,13 @@ internal sealed partial class DreamViewOverlay : Overlay {
             icon.Appearance.Transform[4], icon.Appearance.Transform[5]
         );
 
-        if (parentIcon != null)
-        {
+        if (parentIcon != null) {
             current.ClickUid = parentIcon.ClickUid;
             current.MouseOpacity = parentIcon.MouseOpacity;
-            if ((icon.Appearance.AppearanceFlags & AppearanceFlags.ResetColor) != 0 || keepTogether)
-            { //RESET_COLOR
+            if ((icon.Appearance.AppearanceFlags & AppearanceFlags.ResetColor) != 0 || keepTogether) { //RESET_COLOR
                 current.ColorToApply = icon.Appearance.Color;
                 current.ColorMatrixToApply = icon.Appearance.ColorMatrix;
-            }
-            else
-            {
+            } else {
                 current.ColorToApply = parentIcon.ColorToApply * icon.Appearance.Color;
                 ColorMatrix.Multiply(in parentIcon.ColorMatrixToApply, in icon.Appearance.ColorMatrix, out current.ColorMatrixToApply);
             }

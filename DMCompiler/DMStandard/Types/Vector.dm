@@ -1,7 +1,6 @@
 /vector
-	// TODO: Verify these default values
-	var/len = 2 as num
-	var/size = 0 as num
+	var/len = null as num|null
+	var/size = null as num|null
 	var/x = 0 as num
 	var/y = 0 as num
 	var/z = 0 as num
@@ -12,13 +11,14 @@
 		set opendream_unimplemented = TRUE
 	
 	proc/Dot(vector/B)
-		set opendream_unimplemented = TRUE
+		return x * B.x + y * B.y + z * B.z
 	
 	proc/Interpolate(vector/B, t)
-		set opendream_unimplemented = TRUE
+		return src + (B-src) * t
 	
 	proc/Normalize()
-		set opendream_unimplemented = TRUE
+		size = 1
+		return src
 	
 	proc/Turn(angle)
 		set opendream_unimplemented = TRUE

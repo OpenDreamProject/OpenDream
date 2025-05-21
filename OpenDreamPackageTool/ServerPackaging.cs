@@ -214,6 +214,13 @@ public static class ServerPackaging {
         string sourceDir = Path.Combine("bin", "Content.Server");
         string runtimesDir = $"runtimes/{platform.RId}/";
 
-        Program.CopyDirectory(Path.Combine(sourceDir, runtimesDir), Path.Combine(releaseDir, runtimesDir));
+        if (platform.TargetOs == "Windows") { // Windows wants the DLL beside the exe
+            var dllSrc = Path.Combine(sourceDir, runtimesDir, "native/byondcore.dll");
+            var dllDst = Path.Combine(releaseDir, "byondcore.dll");
+
+            File.Copy(dllSrc, dllDst);
+        } else { // Otherwise, copy the respective runtimes/ folder
+            Program.CopyDirectory(Path.Combine(sourceDir, runtimesDir), Path.Combine(releaseDir, runtimesDir));
+        }
     }
 }

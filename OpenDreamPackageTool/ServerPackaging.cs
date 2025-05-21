@@ -149,6 +149,7 @@ public static class ServerPackaging {
         Program.CopyDirectory($"RobustToolbox/bin/Server/{platform.RId}/publish", releaseDir, BinSkipFolders);
         CopyResources(Path.Combine(releaseDir, "Resources"));
         CopyContentAssemblies(Path.Combine(releaseDir, "Resources", "Assemblies"));
+        CopyNatives(platform, releaseDir);
         if (options.HybridAcz) {
             // Hybrid ACZ expects "Content.Client.zip" (as it's not OpenDream-specific)
             ZipFile.CreateFromDirectory(Path.Combine(options.OutputDir, "OpenDreamClient"), Path.Combine(releaseDir, "Content.Client.zip"));
@@ -206,6 +207,20 @@ public static class ServerPackaging {
 
         foreach (var file in files) {
             File.Copy(Path.Combine(sourceDir, file), Path.Combine(dest, file));
+        }
+    }
+
+    private static void CopyNatives(PlatformReg platform, string releaseDir) {
+        string sourceDir = Path.Combine("bin", "Content.Server");
+        string runtimesDir = $"runtimes/{platform.RId}/";
+
+        if (platform.TargetOs == "Windows") { // Windows wants the DLL beside the exe
+            var dllSrc = Path.Combine(sourceDir, runtimesDir, "native/byondcore.dll");
+            var dllDst = Path.Combine(releaseDir, "byondcore.dll");
+
+            File.Copy(dllSrc, dllDst);
+        } else { // Otherwise, copy the respective runtimes/ folder
+            Program.CopyDirectory(Path.Combine(sourceDir, runtimesDir), Path.Combine(releaseDir, runtimesDir));
         }
     }
 }

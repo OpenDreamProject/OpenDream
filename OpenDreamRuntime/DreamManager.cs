@@ -71,9 +71,7 @@ public sealed partial class DreamManager {
     //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
     public void PreInitialize(string? jsonPath) {
         _sawmill = Logger.GetSawmill("opendream");
-#if !DISABLE_BYOND_API
         ByondApi.ByondApi.Initialize(this, _atomManager, _dreamMapManager, _objectTree);
-#endif
 
         InitializeConnectionManager();
         _dreamResourceManager.PreInitialize();

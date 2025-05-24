@@ -111,6 +111,9 @@ internal sealed class ProcCall(Location location, DMExpression target, ArgumentL
         if ((targetProc?.Attributes & ProcAttributes.Unimplemented) == ProcAttributes.Unimplemented) {
             ctx.Compiler.UnimplementedWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}.{targetProc.Name}() is not implemented");
         }
+        if ((targetProc?.Attributes & ProcAttributes.Unsupported) == ProcAttributes.Unsupported) {
+            ctx.Compiler.Unsupportedwarning(Location, $"{procOwner?.Path.ToString() ?? "/"}.{targetProc.Name}() will not be supported");
+        }
 
         string endLabel = ctx.Proc.NewLabelName();
 

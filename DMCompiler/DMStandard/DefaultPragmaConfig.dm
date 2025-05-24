@@ -46,6 +46,7 @@
 #pragma LostTypeInfo notice
 // END TYPEMAKER
 #pragma UnimplementedAccess warning
+#pragma UnsupportedAccess warning
 
 //3000-3999
 #pragma EmptyBlock notice

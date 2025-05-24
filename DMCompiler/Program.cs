@@ -71,6 +71,7 @@ internal static class Program {
         Console.WriteLine("--version [VER].[BUILD]   : Used to set the DM_VERSION and DM_BUILD macros");
         Console.WriteLine("--skip-bad-args           : Skip arguments the compiler doesn't recognize");
         Console.WriteLine("--suppress-unimplemented  : Do not warn about unimplemented proc and var uses");
+        Console.WriteLine("--suppress-unsupported    : Do not warn about proc and var uses that will not be supported");
         Console.WriteLine("--dump-preprocessor       : This saves the result of preprocessing (#include, #if, defines, etc) in a file called preprocessor_dump.dm beside the given DME file.");
         Console.WriteLine("--no-standard             : This disables objects and procs that are usually built-into every DM program by not including DMStandard.dm.");
         Console.WriteLine("--define [KEY=VAL]        : Add extra defines to the compilation");
@@ -92,6 +93,7 @@ internal static class Program {
                     PrintHelp();
                     return false;
                 case "suppress-unimplemented": settings.SuppressUnimplementedWarnings = true; break;
+                case "suppress-unsupported": settings.SuppressUnsupportedAccessWarnings = true; break;
                 case "skip-anything-typecheck": settings.SkipAnythingTypecheck = true; break;
                 case "dump-preprocessor": settings.DumpPreprocessor = true; break;
                 case "no-standard": settings.NoStandard = true; break;

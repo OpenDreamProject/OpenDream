@@ -170,9 +170,9 @@ internal static class Program {
 
                     break;
                 }
+                case "no-opt":
                 case "no-opts":
                     settings.NoOpts = true;
-                    compiler.ForcedWarning("Compiler optimizations (const folding, peephole opts, etc.) are disabled via the \"--no-opts\" arg. This results in slower code execution and is not representative of OpenDream performance.");
                     break;
                 default: {
                     if (skipBad) {

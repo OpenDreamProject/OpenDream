@@ -54,8 +54,6 @@ public sealed partial class DMTests : ContentUnitTest {
             NoOpts = Environment.GetEnvironmentVariable("NO_OPTS") != null
         });
 
-        if (compiler.Settings.NoOpts) Environment.Exit(1); // test that it works
-
         return successfulCompile ? Path.ChangeExtension(sourceFile, "json") : null;
     }
 

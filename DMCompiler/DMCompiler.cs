@@ -66,10 +66,12 @@ public class DMCompiler {
         DMPreprocessor preprocessor = Preprocess(this, settings.Files, settings.MacroDefines);
         bool successfulCompile = preprocessor is not null && Compile(preprocessor);
 
-        if (settings.SuppressUnimplementedWarnings) {
+        if (settings.SuppressUnimplementedWarnings)
             Emit(WarningCode.UnimplementedAccess, Location.Internal,
                 "Unimplemented proc & var warnings are currently suppressed");
-        }
+
+        if (settings.NoOpts)
+            ForcedWarning("Compiler optimizations (const folding, peephole opts, etc.) are disabled via the \"--no-opts\" arg. This results in slower code execution and is not representative of OpenDream performance.");
 
         if (successfulCompile) {
             //Output file is the first file with the extension changed to .json

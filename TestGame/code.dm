@@ -10,6 +10,9 @@
 
 #define TURF_PLANE -10
 
+/client/verb/Think()
+	usr << pick("[src] thinks...", "[src] ponders...", "[src] wonders...")
+
 /obj/plane_master
 	appearance_flags = PLANE_MASTER
 
@@ -152,6 +155,14 @@
 	verb/input_num()
 		var/v = input("A") as num
 		usr << "you entered [v]"
+		
+	verb/client_verbs()
+		set category = "Test"
+		var/verbs = ""
+		for (var/thing in typesof(/client/verb))
+			verbs += "[thing]\n"
+		usr << "Client verbs:\n[verbs]"
+		
 
 	verb/test_browse()
 		set category = "Test"

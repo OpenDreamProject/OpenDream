@@ -18,6 +18,7 @@ public sealed class ServerVerbSystem : VerbSystem {
 
     private readonly List<VerbInfo> _verbs = new();
     private readonly Dictionary<int, DreamProc> _verbIdToProc = new();
+    private readonly Dictionary<DreamConnection, List<int /* verbId */>> _repeatingVerbs = new();
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.verbs");
 
@@ -25,6 +26,8 @@ public sealed class ServerVerbSystem : VerbSystem {
         _playerManager.PlayerStatusChanged += OnPlayerStatusChanged;
 
         SubscribeNetworkEvent<ExecuteVerbEvent>(OnVerbExecuted);
+        SubscribeNetworkEvent<RegisterRepeatVerbEvent>(OnRepeatVerbStart);
+        SubscribeNetworkEvent<UnregisterRepeatVerbEvent>(OnRepeatVerbStop);
     }
 
     /// <summary>
@@ -111,11 +114,16 @@ public sealed class ServerVerbSystem : VerbSystem {
     public void UpdateClientVerbs(DreamObjectClient client) {
         var verbs = client.ClientVerbs.Verbs;
         var verbIds = new List<int>(verbs.Count);
+        Dictionary<string /* proc name */, DreamProc> latestVerbOverrideForType = new Dictionary<string, DreamProc>();
 
         foreach (var verb in verbs) {
+            latestVerbOverrideForType[verb.Name] = verb;
+        }
+
+        foreach (var proc in latestVerbOverrideForType) {
+            var verb = proc.Value;
             if (verb.VerbId == null)
                 RegisterVerb(verb);
-
             verbIds.Add(verb.VerbId!.Value);
         }
 
@@ -130,35 +138,89 @@ public sealed class ServerVerbSystem : VerbSystem {
         RaiseNetworkEvent(new AllVerbsEvent(_verbs), e.Session);
     }
 
-    private void OnVerbExecuted(ExecuteVerbEvent msg, EntitySessionEventArgs args) {
-        var connection = _dreamManager.GetConnectionBySession(args.SenderSession);
-        var src = _dreamManager.GetFromClientReference(connection, msg.Src);
-        if (src == null || !_verbIdToProc.TryGetValue(msg.VerbId, out var verb) || !CanExecute(connection, src, verb))
-            return;
+    public void RunRepeatingVerbs() {
+        using (Profiler.BeginZone("Repeating Verbs", color: (uint)Color.OrangeRed.ToArgb())) {
+            foreach (var repeatingVerb in _repeatingVerbs) {
+                if (repeatingVerb.Value.Count == 0)
+                    return;
+                var client = repeatingVerb.Key;
+                var verbId = repeatingVerb.Value.Last();
 
-        var argCount = verb.ArgumentTypes?.Count ?? 0;
-        if (msg.Arguments.Length != argCount) {
-            _sawmill.Error(
-                $"User \"{args.SenderSession.Name}\" gave {msg.Arguments.Length} argument(s) to the \"{verb.Name}\" verb which only has {argCount} argument(s)");
-            return;
-        }
+                var src = _dreamManager.GetFromClientReference(client, ClientObjectReference.Client);
+                if (src == null || !_verbIdToProc.TryGetValue(verbId, out var verb) || !CanExecute(client, src, verb))
+                    return;
 
-        // Convert the values the client gave to DreamValues
-        DreamValue[] arguments = new DreamValue[argCount];
-        for (int i = 0; i < argCount; i++) {
-            var argType = verb.ArgumentTypes![i];
-
-            if (!connection.TryConvertPromptResponse(argType, msg.Arguments[i], out arguments[i])) {
-                _sawmill.Error(
-                    $"User \"{args.SenderSession.Name}\" gave an invalid value for argument #{i + 1} of verb \"{verb.Name}\"");
-                return;
+                using (Profiler.BeginZone("DM Execution", color: (uint)Color.LightPink.ToArgb()))
+                    DreamThread.Run($"Execute repeating {verb} by {client.Session!.Name}", async state => {
+                        await state.Call(verb, src, client.Mob);
+                        return DreamValue.Null;
+                    });
             }
         }
+    }
 
-        DreamThread.Run($"Execute {msg.VerbId} by {connection.Session!.Name}", async state => {
-            await state.Call(verb, src, connection.Mob, arguments);
-            return DreamValue.Null;
-        });
+    public void RemoveConnectionFromRepeatingVerbs(DreamConnection connection) {
+        _repeatingVerbs.Remove(connection);
+    }
+
+    private void OnRepeatVerbStart(RegisterRepeatVerbEvent msg, EntitySessionEventArgs args) {
+        if (!_verbIdToProc.ContainsKey(msg.VerbId))
+            return;
+        var conn = _dreamManager.GetConnectionBySession(args.SenderSession);
+        if (_repeatingVerbs.TryGetValue(conn, out var verb)) {
+            if (!verb.Remove(msg.VerbId)) {
+                verb.Add(msg.VerbId);
+            }
+        } else {
+            List<int> list = new();
+            _repeatingVerbs.Add(conn, list);
+            list.Add(msg.VerbId);
+        }
+    }
+
+    private void OnRepeatVerbStop(UnregisterRepeatVerbEvent msg, EntitySessionEventArgs args) {
+        var conn = _dreamManager.GetConnectionBySession(args.SenderSession);
+        if (_repeatingVerbs.TryGetValue(conn, out var verb)) {
+            verb.Remove(msg.VerbId);
+            if (verb.Count == 0) {
+                _repeatingVerbs.Remove(conn);
+            }
+        }
+    }
+
+    private void OnVerbExecuted(ExecuteVerbEvent msg, EntitySessionEventArgs args) {
+        using (Profiler.BeginZone("Verb", color: (uint)Color.OrangeRed.ToArgb())) {
+            var connection = _dreamManager.GetConnectionBySession(args.SenderSession);
+            var src = _dreamManager.GetFromClientReference(connection, msg.Src);
+            if (src == null || !_verbIdToProc.TryGetValue(msg.VerbId, out var verb) ||
+                !CanExecute(connection, src, verb))
+                return;
+
+            var argCount = verb.ArgumentTypes?.Count ?? 0;
+            if (msg.Arguments.Length != argCount) {
+                _sawmill.Error(
+                    $"User \"{args.SenderSession.Name}\" gave {msg.Arguments.Length} argument(s) to the \"{verb.Name}\" verb which only has {argCount} argument(s)");
+                return;
+            }
+
+            // Convert the values the client gave to DreamValues
+            DreamValue[] arguments = new DreamValue[argCount];
+            for (int i = 0; i < argCount; i++) {
+                var argType = verb.ArgumentTypes![i];
+
+                if (!connection.TryConvertPromptResponse(argType, msg.Arguments[i], out arguments[i])) {
+                    _sawmill.Error(
+                        $"User \"{args.SenderSession.Name}\" gave an invalid value for argument #{i + 1} of verb \"{verb.Name}\"");
+                    return;
+                }
+            }
+
+            using (Profiler.BeginZone("DM Execution", color: (uint)Color.LightPink.ToArgb()))
+                DreamThread.Run($"Execute {msg.VerbId} by {connection.Session!.Name}", async state => {
+                    await state.Call(verb, src, connection.Mob, arguments);
+                    return DreamValue.Null;
+                });
+        }
     }
 
     /// <summary>
@@ -180,6 +242,12 @@ public sealed class ServerVerbSystem : VerbSystem {
             // Deviates from BYOND, where anything but usr and world shows the verb in the statpanel but is not executable
             return true;
         } else if (src is DreamObjectAtom atom) {
+            if (!IsVerbLatestOverrideOnType(src, verb)) {
+                _sawmill.Warning(
+                    $"Connection {connection.Session?.Name ?? "<unknown>"} attempted to execute proc {verb} on {src} but is not allowed to per proc override rules! (An override is present later down the tree.)");
+                return false;
+            }
+
             var appearance = _atomManager.MustGetAppearance(atom);
             if (appearance.Verbs.Contains(verb.VerbId.Value) is not true) // Inside atom.verbs?
                 return false;
@@ -200,5 +268,19 @@ public sealed class ServerVerbSystem : VerbSystem {
                 // TODO: All the other kinds
                 return true;
         }
+    }
+
+    private bool IsVerbLatestOverrideOnType(DreamObject src, DreamProc verb) {
+        Dictionary<string /* proc name */, DreamProc> latestVerbOverrideForType = new Dictionary<string, DreamProc>();
+        if (src.ObjectDefinition.Verbs is null)
+            return false;
+        foreach (var proc in src.ObjectDefinition.Verbs) {
+            var verbProc = _objectTree.Procs[proc];
+            if (src.ObjectDefinition.TreeEntry.IsSubtypeOf(verbProc.OwningType)) {
+                latestVerbOverrideForType[verbProc.Name] = verbProc;
+            }
+        }
+
+        return latestVerbOverrideForType[verb.Name].Id == verb.Id;
     }
 }

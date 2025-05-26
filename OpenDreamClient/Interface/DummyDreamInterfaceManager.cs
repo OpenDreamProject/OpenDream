@@ -52,7 +52,7 @@ public sealed class DummyDreamInterfaceManager : IDreamInterfaceManager {
     public void Prompt(DreamValueType types, string title, string message, string defaultValue, Action<DreamValueType, object?>? onClose) {
     }
 
-    public void RunCommand(string fullCommand) {
+    public void RunCommand(string fullCommand, bool repeating = false) {
     }
 
     public void StartRepeatingCommand(string command) {

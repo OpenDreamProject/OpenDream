@@ -65,7 +65,7 @@ internal sealed class DMProc {
     }
 
     public string Name => _astDefinition?.Name ?? "<init>";
-    public bool IsVerb => _astDefinition?.IsVerb ?? false;
+    public bool IsVerb { get; set; }
     public bool IsFinal => _astDefinition?.IsFinal ?? false;
     public List<string> Parameters = new();
     public Location Location;
@@ -123,6 +123,7 @@ internal sealed class DMProc {
         if (_astDefinition?.IsOverride ?? false) Attributes |= ProcAttributes.IsOverride; // init procs don't have AST definitions
         Location = astDefinition?.Location ?? Location.Unknown;
         _scopes.Push(new DMProcScope());
+        IsVerb = _astDefinition?.IsVerb ?? false;
 
         if (_astDefinition is not null) {
             foreach (var parameter in _astDefinition!.Parameters) {

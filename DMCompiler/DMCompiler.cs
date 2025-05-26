@@ -419,6 +419,8 @@ public struct DMCompilerSettings {
     // These are the default DM_VERSION and DM_BUILD values. They're strings because that's what the preprocessor expects (seriously)
     public string DMVersion = "515";
     public string DMBuild = "1633";
+    /// <summary> Disables compiler optimizations such as const-folding and peephole opts </summary>
+    public bool NoOpts = false;
 
     public DMCompilerSettings() {
     }

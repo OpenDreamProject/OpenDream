@@ -38,6 +38,13 @@ jobs:
       run: |
         $env:COMPlus_gcServer=1
         dotnet test --no-build Content.Tests/Content.Tests.csproj -v n
+    - name: Content.Tests (Optimizations Disabled)
+      shell: pwsh
+      env:
+        NO_OPTS: "true"
+      run: |
+        $env:COMPlus_gcServer=1
+        dotnet test --no-build Content.Tests/Content.Tests.csproj -v n
     - name: Content.IntegrationTests
       shell: pwsh
       run: |

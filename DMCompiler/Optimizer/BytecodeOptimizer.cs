@@ -6,6 +6,9 @@ public class BytecodeOptimizer(DMCompiler compiler) {
     private readonly PeepholeOptimizer _peepholeOptimizer = new(compiler);
 
     internal void Optimize(List<IAnnotatedBytecode> input) {
+        if(compiler.Settings.NoOpts) // Optimizations are disabled
+            return;
+
         if (input.Count == 0)
             return;
 

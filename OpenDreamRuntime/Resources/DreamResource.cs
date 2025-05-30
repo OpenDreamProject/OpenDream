@@ -13,11 +13,13 @@ public class DreamResource(int id, string? filePath, string? resourcePath) {
         get {
             if (_resourceDataBacking == null && File.Exists(filePath)) {
                 _resourceDataBacking = File.ReadAllBytes(filePath);
+
                 #if TOOLS
                 _tracyMemoryId?.ReleaseMemory();
                 _tracyMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamResource>() + (_resourceDataBacking?.Length ?? 0)), "resource");
                 #endif
             }
+
             return _resourceDataBacking;
         }
         private set {
@@ -25,14 +27,16 @@ public class DreamResource(int id, string? filePath, string? resourcePath) {
             _tracyMemoryId?.ReleaseMemory();
             _tracyMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamResource>() + (value?.Length ?? 0)), "resource");
             #endif
+
             _resourceDataBacking = value;
         }
     }
 
+    private byte[]? _resourceDataBacking;
+
     #if TOOLS
     private ProfilerMemory? _tracyMemoryId;
     #endif
-    private byte[]? _resourceDataBacking;
 
     public DreamResource(int id, byte[] data) : this(id, null, null) {
         ResourceData = data;

@@ -153,10 +153,11 @@ public sealed class DMProc : DreamProc {
 public sealed class NullProcState : ProcState {
     public static readonly Stack<NullProcState> Pool = new();
 
-#if TOOLS
-    public override (string SourceFile, int Line) TracyLocationId => ("<NO-OP>",0);
-#endif
     public override DreamProc? Proc => _proc;
+
+    #if TOOLS
+    public override (string SourceFile, int Line) TracyLocationId => ("<NO-OP>",0);
+    #endif
 
     private DreamProc? _proc;
 

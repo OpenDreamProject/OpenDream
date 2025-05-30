@@ -66,7 +66,6 @@ public sealed partial class DreamManager {
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
 
-
     private ServerAppearanceSystem? _appearanceSystem;
 
     //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
@@ -114,8 +113,8 @@ public sealed partial class DreamManager {
     public void Update() {
         if (!Initialized)
                 return;
-        using (Profiler.BeginZone("Tick", color:(uint)Color.OrangeRed.ToArgb()))
-        {
+
+        using (Profiler.BeginZone("Tick", color:(uint)Color.OrangeRed.ToArgb())) {
             CurrentTickStart = Environment.TickCount64;
 
             using (Profiler.BeginZone("DM Execution", color:(uint)Color.LightPink.ToArgb()))

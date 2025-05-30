@@ -66,10 +66,12 @@ public class DMCompiler {
         DMPreprocessor preprocessor = Preprocess(this, settings.Files, settings.MacroDefines);
         bool successfulCompile = preprocessor is not null && Compile(preprocessor);
 
-        if (settings.SuppressUnimplementedWarnings) {
+        if (settings.SuppressUnimplementedWarnings)
             Emit(WarningCode.UnimplementedAccess, Location.Internal,
                 "Unimplemented proc & var warnings are currently suppressed");
-        }
+
+        if (settings.NoOpts)
+            ForcedWarning("Compiler optimizations (const folding, peephole opts, etc.) are disabled via the \"--no-opts\" arg. This results in slower code execution and is not representative of OpenDream performance.");
 
         if (successfulCompile) {
             //Output file is the first file with the extension changed to .json
@@ -419,6 +421,8 @@ public struct DMCompilerSettings {
     // These are the default DM_VERSION and DM_BUILD values. They're strings because that's what the preprocessor expects (seriously)
     public string DMVersion = "515";
     public string DMBuild = "1633";
+    /// <summary> Disables compiler optimizations such as const-folding and peephole opts </summary>
+    public bool NoOpts = false;
 
     public DMCompilerSettings() {
     }

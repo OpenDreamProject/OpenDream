@@ -261,13 +261,10 @@ public class DreamList : DreamObject {
         }
     }
 
-    // ReSharper disable once UnusedParameter.Local
     [Conditional("TOOLS")]
-    private void UpdateTracyContentsMemory(int valueCount = -1) {
+    private void UpdateTracyContentsMemory() {
         #if TOOLS
-        if (valueCount == -1)
-            valueCount = _values.Count + (_associativeValues?.Count ?? 0);
-
+        var valueCount = _values.Count + (_associativeValues?.Count ?? 0);
         var totalSize = Unsafe.SizeOf<DreamList>() + valueCount * Unsafe.SizeOf<DreamValue>();
 
         _tracyContentsMemoryId?.ReleaseMemory();

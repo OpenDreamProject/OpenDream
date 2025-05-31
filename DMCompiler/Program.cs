@@ -77,6 +77,7 @@ internal static class Program {
         Console.WriteLine("--verbose                 : Show verbose output during compile");
         Console.WriteLine("--notices-enabled         : Show notice output during compile");
         Console.WriteLine("--pragma-config [file].dm : Configure the error/warning/notice/ignore level of compiler messages");
+        Console.WriteLine("--no-opts                 : Makes the compiler emit raw unoptimized bytecode. Mainly for debugging/testing purposes. User code will be slower at runtime.");
     }
 
     private static bool TryParseArguments(DMCompiler compiler, string[] args, out DMCompilerSettings settings) {
@@ -169,6 +170,10 @@ internal static class Program {
 
                     break;
                 }
+                case "no-opt":
+                case "no-opts":
+                    settings.NoOpts = true;
+                    break;
                 default: {
                     if (skipBad) {
                         compiler.ForcedWarning($"Unknown compiler arg '{arg.Name}', skipping");

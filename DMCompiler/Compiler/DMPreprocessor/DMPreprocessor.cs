@@ -197,6 +197,7 @@ public sealed class DMPreprocessor(DMCompiler compiler, bool enableDirectives) :
     public void IncludeFile(string includeDir, string file, bool isDMStandard, Location? includedFrom = null) {
         string filePath = Path.Combine(includeDir, file);
         filePath = filePath.Replace('\\', Path.DirectorySeparatorChar);
+        filePath = Path.GetFullPath(filePath); // Strips out path operators
 
         if (_includedFiles.Contains(filePath)) {
             compiler.Emit(WarningCode.FileAlreadyIncluded, includedFrom ?? Location.Internal, $"File \"{filePath}\" was already included");

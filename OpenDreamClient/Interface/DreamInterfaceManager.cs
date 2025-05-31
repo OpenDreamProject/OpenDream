@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Text;
+using System.Globalization;
 using OpenDreamShared.Network.Messages;
 using OpenDreamClient.Interface.Controls;
 using OpenDreamClient.Interface.Descriptors;
@@ -791,6 +792,8 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                     return string.Join(';', MacroSets.Keys);
                 case "url":
                     return _netManager.ServerChannel?.RemoteEndPoint.ToString() ?? string.Empty; // TODO: Port should be 0 "if connected to a local .dmb file"
+                case "dpi":
+                    return (_clyde.DefaultWindowScale.X.ToString(CultureInfo.InvariantCulture));
                 default:
                     _sawmill.Error($"Special winget \"{queryValue}\" is not implemented");
                     return string.Empty;

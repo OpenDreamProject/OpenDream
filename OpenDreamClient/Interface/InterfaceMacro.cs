@@ -146,6 +146,8 @@ internal struct ParsedKeybind {
         {"SUBTRACT", Keyboard.Key.NumpadSubtract},
         {"DIVIDE", Keyboard.Key.NumpadDivide},
         {";", Keyboard.Key.SemiColon}, // undocumented but works in BYOND
+        {",", Keyboard.Key.Comma},
+        {".", Keyboard.Key.Period},
         //TODO: Right shift/ctrl/alt
         {"SHIFT", Keyboard.Key.Shift},
         {"CTRL", Keyboard.Key.Control},

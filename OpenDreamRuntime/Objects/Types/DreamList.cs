@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using OpenDreamRuntime.Map;
@@ -12,12 +13,16 @@ namespace OpenDreamRuntime.Objects.Types;
 
 [Virtual]
 public class DreamList : DreamObject {
-    private readonly List<DreamValue> _values;
-    private Dictionary<DreamValue, DreamValue>? _associativeValues;
-
     public override bool ShouldCallNew => false;
 
     public virtual bool IsAssociative => (_associativeValues != null && _associativeValues.Count > 0);
+
+    private readonly List<DreamValue> _values;
+    private Dictionary<DreamValue, DreamValue>? _associativeValues;
+
+    #if TOOLS
+    private ProfilerMemory? _tracyContentsMemoryId;
+    #endif
 
     public DreamList(DreamObjectDefinition listDef, int size) : base(listDef) {
         _values = new List<DreamValue>(size);
@@ -29,6 +34,11 @@ public class DreamList : DreamObject {
     public DreamList(DreamObjectDefinition listDef, List<DreamValue> values, Dictionary<DreamValue, DreamValue>? associativeValues) : base(listDef) {
         _values = values;
         _associativeValues = associativeValues;
+
+        #if TOOLS
+        TracyMemoryId = Profiler.BeginMemoryZone(1, "/list instance");
+        UpdateTracyContentsMemory();
+        #endif
     }
 
     public override void Initialize(DreamProcArguments args) {
@@ -128,6 +138,8 @@ public class DreamList : DreamObject {
             _associativeValues ??= new Dictionary<DreamValue, DreamValue>(1);
             _associativeValues[key] = value;
         }
+
+        UpdateTracyContentsMemory();
     }
 
     public virtual void RemoveValue(DreamValue value) {
@@ -137,10 +149,13 @@ public class DreamList : DreamObject {
             _associativeValues?.Remove(value);
             _values.RemoveAt(valueIndex);
         }
+
+        UpdateTracyContentsMemory();
     }
 
     public virtual void AddValue(DreamValue value) {
         _values.Add(value);
+        UpdateTracyContentsMemory();
     }
 
     //Does not include associations
@@ -177,10 +192,13 @@ public class DreamList : DreamObject {
 
         if (end > start)
             _values.RemoveRange(start - 1, end - start);
+
+        UpdateTracyContentsMemory();
     }
 
     public void Insert(int index, DreamValue value) {
         _values.Insert(index - 1, value);
+        UpdateTracyContentsMemory();
     }
 
     public void Swap(int index1, int index2) {
@@ -200,6 +218,8 @@ public class DreamList : DreamObject {
         } else {
             Cut(size + 1);
         }
+
+        UpdateTracyContentsMemory();
     }
 
     public virtual int GetLength() {
@@ -239,6 +259,17 @@ public class DreamList : DreamObject {
         } else {
             base.SetVar(varName, value);
         }
+    }
+
+    [Conditional("TOOLS")]
+    private void UpdateTracyContentsMemory() {
+        #if TOOLS
+        var valueCount = _values.Count + (_associativeValues?.Count ?? 0);
+        var totalSize = Unsafe.SizeOf<DreamList>() + valueCount * Unsafe.SizeOf<DreamValue>();
+
+        _tracyContentsMemoryId?.ReleaseMemory();
+        _tracyContentsMemoryId = Profiler.BeginMemoryZone((ulong)totalSize, "/list contents");
+        #endif
     }
 
     #region Operators

@@ -66,9 +66,17 @@ public struct DreamValue : IEquatable<DreamValue> {
     private object? _refValue;
     private readonly float _floatValue;
 
+    #if TOOLS
+    //ReSharper disable once NotAccessedField.Local
+    private readonly ProfilerMemory? _tracyMemoryId; //only used for strings, since everything else is a value type or handled in DreamObject
+    #endif
+    
     public DreamValue(string value) {
         DebugTools.Assert(value != null);
         Type = DreamValueType.String;
+        #if TOOLS
+        _tracyMemoryId = Profiler.BeginMemoryZone((ulong) (1+value.Length*sizeof(char)), "string");
+        #endif
         _refValue = value;
     }
 

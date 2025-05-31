@@ -46,6 +46,11 @@ namespace OpenDreamRuntime.Objects {
         protected ServerVerbSystem? VerbSystem => ObjectDefinition.VerbSystem;
 
         protected Dictionary<string, DreamValue>? Variables;
+
+        #if TOOLS
+        protected ProfilerMemory? TracyMemoryId;
+        #endif
+
         //handle to the list of vars on this object so that it's only created once and refs to object.vars are consistent
         private DreamListVars? _varsList;
 
@@ -88,6 +93,11 @@ namespace OpenDreamRuntime.Objects {
             if (this is not DreamObjectAtom && IsSubtypeOf(ObjectTree.Datum)) {
                 ObjectDefinition.DreamManager.Datums.AddLast(new WeakDreamRef(this));
             }
+
+            #if TOOLS
+             //if it's not null, subclasses have done their own allocation
+            TracyMemoryId ??= Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamObject>() + ObjectDefinition.Variables.Count * Unsafe.SizeOf<DreamValue>() ), "/datum");
+            #endif
         }
 
         public virtual void Initialize(DreamProcArguments args) {
@@ -107,6 +117,10 @@ namespace OpenDreamRuntime.Objects {
             Variables = null;
 
             ObjectDefinition = null!;
+
+            #if TOOLS
+            TracyMemoryId?.ReleaseMemory();
+            #endif
         }
 
         /// <summary>

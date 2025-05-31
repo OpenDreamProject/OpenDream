@@ -11,6 +11,10 @@ namespace OpenDreamRuntime.Procs {
         public sealed class State : ProcState {
             public static readonly Stack<State> Pool = new();
 
+            #if TOOLS
+            public override (string SourceFile, int Line) TracyLocationId => ("Async Native Proc", 0);
+            #endif
+
             // IoC dependencies instead of proc fields because _proc can be null
             [Dependency] public readonly DreamManager DreamManager = default!;
             [Dependency] public readonly DreamResourceManager ResourceManager = default!;
@@ -23,8 +27,8 @@ namespace OpenDreamRuntime.Procs {
             private readonly DreamValue[] _arguments = new DreamValue[128];
             private int _argumentCount;
 
-            private AsyncNativeProc? _proc;
             public override DreamProc? Proc => _proc;
+            private AsyncNativeProc? _proc;
 
             private Func<State, Task<DreamValue>> _taskFunc;
             private Task? _task;

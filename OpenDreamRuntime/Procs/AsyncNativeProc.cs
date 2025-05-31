@@ -27,8 +27,9 @@ namespace OpenDreamRuntime.Procs {
             private readonly DreamValue[] _arguments = new DreamValue[128];
             private int _argumentCount;
 
-            private AsyncNativeProc? _proc;
             public override DreamProc? Proc => _proc;
+            private AsyncNativeProc? _proc;
+
             private Func<State, Task<DreamValue>> _taskFunc;
             private Task? _task;
 

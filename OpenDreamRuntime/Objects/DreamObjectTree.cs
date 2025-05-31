@@ -144,7 +144,7 @@ public sealed class DreamObjectTree {
     /// (by calling the result of <see cref="DreamObject.InitProc(DreamThread, DreamObject?, DreamProcArguments)"/> or <see cref="DreamObject.InitSpawn(DreamProcArguments)"/>)
     /// </remarks>
     public DreamObject CreateObject(TreeEntry type) {
-        using(Profiler.BeginZone($"new {type}")){
+        using (Profiler.BeginZone($"new {type}")) {
             if (type == List)
                 return CreateList();
             if (type == Savefile)

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using OpenDreamRuntime.Map;
@@ -33,9 +34,10 @@ public class DreamList : DreamObject {
     public DreamList(DreamObjectDefinition listDef, List<DreamValue> values, Dictionary<DreamValue, DreamValue>? associativeValues) : base(listDef) {
         _values = values;
         _associativeValues = associativeValues;
+
         #if TOOLS
-        _tracyMemoryId = Profiler.BeginMemoryZone(1, "/list instance");
-        _tracyContentsMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamList>() + _values.Count * Unsafe.SizeOf<DreamValue>() + (_associativeValues?.Count ?? 0) * Unsafe.SizeOf<DreamValue>()), "/list contents");
+        TracyMemoryId = Profiler.BeginMemoryZone(1, "/list instance");
+        UpdateTracyContentsMemory();
         #endif
     }
 
@@ -137,10 +139,7 @@ public class DreamList : DreamObject {
             _associativeValues[key] = value;
         }
 
-        #if TOOLS
-        _tracyContentsMemoryId?.ReleaseMemory();
-        _tracyContentsMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamList>() + _values.Count * Unsafe.SizeOf<DreamValue>() + (_associativeValues?.Count ?? 0) * Unsafe.SizeOf<DreamValue>()), "/list contents");
-        #endif
+        UpdateTracyContentsMemory();
     }
 
     public virtual void RemoveValue(DreamValue value) {
@@ -151,19 +150,12 @@ public class DreamList : DreamObject {
             _values.RemoveAt(valueIndex);
         }
 
-        #if TOOLS
-        _tracyContentsMemoryId?.ReleaseMemory();
-        _tracyContentsMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamList>() + _values.Count * Unsafe.SizeOf<DreamValue>() + (_associativeValues?.Count ?? 0) * Unsafe.SizeOf<DreamValue>()), "/list contents");
-        #endif
+        UpdateTracyContentsMemory();
     }
 
     public virtual void AddValue(DreamValue value) {
         _values.Add(value);
-
-        #if TOOLS
-        _tracyContentsMemoryId?.ReleaseMemory();
-        _tracyContentsMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamList>() + _values.Count * Unsafe.SizeOf<DreamValue>() + (_associativeValues?.Count ?? 0) * Unsafe.SizeOf<DreamValue>()), "/list contents");
-        #endif
+        UpdateTracyContentsMemory();
     }
 
     //Does not include associations
@@ -201,19 +193,12 @@ public class DreamList : DreamObject {
         if (end > start)
             _values.RemoveRange(start - 1, end - start);
 
-        #if TOOLS
-        _tracyContentsMemoryId?.ReleaseMemory();
-        _tracyContentsMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamList>() + _values.Count * Unsafe.SizeOf<DreamValue>() + (_associativeValues?.Count ?? 0) * Unsafe.SizeOf<DreamValue>()), "/list contents");
-        #endif
+        UpdateTracyContentsMemory();
     }
 
     public void Insert(int index, DreamValue value) {
         _values.Insert(index - 1, value);
-
-        #if TOOLS
-        _tracyContentsMemoryId?.ReleaseMemory();
-        _tracyContentsMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamList>() + _values.Count * Unsafe.SizeOf<DreamValue>() + (_associativeValues?.Count ?? 0) * Unsafe.SizeOf<DreamValue>()), "/list contents");
-        #endif
+        UpdateTracyContentsMemory();
     }
 
     public void Swap(int index1, int index2) {
@@ -234,10 +219,7 @@ public class DreamList : DreamObject {
             Cut(size + 1);
         }
 
-        #if TOOLS
-        _tracyContentsMemoryId?.ReleaseMemory();
-        _tracyContentsMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamList>() + _values.Count * Unsafe.SizeOf<DreamValue>() + (_associativeValues?.Count ?? 0) * Unsafe.SizeOf<DreamValue>()), "/list contents");
-        #endif
+        UpdateTracyContentsMemory();
     }
 
     public virtual int GetLength() {
@@ -277,6 +259,20 @@ public class DreamList : DreamObject {
         } else {
             base.SetVar(varName, value);
         }
+    }
+
+    // ReSharper disable once UnusedParameter.Local
+    [Conditional("TOOLS")]
+    private void UpdateTracyContentsMemory(int valueCount = -1) {
+        #if TOOLS
+        if (valueCount == -1)
+            valueCount = _values.Count + (_associativeValues?.Count ?? 0);
+
+        var totalSize = Unsafe.SizeOf<DreamList>() + valueCount * Unsafe.SizeOf<DreamValue>();
+
+        _tracyContentsMemoryId?.ReleaseMemory();
+        _tracyContentsMemoryId = Profiler.BeginMemoryZone((ulong)totalSize, "/list contents");
+        #endif
     }
 
     #region Operators

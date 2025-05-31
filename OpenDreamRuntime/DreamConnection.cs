@@ -127,6 +127,8 @@ public sealed class DreamConnection {
             }
         }
 
+        _verbSystem?.RemoveConnectionFromRepeatingVerbs(this);
+
         Client.Delete();
         Client = null;
 
@@ -254,40 +256,6 @@ public sealed class DreamConnection {
         };
 
         Session?.Channel.SendMessage(msg);
-    }
-
-    // TODO: Remove this. Vestigial and doesn't run all commands.
-    public void HandleCommand(string fullCommand) {
-        string[] args = fullCommand.Split(' ', StringSplitOptions.TrimEntries);
-        string command = args[0].ToLowerInvariant(); // Case-insensitive
-
-        switch (command) {
-            case ".north":
-            case ".east":
-            case ".south":
-            case ".west":
-            case ".northeast":
-            case ".southeast":
-            case ".southwest":
-            case ".northwest":
-            case ".center":
-                string movementProc = command switch {
-                    ".north" => "North",
-                    ".east" => "East",
-                    ".south" => "South",
-                    ".west" => "West",
-                    ".northeast" => "Northeast",
-                    ".southeast" => "Southeast",
-                    ".southwest" => "Southwest",
-                    ".northwest" => "Northwest",
-                    ".center" => "Center",
-                    _ => throw new ArgumentOutOfRangeException()
-                };
-
-                if (Mob != null)
-                    _walkManager.StopWalks(Mob);
-                Client?.SpawnProc(movementProc, Mob); break;
-        }
     }
 
     public Task<DreamValue> Prompt(DreamValueType types, string title, string message, string defaultValue) {

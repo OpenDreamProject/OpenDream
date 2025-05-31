@@ -18,6 +18,7 @@ public sealed class ServerVerbSystem : VerbSystem {
 
     private readonly List<VerbInfo> _verbs = new();
     private readonly Dictionary<int, DreamProc> _verbIdToProc = new();
+    private readonly Dictionary<DreamConnection, List<int /* verbId */>> _repeatingVerbs = new();
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.verbs");
 
@@ -25,6 +26,8 @@ public sealed class ServerVerbSystem : VerbSystem {
         _playerManager.PlayerStatusChanged += OnPlayerStatusChanged;
 
         SubscribeNetworkEvent<ExecuteVerbEvent>(OnVerbExecuted);
+        SubscribeNetworkEvent<RegisterRepeatVerbEvent>(OnRepeatVerbStart);
+        SubscribeNetworkEvent<UnregisterRepeatVerbEvent>(OnRepeatVerbStop);
     }
 
     /// <summary>
@@ -128,6 +131,53 @@ public sealed class ServerVerbSystem : VerbSystem {
 
         // Send the new player a list of every verb
         RaiseNetworkEvent(new AllVerbsEvent(_verbs), e.Session);
+    }
+
+    public void RunRepeatingVerbs() {
+        foreach (var pair in _repeatingVerbs) {
+            if (pair.Value.Count == 0)
+                return;
+            var client = pair.Key;
+            var verbId = pair.Value.Last();
+
+            var src = _dreamManager.GetFromClientReference(client, ClientObjectReference.Client);
+            if (src == null || !_verbIdToProc.TryGetValue(verbId, out var verb) || !CanExecute(client, src, verb))
+                return;
+
+            DreamThread.Run($"Execute repeating {verb} by {client.Session!.Name}", async state => {
+                await state.Call(verb, src, client.Mob);
+                return DreamValue.Null;
+            });
+        }
+    }
+
+    public void RemoveConnectionFromRepeatingVerbs(DreamConnection connection) {
+        _repeatingVerbs.Remove(connection);
+    }
+
+    private void OnRepeatVerbStart(RegisterRepeatVerbEvent msg, EntitySessionEventArgs args) {
+        if (!_verbIdToProc.ContainsKey(msg.VerbId))
+            return;
+        var conn = _dreamManager.GetConnectionBySession(args.SenderSession);
+        if (_repeatingVerbs.TryGetValue(conn, out var verb)) {
+            if (!verb.Remove(msg.VerbId)) {
+                verb.Add(msg.VerbId);
+            }
+        } else {
+            List<int> list = new();
+            _repeatingVerbs.Add(conn, list);
+            list.Add(msg.VerbId);
+        }
+    }
+
+    private void OnRepeatVerbStop(UnregisterRepeatVerbEvent msg, EntitySessionEventArgs args) {
+        var conn = _dreamManager.GetConnectionBySession(args.SenderSession);
+        if (_repeatingVerbs.TryGetValue(conn, out var verb)) {
+            verb.Remove(msg.VerbId);
+            if (verb.Count == 0) {
+                _repeatingVerbs.Remove(conn);
+            }
+        }
     }
 
     private void OnVerbExecuted(ExecuteVerbEvent msg, EntitySessionEventArgs args) {

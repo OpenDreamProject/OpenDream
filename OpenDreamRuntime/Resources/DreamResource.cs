@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace OpenDreamRuntime.Resources;
@@ -10,18 +11,35 @@ public class DreamResource(int id, string? filePath, string? resourcePath) {
 
     public byte[]? ResourceData {
         get {
-            if (_resourceData == null && File.Exists(filePath)) {
-                _resourceData = File.ReadAllBytes(filePath);
+            if (_resourceDataBacking == null && File.Exists(filePath)) {
+                _resourceDataBacking = File.ReadAllBytes(filePath);
+
+                #if TOOLS
+                _tracyMemoryId?.ReleaseMemory();
+                _tracyMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamResource>() + (_resourceDataBacking?.Length ?? 0)), "resource");
+                #endif
             }
 
-            return _resourceData;
+            return _resourceDataBacking;
+        }
+        private set {
+            #if TOOLS
+            _tracyMemoryId?.ReleaseMemory();
+            _tracyMemoryId = Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamResource>() + (value?.Length ?? 0)), "resource");
+            #endif
+
+            _resourceDataBacking = value;
         }
     }
 
-    private byte[]? _resourceData;
+    private byte[]? _resourceDataBacking;
+
+    #if TOOLS
+    private ProfilerMemory? _tracyMemoryId;
+    #endif
 
     public DreamResource(int id, byte[] data) : this(id, null, null) {
-        _resourceData = data;
+        ResourceData = data;
     }
 
     /// <summary>
@@ -29,7 +47,7 @@ public class DreamResource(int id, string? filePath, string? resourcePath) {
     /// Calling this alone will not update what clients are holding.
     /// </summary>
     public void ReloadFromDisk() {
-        _resourceData = null;
+        _resourceDataBacking = null;
     }
 
     public virtual string? ReadAsString() {
@@ -62,7 +80,7 @@ public class DreamResource(int id, string? filePath, string? resourcePath) {
 
         CreateDirectory();
         File.AppendAllText(ResourcePath, text + "\r\n");
-        _resourceData = null;
+        _resourceDataBacking = null;
     }
 
     private void CreateDirectory() {

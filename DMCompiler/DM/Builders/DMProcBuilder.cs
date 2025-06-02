@@ -9,16 +9,6 @@ namespace DMCompiler.DM.Builders {
     internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMProc proc) {
         private readonly DMExpressionBuilder _exprBuilder = new(new(compiler, dmObject, proc));
 
-        /// <summary>
-        /// BYOND currently has a ridiculous behaviour, where, <br/>
-        /// sometimes when a set statement has a right-hand side that is non-constant, <br/>
-        /// no error is emitted and instead its value is just, whatever the last well-evaluated set statement's value was. <br/>
-        /// This behaviour is nonsense but for harsh parity we sometimes may need to carry it out to hold up a codebase; <br/>
-        /// Yogstation (at time of writing) actually errors on OD if we don't implement this.
-        /// </summary>
-        // Starts null; marks that we've never seen one before and should just error like normal people.
-        private Constant? _previousSetStatementValue;
-
         private ExpressionContext ExprContext => new(compiler, dmObject, proc);
 
         public void ProcessProcDefinition(DMASTProcDefinition procDefinition) {
@@ -55,13 +45,6 @@ namespace DMCompiler.DM.Builders {
         /// B.) have no descendant proc which actually has code in it (implying that this proc is just some abstract virtual for it)
         /// </param>
         private void ProcessBlockInner(DMASTProcBlockInner block, bool silenceEmptyBlockWarning = false) {
-            // Done first because all set statements are "hoisted" -- evaluated before any code in the block is run
-            foreach (var stmt in block.SetStatements) {
-                Debug.Assert(stmt.IsAggregateOr<DMASTProcStatementSet>(), "Non-set statements were located in the block's SetStatements array! This is a bug.");
-
-                ProcessStatement(stmt);
-            }
-
             if(!silenceEmptyBlockWarning && block.Statements.Length == 0) { // If this block has no real statements
                 // Not an error in BYOND, but we do have an emission for this!
                 if (block.SetStatements.Length != 0) {
@@ -108,13 +91,8 @@ namespace DMCompiler.DM.Builders {
                 case DMASTProcStatementVarDeclaration varDeclaration: ProcessStatementVarDeclaration(varDeclaration); break;
                 case DMASTProcStatementTryCatch tryCatch: ProcessStatementTryCatch(tryCatch); break;
                 case DMASTProcStatementThrow dmThrow: ProcessStatementThrow(dmThrow); break;
-                case DMASTProcStatementSet statementSet: ProcessStatementSet(statementSet); break;
                 //NOTE: Is there a more generic way of doing this, where Aggregate doesn't need every possible type state specified here?
                 //      please write such generic thing if more than three aggregates show up in this switch.
-                case DMASTAggregate<DMASTProcStatementSet> gregSet: // Hi Greg
-                    foreach (var setStatement in gregSet.Statements)
-                        ProcessStatementSet(setStatement);
-                    break;
                 case DMASTAggregate<DMASTProcStatementVarDeclaration> gregVar:
                     foreach (var declare in gregVar.Statements)
                         ProcessStatementVarDeclaration(declare);
@@ -156,179 +134,6 @@ namespace DMCompiler.DM.Builders {
 
         public void ProcessStatementBreak(DMASTProcStatementBreak statementBreak) {
             proc.Break(statementBreak.Label);
-        }
-
-        public void ProcessStatementSet(DMASTProcStatementSet statementSet) {
-            var attribute = statementSet.Attribute.ToLower();
-
-            if(attribute == "src") {
-                // TODO: Would be much better if the parser was just more strict with the expression
-                switch (statementSet.Value) {
-                    case DMASTIdentifier {Identifier: "usr"}:
-                        proc.VerbSrc = statementSet.WasInKeyword ? VerbSrc.InUsr : VerbSrc.Usr;
-                        break;
-                    case DMASTDereference {Expression: DMASTIdentifier{Identifier: "usr"}, Operations: var operations}:
-                        if (operations is not [DMASTDereference.FieldOperation {Identifier: var deref}])
-                            goto default;
-
-                        if (deref == "contents") {
-                            proc.VerbSrc = VerbSrc.InUsr;
-                        }  else if (deref == "loc") {
-                            proc.VerbSrc = VerbSrc.UsrLoc;
-                            compiler.UnimplementedWarning(statementSet.Location,
-                                "'set src = usr.loc' is unimplemented");
-                        } else if (deref == "group") {
-                            proc.VerbSrc = VerbSrc.UsrGroup;
-                            compiler.UnimplementedWarning(statementSet.Location,
-                                "'set src = usr.group' is unimplemented");
-                        } else {
-                            goto default;
-                        }
-
-                        break;
-                    case DMASTIdentifier {Identifier: "world"}:
-                        proc.VerbSrc = statementSet.WasInKeyword ? VerbSrc.InWorld : VerbSrc.World;
-                        if (statementSet.WasInKeyword)
-                            compiler.UnimplementedWarning(statementSet.Location,
-                                "'set src = world.contents' is unimplemented");
-                        else
-                            compiler.UnimplementedWarning(statementSet.Location,
-                                "'set src = world' is unimplemented");
-                        break;
-                    case DMASTDereference {Expression: DMASTIdentifier{Identifier: "world"}, Operations: var operations}:
-                        if (operations is not [DMASTDereference.FieldOperation {Identifier: "contents"}])
-                            goto default;
-
-                        proc.VerbSrc = VerbSrc.InWorld;
-                        compiler.UnimplementedWarning(statementSet.Location,
-                            "'set src = world.contents' is unimplemented");
-                        break;
-                    case DMASTProcCall {Callable: DMASTCallableProcIdentifier {Identifier: { } viewType and ("view" or "oview")}}:
-                        // TODO: Ranges
-                        if (statementSet.WasInKeyword)
-                            proc.VerbSrc = viewType == "view" ? VerbSrc.InView : VerbSrc.InOView;
-                        else
-                            proc.VerbSrc = viewType == "view" ? VerbSrc.View : VerbSrc.OView;
-                        break;
-                    // range() and orange() are undocumented, but they work
-                    case DMASTProcCall {Callable: DMASTCallableProcIdentifier {Identifier: { } viewType and ("range" or "orange")}}:
-                        // TODO: Ranges
-                        if (statementSet.WasInKeyword)
-                            proc.VerbSrc = viewType == "range" ? VerbSrc.InRange : VerbSrc.InORange;
-                        else
-                            proc.VerbSrc = viewType == "range" ? VerbSrc.Range : VerbSrc.ORange;
-                        break;
-                    default:
-                        compiler.Emit(WarningCode.BadExpression, statementSet.Value.Location, "Invalid verb src");
-                        break;
-                }
-
-                return;
-            }
-
-            if (!_exprBuilder.TryConstant(statementSet.Value, out var constant)) { // If this set statement's rhs is not constant
-                bool didError = compiler.Emit(WarningCode.InvalidSetStatement, statementSet.Location, $"'{attribute}' attribute should be a constant");
-                if (didError) // if this is an error
-                    return; // don't do the cursed thing
-
-                constant = _previousSetStatementValue;
-            } else {
-                _previousSetStatementValue = constant;
-            }
-
-            // oh no.
-            if (constant is null) {
-                compiler.Emit(WarningCode.BadExpression, statementSet.Location, $"'{attribute}' attribute must be a constant");
-                return;
-            }
-
-            // Check if it was 'set x in y' or whatever
-            // (which is illegal for everything except setting src to something)
-            if (statementSet.WasInKeyword) {
-                compiler.Emit(WarningCode.BadToken, statementSet.Location, "Use of 'in' keyword is illegal here. Did you mean '='?");
-                //fallthrough into normal behaviour because this error is kinda pedantic
-            }
-
-            switch (statementSet.Attribute.ToLower()) {
-                case "waitfor": {
-                    proc.WaitFor(constant.IsTruthy());
-                    break;
-                }
-                case "opendream_unimplemented": {
-                    if (constant.IsTruthy())
-                        proc.Attributes |= ProcAttributes.Unimplemented;
-                    else
-                        proc.Attributes &= ~ProcAttributes.Unimplemented;
-                    break;
-                }
-                case "hidden":
-                    if (constant.IsTruthy())
-                        proc.Attributes |= ProcAttributes.Hidden;
-                    else
-                        proc.Attributes &= ~ProcAttributes.Hidden;
-                    break;
-                case "popup_menu":
-                    if (constant.IsTruthy()) // The default is to show it so we flag it if it's hidden
-                        proc.Attributes &= ~ProcAttributes.HidePopupMenu;
-                    else
-                        proc.Attributes |= ProcAttributes.HidePopupMenu;
-                    break;
-                case "instant":
-                    if (constant.IsTruthy())
-                        proc.Attributes |= ProcAttributes.Instant;
-                    else
-                        proc.Attributes &= ~ProcAttributes.Instant;
-
-                    compiler.UnimplementedWarning(statementSet.Location, "set instant is not implemented");
-                    break;
-                case "background":
-                    if (constant.IsTruthy())
-                        proc.Attributes |= ProcAttributes.Background;
-                    else
-                        proc.Attributes &= ~ProcAttributes.Background;
-                    break;
-                case "name":
-                    if (constant is not Expressions.String nameStr) {
-                        compiler.Emit(WarningCode.BadExpression, constant.Location, "name attribute must be a string");
-                        break;
-                    }
-
-                    proc.VerbName = nameStr.Value;
-                    break;
-                case "category":
-                    if (constant is Expressions.String str) {
-                        proc.VerbCategory = str.Value;
-                    } else if (constant is Null) {
-                        proc.VerbCategory = null;
-                    } else {
-                        compiler.Emit(WarningCode.BadExpression, constant.Location,
-                            "category attribute must be a string or null");
-                    }
-
-                    break;
-                case "desc":
-                    // TODO: verb.desc is supposed to be printed when you type the verb name and press F1. Check the ref for details.
-                    if (constant is not Expressions.String descStr) {
-                        compiler.Emit(WarningCode.BadExpression, constant.Location, "desc attribute must be a string");
-                        break;
-                    }
-
-                    proc.VerbDesc = descStr.Value;
-                    break;
-                case "invisibility":
-                    // The ref says 0-101 for atoms and 0-100 for verbs
-                    // BYOND doesn't clamp the actual var value but it does seem to treat out-of-range values as their extreme
-                    if (constant is not Number invisNum) {
-                        compiler.Emit(WarningCode.BadExpression, constant.Location, "invisibility attribute must be an int");
-                        break;
-                    }
-
-                    proc.Invisibility = Convert.ToSByte(Math.Clamp(MathF.Floor(invisNum.Value), 0f, 100f));
-                    break;
-                case "src":
-                    compiler.UnimplementedWarning(statementSet.Location, "set src is not implemented");
-                    break;
-            }
         }
 
         public void ProcessStatementDel(DMASTProcStatementDel statementDel) {

@@ -64,19 +64,16 @@ public static unsafe partial class ByondApi {
             }
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
-                // Need to load as RTLD_GLOBAL, otherwise byondapi-rs can't find the symbols.
-                var attempt = dlopen("runtimes/linux-x64/native/libbyond.so", RTLD_LAZY | RTLD_GLOBAL);
-                if (attempt != 0)
-                    return attempt;
+                var searchDirectories = (string?)AppContext.GetData("NATIVE_DLL_SEARCH_DIRECTORIES");
 
-                attempt = dlopen("libbyond.so", RTLD_LAZY | RTLD_GLOBAL);
-                if (attempt != 0)
-                    return attempt;
+                foreach (var dir in searchDirectories?.Split(':') ?? Array.Empty<string>()) {
+                    var libraryPath = Path.Combine(dir, "libbyond.so");
 
-                var path = Path.Combine(Path.GetDirectoryName(assembly.Location), "libbyond.so");
-                attempt = dlopen(path, RTLD_LAZY | RTLD_GLOBAL);
-                if (attempt != 0)
-                    return attempt;
+                    // Need to load as RTLD_GLOBAL, otherwise byondapi-rs can't find the symbols.
+                    var attempt = dlopen(libraryPath, RTLD_LAZY | RTLD_GLOBAL);
+                    if (attempt != 0)
+                        return attempt;
+                }
             }
         }
 

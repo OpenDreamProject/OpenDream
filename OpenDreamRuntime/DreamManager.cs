@@ -82,20 +82,22 @@ public sealed partial class DreamManager {
     }
 
     public void StartWorld() {
-        // It is now OK to call user code, like /New procs.
-        Initialized = true;
-        InitializedTick = _gameTiming.CurTick;
-        CurrentTickStart = Environment.TickCount64;
+        using (Profiler.BeginZone("StartWorld", color:(uint)Color.OrangeRed.ToArgb())) {
+            // It is now OK to call user code, like /New procs.
+            Initialized = true;
+            InitializedTick = _gameTiming.CurTick;
+            CurrentTickStart = Environment.TickCount64;
 
-        // Call global <init> with waitfor=FALSE
-        _objectTree.GlobalInitProc?.Spawn(WorldInstance, new());
+            // Call global <init> with waitfor=FALSE
+            _objectTree.GlobalInitProc?.Spawn(WorldInstance, new());
 
-        // Call New() on all /area and /turf that exist, each with waitfor=FALSE separately. If <global init> created any /area, call New a SECOND TIME
-        // new() up /objs and /mobs from compiled-in maps [order: (1,1) then (2,1) then (1,2) then (2,2)]
-        _dreamMapManager.InitializeAtoms();
+            // Call New() on all /area and /turf that exist, each with waitfor=FALSE separately. If <global init> created any /area, call New a SECOND TIME
+            // new() up /objs and /mobs from compiled-in maps [order: (1,1) then (2,1) then (1,2) then (2,2)]
+            _dreamMapManager.InitializeAtoms();
 
-        // Call world.New()
-        WorldInstance.SpawnProc("New");
+            // Call world.New()
+            WorldInstance.SpawnProc("New");
+        }
     }
 
     public void Shutdown() {
@@ -108,15 +110,29 @@ public sealed partial class DreamManager {
 
     public void Update() {
         if (!Initialized)
-            return;
+                return;
 
-        CurrentTickStart = Environment.TickCount64;
-        _procScheduler.Process();
-        UpdateStat();
-        _dreamMapManager.UpdateTiles();
-        DreamObjectSavefile.FlushAllUpdates();
-        WorldInstance.Cpu = WorldInstance.TickUsage;
-        ProcessDelQueue();
+        using (Profiler.BeginZone("Tick", color:(uint)Color.OrangeRed.ToArgb())) {
+            CurrentTickStart = Environment.TickCount64;
+
+            using (Profiler.BeginZone("DM Execution", color:(uint)Color.LightPink.ToArgb()))
+                _procScheduler.Process();
+
+            using (Profiler.BeginZone("Map Update", color:(uint)Color.LightPink.ToArgb())){
+                UpdateStat();
+                _dreamMapManager.UpdateTiles();
+            }
+
+            using (Profiler.BeginZone("Disk IO", color:(uint)Color.LightPink.ToArgb()))
+                DreamObjectSavefile.FlushAllUpdates();
+
+            WorldInstance.Cpu = WorldInstance.TickUsage;
+
+            using (Profiler.BeginZone("Deletion Queue", color:(uint)Color.LightPink.ToArgb()))
+                ProcessDelQueue();
+        }
+
+        Profiler.EmitFrameMark();
     }
 
     public void ProcessDelQueue() {
@@ -274,12 +290,18 @@ public sealed partial class DreamManager {
         }  else if (value.TryGetValueAsProc(out var proc)) {
             refType = RefType.Proc;
             idx = proc.Id;
+        } else if (value.TryGetValueAsFloat(out var floatValue)) {
+            refType = RefType.Number;
+
+            // Yes, this combines with the refType and produces an invalid ref.
+            // This is BYOND behavior (as of writing at least, on 516.1661).
+            idx = BitConverter.SingleToInt32Bits(floatValue);
         } else {
             throw new NotImplementedException($"Ref for {value} is unimplemented");
         }
 
-        // The first digit is the type
-        return (uint)((int)refType + idx);
+        // The highest byte is the type
+        return (uint)refType | (uint)idx;
     }
 
     /// <summary>
@@ -344,6 +366,8 @@ public sealed partial class DreamManager {
                     : DreamValue.Null;
             case RefType.Proc:
                 return new(_objectTree.Procs[refId]);
+            case RefType.Number: // For the oh so few numbers this works with (most numbers clobber the ref type)
+                return new(BitConverter.Int32BitsToSingle(refId));
             default:
                 throw new Exception($"Invalid reference type for ref [0x{rawRefId:x}]");
         }
@@ -428,5 +452,6 @@ public enum RefType : uint {
     DreamType = 0x9000000, //in byond type is from 0x8 to 0xb, but fuck that
     DreamResource = 0x27000000, //Equivalent to file
     DreamAppearance = 0x3A000000,
-    Proc = 0x26000000
+    Proc = 0x26000000,
+    Number = 0x2A000000
 }

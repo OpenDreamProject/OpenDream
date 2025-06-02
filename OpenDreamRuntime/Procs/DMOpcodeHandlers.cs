@@ -2,7 +2,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using DMCompiler;
@@ -18,7 +17,6 @@ using Vector4 = Robust.Shared.Maths.Vector4;
 namespace OpenDreamRuntime.Procs {
     internal static partial class DMOpcodeHandlers {
         #region Values
-
         public static ProcStatus PushReferenceValue(DMProcState state) {
             DreamReference reference = state.ReadReference();
 
@@ -83,6 +81,21 @@ namespace OpenDreamRuntime.Procs {
                 } else {
                     list.SetValue(key, popped[i + 1], allowGrowth: true);
                 }
+            }
+
+            state.Push(new DreamValue(list));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus CreateStrictAssociativeList(DMProcState state) {
+            int size = state.ReadInt();
+            var list = state.Proc.ObjectTree.CreateAssocList(size);
+
+            ReadOnlySpan<DreamValue> popped = state.PopCount(size * 2);
+            for (int i = 0; i < popped.Length; i += 2) {
+                DreamValue key = popped[i];
+
+                list.SetValue(key, popped[i + 1], allowGrowth: true);
             }
 
             state.Push(new DreamValue(list));
@@ -722,11 +735,9 @@ namespace OpenDreamRuntime.Procs {
             state.Push(new DreamValue(new DreamGlobalVars(state.Proc.ObjectTree.List.ObjectDefinition)));
             return ProcStatus.Continue;
         }
-
         #endregion Values
 
         #region Math
-
         public static ProcStatus Add(DMProcState state) {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
@@ -1330,11 +1341,9 @@ namespace OpenDreamRuntime.Procs {
 
             return ProcStatus.Continue;
         }
-
         #endregion Math
 
         #region Comparisons
-
         public static ProcStatus CompareEquals(DMProcState state) {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
@@ -1475,11 +1484,9 @@ namespace OpenDreamRuntime.Procs {
 
             return nullOrFalse;
         }
-
         #endregion Comparisons
 
         #region Flow
-
         public static ProcStatus Call(DMProcState state) {
             DreamReference procRef = state.ReadReference();
             var argumentInfo = state.ReadProcArguments();
@@ -1845,11 +1852,9 @@ namespace OpenDreamRuntime.Procs {
             state.SetReturn(state.GetReferenceValue(reference));
             return ProcStatus.Returned;
         }
-
         #endregion Flow
 
         #region Builtins
-
         public static ProcStatus GetStep(DMProcState state) {
             var d = state.Pop();
             var l = state.Pop();
@@ -2286,11 +2291,9 @@ namespace OpenDreamRuntime.Procs {
 
             return ProcStatus.Continue;
         }
-
         #endregion Builtins
 
         #region Others
-
         private static void PerformOutput(DreamValue a, DreamValue b) {
             if (a.TryGetValueAsDreamResource(out var resource)) {
                 resource.Output(b);
@@ -2634,7 +2637,6 @@ namespace OpenDreamRuntime.Procs {
 
             return state.Call(proc, instance, arguments);
         }
-
         #endregion Others
 
         #region Helpers
@@ -2980,11 +2982,9 @@ namespace OpenDreamRuntime.Procs {
             DreamProcNativeIcon.Blend(iconObj.Icon, blend, DreamIconOperationBlend.BlendType.Add, 0, 0);
             return new DreamValue(iconObj);
         }
-
         #endregion Helpers
 
         #region Peephole Optimizations
-
         public static ProcStatus NullRef(DMProcState state) {
             state.AssignReference(state.ReadReference(), DreamValue.Null);
             return ProcStatus.Continue;
@@ -3199,7 +3199,6 @@ namespace OpenDreamRuntime.Procs {
             state.SetReturn(new DreamValue(state.ReadFloat()));
             return ProcStatus.Returned;
         }
-
         #endregion
     }
 }

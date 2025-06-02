@@ -282,6 +282,25 @@ public struct DreamValue : IEquatable<DreamValue> {
         return dl;
     }
 
+    // TODO: Replace GetValueAsDreamList with GetValueAsIDreamList if possible. IDreamList isn't complete enough yet.
+    public readonly bool TryGetValueAsIDreamList([NotNullWhen(true)] out IDreamList? list) {
+        if (_refValue is IDreamList idl) {
+            list = idl;
+            return true;
+        }
+
+        list = null;
+        return false;
+    }
+
+    public IDreamList MustGetValueAsIDreamList() {
+        if (_refValue is IDreamList idl)
+            return idl;
+
+        ThrowInvalidCastList();
+        return null!;
+    }
+
     [MethodImpl(MethodImplOptions.NoInlining)]
     private void ThrowInvalidCastList() {
         throw new InvalidCastException("Value " + this + " was not the expected type of DreamList");

@@ -473,7 +473,6 @@ internal sealed class AList(Location location, (DMExpression Key, DMExpression V
         }
 
         ctx.Proc.CreateStrictAssociativeList(values.Length);
-        ctx.Proc.CreateList(values.Length);
     }
 
     public override bool TryAsJsonRepresentation(DMCompiler compiler, out object? json) {

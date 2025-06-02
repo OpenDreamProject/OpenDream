@@ -182,7 +182,6 @@ public sealed class DMProcState : ProcState {
     private static readonly ArrayPool<DreamValue> DreamValuePool = ArrayPool<DreamValue>.Create();
 
     #region Opcode Handlers
-
     //Human-readable friendly version, which will be converted to a more efficient lookup at runtime.
     private static readonly Dictionary<DreamProcOpcode, OpcodeHandler> OpcodeHandlers = new() {
         {DreamProcOpcode.BitShiftLeft, DMOpcodeHandlers.BitShiftLeft},
@@ -196,6 +195,7 @@ public sealed class DMProcState : ProcState {
         {DreamProcOpcode.Call, DMOpcodeHandlers.Call},
         {DreamProcOpcode.MultiplyReference, DMOpcodeHandlers.MultiplyReference},
         {DreamProcOpcode.JumpIfFalse, DMOpcodeHandlers.JumpIfFalse},
+        {DreamProcOpcode.CreateStrictAssociativeList, DMOpcodeHandlers.CreateStrictAssociativeList},
         {DreamProcOpcode.Jump, DMOpcodeHandlers.Jump},
         {DreamProcOpcode.CompareEquals, DMOpcodeHandlers.CompareEquals},
         {DreamProcOpcode.Return, DMOpcodeHandlers.Return},
@@ -333,7 +333,6 @@ public sealed class DMProcState : ProcState {
     };
 
     public static readonly unsafe delegate*<DMProcState, ProcStatus>[] OpcodeHandlersTable;
-
     #endregion
 
     public DreamManager DreamManager => _proc.DreamManager;
@@ -576,7 +575,6 @@ public sealed class DMProcState : ProcState {
     }
 
     #region Stack
-
     private DreamValue[] _stack = default!;
     private int _stackIndex;
     public ReadOnlyMemory<DreamValue> DebugStack() => _stack.AsMemory(0, _stackIndex);
@@ -625,11 +623,9 @@ public sealed class DMProcState : ProcState {
 
         return CreateProcArguments(values, proc, argumentsType, argumentStackSize);
     }
-
     #endregion
 
     #region Operands
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int ReadByte() {
         var r = _proc.Bytecode[_pc];
@@ -701,11 +697,9 @@ public sealed class DMProcState : ProcState {
     public (DMCallArgumentsType Type, int StackSize) ReadProcArguments() {
         return ((DMCallArgumentsType) ReadByte(), ReadInt());
     }
-
     #endregion
 
     #region References
-
     /// <summary>
     /// Takes a DMReference with a <see cref="DMReference.Type.ListIndex"/> type and returns the value being indexed
     /// as well as what it's being indexed with.
@@ -761,7 +755,9 @@ public sealed class DMProcState : ProcState {
             case DMReference.Type.ListIndex: {
                 GetIndexReferenceValues(reference, out var index, out var indexing, peek);
 
-                if (indexing.TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
+                if (indexing.TryGetValueAsIDreamList(out var dreamList)) {
+                    dreamList.SetValue(index, value);
+                } else if (indexing.TryGetValueAsDreamObject<DreamObject>(out var dreamObject)) {
                     dreamObject.OperatorIndexAssign(index, this, value);
                 } else {
                     ThrowCannotAssignListIndex(index, indexing);
@@ -948,7 +944,6 @@ public sealed class DMProcState : ProcState {
     private static void ThrowAttemptedToIndexString(DreamValue index) {
         throw new Exception($"Attempted to index string with {index}");
     }
-
     #endregion References
 
     public IEnumerable<(string, DreamValue)> DebugArguments() {

@@ -6,7 +6,8 @@ public enum JsonVariableType {
     Proc = 2,
     List = 3,
     PositiveInfinity = 4,
-    NegativeInfinity = 5
+    NegativeInfinity = 5,
+    AList = 6
 }
 
 public sealed class DreamTypeJson {

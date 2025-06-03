@@ -1,10 +1,12 @@
-﻿// Keep this in line with AList.dm
+﻿// Keep this in line with List.dm
 
-/list
+/alist
 	var/len
-	var/const/type = /list
+	var/const/type = /alist
 
-	proc/New(Size)
+	// The only difference from /list's definition as far as I can tell
+	// It takes an arglist of key/value pairs instead of a size arg
+	proc/New(items)
 
 	proc/Add(Item1)
 	proc/Copy(Start = 1, End = 0)

@@ -22,12 +22,13 @@ namespace OpenDreamRuntime.Objects;
 
 public sealed class DreamObjectTree {
     public TreeEntry[] Types { get; private set; }
-    public List<DreamProc> Procs { get; private set; } = new();
+    public List<DreamProc> Procs { get; } = new();
     public List<string> Strings { get; private set; } //TODO: Store this somewhere else
     public DreamProc? GlobalInitProc { get; private set; }
 
     public TreeEntry Root { get; private set; }
     public TreeEntry List { get; private set; }
+    public TreeEntry AssocList { get; private set; }
     public TreeEntry World { get; private set; }
     public TreeEntry Client { get; private set; }
     public TreeEntry Datum { get; private set; }
@@ -72,7 +73,7 @@ public sealed class DreamObjectTree {
     private ServerVerbSystem? _verbSystem;
 
     public void LoadJson(DreamCompiledJson json) {
-        var types = json.Types ?? Array.Empty<DreamTypeJson>();
+        var types = json.Types;
         if (types.Length == 0 || types[0].Path != "/")
             throw new ArgumentException("The first type must be root!", nameof(json));
 
@@ -84,7 +85,7 @@ public sealed class DreamObjectTree {
         _entitySystemManager.TryGetEntitySystem(out _metaDataSystem);
         _entitySystemManager.TryGetEntitySystem(out _verbSystem);
 
-        Strings = json.Strings ?? new();
+        Strings = json.Strings;
 
         if (json.GlobalInitProc is { } initProcDef) {
             GlobalInitProc = new DMProc(0, Root, initProcDef, "<global init>", _dreamManager, _atomManager, _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this, _procScheduler, _verbSystem);
@@ -198,11 +199,15 @@ public sealed class DreamObjectTree {
     public DreamList CreateList(string[] elements) {
         DreamList list = CreateList(elements.Length);
 
-        foreach (String value in elements) {
+        foreach (string value in elements) {
             list.AddValue(new DreamValue(value));
         }
 
         return list;
+    }
+
+    public DreamAssocList CreateAssocList(int size = 0) {
+        return new DreamAssocList(AssocList.ObjectDefinition, size);
     }
 
     public DreamValue GetDreamValueFromJsonElement(object? value) {
@@ -238,7 +243,7 @@ public sealed class DreamObjectTree {
                         return new DreamValue(Types[typeValue.GetInt32()]);
                     case JsonVariableType.Proc:
                         return new DreamValue(Procs[jsonElement.GetProperty("value").GetInt32()]);
-                    case JsonVariableType.List:
+                    case JsonVariableType.List: {
                         DreamList list = CreateList();
 
                         if (jsonElement.TryGetProperty("values", out JsonElement values)) {
@@ -258,6 +263,25 @@ public sealed class DreamObjectTree {
                         }
 
                         return new DreamValue(list);
+                    }
+                    case JsonVariableType.AList: {
+                        DreamAssocList aList = CreateAssocList();
+
+                        if (jsonElement.TryGetProperty("values", out JsonElement values)) {
+                            foreach (JsonElement listValue in values.EnumerateArray()) {
+                                if (listValue.ValueKind != JsonValueKind.Object ||
+                                    !listValue.TryGetProperty("key", out var jsonKey) ||
+                                    !listValue.TryGetProperty("value", out var jsonValue)) {
+                                    throw new Exception("AList value was missing a key or value property");
+                                }
+
+                                aList.SetValue(GetDreamValueFromJsonElement(jsonKey),
+                                    GetDreamValueFromJsonElement(jsonValue));
+                            }
+                        }
+
+                        return new DreamValue(aList);
+                    }
                     case JsonVariableType.PositiveInfinity:
                         return new DreamValue(float.PositiveInfinity);
                     case JsonVariableType.NegativeInfinity:
@@ -289,6 +313,7 @@ public sealed class DreamObjectTree {
 
         World = GetTreeEntry("/world");
         List = GetTreeEntry("/list");
+        AssocList = GetTreeEntry("/alist");
         Client = GetTreeEntry("/client");
         Datum = GetTreeEntry("/datum");
         Sound = GetTreeEntry("/sound");

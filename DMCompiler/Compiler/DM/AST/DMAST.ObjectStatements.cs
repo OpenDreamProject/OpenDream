@@ -70,8 +70,7 @@ public sealed class DMASTObjectVarDefinition(
     Location location,
     DreamPath path,
     DMASTExpression value,
-    DMComplexValueType valType,
-    DreamPath? valPath = null) : DMASTStatement(location) {
+    DMComplexValueType valType) : DMASTStatement(location) {
     /// <summary>The path of the object that we are a property of.</summary>
     public DreamPath ObjectPath => _varDecl.ObjectPath;
 

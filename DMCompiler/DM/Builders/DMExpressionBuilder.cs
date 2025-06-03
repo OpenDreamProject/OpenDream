@@ -976,7 +976,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                             prevPath = property.Type;
                             pathIsFuzzy = prevPath == null;
                             continue;
-                        } else if (property?.CanConstFold is true && property.Value.TryAsConstant(Compiler, out var derefConst)) {
+                        } else if (property?.TryAsConstant(Compiler, out var derefConst) is true) {
                             expr = derefConst;
 
                             var newOperationCount = operations.Length - i - 1;

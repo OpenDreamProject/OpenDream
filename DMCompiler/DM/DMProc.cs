@@ -551,7 +551,7 @@ internal sealed class DMProc {
     public void CreateFilteredListEnumerator(int filterTypeId, DreamPath filterType) {
         WriteOpcode(DreamProcOpcode.CreateFilteredListEnumerator);
         WriteEnumeratorId(_enumeratorIdCounter++);
-        WriteFilterID(filterTypeId, filterType);
+        WriteFilterId(filterTypeId, filterType);
     }
 
     public void CreateTypeEnumerator() {
@@ -1321,7 +1321,7 @@ internal sealed class DMProc {
         AnnotatedBytecode.WriteConcatCount(count, _writerLocation);
     }
 
-    private void WriteFilterID(int filterId, DreamPath filter) {
+    private void WriteFilterId(int filterId, DreamPath filter) {
         AnnotatedBytecode.WriteFilterId(filterId, filter, _writerLocation);
     }
 

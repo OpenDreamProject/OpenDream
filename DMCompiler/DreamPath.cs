@@ -11,6 +11,7 @@ public struct DreamPath {
     public static readonly DreamPath Root = new DreamPath("/");
     public static readonly DreamPath Exception = new DreamPath("/exception");
     public static readonly DreamPath List = new DreamPath("/list");
+    public static readonly DreamPath AList = new DreamPath("/alist");
     public static readonly DreamPath Regex = new DreamPath("/regex");
     public static readonly DreamPath Savefile = new DreamPath("/savefile");
     public static readonly DreamPath Sound = new DreamPath("/sound");

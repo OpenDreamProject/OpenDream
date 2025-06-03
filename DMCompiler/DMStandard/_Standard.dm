@@ -126,6 +126,7 @@ proc/winget(player, control_id, params)
 proc/winset(player, control_id, params)
 
 #include "Defines.dm"
+#include "Types\AList.dm"
 #include "Types\Client.dm"
 #include "Types\Database.dm"
 #include "Types\Datum.dm"

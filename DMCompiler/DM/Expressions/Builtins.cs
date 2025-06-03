@@ -466,6 +466,50 @@ internal sealed class List : DMExpression {
     }
 }
 
+// alist(...)
+internal sealed class AList(Location location, (DMExpression Key, DMExpression Value)[] values) : DMExpression(location) {
+    public override bool PathIsFuzzy => true;
+    public override DMComplexValueType ValType => DreamPath.AList;
+
+    public override void EmitPushValue(ExpressionContext ctx) {
+        foreach (var value in values) {
+            value.Key.EmitPushValue(ctx);
+            value.Value.EmitPushValue(ctx);
+        }
+
+        ctx.Proc.CreateStrictAssociativeList(values.Length);
+    }
+
+    public override bool TryAsJsonRepresentation(DMCompiler compiler, out object? json) {
+        List<object?> values1 = new();
+
+        foreach (var value in values) {
+            if (!value.Value.TryAsJsonRepresentation(compiler, out var jsonValue)) {
+                json = null;
+                return false;
+            }
+
+            // Null key is not supported here
+            if (!value.Key.TryAsJsonRepresentation(compiler, out var jsonKey) || jsonKey == null) {
+                json = null;
+                return false;
+            }
+
+            values1.Add(new Dictionary<object, object?> {
+                { "key", jsonKey },
+                { "value", jsonValue }
+            });
+        }
+
+        json = new Dictionary<string, object> {
+            { "type", JsonVariableType.AList },
+            { "values", values1 }
+        };
+
+        return true;
+    }
+}
+
 // Value of var/list/L[1][2][3]
 internal sealed class DimensionalList(Location location, DMExpression[] sizes) : DMExpression(location) {
     public override void EmitPushValue(ExpressionContext ctx) {

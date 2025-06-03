@@ -1443,11 +1443,11 @@ internal static class DreamProcNativeRoot {
             writer.WriteStringValue(type.Path);
         else if (value.TryGetValueAsProc(out var proc))
             writer.WriteStringValue(proc.ToString());
-        else if (value.TryGetValueAsDreamList(out var list)) {
+        else if (value.TryGetValueAsIDreamList(out var list)) {
             if (list.IsAssociative) {
                 writer.WriteStartObject();
 
-                foreach (DreamValue listValue in list.GetValues()) {
+                foreach (DreamValue listValue in list.EnumerateValues()) {
                     var key = listValue.Stringify();
 
                     if (list.ContainsKey(listValue)) {
@@ -1465,7 +1465,7 @@ internal static class DreamProcNativeRoot {
             } else {
                 writer.WriteStartArray();
 
-                foreach (DreamValue listValue in list.GetValues()) {
+                foreach (DreamValue listValue in list.EnumerateValues()) {
                     JsonEncode(writer, listValue);
                 }
 

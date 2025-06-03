@@ -1096,21 +1096,28 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
     }
 
     private DMExpression BuildList(DMASTList list, DreamPath? inferredPath) {
-        (DMExpression? Key, DMExpression Value)[] values = [];
+        (DMExpression? Key, DMExpression Value)[] values = new (DMExpression?, DMExpression)[list.Values.Length];
 
-        if (list.Values != null) {
-            values = new (DMExpression?, DMExpression)[list.Values.Length];
+        for (int i = 0; i < list.Values.Length; i++) {
+            DMASTCallParameter value = list.Values[i];
+            DMExpression? key = null;
+            DMExpression listValue = BuildExpression(value.Value, inferredPath);
 
-            for (int i = 0; i < list.Values.Length; i++) {
-                DMASTCallParameter value = list.Values[i];
-                DMExpression? key = (value.Key != null) ? BuildExpression(value.Key, inferredPath) : null;
-                DMExpression listValue = BuildExpression(value.Value, inferredPath);
-
-                values[i] = (key, listValue);
+            if (value.Key != null) {
+                key = BuildExpression(value.Key, inferredPath);
+            } else if (list.IsAList) {
+                Compiler.Emit(WarningCode.BadArgument, value.Location, "Missing the key for an alist item");
+                key = new BadExpression(value.Location);
             }
+
+            values[i] = (key, listValue);
         }
 
-        return new List(list.Location, values);
+        if (list.IsAList) {
+            return new AList(list.Location, values!);
+        } else {
+            return new List(list.Location, values);
+        }
     }
 
     private DMExpression BuildDimensionalList(DMASTDimensionalList list, DreamPath? inferredPath) {

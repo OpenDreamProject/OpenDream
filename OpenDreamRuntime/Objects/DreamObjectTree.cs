@@ -272,7 +272,7 @@ public sealed class DreamObjectTree {
                                 if (listValue.ValueKind != JsonValueKind.Object ||
                                     !listValue.TryGetProperty("key", out var jsonKey) ||
                                     !listValue.TryGetProperty("value", out var jsonValue)) {
-                                    throw new Exception("List value was missing a key or value property");
+                                    throw new Exception("AList value was missing a key or value property");
                                 }
 
                                 aList.SetValue(GetDreamValueFromJsonElement(jsonKey),

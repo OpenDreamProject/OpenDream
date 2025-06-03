@@ -178,17 +178,17 @@ internal sealed class DMProc {
 
             switch (expr) {
                 case ProcCall:
-                    _compiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Called proc does not have a return type set, expected {ReturnTypes}.");
+                    _compiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject.Path.ToString()}.{Name}(): Called proc does not have a return type set, expected {ReturnTypes}.");
                     break;
                 case Local:
-                    _compiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type of non-constant expression, expected {ReturnTypes}. Consider making this variable constant or adding an explicit \"as {ReturnTypes}\"");
+                    _compiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject.Path.ToString()}.{Name}(): Cannot determine return type of non-constant expression, expected {ReturnTypes}. Consider making this variable constant or adding an explicit \"as {ReturnTypes}\"");
                     break;
                 default:
-                    _compiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type of expression \"{expr}\", expected {ReturnTypes}. Consider reporting this as a bug on OpenDream's GitHub.");
+                    _compiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject.Path.ToString()}.{Name}(): Cannot determine return type of expression \"{expr}\", expected {ReturnTypes}. Consider reporting this as a bug on OpenDream's GitHub.");
                     break;
             }
         } else if (!ReturnTypes.MatchesType(_compiler, type)) { // We could determine the return types but they don't match
-            _compiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{splitter}{Name}(): Invalid return type {type}, expected {ReturnTypes}");
+            _compiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject.Path.ToString()}{splitter}{Name}(): Invalid return type {type}, expected {ReturnTypes}");
         }
     }
 
@@ -483,7 +483,7 @@ internal sealed class DMProc {
         return _scopes.Peek().LocalVariables.TryAdd(name, new LocalVariable(name, localVarId, false, type, valType));
     }
 
-    public bool TryAddLocalConstVariable(string name, DreamPath? type, Expressions.Constant value) {
+    public bool TryAddLocalConstVariable(string name, DreamPath? type, Constant value) {
         if (_parameters.ContainsKey(name)) //Parameters and local vars cannot share a name
             return false;
 
@@ -518,7 +518,7 @@ internal sealed class DMProc {
     }
 
     public void DebugSource(Location location) {
-        var sourceInfo = new SourceInfoJson() {
+        var sourceInfo = new SourceInfoJson {
             Line = location.Line ?? -1
         };
 

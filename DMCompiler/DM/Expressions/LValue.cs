@@ -158,12 +158,7 @@ internal sealed class Field(Location location, DMVariable variable, DMComplexVal
     public override string GetNameof(ExpressionContext ctx) => variable.Name;
 
     public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
-        if (variable is { CanConstFold: true, Value: not null }) {
-            return variable.Value.TryAsConstant(compiler, out constant);
-        }
-
-        constant = null;
-        return false;
+        return variable.TryAsConstant(compiler, out constant);
     }
 
     public override string ToString() {
@@ -195,12 +190,8 @@ internal sealed class GlobalField(Location location, DreamPath? path, int id,  D
 
     public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
         DMVariable global = compiler.DMObjectTree.Globals[Id];
-        if (global.CanConstFold) {
-            return global.Value.TryAsConstant(compiler, out constant);
-        }
 
-        constant = null;
-        return false;
+        return global.TryAsConstant(compiler, out constant);
     }
 }
 

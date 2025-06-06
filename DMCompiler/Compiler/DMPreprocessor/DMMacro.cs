@@ -165,7 +165,7 @@ internal sealed class DMMacroFile() : DMMacro(null, null) {
 internal sealed class DMMacroVersion() : DMMacro(null, null) {
     public override List<Token> Expand(DMCompiler compiler, Token replacing, List<List<Token>>? parameters) {
         return [
-            new Token(TokenType.DM_Preproc_Number, compiler.Settings.DMVersion, replacing.Location, null)
+            new Token(TokenType.DM_Preproc_Number, compiler.Settings.DMVersion.ToString(), replacing.Location, null)
         ];
     }
 }
@@ -174,7 +174,7 @@ internal sealed class DMMacroVersion() : DMMacro(null, null) {
 internal sealed class DMMacroBuild() : DMMacro(null, null) {
     public override List<Token> Expand(DMCompiler compiler, Token replacing, List<List<Token>>? parameters) {
         return [
-            new Token(TokenType.DM_Preproc_Number, compiler.Settings.DMBuild, replacing.Location, null)
+            new Token(TokenType.DM_Preproc_Number, compiler.Settings.DMBuild.ToString(), replacing.Location, null)
         ];
     }
 }

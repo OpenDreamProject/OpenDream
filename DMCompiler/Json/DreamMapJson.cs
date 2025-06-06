@@ -1,22 +1,24 @@
-﻿namespace DMCompiler.Json;
+﻿// ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
+
+namespace DMCompiler.Json;
 
 public sealed class DreamMapJson {
     public int MaxX { get; set; }
     public int MaxY { get; set; }
     public int MaxZ { get; set; }
-    public Dictionary<string, CellDefinitionJson> CellDefinitions { get; } = new();
-    public List<MapBlockJson> Blocks { get; } = new();
+    public Dictionary<string, CellDefinitionJson> CellDefinitions { get; set; } = new();
+    public List<MapBlockJson> Blocks { get; set; } = new();
 }
 
 public sealed class CellDefinitionJson(string name) {
-    public string Name { get; } = name;
+    public string Name { get; set; } = name;
     public MapObjectJson Turf { get; set; }
     public MapObjectJson? Area { get; set; }
-    public List<MapObjectJson> Objects { get; } = new();
+    public List<MapObjectJson> Objects { get; set; } = new();
 }
 
 public sealed class MapObjectJson(int type) {
-    public int Type { get; } = type;
+    public int Type { get; set; } = type;
     public Dictionary<string, object?>? VarOverrides { get; set; }
 
     public bool AddVarOverride(string varName, object? varValue) {
@@ -38,10 +40,10 @@ public sealed class MapObjectJson(int type) {
 }
 
 public sealed class MapBlockJson(int x, int y, int z) {
-    public int X { get; } = x;
-    public int Y { get; } = y;
-    public int Z { get; } = z;
+    public int X { get; set; } = x;
+    public int Y { get; set; } = y;
+    public int Z { get; set; } = z;
     public int Width { get; set; }
     public int Height { get; set; }
-    public List<string> Cells { get; } = new();
+    public List<string> Cells { get; set; } = new();
 }

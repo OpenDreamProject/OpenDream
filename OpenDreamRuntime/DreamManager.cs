@@ -123,6 +123,9 @@ public sealed partial class DreamManager {
                 _dreamMapManager.UpdateTiles();
             }
 
+            using (Profiler.BeginZone("ByondApi Thread Syncs"))
+                ByondApi.ByondApi.ExecuteThreadSyncs();
+
             using (Profiler.BeginZone("Disk IO", color:(uint)Color.LightPink.ToArgb()))
                 DreamObjectSavefile.FlushAllUpdates();
 

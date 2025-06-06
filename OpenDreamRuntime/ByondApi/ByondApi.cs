@@ -1,4 +1,7 @@
-﻿using OpenDreamRuntime.Map;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
+using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects;
 using Robust.Shared.Utility;
 
@@ -10,6 +13,9 @@ public static partial class ByondApi {
     private static IDreamMapManager? _dreamMapManager;
     private static DreamObjectTree? _objectTree;
 
+    private static readonly ConcurrentQueue<Action> ThreadSyncQueue = new();
+    private static int _mainThreadId;
+
     public static void Initialize(DreamManager dreamManager, AtomManager atomManager, IDreamMapManager dreamMapManager, DreamObjectTree objectTree) {
         DebugTools.Assert(_dreamManager is null or { IsShutDown: true });
 
@@ -18,10 +24,24 @@ public static partial class ByondApi {
         _dreamMapManager = dreamMapManager;
         _objectTree = objectTree;
 
+        _mainThreadId = Environment.CurrentManagedThreadId;
+        ThreadSyncQueue.Clear();
+
         InitTrampoline();
     }
 
+    public static void ExecuteThreadSyncs() {
+        while (ThreadSyncQueue.TryDequeue(out var task))
+            task.Invoke();
+    }
+
+    /// <summary>
+    /// Converts a CByondValue to a DreamValue
+    /// </summary>
+    /// <remarks>Must be run on the main thread</remarks>
     public static DreamValue ValueFromDreamApi(CByondValue value) {
+        DebugTools.AssertEqual(Environment.CurrentManagedThreadId, _mainThreadId);
+
         var cdata = value.data;
         var ctype = value.type;
 
@@ -134,5 +154,19 @@ public static partial class ByondApi {
             default:
                 throw new ArgumentOutOfRangeException();
         }
+    }
+
+    [SuppressMessage("Usage", "RA0004:Risk of deadlock from accessing Task<T>.Result")]
+    private static T RunOnMainThread<T>(Func<T> task) {
+        if (Environment.CurrentManagedThreadId == _mainThreadId)
+            return task.Invoke();
+
+        var tcs = new TaskCompletionSource<T>();
+
+        ThreadSyncQueue.Enqueue(() => {
+            tcs.SetResult(task.Invoke());
+        });
+
+        return tcs.Task.Result;
     }
 }

@@ -54,7 +54,7 @@ public static unsafe partial class ByondApi {
         return 9001;
     }
 
-    /**
+    /** byondapi.h comment:
      * Runs a function as a callback on the main thread (or right away if already there)
      * All references created from Byondapi calls within your callback are persistent, not temporary, even though your callback runs on the main thread.
      * Blocking is optional. If already on the main thread, the block parameter is meaningless.
@@ -433,7 +433,7 @@ public static unsafe partial class ByondApi {
         });
     }
 
-    /**
+    /** byondapi.h comment:
      * Writes an item to a list.
      * Blocks if not on the main thread.
      * @param loc The list
@@ -465,7 +465,7 @@ public static unsafe partial class ByondApi {
         });
     }
 
-    /**
+    /** byondapi.h comment:
      * Reads from a BYOND pointer
      * Blocks if not on the main thread.
      * @param ptr The BYOND pointer
@@ -481,7 +481,7 @@ public static unsafe partial class ByondApi {
         throw new NotImplementedException();
     }
 
-    /**
+    /** byondapi.h comment:
      * Writes to a BYOND pointer
      * Blocks if not on the main thread.
      * @param ptr The BYOND pointer
@@ -914,7 +914,7 @@ public static unsafe partial class ByondApi {
         });
     }
 
-    /**
+    /** byondapi.h comment:
      * Equivalent to calling refcount(value)
      * Blocks if not on the main thread.
      * @param src The object to refcount
@@ -992,7 +992,7 @@ public static unsafe partial class ByondApi {
         throw new NotImplementedException();
     }
 
-    /**
+    /** byondapi.h comment:
      * Increase the persistent reference count of an object used in Byondapi
      * Reminder: Calls only create temporary references when made on the main thread. On other threads, the references are already persistent.
      * Blocks if not on the main thread.
@@ -1004,7 +1004,7 @@ public static unsafe partial class ByondApi {
         //throw new NotImplementedException();
     }
 
-    /**
+    /** byondapi.h comment:
      * Mark a persistent reference as no longer in use by Byondapi
      * This is IMPORTANT to call when you make Byondapi calls on another thread, since all the references they create are persistent.
      * This cannot be used for temporary references. See ByondValue_DecTempRef() for those.
@@ -1017,7 +1017,7 @@ public static unsafe partial class ByondApi {
         //throw new NotImplementedException();
     }
 
-    /**
+    /** byondapi.h comment:
      * Mark a temporary reference as no longer in use by Byondapi
      * Temporary references will be deleted automatically at the end of a tick, so this only gets rid of the reference a little faster.
      * Only works on the main thread. Does nothing on other threads.

@@ -74,10 +74,6 @@ internal partial class DMCodeTree {
                 codeTree._waitingNodes.Add(procGlobalNode);
             }
 
-            if (proc.IsVerb) {
-                dmObject.AddVerb(proc);
-            }
-
             return true;
         }
 

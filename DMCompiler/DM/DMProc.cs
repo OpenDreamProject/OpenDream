@@ -162,6 +162,9 @@ internal sealed class DMProc {
         if (_astDefinition is not null) { // It's null for initialization procs
             new DMProcBuilder(_compiler, _dmObject, this).ProcessProcDefinition(_astDefinition);
         }
+
+        if (IsVerb)
+            _dmObject.AddVerb(this);
     }
 
     public void ValidateReturnType(DMExpression expr) {

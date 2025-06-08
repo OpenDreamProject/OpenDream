@@ -114,14 +114,8 @@ public sealed class ServerVerbSystem : VerbSystem {
     public void UpdateClientVerbs(DreamObjectClient client) {
         var verbs = client.ClientVerbs.Verbs;
         var verbIds = new List<int>(verbs.Count);
-        Dictionary<string /* proc name */, DreamProc> latestVerbOverrideForType = new Dictionary<string, DreamProc>();
 
         foreach (var verb in verbs) {
-            latestVerbOverrideForType[verb.Name] = verb;
-        }
-
-        foreach (var proc in latestVerbOverrideForType) {
-            var verb = proc.Value;
             if (verb.VerbId == null)
                 RegisterVerb(verb);
             verbIds.Add(verb.VerbId!.Value);
@@ -242,12 +236,6 @@ public sealed class ServerVerbSystem : VerbSystem {
             // Deviates from BYOND, where anything but usr and world shows the verb in the statpanel but is not executable
             return true;
         } else if (src is DreamObjectAtom atom) {
-            if (!IsVerbLatestOverrideOnType(src, verb)) {
-                _sawmill.Warning(
-                    $"Connection {connection.Session?.Name ?? "<unknown>"} attempted to execute proc {verb} on {src} but is not allowed to per proc override rules! (An override is present later down the tree.)");
-                return false;
-            }
-
             var appearance = _atomManager.MustGetAppearance(atom);
             if (appearance.Verbs.Contains(verb.VerbId.Value) is not true) // Inside atom.verbs?
                 return false;
@@ -268,19 +256,5 @@ public sealed class ServerVerbSystem : VerbSystem {
                 // TODO: All the other kinds
                 return true;
         }
-    }
-
-    private bool IsVerbLatestOverrideOnType(DreamObject src, DreamProc verb) {
-        Dictionary<string /* proc name */, DreamProc> latestVerbOverrideForType = new Dictionary<string, DreamProc>();
-        if (src.ObjectDefinition.Verbs is null)
-            return false;
-        foreach (var proc in src.ObjectDefinition.Verbs) {
-            var verbProc = _objectTree.Procs[proc];
-            if (src.ObjectDefinition.TreeEntry.IsSubtypeOf(verbProc.OwningType)) {
-                latestVerbOverrideForType[verbProc.Name] = verbProc;
-            }
-        }
-
-        return latestVerbOverrideForType[verb.Name].Id == verb.Id;
     }
 }

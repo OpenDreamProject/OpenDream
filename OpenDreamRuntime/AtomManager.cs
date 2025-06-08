@@ -763,17 +763,10 @@ public sealed class AtomManager {
         }
 
         if (def.Verbs != null) {
-            Dictionary<string /* proc name */, DreamProc> latestVerbOverrideForType = new Dictionary<string, DreamProc>();
             foreach (var verb in def.Verbs) {
                 var verbProc = _objectTree.Procs[verb];
-                // only consider adding as a verb if its proc's owning type belongs to this entity
-                if (def.TreeEntry.IsSubtypeOf(verbProc.OwningType)) {
-                    latestVerbOverrideForType[verbProc.Name] = verbProc;
-                }
-            }
 
-            foreach (var proc in latestVerbOverrideForType) {
-                appearance.Verbs.Add(proc.Value.VerbId!.Value);
+                appearance.Verbs.Add(verbProc.VerbId!.Value);
             }
         }
 

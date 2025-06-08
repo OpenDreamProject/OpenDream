@@ -1,4 +1,6 @@
-﻿namespace DMCompiler.Json;
+﻿// ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
+
+namespace DMCompiler.Json;
 
 public sealed class DreamMapJson {
     public int MaxX { get; set; }
@@ -17,9 +19,9 @@ public sealed class CellDefinitionJson(string name) {
 
 public sealed class MapObjectJson(int type) {
     public int Type { get; set; } = type;
-    public Dictionary<string, object>? VarOverrides { get; set; }
+    public Dictionary<string, object?>? VarOverrides { get; set; }
 
-    public bool AddVarOverride(string varName, object varValue) {
+    public bool AddVarOverride(string varName, object? varValue) {
         VarOverrides ??= new();
         bool contained = VarOverrides.ContainsKey(varName);
         VarOverrides[varName] = varValue;
@@ -29,7 +31,7 @@ public sealed class MapObjectJson(int type) {
     public override bool Equals(object? obj) {
         return obj is MapObjectJson json &&
                Type == json.Type &&
-               EqualityComparer<Dictionary<string, object>>.Default.Equals(VarOverrides, json.VarOverrides);
+               EqualityComparer<Dictionary<string, object?>>.Default.Equals(VarOverrides, json.VarOverrides);
     }
 
     public override int GetHashCode() {

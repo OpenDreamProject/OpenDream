@@ -80,6 +80,7 @@ internal partial class DMCodeTree {
                     _ => false
                 },
 
+                AList => true,
                 List => true,
                 DimensionalList => true,
                 NewList => true,

@@ -66,9 +66,17 @@ public struct DreamValue : IEquatable<DreamValue> {
     private object? _refValue;
     private readonly float _floatValue;
 
+    #if TOOLS
+    //ReSharper disable once NotAccessedField.Local
+    private readonly ProfilerMemory? _tracyMemoryId; //only used for strings, since everything else is a value type or handled in DreamObject
+    #endif
+    
     public DreamValue(string value) {
         DebugTools.Assert(value != null);
         Type = DreamValueType.String;
+        #if TOOLS
+        _tracyMemoryId = Profiler.BeginMemoryZone((ulong) (1+value.Length*sizeof(char)), "string");
+        #endif
         _refValue = value;
     }
 
@@ -280,6 +288,25 @@ public struct DreamValue : IEquatable<DreamValue> {
         }
 
         return dl;
+    }
+
+    // TODO: Replace GetValueAsDreamList with GetValueAsIDreamList if possible. IDreamList isn't complete enough yet.
+    public readonly bool TryGetValueAsIDreamList([NotNullWhen(true)] out IDreamList? list) {
+        if (_refValue is IDreamList idl) {
+            list = idl;
+            return true;
+        }
+
+        list = null;
+        return false;
+    }
+
+    public IDreamList MustGetValueAsIDreamList() {
+        if (_refValue is IDreamList idl)
+            return idl;
+
+        ThrowInvalidCastList();
+        return null!;
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]

@@ -38,9 +38,6 @@ internal static partial class DMOpcodeHandlers {
         DreamProcArguments arguments) {
         // TODO: Don't allocate string copy
         // TODO: Handle stdcall (do we care?)
-#if DISABLE_BYOND_API
-        throw new Exception("Server was not compiled with BYOND API support!");
-#else
         var entryPoint = (delegate* unmanaged[Cdecl]<uint, ByondApi.CByondValue*, ByondApi.CByondValue>)
             DllHelper.ResolveDllTarget(state.Proc.DreamResourceManager, dllName, procName["byond:".Length..]);
 
@@ -56,7 +53,6 @@ internal static partial class DMOpcodeHandlers {
 
         state.Push(Api.ValueFromDreamApi(result));
         return ProcStatus.Continue;
-#endif
     }
 
     private static unsafe ProcStatus CallExtString(

@@ -31,7 +31,7 @@ internal abstract class DMExpression(Location location) {
         PopNull,
 
         // If a dereference is short-circuited due to a null conditional, the short-circuit label should be jumped to with null still on the top of the stack
-        KeepNull,
+        KeepNull
     }
 
     public virtual bool CanReferenceShortCircuit() => false;

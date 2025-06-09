@@ -50,7 +50,8 @@ public sealed partial class DMTests : ContentUnitTest {
 
     private string? Compile(DMCompiler.DMCompiler compiler, string sourceFile) {
         bool successfulCompile = compiler.Compile(new() {
-            Files = [sourceFile]
+            Files = [sourceFile],
+            NoOpts = Environment.GetEnvironmentVariable("NO_OPTS") != null
         });
 
         return successfulCompile ? Path.ChangeExtension(sourceFile, "json") : null;

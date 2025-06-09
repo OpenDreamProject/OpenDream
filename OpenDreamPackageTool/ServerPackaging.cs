@@ -149,6 +149,7 @@ public static class ServerPackaging {
         Program.CopyDirectory($"RobustToolbox/bin/Server/{platform.RId}/publish", releaseDir, BinSkipFolders);
         CopyResources(Path.Combine(releaseDir, "Resources"));
         CopyContentAssemblies(Path.Combine(releaseDir, "Resources", "Assemblies"));
+        CopyNatives(platform, releaseDir);
         if (options.HybridAcz) {
             // Hybrid ACZ expects "Content.Client.zip" (as it's not OpenDream-specific)
             ZipFile.CreateFromDirectory(Path.Combine(options.OutputDir, "OpenDreamClient"), Path.Combine(releaseDir, "Content.Client.zip"));
@@ -207,5 +208,23 @@ public static class ServerPackaging {
         foreach (var file in files) {
             File.Copy(Path.Combine(sourceDir, file), Path.Combine(dest, file));
         }
+    }
+
+    private static void CopyNatives(PlatformReg platform, string releaseDir) {
+        string sourceDir = Path.Combine("bin", "Content.Server");
+        string runtimesDir = $"runtimes/{platform.RId}/";
+        string dllSrc, dllDst;
+
+        if (platform.TargetOs == "Windows") {
+            dllSrc = Path.Combine(sourceDir, runtimesDir, "native/byondcore.dll");
+            dllDst = Path.Combine(releaseDir, "byondcore.dll");
+        } else if (platform.TargetOs == "Linux") {
+            dllSrc = Path.Combine(sourceDir, runtimesDir, "native/libbyond.so");
+            dllDst = Path.Combine(releaseDir, "libbyond.so");
+        } else {
+            throw new Exception($"Unsupported target OS {platform.TargetOs}");
+        }
+
+        File.Copy(dllSrc, dllDst);
     }
 }

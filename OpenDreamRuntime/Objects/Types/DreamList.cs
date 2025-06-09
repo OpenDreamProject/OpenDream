@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using OpenDreamRuntime.Map;
@@ -11,13 +12,17 @@ using Dependency = Robust.Shared.IoC.DependencyAttribute;
 namespace OpenDreamRuntime.Objects.Types;
 
 [Virtual]
-public class DreamList : DreamObject {
+public class DreamList : DreamObject, IDreamList {
+    public override bool ShouldCallNew => false;
+
+    public virtual bool IsAssociative => _associativeValues is { Count: > 0 };
+
     private readonly List<DreamValue> _values;
     private Dictionary<DreamValue, DreamValue>? _associativeValues;
 
-    public override bool ShouldCallNew => false;
-
-    public virtual bool IsAssociative => (_associativeValues != null && _associativeValues.Count > 0);
+    #if TOOLS
+    private ProfilerMemory? _tracyContentsMemoryId;
+    #endif
 
     public DreamList(DreamObjectDefinition listDef, int size) : base(listDef) {
         _values = new List<DreamValue>(size);
@@ -29,6 +34,11 @@ public class DreamList : DreamObject {
     public DreamList(DreamObjectDefinition listDef, List<DreamValue> values, Dictionary<DreamValue, DreamValue>? associativeValues) : base(listDef) {
         _values = values;
         _associativeValues = associativeValues;
+
+        #if TOOLS
+        TracyMemoryId = Profiler.BeginMemoryZone(1, "/list instance");
+        UpdateTracyContentsMemory();
+        #endif
     }
 
     public override void Initialize(DreamProcArguments args) {
@@ -38,17 +48,14 @@ public class DreamList : DreamObject {
         if (args.Count == 1 && args.GetArgument(0).TryGetValueAsInteger(out int size)) {
             Resize(size);
         } else if (args.Count > 1) {
-            DreamList[] lists = { this };
+            DreamList[] lists = [this];
 
             int dimensions = args.Count;
             for (int argIndex = 0; argIndex < dimensions; argIndex++) {
                 DreamValue arg = args.GetArgument(argIndex);
                 arg.TryGetValueAsInteger(out size);
 
-                DreamList[] newLists = null;
-                if (argIndex < dimensions) {
-                    newLists = new DreamList[size * lists.Length];
-                }
+                DreamList[] newLists = new DreamList[size * lists.Length];
 
                 for (int i = 0; i < lists.Length; i++) {
                     DreamList list = lists[i];
@@ -100,6 +107,10 @@ public class DreamList : DreamObject {
         return _values;
     }
 
+    public IEnumerable<DreamValue> EnumerateValues() {
+        return _values;
+    }
+
     public Dictionary<DreamValue, DreamValue> GetAssociativeValues() {
         return _associativeValues ??= new Dictionary<DreamValue, DreamValue>();
     }
@@ -128,6 +139,8 @@ public class DreamList : DreamObject {
             _associativeValues ??= new Dictionary<DreamValue, DreamValue>(1);
             _associativeValues[key] = value;
         }
+
+        UpdateTracyContentsMemory();
     }
 
     public virtual void RemoveValue(DreamValue value) {
@@ -137,10 +150,13 @@ public class DreamList : DreamObject {
             _associativeValues?.Remove(value);
             _values.RemoveAt(valueIndex);
         }
+
+        UpdateTracyContentsMemory();
     }
 
     public virtual void AddValue(DreamValue value) {
         _values.Add(value);
+        UpdateTracyContentsMemory();
     }
 
     //Does not include associations
@@ -177,10 +193,13 @@ public class DreamList : DreamObject {
 
         if (end > start)
             _values.RemoveRange(start - 1, end - start);
+
+        UpdateTracyContentsMemory();
     }
 
     public void Insert(int index, DreamValue value) {
         _values.Insert(index - 1, value);
+        UpdateTracyContentsMemory();
     }
 
     public void Swap(int index1, int index2) {
@@ -200,6 +219,8 @@ public class DreamList : DreamObject {
         } else {
             Cut(size + 1);
         }
+
+        UpdateTracyContentsMemory();
     }
 
     public virtual int GetLength() {
@@ -241,8 +262,18 @@ public class DreamList : DreamObject {
         }
     }
 
-    #region Operators
+    [Conditional("TOOLS")]
+    private void UpdateTracyContentsMemory() {
+        #if TOOLS
+        var valueCount = _values.Count + (_associativeValues?.Count ?? 0);
+        var totalSize = Unsafe.SizeOf<DreamList>() + valueCount * Unsafe.SizeOf<DreamValue>();
 
+        _tracyContentsMemoryId?.ReleaseMemory();
+        _tracyContentsMemoryId = Profiler.BeginMemoryZone((ulong)totalSize, "/list contents");
+        #endif
+    }
+
+    #region Operators
     public override DreamValue OperatorIndex(DreamValue index, DMProcState state) {
         return GetValue(index);
     }
@@ -394,7 +425,6 @@ public class DreamList : DreamObject {
 
         return DreamValue.True;
     }
-
     #endregion Operators
 }
 
@@ -458,7 +488,7 @@ internal sealed class DreamListVars(DreamObjectDefinition listDef, DreamObject d
 }
 
 // global.vars list
-sealed class DreamGlobalVars : DreamList {
+internal sealed class DreamGlobalVars : DreamList {
     [Dependency] private readonly DreamManager _dreamMan = default!;
     [Dependency] private readonly DreamObjectTree _objectTree = default!;
 
@@ -1059,15 +1089,11 @@ public sealed class ClientScreenList(DreamObjectTree objectTree, ServerScreenOve
 }
 
 // client.images list
-public sealed class ClientImagesList : DreamList {
-    private readonly ServerClientImagesSystem? _clientImagesSystem;
-    private readonly DreamConnection _connection;
+public sealed class ClientImagesList(
+    DreamObjectTree objectTree,
+    ServerClientImagesSystem? clientImagesSystem,
+    DreamConnection connection) : DreamList(objectTree.List.ObjectDefinition, 0) {
     private readonly List<DreamValue> _imageObjects = new();
-
-    public ClientImagesList(DreamObjectTree objectTree, ServerClientImagesSystem? clientImagesSystem, DreamConnection connection) : base(objectTree.List.ObjectDefinition, 0) {
-        _clientImagesSystem = clientImagesSystem;
-        _connection = connection;
-    }
 
     public override DreamValue GetValue(DreamValue key) {
         if (!key.TryGetValueAsInteger(out var imageIndex) || imageIndex < 1 || imageIndex > _imageObjects.Count)
@@ -1088,7 +1114,7 @@ public sealed class ClientImagesList : DreamList {
         if (!value.TryGetValueAsDreamObject<DreamObjectImage>(out var image))
             return;
 
-        _clientImagesSystem?.AddImageObject(_connection, image);
+        clientImagesSystem?.AddImageObject(connection, image);
         _imageObjects.Add(value);
     }
 
@@ -1096,7 +1122,7 @@ public sealed class ClientImagesList : DreamList {
         if (!value.TryGetValueAsDreamObject<DreamObjectImage>(out var image))
             return;
 
-        _clientImagesSystem?.RemoveImageObject(_connection, image);
+        clientImagesSystem?.RemoveImageObject(connection, image);
         _imageObjects.Remove(value);
     }
 
@@ -1107,7 +1133,7 @@ public sealed class ClientImagesList : DreamList {
             if (!_imageObjects[i].TryGetValueAsDreamObject<DreamObjectImage>(out var image))
                 continue;
 
-            _clientImagesSystem?.RemoveImageObject(_connection, image);
+            clientImagesSystem?.RemoveImageObject(connection, image);
         }
 
         _imageObjects.RemoveRange(start - 1, end - start);
@@ -1394,25 +1420,19 @@ internal sealed class ProcArgsList(DreamObjectDefinition listDef, DMProcState st
 }
 
 // Savefile Dir List - always sync'd with Savefiles currentDir. Only stores keys.
-internal sealed class SavefileDirList : DreamList {
-    private readonly DreamObjectSavefile _save;
-
-    public SavefileDirList(DreamObjectDefinition listDef, DreamObjectSavefile backedSaveFile) : base(listDef, 0) {
-        _save = backedSaveFile;
-    }
-
+internal sealed class SavefileDirList(DreamObjectDefinition listDef, DreamObjectSavefile backedSaveFile) : DreamList(listDef, 0) {
     public override DreamValue GetValue(DreamValue key) {
         if (!key.TryGetValueAsInteger(out var index))
             throw new Exception($"Invalid index on savefile dir list: {key}");
-        if (index < 1 || index > _save.CurrentDir.Count)
+        if (index < 1 || index > backedSaveFile.CurrentDir.Count)
             throw new Exception($"Out of bounds index on savefile dir list: {index}");
-        return new DreamValue(_save.CurrentDir.Keys.ElementAt(index - 1));
+        return new DreamValue(backedSaveFile.CurrentDir.Keys.ElementAt(index - 1));
     }
 
     public override List<DreamValue> GetValues() {
-        List<DreamValue> values = new(_save.CurrentDir.Count);
+        List<DreamValue> values = new(backedSaveFile.CurrentDir.Count);
 
-        foreach (string value in _save.CurrentDir.Keys.OrderBy(x => x))
+        foreach (string value in backedSaveFile.CurrentDir.Keys.OrderBy(x => x))
             values.Add(new DreamValue(value));
         return values;
     }
@@ -1422,22 +1442,22 @@ internal sealed class SavefileDirList : DreamList {
             throw new Exception($"Invalid index on savefile dir list: {key}");
         if (!value.TryGetValueAsString(out var valueStr))
             throw new Exception($"Invalid value on savefile dir name: {value}");
-        if (index < 1 || index > _save.CurrentDir.Count)
+        if (index < 1 || index > backedSaveFile.CurrentDir.Count)
             throw new Exception($"Out of bounds index on savefile dir list: {index}");
 
-        _save.RenameAndNullSavefileValue(_save.CurrentDir.Keys.ElementAt(index - 1), valueStr);
+        backedSaveFile.RenameAndNullSavefileValue(backedSaveFile.CurrentDir.Keys.ElementAt(index - 1), valueStr);
     }
 
     public override void AddValue(DreamValue value) {
         if (!value.TryGetValueAsString(out var valueStr))
             throw new Exception($"Invalid value on savefile dir name: {value}");
-        _save.AddSavefileDir(valueStr);
+        backedSaveFile.AddSavefileDir(valueStr);
     }
 
     public override void RemoveValue(DreamValue value) {
         if (!value.TryGetValueAsString(out var valueStr))
             throw new Exception($"Invalid value on savefile dir name: {value}");
-        _save.RemoveSavefileValue(valueStr);
+        backedSaveFile.RemoveSavefileValue(valueStr);
     }
 
     public override void Cut(int start = 1, int end = 0) {
@@ -1445,6 +1465,6 @@ internal sealed class SavefileDirList : DreamList {
     }
 
     public override int GetLength() {
-        return _save.CurrentDir.Count;
+        return backedSaveFile.CurrentDir.Count;
     }
 }

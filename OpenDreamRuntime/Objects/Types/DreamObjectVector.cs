@@ -4,9 +4,9 @@ using OpenDreamRuntime.Procs;
 namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamObject(definition) {
-    public float X, Y;
+    public double X, Y;
 
-    public float Z {
+    public double Z {
         get => Is3D ? _z : 0;
         set {
             if (!Is3D)
@@ -17,8 +17,8 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
 
     public bool Is3D { get; private set; }
 
-    public float Size {
-        get => MathF.Sqrt(X * X + Y * Y + Z * Z);
+    public double Size {
+        get => Math.Sqrt(X * X + Y * Y + Z * Z);
         set {
             if (X == 0 && Y == 0 && Z == 0)
                 return;
@@ -30,7 +30,7 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
         }
     }
 
-    private float _z;
+    private double _z;
 
     public override void Initialize(DreamProcArguments args) {
         base.Initialize(args);
@@ -83,6 +83,151 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
         // TODO: Allow pixloc as an arg
         throw new Exception($"Bad vector arguments {args.ToString()}");
     }
+
+    #region Operators
+
+    public override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
+        if (b.TryGetValueAsDreamObject<DreamObjectVector>(out var right)) {
+            var output = new DreamObjectVector(ObjectDefinition) {
+                X = X + right.X,
+                Y = Y + right.Y,
+                Is3D = Is3D || right.Is3D,
+                Z = Z + right.Z
+            };
+
+            return new DreamValue(output);
+        }
+
+        return base.OperatorAdd(b, state);
+    }
+
+    public override DreamValue OperatorSubtract(DreamValue b, DMProcState state) {
+        if (b.TryGetValueAsDreamObject<DreamObjectVector>(out var right)) {
+            var output = new DreamObjectVector(ObjectDefinition) {
+                X = X - right.X,
+                Y = Y - right.Y,
+                Is3D = Is3D || right.Is3D,
+                Z = Z - right.Z
+            };
+
+            return new DreamValue(output);
+        }
+
+        return base.OperatorSubtract(b, state);
+    }
+
+    public override DreamValue OperatorMultiply(DreamValue b, DMProcState state) {
+        if (b.TryGetValueAsFloat(out float scalar)) {
+            var output = new DreamObjectVector(ObjectDefinition) {
+                X = X * scalar,
+                Y = Y * scalar,
+                Is3D = Is3D,
+                Z = Z * scalar
+            };
+            return new DreamValue(output);
+        } else if (b.TryGetValueAsDreamObject<DreamObjectVector>(out var right)) {
+            var output = new DreamObjectVector(ObjectDefinition) {
+                X = X * right.X,
+                Y = Y * right.Y,
+                Is3D = Is3D || right.Is3D,
+                Z = Z * right.Z
+            };
+            return new DreamValue(output);
+        }
+
+        return base.OperatorMultiply(b, state);
+    }
+
+    public override DreamValue OperatorMultiplyRef(DreamValue b, DMProcState state) {
+        if (b.TryGetValueAsFloat(out float scalar)) {
+            X *= scalar;
+            Y *= scalar;
+            Z *= scalar;
+            return new DreamValue(this);
+        } else if (b.TryGetValueAsDreamObject<DreamObjectVector>(out var right)) {
+            X *= right.X;
+            Y *= right.Y;
+            Z *= right.Z;
+            return new DreamValue(this);
+        }
+
+        return base.OperatorMultiplyRef(b, state);
+    }
+
+    public override DreamValue OperatorDivide(DreamValue b, DMProcState state) {
+        if (b.TryGetValueAsFloat(out float scalar)) {
+            if (scalar == 0) throw new DivideByZeroException("Cannot divide vector by zero");
+
+            var output = new DreamObjectVector(ObjectDefinition) {
+                X = X / scalar,
+                Y = Y / scalar,
+                Is3D = Is3D,
+                Z = Z / scalar
+            };
+
+            return new DreamValue(output);
+        } else if (b.TryGetValueAsDreamObject<DreamObjectVector>(out var right)) {
+            if (right.X == 0 || right.Y == 0 || (Is3D && right.Z == 0))
+                throw new DivideByZeroException("Cannot divide vector by zero vector component");
+
+            var output = new DreamObjectVector(ObjectDefinition) {
+                X = X / right.X,
+                Y = Y / right.Y,
+                Is3D = Is3D || right.Is3D,
+                Z = right.Z == 0 ? 0 : Z / right.Z
+            };
+            return new DreamValue(output);
+        }
+
+        return base.OperatorDivide(b, state);
+    }
+
+    public override DreamValue OperatorDivideRef(DreamValue b, DMProcState state) {
+        if (b.TryGetValueAsFloat(out float scalar)) {
+            if (scalar == 0) throw new DivideByZeroException("Cannot divide vector by zero");
+            X /= scalar;
+            Y /= scalar;
+            Z /= scalar;
+            return new DreamValue(this);
+        } else if (b.TryGetValueAsDreamObject<DreamObjectVector>(out var right)) {
+            if (right.X == 0 || right.Y == 0 || (Is3D && right.Z == 0))
+                throw new DivideByZeroException("Cannot divide vector by zero vector component");
+            X /= right.X;
+            Y /= right.Y;
+            Z = right.Z == 0 ? 0 : Z / right.Z;
+            return new DreamValue(this);
+        }
+
+        return base.OperatorDivideRef(b, state);
+    }
+
+    public override DreamValue OperatorAppend(DreamValue b) {
+        if (b.TryGetValueAsDreamObject<DreamObjectVector>(out var right)) {
+            X += right.X;
+            Y += right.Y;
+            Z += right.Z;
+            Is3D = Is3D || right.Is3D;
+
+            return new DreamValue(this);
+        }
+
+        return base.OperatorAppend(b);
+    }
+
+    public override DreamValue OperatorRemove(DreamValue b) {
+        if (b.TryGetValueAsDreamObject<DreamObjectVector>(out var right)) {
+            X -= right.X;
+            Y -= right.Y;
+            Z -= right.Z;
+            Is3D = Is3D || right.Is3D;
+
+            return new DreamValue(this);
+        }
+
+        return base.OperatorRemove(b);
+    }
+
+    #endregion Operators
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
         switch (varName) {

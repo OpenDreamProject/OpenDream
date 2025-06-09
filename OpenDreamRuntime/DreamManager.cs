@@ -71,9 +71,7 @@ public sealed partial class DreamManager {
     //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
     public void PreInitialize(string? jsonPath) {
         _sawmill = Logger.GetSawmill("opendream");
-#if !DISABLE_BYOND_API
         ByondApi.ByondApi.Initialize(this, _atomManager, _dreamMapManager, _objectTree);
-#endif
 
         InitializeConnectionManager();
         _dreamResourceManager.PreInitialize();
@@ -84,20 +82,22 @@ public sealed partial class DreamManager {
     }
 
     public void StartWorld() {
-        // It is now OK to call user code, like /New procs.
-        Initialized = true;
-        InitializedTick = _gameTiming.CurTick;
-        CurrentTickStart = Environment.TickCount64;
+        using (Profiler.BeginZone("StartWorld", color:(uint)Color.OrangeRed.ToArgb())) {
+            // It is now OK to call user code, like /New procs.
+            Initialized = true;
+            InitializedTick = _gameTiming.CurTick;
+            CurrentTickStart = Environment.TickCount64;
 
-        // Call global <init> with waitfor=FALSE
-        _objectTree.GlobalInitProc?.Spawn(WorldInstance, new());
+            // Call global <init> with waitfor=FALSE
+            _objectTree.GlobalInitProc?.Spawn(WorldInstance, new());
 
-        // Call New() on all /area and /turf that exist, each with waitfor=FALSE separately. If <global init> created any /area, call New a SECOND TIME
-        // new() up /objs and /mobs from compiled-in maps [order: (1,1) then (2,1) then (1,2) then (2,2)]
-        _dreamMapManager.InitializeAtoms();
+            // Call New() on all /area and /turf that exist, each with waitfor=FALSE separately. If <global init> created any /area, call New a SECOND TIME
+            // new() up /objs and /mobs from compiled-in maps [order: (1,1) then (2,1) then (1,2) then (2,2)]
+            _dreamMapManager.InitializeAtoms();
 
-        // Call world.New()
-        WorldInstance.SpawnProc("New");
+            // Call world.New()
+            WorldInstance.SpawnProc("New");
+        }
     }
 
     public void Shutdown() {
@@ -110,15 +110,32 @@ public sealed partial class DreamManager {
 
     public void Update() {
         if (!Initialized)
-            return;
+                return;
 
-        CurrentTickStart = Environment.TickCount64;
-        _procScheduler.Process();
-        UpdateStat();
-        _dreamMapManager.UpdateTiles();
-        DreamObjectSavefile.FlushAllUpdates();
-        WorldInstance.Cpu = WorldInstance.TickUsage;
-        ProcessDelQueue();
+        using (Profiler.BeginZone("Tick", color:(uint)Color.OrangeRed.ToArgb())) {
+            CurrentTickStart = Environment.TickCount64;
+
+            using (Profiler.BeginZone("DM Execution", color:(uint)Color.LightPink.ToArgb()))
+                _procScheduler.Process();
+
+            using (Profiler.BeginZone("Map Update", color:(uint)Color.LightPink.ToArgb())){
+                UpdateStat();
+                _dreamMapManager.UpdateTiles();
+            }
+
+            using (Profiler.BeginZone("ByondApi Thread Syncs"))
+                ByondApi.ByondApi.ExecuteThreadSyncs();
+
+            using (Profiler.BeginZone("Disk IO", color:(uint)Color.LightPink.ToArgb()))
+                DreamObjectSavefile.FlushAllUpdates();
+
+            WorldInstance.Cpu = WorldInstance.TickUsage;
+
+            using (Profiler.BeginZone("Deletion Queue", color:(uint)Color.LightPink.ToArgb()))
+                ProcessDelQueue();
+        }
+
+        Profiler.EmitFrameMark();
     }
 
     public void ProcessDelQueue() {

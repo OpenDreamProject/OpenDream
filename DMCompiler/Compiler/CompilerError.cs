@@ -171,9 +171,10 @@ public struct CompilerEmission {
         {WarningCode.LostTypeInfo, ErrorLevel.Notice},
         // END TYPEMAKER
         {WarningCode.UnimplementedAccess, ErrorLevel.Warning},
+        {WarningCode.UnsupportedAccess, ErrorLevel.Warning},
 
         //3000-3999
-        {WarningCode.EmptyBlock, ErrorLevel.Notice},
+        { WarningCode.EmptyBlock, ErrorLevel.Notice},
         {WarningCode.EmptyProc, ErrorLevel.Disabled}, // NOTE: If you enable this in OD's default pragma config file, it will emit for OD's DMStandard. Put it in your codebase's pragma config file.
         {WarningCode.UnsafeClientAccess, ErrorLevel.Disabled}, // NOTE: Only checks for unsafe accesses like "client.foobar" and doesn't consider if the client was already null-checked earlier in the proc
         {WarningCode.AssignmentInConditional, ErrorLevel.Warning},

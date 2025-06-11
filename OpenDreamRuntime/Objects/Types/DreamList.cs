@@ -173,7 +173,7 @@ public class DreamList : DreamObject, IDreamList {
         return _associativeValues != null && _associativeValues.ContainsKey(value);
     }
 
-    public int FindValue(DreamValue value, int start = 1, int end = 0) {
+    public virtual int FindValue(DreamValue value, int start = 1, int end = 0) {
         if (end == 0 || end > _values.Count) end = _values.Count;
 
         for (int i = start; i <= end; i++) {
@@ -1333,6 +1333,24 @@ public sealed class MovableContentsList(DreamObjectDefinition listDef, DreamObje
         }
 
         return values;
+    }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        if (end == 0 || end > transform.ChildCount) end = transform.ChildCount;
+
+        using var childEnumerator = transform.ChildEnumerator;
+
+        int i = 0;
+        while (childEnumerator.MoveNext(out EntityUid child)) {
+            if (!AtomManager.TryGetMovableFromEntity(child, out var childObject))
+                continue;
+            i++;
+            if (i >= start && new DreamValue(childObject).Equals(value))
+                return i;
+            if (i > end)
+                return 0;
+        }
+        return 0;
     }
 
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {

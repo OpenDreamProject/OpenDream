@@ -125,6 +125,13 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
             case "view-size": // Size of the final viewport (resized and all) rather than the whole container
                 value = new DMFPropertyVec2(Viewport.GetDrawBox().Size);
                 return true;
+            case "mouse-pos":
+            case "inner-mouse-pos":
+                var mousePos = IoCManager.Resolve<IUserInterfaceManager>().MousePositionScaled.Position;
+                mousePos -= Viewport.GlobalPosition;
+
+                value = new DMFPropertyVec2(mousePos);
+                return true;
             default:
                 return base.TryGetProperty(property, out value);
         }

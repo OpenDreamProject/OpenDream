@@ -54,7 +54,6 @@ internal sealed class DreamPlane(IRenderTexture mainRenderTarget) : IDisposable 
                 var positionOffset = -worldAABB.BottomLeft;
 
                 if (sprite.HasRenderSource && overlay.RenderSourceLookup.TryGetValue(sprite.RenderSource!, out var renderSourceTexture)) {
-                    positionOffset -= renderSourceTexture.Size / 2 / EyeManager.PixelsPerMeter;
                     sprite.TextureOverride = renderSourceTexture.Texture;
                 }
 

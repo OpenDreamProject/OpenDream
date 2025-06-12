@@ -487,7 +487,7 @@ internal sealed class DreamListVars(DreamObjectDefinition listDef, DreamObject d
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        throw new NotImplementedException($".Find() is not yet implemented on {this.GetType()}");
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }
 
@@ -553,7 +553,7 @@ internal sealed class DreamGlobalVars : DreamList {
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        throw new NotImplementedException($".Find() is not yet implemented on {this.GetType()}");
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }
 
@@ -625,7 +625,7 @@ public sealed class ClientVerbsList : DreamList {
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        throw new NotImplementedException($".Find() is not yet implemented on {this.GetType()}");
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }
 
@@ -701,7 +701,7 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        throw new NotImplementedException($".Find() is not yet implemented on {this.GetType()}");
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }
 
@@ -799,7 +799,7 @@ public sealed class DreamOverlaysList : DreamList {
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        throw new NotImplementedException($".Find() is not yet implemented on {this.GetType()}");
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -920,7 +920,7 @@ public sealed class DreamVisContentsList : DreamList {
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        throw new NotImplementedException($".Find() is not yet implemented on {this.GetType()}");
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }
 
@@ -1046,7 +1046,7 @@ public sealed class DreamFilterList : DreamList {
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        throw new NotImplementedException($".Find() is not yet implemented on {this.GetType()}");
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 
     private ImmutableAppearance GetAppearance() {
@@ -1116,7 +1116,7 @@ public sealed class ClientScreenList(DreamObjectTree objectTree, ServerScreenOve
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        throw new NotImplementedException($".Find() is not yet implemented on {this.GetType()}");
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }
 
@@ -1176,7 +1176,7 @@ public sealed class ClientImagesList(
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        throw new NotImplementedException($".Find() is not yet implemented on {this.GetType()}");
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }
 
@@ -1214,7 +1214,7 @@ public sealed class WorldContentsList(DreamObjectDefinition listDef, AtomManager
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        throw new NotImplementedException($".Find() is not yet implemented on {this.GetType()}");
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }
 
@@ -1267,7 +1267,7 @@ public sealed class TurfContentsList(DreamObjectDefinition listDef, DreamObjectT
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        throw new NotImplementedException($".Find() is not yet implemented on {this.GetType()}");
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }
 
@@ -1340,7 +1340,7 @@ public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectA
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        throw new NotImplementedException($".Find() is not yet implemented on {this.GetType()}");
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }
 
@@ -1486,7 +1486,7 @@ internal sealed class ProcArgsList(DreamObjectDefinition listDef, DMProcState st
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        throw new NotImplementedException($".Find() is not yet implemented on {this.GetType()}");
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }
 
@@ -1540,6 +1540,6 @@ internal sealed class SavefileDirList(DreamObjectDefinition listDef, DreamObject
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        throw new NotImplementedException($".Find() is not yet implemented on {this.GetType()}");
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }

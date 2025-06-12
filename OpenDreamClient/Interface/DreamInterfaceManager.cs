@@ -494,7 +494,17 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                         if (argsRaw[1][i] == '"') {
                             currentArg.Append('"');
                             if (stringCapture) {
-                                args.Add(HandleEmbeddedWinget(null, currentArg.ToString()));
+                                var result = HandleEmbeddedWinget(null, currentArg.ToString(), out var hadWinget);
+
+                                // 64x64 or 64,64 gets split into two "64 64" args
+                                if (hadWinget && result.Split(['x', ',']) is {Length: 2} wingetSplit &&
+                                    float.TryParse(wingetSplit[0], out _) && float.TryParse(wingetSplit[1], out _)) {
+                                    args.Add(wingetSplit[0]);
+                                    args.Add(wingetSplit[1]);
+                                } else {
+                                    args.Add(result);
+                                }
+
                                 currentArg.Clear();
                             }
 
@@ -503,7 +513,17 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                         }
 
                         if (argsRaw[1][i] == ' ' && !stringCapture) {
-                            args.Add(HandleEmbeddedWinget(null, currentArg.ToString()));
+                            var result = HandleEmbeddedWinget(null, currentArg.ToString(), out var hadWinget);
+
+                            // 64x64 or 64,64 gets split into two "64 64" args
+                            if (hadWinget && result.Split(['x', ',']) is {Length: 2} wingetSplit &&
+                                float.TryParse(wingetSplit[0], out _) && float.TryParse(wingetSplit[1], out _)) {
+                                args.Add(wingetSplit[0]);
+                                args.Add(wingetSplit[1]);
+                            } else {
+                                args.Add(result);
+                            }
+
                             currentArg.Clear();
                             continue;
                         }
@@ -511,12 +531,22 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                         currentArg.Append(argsRaw[1][i]);
                     }
 
-                    if(currentArg.ToString() is { } arg && !string.IsNullOrEmpty(arg))
-                        args.Add(HandleEmbeddedWinget(null, arg));
+                    if (currentArg.ToString() is { } arg && !string.IsNullOrEmpty(arg)) {
+                        var result = HandleEmbeddedWinget(null, arg, out var hadWinget);
+
+                        // 64x64 or 64,64 gets split into two "64 64" args
+                        if (hadWinget && result.Split(['x', ',']) is {Length: 2} wingetSplit &&
+                            float.TryParse(wingetSplit[0], out _) && float.TryParse(wingetSplit[1], out _)) {
+                            args.Add(wingetSplit[0]);
+                            args.Add(wingetSplit[1]);
+                        } else {
+                            args.Add(result);
+                        }
+                    }
 
                     if (args.Count != verbInfo.Arguments.Length) {
                         _sawmill.Error(
-                            $"Attempted to call a verb with {verbInfo.Arguments.Length} argument(s) with only {args.Count}");
+                            $"Attempted to call a verb with {verbInfo.Arguments.Length} argument(s) with only {args.Count}: {fullCommand}");
                         return;
                     }
 
@@ -556,7 +586,9 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         _netManager.ClientSendMessage(new MsgCommandRepeatStop() { Command = command });
     }
 
-    public string HandleEmbeddedWinget(string? controlId, string value) {
+    public string HandleEmbeddedWinget(string? controlId, string value, out bool hadWinget) {
+        hadWinget = false;
+
         string result = value;
         int startPos = result.IndexOf("[[", StringComparison.Ordinal);
         while(startPos > -1){
@@ -572,6 +604,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             }
 
             string innerResult = WinGet(innerControlId, inner);
+            hadWinget = true;
             result = result.Substring(0, startPos) + innerResult + result.Substring(endPos+2);
             startPos = result.IndexOf("[[", StringComparison.Ordinal);
         }
@@ -617,7 +650,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
                 if (elementId == null) {
                     if (winSet.Attribute == "command") {
-                        RunCommand(HandleEmbeddedWinget(controlId, winSet.Value));
+                        RunCommand(HandleEmbeddedWinget(controlId, winSet.Value, out _));
                     } else {
                         _sawmill.Error($"Invalid global winset \"{winsetParams}\"");
                     }
@@ -629,20 +662,20 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                         else
                             if(conditionalElement.TryGetProperty(winSet.Attribute, out var conditionalCheckValue) && conditionalCheckValue.Equals(winSet.Value)) {
                                 foreach(DMFWinSet statement in winSet.TrueStatements) {
-                                    string? statementElementId = statement.Element ?? elementId;
+                                    string statementElementId = statement.Element ?? elementId;
                                     InterfaceElement? statementElement = FindElementWithId(statementElementId);
                                     if(statementElement is not null) {
-                                        statementElement.SetProperty(statement.Attribute, HandleEmbeddedWinget(statementElementId, statement.Value), manualWinset: true);
+                                        statementElement.SetProperty(statement.Attribute, HandleEmbeddedWinget(statementElementId, statement.Value, out _), manualWinset: true);
                                     } else {
                                         _sawmill.Error($"Invalid element on ternary \"{statementElementId}\"");
                                     }
                                 }
                             } else if (winSet.FalseStatements is not null){
                                 foreach(DMFWinSet statement in winSet.FalseStatements) {
-                                    string? statementElementId = statement.Element ?? elementId;
+                                    string statementElementId = statement.Element ?? elementId;
                                     InterfaceElement? statementElement = FindElementWithId(statementElementId);
                                     if(statementElement is not null) {
-                                        statementElement.SetProperty(statement.Attribute, HandleEmbeddedWinget(statementElementId, statement.Value), manualWinset: true);
+                                        statementElement.SetProperty(statement.Attribute, HandleEmbeddedWinget(statementElementId, statement.Value, out _), manualWinset: true);
                                     } else {
                                         _sawmill.Error($"Invalid element on ternary \"{statementElementId}\"");
                                     }
@@ -652,7 +685,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                         InterfaceElement? element = FindElementWithId(elementId);
 
                         if (element != null) {
-                            element.SetProperty(winSet.Attribute, HandleEmbeddedWinget(elementId, winSet.Value), manualWinset: true);
+                            element.SetProperty(winSet.Attribute, HandleEmbeddedWinget(elementId, winSet.Value, out _), manualWinset: true);
                         } else {
                             _sawmill.Error($"Invalid element \"{elementId}\"");
                         }

@@ -550,6 +550,36 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
 
     private DMExpression BuildIdentifier(DMASTIdentifier identifier, DreamPath? inferredPath = null) {
         var name = identifier.Identifier;
+        if (scopeMode == Normal) {
+            var localVar = ctx.Proc?.GetLocalVariable(name);
+            if (localVar != null) {
+                if (name == "usr" || name == "src" || name == "args")
+                    Compiler.Emit(WarningCode.SoftReservedKeyword, identifier.Location, $"Local variable named {name} overrides the built-in {name} in this context.");
+                return new Local(identifier.Location, localVar);
+            }
+        }
+
+        var field = ctx.Type.GetVariable(name);
+        if (field != null && (scopeMode == Normal || field.IsConst)) {
+            if (name == "usr" || name == "src" || name == "args")
+                Compiler.Emit(WarningCode.SoftReservedKeyword, identifier.Location, $"Local variable named {name} overrides the built-in {name} in this context.");
+
+            return new Field(identifier.Location, field, field.ValType);
+        }
+
+        var globalId = ctx.Proc?.GetGlobalVariableId(name) ?? ctx.Type.GetGlobalVariableId(name);
+
+        if (globalId != null) {
+            if (field is not null)
+                Compiler.Emit(WarningCode.AmbiguousVarStatic, identifier.Location, $"Static var definition cannot reference instance variable \"{name}\" but a global exists");
+
+            var globalVar = ObjectTree.Globals[globalId.Value];
+            var global = new GlobalField(identifier.Location, globalVar.Type, globalId.Value, globalVar.ValType);
+            if (name == "usr" || name == "src" || name == "args")
+                Compiler.Emit(WarningCode.SoftReservedKeyword, identifier.Location, $"Global variable named {name} overrides the built-in {name} in this context. This is a terrible idea, don't do that.");
+
+            return global;
+        }
 
         switch (name) {
             case "src":
@@ -578,28 +608,6 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
             case "global":
                 return new Global(identifier.Location);
             default: {
-                if (scopeMode == Normal) {
-                    var localVar = ctx.Proc?.GetLocalVariable(name);
-                    if (localVar != null)
-                        return new Local(identifier.Location, localVar);
-                }
-
-                var field = ctx.Type.GetVariable(name);
-                if (field != null && (scopeMode == Normal || field.IsConst)) {
-                    return new Field(identifier.Location, field, field.ValType);
-                }
-
-                var globalId = ctx.Proc?.GetGlobalVariableId(name) ?? ctx.Type.GetGlobalVariableId(name);
-
-                if (globalId != null) {
-                    if (field is not null)
-                        Compiler.Emit(WarningCode.AmbiguousVarStatic, identifier.Location, $"Static var definition cannot reference instance variable \"{name}\" but a global exists");
-
-                    var globalVar = ObjectTree.Globals[globalId.Value];
-                    var global = new GlobalField(identifier.Location, globalVar.Type, globalId.Value, globalVar.ValType);
-                    return global;
-                }
-
                 return UnknownIdentifier(identifier.Location, name);
             }
         }

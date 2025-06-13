@@ -487,7 +487,7 @@ internal sealed class DreamListVars(DreamObjectDefinition listDef, DreamObject d
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
+        return GetValues().IndexOf(value)+1; // IndexOf is 0 indexed, returns -1 on fail, DM is 1 indexed and returns 0 on fail, so +1
     }
 }
 

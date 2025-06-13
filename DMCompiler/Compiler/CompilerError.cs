@@ -68,6 +68,7 @@ public enum WarningCode {
     ImplicitNullType = 2703, //  Raised when a null variable isn't explicitly statically typed as nullable
     LostTypeInfo = 2704, // An operation led to lost type information
     UnimplementedAccess = 2800, // When accessing unimplemented procs and vars
+    UnsupportedAccess  = 2801, // accessing procs and vars that wont be implemented
 
     // 3000 - 3999 are reserved for stylistic configuration.
     EmptyBlock = 3100,
@@ -170,9 +171,10 @@ public struct CompilerEmission {
         {WarningCode.LostTypeInfo, ErrorLevel.Notice},
         // END TYPEMAKER
         {WarningCode.UnimplementedAccess, ErrorLevel.Warning},
+        {WarningCode.UnsupportedAccess, ErrorLevel.Warning},
 
         //3000-3999
-        {WarningCode.EmptyBlock, ErrorLevel.Notice},
+        { WarningCode.EmptyBlock, ErrorLevel.Notice},
         {WarningCode.EmptyProc, ErrorLevel.Disabled}, // NOTE: If you enable this in OD's default pragma config file, it will emit for OD's DMStandard. Put it in your codebase's pragma config file.
         {WarningCode.UnsafeClientAccess, ErrorLevel.Disabled}, // NOTE: Only checks for unsafe accesses like "client.foobar" and doesn't consider if the client was already null-checked earlier in the proc
         {WarningCode.AssignmentInConditional, ErrorLevel.Warning},

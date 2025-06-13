@@ -244,7 +244,15 @@ public class DMCompiler {
         Emit(WarningCode.UnimplementedAccess, loc, message);
     }
 
-    public void VerbosePrint(string message) {
+    public void Unsupportedwarning(Location loc, string message) {
+        if (Settings.SuppressUnsupportedAccessWarnings)
+            return;
+
+        Emit(WarningCode.UnsupportedAccess, loc, message);
+    }
+
+    public void VerbosePrint(string message)
+    {
         if (!Settings.Verbose) return;
 
         TimeSpan duration = DateTime.Now - _compileStartTime;
@@ -351,6 +359,7 @@ public class DMCompiler {
 public struct DMCompilerSettings {
     public required List<string> Files;
     public bool SuppressUnimplementedWarnings = false;
+    public bool SuppressUnsupportedAccessWarnings = false;
     public bool NoticesEnabled = false;
     public bool DumpPreprocessor = false;
     public bool NoStandard = false;

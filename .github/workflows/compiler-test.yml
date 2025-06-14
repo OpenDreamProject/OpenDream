@@ -43,6 +43,7 @@ jobs:
 
   compile-testgame:
     runs-on: windows-latest
+    needs: build
     continue-on-error: true
     steps:
     - name: Pop build cache
@@ -59,6 +60,7 @@ jobs:
 
   compile-tgstation:
     runs-on: windows-latest
+    needs: build
     continue-on-error: true
     steps:
     - name: Pop build cache
@@ -79,6 +81,7 @@ jobs:
 
   compile-goonstation:
     runs-on: windows-latest
+    needs: build
     continue-on-error: true
     steps:
     - name: Pop build cache
@@ -99,6 +102,7 @@ jobs:
 
   compile-paradise:
     runs-on: windows-latest
+    needs: build
     continue-on-error: true
     steps:
     - name: Pop build cache
@@ -117,6 +121,7 @@ jobs:
 
   compile-nebula:
     runs-on: windows-latest
+    needs: build
     continue-on-error: true
     steps:
     - name: Pop build cache
@@ -135,6 +140,7 @@ jobs:
 
   compile-vgstation:
     runs-on: windows-latest
+    needs: build
     continue-on-error: true
     steps:
     - name: Pop build cache
@@ -153,6 +159,7 @@ jobs:
 
   compile-cm:
     runs-on: windows-latest
+    needs: build
     continue-on-error: true
     steps:
     - name: Pop build cache
@@ -171,6 +178,7 @@ jobs:
 
   compile-aurora:
     runs-on: windows-latest
+    needs: build
     continue-on-error: true
     steps:
     - name: Pop build cache
@@ -189,6 +197,7 @@ jobs:
 
   compile-daedalus:
     runs-on: windows-latest
+    needs: build
     continue-on-error: true
     steps:
     - name: Pop build cache

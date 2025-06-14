@@ -552,16 +552,16 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
         var name = identifier.Identifier;
         if (scopeMode == Normal) {
             var localVar = ctx.Proc?.GetLocalVariable(name);
-            if (localVar != null) {
-                if (name == "usr" || name == "src" || name == "args")
-                    Compiler.Emit(WarningCode.SoftReservedKeyword, identifier.Location, $"Local variable named {name} overrides the built-in {name} in this context.");
+            if (localVar is not null) {
+                if (name is "usr" or "src" or "args" or "world" or "global")
+                    Compiler.Emit(WarningCode.SoftReservedKeyword, identifier.Location, $"{(localVar.IsParameter ? "Proc parameter":"Local variable")} named {name} overrides the built-in {name} in this context.");
                 return new Local(identifier.Location, localVar);
             }
         }
 
         var field = ctx.Type.GetVariable(name);
         if (field != null && (scopeMode == Normal || field.IsConst)) {
-            if (name == "usr" || name == "src" || name == "args")
+            if (name is "usr" or "src" or "args" or "world" or "global")
                 Compiler.Emit(WarningCode.SoftReservedKeyword, identifier.Location, $"Local variable named {name} overrides the built-in {name} in this context.");
 
             return new Field(identifier.Location, field, field.ValType);
@@ -575,7 +575,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
 
             var globalVar = ObjectTree.Globals[globalId.Value];
             var global = new GlobalField(identifier.Location, globalVar.Type, globalId.Value, globalVar.ValType);
-            if (name == "usr" || name == "src" || name == "args")
+            if (name is "usr" or "src" or "args" or "world" or "global")
                 Compiler.Emit(WarningCode.SoftReservedKeyword, identifier.Location, $"Global variable named {name} overrides the built-in {name} in this context. This is a terrible idea, don't do that.");
 
             return global;

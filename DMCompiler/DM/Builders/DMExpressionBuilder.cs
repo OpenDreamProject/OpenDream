@@ -576,9 +576,9 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
             var globalVar = ObjectTree.Globals[globalId.Value];
             var global = new GlobalField(identifier.Location, globalVar.Type, globalId.Value, globalVar.ValType);
             if (name is "usr" or "src" or "args" or "world" or "global")
-                Compiler.Emit(WarningCode.SoftReservedKeyword, identifier.Location, $"Global variable named {name} overrides the built-in {name} in this context. This is a terrible idea, don't do that.");
-
-            return global;
+                Compiler.Emit(WarningCode.SoftReservedKeyword, identifier.Location, $"Global variable named {name} DOES NOT overrides the built-in {name}. This is a terrible idea, don't do that.");
+            else
+                return global;
         }
 
         switch (name) {

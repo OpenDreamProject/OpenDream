@@ -5,6 +5,8 @@ using System.Diagnostics.CodeAnalysis;
 using OpenDreamShared.Network.Messages;
 using Robust.Shared.Player;
 using System.Diagnostics;
+using System.Threading;
+using OpenDreamRuntime.Objects.Types;
 using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
 
 namespace OpenDreamRuntime.Rendering;
@@ -22,11 +24,12 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     /// <summary>
     /// This system is used by the PVS thread, we need to be thread-safe
     /// </summary>
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 
     private readonly Dictionary<uint, ProxyWeakRef> _idToAppearance = new();
     private uint _counter;
 
+    [Dependency] private readonly DreamManager _dreamManager = default!;
     [Dependency] private readonly IPlayerManager _playerManager = default!;
 
     public override void Initialize() {
@@ -130,10 +133,14 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
 
         RaiseNetworkEvent(new AnimationEvent(entity, appearanceId, duration, easing, loop, flags, delay, chainAnim, turfId));
     }
+
+    public void Flick(DreamObjectAtom atom, int iconId, string? iconState) {
+        RaiseNetworkEvent(new FlickEvent(_dreamManager.GetClientReference(atom), iconId, iconState));
+    }
 }
 
 //this class lets us hold a weakref and also do quick lookups in hash tables
-internal sealed class ProxyWeakRef: IEquatable<ProxyWeakRef>{
+internal sealed class ProxyWeakRef: IEquatable<ProxyWeakRef> {
     private readonly uint? _registeredId;
     private readonly int _hashCode;
     public bool TryGetTarget([NotNullWhen(true)] out ImmutableAppearance? target) => _weakRef.TryGetTarget(out target);

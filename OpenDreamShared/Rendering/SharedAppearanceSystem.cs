@@ -32,4 +32,11 @@ public abstract class SharedAppearanceSystem : EntitySystem {
         public bool ChainAnim = chainAnim;
         public uint? TurfId = turfId;
     }
+
+    [Serializable, NetSerializable]
+    public sealed class FlickEvent(ClientObjectReference clientRef, int iconId, string? iconState) : EntityEventArgs {
+        public ClientObjectReference ClientRef = clientRef;
+        public int IconId = iconId;
+        public string? IconState = iconState;
+    }
 }

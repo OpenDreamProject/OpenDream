@@ -417,6 +417,16 @@ public sealed partial class DreamManager {
         return null;
     }
 
+    public ClientObjectReference GetClientReference(DreamObjectAtom atom) {
+        if (atom is DreamObjectMovable movable) {
+            return new(_entityManager.GetNetEntity(movable.Entity));
+        } else if (atom is DreamObjectTurf turf) {
+            return new((turf.X, turf.Y), turf.Z);
+        } else {
+            throw new NotImplementedException($"Cannot create a client reference for {atom}");
+        }
+    }
+
     public void HandleException(Exception e, string msg = "", string file = "", int line = 0) {
         if (string.IsNullOrEmpty(msg)) { // Just print the C# exception if we don't override the message
             msg = e.Message;

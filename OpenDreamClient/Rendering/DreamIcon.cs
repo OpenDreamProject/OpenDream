@@ -82,19 +82,23 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
         DMI = null; //triggers the removal of the onUpdateCallback
     }
 
-    public Texture? GetTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData, Texture? textureOverride = null) {
+    public Texture? GetTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData, Texture? textureOverride, ClientAppearanceSystem.Flick? flick) {
         Texture? frame;
 
         if (textureOverride == null) {
             if (Appearance == null || DMI == null)
                 return null;
 
-            var animationFrame = AnimationFrame;
-            if (CachedTexture != null && !_textureDirty)
+            var dmi = flick?.Icon ?? DMI;
+            var iconState = flick?.IconState ?? Appearance.IconState;
+            var animationFrame = flick?.GetAnimationFrame(gameTiming) ?? AnimationFrame;
+            if (animationFrame == -1) // A flick returns -1 for a finished animation
+                animationFrame = AnimationFrame;
+            if (CachedTexture != null && !_textureDirty && flick == null)
                 return CachedTexture.Texture;
 
             _textureDirty = false;
-            frame = DMI.GetState(Appearance.IconState)?.GetFrames(_direction)[animationFrame];
+            frame = dmi.GetState(iconState)?.GetFrames(_direction)[animationFrame];
         } else {
             frame = textureOverride;
         }

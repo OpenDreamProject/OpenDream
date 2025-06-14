@@ -19,6 +19,7 @@ using System.Web;
 using DMCompiler.DM;
 using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects.Types;
+using OpenDreamRuntime.Rendering;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
 using Robust.Server;
@@ -979,8 +980,31 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("Icon", Type = DreamValueTypeFlag.String | DreamValueTypeFlag.DreamResource)]
     [DreamProcParameter("Object", Type = DreamValueTypeFlag.String | DreamValueTypeFlag.DreamResource)]
     public static DreamValue NativeProc_flick(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-        //TODO: Implement flick()
+        var iconArg = bundle.GetArgument(0, "Icon");
+        var objectArg = bundle.GetArgument(1, "Object");
 
+        if (!objectArg.TryGetValueAsDreamObject<DreamObjectAtom>(out var atom))
+            return DreamValue.Null;
+
+        var appearance = bundle.AtomManager.MustGetAppearance(atom);
+        int iconId;
+        if (iconArg.TryGetValueAsString(out var iconState)) {
+            if (appearance.Icon == null)
+                return DreamValue.Null;
+
+            iconId = appearance.Icon.Value;
+        } else if (iconArg.TryGetValueAsDreamResource(out var resource)) {
+            iconId = resource.Id;
+            iconState = appearance.IconState;
+        } else {
+            return DreamValue.Null;
+        }
+
+        var entitySystemManager = IoCManager.Resolve<IEntitySystemManager>();
+        if (!entitySystemManager.TryGetEntitySystem(out ServerAppearanceSystem? appearanceSystem))
+            return DreamValue.Null;
+
+        appearanceSystem.Flick(atom, iconId, iconState);
         return DreamValue.Null;
     }
 

@@ -161,15 +161,13 @@ public sealed class ServerVerbSystem : VerbSystem {
         if (!_verbIdToProc.ContainsKey(msg.VerbId))
             return;
         var conn = _dreamManager.GetConnectionBySession(args.SenderSession);
-        if (_repeatingVerbs.TryGetValue(conn, out var verb)) {
-            if (!verb.Remove(msg.VerbId)) {
-                verb.Add(msg.VerbId);
-            }
-        } else {
-            List<int> list = new();
+        if (!_repeatingVerbs.TryGetValue(conn, out var list)) {
+            list = new();
             _repeatingVerbs.Add(conn, list);
-            list.Add(msg.VerbId);
         }
+
+        if (!list.Contains(msg.VerbId))
+            list.Add(msg.VerbId);
     }
 
     private void OnRepeatVerbStop(UnregisterRepeatVerbEvent msg, EntitySessionEventArgs args) {

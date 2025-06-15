@@ -380,8 +380,7 @@ public sealed class DreamObjectTree {
 
                 foreach (var verbName in jsonType.Verbs) {
                     var verb = definition.GetProc(verbName);
-
-                    definition.Verbs.Add(verb.Id);
+                    definition.Verbs[verb.Name] = verb.Id;
                 }
             }
 

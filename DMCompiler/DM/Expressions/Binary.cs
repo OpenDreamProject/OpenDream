@@ -563,7 +563,7 @@ internal sealed class Assignment(Location location, DMExpression lhs, DMExpressi
         RHS.EmitPushValue(ctx);
         ctx.Proc.Assign(reference);
 
-        if (!LHS.ValType.MatchesType(ctx.Compiler, RHS.ValType) && !LHS.ValType.IsUnimplemented) {
+        if (!LHS.ValType.MatchesType(ctx.Compiler, RHS.ValType) && !LHS.ValType.IsUnimplemented && !LHS.ValType.IsUnsupported) {
             if (ctx.Compiler.Settings.SkipAnythingTypecheck && RHS.ValType.IsAnything)
                 return;
 

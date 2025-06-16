@@ -950,7 +950,7 @@ namespace OpenDreamRuntime.Procs {
                     state.Push(new DreamValue(0));
                     break;
                 case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
-                    state.Push(new DreamValue(first.MustGetValueAsInteger() << second.MustGetValueAsInteger()));
+                    state.Push(new DreamValue((first.MustGetValueAsInteger() << second.MustGetValueAsInteger()) & 0x00FFFFFF)); //to match byond's 24bit shifts - top 8 bits are 0'd
                     break;
                 case DreamValue.DreamValueType.Float when second.IsNull:
                     state.Push(new DreamValue(first.MustGetValueAsInteger()));
@@ -972,7 +972,7 @@ namespace OpenDreamRuntime.Procs {
                     result = new DreamValue(0);
                     break;
                 case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
-                    result = new DreamValue(first.MustGetValueAsInteger() << second.MustGetValueAsInteger());
+                    result = new DreamValue(first.MustGetValueAsInteger() << second.MustGetValueAsInteger() & 0x00FFFFFF); //to match byond's 24bit shifts - top 8 bits are 0'd
                     break;
                 case DreamValue.DreamValueType.Float when second.IsNull:
                     result = new DreamValue(first.MustGetValueAsInteger());

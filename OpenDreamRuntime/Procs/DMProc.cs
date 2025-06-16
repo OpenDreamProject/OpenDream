@@ -244,6 +244,8 @@ public sealed class DMProcState : ProcState {
         {DreamProcOpcode.Error, DMOpcodeHandlers.Error},
         {DreamProcOpcode.IsInList, DMOpcodeHandlers.IsInList},
         {DreamProcOpcode.PushFloat, DMOpcodeHandlers.PushFloat},
+        {DreamProcOpcode.PushFloatAssign, DMOpcodeHandlers.PushFloatAssign},
+        {DreamProcOpcode.NPushFloatAssign, DMOpcodeHandlers.NPushFloatAssign},
         {DreamProcOpcode.ModulusReference, DMOpcodeHandlers.ModulusReference},
         {DreamProcOpcode.CreateListEnumerator, DMOpcodeHandlers.CreateListEnumerator},
         {DreamProcOpcode.Enumerate, DMOpcodeHandlers.Enumerate},

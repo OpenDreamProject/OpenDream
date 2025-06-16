@@ -62,6 +62,8 @@ public static class SharedOperations {
         return MathF.Abs(a);
     }
 
+    //because BYOND has everything as a 32 bit float with 8 bit mantissa, we need to chop off the
+    //top 8 bits when bit shifting for parity
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int BitShiftLeft(int left, int right) {
         return (left << right) & 0x00FFFFFF;

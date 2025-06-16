@@ -97,6 +97,10 @@ internal sealed class DMObject(DMCompiler compiler, int id, DreamPath path, DMOb
     }
 
     public DMComplexValueType? GetProcReturnTypes(string name) {
+        return GetProcReturnTypes(name, null);
+    }
+
+    public DMComplexValueType? GetProcReturnTypes(string name, ArgumentList? arguments) {
         if (this == compiler.DMObjectTree.Root && compiler.DMObjectTree.TryGetGlobalProc(name, out var globalProc))
             return globalProc.RawReturnTypes;
         if (GetProcs(name) is not { } procs)
@@ -232,14 +236,15 @@ internal sealed class DMObject(DMCompiler compiler, int id, DreamPath path, DMOb
         return Parent != null && Parent.IsSubtypeOf(path);
     }
 
-    public DMValueType GetDMValueType() {
-        if (IsSubtypeOf(DreamPath.Mob))
-            return DMValueType.Mob;
-        if (IsSubtypeOf(DreamPath.Obj))
-            return DMValueType.Obj;
-        if (IsSubtypeOf(DreamPath.Area))
-            return DMValueType.Area;
+    public DreamPath GetLastCommonAncestor(DMObject other) {
+        if(other.IsSubtypeOf(Path)) {
+            return Path;
+        }
 
-        return DMValueType.Anything;
+        if(IsSubtypeOf(other.Path)) {
+            return other.Path;
+        }
+
+        return Parent?.GetLastCommonAncestor(other) ?? DreamPath.Root;
     }
 }

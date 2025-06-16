@@ -46,6 +46,11 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
         expr.EmitPushValue(ctx);
     }
 
+    public void Emit(DMASTExpression expression, out DMExpression returnedExpr, DreamPath? inferredPath = null) {
+        returnedExpr = Create(expression, inferredPath);
+        returnedExpr.EmitPushValue(ctx);
+    }
+
     public bool TryConstant(DMASTExpression expression, out Constant? constant) {
         var expr = Create(expression);
         return expr.TryAsConstant(Compiler, out constant);
@@ -64,7 +69,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
             case DMASTStringFormat stringFormat: result = BuildStringFormat(stringFormat, inferredPath); break;
             case DMASTIdentifier identifier: result = BuildIdentifier(identifier, inferredPath); break;
             case DMASTScopeIdentifier globalIdentifier: result = BuildScopeIdentifier(globalIdentifier, inferredPath); break;
-            case DMASTCallableSelf: result = new ProcSelf(expression.Location, ctx.Proc.ReturnTypes); break;
+            case DMASTCallableSelf: result = new ProcSelf(expression.Location, ctx.Proc.RawReturnTypes); break;
             case DMASTCallableSuper: result = new ProcSuper(expression.Location, ctx.Type.GetProcReturnTypes(ctx.Proc.Name)); break;
             case DMASTCallableProcIdentifier procIdentifier: result = BuildCallableProcIdentifier(procIdentifier, ctx.Type); break;
             case DMASTProcCall procCall: result = BuildProcCall(procCall, inferredPath); break;
@@ -272,10 +277,10 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
 
                 if (b.ValType.TypePath != null && c.ValType.TypePath != null && b.ValType.TypePath != c.ValType.TypePath) {
                     Compiler.Emit(WarningCode.LostTypeInfo, ternary.Location,
-                        $"Ternary has type paths {b.ValType.TypePath} and {c.ValType.TypePath} but a value can only have one type path. Using {b.ValType.TypePath}.");
+                        $"Ternary has type paths {b.ValType.TypePath} and {c.ValType.TypePath} but a value can only have one type path. Using their common ancestor, {b.ValType.TypePath.Value.GetLastCommonAncestor(Compiler, c.ValType.TypePath.Value)}.");
                 }
 
-                result = new Ternary(ternary.Location, a, b, c);
+                result = new Ternary(Compiler, ternary.Location, a, b, c);
                 break;
             case DMASTNewPath newPath:
                 if (BuildExpression(newPath.Path, inferredPath) is not IConstantPath path) {
@@ -284,7 +289,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                     break;
                 }
 
-                result = new NewPath(Compiler, newPath.Location, path,
+                result = new NewPath(newPath.Location, path,
                     BuildArgumentList(newPath.Location, newPath.Parameters, inferredPath));
                 break;
             case DMASTNewExpr newExpr:
@@ -305,7 +310,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                     break;
                 }
 
-                result = new NewPath(Compiler, newInferred.Location, inferredType,
+                result = new NewPath(newInferred.Location, inferredType,
                     BuildArgumentList(newInferred.Location, newInferred.Parameters, inferredPath));
                 break;
             case DMASTPreIncrement preIncrement:
@@ -581,7 +586,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                 if (scopeMode == Normal) {
                     var localVar = ctx.Proc?.GetLocalVariable(name);
                     if (localVar != null)
-                        return new Local(identifier.Location, localVar);
+                        return new Local(identifier.Location, localVar, localVar.ExplicitValueType);
                 }
 
                 var field = ctx.Type.GetVariable(name);
@@ -615,7 +620,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                     return UnknownReference(location, $"No global proc named \"{bIdentifier}\" exists");
 
                 var arguments = BuildArgumentList(location, scopeIdentifier.CallArguments, inferredPath);
-                return new ProcCall(location, new GlobalProc(location, globalProc), arguments, DMValueType.Anything);
+                return new ProcCall(Compiler, location, new GlobalProc(location, globalProc), arguments, DMValueType.Anything);
             }
 
             // ::vars, special case
@@ -708,7 +713,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
             if (variable == null)
                 return UnknownIdentifier(location, bIdentifier);
 
-            return new ScopeReference(ObjectTree, location, expression, bIdentifier, variable);
+            return new ScopeReference(Compiler, location, expression, bIdentifier, variable);
         }
     }
 
@@ -722,7 +727,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
         }
 
         if (dmObject.HasProc(procIdentifier.Identifier)) {
-            return new Proc(procIdentifier.Location, procIdentifier.Identifier);
+            return new Proc(procIdentifier.Location, procIdentifier.Identifier, dmObject);
         }
 
         if (ObjectTree.TryGetGlobalProc(procIdentifier.Identifier, out var globalProc)) {
@@ -759,10 +764,10 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
         if (target is Proc targetProc) { // GlobalProc handles returnType itself
             var returnType = targetProc.GetReturnType(ctx.Type);
 
-            return new ProcCall(procCall.Location, target, args, returnType);
+            return new ProcCall(Compiler, procCall.Location, target, args, returnType);
         }
 
-        return new ProcCall(procCall.Location, target, args, DMValueType.Anything);
+        return new ProcCall(Compiler, procCall.Location, target, args, DMValueType.Anything);
     }
 
     private ArgumentList BuildArgumentList(Location location, DMASTCallParameter[]? arguments, DreamPath? inferredPath = null) {
@@ -892,7 +897,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                         var argumentList = BuildArgumentList(deref.Expression.Location, callOperation.Parameters, inferredPath);
 
                         var globalProcExpr = new GlobalProc(expr.Location, globalProc);
-                        expr = new ProcCall(expr.Location, globalProcExpr, argumentList, DMValueType.Anything);
+                        expr = new ProcCall(Compiler, expr.Location, globalProcExpr, argumentList, DMValueType.Anything);
                         break;
 
                     case DMASTDereference.FieldOperation:
@@ -1028,6 +1033,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                 case DMASTDereference.CallOperation callOperation: {
                     var field = callOperation.Identifier;
                     var argumentList = BuildArgumentList(deref.Expression.Location, callOperation.Parameters, inferredPath);
+                    DreamPath? nextPath = null;
 
                     if (!callOperation.NoSearch && !pathIsFuzzy) {
                         if (prevPath == null) {
@@ -1038,16 +1044,25 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                             return UnknownReference(callOperation.Location, $"Type {prevPath.Value} does not exist");
                         if (!fromObject.HasProc(field))
                             return UnknownIdentifier(callOperation.Location, field);
+
+                        var returnTypes = fromObject.GetProcReturnTypes(field, argumentList) ?? DMValueType.Anything;
+                        nextPath = returnTypes.HasPath ? returnTypes.TypePath : returnTypes.AsPath();
+                        if (!returnTypes.HasPath & nextPath.HasValue) {
+                            var thePath = nextPath!.Value;
+                            thePath.Type = DreamPath.PathType.UpwardSearch;
+                            nextPath = thePath;
+                        }
                     }
 
                     operation = new Dereference.CallOperation {
                         Parameters = argumentList,
                         Safe = callOperation.Safe,
                         Identifier = field,
-                        Path = null
+                        Path = prevPath
                     };
-                    prevPath = null;
-                    pathIsFuzzy = true;
+                    prevPath = nextPath;
+                    if(prevPath is null)
+                        pathIsFuzzy = true;
                     break;
                 }
 
@@ -1069,7 +1084,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
             if (inferredPath == null)
                 return BadExpression(WarningCode.BadExpression, locate.Location, "inferred locate requires a type");
 
-            return new LocateInferred(locate.Location, inferredPath.Value, container);
+            return new LocateInferred(Compiler, locate.Location, inferredPath.Value, container);
         }
 
         var pathExpr = BuildExpression(locate.Expression, inferredPath);
@@ -1116,7 +1131,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
         if (list.IsAList) {
             return new AList(list.Location, values!);
         } else {
-            return new List(list.Location, values);
+            return new List(Compiler, list.Location, values);
         }
     }
 
@@ -1223,7 +1238,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
             pickValues[i] = new Pick.PickValue(weight, value);
         }
 
-        return new Pick(pick.Location, pickValues);
+        return new Pick(Compiler, pick.Location, pickValues);
     }
 
     private DMExpression BuildLog(DMASTLog log, DreamPath? inferredPath) {

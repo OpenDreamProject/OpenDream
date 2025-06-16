@@ -483,8 +483,6 @@ internal sealed class LessThanOrEqual(Location location, DMExpression lhs, DMExp
 
 // x || y
 internal sealed class Or(Location location, DMExpression lhs, DMExpression rhs) : BinaryOp(location, lhs, rhs) {
-    public override DMComplexValueType ValType => DMValueType.Num; // todo: DMValueType.Bool
-
     public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
         if (LHS.TryAsConstant(compiler, out var lhs)) {
             if (lhs.IsTruthy()) {

@@ -107,7 +107,7 @@ internal sealed class Local(Location location, DMProc.LocalVariable localVar, DM
     public override DMComplexValueType ValType {
         get {
             if (valType is not null && !valType.Value.IsAnything) return valType.Value;
-            return LocalVar.Type is not null ? new DMComplexValueType(DMValueType.Instance | DMValueType.Path | DMValueType.Null, LocalVar.Type) : DMValueType.Anything;
+            return LocalVar.ExplicitValueType ?? (LocalVar.Type is not null ? new DMComplexValueType(DMValueType.Instance | DMValueType.Path | DMValueType.Null, LocalVar.Type) : DMValueType.Anything);
         }
     }
 

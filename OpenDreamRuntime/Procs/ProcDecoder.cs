@@ -397,9 +397,9 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
             case (DreamProcOpcode.NPushFloatAssign, float[] floats, DMReference[] refs): {
                 // The length of both arrays are equal
                 for (var index = 0; index < refs.Length; index++) {
+                    text.Append(refs[index]);
+                    text.Append('=');
                     text.Append(floats[index]);
-                    text.Append(' ');
-                    text.Append($"\"{refs[index]}\"");
 
                     if(index + 1 < refs.Length) // Don't leave a trailing space
                         text.Append(' ');

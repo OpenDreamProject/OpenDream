@@ -131,8 +131,13 @@ internal sealed class ArgumentList(Location location, (string? Name, DMExpressio
         DMComplexValueType paramType = param.ExplicitValueType ?? DMValueType.Anything;
 
         if (!(compiler.Settings.SkipAnythingTypecheck && expr.ValType.IsAnything) && !paramType.MatchesType(compiler, expr.ValType)) {
-            compiler.Emit(WarningCode.InvalidVarType, expr.Location,
-                $"{targetProc.Name}(...) argument \"{param.Name}\": Invalid var value type {expr.ValType}, expected {paramType}");
+            if (expr is Null) {
+                compiler.Emit(WarningCode.ImplicitNullType, expr.Location, $"{targetProc.Name}(...) argument \"{param.Name}\": Argument is null but not explicitly typed as nullable, append \"|null\" to \"as\". Implicitly treating as nullable.");
+                param.ExplicitValueType |= DMValueType.Null;
+            } else {
+                compiler.Emit(WarningCode.InvalidVarType, expr.Location,
+                    $"{targetProc.Name}(...) argument \"{param.Name}\": Invalid var value type {expr.ValType}, expected {paramType}");
+            }
         }
     }
 }

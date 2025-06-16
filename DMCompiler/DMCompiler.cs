@@ -251,8 +251,7 @@ public class DMCompiler {
         Emit(WarningCode.UnsupportedAccess, loc, message);
     }
 
-    public void VerbosePrint(string message)
-    {
+    public void VerbosePrint(string message) {
         if (!Settings.Verbose) return;
 
         TimeSpan duration = DateTime.Now - _compileStartTime;

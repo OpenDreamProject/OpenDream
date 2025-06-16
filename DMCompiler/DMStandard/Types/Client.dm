@@ -157,12 +157,12 @@
 		object.MouseWheel(delta_x,delta_y,location,control,params)
 
 	proc/IsByondMember()
-		set opendream_unsupported = "Opendream has no premium tier."
+		set opendream_unsupported = "OpenDream has no premium tier."
 		return FALSE
 	proc/CheckPassport(passport_identifier)
-		set opendream_unsupported = "Opendream does not support subscribing to games"
+		set opendream_unsupported = "OpenDream does not support subscribing to games"
 	proc/SendPage(msg, recipient, options)
-		set opendream_unsupported = "Opendream does not implement a pager"
+		set opendream_unsupported = "OpenDream does not implement a pager"
 	proc/GetAPI(Api, Name)
 		set opendream_unimplemented = "Steam Achievements API will not be supported"
 	proc/SetAPI(Api, Key, Value)

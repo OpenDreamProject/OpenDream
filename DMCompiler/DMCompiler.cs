@@ -244,7 +244,7 @@ public class DMCompiler {
         Emit(WarningCode.UnimplementedAccess, loc, message);
     }
 
-    public void Unsupportedwarning(Location loc, string message) {
+    public void UnsupportedWarning(Location loc, string message) {
         if (Settings.SuppressUnsupportedAccessWarnings)
             return;
 

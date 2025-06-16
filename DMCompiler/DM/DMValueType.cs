@@ -27,9 +27,9 @@ public enum DMValueType {
 
     //Byond here be dragons
     Unimplemented = 0x4000, // Marks that a method or property is not implemented. Throws a compiler warning if accessed.
-    Unsupported = 0x5000, // Marks that a method or property will not be not implemented. Throws a compiler warning if accessed.
     CompiletimeReadonly = 0x8000, // Marks that a property can only ever be read from, never written to. This is a const-ier version of const, for certain standard values like list.type
     NoConstFold = 0x10000 // Marks that a const var cannot be const-folded during compile
+    Unsupported = 0x20000, // Marks that a method or property will not be not implemented. Throws a compiler warning if accessed.
 }
 
 /// <summary>

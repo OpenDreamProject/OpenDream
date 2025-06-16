@@ -135,7 +135,7 @@ public readonly struct DMComplexValueType {
     public override string ToString() {
         var types = Type.ToString().ToLowerInvariant();
 
-        return $"\"{(HasPath ? types + $", {TypePath!.Value}{((IsList && ListValueTypes is not null) ? $"({ListValueTypes})" : "")}" : types)}\"";
+        return $"\"{(HasPath ? types + $" of type {TypePath!.Value}{((IsList && ListValueTypes is not null) ? $"({ListValueTypes})" : "")}" : types)}\"".Replace(", ", "|");
     }
 
     public static implicit operator DMComplexValueType(DMValueType type) => new(type, null);

@@ -589,7 +589,7 @@ internal sealed class Assignment(Location location, DMExpression lhs, DMExpressi
                 return;
 
             ctx.Compiler.Emit(WarningCode.InvalidVarType, Location,
-                $"Invalid var type {RHS.ValType}, expected {LHS.ValType}");
+                $"Invalid var type {RHS.ValType}, expected one of {LHS.ValType}");
         }
     }
 }

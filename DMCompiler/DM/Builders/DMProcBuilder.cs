@@ -261,7 +261,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
 
             if (!varDeclaration.ValType.Value.MatchesType(compiler, value.ValType) && (!value.ValType.IsAnything || !compiler.Settings.SkipAnythingTypecheck))
                 compiler.Emit(WarningCode.InvalidVarType, varDeclaration.Location,
-                    $"{varDeclaration.Name}: Invalid var value {value.ValType}, expected {varDeclaration.ValType}");
+                    $"{varDeclaration.Name}: Invalid var value {value.ValType}, expected one of {varDeclaration.ValType}");
         } else {
             value = new Null(varDeclaration.Location);
         }

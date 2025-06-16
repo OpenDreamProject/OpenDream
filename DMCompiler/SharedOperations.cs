@@ -67,7 +67,6 @@ public static class SharedOperations {
         return (left << right) & 0x00FFFFFF;
     }
 
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int BitShiftRight(int left, int right) {
         return (left & 0x00FFFFFF) >> (right) ;

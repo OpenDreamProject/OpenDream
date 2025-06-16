@@ -323,6 +323,7 @@ internal sealed class IsSaved(Location location, DMExpression expr) : DMExpressi
 // astype(x, y)
 internal sealed class AsType(Location location, DMExpression expr, DMExpression path) : DMExpression(location) {
     public override DreamPath? Path => path.Path;
+    public override DMComplexValueType ValType => new(DMValueType.Instance | DMValueType.Null, Path);
     public override bool PathIsFuzzy => path is not ConstantTypeReference;
 
     public override void EmitPushValue(ExpressionContext ctx) {
@@ -335,6 +336,7 @@ internal sealed class AsType(Location location, DMExpression expr, DMExpression 
 // astype(x)
 internal sealed class AsTypeInferred(Location location, DMExpression expr, DreamPath path) : DMExpression(location) {
     public override DreamPath? Path => path;
+    public override DMComplexValueType ValType => new(DMValueType.Instance | DMValueType.Null, Path);
 
     public override void EmitPushValue(ExpressionContext ctx) {
         if (!ctx.ObjectTree.TryGetTypeId(path, out var typeId)) {

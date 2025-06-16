@@ -17,7 +17,7 @@
 
 	proc/Bump(atom/Obstacle)
 
-	proc/Move(atom/NewLoc, Dir=0 as num) as num
+	proc/Move(atom/NewLoc, Dir=0 as num) as num|null // NOTE: BYOND doesn't return null, but it's common for SS13 proc overrides to
 		if (isnull(NewLoc) || loc == NewLoc)
 			return FALSE
 

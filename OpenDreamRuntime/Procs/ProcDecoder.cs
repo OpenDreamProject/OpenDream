@@ -387,7 +387,7 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
                 break;
             }
 
-            case (DreamProcOpcode PushFloatAssign, float value, DMReference reference): {
+            case (DreamProcOpcode.PushFloatAssign, float value, DMReference reference): {
                 text.Append(value);
                 text.Append(' ');
                 text.Append(reference.ToString());

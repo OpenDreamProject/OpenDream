@@ -12,7 +12,7 @@ public sealed class DreamMapJson {
 
 public sealed class CellDefinitionJson(string name) {
     public string Name { get; set; } = name;
-    public MapObjectJson Turf { get; set; }
+    public MapObjectJson? Turf { get; set; }
     public MapObjectJson? Area { get; set; }
     public List<MapObjectJson> Objects { get; set; } = new();
 }

@@ -71,7 +71,20 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
 
             case DreamProcOpcode.PushStringFloat:
                 return (opcode, ReadString(), ReadFloat());
+            case DreamProcOpcode.PushFloatAssign:
+                return (opcode, ReadFloat(), ReadReference());
+            case DreamProcOpcode.NPushFloatAssign: {
+                var count = ReadInt();
+                var floats = new float[count];
+                var refs = new DMReference[count];
 
+                for (int i = 0; i < count; i++) {
+                    floats[i] = ReadFloat();
+                    refs[i] = ReadReference();
+                }
+
+                return (opcode, floats, refs);
+            }
             case DreamProcOpcode.PushString:
             case DreamProcOpcode.PushResource:
             case DreamProcOpcode.DereferenceField:
@@ -368,6 +381,27 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
                     text.Append(' ');
                     text.Append(floats[index]);
                     if(index + 1 < strings.Length) // Don't leave a trailing space
+                        text.Append(' ');
+                }
+
+                break;
+            }
+
+            case (DreamProcOpcode PushFloatAssign, float value, DMReference reference): {
+                text.Append(value);
+                text.Append(' ');
+                text.Append(reference.ToString());
+                break;
+            }
+
+            case (DreamProcOpcode.NPushFloatAssign, float[] floats, DMReference[] refs): {
+                // The length of both arrays are equal
+                for (var index = 0; index < refs.Length; index++) {
+                    text.Append(floats[index]);
+                    text.Append(' ');
+                    text.Append($"\"{refs[index]}\"");
+
+                    if(index + 1 < refs.Length) // Don't leave a trailing space
                         text.Append(' ');
                 }
 

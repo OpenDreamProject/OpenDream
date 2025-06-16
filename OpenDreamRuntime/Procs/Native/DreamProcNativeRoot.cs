@@ -965,7 +965,7 @@ internal static class DreamProcNativeRoot {
         actualstart = Math.Max(Math.Min(text.Length, actualstart),0);
 
         if(end > 0)
-            actualcount = actualstart - (end-1);
+            actualcount = actualstart - (end-1) + needle.Length;
         else
             actualcount  = actualstart - ((text.Length-1) + (end));
         actualcount += needle.Length-1;

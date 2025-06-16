@@ -220,10 +220,12 @@ internal sealed class Pick(DMCompiler compiler, Location location, Pick.PickValu
                     return firstValType.ListValueTypes?.NestedListKeyType ?? DMValueType.Anything;
                 }
             }
+
             DMComplexValueType accumValues = DMValueType.Anything;
             foreach(PickValue pickVal in values) {
                 accumValues = DMComplexValueType.MergeComplexValueTypes(compiler, accumValues, pickVal.Value.ValType);
             }
+
             return accumValues;
         }
     }

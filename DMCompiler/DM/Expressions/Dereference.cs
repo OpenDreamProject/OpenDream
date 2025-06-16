@@ -64,7 +64,7 @@ internal class Dereference : LValue {
 
     public override DMComplexValueType ValType {
         get {
-            if (_valType is null) _valType = DetermineValType(_objectTree);
+            _valType ??= DetermineValType(_objectTree);
             return _valType.Value;
         }
     }
@@ -367,7 +367,7 @@ internal sealed class ScopeReference(DMCompiler compiler, Location location, DME
     public override DMComplexValueType ValType {
         get {
             TryAsConstant(compiler, out var constant);
-            return constant is not null ? constant.ValType : dmVar.ValType;
+            return constant?.ValType ?? dmVar.ValType;
         }
     }
 

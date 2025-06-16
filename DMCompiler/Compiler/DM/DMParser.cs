@@ -2821,7 +2821,6 @@ namespace DMCompiler.Compiler.DM {
                         outListTypes = DMListValueTypes.MergeListValueTypes(compiler, outListTypes, listTypes);
                     }
                 }
-
             } while (Check(TokenType.DM_Bar));
 
             return new(type, path, outListTypes);

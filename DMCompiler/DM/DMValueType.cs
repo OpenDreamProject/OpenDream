@@ -98,7 +98,7 @@ public readonly struct DMComplexValueType {
         if (type.Type.HasFlag(DMValueType.Color) && IsList && ListValueTypes?.NestedListKeyType.Type == DMValueType.Num && ListValueTypes.NestedListValType is null)
             return true;
         // probably only one of these is correct but i can't be assed to figure out which
-        if (Type.HasFlag(DMValueType.Color) && type.IsList && type.ListValueTypes?.NestedListKeyType.Type == DMValueType.Num && type.ListValueTypes.NestedListValType is null)
+        if (Type.HasFlag(DMValueType.Color) && type is { IsList: true, ListValueTypes: { NestedListKeyType.Type: DMValueType.Num, NestedListValType: null } })
             return true;
         if (type.IsInstance && MatchesType(type.TypePath!.Value.GetAtomType(compiler))) {
             return true;

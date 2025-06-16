@@ -13,7 +13,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
     /// <summary>
     /// This tracks the current return type.
     /// </summary>
-    private DMComplexValueType CurrentReturnType = DMValueType.Null;
+    private DMComplexValueType _currentReturnType = DMValueType.Null;
 
     private ExpressionContext ExprContext => new(compiler, dmObject, proc);
 
@@ -49,7 +49,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
 
     private void CheckBlockReturnRecursive(DMASTProcBlockInner block) {
         if (block.Statements.Length <= 0) {
-            proc.ValidateReturnType(CurrentReturnType, null, block.Location);
+            proc.ValidateReturnType(_currentReturnType, null, block.Location);
             return;
         }
 
@@ -60,7 +60,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                 if (ifStatement.ElseBody is not null)
                     CheckBlockReturnRecursive(ifStatement.ElseBody);
                 else // if statement is non-exhaustive, so check for an implicit return after
-                    proc.ValidateReturnType(CurrentReturnType, null, lastStatement.Location);
+                    proc.ValidateReturnType(_currentReturnType, null, lastStatement.Location);
                 break;
             case DMASTProcStatementSwitch switchStatement:
                 if (!switchStatement.Cases.Any()) // No cases to check?
@@ -70,13 +70,13 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                 }
 
                 if (!switchStatement.Cases.Any(x => x is DMASTProcStatementSwitch.SwitchCaseDefault)) // non-exhaustive, implicit return
-                    proc.ValidateReturnType(CurrentReturnType, null, switchStatement.Cases.Last().Body.Location);
+                    proc.ValidateReturnType(_currentReturnType, null, switchStatement.Cases.Last().Body.Location);
                 break;
             case DMASTProcStatementReturn:
-            case DMASTProcStatementExpression expression when expression.Expression is DMASTAssign assign && assign.LHS is DMASTCallableSelf:
+            case DMASTProcStatementExpression { Expression: DMASTAssign { LHS: DMASTCallableSelf } }:
                 break; // already checked elsewhere
             default:
-                proc.ValidateReturnType(CurrentReturnType, null, lastStatement.Location);
+                proc.ValidateReturnType(_currentReturnType, null, lastStatement.Location);
                 break;
         }
     }
@@ -149,14 +149,13 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
     /// <summary>
     /// Returns true if the expression has DMASTCallableSelf as the leftmost innermost expression.
     /// </summary>
-    /// <param name="expr"></param>
     /// <returns></returns>
     public void HandleCallableSelfLeft(DMASTExpression expr, ref DMComplexValueType currentReturnType, DMExpression realExpr, out bool isTemporary, bool checkConditions = false) {
         isTemporary = false;
         var checkedExpression = expr.GetUnwrapped();
         switch (checkedExpression) {
-            case DMASTNot:
-                DMASTUnary astUnary = (DMASTUnary)checkedExpression;
+            case DMASTNot not:
+                DMASTUnary astUnary = not;
                 UnaryOp unaryExpr = (UnaryOp)realExpr;
                 HandleCallableSelfLeft(astUnary.Value.GetUnwrapped(), ref currentReturnType, unaryExpr.Expr, out var _);
                 break;
@@ -180,8 +179,8 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                 if (astAssignment.LHS.GetUnwrapped() is DMASTCallableSelf)
                     currentReturnType = assignExpr.RHS.ValType;
                 break;
-            case DMASTLogicalOrAssign:
-                DMASTBinary astBinary = (DMASTBinary)checkedExpression;
+            case DMASTLogicalOrAssign assign:
+                DMASTBinary astBinary = assign;
                 if (astBinary.LHS.GetUnwrapped() is not DMASTCallableSelf)
                     break;
                 if (currentReturnType.Type != DMValueType.Null)
@@ -193,7 +192,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
 
     private void ProcessStatementExpression(DMASTProcStatementExpression statement) {
         _exprBuilder.Emit(statement.Expression, out var expr);
-        HandleCallableSelfLeft(statement.Expression, ref CurrentReturnType, expr, out var _);
+        HandleCallableSelfLeft(statement.Expression, ref _currentReturnType, expr, out var _);
         proc.Pop();
     }
 
@@ -259,7 +258,8 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
         if (varDeclaration.Value != null) {
             value = _exprBuilder.Create(varDeclaration.Value, varDeclaration.Type);
 
-            if (!varDeclaration.ValType.Value.MatchesType(compiler, value.ValType) && (!value.ValType.IsAnything || !compiler.Settings.SkipAnythingTypecheck))
+            var varValType = varDeclaration.ValType ?? DMValueType.Anything;
+            if (!varValType.MatchesType(compiler, value.ValType) && (!value.ValType.IsAnything || !compiler.Settings.SkipAnythingTypecheck))
                 compiler.Emit(WarningCode.InvalidVarType, varDeclaration.Location,
                     $"{varDeclaration.Name}: Invalid var value {value.ValType}, expected one of {varDeclaration.ValType}");
         } else {
@@ -303,7 +303,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
 
             expr.EmitPushValue(ExprContext);
         } else {
-            proc.ValidateReturnType(CurrentReturnType, null, statement.Location);
+            proc.ValidateReturnType(_currentReturnType, null, statement.Location);
             proc.PushReferenceValue(DMReference.Self); //Default return value
         }
 
@@ -312,9 +312,9 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
 
     private void ProcessStatementIf(DMASTProcStatementIf statement) {
         _exprBuilder.Emit(statement.Condition, out var expr);
-        var prevReturnType = CurrentReturnType;
-        HandleCallableSelfLeft(statement.Condition, ref CurrentReturnType, expr, out var isTemporary, checkConditions: true);
-        var condReturnType = CurrentReturnType;
+        var prevReturnType = _currentReturnType;
+        HandleCallableSelfLeft(statement.Condition, ref _currentReturnType, expr, out var isTemporary, checkConditions: true);
+        var condReturnType = _currentReturnType;
 
         if (statement.ElseBody == null) {
             string endLabel = proc.NewLabelName();
@@ -323,7 +323,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
             proc.StartScope();
             ProcessBlockInner(statement.Body);
             proc.EndScope();
-            CurrentReturnType = condReturnType;
+            _currentReturnType = condReturnType;
             proc.AddLabel(endLabel);
         } else {
             string elseLabel = proc.NewLabelName();
@@ -334,9 +334,9 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
             proc.StartScope();
             ProcessBlockInner(statement.Body);
             proc.EndScope();
-            CurrentReturnType = condReturnType;
+            _currentReturnType = condReturnType;
             if (isTemporary)
-                CurrentReturnType = prevReturnType;
+                _currentReturnType = prevReturnType;
             proc.Jump(endLabel);
 
             proc.AddLabel(elseLabel);
@@ -349,7 +349,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
         }
 
         if (isTemporary)
-            CurrentReturnType = prevReturnType;
+            _currentReturnType = prevReturnType;
     }
 
     private void ProcessStatementFor(DMASTProcStatementFor statementFor) {
@@ -389,7 +389,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                     case Local outputLocal: {
                         if (statementFor.DMTypes is not null)
                             outputLocal.LocalVar.ExplicitValueType = statementFor.DMTypes;
-                        else if (list.ValType.IsList && list.ValType.ListValueTypes is not null)
+                        else if (list.ValType is { IsList: true, ListValueTypes: not null })
                             outputLocal.LocalVar.ExplicitValueType = list.ValType.ListValueTypes.NestedListKeyType;
                         if(outputLocal.LocalVar is DMProc.LocalConstVariable)
                             compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, "Cannot change constant value");
@@ -800,7 +800,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
         DMASTProcBlockInner? defaultCaseBody = null;
 
         _exprBuilder.Emit(statementSwitch.Value, out var expr);
-        HandleCallableSelfLeft(statementSwitch.Value, ref CurrentReturnType, expr, out var _);
+        HandleCallableSelfLeft(statementSwitch.Value, ref _currentReturnType, expr, out var _);
         // todo: some sort of return type inference based on cases for conditions switching on .
         foreach (DMASTProcStatementSwitch.SwitchCase switchCase in statementSwitch.Cases) {
             if (switchCase is DMASTProcStatementSwitch.SwitchCaseValues switchCaseValues) {
@@ -859,7 +859,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
 
         proc.Pop();
 
-        DMComplexValueType oldReturnType = CurrentReturnType;
+        DMComplexValueType oldReturnType = _currentReturnType;
         DMComplexValueType? defaultCaseReturnType = null;
         if (defaultCaseBody != null) {
             // if a default case exists, the switch is exhaustive so we go with its returntype
@@ -868,25 +868,25 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                 ProcessBlockInner(defaultCaseBody);
             }
             proc.EndScope();
-            defaultCaseReturnType = CurrentReturnType;
-            CurrentReturnType = oldReturnType; // the default case hasn't taken effect for the rest of the cases
+            defaultCaseReturnType = _currentReturnType;
+            _currentReturnType = oldReturnType; // the default case hasn't taken effect for the rest of the cases
         }
 
         proc.Jump(endLabel);
 
         foreach ((string CaseLabel, DMASTProcBlockInner CaseBody) valueCase in valueCases) {
             proc.AddLabel(valueCase.CaseLabel);
-            oldReturnType = CurrentReturnType;
+            oldReturnType = _currentReturnType;
             proc.StartScope();
             {
                 ProcessBlockInner(valueCase.CaseBody);
             }
             proc.EndScope();
-            CurrentReturnType = oldReturnType;
+            _currentReturnType = oldReturnType;
             proc.Jump(endLabel);
         }
 
-        CurrentReturnType = defaultCaseReturnType ?? oldReturnType;
+        _currentReturnType = defaultCaseReturnType ?? oldReturnType;
         proc.AddLabel(endLabel);
     }
 

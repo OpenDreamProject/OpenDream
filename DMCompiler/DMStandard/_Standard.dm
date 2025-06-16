@@ -31,8 +31,8 @@ proc/flist(Path) as /list
 proc/floor(A) as num
 proc/fract(n) as num
 proc/ftime(File, IsCreationTime = 0) as num
-proc/get_step_to(Ref, Trg, Min=0) as num)
-proc/get_steps_to(Ref, Trg, Min=0) as num)
+proc/get_step_to(Ref, Trg, Min=0) as num
+proc/get_steps_to(Ref, Trg, Min=0) as num
 proc/gradient(A, index)
 proc/hascall(Object, ProcName) as num
 proc/hearers(Depth = world.view, Center = usr) as /list

@@ -167,7 +167,7 @@ internal sealed class DMProc {
     }
 
     public void ValidateReturnType(DMComplexValueType type, DMExpression? expr, Location location) {
-        var returnTypes = _dmObject.GetProcReturnTypes(Name)!.Value;
+        var returnTypes = _dmObject.GetProcReturnTypes(Name) ?? DMValueType.Anything;
         if ((returnTypes.Type & (DMValueType.Color | DMValueType.File | DMValueType.Message)) != 0) {
             _compiler.Emit(WarningCode.UnsupportedTypeCheck, Location, "color, message, and file return types are currently unsupported.");
             return;

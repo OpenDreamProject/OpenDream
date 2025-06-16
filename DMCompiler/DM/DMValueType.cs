@@ -70,6 +70,7 @@ public readonly struct DMComplexValueType {
 
     public bool MatchesType(DMValueType type) {
         if (IsAnything || (Type & type) != 0) return true;
+        if((type & DMValueType.Icon) != 0 && TypePath == DreamPath.Icon) return true; // var/icon/foo is not explicitly "as icon"
         if ((type & (DMValueType.Text | DMValueType.Message)) != 0 && (Type & (DMValueType.Text | DMValueType.Message)) != 0) return true;
         if ((type & (DMValueType.Text | DMValueType.Color)) != 0 && (Type & (DMValueType.Text | DMValueType.Color)) != 0) return true;
         return false;

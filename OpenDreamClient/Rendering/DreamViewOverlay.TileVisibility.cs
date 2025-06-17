@@ -60,7 +60,7 @@ internal partial class DreamViewOverlay {
                 continue;
 
             var transform = _xformQuery.GetComponent(entity);
-            if (!sprite.IsVisible(transform, seeVis))
+            if (!_spriteSystem.IsVisible(sprite, transform, seeVis, null))
                 continue;
             if (sprite.Icon.Appearance == null) //appearance hasn't loaded yet
                 continue;

@@ -63,12 +63,10 @@
 	var/vis_flags as opendream_unimplemented
 
 	proc/Click(location, control, params)
+	proc/DblClick(location, control, params)
 	proc/MouseDrop(over_object,src_location,over_location,src_control,over_control,params)
 	proc/MouseEntered(location,control,params)
 	proc/MouseExited(location,control,params)
-
-	proc/DblClick(location, control, params)
-		set opendream_unimplemented = TRUE
 
 	proc/MouseDown(location, control, params)
 		set opendream_unimplemented = TRUE

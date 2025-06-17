@@ -60,6 +60,7 @@ internal static class DreamProcNative {
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_json_decode);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_json_encode);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_length_char);
+        objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_lerp);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_list2params);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_lowertext);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_matrix);

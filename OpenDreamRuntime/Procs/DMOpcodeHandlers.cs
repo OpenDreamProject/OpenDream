@@ -2,7 +2,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using DMCompiler;
@@ -16,9 +15,8 @@ using Robust.Shared.Random;
 using Vector4 = Robust.Shared.Maths.Vector4;
 
 namespace OpenDreamRuntime.Procs {
-    internal static class DMOpcodeHandlers {
+    internal static partial class DMOpcodeHandlers {
         #region Values
-
         public static ProcStatus PushReferenceValue(DMProcState state) {
             DreamReference reference = state.ReadReference();
 
@@ -83,6 +81,21 @@ namespace OpenDreamRuntime.Procs {
                 } else {
                     list.SetValue(key, popped[i + 1], allowGrowth: true);
                 }
+            }
+
+            state.Push(new DreamValue(list));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus CreateStrictAssociativeList(DMProcState state) {
+            int size = state.ReadInt();
+            var list = state.Proc.ObjectTree.CreateAssocList(size);
+
+            ReadOnlySpan<DreamValue> popped = state.PopCount(size * 2);
+            for (int i = 0; i < popped.Length; i += 2) {
+                DreamValue key = popped[i];
+
+                list.SetValue(key, popped[i + 1], allowGrowth: true);
             }
 
             state.Push(new DreamValue(list));
@@ -261,8 +274,34 @@ namespace OpenDreamRuntime.Procs {
             var jumpToIfFailure = state.ReadInt();
 
             var enumerator = state.Enumerators[enumeratorId];
-            if (enumerator == null || !enumerator.Enumerate(state, outputRef))
+            if (enumerator == null || !enumerator.Enumerate(state, outputRef, false))
                 state.Jump(jumpToIfFailure);
+
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus EnumerateAssoc(DMProcState state) {
+            var enumeratorId = state.ReadInt();
+            var assocRef = state.ReadReference();
+            var listRef = state.ReadReference();
+            var outputRef = state.ReadReference();
+            var jumpToIfFailure = state.ReadInt();
+
+            var enumerator = state.Enumerators[enumeratorId];
+            if (enumerator == null || !enumerator.Enumerate(state, outputRef, true)) {
+                // Ensure relevant stack values are popped
+                state.GetReferenceValue(outputRef);
+                state.GetReferenceValue(listRef);
+                state.GetReferenceValue(assocRef);
+
+                state.Jump(jumpToIfFailure);
+            } else {
+                var outputVal = state.GetReferenceValue(outputRef);
+                var listVal = state.GetReferenceValue(listRef);
+                var indexVal = state.GetIndex(listVal, outputVal, state);
+
+                state.AssignReference(assocRef, indexVal);
+            }
 
             return ProcStatus.Continue;
         }
@@ -272,7 +311,7 @@ namespace OpenDreamRuntime.Procs {
             var enumerator = state.Enumerators[enumeratorId];
             var jumpToIfFailure = state.ReadInt();
 
-            if (enumerator == null || !enumerator.Enumerate(state, null))
+            if (enumerator == null || !enumerator.Enumerate(state, null, false))
                 state.Jump(jumpToIfFailure);
 
             return ProcStatus.Continue;
@@ -696,11 +735,9 @@ namespace OpenDreamRuntime.Procs {
             state.Push(new DreamValue(new DreamGlobalVars(state.Proc.ObjectTree.List.ObjectDefinition)));
             return ProcStatus.Continue;
         }
-
         #endregion Values
 
         #region Math
-
         public static ProcStatus Add(DMProcState state) {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
@@ -1304,11 +1341,9 @@ namespace OpenDreamRuntime.Procs {
 
             return ProcStatus.Continue;
         }
-
         #endregion Math
 
         #region Comparisons
-
         public static ProcStatus CompareEquals(DMProcState state) {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
@@ -1449,11 +1484,9 @@ namespace OpenDreamRuntime.Procs {
 
             return nullOrFalse;
         }
-
         #endregion Comparisons
 
         #region Flow
-
         public static ProcStatus Call(DMProcState state) {
             DreamReference procRef = state.ReadReference();
             var argumentInfo = state.ReadProcArguments();
@@ -1535,52 +1568,9 @@ namespace OpenDreamRuntime.Procs {
                     return state.Call(proc, state.Instance, arguments);
                 }
                 case DreamValue.DreamValueType.String:
-                    unsafe {
-                        if(!source.TryGetValueAsString(out var dllName))
-                            throw new Exception($"{source} is not a valid DLL");
+                    // DLL Invoke
+                    return CallExt(state, source, argumentsInfo);
 
-                        var popProc = state.Pop();
-                        if(!popProc.TryGetValueAsString(out var procName)) {
-                            throw new Exception($"{popProc} is not a valid proc name");
-                        }
-
-                        DreamProcArguments arguments = state.PopProcArguments(null, argumentsInfo.Type, argumentsInfo.StackSize);
-
-                        // DLL Invoke
-                        var entryPoint = DllHelper.ResolveDllTarget(state.Proc.DreamResourceManager, dllName, procName);
-
-                        Span<nint> argV = stackalloc nint[arguments.Count];
-                        argV.Fill(0);
-                        try {
-                            for (var i = 0; i < argV.Length; i++) {
-                                var arg = arguments.GetArgument(i).Stringify();
-                                argV[i] = Marshal.StringToCoTaskMemUTF8(arg);
-                            }
-
-                            byte* ret;
-                            if (arguments.Count > 0) {
-                                fixed (nint* ptr = &argV[0]) {
-                                    ret = entryPoint(arguments.Count, (byte**)ptr);
-                                }
-                            } else {
-                                ret = entryPoint(0, (byte**)0);
-                            }
-
-                            if (ret == null) {
-                                state.Push(DreamValue.Null);
-                                return ProcStatus.Continue;
-                            }
-
-                            var retString = Marshal.PtrToStringUTF8((nint)ret);
-                            state.Push(new DreamValue(retString));
-                            return ProcStatus.Continue;
-                        } finally {
-                            foreach (var arg in argV) {
-                                if (arg != 0)
-                                    Marshal.ZeroFreeCoTaskMemUTF8(arg);
-                            }
-                        }
-                    }
                 default:
                     throw new Exception($"Call statement has an invalid source ({source})");
             }
@@ -1862,11 +1852,9 @@ namespace OpenDreamRuntime.Procs {
             state.SetReturn(state.GetReferenceValue(reference));
             return ProcStatus.Returned;
         }
-
         #endregion Flow
 
         #region Builtins
-
         public static ProcStatus GetStep(DMProcState state) {
             var d = state.Pop();
             var l = state.Pop();
@@ -2303,11 +2291,9 @@ namespace OpenDreamRuntime.Procs {
 
             return ProcStatus.Continue;
         }
-
         #endregion Builtins
 
         #region Others
-
         private static void PerformOutput(DreamValue a, DreamValue b) {
             if (a.TryGetValueAsDreamResource(out var resource)) {
                 resource.Output(b);
@@ -2316,6 +2302,8 @@ namespace OpenDreamRuntime.Procs {
                     return;
 
                 dreamObject.OperatorOutput(b);
+            } else if (a.TryGetValueAsFloatCoerceNull(out _)) { // no-op
+                // TODO: When we have runtime pragmas we should probably emit a no-op runtime. They probably meant to do <<= not <<
             } else {
                 throw new NotImplementedException($"Unimplemented output operation between {a} and {b}");
             }
@@ -2651,13 +2639,11 @@ namespace OpenDreamRuntime.Procs {
 
             return state.Call(proc, instance, arguments);
         }
-
         #endregion Others
 
         #region Helpers
-
         [SuppressMessage("ReSharper", "CompareOfFloatsByEqualityOperator")]
-        private static bool IsEqual(DreamValue first, DreamValue second) {
+        public static bool IsEqual(DreamValue first, DreamValue second) {
             // null should only ever be equal to null
             if (first.IsNull) return second.IsNull;
             if (second.IsNull) return false; // If this were ever true the above condition would have handled it
@@ -2998,11 +2984,9 @@ namespace OpenDreamRuntime.Procs {
             DreamProcNativeIcon.Blend(iconObj.Icon, blend, DreamIconOperationBlend.BlendType.Add, 0, 0);
             return new DreamValue(iconObj);
         }
-
         #endregion Helpers
 
         #region Peephole Optimizations
-
         public static ProcStatus NullRef(DMProcState state) {
             state.AssignReference(state.ReadReference(), DreamValue.Null);
             return ProcStatus.Continue;
@@ -3217,7 +3201,6 @@ namespace OpenDreamRuntime.Procs {
             state.SetReturn(new DreamValue(state.ReadFloat()));
             return ProcStatus.Returned;
         }
-
         #endregion
     }
 }

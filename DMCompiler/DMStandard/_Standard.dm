@@ -57,6 +57,7 @@ proc/isturf(Loc1) as num
 proc/json_decode(JSON)
 proc/json_encode(Value, flags)
 proc/length_char(E) as num
+proc/lerp(A, B, factor)
 proc/list2params(List) as text
 proc/lowertext(T as text) as text
 proc/max(A) as num|text|null
@@ -126,6 +127,7 @@ proc/winget(player, control_id, params)
 proc/winset(player, control_id, params)
 
 #include "Defines.dm"
+#include "Types\AList.dm"
 #include "Types\Client.dm"
 #include "Types\Database.dm"
 #include "Types\Datum.dm"

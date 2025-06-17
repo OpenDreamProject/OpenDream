@@ -36,7 +36,9 @@ public sealed partial class DreamMapManager : IDreamMapManager {
 
     // Set in Initialize
     private MapObjectJson _defaultArea = default!;
-    private TreeEntry _defaultTurf = default!;
+    private MapObjectJson _defaultTurf = default!;
+
+    private List<DreamMapJson>? _jsonMaps = new();
 
     public void Initialize() {
         _appearanceSystem = _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
@@ -45,30 +47,23 @@ public sealed partial class DreamMapManager : IDreamMapManager {
         DreamObjectDefinition worldDefinition = _objectTree.World.ObjectDefinition;
 
         // Default area
-        if (worldDefinition.Variables["area"].TryGetValueAsType(out var area)) {
-            if(!area.ObjectDefinition.IsSubtypeOf(_objectTree.Area)) throw new Exception("bad area");
-
-            _defaultArea = new MapObjectJson(area.Id);
-        } else if (worldDefinition.Variables["area"].IsNull ||
-                   worldDefinition.Variables["area"].TryGetValueAsInteger(out var areaInt) && areaInt == 0) {
-            //TODO: Properly handle disabling default area
-            _defaultArea = new MapObjectJson(_objectTree.Area.Id);
-        } else {
+        var defaultArea = worldDefinition.Variables["area"];
+        if (!defaultArea.TryGetValueAsType(out var defaultAreaValue) &&
+            defaultArea.TryGetValueAsFloatCoerceNull(out var areaInt) && areaInt == 0) //TODO: Properly handle disabling default area
+            defaultAreaValue = _objectTree.Area;
+        if(defaultAreaValue?.ObjectDefinition.IsSubtypeOf(_objectTree.Area) is not true)
             throw new Exception("bad area");
-        }
 
         //Default turf
-        if (worldDefinition.Variables["turf"].TryGetValueAsType(out var turf)) {
-            if (!turf.ObjectDefinition.IsSubtypeOf(_objectTree.Turf))
-                throw new Exception("bad turf");
-            _defaultTurf = turf;
-        } else if (worldDefinition.Variables["turf"].IsNull ||
-                   worldDefinition.Variables["turf"].TryGetValueAsInteger(out var turfInt) && turfInt == 0) {
-            //TODO: Properly handle disabling default turf
-            _defaultTurf = _objectTree.Turf;
-        } else {
+        var defaultTurf = worldDefinition.Variables["turf"];
+        if (!defaultTurf.TryGetValueAsType(out var defaultTurfValue) &&
+            defaultTurf.TryGetValueAsFloatCoerceNull(out var turfInt) && turfInt == 0) //TODO: Properly handle disabling default turf
+            defaultTurfValue = _objectTree.Turf;
+        if(defaultTurfValue?.ObjectDefinition.IsSubtypeOf(_objectTree.Turf) is not true)
             throw new Exception("bad turf");
-        }
+
+        _defaultArea = new MapObjectJson(defaultAreaValue.Id);
+        _defaultTurf = new MapObjectJson(defaultTurfValue.Id);
     }
 
     public void UpdateTiles() {
@@ -104,6 +99,8 @@ public sealed partial class DreamMapManager : IDreamMapManager {
         SetZLevels(maxZ);
 
         if (maps != null) {
+            _jsonMaps = maps;
+
             // Load turfs and areas of compiled-in maps, recursively calling <init>, but suppressing all New
             foreach (var map in maps) {
                 foreach (MapBlockJson block in map.Blocks) {
@@ -113,7 +110,7 @@ public sealed partial class DreamMapManager : IDreamMapManager {
         }
     }
 
-    public void InitializeAtoms(List<DreamMapJson>? maps) {
+    public void InitializeAtoms() {
         // Call New() on all /area in this particular order, each with waitfor=FALSE
         var seenAreas = new HashSet<DreamObject>();
         for (var z = 1; z <= Levels; ++z) {
@@ -144,13 +141,16 @@ public sealed partial class DreamMapManager : IDreamMapManager {
             }
         }
 
-        if (maps != null) {
+        if (_jsonMaps != null) {
             // new() up /objs and /mobs from compiled-in maps
-            foreach (var map in maps) {
+            foreach (var map in _jsonMaps) {
                 foreach (MapBlockJson block in map.Blocks) {
                     LoadMapObjectsAndMobs(block, map.CellDefinitions);
                 }
             }
+
+            // No longer needed
+            _jsonMaps = null;
         }
     }
 
@@ -284,11 +284,12 @@ public sealed partial class DreamMapManager : IDreamMapManager {
                             continue;
                         }
 
-                        var defaultTurf = new DreamObjectTurf(_defaultTurf.ObjectDefinition, x, y, existingLevel.Z);
+                        var defaultTurfDef = _objectTree.GetTreeEntry(_defaultTurf.Type).ObjectDefinition;
+                        var defaultTurf = new DreamObjectTurf(defaultTurfDef, x, y, existingLevel.Z);
                         var cell = new Cell(DefaultArea, defaultTurf);
                         defaultTurf.Cell = cell;
                         existingLevel.Cells[x - 1, y - 1] = cell;
-                        SetTurf(new Vector2i(x, y), existingLevel.Z, _defaultTurf.ObjectDefinition, new());
+                        SetTurf(new Vector2i(x, y), existingLevel.Z, defaultTurfDef, new());
                     }
                 }
             }
@@ -321,19 +322,21 @@ public sealed partial class DreamMapManager : IDreamMapManager {
 
     public void SetZLevels(int levels) {
         if (levels > Levels) {
+            var defaultTurfDef = _objectTree.GetTreeEntry(_defaultTurf.Type).ObjectDefinition;
+
             for (int z = Levels + 1; z <= levels; z++) {
                 MapId mapId = new(z);
                 _mapSystem.CreateMap(mapId);
 
                 var grid = _mapManager.CreateGridEntity(mapId);
-                Level level = new Level(z, grid, _defaultTurf.ObjectDefinition, DefaultArea, Size);
+                Level level = new Level(z, grid, defaultTurfDef, DefaultArea, Size);
                 _levels.Add(level);
 
                 for (int x = 1; x <= Size.X; x++) {
                     for (int y = 1; y <= Size.Y; y++) {
                         Vector2i pos = (x, y);
 
-                        SetTurf(pos, z, _defaultTurf.ObjectDefinition, new());
+                        SetTurf(pos, z, defaultTurfDef, new());
                     }
                 }
             }
@@ -342,7 +345,7 @@ public sealed partial class DreamMapManager : IDreamMapManager {
         } else if (levels < Levels) {
             _levels.RemoveRange(levels, Levels - levels);
             for (int z = Levels; z > levels; z--) {
-                _mapManager.DeleteMap(new MapId(z));
+                _mapSystem.DeleteMap(new MapId(z));
             }
         }
     }
@@ -365,7 +368,7 @@ public sealed partial class DreamMapManager : IDreamMapManager {
             Vector2i pos = (block.X + blockX - 1, block.Y + block.Height - blockY);
 
             _levels[block.Z - 1].Cells[pos.X - 1, pos.Y - 1].Area = area;
-            SetTurf(pos, block.Z, CreateMapObjectDefinition(cellDefinition.Turf), new());
+            SetTurf(pos, block.Z, CreateMapObjectDefinition(cellDefinition.Turf ?? _defaultTurf), new());
 
             blockX++;
             if (blockX > block.Width) {
@@ -488,7 +491,7 @@ public interface IDreamMapManager {
 
     public void Initialize();
     public void LoadMaps(List<DreamMapJson>? maps);
-    public void InitializeAtoms(List<DreamMapJson>? maps);
+    public void InitializeAtoms();
     public void UpdateTiles();
 
     public void SetTurf(DreamObjectTurf turf, DreamObjectDefinition type, DreamProcArguments creationArguments);

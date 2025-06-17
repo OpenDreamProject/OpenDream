@@ -1,4 +1,6 @@
-﻿/list
+﻿// Keep this in line with AList.dm
+
+/list
 	var/len
 	var/const/type = /list
 

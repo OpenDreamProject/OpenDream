@@ -12,15 +12,15 @@ namespace DMDisassembler;
 
 internal class Program {
     public static string JsonFile = string.Empty;
-    public static DreamCompiledJson CompiledJson;
-    public static DMProc GlobalInitProc = null;
-    public static List<DMProc> Procs = null;
-    public static Dictionary<string, DMType> AllTypes = null;
-    public static List<DMType> TypesById = null;
+    public static DreamCompiledJson CompiledJson = null!;
+    public static DMProc? GlobalInitProc;
+    public static DMProc[] Procs = Array.Empty<DMProc>();
+    public static Dictionary<string, DMType> AllTypes = new();
+    public static DMType[] TypesById = Array.Empty<DMType>();
 
     private static readonly string NoTypeSelectedMessage = "No type is selected";
 
-    private static DMType _selectedType = null;
+    private static DMType? _selectedType;
 
     static void Main(string[] args) {
         if (args.Length == 0 || Path.GetExtension(args[0]) != ".json") {
@@ -31,9 +31,16 @@ internal class Program {
         JsonFile = args[0];
 
         string compiledJsonText = File.ReadAllText(args[0]);
+        var deserialized = JsonSerializer.Deserialize<DreamCompiledJson>(compiledJsonText);
+        if (deserialized is null) {
+            Console.WriteLine("Failed to deserialize compiled json");
+            Environment.Exit(1);
+        }
 
-        CompiledJson = JsonSerializer.Deserialize<DreamCompiledJson>(compiledJsonText);
+        CompiledJson = deserialized;
+
         if (CompiledJson.GlobalInitProc != null) GlobalInitProc = new DMProc(CompiledJson.GlobalInitProc);
+
         LoadAllProcs();
         LoadAllTypes();
 
@@ -66,7 +73,7 @@ internal class Program {
 
             Console.Write("> ");
 
-            string input = Console.ReadLine();
+            string? input = Console.ReadLine();
             if (input == null) {
                 // EOF
                 break;
@@ -96,8 +103,7 @@ internal class Program {
                 default: Console.WriteLine($"Invalid command \"{command}\""); break;
             }
 
-            [CanBeNull]
-            string GetArg() {
+            string? GetArg() {
                 if (split.Length > 2) {
                     Console.WriteLine($"Command \"{command}\" takes 0 or 1 arguments. Ignoring extra arguments.");
                 }
@@ -107,7 +113,7 @@ internal class Program {
         }
     }
 
-    private static void PrintHelp([CanBeNull] string command) {
+    private static void PrintHelp(string? command) {
         if (string.IsNullOrEmpty(command)) {
             AllCommands();
             return;
@@ -147,7 +153,7 @@ internal class Program {
         }
     }
 
-    private static void Stats([CanBeNull] string statType) {
+    private static void Stats(string? statType) {
         if (string.IsNullOrEmpty(statType)) {
             PrintHelp("stats");
             return;
@@ -198,7 +204,7 @@ internal class Program {
 
         void SubtypesByType() {
             Console.WriteLine("Counting all subtypes by type. This may take a moment.");
-            Dictionary<int, int> typeIdToSubtypeCount = new Dictionary<int, int>(TypesById.Count);
+            Dictionary<int, int> typeIdToSubtypeCount = new Dictionary<int, int>(TypesById.Length);
 
             foreach (DMType type in TypesById) {
                 var parent = type.Json.Parent;
@@ -290,7 +296,7 @@ internal class Program {
         }
 
         string type = args[1];
-        if (AllTypes.TryGetValue(type, out DMType dmType)) {
+        if (AllTypes.TryGetValue(type, out DMType? dmType)) {
             _selectedType = dmType;
         } else {
             Console.WriteLine("Invalid type \"" + type + "\"");
@@ -362,7 +368,7 @@ internal class Program {
             } else {
                 Console.WriteLine("Selected type does not have an init proc");
             }
-        } else if (_selectedType.Procs.TryGetValue(name, out DMProc proc)) {
+        } else if (_selectedType.Procs.TryGetValue(name, out DMProc? proc)) {
             Console.WriteLine(proc.Decompile());
         } else {
             Console.WriteLine("No procs named \"" + name + "\"");
@@ -370,21 +376,23 @@ internal class Program {
     }
 
     private static void LoadAllProcs() {
-        Procs = new List<DMProc>(CompiledJson.Procs.Length);
+        Procs = new DMProc[CompiledJson.Procs.Length];
 
-        foreach (ProcDefinitionJson procDef in CompiledJson.Procs) {
-            Procs.Add(new DMProc(procDef));
+        for (var index = 0; index < CompiledJson.Procs.Length; index++) {
+            var procDef = CompiledJson.Procs[index];
+            Procs[index] = new DMProc(procDef);
         }
     }
 
     private static void LoadAllTypes() {
-        AllTypes = new Dictionary<string, DMType>(CompiledJson.Types.Length);
-        TypesById = new List<DMType>(CompiledJson.Types.Length);
+        AllTypes.EnsureCapacity(CompiledJson.Types.Length);
+        TypesById = new DMType[CompiledJson.Types.Length];
 
-        foreach (DreamTypeJson json in CompiledJson.Types) {
+        for (var index = 0; index < CompiledJson.Types.Length; index++) {
+            var json = CompiledJson.Types[index];
             var dmType = new DMType(json);
             AllTypes.Add(json.Path, dmType);
-            TypesById.Add(dmType);
+            TypesById[index] = dmType;
         }
 
         //Add global procs to the root type
@@ -402,7 +410,7 @@ internal class Program {
         int errored = 0, all = 0;
         foreach (DMProc proc in Procs) {
             string value = proc.Decompile();
-            if (proc.exception != null) {
+            if (proc.Exception != null) {
                 Console.WriteLine("Error disassembling " + PrettyPrintPath(proc));
                 Console.WriteLine(value);
                 ++errored;
@@ -428,7 +436,7 @@ internal class Program {
                 writer.WriteLine(type.Path);
         }
 
-        Console.WriteLine($"Successfully dumped {TypesById.Count:n0} types to {outputFile}");
+        Console.WriteLine($"Successfully dumped {TypesById.Length:n0} types to {outputFile}");
     }
 
     private static void DumpAll() {
@@ -440,7 +448,7 @@ internal class Program {
 
         foreach (DMProc proc in Procs) {
             string value = proc.Decompile();
-            if (proc.exception != null) {
+            if (proc.Exception != null) {
                 Console.WriteLine("Error disassembling " + PrettyPrintPath(proc));
                 ++errored;
             } else {
@@ -456,7 +464,7 @@ internal class Program {
     }
 
     private static string PrettyPrintPath(DMProc proc) {
-        var path = CompiledJson.Types![proc.OwningTypeId].Path;
+        var path = CompiledJson.Types[proc.OwningTypeId].Path;
         var args = proc.GetArguments();
 
         if(args is null)

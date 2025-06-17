@@ -80,6 +80,7 @@ internal partial class DMCodeTree {
                     _ => false
                 },
 
+                AList => true,
                 List => true,
                 DimensionalList => true,
                 NewList => true,
@@ -173,8 +174,8 @@ internal partial class DMCodeTree {
                     return true;
                 }
 
-                // Vars on /world and /list can only be defined in DMStandard
-                if ((dmObject.Path == DreamPath.World || dmObject.Path == DreamPath.List) && !inStandard) {
+                // Vars on /world, /list, and /alist can only be defined in DMStandard
+                if ((dmObject.Path == DreamPath.World || dmObject.Path == DreamPath.List || dmObject.Path == DreamPath.AList) && !inStandard) {
                     compiler.Emit(WarningCode.InvalidVarDefinition, varDef.Location,
                         $"Cannot define a var on type {dmObject.Path}");
                     return true;

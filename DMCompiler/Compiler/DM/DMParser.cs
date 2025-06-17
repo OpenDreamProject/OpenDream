@@ -4,7 +4,7 @@ using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM;
 
 namespace DMCompiler.Compiler.DM {
-    internal partial class DMParser(DMCompiler compiler, DMLexer lexer) : Parser<Token>(compiler, lexer) {
+    public partial class DMParser(DMCompiler compiler, DMLexer lexer) : Parser<Token>(compiler, lexer) {
         protected Location CurrentLoc => Current().Location;
         protected DreamPath CurrentPath = DreamPath.Root;
 
@@ -2545,7 +2545,8 @@ namespace DMCompiler.Compiler.DM {
 
                 switch (procName) {
                     // Any number of arguments
-                    case "list": return new DMASTList(callLoc, callParameters);
+                    case "list": return new DMASTList(callLoc, callParameters, false);
+                    case "alist": return new DMASTList(callLoc, callParameters, true);
                     case "newlist": return new DMASTNewList(callLoc, callParameters);
                     case "addtext": return new DMASTAddText(callLoc, callParameters);
                     case "gradient": return new DMASTGradient(callLoc, callParameters);

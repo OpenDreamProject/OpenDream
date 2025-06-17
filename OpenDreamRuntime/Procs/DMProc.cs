@@ -52,6 +52,8 @@ public sealed class DMProc : DreamProc {
     }
 
     public (string Source, int Line) GetSourceAtOffset(int offset) {
+        if(SourceInfo.Count == 0)
+            return ("<No Source Attached>",0);
         SourceInfoJson current = SourceInfo[0];
         string source = ObjectTree.Strings[current.File!.Value];
 
@@ -153,6 +155,10 @@ public sealed class NullProcState : ProcState {
 
     public override DreamProc? Proc => _proc;
 
+    #if TOOLS
+    public override (string SourceFile, int Line) TracyLocationId => ("<NO-OP>",0);
+    #endif
+
     private DreamProc? _proc;
 
     public override ProcStatus Resume() {
@@ -182,7 +188,6 @@ public sealed class DMProcState : ProcState {
     private static readonly ArrayPool<DreamValue> DreamValuePool = ArrayPool<DreamValue>.Create();
 
     #region Opcode Handlers
-
     //Human-readable friendly version, which will be converted to a more efficient lookup at runtime.
     private static readonly Dictionary<DreamProcOpcode, OpcodeHandler> OpcodeHandlers = new() {
         {DreamProcOpcode.BitShiftLeft, DMOpcodeHandlers.BitShiftLeft},
@@ -196,6 +201,7 @@ public sealed class DMProcState : ProcState {
         {DreamProcOpcode.Call, DMOpcodeHandlers.Call},
         {DreamProcOpcode.MultiplyReference, DMOpcodeHandlers.MultiplyReference},
         {DreamProcOpcode.JumpIfFalse, DMOpcodeHandlers.JumpIfFalse},
+        {DreamProcOpcode.CreateStrictAssociativeList, DMOpcodeHandlers.CreateStrictAssociativeList},
         {DreamProcOpcode.Jump, DMOpcodeHandlers.Jump},
         {DreamProcOpcode.CompareEquals, DMOpcodeHandlers.CompareEquals},
         {DreamProcOpcode.Return, DMOpcodeHandlers.Return},
@@ -241,6 +247,7 @@ public sealed class DMProcState : ProcState {
         {DreamProcOpcode.ModulusReference, DMOpcodeHandlers.ModulusReference},
         {DreamProcOpcode.CreateListEnumerator, DMOpcodeHandlers.CreateListEnumerator},
         {DreamProcOpcode.Enumerate, DMOpcodeHandlers.Enumerate},
+        {DreamProcOpcode.EnumerateAssoc, DMOpcodeHandlers.EnumerateAssoc},
         {DreamProcOpcode.DestroyEnumerator, DMOpcodeHandlers.DestroyEnumerator},
         {DreamProcOpcode.Browse, DMOpcodeHandlers.Browse},
         {DreamProcOpcode.BrowseResource, DMOpcodeHandlers.BrowseResource},
@@ -332,7 +339,6 @@ public sealed class DMProcState : ProcState {
     };
 
     public static readonly unsafe delegate*<DMProcState, ProcStatus>[] OpcodeHandlersTable;
-
     #endregion
 
     public DreamManager DreamManager => _proc.DreamManager;
@@ -359,6 +365,10 @@ public sealed class DMProcState : ProcState {
 
     private DMProc _proc = default!;
     public override DMProc Proc => _proc;
+
+#if TOOLS
+    public override (string SourceFile, int Line) TracyLocationId => _proc.GetSourceAtOffset(_pc+1);
+#endif
 
     /// Static initializer for maintainer friendly OpcodeHandlers to performance friendly _opcodeHandlers
     static unsafe DMProcState() {
@@ -486,8 +496,11 @@ public sealed class DMProcState : ProcState {
 
     public ProcStatus Call(DreamProc proc, DreamObject? src, DreamProcArguments arguments) {
         if (proc is NativeProc p) {
-            // Skip a whole song and dance.
-            Push(p.Call(Thread, src, Usr, arguments));
+            // ReSharper disable ExplicitCallerInfoArgument
+            using(Profiler.BeginZone(filePath:"Native Proc", lineNumber:0, memberName:p.Name))
+                // Skip a whole song and dance.
+                Push(p.Call(Thread, src, Usr, arguments));
+            // ReSharper restore ExplicitCallerInfoArgument
             return ProcStatus.Continue;
         }
 
@@ -575,7 +588,6 @@ public sealed class DMProcState : ProcState {
     }
 
     #region Stack
-
     private DreamValue[] _stack = default!;
     private int _stackIndex;
     public ReadOnlyMemory<DreamValue> DebugStack() => _stack.AsMemory(0, _stackIndex);
@@ -624,11 +636,9 @@ public sealed class DMProcState : ProcState {
 
         return CreateProcArguments(values, proc, argumentsType, argumentStackSize);
     }
-
     #endregion
 
     #region Operands
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int ReadByte() {
         var r = _proc.Bytecode[_pc];
@@ -700,11 +710,9 @@ public sealed class DMProcState : ProcState {
     public (DMCallArgumentsType Type, int StackSize) ReadProcArguments() {
         return ((DMCallArgumentsType) ReadByte(), ReadInt());
     }
-
     #endregion
 
     #region References
-
     /// <summary>
     /// Takes a DMReference with a <see cref="DMReference.Type.ListIndex"/> type and returns the value being indexed
     /// as well as what it's being indexed with.
@@ -728,7 +736,7 @@ public sealed class DMProcState : ProcState {
         throw new ArgumentException("Reference was not a ListIndex type");
     }
 
-    public void AssignReference(DreamReference reference, DreamValue value) {
+    public void AssignReference(DreamReference reference, DreamValue value, bool peek = false) {
         switch (reference.Type) {
             case DMReference.Type.Self: Result = value; break;
             case DMReference.Type.Argument: SetArgument(reference.Value, value); break;
@@ -750,7 +758,7 @@ public sealed class DMProcState : ProcState {
 
                 break;
             case DMReference.Type.Field: {
-                DreamValue owner = Pop();
+                DreamValue owner = peek ? Peek() : Pop();
                 if (!owner.TryGetValueAsDreamObject(out var ownerObj) || ownerObj == null)
                     ThrowCannotAssignFieldOn(reference, owner);
 
@@ -758,9 +766,11 @@ public sealed class DMProcState : ProcState {
                 break;
             }
             case DMReference.Type.ListIndex: {
-                GetIndexReferenceValues(reference, out var index, out var indexing);
+                GetIndexReferenceValues(reference, out var index, out var indexing, peek);
 
-                if (indexing.TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
+                if (indexing.TryGetValueAsIDreamList(out var dreamList)) {
+                    dreamList.SetValue(index, value);
+                } else if (indexing.TryGetValueAsDreamObject<DreamObject>(out var dreamObject)) {
                     dreamObject.OperatorIndexAssign(index, this, value);
                 } else {
                     ThrowCannotAssignListIndex(index, indexing);
@@ -947,7 +957,6 @@ public sealed class DMProcState : ProcState {
     private static void ThrowAttemptedToIndexString(DreamValue index) {
         throw new Exception($"Attempted to index string with {index}");
     }
-
     #endregion References
 
     public IEnumerable<(string, DreamValue)> DebugArguments() {

@@ -32,7 +32,7 @@ internal static class Program {
             var firstString = args[i];
             if(string.IsNullOrWhiteSpace(firstString)) // Is this possible? I don't even know. (IsNullOrWhiteSpace also checks if the string is empty, btw)
                 continue;
-            if(!firstString.StartsWith("--")) { // If it's a value-only argument
+            if(!firstString.StartsWith('-')) { // If it's a value-only argument
                 retArgs.Add(new Argument { Value = firstString });
                 continue;
             }
@@ -76,7 +76,7 @@ internal static class Program {
         Console.WriteLine("--define [KEY=VAL]        : Add extra defines to the compilation");
         Console.WriteLine("--verbose                 : Show verbose output during compile");
         Console.WriteLine("--notices-enabled         : Show notice output during compile");
-        Console.WriteLine("--pragma-config [file].dm : Configure the error/warning/notice/ignore level of compiler messages");
+        Console.WriteLine("--no-opts                 : Makes the compiler emit raw unoptimized bytecode. Mainly for debugging/testing purposes. User code will be slower at runtime.");
     }
 
     private static bool TryParseArguments(DMCompiler compiler, string[] args, out DMCompilerSettings settings) {
@@ -99,7 +99,12 @@ internal static class Program {
                 case "print-code-tree": settings.PrintCodeTree = true; break;
                 case "skip-bad-args": break;
                 case "define":
-                    var parts = arg.Value?.Split('=', 2); // Only split on the first = in case of stuff like "--define AAA=0==1"
+                    if (arg.Value is null) {
+                        Console.WriteLine("Compiler arg 'define' requires a value, skipping");
+                        continue;
+                    }
+
+                    var parts = arg.Value.Split('=', 2); // Only split on the first = in case of stuff like "--define AAA=0==1"
                     if (parts is { Length: 0 }) {
                         Console.WriteLine("Compiler arg 'define' requires macro identifier for definition directive");
                         return false;
@@ -112,20 +117,6 @@ internal static class Program {
                 case "notices-enabled":
                     settings.NoticesEnabled = true;
                     break;
-                case "pragma-config": {
-                    if(arg.Value is null || !HasValidDMExtension(arg.Value)) {
-                        if(skipBad) {
-                            compiler.ForcedWarning($"Compiler arg 'pragma-config' requires filename of valid DM file, skipping");
-                            continue;
-                        }
-
-                        Console.WriteLine("Compiler arg 'pragma-config' requires filename of valid DM file");
-                        return false;
-                    }
-
-                    settings.PragmaFileOverride = arg.Value;
-                    break;
-                }
                 case "version": {
                     if(arg.Value is null) {
                         if(skipBad) {
@@ -148,8 +139,12 @@ internal static class Program {
                         return false;
                     }
 
-                    settings.DMVersion = split[0];
-                    settings.DMBuild = split[1];
+                    if (!int.TryParse(split[0], out settings.DMVersion) ||
+                        !int.TryParse(split[1], out settings.DMBuild)) {
+                        Console.WriteLine($"\"{arg.Value}\" is not a valid value for the 'version' argument");
+                        return false;
+                    }
+
                     break;
                 }
                 case null: { // Value-only argument
@@ -169,6 +164,10 @@ internal static class Program {
 
                     break;
                 }
+                case "no-opt":
+                case "no-opts":
+                    settings.NoOpts = true;
+                    break;
                 default: {
                     if (skipBad) {
                         compiler.ForcedWarning($"Unknown compiler arg '{arg.Name}', skipping");

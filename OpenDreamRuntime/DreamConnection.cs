@@ -26,6 +26,7 @@ public sealed class DreamConnection {
 
     [ViewVariables] private readonly Dictionary<string, List<(string, string, string?)>> _statPanels = new();
     [ViewVariables] private bool _currentlyUpdatingStat;
+    [ViewVariables] public TimeSpan? LastClickTime { get; set; }
 
     [ViewVariables] public ICommonSession? Session { get; private set; }
     [ViewVariables] public DreamObjectClient? Client { get; private set; }

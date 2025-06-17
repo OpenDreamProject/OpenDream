@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using OpenDreamRuntime.Map;
@@ -11,13 +12,17 @@ using Dependency = Robust.Shared.IoC.DependencyAttribute;
 namespace OpenDreamRuntime.Objects.Types;
 
 [Virtual]
-public class DreamList : DreamObject {
+public class DreamList : DreamObject, IDreamList {
+    public override bool ShouldCallNew => false;
+
+    public virtual bool IsAssociative => _associativeValues is { Count: > 0 };
+
     private readonly List<DreamValue> _values;
     private Dictionary<DreamValue, DreamValue>? _associativeValues;
 
-    public override bool ShouldCallNew => false;
-
-    public virtual bool IsAssociative => (_associativeValues != null && _associativeValues.Count > 0);
+    #if TOOLS
+    private ProfilerMemory? _tracyContentsMemoryId;
+    #endif
 
     public DreamList(DreamObjectDefinition listDef, int size) : base(listDef) {
         _values = new List<DreamValue>(size);
@@ -29,6 +34,11 @@ public class DreamList : DreamObject {
     public DreamList(DreamObjectDefinition listDef, List<DreamValue> values, Dictionary<DreamValue, DreamValue>? associativeValues) : base(listDef) {
         _values = values;
         _associativeValues = associativeValues;
+
+        #if TOOLS
+        TracyMemoryId = Profiler.BeginMemoryZone(1, "/list instance");
+        UpdateTracyContentsMemory();
+        #endif
     }
 
     public override void Initialize(DreamProcArguments args) {
@@ -38,17 +48,14 @@ public class DreamList : DreamObject {
         if (args.Count == 1 && args.GetArgument(0).TryGetValueAsInteger(out int size)) {
             Resize(size);
         } else if (args.Count > 1) {
-            DreamList[] lists = { this };
+            DreamList[] lists = [this];
 
             int dimensions = args.Count;
             for (int argIndex = 0; argIndex < dimensions; argIndex++) {
                 DreamValue arg = args.GetArgument(argIndex);
                 arg.TryGetValueAsInteger(out size);
 
-                DreamList[] newLists = null;
-                if (argIndex < dimensions) {
-                    newLists = new DreamList[size * lists.Length];
-                }
+                DreamList[] newLists = new DreamList[size * lists.Length];
 
                 for (int i = 0; i < lists.Length; i++) {
                     DreamList list = lists[i];
@@ -100,6 +107,10 @@ public class DreamList : DreamObject {
         return _values;
     }
 
+    public IEnumerable<DreamValue> EnumerateValues() {
+        return _values;
+    }
+
     public Dictionary<DreamValue, DreamValue> GetAssociativeValues() {
         return _associativeValues ??= new Dictionary<DreamValue, DreamValue>();
     }
@@ -128,6 +139,8 @@ public class DreamList : DreamObject {
             _associativeValues ??= new Dictionary<DreamValue, DreamValue>(1);
             _associativeValues[key] = value;
         }
+
+        UpdateTracyContentsMemory();
     }
 
     public virtual void RemoveValue(DreamValue value) {
@@ -137,10 +150,13 @@ public class DreamList : DreamObject {
             _associativeValues?.Remove(value);
             _values.RemoveAt(valueIndex);
         }
+
+        UpdateTracyContentsMemory();
     }
 
     public virtual void AddValue(DreamValue value) {
         _values.Add(value);
+        UpdateTracyContentsMemory();
     }
 
     //Does not include associations
@@ -157,7 +173,7 @@ public class DreamList : DreamObject {
         return _associativeValues != null && _associativeValues.ContainsKey(value);
     }
 
-    public int FindValue(DreamValue value, int start = 1, int end = 0) {
+    public virtual int FindValue(DreamValue value, int start = 1, int end = 0) {
         if (end == 0 || end > _values.Count) end = _values.Count;
 
         for (int i = start; i <= end; i++) {
@@ -177,10 +193,13 @@ public class DreamList : DreamObject {
 
         if (end > start)
             _values.RemoveRange(start - 1, end - start);
+
+        UpdateTracyContentsMemory();
     }
 
     public void Insert(int index, DreamValue value) {
         _values.Insert(index - 1, value);
+        UpdateTracyContentsMemory();
     }
 
     public void Swap(int index1, int index2) {
@@ -200,6 +219,8 @@ public class DreamList : DreamObject {
         } else {
             Cut(size + 1);
         }
+
+        UpdateTracyContentsMemory();
     }
 
     public virtual int GetLength() {
@@ -241,8 +262,18 @@ public class DreamList : DreamObject {
         }
     }
 
-    #region Operators
+    [Conditional("TOOLS")]
+    private void UpdateTracyContentsMemory() {
+        #if TOOLS
+        var valueCount = _values.Count + (_associativeValues?.Count ?? 0);
+        var totalSize = Unsafe.SizeOf<DreamList>() + valueCount * Unsafe.SizeOf<DreamValue>();
 
+        _tracyContentsMemoryId?.ReleaseMemory();
+        _tracyContentsMemoryId = Profiler.BeginMemoryZone((ulong)totalSize, "/list contents");
+        #endif
+    }
+
+    #region Operators
     public override DreamValue OperatorIndex(DreamValue index, DMProcState state) {
         return GetValue(index);
     }
@@ -394,7 +425,6 @@ public class DreamList : DreamObject {
 
         return DreamValue.True;
     }
-
     #endregion Operators
 }
 
@@ -455,10 +485,14 @@ internal sealed class DreamListVars(DreamObjectDefinition listDef, DreamObject d
     public override bool IsSaved(string name) {
         return DreamObject.IsSaved(name);
     }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        return GetValues().IndexOf(value)+1; // IndexOf is 0 indexed, returns -1 on fail, DM is 1 indexed and returns 0 on fail, so +1
+    }
 }
 
 // global.vars list
-sealed class DreamGlobalVars : DreamList {
+internal sealed class DreamGlobalVars : DreamList {
     [Dependency] private readonly DreamManager _dreamMan = default!;
     [Dependency] private readonly DreamObjectTree _objectTree = default!;
 
@@ -516,6 +550,10 @@ sealed class DreamGlobalVars : DreamList {
         } else {
             throw new Exception($"Invalid var index {key}");
         }
+    }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }
 
@@ -584,6 +622,10 @@ public sealed class ClientVerbsList : DreamList {
 
     public override int GetLength() {
         return Verbs.Count;
+    }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }
 
@@ -656,6 +698,10 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
             throw new Exception("Atom has no appearance");
 
         return appearance.Verbs;
+    }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }
 
@@ -750,6 +796,10 @@ public sealed class DreamOverlaysList : DreamList {
 
     public override int GetLength() {
         return GetOverlaysArray(_atomManager.MustGetAppearance(_owner)).Length;
+    }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -867,6 +917,10 @@ public sealed class DreamVisContentsList : DreamList {
 
     public override int GetLength() {
         return _visContents.Count;
+    }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }
 
@@ -991,6 +1045,10 @@ public sealed class DreamFilterList : DreamList {
         return GetAppearance().Filters.Length;
     }
 
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
+    }
+
     private ImmutableAppearance GetAppearance() {
         ImmutableAppearance? appearance = _atomManager.MustGetAppearance(_owner);
         if (appearance == null)
@@ -1056,18 +1114,18 @@ public sealed class ClientScreenList(DreamObjectTree objectTree, ServerScreenOve
     public override int GetLength() {
         return _screenObjects.Count;
     }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
+    }
 }
 
 // client.images list
-public sealed class ClientImagesList : DreamList {
-    private readonly ServerClientImagesSystem? _clientImagesSystem;
-    private readonly DreamConnection _connection;
+public sealed class ClientImagesList(
+    DreamObjectTree objectTree,
+    ServerClientImagesSystem? clientImagesSystem,
+    DreamConnection connection) : DreamList(objectTree.List.ObjectDefinition, 0) {
     private readonly List<DreamValue> _imageObjects = new();
-
-    public ClientImagesList(DreamObjectTree objectTree, ServerClientImagesSystem? clientImagesSystem, DreamConnection connection) : base(objectTree.List.ObjectDefinition, 0) {
-        _clientImagesSystem = clientImagesSystem;
-        _connection = connection;
-    }
 
     public override DreamValue GetValue(DreamValue key) {
         if (!key.TryGetValueAsInteger(out var imageIndex) || imageIndex < 1 || imageIndex > _imageObjects.Count)
@@ -1088,7 +1146,7 @@ public sealed class ClientImagesList : DreamList {
         if (!value.TryGetValueAsDreamObject<DreamObjectImage>(out var image))
             return;
 
-        _clientImagesSystem?.AddImageObject(_connection, image);
+        clientImagesSystem?.AddImageObject(connection, image);
         _imageObjects.Add(value);
     }
 
@@ -1096,7 +1154,7 @@ public sealed class ClientImagesList : DreamList {
         if (!value.TryGetValueAsDreamObject<DreamObjectImage>(out var image))
             return;
 
-        _clientImagesSystem?.RemoveImageObject(_connection, image);
+        clientImagesSystem?.RemoveImageObject(connection, image);
         _imageObjects.Remove(value);
     }
 
@@ -1107,7 +1165,7 @@ public sealed class ClientImagesList : DreamList {
             if (!_imageObjects[i].TryGetValueAsDreamObject<DreamObjectImage>(out var image))
                 continue;
 
-            _clientImagesSystem?.RemoveImageObject(_connection, image);
+            clientImagesSystem?.RemoveImageObject(connection, image);
         }
 
         _imageObjects.RemoveRange(start - 1, end - start);
@@ -1115,6 +1173,10 @@ public sealed class ClientImagesList : DreamList {
 
     public override int GetLength() {
         return _imageObjects.Count;
+    }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }
 
@@ -1149,6 +1211,10 @@ public sealed class WorldContentsList(DreamObjectDefinition listDef, AtomManager
 
     public override int GetLength() {
         return atomManager.AtomCount;
+    }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }
 
@@ -1198,6 +1264,10 @@ public sealed class TurfContentsList(DreamObjectDefinition listDef, DreamObjectT
 
     public override int GetLength() {
         return Cell.Movables.Count;
+    }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }
 
@@ -1268,6 +1338,10 @@ public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectA
 
         return length;
     }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
+    }
 }
 
 // mob.contents, obj.contents list
@@ -1307,6 +1381,25 @@ public sealed class MovableContentsList(DreamObjectDefinition listDef, DreamObje
         }
 
         return values;
+    }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        if (end == 0 || end > transform.ChildCount) end = transform.ChildCount;
+
+        using var childEnumerator = transform.ChildEnumerator;
+
+        int i = 0;
+        while (childEnumerator.MoveNext(out EntityUid child)) {
+            if (!AtomManager.TryGetMovableFromEntity(child, out var childObject))
+                continue;
+            i++;
+            if (i >= start && new DreamValue(childObject).Equals(value))
+                return i;
+            if (i > end)
+                return 0;
+        }
+
+        return 0;
     }
 
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
@@ -1391,28 +1484,26 @@ internal sealed class ProcArgsList(DreamObjectDefinition listDef, DMProcState st
     public override int GetLength() {
         return state.ArgumentCount;
     }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
+    }
 }
 
 // Savefile Dir List - always sync'd with Savefiles currentDir. Only stores keys.
-internal sealed class SavefileDirList : DreamList {
-    private readonly DreamObjectSavefile _save;
-
-    public SavefileDirList(DreamObjectDefinition listDef, DreamObjectSavefile backedSaveFile) : base(listDef, 0) {
-        _save = backedSaveFile;
-    }
-
+internal sealed class SavefileDirList(DreamObjectDefinition listDef, DreamObjectSavefile backedSaveFile) : DreamList(listDef, 0) {
     public override DreamValue GetValue(DreamValue key) {
         if (!key.TryGetValueAsInteger(out var index))
             throw new Exception($"Invalid index on savefile dir list: {key}");
-        if (index < 1 || index > _save.CurrentDir.Count)
+        if (index < 1 || index > backedSaveFile.CurrentDir.Count)
             throw new Exception($"Out of bounds index on savefile dir list: {index}");
-        return new DreamValue(_save.CurrentDir.Keys.ElementAt(index - 1));
+        return new DreamValue(backedSaveFile.CurrentDir.Keys.ElementAt(index - 1));
     }
 
     public override List<DreamValue> GetValues() {
-        List<DreamValue> values = new(_save.CurrentDir.Count);
+        List<DreamValue> values = new(backedSaveFile.CurrentDir.Count);
 
-        foreach (string value in _save.CurrentDir.Keys.OrderBy(x => x))
+        foreach (string value in backedSaveFile.CurrentDir.Keys.OrderBy(x => x))
             values.Add(new DreamValue(value));
         return values;
     }
@@ -1422,22 +1513,22 @@ internal sealed class SavefileDirList : DreamList {
             throw new Exception($"Invalid index on savefile dir list: {key}");
         if (!value.TryGetValueAsString(out var valueStr))
             throw new Exception($"Invalid value on savefile dir name: {value}");
-        if (index < 1 || index > _save.CurrentDir.Count)
+        if (index < 1 || index > backedSaveFile.CurrentDir.Count)
             throw new Exception($"Out of bounds index on savefile dir list: {index}");
 
-        _save.RenameAndNullSavefileValue(_save.CurrentDir.Keys.ElementAt(index - 1), valueStr);
+        backedSaveFile.RenameAndNullSavefileValue(backedSaveFile.CurrentDir.Keys.ElementAt(index - 1), valueStr);
     }
 
     public override void AddValue(DreamValue value) {
         if (!value.TryGetValueAsString(out var valueStr))
             throw new Exception($"Invalid value on savefile dir name: {value}");
-        _save.AddSavefileDir(valueStr);
+        backedSaveFile.AddSavefileDir(valueStr);
     }
 
     public override void RemoveValue(DreamValue value) {
         if (!value.TryGetValueAsString(out var valueStr))
             throw new Exception($"Invalid value on savefile dir name: {value}");
-        _save.RemoveSavefileValue(valueStr);
+        backedSaveFile.RemoveSavefileValue(valueStr);
     }
 
     public override void Cut(int start = 1, int end = 0) {
@@ -1445,6 +1536,10 @@ internal sealed class SavefileDirList : DreamList {
     }
 
     public override int GetLength() {
-        return _save.CurrentDir.Count;
+        return backedSaveFile.CurrentDir.Count;
+    }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }

@@ -95,10 +95,92 @@ public enum ErrorLevel {
 /// Stores the location and message of a notice/warning/error.
 /// </summary>
 public struct CompilerEmission {
-    public ErrorLevel Level;
-    public WarningCode Code;
+    public readonly ErrorLevel Level;
+    public readonly WarningCode Code;
     public Location Location;
-    public string Message;
+    public readonly string Message;
+
+    public static readonly Dictionary<WarningCode, ErrorLevel> DefaultErrorConfig = new(Enum.GetValues<WarningCode>().Length) {
+        //0-999, must all be error
+        {WarningCode.Unknown, ErrorLevel.Error},
+        {WarningCode.BadToken, ErrorLevel.Error},
+        {WarningCode.BadDirective, ErrorLevel.Error},
+        {WarningCode.BadExpression, ErrorLevel.Error},
+        {WarningCode.MissingExpression, ErrorLevel.Error},
+        {WarningCode.InvalidArgumentCount, ErrorLevel.Error},
+        {WarningCode.InvalidVarDefinition, ErrorLevel.Error},
+        {WarningCode.MissingBody, ErrorLevel.Error},
+        {WarningCode.BadLabel, ErrorLevel.Error},
+        {WarningCode.InvalidReference, ErrorLevel.Error},
+        {WarningCode.BadArgument, ErrorLevel.Error},
+        {WarningCode.InvalidArgumentKey, ErrorLevel.Error},
+        {WarningCode.ArglistOnlyArgument, ErrorLevel.Error},
+        {WarningCode.HardReservedKeyword, ErrorLevel.Error},
+        {WarningCode.ItemDoesntExist, ErrorLevel.Error},
+        {WarningCode.DanglingOverride, ErrorLevel.Error},
+        {WarningCode.StaticOverride, ErrorLevel.Error},
+        {WarningCode.FinalOverride, ErrorLevel.Error},
+        {WarningCode.IAmATeaPot, ErrorLevel.Error},
+        {WarningCode.HardConstContext, ErrorLevel.Error},
+        {WarningCode.WriteToConstant, ErrorLevel.Error},
+        {WarningCode.InvalidInclusion, ErrorLevel.Error},
+
+        //1000-1999
+        {WarningCode.FileAlreadyIncluded, ErrorLevel.Warning},
+        {WarningCode.MissingIncludedFile, ErrorLevel.Error},
+        {WarningCode.InvalidWarningCode, ErrorLevel.Warning},
+        {WarningCode.InvalidFileDirDefine, ErrorLevel.Warning},
+        {WarningCode.MisplacedDirective, ErrorLevel.Error},
+        {WarningCode.UndefineMissingDirective, ErrorLevel.Warning},
+        {WarningCode.DefinedMissingParen, ErrorLevel.Error},
+        {WarningCode.ErrorDirective, ErrorLevel.Error},
+        {WarningCode.WarningDirective, ErrorLevel.Warning},
+        {WarningCode.MiscapitalizedDirective, ErrorLevel.Warning},
+
+        //2000-2999
+        {WarningCode.SoftReservedKeyword, ErrorLevel.Error},
+        {WarningCode.ScopeOperandNamedType, ErrorLevel.Warning},
+        {WarningCode.DuplicateVariable, ErrorLevel.Warning},
+        {WarningCode.DuplicateProcDefinition, ErrorLevel.Error},
+        {WarningCode.PointlessParentCall, ErrorLevel.Warning},
+        {WarningCode.PointlessBuiltinCall, ErrorLevel.Warning},
+        {WarningCode.SuspiciousMatrixCall, ErrorLevel.Warning},
+        {WarningCode.FallbackBuiltinArgument, ErrorLevel.Warning},
+        {WarningCode.PointlessScopeOperator, ErrorLevel.Warning},
+        {WarningCode.MalformedRange, ErrorLevel.Warning},
+        {WarningCode.InvalidRange, ErrorLevel.Error},
+        {WarningCode.InvalidSetStatement, ErrorLevel.Error},
+        {WarningCode.InvalidOverride, ErrorLevel.Warning},
+        {WarningCode.InvalidIndexOperation, ErrorLevel.Warning},
+        {WarningCode.DanglingVarType, ErrorLevel.Warning},
+        {WarningCode.MissingInterpolatedExpression, ErrorLevel.Warning},
+        {WarningCode.AmbiguousResourcePath, ErrorLevel.Warning},
+        {WarningCode.SuspiciousSwitchCase, ErrorLevel.Warning},
+        {WarningCode.PointlessPositionalArgument, ErrorLevel.Warning},
+        {WarningCode.ProcArgumentGlobal, ErrorLevel.Warning}, // Ref BYOND issue https://www.byond.com/forum/post/2830750
+        {WarningCode.AmbiguousVarStatic, ErrorLevel.Warning}, // https://github.com/OpenDreamProject/OpenDream/issues/997
+        // NOTE: The next few pragmas are for OpenDream's experimental type checker
+        // This feature is still in development, elevating these pragmas outside of local testing is discouraged
+        // An RFC to finalize this feature is coming soon(TM)
+        // BEGIN TYPEMAKER
+        {WarningCode.UnsupportedTypeCheck, ErrorLevel.Notice},
+        {WarningCode.InvalidReturnType, ErrorLevel.Notice},
+        {WarningCode.InvalidVarType, ErrorLevel.Notice},
+        {WarningCode.ImplicitNullType, ErrorLevel.Notice},
+        {WarningCode.LostTypeInfo, ErrorLevel.Notice},
+        // END TYPEMAKER
+        {WarningCode.UnimplementedAccess, ErrorLevel.Warning},
+
+        //3000-3999
+        {WarningCode.EmptyBlock, ErrorLevel.Notice},
+        {WarningCode.EmptyProc, ErrorLevel.Disabled}, // NOTE: If you enable this in OD's default pragma config file, it will emit for OD's DMStandard. Put it in your codebase's pragma config file.
+        {WarningCode.UnsafeClientAccess, ErrorLevel.Disabled}, // NOTE: Only checks for unsafe accesses like "client.foobar" and doesn't consider if the client was already null-checked earlier in the proc
+        {WarningCode.AssignmentInConditional, ErrorLevel.Warning},
+        {WarningCode.PickWeightedSyntax, ErrorLevel.Disabled},
+        {WarningCode.AmbiguousInOrder, ErrorLevel.Warning},
+        {WarningCode.ExtraToken, ErrorLevel.Warning},
+        {WarningCode.RuntimeSearchOperator, ErrorLevel.Disabled}
+    };
 
     public CompilerEmission(ErrorLevel level, Location? location, string message) {
         Level = level;
@@ -119,6 +201,6 @@ public struct CompilerEmission {
         ErrorLevel.Notice => $"Notice OD{(int)Code:d4} at {Location.ToString()}: {Message}",
         ErrorLevel.Warning => $"Warning OD{(int)Code:d4} at {Location.ToString()}: {Message}",
         ErrorLevel.Error => $"Error OD{(int)Code:d4} at {Location.ToString()}: {Message}",
-        _ => "",
+        _ => ""
     };
 }

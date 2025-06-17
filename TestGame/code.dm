@@ -143,6 +143,7 @@
 		usr << "panes: [json_encode(winget(usr, null, "panes"))]"
 		usr << "menus: [json_encode(winget(usr, null, "menus"))]"
 		usr << "macros: [json_encode(winget(usr, null, "macros"))]"
+		usr << "dpi: [winget(usr, null, "dpi")]"
 
 	verb/browse_rsc_test()
 		usr << browse_rsc('icons/mob.dmi', "mobicon.png")

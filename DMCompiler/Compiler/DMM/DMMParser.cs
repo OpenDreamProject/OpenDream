@@ -73,15 +73,12 @@ internal sealed class DMMParser(DMCompiler compiler, DMLexer lexer, int zOffset)
                         if (!varOverride.ObjectPath.Equals(DreamPath.Root))
                             Compiler.ForcedError(statement.Location, $"Invalid var name '{varOverride.VarName}' in DMM on type {objectType.Path}");
 
-                        Compiler.DMObjectTree.TryGetDMObject(objectType.Path, out var dmObject);
-                        var exprBuilder = new DMExpressionBuilder(new(Compiler, dmObject, null));
+                        var exprBuilder = new DMExpressionBuilder(new(Compiler, type, null));
                         var value = exprBuilder.Create(varOverride.Value);
                         if (!value.TryAsJsonRepresentation(Compiler, out var valueJson))
                             Compiler.ForcedError(statement.Location, $"Failed to serialize value to json ({value})");
-
-                        if(!mapObject.AddVarOverride(varOverride.VarName, valueJson)) {
+                        else if (!mapObject.AddVarOverride(varOverride.VarName, valueJson))
                             Compiler.ForcedWarning(statement.Location, $"Duplicate var override '{varOverride.VarName}' in DMM on type {objectType.Path}");
-                        }
 
                         CurrentPath = DreamPath.Root;
                         statement = Check(TokenType.DM_Semicolon) ? Statement() : null;
@@ -106,6 +103,9 @@ internal sealed class DMMParser(DMCompiler compiler, DMLexer lexer, int zOffset)
                     objectType = null;
                 }
             }
+
+            if (cellDefinition.Turf == null)
+                Compiler.ForcedWarning(currentToken.Location, $"Cell definition \"{cellDefinition.Name}\" is missing a turf");
 
             Consume(TokenType.DM_RightParenthesis, "Expected ')'");
             return cellDefinition;

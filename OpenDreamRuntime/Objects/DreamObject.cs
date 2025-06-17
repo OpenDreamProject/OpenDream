@@ -44,6 +44,7 @@ namespace OpenDreamRuntime.Objects {
         protected PvsOverrideSystem? PvsOverrideSystem => ObjectDefinition.PvsOverrideSystem;
         protected MetaDataSystem? MetaDataSystem => ObjectDefinition.MetaDataSystem;
         protected ServerVerbSystem? VerbSystem => ObjectDefinition.VerbSystem;
+        protected ServerDreamParticlesSystem? ParticlesSystem => ObjectDefinition.ParticlesSystem;
 
         protected Dictionary<string, DreamValue>? Variables;
 

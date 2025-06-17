@@ -41,6 +41,8 @@ internal sealed partial class DreamViewOverlay : Overlay {
     [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
     [Dependency] private readonly IPlayerManager _playerManager = default!;
     [Dependency] private readonly IEntityManager _entityManager = default!;
+    [Dependency] private readonly ParticlesManager _particlesManager = default!;
+
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly IClyde _clyde = default!;
@@ -383,7 +385,10 @@ internal sealed partial class DreamViewOverlay : Overlay {
             result.Add(maptext);
         }
 
-        //TODO particles - colour and transform don't apply?
+        //query entity for particles component - check for parent to make sure this is the top level entity
+        if(parentIcon is null && _particlesManager.TryGetParticleSystem(uid, out var particlesSystem)){
+            current.Particles = particlesSystem;
+        }
 
         //flatten KeepTogetherGroup. Done here so we get implicit recursive iteration down the tree.
         if (current.KeepTogetherGroup?.Count > 0) {
@@ -466,6 +471,12 @@ internal sealed partial class DreamViewOverlay : Overlay {
 
         handle.SetTransform(CalculateDrawingMatrix(iconMetaData.TransformToApply, pixelPosition, frame.Size, renderTargetSize));
         handle.DrawTextureRect(frame, Box2.FromDimensions(Vector2.Zero, frame.Size), iconMetaData.ColorToApply);
+
+        if (iconMetaData.Particles is not null) {
+            handle.UseShader(GetBlendAndColorShader(iconMetaData, ignoreColor: true));
+            iconMetaData.Particles.Draw(handle, CalculateDrawingMatrix(iconMetaData.TransformToApply, pixelPosition, iconMetaData.Particles.RenderSize, renderTargetSize));
+        }
+
     }
 
     /// <summary>

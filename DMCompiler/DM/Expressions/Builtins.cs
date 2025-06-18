@@ -89,13 +89,6 @@ internal sealed class NewPath(DMCompiler compiler, Location location, IConstantP
                 var newProc = ctx.ObjectTree.GetNewProc(typeReference.Value.Id);
 
                 (argumentsType, stackSize) = arguments.EmitArguments(ctx, newProc);
-                foreach (KeyValuePair<string, object> varOverrides in variableOverrides) {
-                    if (!typeReference.Value.HasLocalVariable(varOverrides.Key)) {
-                        ctx.Compiler.Emit(WarningCode.ItemDoesntExist, Location, $"{varOverrides.Key} is undefined on {Path}");
-                        ctx.Proc.PushNull();
-                        return;
-                    }
-                }
 
                 ctx.Proc.PushString(JsonSerializer.Serialize(variableOverrides));
                 ctx.Proc.PushType(typeReference.Value.Id);

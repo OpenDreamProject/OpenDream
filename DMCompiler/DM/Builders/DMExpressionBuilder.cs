@@ -285,22 +285,39 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                 }
 
                 Dictionary<string, object> overrides = new();
-                if (newPath.Path.VarOverrides is not null) {
-                    foreach (KeyValuePair<string, DMASTExpression> varOverride in newPath.Path.VarOverrides) {
-                        if (!BuildExpression(varOverride.Value, inferredPath)
-                                .TryAsConstant(Compiler, out var jsonConstant)) {
-                            if (!BuildExpression(varOverride.Value, inferredPath)
-                                    .TryAsJsonRepresentation(Compiler, out var jsonValue)) {
-                                return BadExpression(WarningCode.BadExpression, newPath.Path.Location,
-                                    "Expected a constant expression");
-                            }
+                if (newPath.Path.VarOverrides is null) {
+                    result = new NewPath(Compiler, newPath.Location, path, overrides,
+                        BuildArgumentList(newPath.Location, newPath.Parameters, inferredPath));
+                    break;
+                }
 
-                            overrides[varOverride.Key] = jsonValue;
-                        } else {
-                            jsonConstant.TryAsJsonRepresentation(Compiler, out var jsonValue);
-                            overrides[varOverride.Key] = jsonValue;
-                        }
+                if (!ObjectTree.TryGetDMObject(newPath.Path.Value.Path, out var owner)) {
+                    return UnknownReference(newPath.Path.Location, $"Type {newPath.Path.Value.Path} does not exist");
+                }
+                var Failed = false;
+                foreach (KeyValuePair<string, DMASTExpression> varOverride in newPath.Path.VarOverrides) {
+                    if (!owner.HasLocalVariable(varOverride.Key)) {
+                        return UnknownIdentifier(newPath.Path.Location, varOverride.Key);
                     }
+
+                    if (!BuildExpression(varOverride.Value, inferredPath)
+                            .TryAsConstant(Compiler, out var jsonConstant)) {
+                        if (!BuildExpression(varOverride.Value, inferredPath)
+                                .TryAsJsonRepresentation(Compiler, out var jsonValue)) {
+                            Failed = true;
+                            break;
+                        }
+
+                        overrides[varOverride.Key] = jsonValue;
+                    } else {
+                        jsonConstant.TryAsJsonRepresentation(Compiler, out var jsonValue);
+                        overrides[varOverride.Key] = jsonValue;
+                    }
+                }
+
+                if (Failed) {
+                    result = BadExpression(WarningCode.BadExpression, newPath.Path.Location, "Expected a constant expression");
+                    break;
                 }
 
                 result = new NewPath(Compiler, newPath.Location, path, overrides,

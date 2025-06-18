@@ -187,6 +187,10 @@ public sealed class DMProcState : ProcState {
 
     private static readonly ArrayPool<DreamValue> DreamValuePool = ArrayPool<DreamValue>.Create();
 
+    private static long _idCounter;
+
+    private const int NoTryCatchVar = -1;
+
     #region Opcode Handlers
     //Human-readable friendly version, which will be converted to a more efficient lookup at runtime.
     private static readonly Dictionary<DreamProcOpcode, OpcodeHandler> OpcodeHandlers = new() {
@@ -350,25 +354,24 @@ public sealed class DMProcState : ProcState {
 
     public DreamObject? Usr;
     public int ArgumentCount;
-    private readonly Stack<int> _catchPosition = new();
-    private readonly Stack<int> _catchVarIndex = new();
-    private const int NoTryCatchVar = -1;
     public readonly IDreamValueEnumerator?[] Enumerators = new IDreamValueEnumerator?[16];
+    public long Id;
 
     public int ProgramCounter => _pc;
-    private int _pc;
-
-    private bool _firstResume = true;
-
-    // Contains both arguments (at index 0) and local vars (at index ArgumentCount)
-    private DreamValue[] _localVariables = default!;
-
-    private DMProc _proc = default!;
     public override DMProc Proc => _proc;
 
 #if TOOLS
     public override (string SourceFile, int Line) TracyLocationId => _proc.GetSourceAtOffset(_pc+1);
 #endif
+
+    private DMProc _proc = default!;
+    private bool _firstResume = true;
+    private int _pc;
+    private readonly Stack<int> _catchPosition = new();
+    private readonly Stack<int> _catchVarIndex = new();
+
+    /// Contains both arguments (at index 0) and local vars (at index ArgumentCount)
+    private DreamValue[] _localVariables = default!;
 
     /// Static initializer for maintainer friendly OpcodeHandlers to performance friendly _opcodeHandlers
     static unsafe DMProcState() {
@@ -414,6 +417,7 @@ public sealed class DMProcState : ProcState {
         _localVariables = DreamValuePool.Rent(256);
         _stack = DreamValuePool.Rent(maxStackSize);
         _firstResume = true;
+        Id = _idCounter++;
 
         for (int i = 0; i < ArgumentCount; i++) {
             _localVariables[i] = arguments.GetArgument(i);
@@ -562,6 +566,7 @@ public sealed class DMProcState : ProcState {
         Array.Clear(Enumerators);
         _pc = 0;
         _proc = null!;
+        Id = -1;
 
         DreamValuePool.Return(_stack);
         _stackIndex = 0;
@@ -685,6 +690,8 @@ public sealed class DMProcState : ProcState {
             case DMReference.Type.World:
             case DMReference.Type.SuperProc:
             case DMReference.Type.ListIndex:
+            case DMReference.Type.Callee:
+            case DMReference.Type.Caller:
                 return new DreamReference(refType, 0);
             case DMReference.Type.Argument:
             case DMReference.Type.Local:
@@ -819,6 +826,17 @@ public sealed class DMProcState : ProcState {
             case DMReference.Type.Local: return _localVariables[ArgumentCount + reference.Value];
             case DMReference.Type.Args: return new(new ProcArgsList(Proc.ObjectTree.List.ObjectDefinition, this));
             case DMReference.Type.World: return new(DreamManager.WorldInstance);
+            case DMReference.Type.Callee: {
+                var callee = Proc.ObjectTree.CreateObject<DreamObjectCallee>(Proc.ObjectTree.Callee);
+
+                callee.ProcState = this;
+                callee.ProcStateId = Id;
+                return new(callee);
+            }
+            case DMReference.Type.Caller: {
+                // TODO
+                return DreamValue.Null;
+            }
             case DMReference.Type.Field: {
                 DreamValue owner = peek ? Peek() : Pop();
 
@@ -870,6 +888,8 @@ public sealed class DMProcState : ProcState {
             case DMReference.Type.Local:
             case DMReference.Type.Args:
             case DMReference.Type.SrcField:
+            case DMReference.Type.Callee:
+            case DMReference.Type.Caller:
                 return;
             case DMReference.Type.ListIndex:
                 PopDrop();
@@ -879,7 +899,8 @@ public sealed class DMProcState : ProcState {
             case DMReference.Type.Field:
                 PopDrop();
                 return;
-            default: ThrowPopInvalidType(reference.Type);
+            default:
+                ThrowPopInvalidType(reference.Type);
                 return;
         }
     }

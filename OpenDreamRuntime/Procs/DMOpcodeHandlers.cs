@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using DMCompiler;
 using DMCompiler.Bytecode;
@@ -195,12 +196,18 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus CreateObject(DMProcState state) {
             var argumentInfo = state.ReadProcArguments();
             var val = state.Pop();
+            Dictionary<string, Object>? overrides = null;
+            if (state.Pop().TryGetValueAsString(out var jsonDict)) {
+                overrides = JsonSerializer.Deserialize<Dictionary<string, Object>>(jsonDict);
+            }
+
             if (!val.TryGetValueAsType(out var objectType)) {
                 if (val.TryGetValueAsString(out var pathString)) {
                     if (!state.Proc.ObjectTree.TryGetTreeEntry(pathString, out objectType)) {
                         ThrowCannotCreateUnknownObject(val);
                     }
-                } else if (val.TryGetValueAsProc(out var proc)) { // new /proc/proc_name(Destination,Name,Desc)
+                } else if (val.TryGetValueAsProc(out var proc)) {
+                    // new /proc/proc_name(Destination,Name,Desc)
                     var arguments = state.PopProcArguments(null, argumentInfo.Type, argumentInfo.StackSize);
                     var destination = arguments.GetArgument(0);
 
@@ -234,12 +241,24 @@ namespace OpenDreamRuntime.Procs {
                     ThrowInvalidTurfLoc(loc);
 
                 state.Proc.DreamMapManager.SetTurf(turf, objectDef, newArguments);
+                if (overrides is not null) {
+                    foreach (KeyValuePair<string, object> varOverride in overrides) {
+                        turf.SetVariable(varOverride.Key,
+                            state.Proc.ObjectTree.GetDreamValueFromJsonElement(varOverride.Value));
+                    }
+                }
 
                 state.Push(loc);
                 return ProcStatus.Continue;
             }
 
             var newObject = state.Proc.ObjectTree.CreateObject(objectType);
+            if (overrides is not null) {
+                foreach (KeyValuePair<string, object> varOverride in overrides) {
+                    newObject.SetVariable(varOverride.Key, state.Proc.ObjectTree.GetDreamValueFromJsonElement(varOverride.Value));
+                }
+            }
+
             var s = newObject.InitProc(state.Thread, state.Usr, newArguments);
 
             state.Thread.PushProcState(s);

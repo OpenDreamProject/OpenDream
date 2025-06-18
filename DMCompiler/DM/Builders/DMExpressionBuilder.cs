@@ -284,7 +284,26 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                     break;
                 }
 
-                result = new NewPath(Compiler, newPath.Location, path,
+                Dictionary<string, Object> overrides = new();
+                if (newPath.Path.VarOverrides is not null) {
+                    foreach (KeyValuePair<string, DMASTExpression> varOverride in newPath.Path.VarOverrides) {
+                        if (!BuildExpression(varOverride.Value, inferredPath)
+                                .TryAsConstant(Compiler, out var jsonConstant)) {
+                            if (!BuildExpression(varOverride.Value, inferredPath)
+                                    .TryAsJsonRepresentation(Compiler, out var jsonValue)) {
+                                BadExpression(WarningCode.BadExpression, newPath.Path.Location,
+                                    "Expected a constant expression");
+                            }
+
+                            overrides[varOverride.Key] = jsonValue;
+                        } else {
+                            jsonConstant.TryAsJsonRepresentation(Compiler, out var jsonValue);
+                            overrides[varOverride.Key] = jsonValue;
+                        }
+                    }
+                }
+
+                result = new NewPath(Compiler, newPath.Location, path, overrides,
                     BuildArgumentList(newPath.Location, newPath.Parameters, inferredPath));
                 break;
             case DMASTNewExpr newExpr:
@@ -305,7 +324,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                     break;
                 }
 
-                result = new NewPath(Compiler, newInferred.Location, inferredType,
+                result = new NewPath(Compiler, newInferred.Location, inferredType, new Dictionary<string, object>(),
                     BuildArgumentList(newInferred.Location, newInferred.Parameters, inferredPath));
                 break;
             case DMASTPreIncrement preIncrement:

@@ -1,7 +1,7 @@
 ﻿/callee
 	var/proc
-	var/args as /list
-	var/caller as /callee
+	var/args
+	var/caller as /callee|null
 	
 	var/name as text|null
 	var/desc as text|null

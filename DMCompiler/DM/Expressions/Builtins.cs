@@ -75,7 +75,7 @@ internal sealed class New(DMCompiler compiler, Location location, DMExpression e
 
 // new /x/y/z (...)
 internal sealed class NewPath(DMCompiler compiler, Location location, IConstantPath create,
-    Dictionary<string, object> variableOverrides, ArgumentList arguments) : DMExpression(location) {
+    Dictionary<string, object?> variableOverrides, ArgumentList arguments) : DMExpression(location) {
     public override DreamPath? Path => (create is ConstantTypeReference typeReference) ? typeReference.Path : null;
     public override DMComplexValueType ValType => Path?.GetAtomType(compiler) ?? DMValueType.Anything;
 

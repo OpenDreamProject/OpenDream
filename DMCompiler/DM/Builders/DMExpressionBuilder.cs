@@ -284,7 +284,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                     break;
                 }
 
-                Dictionary<string, object> overrides = new();
+                Dictionary<string, object?> overrides = new();
                 if (newPath.Path.VarOverrides is null) {
                     result = new NewPath(Compiler, newPath.Location, path, overrides,
                         BuildArgumentList(newPath.Location, newPath.Parameters, inferredPath));

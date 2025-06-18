@@ -75,7 +75,7 @@ internal sealed class New(DMCompiler compiler, Location location, DMExpression e
 
 // new /x/y/z (...)
 internal sealed class NewPath(DMCompiler compiler, Location location, IConstantPath create,
-    Dictionary<string, Object> VariableOverrides, ArgumentList arguments) : DMExpression(location) {
+    Dictionary<string, object> variableOverrides, ArgumentList arguments) : DMExpression(location) {
     public override DreamPath? Path => (create is ConstantTypeReference typeReference) ? typeReference.Path : null;
     public override DMComplexValueType ValType => Path?.GetAtomType(compiler) ?? DMValueType.Anything;
 
@@ -89,23 +89,25 @@ internal sealed class NewPath(DMCompiler compiler, Location location, IConstantP
                 var newProc = ctx.ObjectTree.GetNewProc(typeReference.Value.Id);
 
                 (argumentsType, stackSize) = arguments.EmitArguments(ctx, newProc);
-                foreach (KeyValuePair<string, Object> varOverrides in VariableOverrides) {
+                foreach (KeyValuePair<string, object> varOverrides in variableOverrides) {
                     if (!typeReference.Value.HasLocalVariable(varOverrides.Key)) {
                         ctx.Compiler.Emit(WarningCode.ItemDoesntExist, Location, $"{varOverrides.Key} is undefined on {Path}");
                         ctx.Proc.PushNull();
                         return;
                     }
                 }
-                ctx.Proc.PushString(JsonSerializer.Serialize(VariableOverrides));
+
+                ctx.Proc.PushString(JsonSerializer.Serialize(variableOverrides));
                 ctx.Proc.PushType(typeReference.Value.Id);
                 break;
             case ConstantProcReference procReference: // "new /proc/new_verb(Destination)" is a thing
                 (argumentsType, stackSize) = arguments.EmitArguments(ctx, ctx.ObjectTree.AllProcs[procReference.Value.Id]);
-                if(VariableOverrides.Count > 0) {
-                    ctx.Compiler.Emit(WarningCode.BadExpression, Location, $"Cannot add a Var Override to a proc");
+                if(variableOverrides.Count > 0) {
+                    ctx.Compiler.Emit(WarningCode.BadExpression, Location, "Cannot add a Var Override to a proc");
                     ctx.Proc.PushNull();
                     return;
                 }
+
                 ctx.Proc.PushNull();
                 ctx.Proc.PushProc(procReference.Value.Id);
                 break;

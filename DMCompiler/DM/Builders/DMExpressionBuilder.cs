@@ -284,14 +284,14 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                     break;
                 }
 
-                Dictionary<string, Object> overrides = new();
+                Dictionary<string, object> overrides = new();
                 if (newPath.Path.VarOverrides is not null) {
                     foreach (KeyValuePair<string, DMASTExpression> varOverride in newPath.Path.VarOverrides) {
                         if (!BuildExpression(varOverride.Value, inferredPath)
                                 .TryAsConstant(Compiler, out var jsonConstant)) {
                             if (!BuildExpression(varOverride.Value, inferredPath)
                                     .TryAsJsonRepresentation(Compiler, out var jsonValue)) {
-                                BadExpression(WarningCode.BadExpression, newPath.Path.Location,
+                                return BadExpression(WarningCode.BadExpression, newPath.Path.Location,
                                     "Expected a constant expression");
                             }
 

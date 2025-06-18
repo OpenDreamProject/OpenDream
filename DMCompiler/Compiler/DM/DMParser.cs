@@ -2265,7 +2265,9 @@ namespace DMCompiler.Compiler.DM {
                         BracketWhitespace();
                         Consume(TokenType.DM_Equals, "Expected '='");
                         BracketWhitespace();
-                        overrides[overriding.Identifier] = Expression();
+                        DMASTExpression? value = Expression();
+                        RequireExpression(ref value);
+                        overrides[overriding.Identifier] = value;
                         if (Check(TokenType.DM_Semicolon)) {
                             BracketWhitespace();
                             Whitespace(true);

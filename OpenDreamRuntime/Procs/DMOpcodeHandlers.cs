@@ -196,9 +196,9 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus CreateObject(DMProcState state) {
             var argumentInfo = state.ReadProcArguments();
             var val = state.Pop();
-            Dictionary<string, Object>? overrides = null;
+            Dictionary<string, object>? overrides = null;
             if (state.Pop().TryGetValueAsString(out var jsonDict)) {
-                overrides = JsonSerializer.Deserialize<Dictionary<string, Object>>(jsonDict);
+                overrides = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonDict);
             }
 
             if (!val.TryGetValueAsType(out var objectType)) {

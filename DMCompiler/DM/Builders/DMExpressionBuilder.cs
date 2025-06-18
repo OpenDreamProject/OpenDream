@@ -294,7 +294,8 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                 if (!ObjectTree.TryGetDMObject(newPath.Path.Value.Path, out var owner)) {
                     return UnknownReference(newPath.Path.Location, $"Type {newPath.Path.Value.Path} does not exist");
                 }
-                var Failed = false;
+
+                var failed = false;
                 foreach (KeyValuePair<string, DMASTExpression> varOverride in newPath.Path.VarOverrides) {
                     if (!owner.HasLocalVariable(varOverride.Key)) {
                         return UnknownIdentifier(newPath.Path.Location, varOverride.Key);
@@ -304,7 +305,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                             .TryAsConstant(Compiler, out var jsonConstant)) {
                         if (!BuildExpression(varOverride.Value, inferredPath)
                                 .TryAsJsonRepresentation(Compiler, out var jsonValue)) {
-                            Failed = true;
+                            failed = true;
                             break;
                         }
 
@@ -315,7 +316,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                     }
                 }
 
-                if (Failed) {
+                if (failed) {
                     result = BadExpression(WarningCode.BadExpression, newPath.Path.Location, "Expected a constant expression");
                     break;
                 }

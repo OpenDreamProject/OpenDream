@@ -3,6 +3,7 @@ proc/alert(Usr = usr, Message, Title, Button1 = "Ok", Button2, Button3) as text
 proc/animate(Object, time, loop, easing, flags, delay, pixel_x, pixel_y, pixel_z, maptext, maptext_width, maptext_height, maptext_x, maptext_y, dir, alpha, transform, color, luminosity, infra_luminosity, layer, glide_size, icon, icon_state, invisibility, suffix) as null
 proc/ascii2text(N) as text
 proc/block(atom/Start, atom/End, StartZ, EndX=Start, EndY=End, EndZ=StartZ) as /list
+proc/bounds_dist(atom/Ref, atom/Target) as num
 proc/ceil(A) as num
 proc/ckey(Key) as text|null
 proc/ckeyEx(Text) as text|null

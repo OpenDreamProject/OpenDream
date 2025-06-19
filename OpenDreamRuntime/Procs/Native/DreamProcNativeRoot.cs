@@ -925,11 +925,10 @@ internal static class DreamProcNativeRoot {
         actualstart += needle.Length-1;
         actualstart = Math.Max(Math.Min(text.Length, actualstart),0);
 
-        if(end > 0)
-            actualcount = actualstart - (end-1);
+        if (end > 0)
+            actualcount = actualstart - (end - 1) + needle.Length;
         else
-            actualcount  = actualstart - ((text.Length-1) + (end));
-        actualcount += needle.Length-1;
+            actualcount = actualstart - ((text.Length - 1) + (end));
         actualcount = Math.Max(Math.Min(actualstart+1, actualcount),0);
         int needleIndex = text.LastIndexOf(needle, actualstart, actualcount, StringComparison.OrdinalIgnoreCase);
         return new DreamValue(needleIndex + 1); //1-indexed, or 0 if not found (LastIndexOf returns -1 if not found)
@@ -967,7 +966,7 @@ internal static class DreamProcNativeRoot {
         actualstart = Math.Max(Math.Min(text.Length, actualstart),0);
 
         if(end > 0)
-            actualcount = actualstart - (end-1);
+            actualcount = actualstart - (end-1) + needle.Length;
         else
             actualcount  = actualstart - ((text.Length-1) + (end));
         actualcount += needle.Length-1;

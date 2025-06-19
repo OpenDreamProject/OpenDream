@@ -319,8 +319,6 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
         LoadInterfaceFromSource(interfaceText);
         _netManager.ClientSendMessage(new MsgAckLoadInterface());
-        if (_entitySystemManager.TryGetEntitySystem(out ClientVerbSystem? verbSystem))
-            DefaultInfo?.RefreshVerbs(verbSystem);
     }
 
     private void RxUpdateClientInfo(MsgUpdateClientInfo msg) {

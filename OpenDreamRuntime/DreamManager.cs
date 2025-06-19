@@ -368,7 +368,9 @@ public sealed partial class DreamManager {
                     ? new DreamValue(appearance.ToMutable())
                     : DreamValue.Null;
             case RefType.Proc:
-                return new(_objectTree.Procs[refId]);
+                return _objectTree.Procs.Count > refId
+                    ? new DreamValue(_objectTree.Procs[refId])
+                    : DreamValue.Null;
             case RefType.Number: // For the oh so few numbers this works with (most numbers clobber the ref type)
                 return new(BitConverter.Int32BitsToSingle(refId));
             default:
@@ -415,6 +417,16 @@ public sealed partial class DreamManager {
         }
 
         return null;
+    }
+
+    public ClientObjectReference GetClientReference(DreamObjectAtom atom) {
+        if (atom is DreamObjectMovable movable) {
+            return new(_entityManager.GetNetEntity(movable.Entity));
+        } else if (atom is DreamObjectTurf turf) {
+            return new((turf.X, turf.Y), turf.Z);
+        } else {
+            throw new NotImplementedException($"Cannot create a client reference for {atom}");
+        }
     }
 
     public void HandleException(Exception e, string msg = "", string file = "", int line = 0) {

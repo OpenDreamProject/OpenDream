@@ -822,6 +822,7 @@ public sealed class DMProcState : ProcState {
             case DMReference.Type.Args: return new(new ProcArgsList(Proc.ObjectTree.List.ObjectDefinition, this));
             case DMReference.Type.World: return new(DreamManager.WorldInstance);
             case DMReference.Type.Callee: {
+                // TODO: BYOND seems to reuse the same object. At least, callee == callee
                 var callee = Proc.ObjectTree.CreateObject<DreamObjectCallee>(Proc.ObjectTree.Callee);
 
                 callee.ProcState = this;

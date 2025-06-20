@@ -187,8 +187,6 @@ public sealed class DMProcState : ProcState {
 
     private static readonly ArrayPool<DreamValue> DreamValuePool = ArrayPool<DreamValue>.Create();
 
-    private static long _idCounter;
-
     private const int NoTryCatchVar = -1;
 
     #region Opcode Handlers
@@ -355,7 +353,6 @@ public sealed class DMProcState : ProcState {
     public DreamObject? Usr;
     public int ArgumentCount;
     public readonly IDreamValueEnumerator?[] Enumerators = new IDreamValueEnumerator?[16];
-    public long Id;
 
     public int ProgramCounter => _pc;
     public override DMProc Proc => _proc;
@@ -417,7 +414,6 @@ public sealed class DMProcState : ProcState {
         _localVariables = DreamValuePool.Rent(256);
         _stack = DreamValuePool.Rent(maxStackSize);
         _firstResume = true;
-        Id = _idCounter++;
 
         for (int i = 0; i < ArgumentCount; i++) {
             _localVariables[i] = arguments.GetArgument(i);
@@ -566,7 +562,6 @@ public sealed class DMProcState : ProcState {
         Array.Clear(Enumerators);
         _pc = 0;
         _proc = null!;
-        Id = -1;
 
         DreamValuePool.Return(_stack);
         _stackIndex = 0;

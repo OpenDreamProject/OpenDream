@@ -89,7 +89,7 @@ namespace OpenDreamRuntime {
                     Logger.GetSawmill("opendream.dmproc").Warning("The 'hidden' field on verbs will always return null.");
                     return DreamValue.Null;
                 default:
-                    throw new Exception($"Cannot get field \"{field}\" from {OwningType.ToString()}.{Name}()");
+                    throw new Exception($"Cannot get field \"{field}\" from {OwningType}.{Name}()");
             }
         }
 
@@ -126,13 +126,13 @@ namespace OpenDreamRuntime {
     internal sealed class DMError(string message) : Exception(message);
 
     public abstract class ProcState : IDisposable {
-        private static int _idCounter = 0;
-        public int Id { get; } = ++_idCounter;
+        private static int _idCounter;
+        public int Id { get; private set; } = ++_idCounter;
+        public DreamThread Thread { get; set; } = default!;
         #if TOOLS
         public abstract (string SourceFile, int Line) TracyLocationId { get; }
         public ProfilerZone? TracyZoneId { get; set; }
         #endif
-        public DreamThread Thread { get; set; }
 
         [Access(typeof(ProcScheduler))]
         public DreamValue Result = DreamValue.Null;
@@ -169,6 +169,7 @@ namespace OpenDreamRuntime {
             Thread = null!;
             Result = DreamValue.Null;
             WaitFor = true;
+            Id = -1;
         }
     }
 
@@ -185,7 +186,7 @@ namespace OpenDreamRuntime {
         private readonly Stack<ProcState> _stack = new();
 
         // The amount of stack frames containing `WaitFor = false`
-        private int _syncCount = 0;
+        private int _syncCount;
 
         /// <summary>
         /// Stores the last object that was animated, so that animate() can be called without the object parameter. Does not need to be passed to spawn calls, only current execution context.

@@ -73,6 +73,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     }
 
     public bool ShowPopupMenus { get; private set; } = true;
+    public int IconSize { get; private set; }
 
     private ViewRange _view = new(5);
 
@@ -322,6 +323,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     }
 
     private void RxUpdateClientInfo(MsgUpdateClientInfo msg) {
+        IconSize = msg.IconSize;
         View = msg.View;
         ShowPopupMenus = msg.ShowPopupMenus;
     }
@@ -1024,6 +1026,7 @@ public interface IDreamInterfaceManager {
     public ControlMap? DefaultMap { get; }
     public ViewRange View { get; }
     public bool ShowPopupMenus { get; }
+    public int IconSize { get; }
 
     void Initialize();
     void FrameUpdate(FrameEventArgs frameEventArgs);

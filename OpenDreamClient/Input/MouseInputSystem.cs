@@ -124,7 +124,7 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
         if (underMouse.ClickUid == EntityUid.Invalid) { // A turf
             return GetTurfUnderMouse(mapCoords, out _);
         } else {
-            Vector2i iconPosition = (Vector2i) ((mapCoords.Position - underMouse.Position) * EyeManager.PixelsPerMeter);
+            Vector2i iconPosition = (Vector2i) ((mapCoords.Position - underMouse.Position) * _dreamInterfaceManager.IconSize);
 
             return (new(_entityManager.GetNetEntity(underMouse.ClickUid)), iconPosition);
         }
@@ -138,7 +138,7 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
             Vector2i position = _mapSystem.CoordinatesToTile(gridEntity, grid, _mapSystem.MapToGrid(gridEntity, mapCoords));
             _mapSystem.TryGetTile(grid, position, out Tile tile);
             turfId = (uint)tile.TypeId;
-            Vector2i turfIconPosition = (Vector2i) ((mapCoords.Position - position) * EyeManager.PixelsPerMeter);
+            Vector2i turfIconPosition = (Vector2i) ((mapCoords.Position - position) * _dreamInterfaceManager.IconSize);
             MapCoordinates worldPosition = _mapSystem.GridTileToWorld(gridEntity, grid, position);
 
             return (new(position, (int)worldPosition.MapId), turfIconPosition);

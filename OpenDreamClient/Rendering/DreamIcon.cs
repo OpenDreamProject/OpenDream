@@ -541,6 +541,20 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
                 handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, pong.Size));
             }, Color.Black.WithAlpha(0));
 
+            // The blur filter runs a more performant two passes
+            if (filterId.FilterType == "blur") {
+                s = appearanceSystem.GetFilterShader(filterId with {FilterType = "blur_vertical"}, viewOverlay.RenderSourceLookup);
+                (ping, pong) = (pong, ping);
+
+                handle.RenderInRenderTarget(ping, () => {
+                    handle.UseShader(s);
+
+                    // Technically this should be ping.Size, but they are the same size so avoid the extra closure alloc
+                    handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(pong.Size, Vector2.Zero));
+                    handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, pong.Size));
+                }, Color.Black.WithAlpha(0));
+            }
+
             (ping, pong) = (pong, ping);
         }
 

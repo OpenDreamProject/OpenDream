@@ -59,7 +59,7 @@ jobs:
     - name: Compile Goonstation Master
       run: |
         New-Item goon\+secret\__secret.dme -type file
-        main\bin\DMCompiler\DMCompiler.exe goon\goonstation.dme --suppress-unimplemented
+        main\bin\DMCompiler\DMCompiler.exe goon\goonstation.dme --suppress-unimplemented  --version=515.1633
     - name: Checkout Paradise Master
       uses: actions/checkout@v2
       with:

@@ -28,7 +28,8 @@ internal sealed class DMVariable {
         IsFinal = isFinal;
         IsTmp = isTmp;
         Value = null;
-        ValType = valType ?? DMValueType.Anything;
+        DMComplexValueType atomType = Type is not null ? new DMComplexValueType(DMValueType.Instance | DMValueType.Path, Type) : DMValueType.Anything;
+        ValType = valType ?? (!atomType.IsAnything ? atomType | DMValueType.Null : (Type is null ? DMValueType.Anything : new DMComplexValueType(DMValueType.Instance | DMValueType.Path | DMValueType.Null, Type)));
     }
 
     public DMVariable(DMVariable copyFrom) {

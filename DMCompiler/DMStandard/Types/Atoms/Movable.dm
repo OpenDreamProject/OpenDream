@@ -1,9 +1,9 @@
 ﻿/atom/movable
-	var/screen_loc
+	var/screen_loc as text|null
 
 	var/animate_movement = FORWARD_STEPS as opendream_unimplemented
 	var/list/locs = null as opendream_unimplemented
-	var/glide_size = 0
+	var/glide_size = 0 as num
 	var/step_size as opendream_unimplemented
 	var/tmp/bound_x as opendream_unimplemented
 	var/tmp/bound_y as opendream_unimplemented
@@ -17,7 +17,7 @@
 
 	proc/Bump(atom/Obstacle)
 
-	proc/Move(atom/NewLoc, Dir=0) as num
+	proc/Move(atom/NewLoc, Dir=0 as num) as num|null // NOTE: BYOND doesn't return null, but it's common for SS13 proc overrides to
 		if (isnull(NewLoc) || loc == NewLoc)
 			return FALSE
 
@@ -57,5 +57,4 @@
 				newarea.Entered(src, oldloc)
 
 			return TRUE
-		else
-			return FALSE
+		return FALSE

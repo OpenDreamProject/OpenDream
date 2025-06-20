@@ -284,7 +284,44 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                     break;
                 }
 
-                result = new NewPath(Compiler, newPath.Location, path,
+                Dictionary<string, object?> overrides = new();
+                if (newPath.Path.VarOverrides is null) {
+                    result = new NewPath(Compiler, newPath.Location, path, overrides,
+                        BuildArgumentList(newPath.Location, newPath.Parameters, inferredPath));
+                    break;
+                }
+
+                if (!ObjectTree.TryGetDMObject(newPath.Path.Value.Path, out var owner)) {
+                    return UnknownReference(newPath.Path.Location, $"Type {newPath.Path.Value.Path} does not exist");
+                }
+
+                var failed = false;
+                foreach (KeyValuePair<string, DMASTExpression> varOverride in newPath.Path.VarOverrides) {
+                    if (!owner.HasLocalVariable(varOverride.Key)) {
+                        return UnknownIdentifier(newPath.Path.Location, varOverride.Key);
+                    }
+
+                    if (!BuildExpression(varOverride.Value, inferredPath)
+                            .TryAsConstant(Compiler, out var jsonConstant)) {
+                        if (!BuildExpression(varOverride.Value, inferredPath)
+                                .TryAsJsonRepresentation(Compiler, out var jsonValue)) {
+                            failed = true;
+                            break;
+                        }
+
+                        overrides[varOverride.Key] = jsonValue;
+                    } else {
+                        jsonConstant.TryAsJsonRepresentation(Compiler, out var jsonValue);
+                        overrides[varOverride.Key] = jsonValue;
+                    }
+                }
+
+                if (failed) {
+                    result = BadExpression(WarningCode.BadExpression, newPath.Path.Location, "Expected a constant expression");
+                    break;
+                }
+
+                result = new NewPath(Compiler, newPath.Location, path, overrides,
                     BuildArgumentList(newPath.Location, newPath.Parameters, inferredPath));
                 break;
             case DMASTNewExpr newExpr:
@@ -305,7 +342,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                     break;
                 }
 
-                result = new NewPath(Compiler, newInferred.Location, inferredType,
+                result = new NewPath(Compiler, newInferred.Location, inferredType, new Dictionary<string, object?>(),
                     BuildArgumentList(newInferred.Location, newInferred.Parameters, inferredPath));
                 break;
             case DMASTPreIncrement preIncrement:

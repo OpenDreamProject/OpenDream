@@ -127,7 +127,8 @@ namespace OpenDreamRuntime {
 
     public abstract class ProcState : IDisposable {
         private static int _idCounter;
-        public int Id { get; private set; } = ++_idCounter;
+
+        public int Id { get; private set; }
         public DreamThread Thread { get; set; } = default!;
         #if TOOLS
         public abstract (string SourceFile, int Line) TracyLocationId { get; }
@@ -144,6 +145,7 @@ namespace OpenDreamRuntime {
         protected void Initialize(DreamThread thread, bool waitFor) {
             Thread = thread;
             WaitFor = waitFor;
+            Id = _idCounter++;
         }
 
         public abstract ProcStatus Resume();

@@ -8,29 +8,30 @@ namespace DMCompiler;
 // TODO: This is fairly ugly structure and should probably be removed/redone with something much nicer.
 //          It's heavily embedded into a lot of corners of the compiler though.
 public struct DreamPath {
-    public static readonly DreamPath Root = new DreamPath("/");
-    public static readonly DreamPath Exception = new DreamPath("/exception");
-    public static readonly DreamPath List = new DreamPath("/list");
-    public static readonly DreamPath AList = new DreamPath("/alist");
-    public static readonly DreamPath Regex = new DreamPath("/regex");
-    public static readonly DreamPath Savefile = new DreamPath("/savefile");
-    public static readonly DreamPath Sound = new DreamPath("/sound");
-    public static readonly DreamPath Image = new DreamPath("/image");
-    public static readonly DreamPath Icon = new DreamPath("/icon");
-    public static readonly DreamPath MutableAppearance = new DreamPath("/mutable_appearance");
-    public static readonly DreamPath World = new DreamPath("/world");
-    public static readonly DreamPath Client = new DreamPath("/client");
-    public static readonly DreamPath Datum = new DreamPath("/datum");
-    public static readonly DreamPath Database = new DreamPath("/database");
-    public static readonly DreamPath DatabaseQuery = new DreamPath("/database/query");
-    public static readonly DreamPath Matrix = new DreamPath("/matrix");
-    public static readonly DreamPath Atom = new DreamPath("/atom");
-    public static readonly DreamPath Area = new DreamPath("/area");
-    public static readonly DreamPath Turf = new DreamPath("/turf");
-    public static readonly DreamPath Movable = new DreamPath("/atom/movable");
-    public static readonly DreamPath Obj = new DreamPath("/obj");
-    public static readonly DreamPath Mob = new DreamPath("/mob");
-    public static readonly DreamPath Filter = new DreamPath("/dm_filter");
+    public static readonly DreamPath Root = new("/");
+    public static readonly DreamPath Exception = new("/exception");
+    public static readonly DreamPath List = new("/list");
+    public static readonly DreamPath AList = new("/alist");
+    public static readonly DreamPath Regex = new("/regex");
+    public static readonly DreamPath Savefile = new("/savefile");
+    public static readonly DreamPath Sound = new("/sound");
+    public static readonly DreamPath Image = new("/image");
+    public static readonly DreamPath Icon = new("/icon");
+    public static readonly DreamPath MutableAppearance = new("/mutable_appearance");
+    public static readonly DreamPath World = new("/world");
+    public static readonly DreamPath Client = new("/client");
+    public static readonly DreamPath Datum = new("/datum");
+    public static readonly DreamPath Database = new("/database");
+    public static readonly DreamPath DatabaseQuery = new("/database/query");
+    public static readonly DreamPath Matrix = new("/matrix");
+    public static readonly DreamPath Atom = new("/atom");
+    public static readonly DreamPath Area = new("/area");
+    public static readonly DreamPath Turf = new("/turf");
+    public static readonly DreamPath Movable = new("/atom/movable");
+    public static readonly DreamPath Obj = new("/obj");
+    public static readonly DreamPath Mob = new("/mob");
+    public static readonly DreamPath Filter = new("/dm_filter");
+    public static readonly DreamPath Callee = new("/callee");
 
     public enum PathType {
         Absolute,

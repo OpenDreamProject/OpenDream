@@ -27,13 +27,12 @@ using Robust.Shared.Asynchronous;
 using Vector4 = Robust.Shared.Maths.Vector4;
 
 namespace OpenDreamRuntime.Procs.Native;
+
 /// <remarks>
 /// Note that this proc container also includes global procs which are used to create some DM objects,
 /// like filter(), matrix(), etc.
 /// </remarks>
 internal static class DreamProcNativeRoot {
-    private static readonly DreamResourceManager _resourceManager = IoCManager.Resolve<DreamResourceManager>();
-
     [DreamProc("alert")]
     [DreamProcParameter("Usr", Type = DreamValueTypeFlag.DreamObject)]
     [DreamProcParameter("Message", Type = DreamValueTypeFlag.String)]
@@ -259,6 +258,7 @@ internal static class DreamProcNativeRoot {
             }
         }
 
+        var resourceManager = bundle.ResourceManager;
         bundle.AtomManager.AnimateAppearance(obj, TimeSpan.FromMilliseconds(time * 100), (AnimationEasing)easing, loop, flags, delay, chainAnim,
         appearance => {
             if (!pixelX.IsNull) {
@@ -357,7 +357,7 @@ internal static class DreamProcNativeRoot {
 
             if (!icon.IsNull) {
                 obj.SetVariableValue("icon", icon);
-                if(_resourceManager.TryLoadIcon(icon, out var iconResource))
+                if(resourceManager.TryLoadIcon(icon, out var iconResource))
                     appearance.Icon = iconResource.Id;
             }
 

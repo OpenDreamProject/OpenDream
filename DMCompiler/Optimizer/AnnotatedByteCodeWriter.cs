@@ -315,6 +315,8 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
             case DMReference.Type.Args:
             case DMReference.Type.World:
             case DMReference.Type.Usr:
+            case DMReference.Type.Callee:
+            case DMReference.Type.Caller:
             case DMReference.Type.Invalid:
                 _annotatedBytecode[^1].AddArg(compiler, new AnnotatedBytecodeReference(reference.RefType, location));
                 break;

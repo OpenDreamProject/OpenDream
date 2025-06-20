@@ -558,10 +558,6 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                 return new Usr(identifier.Location);
             case "args":
                 return new Args(identifier.Location);
-            case "callee":
-                return new Callee(identifier.Location);
-            case "caller":
-                return new Caller(identifier.Location);
             case "world":
                 if (scopeMode == FirstPassStatic) // world is not available on the first pass
                     return UnknownIdentifier(identifier.Location, "world");
@@ -586,6 +582,12 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                     var localVar = ctx.Proc?.GetLocalVariable(name);
                     if (localVar != null)
                         return new Local(identifier.Location, localVar);
+
+                    // Here because proc args can shadow these
+                    if (name == "callee")
+                        return new Callee(identifier.Location);
+                    else if (name == "caller")
+                        return new Caller(identifier.Location);
                 }
 
                 var field = ctx.Type.GetVariable(name);

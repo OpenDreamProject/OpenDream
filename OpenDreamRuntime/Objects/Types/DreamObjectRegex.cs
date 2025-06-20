@@ -54,6 +54,8 @@ public sealed class DreamObjectRegex(DreamObjectDefinition objectDefinition) : D
 
                             if (!insideBrackets)
                                 newPatternBuilder.Append(']');
+                        } else if (c == '_') {
+                            newPatternBuilder.Append('_'); //I don't know why BYOND supports escaping this, but C# doesn't
                         } else {
                             newPatternBuilder.Append('\\');
                             goto default;

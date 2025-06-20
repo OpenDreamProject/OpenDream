@@ -15,6 +15,7 @@
 	var/atom/eye
 	var/lazy_eye = 0 as opendream_unimplemented
 	var/perspective = MOB_PERSPECTIVE
+	var/edge_limit = null as opendream_unimplemented
 	var/view
 	var/pixel_x = 0 as opendream_unimplemented
 	var/pixel_y = 0 as opendream_unimplemented

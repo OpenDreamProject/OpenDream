@@ -183,7 +183,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
     }
 
     //handles underlays, overlays, appearance flags, images. Adds them to the result list, so they can be sorted and drawn with DrawIcon()
-    private void ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, bool isScreen, ref int tieBreaker, List<RendererMetaData> result, sbyte seeVis, RendererMetaData? parentIcon = null, bool keepTogether = false, Vector3? turfCoords = null) {
+    private void ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, bool isScreen, ref int tieBreaker, List<RendererMetaData> result, sbyte seeVis, RendererMetaData? parentIcon = null, bool keepTogether = false, Vector3? turfCoords = null, ClientAppearanceSystem.Flick? flick = null) {
         if (icon.Appearance is null) //in the event that appearance hasn't loaded yet
             return;
 
@@ -199,6 +199,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
         current.RenderTarget = icon.Appearance.RenderTarget;
         current.AppearanceFlags = icon.Appearance.AppearanceFlags;
         current.BlendMode = icon.Appearance.BlendMode;
+        current.Flick = flick;
 
         //reverse rotation transforms because of 180 flip from RenderTarget->world transform
         Matrix3x2 iconAppearanceTransformMatrix = new Matrix3x2(
@@ -615,11 +616,12 @@ internal sealed partial class DreamViewOverlay : Overlay {
             Vector2i tilePos = eyeTile.GridIndices + (tile.DeltaX, tile.DeltaY);
             TileRef tileRef = _mapSystem.GetTileRef(gridUid, grid, tilePos);
             MapCoordinates worldPos = _mapSystem.GridTileToWorld(gridUid, grid, tilePos);
+            var flick = _appearanceSystem.GetTurfFlick(tilePos.X, tilePos.Y, (int) worldPos.MapId);
 
             tValue = 0;
             //pass the turf coords for client.images lookup
             Vector3 turfCoords = new Vector3(tileRef.X, tileRef.Y, (int) worldPos.MapId);
-            ProcessIconComponents(_appearanceSystem.GetTurfIcon((uint)tileRef.Tile.TypeId), worldPos.Position - Vector2.One, EntityUid.Invalid, false, ref tValue, _spriteContainer, seeVis, turfCoords: turfCoords);
+            ProcessIconComponents(_appearanceSystem.GetTurfIcon((uint)tileRef.Tile.TypeId), worldPos.Position - Vector2.One, EntityUid.Invalid, false, ref tValue, _spriteContainer, seeVis, turfCoords: turfCoords, flick: flick);
         }
 
         // Visible entities
@@ -647,8 +649,10 @@ internal sealed partial class DreamViewOverlay : Overlay {
                         continue;
                 }
 
+                var flick = _appearanceSystem.GetMovableFlick(entity);
+
                 tValue = 0;
-                ProcessIconComponents(sprite.Icon, worldPos - new Vector2(0.5f), entity, false, ref tValue, _spriteContainer, seeVis);
+                ProcessIconComponents(sprite.Icon, worldPos - new Vector2(0.5f), entity, false, ref tValue, _spriteContainer, seeVis, flick: flick);
             }
         }
 

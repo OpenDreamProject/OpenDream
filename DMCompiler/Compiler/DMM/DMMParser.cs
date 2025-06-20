@@ -104,6 +104,9 @@ internal sealed class DMMParser(DMCompiler compiler, DMLexer lexer, int zOffset)
                 }
             }
 
+            if (cellDefinition.Turf == null)
+                Compiler.ForcedWarning(currentToken.Location, $"Cell definition \"{cellDefinition.Name}\" is missing a turf");
+
             Consume(TokenType.DM_RightParenthesis, "Expected ')'");
             return cellDefinition;
         }

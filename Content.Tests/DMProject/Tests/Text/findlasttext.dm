@@ -1,4 +1,6 @@
 /proc/RunTest()
+	ASSERT(findlasttext("/mob", "/", 0, 1) == 1)
+	ASSERT(findlasttext("/mob", "/") == 1)
 	ASSERT(findlasttext("abcdefg", "f", 0, -1) == 0)
 	ASSERT(findlasttext("abcdefg", "f", 0, -2) == 6)
 	ASSERT(findlasttext("abcdefg", "f", 6) == 6)

@@ -69,6 +69,7 @@ internal class DMObjectTree(DMCompiler compiler) {
                 case "vector":
                 case "savefile":
                 case "world":
+                case "callee":
                     parent = GetOrCreateDMObject(DreamPath.Root);
                     break;
                 default:

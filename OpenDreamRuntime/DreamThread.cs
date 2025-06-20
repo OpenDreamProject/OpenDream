@@ -34,12 +34,12 @@ namespace OpenDreamRuntime {
 
         public int? VerbId = null; // Null until registered as a verb in ServerVerbSystem
         public string VerbName => _verbName ?? Name;
+        public readonly string? VerbDesc;
         public readonly string? VerbCategory = string.Empty;
         public readonly VerbSrc? VerbSrc;
         public readonly sbyte Invisibility;
 
         private readonly string? _verbName;
-        private readonly string? _verbDesc;
 
         protected DreamProc(int id, TreeEntry owningType, string name, DreamProc? superProc, ProcAttributes attributes, List<string>? argumentNames, List<DreamValueType>? argumentTypes, VerbSrc? verbSrc, string? verbName, string? verbCategory, string? verbDesc, sbyte invisibility, bool isVerb = false) {
             Id = id;
@@ -59,7 +59,8 @@ namespace OpenDreamRuntime {
                 // Explicit null becomes treated as string.Empty
                 VerbCategory = verbCategory == string.Empty ? null : verbCategory;
             }
-            _verbDesc = verbDesc;
+
+            VerbDesc = verbDesc;
             Invisibility = invisibility;
         }
 
@@ -81,14 +82,14 @@ namespace OpenDreamRuntime {
                 case "category":
                     return (VerbCategory != null) ? new DreamValue(VerbCategory) : DreamValue.Null;
                 case "desc":
-                    return (_verbDesc != null) ? new DreamValue(_verbDesc) : DreamValue.Null;
+                    return (VerbDesc != null) ? new DreamValue(VerbDesc) : DreamValue.Null;
                 case "invisibility":
                     return new DreamValue(Invisibility);
                 case "hidden":
                     Logger.GetSawmill("opendream.dmproc").Warning("The 'hidden' field on verbs will always return null.");
                     return DreamValue.Null;
                 default:
-                    throw new Exception($"Cannot get field \"{field}\" from {OwningType.ToString()}.{Name}()");
+                    throw new Exception($"Cannot get field \"{field}\" from {OwningType}.{Name}()");
             }
         }
 
@@ -100,12 +101,8 @@ namespace OpenDreamRuntime {
     }
 
     [Virtual]
-    internal class DMThrowException : Exception {
-        public readonly DreamValue Value;
-
-        public DMThrowException(DreamValue value) : base(GetRuntimeMessage(value)) {
-            Value = value;
-        }
+    internal class DMThrowException(DreamValue value) : Exception(GetRuntimeMessage(value)) {
+        public readonly DreamValue Value = value;
 
         private static string GetRuntimeMessage(DreamValue value) {
             string? name;
@@ -121,27 +118,22 @@ namespace OpenDreamRuntime {
         }
     }
 
-    internal sealed class DMCrashRuntime : Exception {
-        public DMCrashRuntime(string message) : base(message) { }
-    }
+    internal sealed class DMCrashRuntime(string message) : Exception(message);
 
     /// <summary>
     /// This exception instantly terminates the entire thread of the proc.
     /// </summary>
-    internal sealed class DMError : Exception {
-        public DMError(string message)
-            : base(message) {
-        }
-    }
+    internal sealed class DMError(string message) : Exception(message);
 
     public abstract class ProcState : IDisposable {
-        private static int _idCounter = 0;
-        public int Id { get; } = ++_idCounter;
+        private static int _idCounter;
+
+        public int Id { get; private set; }
+        public DreamThread Thread { get; set; } = default!;
         #if TOOLS
         public abstract (string SourceFile, int Line) TracyLocationId { get; }
         public ProfilerZone? TracyZoneId { get; set; }
         #endif
-        public DreamThread Thread { get; set; }
 
         [Access(typeof(ProcScheduler))]
         public DreamValue Result = DreamValue.Null;
@@ -153,6 +145,7 @@ namespace OpenDreamRuntime {
         protected void Initialize(DreamThread thread, bool waitFor) {
             Thread = thread;
             WaitFor = waitFor;
+            Id = _idCounter++;
         }
 
         public abstract ProcStatus Resume();
@@ -178,14 +171,15 @@ namespace OpenDreamRuntime {
             Thread = null!;
             Result = DreamValue.Null;
             WaitFor = true;
+            Id = -1;
         }
     }
 
-    public sealed class DreamThread {
+    public sealed class DreamThread(string name) {
         private static readonly ThreadLocal<Stack<DreamThread>> CurrentlyExecuting = new(() => new(), trackAllValues: true);
         private static readonly StringBuilder ErrorMessageBuilder = new();
 
-        private static int _idCounter = 0;
+        private static int _idCounter;
         public int Id { get; } = ++_idCounter;
 
         private const int MaxStackDepth = 400; // Same as BYOND but /world/loop_checks = 0 raises the limit
@@ -194,20 +188,16 @@ namespace OpenDreamRuntime {
         private readonly Stack<ProcState> _stack = new();
 
         // The amount of stack frames containing `WaitFor = false`
-        private int _syncCount = 0;
+        private int _syncCount;
 
         /// <summary>
         /// Stores the last object that was animated, so that animate() can be called without the object parameter. Does not need to be passed to spawn calls, only current execution context.
         /// </summary>
         public DreamValue? LastAnimatedObject = null;
 
-        public string Name { get; }
+        public string Name { get; } = name;
 
         internal DreamDebugManager.ThreadStepMode? StepMode { get; set; }
-
-        public DreamThread(string name) {
-            Name = name;
-        }
 
         public static DreamValue Run(DreamProc proc, DreamObject src, DreamObject? usr, params DreamValue[] arguments) {
             var context = new DreamThread(proc.ToString());
@@ -375,6 +365,7 @@ namespace OpenDreamRuntime {
             if (_current != null) {
                 _stack.Push(_current);
             }
+
             _current = state;
         }
 

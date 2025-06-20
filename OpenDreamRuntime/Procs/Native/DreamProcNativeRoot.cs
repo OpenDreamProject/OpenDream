@@ -19,6 +19,7 @@ using System.Web;
 using DMCompiler.DM;
 using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects.Types;
+using OpenDreamRuntime.Rendering;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
 using Robust.Server;
@@ -26,13 +27,12 @@ using Robust.Shared.Asynchronous;
 using Vector4 = Robust.Shared.Maths.Vector4;
 
 namespace OpenDreamRuntime.Procs.Native;
+
 /// <remarks>
 /// Note that this proc container also includes global procs which are used to create some DM objects,
 /// like filter(), matrix(), etc.
 /// </remarks>
 internal static class DreamProcNativeRoot {
-    private static readonly DreamResourceManager _resourceManager = IoCManager.Resolve<DreamResourceManager>();
-
     [DreamProc("alert")]
     [DreamProcParameter("Usr", Type = DreamValueTypeFlag.DreamObject)]
     [DreamProcParameter("Message", Type = DreamValueTypeFlag.String)]
@@ -258,6 +258,7 @@ internal static class DreamProcNativeRoot {
             }
         }
 
+        var resourceManager = bundle.ResourceManager;
         bundle.AtomManager.AnimateAppearance(obj, TimeSpan.FromMilliseconds(time * 100), (AnimationEasing)easing, loop, flags, delay, chainAnim,
         appearance => {
             if (!pixelX.IsNull) {
@@ -356,7 +357,7 @@ internal static class DreamProcNativeRoot {
 
             if (!icon.IsNull) {
                 obj.SetVariableValue("icon", icon);
-                if(_resourceManager.TryLoadIcon(icon, out var iconResource))
+                if(resourceManager.TryLoadIcon(icon, out var iconResource))
                     appearance.Icon = iconResource.Id;
             }
 
@@ -924,11 +925,10 @@ internal static class DreamProcNativeRoot {
         actualstart += needle.Length-1;
         actualstart = Math.Max(Math.Min(text.Length, actualstart),0);
 
-        if(end > 0)
-            actualcount = actualstart - (end-1);
+        if (end > 0)
+            actualcount = actualstart - (end - 1) + needle.Length;
         else
-            actualcount  = actualstart - ((text.Length-1) + (end));
-        actualcount += needle.Length-1;
+            actualcount = actualstart - ((text.Length - 1) + (end));
         actualcount = Math.Max(Math.Min(actualstart+1, actualcount),0);
         int needleIndex = text.LastIndexOf(needle, actualstart, actualcount, StringComparison.OrdinalIgnoreCase);
         return new DreamValue(needleIndex + 1); //1-indexed, or 0 if not found (LastIndexOf returns -1 if not found)
@@ -966,7 +966,7 @@ internal static class DreamProcNativeRoot {
         actualstart = Math.Max(Math.Min(text.Length, actualstart),0);
 
         if(end > 0)
-            actualcount = actualstart - (end-1);
+            actualcount = actualstart - (end-1) + needle.Length;
         else
             actualcount  = actualstart - ((text.Length-1) + (end));
         actualcount += needle.Length-1;
@@ -979,8 +979,31 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("Icon", Type = DreamValueTypeFlag.String | DreamValueTypeFlag.DreamResource)]
     [DreamProcParameter("Object", Type = DreamValueTypeFlag.String | DreamValueTypeFlag.DreamResource)]
     public static DreamValue NativeProc_flick(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-        //TODO: Implement flick()
+        var iconArg = bundle.GetArgument(0, "Icon");
+        var objectArg = bundle.GetArgument(1, "Object");
 
+        if (!objectArg.TryGetValueAsDreamObject<DreamObjectAtom>(out var atom))
+            return DreamValue.Null;
+
+        var appearance = bundle.AtomManager.MustGetAppearance(atom);
+        int iconId;
+        if (iconArg.TryGetValueAsString(out var iconState)) {
+            if (appearance.Icon == null)
+                return DreamValue.Null;
+
+            iconId = appearance.Icon.Value;
+        } else if (iconArg.TryGetValueAsDreamResource(out var resource)) {
+            iconId = resource.Id;
+            iconState = appearance.IconState;
+        } else {
+            return DreamValue.Null;
+        }
+
+        var entitySystemManager = IoCManager.Resolve<IEntitySystemManager>();
+        if (!entitySystemManager.TryGetEntitySystem(out ServerAppearanceSystem? appearanceSystem))
+            return DreamValue.Null;
+
+        appearanceSystem.Flick(atom, iconId, iconState);
         return DreamValue.Null;
     }
 

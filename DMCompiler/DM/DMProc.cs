@@ -126,7 +126,7 @@ internal sealed class DMProc {
 
         if (_astDefinition is not null) {
             foreach (var parameter in _astDefinition!.Parameters) {
-                AddParameter(parameter.Name, parameter.Type, parameter.ObjectType);
+                AddParameter(parameter.Name, parameter.Location, parameter.Type, parameter.ObjectType);
             }
 
             foreach (var statement in _astDefinition!.Body?.SetStatements ?? Array.Empty<DMASTProcStatementSet>()) {
@@ -270,10 +270,11 @@ internal sealed class DMProc {
         return null;
     }
 
-    public void AddParameter(string name, DMComplexValueType? valueType, DreamPath? type) {
+    public void AddParameter(string name, Location location, DMComplexValueType? valueType, DreamPath? type) {
         if (_parameters.ContainsKey(name)) {
-            _compiler.Emit(WarningCode.DuplicateVariable, _astDefinition.Location, $"Duplicate argument \"{name}\"");
+            _compiler.Emit(WarningCode.DuplicateVariable, location, $"Duplicate argument \"{name}\"");
         } else {
+            // TODO: Emit a warning when shadowing a builtin, such as "caller"
             Parameters.Add(name);
             _parameters.Add(name, new LocalVariable(name, _parameters.Count, true, type, valueType));
         }

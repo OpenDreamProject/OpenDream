@@ -3128,6 +3128,25 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
+        public static ProcStatus PushFloatAssign(DMProcState state) {
+            float flt = state.ReadFloat();
+            DreamReference reference = state.ReadReference();
+            state.AssignReference(reference, new DreamValue(flt));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus NPushFloatAssign(DMProcState state) {
+            int count = state.ReadInt();
+
+            for (int i = 0; i < count; i++) {
+                float flt = state.ReadFloat();
+                DreamReference reference = state.ReadReference();
+                state.AssignReference(reference, new DreamValue(flt));
+            }
+
+            return ProcStatus.Continue;
+        }
+
         public static ProcStatus CreateListNFloats(DMProcState state) {
             int size = state.ReadInt();
             var list = state.Proc.ObjectTree.CreateList(size);

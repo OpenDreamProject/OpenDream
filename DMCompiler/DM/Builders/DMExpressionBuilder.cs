@@ -976,6 +976,11 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                                     $"{prevPath}.{field} is not implemented and will have unexpected behavior");
                             }
 
+                            if (property.ValType.IsUnsupported) {
+                                Compiler.UnsupportedWarning(deref.Location,
+                                    $"{prevPath}.{field} will not be supported");
+                            }
+
                             operations = new Dereference.Operation[newOperationCount];
                             astOperationOffset += i + 1;
                             i = -1;
@@ -993,6 +998,11 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                             if (property.ValType.IsUnimplemented) {
                                 Compiler.UnimplementedWarning(deref.Location,
                                     $"{prevPath}.{field} is not implemented and will have unexpected behavior");
+                            }
+
+                            if (property.ValType.IsUnsupported){
+                                Compiler.UnsupportedWarning(deref.Location,
+                                    $"{prevPath}.{field} will not be supported");
                             }
 
                             operations = new Dereference.Operation[newOperationCount];

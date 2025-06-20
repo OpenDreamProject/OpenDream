@@ -79,7 +79,7 @@ public class DreamObjectMovable : DreamObjectAtom {
                 return true;
             case "bound_width":
             case "bound_height":
-                value = new(32); // TODO: Custom bounds support
+                value = new(DreamManager.WorldInstance.IconSize); // TODO: Custom bounds support
                 return true;
             case "screen_loc":
                 value = (ScreenLoc != null) ? new(ScreenLoc) : DreamValue.Null;

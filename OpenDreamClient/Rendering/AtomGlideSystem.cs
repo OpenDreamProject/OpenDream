@@ -1,4 +1,5 @@
-﻿using Robust.Client.GameObjects;
+﻿using OpenDreamClient.Interface;
+using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Shared.Utility;
 
@@ -17,6 +18,7 @@ public sealed class AtomGlideSystem : EntitySystem {
 
     [Dependency] private readonly TransformSystem _transformSystem = default!;
     [Dependency] private readonly IEntityManager _entityManager = default!;
+    [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
     private EntityQuery<DMISpriteComponent> _spriteQuery;
 
     private readonly List<Glide> _currentGlides = new();
@@ -57,7 +59,7 @@ public sealed class AtomGlideSystem : EntitySystem {
 
             var currentPos = glide.Transform.LocalPosition;
             var newPos = currentPos;
-            var movementSpeed = CalculateMovementSpeed(glide.Sprite.Icon.Appearance.GlideSize);
+            var movementSpeed = CalculateMovementSpeed(_interfaceManager.IconSize, glide.Sprite.Icon.Appearance.GlideSize);
             var movement = movementSpeed * frameTime;
 
             // Move X towards the end position at a constant speed
@@ -135,12 +137,12 @@ public sealed class AtomGlideSystem : EntitySystem {
         _ignoreMoveEvent = false;
     }
 
-    private static float CalculateMovementSpeed(float glideSize) {
+    private static float CalculateMovementSpeed(int iconSize, float glideSize) {
         if (glideSize == 0)
             glideSize = 4; // TODO: 0 gives us "automated control" over this value, not just setting it to 4
 
         // Assume a 20 TPS server
         // TODO: Support other TPS
-        return glideSize / EyeManager.PixelsPerMeter * 20f;
+        return glideSize / iconSize * 20f;
     }
 }

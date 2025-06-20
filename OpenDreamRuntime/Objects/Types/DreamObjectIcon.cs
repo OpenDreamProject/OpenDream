@@ -6,7 +6,7 @@ public sealed class DreamObjectIcon : DreamObject {
     public DreamIcon Icon;
 
     public DreamObjectIcon(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
-        Icon = new(DreamResourceManager);
+        Icon = new(DreamManager, DreamResourceManager);
     }
 
     public override void Initialize(DreamProcArguments args) {

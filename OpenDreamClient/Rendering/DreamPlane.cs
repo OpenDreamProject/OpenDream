@@ -96,7 +96,7 @@ internal sealed class DreamPlane(IRenderTexture mainRenderTarget) : IDisposable 
             if (texture == null)
                 continue;
 
-            var pos = (sprite.Position - worldAABB.BottomLeft) * EyeManager.PixelsPerMeter;
+            var pos = (sprite.Position - worldAABB.BottomLeft) * overlay.IconSize;
             if (sprite.MainIcon != null)
                 pos += sprite.MainIcon.TextureRenderOffset;
 

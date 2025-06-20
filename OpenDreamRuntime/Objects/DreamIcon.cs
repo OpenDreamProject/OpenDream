@@ -15,7 +15,7 @@ using ParsedDMIFrame = OpenDreamShared.Resources.DMIParser.ParsedDMIFrame;
 
 namespace OpenDreamRuntime.Objects;
 
-public sealed class DreamIcon(DreamResourceManager resourceManager) {
+public sealed class DreamIcon(DreamManager dreamManager, DreamResourceManager resourceManager) {
     private static readonly ArrayPool<Rgba32> PixelArrayPool = ArrayPool<Rgba32>.Shared;
 
     public int Width, Height;
@@ -101,14 +101,14 @@ public sealed class DreamIcon(DreamResourceManager resourceManager) {
             return _cachedDMI;
 
         if(Width == 0 && Height == 0)
-           Width = Height = 32; //TODO should be world.icon_size
+           Width = Height = dreamManager.WorldInstance.IconSize;
 
         int frameCount = FrameCount;
 
         int frameWidth = Width, frameHeight = Height;
-        if (frameCount == 0) { // No frames creates a blank 32x32 image (TODO: should be world.icon_size)
-            frameWidth = 32;
-            frameHeight = 32;
+        if (frameCount == 0) { // No frames creates a blank world.icon_size square image
+            frameWidth = dreamManager.WorldInstance.IconSize;
+            frameHeight = dreamManager.WorldInstance.IconSize;
         }
 
         ParsedDMIDescription newDescription = new() {Width = frameWidth, Height = frameHeight};

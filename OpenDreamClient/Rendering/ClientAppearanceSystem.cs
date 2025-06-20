@@ -28,6 +28,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     [Dependency] private readonly IPlayerManager _playerManager = default!;
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly MapSystem _mapSystem = default!;
+    [Dependency] private readonly IPrototypeManager _protoManager = default!;
 
     public override void Initialize() {
         SubscribeNetworkEvent<NewAppearanceEvent>(OnNewAppearance);
@@ -141,9 +142,8 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
 
     public ShaderInstance GetFilterShader(DreamFilter filter, Dictionary<string, IRenderTexture> renderSourceLookup) {
         if (!_filterShaders.TryGetValue(filter, out var instance)) {
-            var protoManager = IoCManager.Resolve<IPrototypeManager>();
+            instance = _protoManager.Index<ShaderPrototype>(filter.FilterType).InstanceUnique();
 
-            instance = protoManager.Index<ShaderPrototype>(filter.FilterType).InstanceUnique();
             switch (filter) {
                 case DreamFilterAlpha alpha:
                     instance.SetParameter("x",alpha.X);

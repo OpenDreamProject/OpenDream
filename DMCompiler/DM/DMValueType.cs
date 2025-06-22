@@ -30,6 +30,7 @@ public enum DMValueType {
     Unimplemented = 0x8000, // Marks that a method or property is not implemented. Throws a compiler warning if accessed.
     CompiletimeReadonly = 0x10000, // Marks that a property can only ever be read from, never written to. This is a const-ier version of const, for certain standard values like list.type
     NoConstFold = 0x20000 // Marks that a const var cannot be const-folded during compile
+    Unsupported = 0x40000, // Marks that a method or property will not be not implemented. Throws a compiler warning if accessed.
 }
 
 /// <summary>
@@ -43,6 +44,7 @@ public readonly struct DMComplexValueType {
     public bool IsInstance => Type.HasFlag(DMValueType.Instance);
     public bool HasPath => Type.HasFlag(DMValueType.Path) | Type.HasFlag(DMValueType.Instance);
     public bool IsUnimplemented { get; }
+    public bool IsUnsupported { get; }
     public bool IsCompileTimeReadOnly { get; }
     public bool IsList => IsInstance && TypePath == DreamPath.List;
 
@@ -57,6 +59,7 @@ public readonly struct DMComplexValueType {
         Type = type & ~(DMValueType.Unimplemented | DMValueType.CompiletimeReadonly); // Ignore these 2 types
         TypePath = typePath;
         IsUnimplemented = type.HasFlag(DMValueType.Unimplemented);
+        IsUnsupported = type.HasFlag(DMValueType.Unsupported);
         IsCompileTimeReadOnly = type.HasFlag(DMValueType.CompiletimeReadonly);
 
         if (HasPath && TypePath == null)

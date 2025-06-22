@@ -128,9 +128,7 @@ internal sealed class ProcCall(DMCompiler compiler, Location location, DMExpress
     public override void EmitPushValue(ExpressionContext ctx) {
         (DMObject? procOwner, DMProc? targetProc) = GetTargetProc(ctx.Compiler, ctx.Type);
         DoCompileTimeLinting(ctx.Compiler, procOwner, targetProc);
-        if ((targetProc?.Attributes & ProcAttributes.Unimplemented) == ProcAttributes.Unimplemented) {
-            ctx.Compiler.UnimplementedWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}.{targetProc.Name}() is not implemented");
-        }
+        targetProc?.EmitUsageWarnings(Location);
 
         string endLabel = ctx.Proc.NewLabelName();
 

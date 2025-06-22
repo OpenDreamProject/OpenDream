@@ -244,6 +244,13 @@ public class DMCompiler {
         Emit(WarningCode.UnimplementedAccess, loc, message);
     }
 
+    public void UnsupportedWarning(Location loc, string message) {
+        if (Settings.SuppressUnsupportedAccessWarnings)
+            return;
+
+        Emit(WarningCode.UnsupportedAccess, loc, message);
+    }
+
     public void VerbosePrint(string message) {
         if (!Settings.Verbose) return;
 
@@ -351,6 +358,7 @@ public class DMCompiler {
 public struct DMCompilerSettings {
     public required List<string> Files;
     public bool SuppressUnimplementedWarnings = false;
+    public bool SuppressUnsupportedAccessWarnings = false;
     public bool NoticesEnabled = false;
     public bool DumpPreprocessor = false;
     public bool NoStandard = false;
@@ -359,10 +367,10 @@ public struct DMCompilerSettings {
     public Dictionary<string, string>? MacroDefines = null;
 
     /// <summary> The value of the DM_VERSION macro </summary>
-    public int DMVersion = 515;
+    public int DMVersion = 516;
 
     /// <summary> The value of the DM_BUILD macro </summary>
-    public int DMBuild = 1633;
+    public int DMBuild = 1655;
 
     /// <summary> Typechecking won't fail if the RHS type is "as anything" to ease migration, thus only emitting for explicit mismatches (e.g. "num" and "text") </summary>
     public bool SkipAnythingTypecheck = false;

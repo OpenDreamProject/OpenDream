@@ -68,7 +68,7 @@
 	proc/OpenPort(port)
 		set opendream_unimplemented = TRUE
 	proc/IsSubscribed(player, type)
-		set opendream_unimplemented = TRUE
+		set opendream_unsupported = "OpenDream does not have a premium tier"
 	proc/IsBanned(key,address,computer_id,type)
 		set opendream_unimplemented = TRUE
 		return FALSE;
@@ -91,30 +91,30 @@
 		set opendream_unimplemented = TRUE
 		
 	proc/SetScores()
-		set opendream_unimplemented = TRUE
+		set opendream_unsupported = "OpenDream does not support hub scores"
 
 	proc/GetScores()
-		set opendream_unimplemented = TRUE
+		set opendream_unsupported = "OpenDream does not support hub scores"
 
 	proc/GetMedal()
-		set opendream_unimplemented = TRUE
+		set opendream_unsupported = "OpenDream does not support hub medals"
 
 	proc/SetMedal()
-		set opendream_unimplemented = TRUE
+		set opendream_unsupported = "OpenDream does not support hub medals"
 
 	proc/ClearMedal()
-		set opendream_unimplemented = TRUE
+		set opendream_unsupported = "OpenDream does not support hub medals"
 
 	proc/AddCredits(player, credits, note)
-		set opendream_unimplemented = TRUE
+		set opendream_unsupported = "OpenDream does not support hub credits"
 		return 0
 
 	proc/GetCredits(player)
-		set opendream_unimplemented = TRUE
+		set opendream_unsupported = "OpenDream does not support hub credits"
 		return null
 
 	proc/PayCredits(player, credits, note)
-		set opendream_unimplemented = TRUE
+		set opendream_unsupported = "OpenDream does not support hub credits"
 		return 0
 
 	proc/ODHotReloadInterface()

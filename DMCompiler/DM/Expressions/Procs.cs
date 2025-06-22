@@ -109,11 +109,11 @@ internal sealed class ProcCall(Location location, DMExpression target, ArgumentL
         (DMObject? procOwner, DMProc? targetProc) = GetTargetProc(ctx.Compiler, ctx.Type);
         DoCompileTimeLinting(ctx.Compiler, procOwner, targetProc);
         if ((targetProc?.Attributes & ProcAttributes.Unimplemented) == ProcAttributes.Unimplemented) {
-            ctx.Compiler.UnimplementedWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}.{targetProc.Name}() is not implemented");
+            ctx.Compiler.UnimplementedWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}.{targetProc!.Name}() is not implemented");
         }
 
-        if ((targetProc?.Attributes & ProcAttributes.Unsupported) == ProcAttributes.Unsupported){
-            ctx.Compiler.UnsupportedWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}.{targetProc.Name}() will not be supported");
+        if ((targetProc?.Attributes & ProcAttributes.Unsupported) == ProcAttributes.Unsupported) {
+            ctx.Compiler.UnsupportedWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}.{targetProc!.Name}() will not be supported");
         }
 
         string endLabel = ctx.Proc.NewLabelName();

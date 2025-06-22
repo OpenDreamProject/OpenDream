@@ -384,7 +384,7 @@ internal sealed class DMProc {
                     Attributes |= ProcAttributes.Unsupported;
                 else
                     Attributes &= ~ProcAttributes.Unsupported;
-                    break;
+                break;
             case "hidden":
                 if (constant.IsTruthy())
                     Attributes |= ProcAttributes.Hidden;

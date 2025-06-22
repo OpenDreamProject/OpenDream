@@ -44,7 +44,7 @@
 	var/preload_rsc = 1 as opendream_unimplemented
 	var/fps = 0 as opendream_unimplemented
 	var/dir = NORTH as opendream_unimplemented
-	var/gender = "neuter" as opendream_unsupported
+	var/gender = NEUTER as text|opendream_unsupported
 	var/glide_size as opendream_unimplemented
 	var/virtual_eye as opendream_unimplemented
 

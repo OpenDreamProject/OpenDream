@@ -32,7 +32,7 @@ internal partial class DMCodeTree {
 
         protected void SetVariableValue(DMCompiler compiler, DMObject dmObject, DMVariable variable, DMExpression value, bool isOverride) {
             // Typechecking
-            if (!variable.ValType.MatchesType(compiler, value.ValType) && !variable.ValType.IsUnimplemented && !variable.ValType.IsUnsupported && !variable.ValType.Type.HasFlag(DMValueType.NoConstFold)) {
+            if (!variable.ValType.MatchesType(compiler, value.ValType) && !variable.ValType.IsUnimplemented && !variable.ValType.Type.HasFlag(DMValueType.NoConstFold)) {
                 if (value is Null && !isOverride) {
                     compiler.Emit(WarningCode.ImplicitNullType, value.Location, $"{dmObject.Path}.{variable.Name}: Variable is null but not explicitly typed as nullable, append \"|null\" to \"as\". Implicitly treating as nullable.");
                     variable.ValType |= DMValueType.Null;

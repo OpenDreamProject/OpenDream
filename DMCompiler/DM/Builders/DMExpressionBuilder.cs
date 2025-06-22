@@ -1054,6 +1054,9 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                             return UnknownReference(callOperation.Location, $"Type {prevPath.Value} does not exist");
                         if (!fromObject.HasProc(field))
                             return UnknownIdentifier(callOperation.Location, field);
+
+                        var procId = fromObject.GetProcs(field)![^1];
+                        ObjectTree.AllProcs[procId].EmitUsageWarnings(callOperation.Location);
                     }
 
                     operation = new Dereference.CallOperation {

@@ -108,11 +108,7 @@ internal sealed class ProcCall(Location location, DMExpression target, ArgumentL
     public override void EmitPushValue(ExpressionContext ctx) {
         (DMObject? procOwner, DMProc? targetProc) = GetTargetProc(ctx.Compiler, ctx.Type);
         DoCompileTimeLinting(ctx.Compiler, procOwner, targetProc);
-        if (targetProc?.UnsupportedReason is not null) {
-            ctx.Compiler.UnsupportedWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}.{targetProc.Name}() is unsupported: {targetProc.UnsupportedReason}");
-        } else if ((targetProc?.Attributes & ProcAttributes.Unimplemented) == ProcAttributes.Unimplemented) {
-            ctx.Compiler.UnimplementedWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}.{targetProc!.Name}() is not implemented");
-        }
+        targetProc?.EmitUsageWarnings(Location);
 
         string endLabel = ctx.Proc.NewLabelName();
 

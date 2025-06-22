@@ -458,6 +458,17 @@ internal sealed class DMProc {
         }
     }
 
+    public void EmitUsageWarnings(Location fromLoc) {
+        if (fromLoc.InDMStandard) // Don't emit these warnings for code inside DMStandard
+            return;
+
+        if (UnsupportedReason is not null) {
+            _compiler.UnsupportedWarning(fromLoc, $"{_dmObject.Path.ToString()}.{Name}() is unsupported: {UnsupportedReason}");
+        } else if ((Attributes & ProcAttributes.Unimplemented) == ProcAttributes.Unimplemented) {
+            _compiler.UnimplementedWarning(fromLoc, $"{_dmObject.Path.ToString()}.{Name}() is not implemented");
+        }
+    }
+
     public bool TryGetParameterByName(string name, [NotNullWhen(true)] out LocalVariable? param) {
         return _parameters.TryGetValue(name, out param);
     }

@@ -67,9 +67,10 @@ internal sealed class DMProc {
     public string Name => _astDefinition?.Name ?? "<init>";
     public bool IsVerb => _astDefinition?.IsVerb ?? false;
     public bool IsFinal => _astDefinition?.IsFinal ?? false;
-    public List<string> Parameters = new();
+    public readonly List<string> Parameters = new();
     public Location Location;
     public ProcAttributes Attributes;
+    public string? UnsupportedReason;
     public readonly int Id;
     public readonly Dictionary<string, int> GlobalVariables = new();
 
@@ -380,10 +381,12 @@ internal sealed class DMProc {
                 break;
             }
             case "opendream_unsupported":
-                if (constant.IsTruthy())
-                    Attributes |= ProcAttributes.Unsupported;
-                else
-                    Attributes &= ~ProcAttributes.Unsupported;
+                if (constant is not Expressions.String unsupportedStr) {
+                    _compiler.Emit(WarningCode.BadExpression, constant.Location, "opendream_unsupported attribute must be a string");
+                    break;
+                }
+
+                UnsupportedReason = unsupportedStr.Value;
                 break;
             case "hidden":
                 if (constant.IsTruthy())

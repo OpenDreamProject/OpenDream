@@ -203,7 +203,7 @@ internal sealed class LeftShift(Location location, DMExpression lhs, DMExpressio
         }
 
         if (lhs is Number lhsNum && rhs is Number rhsNum) {
-            constant = new Number(Location, ((int)lhsNum.Value) << ((int)rhsNum.Value));
+            constant = new Number(Location, SharedOperations.BitShiftLeft((int)lhsNum.Value, (int)rhsNum.Value));
         } else {
             constant = null;
             return false;
@@ -228,7 +228,7 @@ internal sealed class RightShift(Location location, DMExpression lhs, DMExpressi
         }
 
         if (lhs is Number lhsNum && rhs is Number rhsNum) {
-            constant = new Number(Location, ((int)lhsNum.Value) >> ((int)rhsNum.Value));
+            constant = new Number(Location, SharedOperations.BitShiftRight((int)lhsNum.Value, (int)rhsNum.Value));
         } else {
             constant = null;
             return false;

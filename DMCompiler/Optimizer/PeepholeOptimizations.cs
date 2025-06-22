@@ -720,7 +720,7 @@ internal sealed class ConstFoldBitshiftLeft : IOptimization {
 
         // At runtime, given "A << B" we pop B then A
         // In the peephole optimizer, index is "A", index+1 is "B"
-        var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(((int)pushVal1 << (int)pushVal2), firstInstruction.Location)};
+        var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(SharedOperations.BitShiftLeft((int)pushVal1, (int)pushVal2), firstInstruction.Location)};
 
         IOptimization.ReplaceInstructions(input, index, 3,
             new AnnotatedBytecodeInstruction(DreamProcOpcode.PushFloat, 1, args));
@@ -748,7 +748,7 @@ internal sealed class ConstFoldBitshiftRight : IOptimization {
 
         // At runtime, given "A >> B" we pop B then A
         // In the peephole optimizer, index is "A", index+1 is "B"
-        var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(((int)pushVal1 >> (int)pushVal2), firstInstruction.Location)};
+        var args = new List<IAnnotatedBytecode>(1) {new AnnotatedBytecodeFloat(SharedOperations.BitShiftRight((int)pushVal1, (int)pushVal2), firstInstruction.Location)};
 
         IOptimization.ReplaceInstructions(input, index, 3,
             new AnnotatedBytecodeInstruction(DreamProcOpcode.PushFloat, 1, args));

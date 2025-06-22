@@ -25,7 +25,6 @@ proc/findtextEx(Haystack, Needle, Start = 1, End = 0) as num
 proc/findlasttext(Haystack, Needle, Start = 0, End = 1) as num
 proc/findlasttextEx(Haystack, Needle, Start = 0, End = 1) as num
 proc/flick(Icon, Object)
-	set opendream_unimplemented = 1
 proc/flist(Path) as /list
 proc/floor(A) as num
 proc/fract(n) as num
@@ -128,6 +127,7 @@ proc/winset(player, control_id, params)
 
 #include "Defines.dm"
 #include "Types\AList.dm"
+#include "Types\Callee.dm"
 #include "Types\Client.dm"
 #include "Types\Database.dm"
 #include "Types\Datum.dm"

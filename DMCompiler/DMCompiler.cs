@@ -244,6 +244,13 @@ public class DMCompiler {
         Emit(WarningCode.UnimplementedAccess, loc, message);
     }
 
+    public void UnsupportedWarning(Location loc, string message) {
+        if (Settings.SuppressUnsupportedAccessWarnings)
+            return;
+
+        Emit(WarningCode.UnsupportedAccess, loc, message);
+    }
+
     public void VerbosePrint(string message) {
         if (!Settings.Verbose) return;
 
@@ -351,6 +358,7 @@ public class DMCompiler {
 public struct DMCompilerSettings {
     public required List<string> Files;
     public bool SuppressUnimplementedWarnings = false;
+    public bool SuppressUnsupportedAccessWarnings = false;
     public bool NoticesEnabled = false;
     public bool DumpPreprocessor = false;
     public bool NoStandard = false;

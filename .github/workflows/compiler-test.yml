@@ -87,7 +87,7 @@ jobs:
         ref: master
         path: tg
     - name: Compile /tg/station Master
-      run: main/bin/DMCompiler/DMCompiler tg/tgstation.dme --suppress-unimplemented
+      run: main/bin/DMCompiler/DMCompiler tg/tgstation.dme --suppress-unimplemented --suppress-unsupported
     - name: Disassemble /tg/station Master
       run: main/bin/DMDisassembler/DMDisassembler tg/tgstation.json crash-on-test
 
@@ -114,7 +114,7 @@ jobs:
     - name: Compile Goonstation Master
       run: |
         touch goon/+secret/__secret.dme
-        main/bin/DMCompiler/DMCompiler goon/goonstation.dme --suppress-unimplemented
+        main/bin/DMCompiler/DMCompiler goon/goonstation.dme --suppress-unimplemented --suppress-unsupported --version=515.1633
 
   compile-paradise:
     runs-on: ubuntu-latest
@@ -137,7 +137,7 @@ jobs:
         ref: master
         path: para
     - name: Compile Paradise Master
-      run: main/bin/DMCompiler/DMCompiler para/paradise.dme --suppress-unimplemented
+      run: main/bin/DMCompiler/DMCompiler para/paradise.dme --suppress-unimplemented --suppress-unsupported
 
   compile-nebula:
     runs-on: ubuntu-latest
@@ -160,7 +160,7 @@ jobs:
         ref: dev
         path: nebula
     - name: Compile Nebula Dev
-      run: main/bin/DMCompiler/DMCompiler nebula/nebula.dme --suppress-unimplemented --version=516.1655
+      run: main/bin/DMCompiler/DMCompiler nebula/nebula.dme --suppress-unimplemented --suppress-unsupported --version=516.1655
 
   compile-vgstation:
     runs-on: ubuntu-latest
@@ -183,7 +183,7 @@ jobs:
         ref: Bleeding-Edge
         path: vg
     - name: Compile /vg/station Master
-      run: main/bin/DMCompiler/DMCompiler vg/vgstation13.dme --suppress-unimplemented --version=516.1655
+      run: main/bin/DMCompiler/DMCompiler vg/vgstation13.dme --suppress-unimplemented --suppress-unsupported --version=516.1655
 
   compile-cm:
     runs-on: ubuntu-latest
@@ -206,7 +206,7 @@ jobs:
         ref: master
         path: cm
     - name: Compile CM Master
-      run: main/bin/DMCompiler/DMCompiler cm/colonialmarines.dme --suppress-unimplemented
+      run: main/bin/DMCompiler/DMCompiler cm/colonialmarines.dme --suppress-unimplemented --suppress-unsupported
 
   compile-aurora:
     runs-on: ubuntu-latest
@@ -229,7 +229,7 @@ jobs:
         ref: master
         path: aurora
     - name: Compile Aurora Master
-      run: main/bin/DMCompiler/DMCompiler aurora/aurorastation.dme --suppress-unimplemented --version=516.1655
+      run: main/bin/DMCompiler/DMCompiler aurora/aurorastation.dme --suppress-unimplemented --suppress-unsupported --version=516.1655
 
   compile-daedalus:
     runs-on: ubuntu-latest
@@ -252,4 +252,4 @@ jobs:
         ref: master
         path: daedalus
     - name: Compile Daedalus Master
-      run: main/bin/DMCompiler/DMCompiler daedalus/daedalus.dme --suppress-unimplemented
+      run: main/bin/DMCompiler/DMCompiler daedalus/daedalus.dme --suppress-unimplemented --suppress-unsupported

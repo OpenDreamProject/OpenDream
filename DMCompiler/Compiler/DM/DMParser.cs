@@ -328,7 +328,7 @@ namespace DMCompiler.Compiler.DM {
                     var varDef = new DMASTObjectVarDefinition(loc, varPath, value, valType);
 
                     varDefinitions.Add(varDef);
-                    if (Check(TokenType.DM_Comma) || (isIndented && Newline())) {
+                    if (Check(TokenType.DM_Comma) || (isIndented && Delimiter())) {
                         Whitespace();
                         DMASTPath? newVarPath = Path();
 
@@ -2849,6 +2849,7 @@ namespace DMCompiler.Compiler.DM {
                 case "icon": return DMValueType.Icon;
                 case "path": return DMValueType.Path;
                 case "opendream_unimplemented": return DMValueType.Unimplemented;
+                case "opendream_unsupported": return DMValueType.Unsupported;
                 case "opendream_compiletimereadonly": return DMValueType.CompiletimeReadonly;
                 case "opendream_noconstfold": return DMValueType.NoConstFold;
                 default:

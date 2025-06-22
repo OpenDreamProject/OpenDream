@@ -554,17 +554,12 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
             // ReSharper disable once ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
             var localVar = ctx.Proc?.GetLocalVariable(name);
             if (localVar is not null) {
-                if (name is "usr" or "src" or "args" or "world" or "global" or "callee" or "caller")
-                    Compiler.Emit(WarningCode.SoftReservedKeyword, identifier.Location, $"{(localVar.IsParameter ? "Proc parameter":"Local variable")} named {name} overrides the built-in {name} in this context.");
                 return new Local(identifier.Location, localVar);
             }
         }
 
         var field = ctx.Type.GetVariable(name);
         if (field != null && (scopeMode == Normal || field.IsConst)) {
-            if (name is "usr" or "src" or "args" or "world" or "global" or "callee" or "caller")
-                Compiler.Emit(WarningCode.SoftReservedKeyword, identifier.Location, $"Local variable named {name} overrides the built-in {name} in this context.");
-
             return new Field(identifier.Location, field, field.ValType);
         }
 
@@ -576,9 +571,8 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
 
             var globalVar = ObjectTree.Globals[globalId.Value];
             var global = new GlobalField(identifier.Location, globalVar.Type, globalId.Value, globalVar.ValType);
-            if (name is "usr" or "src" or "args" or "world" or "global" or "callee" or "caller")
-                Compiler.Emit(WarningCode.SoftReservedKeyword, identifier.Location, $"Global variable named {name} DOES NOT overrides the built-in {name}. This is a terrible idea, don't do that.");
-            else
+            //soft reserved keywords DO NOT override globals
+            if (name is not ("usr" or "src" or "args" or "world" or "global" or "callee" or "caller"))
                 return global;
         }
 

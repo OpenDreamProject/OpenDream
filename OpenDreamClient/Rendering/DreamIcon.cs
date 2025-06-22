@@ -82,19 +82,23 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
         DMI = null; //triggers the removal of the onUpdateCallback
     }
 
-    public Texture? GetTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData, Texture? textureOverride = null) {
+    public Texture? GetTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData, Texture? textureOverride, ClientAppearanceSystem.Flick? flick) {
         Texture? frame;
 
         if (textureOverride == null) {
             if (Appearance == null || DMI == null)
                 return null;
 
-            var animationFrame = AnimationFrame;
-            if (CachedTexture != null && !_textureDirty)
+            var dmi = flick?.Icon ?? DMI;
+            var iconState = flick?.IconState ?? Appearance.IconState;
+            var animationFrame = flick?.GetAnimationFrame(gameTiming) ?? AnimationFrame;
+            if (animationFrame == -1) // A flick returns -1 for a finished animation
+                animationFrame = AnimationFrame;
+            if (CachedTexture != null && !_textureDirty && flick == null)
                 return CachedTexture.Texture;
 
             _textureDirty = false;
-            frame = DMI.GetState(Appearance.IconState)?.GetFrames(_direction)[animationFrame];
+            frame = dmi.GetState(iconState)?.GetFrames(_direction)[animationFrame];
         } else {
             frame = textureOverride;
         }
@@ -536,6 +540,20 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
                 handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(pong.Size, Vector2.Zero));
                 handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, pong.Size));
             }, Color.Black.WithAlpha(0));
+
+            // The blur filter runs a more performant two passes
+            if (filterId.FilterType == "blur") {
+                s = appearanceSystem.GetFilterShader(filterId with {FilterType = "blur_vertical"}, viewOverlay.RenderSourceLookup);
+                (ping, pong) = (pong, ping);
+
+                handle.RenderInRenderTarget(ping, () => {
+                    handle.UseShader(s);
+
+                    // Technically this should be ping.Size, but they are the same size so avoid the extra closure alloc
+                    handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(pong.Size, Vector2.Zero));
+                    handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, pong.Size));
+                }, Color.Black.WithAlpha(0));
+            }
 
             (ping, pong) = (pong, ping);
         }

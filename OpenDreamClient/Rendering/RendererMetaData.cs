@@ -25,6 +25,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public Texture? TextureOverride;
     public string? Maptext;
     public Vector2i? MaptextSize;
+    public ClientAppearanceSystem.Flick? Flick;
 
     public bool IsPlaneMaster => (AppearanceFlags & AppearanceFlags.PlaneMaster) != 0;
     public bool HasRenderSource => !string.IsNullOrEmpty(RenderSource);
@@ -62,7 +63,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         if (MainIcon == null)
             return null;
 
-        var texture = MainIcon.GetTexture(viewOverlay, handle, this, TextureOverride);
+        var texture = MainIcon.GetTexture(viewOverlay, handle, this, TextureOverride, Flick);
         MainIcon.LastRenderedTexture = texture;
         return texture;
     }

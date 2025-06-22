@@ -6,6 +6,7 @@ using Robust.Client.Graphics;
 using Robust.Shared.Prototypes;
 using OpenDreamClient.Resources;
 using OpenDreamClient.Resources.ResourceTypes;
+using OpenDreamShared.Resources;
 using Robust.Client.Player;
 using Robust.Shared.Map;
 using Robust.Shared.Timing;
@@ -13,10 +14,46 @@ using Robust.Shared.Timing;
 namespace OpenDreamClient.Rendering;
 
 internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
+    public sealed class Flick {
+        public readonly DMIResource Icon;
+        public readonly string? IconState;
+
+        private int _animationFrame;
+        private long _nextFrame;
+
+        private DMIParser.ParsedDMIFrame[] Frames => Icon.Description.GetStateOrDefault(IconState)?.GetFrames(AtomDirection.South) ?? [];
+
+        public Flick(DMIResource icon, string? iconState, long startTick) {
+            Icon = icon;
+            IconState = iconState;
+
+            var frames = Frames;
+            if (frames.Length > 0)
+                _nextFrame = startTick + Frames[0].Delay.Ticks;
+        }
+
+        public int GetAnimationFrame(IGameTiming gameTiming) {
+            var frames = Frames;
+            if (_animationFrame >= frames.Length)
+                return -1;
+            if (gameTiming.CurTime.Ticks >= _nextFrame) {
+                _animationFrame++;
+                if (_animationFrame >= frames.Length)
+                    return -1;
+
+                _nextFrame += frames[_animationFrame].Delay.Ticks;
+            }
+
+            return _animationFrame;
+        }
+    }
+
     private Dictionary<uint, ImmutableAppearance> _appearances = new();
     private readonly Dictionary<uint, List<Action<ImmutableAppearance>>> _appearanceLoadCallbacks = new();
     private readonly Dictionary<uint, DreamIcon> _turfIcons = new();
     private readonly Dictionary<DreamFilter, ShaderInstance> _filterShaders = new();
+    private readonly Dictionary<(int X, int Y, int Z), Flick> _turfFlicks = new();
+    private readonly Dictionary<EntityUid, Flick> _movableFlicks = new();
     private bool _receivedAllAppearancesMsg;
 
     [Dependency] private readonly IEntityManager _entityManager = default!;
@@ -28,11 +65,15 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     [Dependency] private readonly IPlayerManager _playerManager = default!;
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly MapSystem _mapSystem = default!;
+    [Dependency] private readonly IPrototypeManager _protoManager = default!;
 
     public override void Initialize() {
+        UpdatesOutsidePrediction = true;
+
         SubscribeNetworkEvent<NewAppearanceEvent>(OnNewAppearance);
         SubscribeNetworkEvent<RemoveAppearanceEvent>(e => _appearances.Remove(e.AppearanceId));
         SubscribeNetworkEvent<AnimationEvent>(OnAnimation);
+        SubscribeNetworkEvent<FlickEvent>(OnFlick);
         SubscribeLocalEvent<DMISpriteComponent, WorldAABBEvent>(OnWorldAABB);
     }
 
@@ -42,6 +83,20 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         _appearanceLoadCallbacks.Clear();
         _turfIcons.Clear();
         _filterShaders.Clear();
+        _turfFlicks.Clear();
+        _movableFlicks.Clear();
+    }
+
+    public override void Update(float frameTime) {
+        foreach (var (flickKey, flick) in _turfFlicks) {
+            if (flick.GetAnimationFrame(_gameTiming) == -1)
+                _turfFlicks.Remove(flickKey);
+        }
+
+        foreach (var (flickKey, flick) in _movableFlicks) {
+            if (flick.GetAnimationFrame(_gameTiming) == -1)
+                _movableFlicks.Remove(flickKey);
+        }
     }
 
     public void SetAllAppearances(Dictionary<uint, ImmutableAppearance> appearances) {
@@ -87,7 +142,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         return icon;
     }
 
-    public void OnNewAppearance(NewAppearanceEvent e) {
+    private void OnNewAppearance(NewAppearanceEvent e) {
         uint appearanceId = e.Appearance.MustGetId();
         _appearances[appearanceId] = e.Appearance;
 
@@ -118,6 +173,25 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         }
     }
 
+    private void OnFlick(FlickEvent e) {
+        _dreamResourceManager.LoadResourceAsync<DMIResource>(e.IconId, icon => {
+            var flick = new Flick(icon, e.IconState, _gameTiming.CurTime.Ticks);
+
+            switch (e.ClientRef.Type) {
+                case ClientObjectReference.RefType.Turf:
+                    _turfFlicks[(e.ClientRef.TurfX, e.ClientRef.TurfY, e.ClientRef.TurfZ)] = flick;
+                    break;
+                case ClientObjectReference.RefType.Entity: {
+                    if (!_entityManager.TryGetEntity(e.ClientRef.Entity, out var entity))
+                        return;
+
+                    _movableFlicks[entity.Value] = flick;
+                    break;
+                }
+            }
+        });
+    }
+
     private void OnWorldAABB(EntityUid uid, DMISpriteComponent comp, ref WorldAABBEvent e) {
         Box2? aabb = null;
 
@@ -141,9 +215,8 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
 
     public ShaderInstance GetFilterShader(DreamFilter filter, Dictionary<string, IRenderTexture> renderSourceLookup) {
         if (!_filterShaders.TryGetValue(filter, out var instance)) {
-            var protoManager = IoCManager.Resolve<IPrototypeManager>();
+            instance = _protoManager.Index<ShaderPrototype>(filter.FilterType).InstanceUnique();
 
-            instance = protoManager.Index<ShaderPrototype>(filter.FilterType).InstanceUnique();
             switch (filter) {
                 case DreamFilterAlpha alpha:
                     instance.SetParameter("x",alpha.X);
@@ -279,5 +352,13 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         }
 
         return "<unknown>";
+    }
+
+    public Flick? GetTurfFlick(int x, int y, int z) {
+        return _turfFlicks.GetValueOrDefault((x, y, z));
+    }
+
+    public Flick? GetMovableFlick(EntityUid entity) {
+        return _movableFlicks.GetValueOrDefault(entity);
     }
 }

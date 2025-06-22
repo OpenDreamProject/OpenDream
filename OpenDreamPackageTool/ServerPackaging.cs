@@ -37,7 +37,8 @@ public static class ServerPackaging {
         "Byond.TopicSender",
         "Microsoft.Extensions.Logging.Abstractions", // dep of Byond.TopicSender
         "Microsoft.Extensions.DependencyInjection.Abstractions", // dep of above
-        "DMCompiler"
+        "DMCompiler",
+        "Tracy"
     };
 
     // Extra assemblies to copy on the server, with a startswith
@@ -49,7 +50,8 @@ public static class ServerPackaging {
         "Byond.TopicSender",
         "Microsoft.Extensions.Logging.Abstractions", // dep of Byond.TopicSender
         "Microsoft.Extensions.DependencyInjection.Abstractions", // dep of above
-        "DMCompiler"
+        "DMCompiler",
+        "Tracy"
     };
 
     private static readonly string[] ServerNotExtraAssemblies = {

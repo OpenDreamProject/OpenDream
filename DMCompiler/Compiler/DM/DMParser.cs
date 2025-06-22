@@ -76,7 +76,7 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_Dedent
         ];
 
-        private static readonly TokenType[] IdentifierTypes = [TokenType.DM_Identifier, TokenType.DM_Step];
+        private static readonly TokenType[] IdentifierTypes = [TokenType.DM_Identifier, TokenType.DM_Step, TokenType.DM_Proc];
 
         /// <summary>
         /// Used by <see cref="PathElement"/> to determine, keywords that may actually just be identifiers of a typename within a path, in a given context.
@@ -328,7 +328,7 @@ namespace DMCompiler.Compiler.DM {
                     var varDef = new DMASTObjectVarDefinition(loc, varPath, value, valType);
 
                     varDefinitions.Add(varDef);
-                    if (Check(TokenType.DM_Comma) || (isIndented && Newline())) {
+                    if (Check(TokenType.DM_Comma) || (isIndented && Delimiter())) {
                         Whitespace();
                         DMASTPath? newVarPath = Path();
 

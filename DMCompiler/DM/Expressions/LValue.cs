@@ -88,6 +88,26 @@ internal sealed class Args(Location location) : LValue(location, DreamPath.List)
     public override string GetNameof(ExpressionContext ctx) => "args";
 }
 
+// callee
+internal sealed class Callee(Location location) : LValue(location, DreamPath.Callee) {
+    public override DMReference EmitReference(ExpressionContext ctx, string endLabel,
+        ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+        return DMReference.Callee;
+    }
+
+    public override string GetNameof(ExpressionContext ctx) => "callee";
+}
+
+// caller
+internal sealed class Caller(Location location) : LValue(location, DreamPath.Callee) {
+    public override DMReference EmitReference(ExpressionContext ctx, string endLabel,
+        ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+        return DMReference.Caller;
+    }
+
+    public override string GetNameof(ExpressionContext ctx) => "caller";
+}
+
 // world
 internal sealed class World(Location location) : LValue(location, DreamPath.World) {
     public override DMReference EmitReference(ExpressionContext ctx, string endLabel,

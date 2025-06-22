@@ -173,7 +173,7 @@ public class DreamList : DreamObject, IDreamList {
         return _associativeValues != null && _associativeValues.ContainsKey(value);
     }
 
-    public int FindValue(DreamValue value, int start = 1, int end = 0) {
+    public virtual int FindValue(DreamValue value, int start = 1, int end = 0) {
         if (end == 0 || end > _values.Count) end = _values.Count;
 
         for (int i = start; i <= end; i++) {
@@ -485,6 +485,10 @@ internal sealed class DreamListVars(DreamObjectDefinition listDef, DreamObject d
     public override bool IsSaved(string name) {
         return DreamObject.IsSaved(name);
     }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        return GetValues().IndexOf(value)+1; // IndexOf is 0 indexed, returns -1 on fail, DM is 1 indexed and returns 0 on fail, so +1
+    }
 }
 
 // global.vars list
@@ -546,6 +550,10 @@ internal sealed class DreamGlobalVars : DreamList {
         } else {
             throw new Exception($"Invalid var index {key}");
         }
+    }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }
 
@@ -614,6 +622,10 @@ public sealed class ClientVerbsList : DreamList {
 
     public override int GetLength() {
         return Verbs.Count;
+    }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }
 
@@ -686,6 +698,10 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
             throw new Exception("Atom has no appearance");
 
         return appearance.Verbs;
+    }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }
 
@@ -780,6 +796,10 @@ public sealed class DreamOverlaysList : DreamList {
 
     public override int GetLength() {
         return GetOverlaysArray(_atomManager.MustGetAppearance(_owner)).Length;
+    }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -897,6 +917,10 @@ public sealed class DreamVisContentsList : DreamList {
 
     public override int GetLength() {
         return _visContents.Count;
+    }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }
 
@@ -1021,6 +1045,10 @@ public sealed class DreamFilterList : DreamList {
         return GetAppearance().Filters.Length;
     }
 
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
+    }
+
     private ImmutableAppearance GetAppearance() {
         ImmutableAppearance? appearance = _atomManager.MustGetAppearance(_owner);
         if (appearance == null)
@@ -1086,6 +1114,10 @@ public sealed class ClientScreenList(DreamObjectTree objectTree, ServerScreenOve
     public override int GetLength() {
         return _screenObjects.Count;
     }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
+    }
 }
 
 // client.images list
@@ -1142,6 +1174,10 @@ public sealed class ClientImagesList(
     public override int GetLength() {
         return _imageObjects.Count;
     }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
+    }
 }
 
 // world.contents list
@@ -1175,6 +1211,10 @@ public sealed class WorldContentsList(DreamObjectDefinition listDef, AtomManager
 
     public override int GetLength() {
         return atomManager.AtomCount;
+    }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }
 
@@ -1224,6 +1264,10 @@ public sealed class TurfContentsList(DreamObjectDefinition listDef, DreamObjectT
 
     public override int GetLength() {
         return Cell.Movables.Count;
+    }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }
 
@@ -1294,6 +1338,10 @@ public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectA
 
         return length;
     }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
+    }
 }
 
 // mob.contents, obj.contents list
@@ -1333,6 +1381,25 @@ public sealed class MovableContentsList(DreamObjectDefinition listDef, DreamObje
         }
 
         return values;
+    }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        if (end == 0 || end > transform.ChildCount) end = transform.ChildCount;
+
+        using var childEnumerator = transform.ChildEnumerator;
+
+        int i = 0;
+        while (childEnumerator.MoveNext(out EntityUid child)) {
+            if (!AtomManager.TryGetMovableFromEntity(child, out var childObject))
+                continue;
+            i++;
+            if (i >= start && new DreamValue(childObject).Equals(value))
+                return i;
+            if (i > end)
+                return 0;
+        }
+
+        return 0;
     }
 
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
@@ -1417,6 +1484,10 @@ internal sealed class ProcArgsList(DreamObjectDefinition listDef, DMProcState st
     public override int GetLength() {
         return state.ArgumentCount;
     }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
+    }
 }
 
 // Savefile Dir List - always sync'd with Savefiles currentDir. Only stores keys.
@@ -1466,5 +1537,9 @@ internal sealed class SavefileDirList(DreamObjectDefinition listDef, DreamObject
 
     public override int GetLength() {
         return backedSaveFile.CurrentDir.Count;
+    }
+
+    public override int FindValue(DreamValue value, int start = 1, int end = 0) {
+        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }

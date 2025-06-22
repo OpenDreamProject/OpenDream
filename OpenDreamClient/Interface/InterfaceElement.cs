@@ -63,6 +63,7 @@ public class InterfaceElement {
             if(value is not null)
                 return true;
         }
+
         value = null;
         return false;
     }

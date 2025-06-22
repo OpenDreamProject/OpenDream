@@ -477,26 +477,26 @@ internal static class DreamProcNativeRoot {
             return new DreamValue(float.PositiveInfinity);
         }
 
-        //todo, support different tile sizes and allow step for pixel movement
+        //todo, support step for pixel movement
         if (!origin.TryGetVariable("bound_width", out var originWidth)) {
-            originWidth = new DreamValue(32);
+            originWidth = new(bundle.DreamManager.WorldInstance.IconSize);
         }
 
         if (!origin.TryGetVariable("bound_height", out var originHeight)) {
-            originHeight = new DreamValue(32);
+            originHeight = new(bundle.DreamManager.WorldInstance.IconSize);
         }
 
         if (!target.TryGetVariable("bound_width", out var targetWidth)) {
-            targetWidth = new DreamValue(32);
+            targetWidth = new(bundle.DreamManager.WorldInstance.IconSize);
         }
 
         if (!origin.TryGetVariable("bound_height", out var targetHeight)) {
-            targetHeight = new DreamValue(32);
+            targetHeight = new(bundle.DreamManager.WorldInstance.IconSize);
         }
 
-        return new DreamValue(MathF.Max(MathF.Abs(position2.X - position1.X) * 32 -
+        return new DreamValue(MathF.Max(MathF.Abs(position2.X - position1.X) * bundle.DreamManager.WorldInstance.IconSize -
                                     MathF.Abs(originWidth.MustGetValueAsFloat() + targetWidth.MustGetValueAsFloat()) / 2,
-                                    MathF.Abs(position2.Y - position1.Y) * 32 -
+                                    MathF.Abs(position2.Y - position1.Y) * bundle.DreamManager.WorldInstance.IconSize -
                                     MathF.Abs(originHeight.MustGetValueAsFloat() + targetHeight.MustGetValueAsFloat()) / 2));
     }
 

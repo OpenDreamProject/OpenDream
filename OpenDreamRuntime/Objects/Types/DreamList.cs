@@ -13,6 +13,8 @@ namespace OpenDreamRuntime.Objects.Types;
 
 [Virtual]
 public class DreamList : DreamObject, IDreamList {
+    private static readonly Stack<List<DreamValue>> ListPool = new();
+
     public override bool ShouldCallNew => false;
 
     public virtual bool IsAssociative => _associativeValues is { Count: > 0 };
@@ -25,7 +27,12 @@ public class DreamList : DreamObject, IDreamList {
     #endif
 
     public DreamList(DreamObjectDefinition listDef, int size) : base(listDef) {
-        _values = new List<DreamValue>(size);
+        if (size >= 2048 && ListPool.TryPop(out var poppedValues)) {
+            _values = poppedValues;
+            _values.EnsureCapacity(size);
+        } else {
+            _values = new List<DreamValue>(size);
+        }
     }
 
     /// <summary>
@@ -74,6 +81,25 @@ public class DreamList : DreamObject, IDreamList {
 
                 lists = newLists;
             }
+        }
+    }
+
+    // Hold on to large lists for reuse later
+    protected override void HandleDeletion(bool possiblyThreaded) {
+        if (_values.Capacity < 2048) {
+            base.HandleDeletion(possiblyThreaded);
+            return;
+        }
+
+        if (possiblyThreaded) {
+            EnterIntoDelQueue();
+            return;
+        }
+
+        base.HandleDeletion(possiblyThreaded);
+        if (ListPool.Count < 5000) {
+            _values.Clear();
+            ListPool.Push(_values);
         }
     }
 

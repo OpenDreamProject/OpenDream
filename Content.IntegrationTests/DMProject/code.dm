@@ -27,6 +27,7 @@
 	..()
 	test_world_init()
 	test_block()
+	test_bounds_dist()
 	test_color_matrix()
 	test_range()
 	test_verb_duplicate()

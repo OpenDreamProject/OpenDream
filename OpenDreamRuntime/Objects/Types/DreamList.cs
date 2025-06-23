@@ -221,6 +221,7 @@ public class DreamList : DreamObject, IDreamList {
                 //TODO emit configurable warning here
                 throw new InvalidOperationException("Setting a list size to a negative value is invalid");
             }
+            
             Cut(size + 1);
         }
 

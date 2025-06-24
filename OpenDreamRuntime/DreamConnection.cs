@@ -159,6 +159,7 @@ public sealed class DreamConnection {
 
     public void SendClientInfoUpdate() {
         MsgUpdateClientInfo msg = new() {
+            IconSize = _dreamManager.WorldInstance.IconSize,
             View = Client!.View,
             ShowPopupMenus = Client!.ShowPopupMenus
         };

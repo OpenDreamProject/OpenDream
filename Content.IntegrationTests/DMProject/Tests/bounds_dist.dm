@@ -1,6 +1,4 @@
 /proc/test_bounds_dist()
-	world.maxx = world.maxy = 5
-	world.maxz = 3
 	ASSERT(bounds_dist(locate(3, 3, 2), locate(3, 3, 2)) == -32)
 	ASSERT(isinf(bounds_dist(locate(3, 3, 2), locate(3, 3, 3))))
 	for (var/turf/T in orange(1, locate(3, 3, 2)))

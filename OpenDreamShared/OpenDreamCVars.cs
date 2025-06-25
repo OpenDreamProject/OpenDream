@@ -6,7 +6,7 @@ namespace OpenDreamShared;
 [CVarDefs]
 public abstract class OpenDreamCVars {
     public static readonly CVarDef<string> JsonPath =
-        CVarDef.Create("opendream.json_path", String.Empty, CVar.SERVERONLY);
+        CVarDef.Create("opendream.json_path", string.Empty, CVar.SERVERONLY);
 
     public static readonly CVarDef<int> DownloadTimeout =
         CVarDef.Create("opendream.download_timeout", 30, CVar.CLIENTONLY);
@@ -17,8 +17,11 @@ public abstract class OpenDreamCVars {
     public static readonly CVarDef<int> DebugAdapterLaunched =
         CVarDef.Create("opendream.debug_adapter_launched", 0, CVar.SERVERONLY);
 
+    /// <summary>
+    /// Older versions of BYOND used Internet Explorer. Set this if you need to spoof the old user agent.
+    /// </summary>
     public static readonly CVarDef<bool> SpoofIEUserAgent =
-        CVarDef.Create("opendream.spoof_ie_user_agent", true, CVar.CLIENTONLY);
+        CVarDef.Create("opendream.spoof_ie_user_agent", false, CVar.CLIENTONLY);
 
     public static readonly CVarDef<string> WorldParams =
         CVarDef.Create("opendream.world_params", string.Empty, CVar.SERVERONLY);
@@ -27,8 +30,8 @@ public abstract class OpenDreamCVars {
         CVarDef.Create<ushort>("opendream.topic_port", 25567, CVar.SERVERONLY);
 
     /*
-        * INFOLINKS
-        */
+    * INFOLINKS
+    */
 
     /// <summary>
     /// Link to Discord server to show in the launcher.
@@ -65,5 +68,4 @@ public abstract class OpenDreamCVars {
     /// </summary>
     public static readonly CVarDef<bool> TracyEnable =
         CVarDef.Create("opendream.enable_tracy", false, CVar.SERVERONLY);
-
 }

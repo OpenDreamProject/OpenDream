@@ -29,13 +29,13 @@ public abstract class OpenDreamCVars {
     /// <summary>
     /// How large a /list's capacity has to be before it will be held in the list pool
     /// </summary>
-    public static readonly CVarDef<ushort> ListPoolThreshold =
+    public static readonly CVarDef<int> ListPoolThreshold =
         CVarDef.Create<int>("opendream.list_pool_threshold", 2048, CVar.SERVERONLY);
 
     /// <summary>
     /// The maximum amount of lists kept in the list pool
     /// </summary>
-    public static readonly CVarDef<ushort> ListPoolSize =
+    public static readonly CVarDef<int> ListPoolSize =
         CVarDef.Create<int>("opendream.list_pool_size", 256, CVar.SERVERONLY);
 
     /// <summary>

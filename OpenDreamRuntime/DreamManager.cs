@@ -41,7 +41,7 @@ public sealed partial class DreamManager {
     public Random Random { get; set; } = new();
     public Dictionary<string, List<DreamObject>> Tags { get; } = new();
     public DreamProc ImageConstructor, ImageFactoryProc;
-    public ushort ListPoolThreshold, ListPoolSize;
+    public int ListPoolThreshold, ListPoolSize;
 
     public bool Initialized { get; private set; }
     public GameTick InitializedTick { get; private set; }

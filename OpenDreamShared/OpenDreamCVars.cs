@@ -30,13 +30,13 @@ public abstract class OpenDreamCVars {
     /// How large a /list's capacity has to be before it will be held in the list pool
     /// </summary>
     public static readonly CVarDef<ushort> ListPoolThreshold =
-        CVarDef.Create<ushort>("opendream.list_pool_threshold", 2048, CVar.SERVERONLY);
+        CVarDef.Create<int>("opendream.list_pool_threshold", 2048, CVar.SERVERONLY);
 
     /// <summary>
     /// The maximum amount of lists kept in the list pool
     /// </summary>
     public static readonly CVarDef<ushort> ListPoolSize =
-        CVarDef.Create<ushort>("opendream.list_pool_size", 256, CVar.SERVERONLY);
+        CVarDef.Create<int>("opendream.list_pool_size", 256, CVar.SERVERONLY);
 
     /// <summary>
     /// If Tracy should be enabled. ONLY FUNCTIONS IN TOOLS BUILD.

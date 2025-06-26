@@ -27,7 +27,7 @@ public class DreamList : DreamObject, IDreamList {
     #endif
 
     public DreamList(DreamObjectDefinition listDef, int size) : base(listDef) {
-        if (size >= 2048 && ListPool.TryPop(out var poppedValues)) {
+        if (size >= DreamManager.ListPoolThreshold && ListPool.TryPop(out var poppedValues)) {
             _values = poppedValues;
             _values.EnsureCapacity(size);
         } else {

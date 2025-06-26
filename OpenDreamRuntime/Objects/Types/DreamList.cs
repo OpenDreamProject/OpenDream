@@ -86,7 +86,7 @@ public class DreamList : DreamObject, IDreamList {
 
     // Hold on to large lists for reuse later
     protected override void HandleDeletion(bool possiblyThreaded) {
-        if (_values.Capacity < 2048) {
+        if (_values.Capacity < DreamManager.ListPoolThreshold) {
             base.HandleDeletion(possiblyThreaded);
             return;
         }
@@ -96,11 +96,12 @@ public class DreamList : DreamObject, IDreamList {
             return;
         }
 
-        base.HandleDeletion(possiblyThreaded);
-        if (ListPool.Count < 5000) {
+        if (ListPool.Count < DreamManager.ListPoolSize) {
             _values.Clear();
             ListPool.Push(_values);
         }
+
+        base.HandleDeletion(possiblyThreaded);
     }
 
     public DreamList CreateCopy(int start = 1, int end = 0) {
@@ -247,7 +248,7 @@ public class DreamList : DreamObject, IDreamList {
                 //TODO emit configurable warning here
                 throw new InvalidOperationException("Setting a list size to a negative value is invalid");
             }
-            
+
             Cut(size + 1);
         }
 
@@ -305,6 +306,7 @@ public class DreamList : DreamObject, IDreamList {
     }
 
     #region Operators
+
     public override DreamValue OperatorIndex(DreamValue index, DMProcState state) {
         return GetValue(index);
     }
@@ -456,6 +458,7 @@ public class DreamList : DreamObject, IDreamList {
 
         return DreamValue.True;
     }
+
     #endregion Operators
 }
 

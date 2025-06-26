@@ -26,6 +26,24 @@ public abstract class OpenDreamCVars {
     public static readonly CVarDef<ushort> TopicPort =
         CVarDef.Create<ushort>("opendream.topic_port", 25567, CVar.SERVERONLY);
 
+    /// <summary>
+    /// How large a /list's capacity has to be before it will be held in the list pool
+    /// </summary>
+    public static readonly CVarDef<ushort> ListPoolThreshold =
+        CVarDef.Create<ushort>("opendream.list_pool_threshold", 2048, CVar.SERVERONLY);
+
+    /// <summary>
+    /// The maximum amount of lists kept in the list pool
+    /// </summary>
+    public static readonly CVarDef<ushort> ListPoolSize =
+        CVarDef.Create<ushort>("opendream.list_pool_size", 256, CVar.SERVERONLY);
+
+    /// <summary>
+    /// If Tracy should be enabled. ONLY FUNCTIONS IN TOOLS BUILD.
+    /// </summary>
+    public static readonly CVarDef<bool> TracyEnable =
+        CVarDef.Create("opendream.enable_tracy", false, CVar.SERVERONLY);
+
     /*
         * INFOLINKS
         */
@@ -59,11 +77,4 @@ public abstract class OpenDreamCVars {
     /// </summary>
     public static readonly CVarDef<string> InfoLinksWiki =
         CVarDef.Create("infolinks.wiki", "", CVar.SERVER | CVar.REPLICATED);
-
-    /// <summary>
-    /// If Tracy should be enabled. ONLY FUNCTIONS IN TOOLS BUILD.
-    /// </summary>
-    public static readonly CVarDef<bool> TracyEnable =
-        CVarDef.Create("opendream.enable_tracy", false, CVar.SERVERONLY);
-
 }

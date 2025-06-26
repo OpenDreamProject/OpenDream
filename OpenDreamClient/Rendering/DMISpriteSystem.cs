@@ -1,4 +1,5 @@
-﻿using OpenDreamShared.Rendering;
+﻿using OpenDreamClient.Interface;
+using OpenDreamShared.Rendering;
 using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Client.Player;
@@ -8,6 +9,7 @@ using Robust.Shared.Timing;
 namespace OpenDreamClient.Rendering;
 
 internal sealed class DMISpriteSystem : EntitySystem {
+    [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IGameTiming _gameTiming = default!;
     [Dependency] private readonly ClientAppearanceSystem _appearanceSystem = default!;
@@ -79,7 +81,7 @@ internal sealed class DMISpriteSystem : EntitySystem {
     }
 
     private void HandleComponentAdd(EntityUid uid, DMISpriteComponent component, ref ComponentAdd args) {
-        component.Icon = new DreamIcon(RenderTargetPool, _gameTiming, _clyde, _appearanceSystem);
+        component.Icon = new DreamIcon(RenderTargetPool, _interfaceManager, _gameTiming, _clyde, _appearanceSystem);
         component.Icon.SizeChanged += () => OnIconSizeChanged(uid);
     }
 

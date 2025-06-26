@@ -115,6 +115,8 @@ namespace OpenDreamRuntime.Objects {
             Deleted = true;
             //we release all relevant information, making this a very tiny object
             Variables = null;
+            _varsList?.Delete(possiblyThreaded);
+            _varsList = null;
 
             ObjectDefinition = null!;
 

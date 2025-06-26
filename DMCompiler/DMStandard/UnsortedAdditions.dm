@@ -1,7 +1,5 @@
 ﻿/proc/bounds(Ref=src, Dist=0)
 	set opendream_unimplemented = TRUE
-/proc/bounds_dist(Ref, Target)
-	set opendream_unimplemented = TRUE
 
 // An undocumented proc
 // Doesn't evaluate DM as you might expect, but instead DMScript

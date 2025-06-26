@@ -462,6 +462,44 @@ internal static class DreamProcNativeRoot {
         }
     }
 
+    [DreamProc("bounds_dist")]
+    [DreamProcParameter("Reference", Type = DreamValueTypeFlag.DreamObject)]
+    [DreamProcParameter("Target", Type = DreamValueTypeFlag.DreamObject)]
+    public static DreamValue NativeProc_bounds_dist(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        if (!bundle.GetArgument(0, "Reference").TryGetValueAsDreamObject<DreamObjectAtom>(out var origin) ||
+            !bundle.GetArgument(1, "Target").TryGetValueAsDreamObject<DreamObjectAtom>(out var target)) {
+            return new DreamValue(float.PositiveInfinity);
+        }
+
+        var position1 = bundle.AtomManager.GetAtomPosition(origin);
+        var position2 = bundle.AtomManager.GetAtomPosition(target);
+        if (position1.Z != position2.Z) {
+            return new DreamValue(float.PositiveInfinity);
+        }
+
+        //todo, support step for pixel movement
+        if (!origin.TryGetVariable("bound_width", out var originWidth)) {
+            originWidth = new(bundle.DreamManager.WorldInstance.IconSize);
+        }
+
+        if (!origin.TryGetVariable("bound_height", out var originHeight)) {
+            originHeight = new(bundle.DreamManager.WorldInstance.IconSize);
+        }
+
+        if (!target.TryGetVariable("bound_width", out var targetWidth)) {
+            targetWidth = new(bundle.DreamManager.WorldInstance.IconSize);
+        }
+
+        if (!origin.TryGetVariable("bound_height", out var targetHeight)) {
+            targetHeight = new(bundle.DreamManager.WorldInstance.IconSize);
+        }
+
+        return new DreamValue(MathF.Max(MathF.Abs(position2.X - position1.X) * bundle.DreamManager.WorldInstance.IconSize -
+                                    MathF.Abs(originWidth.MustGetValueAsFloat() + targetWidth.MustGetValueAsFloat()) / 2,
+                                    MathF.Abs(position2.Y - position1.Y) * bundle.DreamManager.WorldInstance.IconSize -
+                                    MathF.Abs(originHeight.MustGetValueAsFloat() + targetHeight.MustGetValueAsFloat()) / 2));
+    }
+
     [DreamProc("ceil")]
     [DreamProcParameter("A", Type = DreamValueTypeFlag.Float)]
     public static DreamValue NativeProc_ceil(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {

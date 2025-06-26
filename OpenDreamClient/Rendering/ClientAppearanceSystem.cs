@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using OpenDreamClient.Interface;
 using OpenDreamShared.Dream;
 using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
 using Robust.Client.GameObjects;
@@ -58,6 +59,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
 
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IDreamResourceManager _dreamResourceManager = default!;
+    [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
     [Dependency] private readonly TransformSystem _transformSystem = default!;
     [Dependency] private readonly IGameTiming _gameTiming = default!;
     [Dependency] private readonly IClyde _clyde = default!;
@@ -135,7 +137,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         uint appearanceId = turfId;
 
         if (!_turfIcons.TryGetValue(appearanceId, out var icon)) {
-            icon = new DreamIcon(_spriteSystem.RenderTargetPool, _gameTiming, _clyde, this, appearanceId);
+            icon = new DreamIcon(_spriteSystem.RenderTargetPool, _interfaceManager, _gameTiming, _clyde, this, appearanceId);
             _turfIcons.Add(appearanceId, icon);
         }
 

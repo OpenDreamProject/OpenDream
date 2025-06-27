@@ -14,7 +14,7 @@ public static class DreamStylesheet {
 
     public static Stylesheet Make() {
         var res = IoCManager.Resolve<IResourceCache>();
-        var textureCloseButton = res.GetResource<TextureResource>("/cross.svg.png").Texture;
+        var textureCloseButton = res.GetResource<TextureResource>("/Textures/Interface/cross.svg.png").Texture;
         var notoSansFont = res.GetResource<FontResource>("/Fonts/NotoSans-Regular.ttf");
         var notoSansBoldFont = res.GetResource<FontResource>("/Fonts/NotoSans-Bold.ttf");
         var notoSansFont8 = new VectorFont(notoSansFont, 8);

@@ -29,8 +29,10 @@ public sealed class Splitter : Container {
                 RemoveChild(_left);
 
             _left = value;
-            if (_left != null)
+            if (_left != null) {
+                _left.Orphan();
                 AddChild(_left);
+            }
         }
     }
 
@@ -44,8 +46,10 @@ public sealed class Splitter : Container {
                 RemoveChild(_right);
 
             _right = value;
-            if (_right != null)
+            if (_right != null) {
+                _right.Orphan();
                 AddChild(_right);
+            }
         }
     }
 

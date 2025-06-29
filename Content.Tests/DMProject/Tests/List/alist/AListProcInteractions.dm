@@ -18,3 +18,6 @@
 	AL = alist("a" = 1, "b" = 2, "c" = -4)
 	ASSERT(values_product(AL) == -8)
 	ASSERT(values_sum(AL) == -1)
+
+	AL.Cut()
+	ASSERT(length(AL) == 0)

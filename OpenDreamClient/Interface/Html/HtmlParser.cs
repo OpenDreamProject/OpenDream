@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using OpenDreamShared.Dream;
 using Robust.Shared.Utility;
 
 namespace OpenDreamClient.Interface.Html;
@@ -90,6 +91,7 @@ public static class HtmlParser {
                         if (!isSelfClosing) {
                             tags.Push(tagType);
                         }
+
                         appendTo.PushTag(new MarkupNode(tagType, null, ParseAttributes(attributes)), selfClosing: isSelfClosing);
                     }
 
@@ -135,6 +137,18 @@ public static class HtmlParser {
                     appendTo.PushNewline();
                     break;
                 default:
+                    // Not really HTML, but this is a very convenient place to put this
+                    if (c == StringFormatting.Icon) {
+                        // The appearance ID is encoded in the next 2 chars (4 bytes)
+                        var upper = (ushort)text[++i];
+                        var lower = (ushort)text[++i];
+                        var appearanceId = (uint)((upper << 16) | lower);
+
+                        PushCurrentText();
+                        appendTo.PushTag(new MarkupNode("icon", new(appearanceId), null), true);
+                        break;
+                    }
+
                     currentText.Append(c);
                     break;
             }

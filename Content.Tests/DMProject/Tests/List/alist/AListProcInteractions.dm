@@ -1,0 +1,20 @@
+/proc/RunTest()
+	var/alist/AL = alist("a" = 1, "b" = 2, "c" = -4)
+	values_cut_over(AL, 0)
+	ASSERT(AL["a"] == null)
+	ASSERT(AL["c"] == -4)
+	ASSERT(length(AL) == 1)
+
+	AL = alist("a" = 1, "b" = 2, "c" = -4)
+	values_cut_under(AL, 0)
+	ASSERT(AL["a"] == 1)
+	ASSERT(AL["c"] == null)
+	ASSERT(length(AL) == 2)
+
+	AL = alist("a" = 1, "b" = 2, "c" = -4)
+	var/alist/AL2 = alist("c" = 5, "d" = 6, "e" = 2)
+	ASSERT(values_dot(AL, AL2) == -20)
+
+	AL = alist("a" = 1, "b" = 2, "c" = -4)
+	ASSERT(values_product(AL) == -8)
+	ASSERT(values_sum(AL) == -1)

@@ -6,7 +6,7 @@
 	var/tmp/current_map = "yeah"   // tmp, should not save
 	var/const/default_cube = "delete it" // const, should not save
 
-	New(args)
+	New(arguments)
 		proc_call_order_check += list("New")
 		..()
 

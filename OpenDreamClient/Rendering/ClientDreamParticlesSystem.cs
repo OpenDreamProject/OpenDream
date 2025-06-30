@@ -1,4 +1,5 @@
 using JetBrains.Annotations;
+using OpenDreamClient.Interface;
 using OpenDreamShared.Rendering;
 using Robust.Client.Graphics;
 using Robust.Shared.Random;
@@ -13,6 +14,7 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
     [Dependency] private readonly ParticlesManager _particlesManager = default!;
     [Dependency] private readonly IGameTiming _gameTiming = default!;
     [Dependency] private readonly ClientAppearanceSystem _appearanceSystem = default!;
+    [Dependency] private readonly IDreamInterfaceManager _dreamInterfaceManager = default!;
     [Dependency] private readonly IClyde _clyde = default!;
     public RenderTargetPool RenderTargetPool = default!;
     private Random random = new();
@@ -44,14 +46,13 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
         else{
             List<DreamIcon> icons = new(component.TextureList.Length);
             foreach(var appearance in component.TextureList){
-                DreamIcon icon = new DreamIcon(RenderTargetPool, _gameTiming, _clyde, _appearanceSystem);
+                DreamIcon icon = new DreamIcon(RenderTargetPool, _dreamInterfaceManager,  _gameTiming, _clyde, _appearanceSystem);
                 icon.SetAppearance(appearance.MustGetId());
                 icons.Add(icon);
             }
-            textureFunc = () => random.Pick(icons).GetTexture(null!, null!, defaultRenderMetaData, null); //oh god, so hacky
+            textureFunc = () => random.Pick(icons).GetTexture(null!, null!, defaultRenderMetaData, null, null); //oh god, so hacky
         }
         var result = new ParticleSystemArgs(textureFunc, new Vector2i(component.Width, component.Height), (uint)component.Count, component.Spawning);
-        GeneratorFloat lifespan = new();
         result.Lifespan = GetGeneratorFloat(component.LifespanLow, component.LifespanHigh, component.LifespanDist);
         result.Fadein = GetGeneratorFloat(component.FadeInLow, component.FadeInHigh, component.FadeInDist);
         result.Fadeout = GetGeneratorFloat(component.FadeOutLow, component.FadeOutHigh, component.FadeOutDist);

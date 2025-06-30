@@ -16,7 +16,6 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     public DreamValue GetValue(DreamValue key) {
         if (!_values.TryGetValue(key, out var value))
             return DreamValue.Null;
-            //throw new Exception($"No value with the key {key}");
 
         return value;
     }
@@ -39,10 +38,10 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
 
     public void Cut(int start = 1, int end = 0) {
         if (start != 1) {
-            throw new Exception($"DoCut() was called with non-default start value of {start}.");
+            throw new Exception($"Cut() was called with non-default start value of {start}.");
         }
         if (end != 0) {
-            throw new Exception($"DoCut() was called with non-default end value of {end}.");
+            throw new Exception($"Cut() was called with non-default end value of {end}.");
         }
         _values.Clear();
     }

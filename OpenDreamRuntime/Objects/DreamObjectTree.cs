@@ -149,6 +149,8 @@ public sealed class DreamObjectTree {
         using (Profiler.BeginZone($"new {type}")) {
             if (type == List)
                 return CreateList();
+            if (type == AssocList)
+                return CreateAssocList();
             if (type == Savefile)
                 return new DreamObjectSavefile(Savefile.ObjectDefinition);
             if (type.ObjectDefinition.IsSubtypeOf(DatabaseQuery))

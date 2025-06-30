@@ -1603,7 +1603,7 @@ internal static class DreamProcNativeRoot {
     public static DreamValue _length(DreamValue value, bool countBytes) {
         if (value.TryGetValueAsString(out var str)) {
             return new DreamValue(countBytes ? str.Length : str.EnumerateRunes().Count());
-        } else if (value.TryGetValueAsDreamList(out var list)) {
+        } else if (value.TryGetValueAsIDreamList(out var list)) {
             return new DreamValue(list.GetLength());
         } else if (value.Type is DreamValueType.Float or DreamValueType.DreamObject or DreamValueType.DreamType) {
             return new DreamValue(0);

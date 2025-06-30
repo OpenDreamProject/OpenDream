@@ -19,5 +19,7 @@
 	ASSERT(values_product(AL) == -8)
 	ASSERT(values_sum(AL) == -1)
 
+	//var/list/L = list()
+	//L.Cut()
 	AL.Cut()
 	ASSERT(length(AL) == 0)

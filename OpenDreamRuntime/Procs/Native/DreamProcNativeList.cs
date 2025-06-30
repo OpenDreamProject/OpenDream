@@ -41,7 +41,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_Cut(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             int start = bundle.GetArgument(0, "Start").MustGetValueAsInteger(); //1-indexed
             int end = bundle.GetArgument(1, "End").MustGetValueAsInteger(); //1-indexed
-            DreamList list = (DreamList)src!;
+            IDreamList list = (IDreamList)src!;
 
             list.Cut(start, end);
             return DreamValue.Null;

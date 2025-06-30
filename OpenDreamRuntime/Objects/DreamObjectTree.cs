@@ -26,32 +26,33 @@ public sealed class DreamObjectTree {
     public List<string> Strings { get; private set; } //TODO: Store this somewhere else
     public DreamProc? GlobalInitProc { get; private set; }
 
-    public TreeEntry Root { get; private set; }
-    public TreeEntry List { get; private set; }
-    public TreeEntry AssocList { get; private set; }
-    public TreeEntry World { get; private set; }
-    public TreeEntry Client { get; private set; }
-    public TreeEntry Datum { get; private set; }
-    public TreeEntry Sound { get; private set; }
-    public TreeEntry Matrix { get; private set; }
-    public TreeEntry Exception { get; private set; }
-    public TreeEntry Savefile { get; private set; }
-    public TreeEntry Database { get; private set; }
-    public TreeEntry DatabaseQuery { get; private set; }
-    public TreeEntry Regex { get; private set; }
-    public TreeEntry Filter { get; private set; }
-    public TreeEntry Vector { get; private set; }
-    public TreeEntry Icon { get; private set; }
-    public TreeEntry Image { get; private set; }
-    public TreeEntry MutableAppearance { get; private set; }
-    public TreeEntry Atom { get; private set; }
-    public TreeEntry Area { get; private set; }
-    public TreeEntry Turf { get; private set; }
-    public TreeEntry Movable { get; private set; }
-    public TreeEntry Obj { get; private set; }
-    public TreeEntry Mob { get; private set; }
-    public TreeEntry Generator { get; private set; }
-    public TreeEntry Particles { get; private set; }
+    public TreeEntry Root { get; private set; } = default!;
+    public TreeEntry List { get; private set; } = default!;
+    public TreeEntry AssocList { get; private set; } = default!;
+    public TreeEntry World { get; private set; } = default!;
+    public TreeEntry Client { get; private set; } = default!;
+    public TreeEntry Datum { get; private set; } = default!;
+    public TreeEntry Sound { get; private set; } = default!;
+    public TreeEntry Matrix { get; private set; } = default!;
+    public TreeEntry Exception { get; private set; } = default!;
+    public TreeEntry Callee { get; private set; } = default!;
+    public TreeEntry Savefile { get; private set; } = default!;
+    public TreeEntry Database { get; private set; } = default!;
+    public TreeEntry DatabaseQuery { get; private set; } = default!;
+    public TreeEntry Regex { get; private set; } = default!;
+    public TreeEntry Filter { get; private set; } = default!;
+    public TreeEntry Vector { get; private set; } = default!;
+    public TreeEntry Icon { get; private set; } = default!;
+    public TreeEntry Image { get; private set; } = default!;
+    public TreeEntry MutableAppearance { get; private set; } = default!;
+    public TreeEntry Atom { get; private set; } = default!;
+    public TreeEntry Area { get; private set; } = default!;
+    public TreeEntry Turf { get; private set; } = default!;
+    public TreeEntry Movable { get; private set; } = default!;
+    public TreeEntry Obj { get; private set; } = default!;
+    public TreeEntry Mob { get; private set; } = default!;
+    public TreeEntry Generator { get; private set; } = default!;
+    public TreeEntry Particles { get; private set; } = default!;
 
     private FrozenDictionary<string, TreeEntry> _pathToType = FrozenDictionary<string, TreeEntry>.Empty;
     private FrozenDictionary<string, int> _globalProcIds = FrozenDictionary<string, int>.Empty;
@@ -188,6 +189,8 @@ public sealed class DreamObjectTree {
                 throw new Exception("New turfs must be created by the map manager");
             if (type.ObjectDefinition.IsSubtypeOf(Exception))
                 return new DreamObjectException(type.ObjectDefinition);
+            if (type.ObjectDefinition.IsSubtypeOf(Callee))
+                return new DreamObjectCallee(type.ObjectDefinition);
             if (type.ObjectDefinition.IsSubtypeOf(Vector))
                 return new DreamObjectVector(type.ObjectDefinition);
 
@@ -327,6 +330,7 @@ public sealed class DreamObjectTree {
         Sound = GetTreeEntry("/sound");
         Matrix = GetTreeEntry("/matrix");
         Exception = GetTreeEntry("/exception");
+        Callee = GetTreeEntry("/callee");
         Savefile = GetTreeEntry("/savefile");
         Database = GetTreeEntry("/database");
         DatabaseQuery = GetTreeEntry("/database/query");

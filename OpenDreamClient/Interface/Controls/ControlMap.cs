@@ -45,7 +45,7 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
         var viewWidth = Math.Max(view.Width, 1);
         var viewHeight = Math.Max(view.Height, 1);
 
-        Viewport.ViewportSize = new Vector2i(viewWidth, viewHeight) * EyeManager.PixelsPerMeter;
+        Viewport.ViewportSize = new Vector2i(viewWidth, viewHeight) * _interfaceManager.IconSize;
         if (MapDescriptor.IconSize.Value != 0) {
             // BYOND supports a negative number here (flips the view), but we're gonna enforce a positive number instead
             var iconSize = Math.Max(MapDescriptor.IconSize.Value, 1);

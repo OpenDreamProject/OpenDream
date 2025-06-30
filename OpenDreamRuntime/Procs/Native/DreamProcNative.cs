@@ -8,6 +8,7 @@ internal static class DreamProcNative {
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_animate);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_ascii2text);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_block);
+        objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_bounds_dist);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_ceil);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_ckey);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_ckeyEx);

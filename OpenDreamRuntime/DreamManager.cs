@@ -41,6 +41,7 @@ public sealed partial class DreamManager {
     public Random Random { get; set; } = new();
     public Dictionary<string, List<DreamObject>> Tags { get; } = new();
     public DreamProc ImageConstructor, ImageFactoryProc;
+    public int ListPoolThreshold, ListPoolSize;
 
     public bool Initialized { get; private set; }
     public GameTick InitializedTick { get; private set; }
@@ -71,6 +72,8 @@ public sealed partial class DreamManager {
     //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
     public void PreInitialize(string? jsonPath) {
         _sawmill = Logger.GetSawmill("opendream");
+        ListPoolThreshold = _config.GetCVar(OpenDreamCVars.ListPoolThreshold);
+        ListPoolSize = _config.GetCVar(OpenDreamCVars.ListPoolSize);
         ByondApi.ByondApi.Initialize(this, _atomManager, _dreamMapManager, _objectTree);
 
         InitializeConnectionManager();
@@ -417,6 +420,16 @@ public sealed partial class DreamManager {
         }
 
         return null;
+    }
+
+    public ClientObjectReference GetClientReference(DreamObjectAtom atom) {
+        if (atom is DreamObjectMovable movable) {
+            return new(_entityManager.GetNetEntity(movable.Entity));
+        } else if (atom is DreamObjectTurf turf) {
+            return new((turf.X, turf.Y), turf.Z);
+        } else {
+            throw new NotImplementedException($"Cannot create a client reference for {atom}");
+        }
     }
 
     public void HandleException(Exception e, string msg = "", string file = "", int line = 0) {

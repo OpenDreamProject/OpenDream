@@ -29,6 +29,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
     public bool ScreenOverlayEnabled = true;
     public bool MouseMapRenderEnabled;
 
+    public int IconSize => _interfaceManager.IconSize;
     public Texture? MouseMap => _mouseMapRenderTarget?.Texture;
     public readonly Dictionary<int, DreamPlane> Planes = new();
     public readonly ShaderInstance BlockColorInstance;
@@ -185,14 +186,14 @@ internal sealed partial class DreamViewOverlay : Overlay {
     }
 
     //handles underlays, overlays, appearance flags, images. Adds them to the result list, so they can be sorted and drawn with DrawIcon()
-    private void ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, bool isScreen, ref int tieBreaker, List<RendererMetaData> result, sbyte seeVis, RendererMetaData? parentIcon = null, bool keepTogether = false, Vector3? turfCoords = null) {
+    private void ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, bool isScreen, ref int tieBreaker, List<RendererMetaData> result, sbyte seeVis, RendererMetaData? parentIcon = null, bool keepTogether = false, Vector3? turfCoords = null, ClientAppearanceSystem.Flick? flick = null) {
         if (icon.Appearance is null) //in the event that appearance hasn't loaded yet
             return;
 
         result.EnsureCapacity(result.Count + icon.Underlays.Count + icon.Overlays.Count + 1);
         RendererMetaData current = RentRendererMetaData();
         current.MainIcon = icon;
-        current.Position = position + (icon.Appearance.TotalPixelOffset / (float)EyeManager.PixelsPerMeter);
+        current.Position = position + (icon.Appearance.TotalPixelOffset / (float)IconSize);
         current.Uid = uid;
         current.ClickUid = uid;
         current.IsScreen = isScreen;
@@ -201,6 +202,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
         current.RenderTarget = icon.Appearance.RenderTarget;
         current.AppearanceFlags = icon.Appearance.AppearanceFlags;
         current.BlendMode = icon.Appearance.BlendMode;
+        current.Flick = flick;
 
         //reverse rotation transforms because of 180 flip from RenderTarget->world transform
         Matrix3x2 iconAppearanceTransformMatrix = new Matrix3x2(
@@ -336,7 +338,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
                     continue;
                 if(sprite.Icon.Appearance.Override) {
                     current.MainIcon = sprite.Icon;
-                    current.Position = current.Position + (sprite.Icon.Appearance.TotalPixelOffset / (float)EyeManager.PixelsPerMeter);
+                    current.Position += (sprite.Icon.Appearance.TotalPixelOffset / (float)IconSize);
                 } else
                     ProcessIconComponents(sprite.Icon, current.Position, uid, isScreen, ref tieBreaker, result, seeVis, current);
             }
@@ -381,7 +383,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
 
             maptext.Maptext = icon.Appearance.Maptext;
             maptext.MaptextSize = icon.Appearance.MaptextSize;
-            maptext.Position += icon.Appearance.MaptextOffset/(float)EyeManager.PixelsPerMeter;
+            maptext.Position += icon.Appearance.MaptextOffset/(float)IconSize;
             result.Add(maptext);
         }
 
@@ -439,7 +441,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
             // TODO: Use something better than a hardcoded 64x64 fallback
             Vector2i ktSize = iconMetaData.MainIcon?.DMI?.IconSize ?? (64,64);
             iconMetaData.TextureOverride = ProcessKeepTogether(handle, iconMetaData, ktSize);
-            positionOffset -= ((ktSize/EyeManager.PixelsPerMeter) - Vector2.One) * new Vector2(0.5f); //correct for KT group texture offset
+            positionOffset -= ((ktSize/IconSize) - Vector2.One) * new Vector2(0.5f); //correct for KT group texture offset
         }
 
         //Maptext
@@ -458,7 +460,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
         }
 
         var frame = iconMetaData.GetTexture(this, handle);
-        var pixelPosition = (iconMetaData.Position + positionOffset) * EyeManager.PixelsPerMeter;
+        var pixelPosition = (iconMetaData.Position + positionOffset) * IconSize;
 
         //if frame is null, this doesn't require a draw, so return NOP
         if (frame == null)
@@ -626,11 +628,12 @@ internal sealed partial class DreamViewOverlay : Overlay {
             Vector2i tilePos = eyeTile.GridIndices + (tile.DeltaX, tile.DeltaY);
             TileRef tileRef = _mapSystem.GetTileRef(gridUid, grid, tilePos);
             MapCoordinates worldPos = _mapSystem.GridTileToWorld(gridUid, grid, tilePos);
+            var flick = _appearanceSystem.GetTurfFlick(tilePos.X, tilePos.Y, (int) worldPos.MapId);
 
             tValue = 0;
             //pass the turf coords for client.images lookup
             Vector3 turfCoords = new Vector3(tileRef.X, tileRef.Y, (int) worldPos.MapId);
-            ProcessIconComponents(_appearanceSystem.GetTurfIcon((uint)tileRef.Tile.TypeId), worldPos.Position - Vector2.One, EntityUid.Invalid, false, ref tValue, _spriteContainer, seeVis, turfCoords: turfCoords);
+            ProcessIconComponents(_appearanceSystem.GetTurfIcon((uint)tileRef.Tile.TypeId), worldPos.Position - Vector2.One, EntityUid.Invalid, false, ref tValue, _spriteContainer, seeVis, turfCoords: turfCoords, flick: flick);
         }
 
         // Visible entities
@@ -658,8 +661,10 @@ internal sealed partial class DreamViewOverlay : Overlay {
                         continue;
                 }
 
+                var flick = _appearanceSystem.GetMovableFlick(entity);
+
                 tValue = 0;
-                ProcessIconComponents(sprite.Icon, worldPos - new Vector2(0.5f), entity, false, ref tValue, _spriteContainer, seeVis);
+                ProcessIconComponents(sprite.Icon, worldPos - new Vector2(0.5f), entity, false, ref tValue, _spriteContainer, seeVis, flick: flick);
             }
         }
 
@@ -675,9 +680,9 @@ internal sealed partial class DreamViewOverlay : Overlay {
                 if (sprite.ScreenLocation.MapControl != null) // Don't render screen objects meant for other map controls
                     continue;
 
-                Vector2i dmiIconSize = sprite.Icon.DMI?.IconSize ?? new(EyeManager.PixelsPerMeter, EyeManager.PixelsPerMeter);
-                Vector2 position = sprite.ScreenLocation.GetViewPosition(worldAABB.BottomLeft, _interfaceManager.View, EyeManager.PixelsPerMeter, dmiIconSize);
-                Vector2 iconSize = sprite.Icon.DMI == null ? Vector2.Zero : sprite.Icon.DMI.IconSize / (float)EyeManager.PixelsPerMeter;
+                Vector2i dmiIconSize = sprite.Icon.DMI?.IconSize ?? new(IconSize, IconSize);
+                Vector2 position = sprite.ScreenLocation.GetViewPosition(worldAABB.BottomLeft, _interfaceManager.View, IconSize, dmiIconSize);
+                Vector2 iconSize = sprite.Icon.DMI == null ? Vector2.Zero : sprite.Icon.DMI.IconSize / (float)IconSize;
                 for (int x = 0; x < sprite.ScreenLocation.RepeatX; x++) {
                     for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {
                         tValue = 0;
@@ -732,7 +737,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
 
         handle.RenderInRenderTarget(tempTexture, () => {
             foreach (RendererMetaData ktItem in ktItems) {
-                DrawIcon(handle, tempTexture.Size, ktItem, -ktItem.Position+((tempTexture.Size/EyeManager.PixelsPerMeter) - Vector2.One) * new Vector2(0.5f)); //draw the icon in the centre of the KT render target
+                DrawIcon(handle, tempTexture.Size, ktItem, -ktItem.Position+((tempTexture.Size/IconSize) - Vector2.One) * new Vector2(0.5f)); //draw the icon in the centre of the KT render target
             }
         }, Color.Transparent);
 

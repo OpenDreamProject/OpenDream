@@ -19,14 +19,15 @@
 			b += 1
 		else
 			a += 1
-	if(a + b != 25)
-		CRASH("Map probably failed to load; expected 25 tiles in the map, instead found [a + b].")
+	if(a + b != 75)
+		CRASH("Map probably failed to load; expected 75 tiles in the map, instead found [a + b].")
 
 
 /world/New()
 	..()
 	test_world_init()
 	test_block()
+	test_bounds_dist()
 	test_color_matrix()
 	test_range()
 	test_verb_duplicate()

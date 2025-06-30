@@ -67,9 +67,10 @@ internal sealed class DMProc {
     public string Name => _astDefinition?.Name ?? "<init>";
     public bool IsVerb => _astDefinition?.IsVerb ?? false;
     public bool IsFinal => _astDefinition?.IsFinal ?? false;
-    public List<string> Parameters = new();
+    public readonly List<string> Parameters = new();
     public Location Location;
     public ProcAttributes Attributes;
+    public string? UnsupportedReason;
     public readonly int Id;
     public readonly Dictionary<string, int> GlobalVariables = new();
 
@@ -126,7 +127,7 @@ internal sealed class DMProc {
 
         if (_astDefinition is not null) {
             foreach (var parameter in _astDefinition!.Parameters) {
-                AddParameter(parameter.Name, parameter.Type, parameter.ObjectType);
+                AddParameter(parameter.Name, parameter.Location, parameter.Type, parameter.ObjectType);
             }
 
             foreach (var statement in _astDefinition!.Body?.SetStatements ?? Array.Empty<DMASTProcStatementSet>()) {
@@ -265,10 +266,11 @@ internal sealed class DMProc {
         return null;
     }
 
-    public void AddParameter(string name, DMComplexValueType? valueType, DreamPath? type) {
+    public void AddParameter(string name, Location location, DMComplexValueType? valueType, DreamPath? type) {
         if (_parameters.ContainsKey(name)) {
-            _compiler.Emit(WarningCode.DuplicateVariable, _astDefinition.Location, $"Duplicate argument \"{name}\"");
+            _compiler.Emit(WarningCode.DuplicateVariable, location, $"Duplicate argument \"{name}\"");
         } else {
+            // TODO: Emit a warning when shadowing a builtin, such as "caller"
             Parameters.Add(name);
             _parameters.Add(name, new LocalVariable(name, _parameters.Count, true, type, valueType));
         }
@@ -378,6 +380,14 @@ internal sealed class DMProc {
                     Attributes &= ~ProcAttributes.Unimplemented;
                 break;
             }
+            case "opendream_unsupported":
+                if (constant is not Expressions.String unsupportedStr) {
+                    _compiler.Emit(WarningCode.BadExpression, constant.Location, "opendream_unsupported attribute must be a string");
+                    break;
+                }
+
+                UnsupportedReason = unsupportedStr.Value;
+                break;
             case "hidden":
                 if (constant.IsTruthy())
                     Attributes |= ProcAttributes.Hidden;
@@ -445,6 +455,17 @@ internal sealed class DMProc {
             case "src":
                 _compiler.UnimplementedWarning(statementSet.Location, "set src is not implemented");
                 break;
+        }
+    }
+
+    public void EmitUsageWarnings(Location fromLoc) {
+        if (fromLoc.InDMStandard) // Don't emit these warnings for code inside DMStandard
+            return;
+
+        if (UnsupportedReason is not null) {
+            _compiler.UnsupportedWarning(fromLoc, $"{_dmObject.Path.ToString()}.{Name}() is unsupported: {UnsupportedReason}");
+        } else if ((Attributes & ProcAttributes.Unimplemented) == ProcAttributes.Unimplemented) {
+            _compiler.UnimplementedWarning(fromLoc, $"{_dmObject.Path.ToString()}.{Name}() is not implemented");
         }
     }
 

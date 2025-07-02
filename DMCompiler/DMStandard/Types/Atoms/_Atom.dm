@@ -21,8 +21,11 @@
 	var/tmp/z = 0
 	var/pixel_x = 0
 	var/pixel_y = 0
-	var/pixel_z = 0 as opendream_unimplemented
-	var/pixel_w = 0 as opendream_unimplemented
+	var/pixel_z = 0
+	var/pixel_w = 0
+	
+	var/icon_w = 0 as opendream_unimplemented
+	var/icon_z = 0 as opendream_unimplemented
 
 	var/icon = null
 	var/icon_state = ""
@@ -60,22 +63,15 @@
 	var/vis_flags as opendream_unimplemented
 
 	proc/Click(location, control, params)
-
 	proc/DblClick(location, control, params)
-		set opendream_unimplemented = TRUE
+	proc/MouseDrop(over_object,src_location,over_location,src_control,over_control,params)
+	proc/MouseEntered(location,control,params)
+	proc/MouseExited(location,control,params)
 
 	proc/MouseDown(location, control, params)
 		set opendream_unimplemented = TRUE
 
 	proc/MouseDrag(over_object,src_location,over_location,src_control,over_control,params)
-		set opendream_unimplemented = TRUE
-
-	proc/MouseDrop(over_object,src_location,over_location,src_control,over_control,params)
-
-	proc/MouseEntered(location,control,params)
-		set opendream_unimplemented = TRUE
-
-	proc/MouseExited(location,control,params)
 		set opendream_unimplemented = TRUE
 
 	proc/MouseMove(location,control,params)

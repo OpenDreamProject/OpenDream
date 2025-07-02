@@ -25,7 +25,7 @@ public sealed class InterfaceMacroSet : InterfaceElement {
         _entitySystemManager = entitySystemManager;
         _uiManager = uiManager;
 
-        _inputContextName = $"{InputContextPrefix}{ElementDescriptor.Name}";
+        _inputContextName = $"{InputContextPrefix}{ElementDescriptor.Id}";
         if (inputManager.Contexts.TryGetContext(_inputContextName, out var existingContext)) {
             _inputContext = existingContext;
         } else {
@@ -45,7 +45,7 @@ public sealed class InterfaceMacroSet : InterfaceElement {
     }
 
     public void SetActive() {
-        _inputManager.Contexts.SetActiveContext($"{InputContextPrefix}{ElementDescriptor.Name}");
+        _inputManager.Contexts.SetActiveContext($"{InputContextPrefix}{ElementDescriptor.Id}");
     }
 }
 
@@ -146,6 +146,8 @@ internal struct ParsedKeybind {
         {"SUBTRACT", Keyboard.Key.NumpadSubtract},
         {"DIVIDE", Keyboard.Key.NumpadDivide},
         {";", Keyboard.Key.SemiColon}, // undocumented but works in BYOND
+        {",", Keyboard.Key.Comma},
+        {".", Keyboard.Key.Period},
         //TODO: Right shift/ctrl/alt
         {"SHIFT", Keyboard.Key.Shift},
         {"CTRL", Keyboard.Key.Control},

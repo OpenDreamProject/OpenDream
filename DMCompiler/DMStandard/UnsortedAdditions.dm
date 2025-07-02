@@ -1,9 +1,5 @@
 ﻿/proc/bounds(Ref=src, Dist=0)
 	set opendream_unimplemented = TRUE
-/proc/bounds_dist(Ref, Target)
-	set opendream_unimplemented = TRUE
-/proc/cmptextEx(T1)
-	set opendream_unimplemented = TRUE
 
 // An undocumented proc
 // Doesn't evaluate DM as you might expect, but instead DMScript
@@ -19,8 +15,6 @@
 /proc/findtextEx_char(Haystack,Needle,Start=1,End=0)
 	set opendream_unimplemented = TRUE
 /proc/generator(type, A, B, rand)
-	set opendream_unimplemented = TRUE
-/proc/issaved(v)
 	set opendream_unimplemented = TRUE
 /proc/load_resource(File)
 	set opendream_unimplemented = TRUE

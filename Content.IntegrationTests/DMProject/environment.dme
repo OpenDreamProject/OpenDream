@@ -1,6 +1,7 @@
 #include "code.dm"
 #include "Tests/atom_appearance.dm"
 #include "Tests/block.dm"
+#include "Tests/bounds_dist.dm"
 #include "Tests/color_matrix.dm"
 #include "Tests/range.dm"
 #include "Tests/verb_duplicate.dm"

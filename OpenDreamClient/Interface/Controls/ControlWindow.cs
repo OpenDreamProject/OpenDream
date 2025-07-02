@@ -29,8 +29,14 @@ public sealed class ControlWindow : InterfaceControl {
 
     private (OSWindow? osWindow, IClydeWindow? clydeWindow) _myWindow;
 
+    private string _currentStatus = string.Empty;
+
     public ControlWindow(WindowDescriptor windowDescriptor) : base(windowDescriptor, null) {
         IoCManager.InjectDependencies(this);
+    }
+
+    public IClydeWindow? GetClydeWindow() {
+        return _myWindow.osWindow is null ? _myWindow.clydeWindow : _myWindow.osWindow.ClydeWindow;
     }
 
     protected override void UpdateElementDescriptor() {
@@ -350,5 +356,20 @@ public sealed class ControlWindow : InterfaceControl {
         }
 
         base.SetProperty(property, value, manualWinset);
+    }
+
+    // TODO: This needs to bubble up through to parent windows
+    public void SetStatus(string status) {
+        if (_currentStatus == status)
+            return;
+
+        _currentStatus = status;
+
+        var onStatusCommand = WindowDescriptor.OnStatus.AsRaw();
+        if (string.IsNullOrWhiteSpace(onStatusCommand))
+            return;
+
+        onStatusCommand = onStatusCommand.Replace("[[*]]", new DMFPropertyString(status).AsArg());
+        _interfaceManager.RunCommand(onStatusCommand);
     }
 }

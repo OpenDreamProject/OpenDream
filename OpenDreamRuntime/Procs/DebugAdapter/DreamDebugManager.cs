@@ -241,7 +241,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
 
         // Execute the original opcode
         unsafe {
-            return DMProcState.OpcodeHandlers[breakpoint.OriginalOpcode](state);
+            return DMProcState.OpcodeHandlersTable[breakpoint.OriginalOpcode](state);
         }
     }
 

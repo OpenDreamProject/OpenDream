@@ -11,7 +11,7 @@ namespace OpenDreamShared.Dream;
 /// </summary>
 /// <remarks>This should only be used on the client or when communicating with the client</remarks>
 [Serializable, NetSerializable]
-public struct ClientObjectReference {
+public struct ClientObjectReference : IEquatable<ClientObjectReference> {
     public enum RefType {
         Client,
         Turf,
@@ -60,6 +60,10 @@ public struct ClientObjectReference {
         return Equals(other.Value);
     }
 
+    public override bool Equals(object? obj) {
+        return obj is ClientObjectReference other && Equals(other);
+    }
+
     public override string ToString() {
         switch (Type) {
             case RefType.Client:
@@ -71,5 +75,17 @@ public struct ClientObjectReference {
         }
 
         return "unknown ClientObjectReference";
+    }
+
+    public override int GetHashCode() {
+        switch (Type) {
+            case RefType.Turf:
+                return HashCode.Combine(Type, TurfX, TurfY, TurfZ);
+            case RefType.Entity:
+                return HashCode.Combine(Type, Entity);
+            case RefType.Client:
+            default:
+                return 0;
+        }
     }
 }

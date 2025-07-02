@@ -291,6 +291,35 @@ internal sealed class IsSaved(Location location, DMExpression expr) : DMExpressi
     }
 }
 
+// astype(x, y)
+internal sealed class AsType(Location location, DMExpression expr, DMExpression path) : DMExpression(location) {
+    public override DreamPath? Path => path.Path;
+    public override bool PathIsFuzzy => path is not ConstantTypeReference;
+
+    public override void EmitPushValue(ExpressionContext ctx) {
+        expr.EmitPushValue(ctx);
+        path.EmitPushValue(ctx);
+        ctx.Proc.AsType();
+    }
+}
+
+// astype(x)
+internal sealed class AsTypeInferred(Location location, DMExpression expr, DreamPath path) : DMExpression(location) {
+    public override DreamPath? Path => path;
+
+    public override void EmitPushValue(ExpressionContext ctx) {
+        if (!ctx.ObjectTree.TryGetTypeId(path, out var typeId)) {
+            ctx.Compiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {path} does not exist");
+
+            return;
+        }
+
+        expr.EmitPushValue(ctx);
+        ctx.Proc.PushType(typeId);
+        ctx.Proc.AsType();
+    }
+}
+
 // istype(x, y)
 internal sealed class IsType(Location location, DMExpression expr, DMExpression path) : DMExpression(location) {
     public override DMComplexValueType ValType => DMValueType.Num;
@@ -431,6 +460,50 @@ internal sealed class List : DMExpression {
         json = new Dictionary<string, object> {
             { "type", JsonVariableType.List },
             { "values", values }
+        };
+
+        return true;
+    }
+}
+
+// alist(...)
+internal sealed class AList(Location location, (DMExpression Key, DMExpression Value)[] values) : DMExpression(location) {
+    public override bool PathIsFuzzy => true;
+    public override DMComplexValueType ValType => DreamPath.AList;
+
+    public override void EmitPushValue(ExpressionContext ctx) {
+        foreach (var value in values) {
+            value.Key.EmitPushValue(ctx);
+            value.Value.EmitPushValue(ctx);
+        }
+
+        ctx.Proc.CreateStrictAssociativeList(values.Length);
+    }
+
+    public override bool TryAsJsonRepresentation(DMCompiler compiler, out object? json) {
+        List<object?> values1 = new();
+
+        foreach (var value in values) {
+            if (!value.Value.TryAsJsonRepresentation(compiler, out var jsonValue)) {
+                json = null;
+                return false;
+            }
+
+            // Null key is not supported here
+            if (!value.Key.TryAsJsonRepresentation(compiler, out var jsonKey) || jsonKey == null) {
+                json = null;
+                return false;
+            }
+
+            values1.Add(new Dictionary<object, object?> {
+                { "key", jsonKey },
+                { "value", jsonValue }
+            });
+        }
+
+        json = new Dictionary<string, object> {
+            { "type", JsonVariableType.AList },
+            { "values", values1 }
         };
 
         return true;

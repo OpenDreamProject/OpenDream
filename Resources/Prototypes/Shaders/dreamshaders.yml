@@ -22,7 +22,14 @@
 - type: shader
   id: blur
   kind: source
-  path: "/Shaders/blur.swsl"
+  path: "/Shaders/blur_horizontal.swsl"
+  params:
+    size: 1
+
+- type: shader
+  id: blur_vertical
+  kind: source
+  path: "/Shaders/blur_vertical.swsl"
   params:
     size: 1
 

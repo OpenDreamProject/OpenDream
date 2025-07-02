@@ -6,19 +6,19 @@
             <ScrollContainer TabContainer.TabTitle="Properties" HorizontalExpand="True" VerticalExpand="True">
                 <GridContainer Name="PropertiesTable" Columns="2" />
             </ScrollContainer>
-            <ScrollContainer TabContainer.TabTitle="Overlays" HorizontalExpand="True" VerticalExpand="True">
+            <ScrollContainer TabContainer.TabTitle="Overlays" Name="OverlaysTab" HorizontalExpand="True" VerticalExpand="True">
                 <BoxContainer Orientation="Vertical" HorizontalAlignment="Center">
                     <Label Text="Click to open" HorizontalAlignment="Center" />
                     <GridContainer Name="OverlaysGrid" Columns="3" />
                 </BoxContainer>
             </ScrollContainer>
-            <ScrollContainer TabContainer.TabTitle="Underlays" HorizontalExpand="True" VerticalExpand="True">
+            <ScrollContainer TabContainer.TabTitle="Underlays" Name="UnderlaysTab" HorizontalExpand="True" VerticalExpand="True">
                 <BoxContainer Orientation="Vertical" HorizontalAlignment="Center">
                     <Label Text="Click to open" HorizontalAlignment="Center" />
                     <GridContainer Name="UnderlaysGrid" Columns="3" />
                 </BoxContainer>
             </ScrollContainer>
-            <ScrollContainer TabContainer.TabTitle="Vis Contents" HorizontalExpand="True" VerticalExpand="True">
+            <ScrollContainer TabContainer.TabTitle="Vis Contents" Name="VisContentsTab" HorizontalExpand="True" VerticalExpand="True">
                 <BoxContainer Orientation="Vertical" HorizontalAlignment="Center">
                     <Label Text="Click to open" HorizontalAlignment="Center" />
                     <GridContainer Name="VisContentsGrid" Columns="3" />

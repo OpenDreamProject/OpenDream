@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Net;
+using System.Text;
 using System.Web;
 using OpenDreamClient.Interface.Descriptors;
 using OpenDreamClient.Resources;
@@ -36,8 +37,8 @@ internal sealed class ControlBrowser : InterfaceControl {
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.browser");
 
-    private PanelContainer _panel;
-    private WebViewControl _webView;
+    private PanelContainer _panel = default!;
+    private WebViewControl _webView = default!;
 
     public ControlBrowser(ControlDescriptor controlDescriptor, ControlWindow window)
         : base(controlDescriptor, window) {
@@ -47,7 +48,7 @@ internal sealed class ControlBrowser : InterfaceControl {
     protected override Control CreateUIElement() {
         _panel = new PanelContainer {
             Children = {
-                (_webView = new WebViewControl())
+                (_webView = new WebViewControl {AlwaysActive = true})
             }
         };
 
@@ -173,7 +174,8 @@ internal sealed class ControlBrowser : InterfaceControl {
     /// <param name="query">The query portion of the embedded winset</param>
     private void HandleEmbeddedWinset(string query) {
         // Strip the question mark out before parsing
-        var queryParams = HttpUtility.ParseQueryString(query.Substring(1));
+        // Also replace ';' with '&' because they're both usable here
+        var queryParams = HttpUtility.ParseQueryString(query.Substring(1).Replace(';', '&'));
 
         // We need to extract the control element (if one was included)
         string? element = queryParams.Get("element");
@@ -205,7 +207,8 @@ internal sealed class ControlBrowser : InterfaceControl {
     // (Not in the XML comment because '&' breaks that apparently)
     private void HandleEmbeddedWinget(string query) {
         // Strip the question mark out before parsing
-        var queryParams = HttpUtility.ParseQueryString(query.Substring(1));
+        // Also replace ';' with '&' because they're both usable here
+        var queryParams = HttpUtility.ParseQueryString(query.Substring(1).Replace(';', '&'));
 
         var elementId = queryParams.Get("id");
         var property = queryParams.Get("property");
@@ -223,13 +226,27 @@ internal sealed class ControlBrowser : InterfaceControl {
             forceJson = false; // property=* does not return "as json" values (why?!)
         }
 
-        var result = _interfaceManager.WinGet(elementId, property, forceJson: forceJson);
+        // Multiple properties can be queried in a single winget with "&property=size,view-size"
+        var properties = property.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        var jsonBuilder = new StringBuilder(); // Build the JSON object that the callback receives
+
+        jsonBuilder.Append("{ ");
+        foreach (var wingetting in properties) {
+            if (jsonBuilder.Length > 2)
+                jsonBuilder.Append(", ");
+
+            jsonBuilder.Append('"');
+            jsonBuilder.Append(HttpUtility.JavaScriptStringEncode(wingetting));
+            jsonBuilder.Append("\": ");
+            var result = _interfaceManager.WinGet(elementId, wingetting, forceJson: forceJson);
+            jsonBuilder.Append(result);
+        }
+
+        jsonBuilder.Append(" }");
 
         // Execute the callback
-        var propertyEncoded = HttpUtility.JavaScriptStringEncode(property);
-        var resultEncoded = HttpUtility.JavaScriptStringEncode(result);
-        var jsonArgument = $"{{ \"{propertyEncoded}\": \"{resultEncoded}\" }}";
-        _webView.ExecuteJavaScript($"{callback}({jsonArgument})");
+        var json = jsonBuilder.ToString();
+        _webView.ExecuteJavaScript($"{callback}({json})");
     }
 
     private void OnShowEvent() {

@@ -3,7 +3,7 @@ using System.Text;
 
 namespace DMCompiler.Compiler.DM;
 
-internal sealed class DMLexer : TokenLexer {
+public sealed class DMLexer : TokenLexer {
     public static readonly List<string> ValidEscapeSequences = [
         "icon",
         "Roman", "roman",
@@ -68,7 +68,7 @@ internal sealed class DMLexer : TokenLexer {
     private readonly Stack<int> _indentationStack = new(new[] { 0 });
 
     /// <param name="source">The enumerable list of tokens output by <see cref="DMPreprocessor.DMPreprocessorLexer"/>.</param>
-    internal DMLexer(string sourceName, IEnumerable<Token> source) : base(sourceName, source) { }
+    public DMLexer(string sourceName, IEnumerable<Token> source) : base(sourceName, source) { }
 
     protected override Token ParseNextToken() {
         Token token;
@@ -76,7 +76,7 @@ internal sealed class DMLexer : TokenLexer {
         if (AtEndOfSource) {
             while (_indentationStack.Peek() > 0) {
                 _indentationStack.Pop();
-                _pendingTokenQueue.Enqueue(CreateToken(TokenType.DM_Dedent, '\r'));
+                PendingTokenQueue.Enqueue(CreateToken(TokenType.DM_Dedent, '\r'));
             }
 
             token = CreateToken(TokenType.EndOfFile, '\0');
@@ -93,19 +93,19 @@ internal sealed class DMLexer : TokenLexer {
                     if (indentationLevel > currentIndentationLevel) {
                         _indentationStack.Push(indentationLevel);
 
-                        _pendingTokenQueue.Enqueue(preprocToken);
+                        PendingTokenQueue.Enqueue(preprocToken);
                         token = CreateToken(TokenType.DM_Indent, '\t');
                     } else if (indentationLevel < currentIndentationLevel) {
                         if (_indentationStack.Contains(indentationLevel)) {
                             token = preprocToken;
                         } else {
-                            _pendingTokenQueue.Enqueue(preprocToken);
+                            PendingTokenQueue.Enqueue(preprocToken);
                             token = CreateToken(TokenType.Error, string.Empty, "Invalid indentation");
                         }
 
                         do {
                             _indentationStack.Pop();
-                            _pendingTokenQueue.Enqueue(CreateToken(TokenType.DM_Dedent, '\r'));
+                            PendingTokenQueue.Enqueue(CreateToken(TokenType.DM_Dedent, '\r'));
                         } while (indentationLevel < _indentationStack.Peek());
                     } else {
                         token = preprocToken;
@@ -145,6 +145,7 @@ internal sealed class DMLexer : TokenLexer {
                                 token = CreateToken(TokenType.DM_Question, "?");
                                 break;
                         }
+
                         break;
                     case TokenType.DM_Preproc_Punctuator_Period:
                         switch (Advance().Type) {
@@ -162,6 +163,7 @@ internal sealed class DMLexer : TokenLexer {
                                 token = CreateToken(TokenType.DM_Period, ".");
                                 break;
                         }
+
                         break;
                     case TokenType.DM_Preproc_Punctuator_Semicolon: {
                         Advance();
@@ -175,7 +177,7 @@ internal sealed class DMLexer : TokenLexer {
                         switch (c) {
                             case "{": token = CreateToken(TokenType.DM_LeftCurlyBracket, c); break;
                             case "}": {
-                                _pendingTokenQueue.Enqueue(CreateToken(TokenType.DM_RightCurlyBracket, c));
+                                PendingTokenQueue.Enqueue(CreateToken(TokenType.DM_RightCurlyBracket, c));
                                 token = CreateToken(TokenType.Newline, '\n');
 
                                 break;
@@ -240,6 +242,7 @@ internal sealed class DMLexer : TokenLexer {
                             case '@': token = CreateToken(TokenType.DM_RawString, tokenText, preprocToken.Value); break;
                             default: token = CreateToken(TokenType.Error, tokenText, "Invalid string"); break;
                         }
+
                         break;
                     }
                     case TokenType.DM_Preproc_StringBegin:

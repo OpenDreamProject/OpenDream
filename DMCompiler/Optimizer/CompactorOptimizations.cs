@@ -6,6 +6,62 @@ namespace DMCompiler.Optimizer;
 
 #region BytecodeCompactors
 
+// PushFloat [float]
+// AssignNoPush [ref]
+// -> PushFloatAssign [float] [ref]
+// or if there's multiple
+// -> NPushFloatAssign [count] [float] [ref] ... [float] [ref]
+internal sealed class PushFloatAssign : IOptimization {
+    public OptPass OptimizationPass => OptPass.BytecodeCompactor;
+
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.PushFloat,
+            DreamProcOpcode.AssignNoPush
+        ];
+    }
+
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
+        if (index + 1 >= input.Count) {
+            throw new ArgumentOutOfRangeException(nameof(index), "Index plus one is outside the bounds of the input list.");
+        }
+
+        int count = 0;
+        while (index + count*2 + 1 < input.Count &&
+               input[index + count * 2] is AnnotatedBytecodeInstruction { Opcode: DreamProcOpcode.PushFloat } && input[index + count * 2 + 1] is AnnotatedBytecodeInstruction { Opcode: DreamProcOpcode.AssignNoPush }) {
+            count++;
+        }
+
+        // If the pattern only occurs once, replace with PushFloatAssign and return
+        if (count == 1) {
+            AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
+            AnnotatedBytecodeInstruction secondInstruction = (AnnotatedBytecodeInstruction)(input[index + 1]);
+            AnnotatedBytecodeFloat pushVal1 = firstInstruction.GetArg<AnnotatedBytecodeFloat>(0);
+            AnnotatedBytecodeReference assignVal2 = secondInstruction.GetArg<AnnotatedBytecodeReference>(0);
+
+            input.RemoveRange(index, 2);
+            input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.PushFloatAssign, [pushVal1, assignVal2]));
+            return;
+        }
+
+        // Otherwise, replace with NPushFloatAssign
+
+        int stackDelta = 0;
+        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(2 * count + 1) { new AnnotatedBytecodeInteger(count, input[index].GetLocation()) };
+
+        for (int i = 0; i < count; i++) {
+            AnnotatedBytecodeInstruction floatInstruction = (AnnotatedBytecodeInstruction)(input[index + i*2]);
+            AnnotatedBytecodeInstruction assignInstruction = (AnnotatedBytecodeInstruction)(input[index + i*2 + 1]);
+            args.Add(floatInstruction.GetArg<AnnotatedBytecodeFloat>(0));
+            args.Add(assignInstruction.GetArg<AnnotatedBytecodeReference>(0));
+            stackDelta += 2;
+        }
+
+        input.RemoveRange(index, count * 2);
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.NPushFloatAssign, stackDelta, args));
+    }
+}
+
 // PushString [string]
 // ...
 // PushString [string]

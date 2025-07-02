@@ -22,7 +22,7 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IServerNetManager _netManager = default!;
         [Dependency] private readonly IConfigurationManager _config = default!;
 
-        private readonly Dictionary<NetUserId, DreamConnection> _connections = new Dictionary<NetUserId, DreamConnection>();
+        private readonly Dictionary<NetUserId, DreamConnection> _connections = new();
 
         public IEnumerable<DreamConnection> Connections => _connections.Values;
 
@@ -244,12 +244,8 @@ namespace OpenDreamRuntime {
         private void OnPlayerStatusChanged(object? sender, SessionStatusEventArgs e) {
             switch (e.NewStatus) {
                 case SessionStatus.Connected:
-                    string? interfaceText = null;
-                    if (_compiledJson.Interface != null)
-                        interfaceText = _dreamResourceManager.LoadResource(_compiledJson.Interface).ReadAsString();
-
-                    var msgLoadInterface = new MsgLoadInterface() {
-                        InterfaceText = interfaceText
+                    var msgLoadInterface = new MsgLoadInterface {
+                        InterfaceText = _dreamResourceManager.InterfaceFile?.ReadAsString()
                     };
 
                     e.Session.Channel.SendMessage(msgLoadInterface);
@@ -286,12 +282,10 @@ namespace OpenDreamRuntime {
         }
 
         public void HotReloadInterface() {
-            string? interfaceText = null;
-            if (_compiledJson.Interface != null)
-                interfaceText = _dreamResourceManager.LoadResource(_compiledJson.Interface, forceReload:true).ReadAsString();
+            _dreamResourceManager.InterfaceFile?.ReloadFromDisk();
 
-            var msgLoadInterface = new MsgLoadInterface() {
-                InterfaceText = interfaceText
+            var msgLoadInterface = new MsgLoadInterface {
+                InterfaceText = _dreamResourceManager.InterfaceFile?.ReadAsString()
             };
 
             foreach (var connection in _connections.Values) {
@@ -299,12 +293,15 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public void HotReloadResource(string fileName){
+        public void HotReloadResource(string fileName) {
             //ensure all paths are relative for consistency
-            var resource = _dreamResourceManager.LoadResource(Path.GetRelativePath(_dreamResourceManager.RootPath, fileName), forceReload:true);
-            var msgBrowseResource = new MsgNotifyResourceUpdate() { //send a message that this resource id has been updated, let the clients handle re-requesting it
+            var path = Path.GetRelativePath(_dreamResourceManager.RootPath, fileName);
+            var resource = _dreamResourceManager.LoadResource(path);
+            var msgBrowseResource = new MsgNotifyResourceUpdate { //send a message that this resource id has been updated, let the clients handle re-requesting it
                 ResourceId = resource.Id
             };
+
+            resource.ReloadFromDisk();
             foreach (var connection in _connections.Values) {
                 connection.Session?.Channel.SendMessage(msgBrowseResource);
             }

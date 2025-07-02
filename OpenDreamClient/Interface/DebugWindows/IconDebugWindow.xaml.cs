@@ -67,6 +67,7 @@ internal sealed partial class IconDebugWindow : OSWindow {
         AddPropertyIfNotDefault("Map Text Offset", appearance.MaptextOffset, MutableAppearance.Default.MaptextOffset);
         AddPropertyIfNotDefault("Map Text Size", appearance.MaptextSize, MutableAppearance.Default.MaptextSize);
         AddPropertyIfNotDefault("Map Text", appearance.Maptext, MutableAppearance.Default.Maptext);
+        AddPropertyIfNotDefault("Mouse Events", appearance.EnabledMouseEvents, MutableAppearance.Default.EnabledMouseEvents);
 
         foreach (var overlay in _icon.Overlays) {
             AddDreamIconButton(OverlaysGrid, overlay);
@@ -86,6 +87,10 @@ internal sealed partial class IconDebugWindow : OSWindow {
                 VisContentsGrid.AddChild(new Label { Text = $"Failed to get sprite component for {visContentEntity}" });
             }
         }
+
+        TabContainer.SetTabVisible(OverlaysTab, OverlaysGrid.ChildCount != 0);
+        TabContainer.SetTabVisible(UnderlaysTab, UnderlaysGrid.ChildCount != 0);
+        TabContainer.SetTabVisible(VisContentsTab, VisContentsGrid.ChildCount != 0);
     }
 
     private void AddPropertyIfNotDefault(string propertyName, object? value, object? defaultValue) {

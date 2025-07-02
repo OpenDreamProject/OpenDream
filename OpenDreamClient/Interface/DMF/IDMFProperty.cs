@@ -159,16 +159,16 @@ public struct DMFPropertyVec2 : IDMFProperty, IEquatable<DMFPropertyVec2> {
     }
 
     public DMFPropertyVec2(string value) {
-        if(value.Equals("none",StringComparison.InvariantCultureIgnoreCase)){
+        if (value.Equals("none", StringComparison.InvariantCultureIgnoreCase)) {
             X = 0;
             Y = 0;
             return;
         }
 
-        string[] parts = value.Split([',','x',' ']);
+        string[] parts = value.Split([',', 'x', ' ']);
 
-        X = int.Parse(parts[0]);
-        Y = int.Parse(parts[1]);
+        X = (int)float.Parse(parts[0]);
+        Y = (int)float.Parse(parts[1]);
     }
 
     public DMFPropertyVec2(Vector2 value) {

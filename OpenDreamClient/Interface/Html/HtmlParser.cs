@@ -70,8 +70,13 @@ public static class HtmlParser {
                     string tagType = attributes[0].ToLowerInvariant();
 
                     currentText.Clear();
+                    bool isSelfClosing = IsSelfClosing(tagType, attributes);
                     if (closingTag) {
-                        if (tags.Count == 0) {
+                        if (isSelfClosing) {
+                            // ignore closing tags of void elements since they don't
+                            // do anything anyway. Should probably warn.
+                            return;
+                        } else if (tags.Count == 0) {
                             Sawmill.Error("Unexpected closing tag");
                             return;
                         } else if (tags.Peek() != tagType) {
@@ -82,9 +87,10 @@ public static class HtmlParser {
                         appendTo.Pop();
                         tags.Pop();
                     } else {
-                        tags.Push(tagType);
-
-                        appendTo.PushTag(new MarkupNode(tagType, null, ParseAttributes(attributes)), selfClosing: attributes[^1] == "/");
+                        if (!isSelfClosing) {
+                            tags.Push(tagType);
+                        }
+                        appendTo.PushTag(new MarkupNode(tagType, null, ParseAttributes(attributes)), selfClosing: isSelfClosing);
                     }
 
                     break;
@@ -137,6 +143,39 @@ public static class HtmlParser {
         PushCurrentText();
         while (tags.TryPop(out _))
             appendTo.Pop();
+    }
+
+    /**
+     * <summary>
+     * Returns if a tag is written in old self-closing form, or if the tag
+     * represents a void element, which must have no children
+     * </summary>
+     */
+    private static bool IsSelfClosing(string tagType, string[] attributes) {
+        if (attributes[^1] == "/") {
+            return true;
+        }
+
+        switch (tagType) {
+            case "area":
+            case "base":
+            case "br":
+            case "col":
+            case "embed":
+            case "hr":
+            case "img":
+            case "input":
+            case "link":
+            case "meta":
+            case "param":
+            case "source":
+            case "track":
+            case "wbr":
+                return true;
+
+            default:
+                return false;
+        }
     }
 
     private static Dictionary<string, MarkupParameter> ParseAttributes(string[] attributes) {

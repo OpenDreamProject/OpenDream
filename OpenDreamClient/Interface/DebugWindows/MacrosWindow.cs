@@ -35,16 +35,16 @@ internal sealed class MacrosWindow : OSWindow {
         AddChild(tabs);
     }
 
-    private GridContainer CreateMacroTable(InterfaceMacroSet macroSet) {
+    private ScrollContainer CreateMacroTable(InterfaceMacroSet macroSet) {
         var macroTable = new GridContainer {
             Columns = 3,
-            Margin = new(5)
+            Margin = new(5, 10, 5, 5),
         };
 
         foreach (var macro in macroSet.Macros.Values) {
             var idText = macro.Id;
-            if (macro.ElementDescriptor.Name.Value != idText.Value)
-                idText.Value += $" ({macro.ElementDescriptor.Name.AsRaw()})";
+            if (macro.ElementDescriptor.Id.Value != idText.Value)
+                idText.Value += $" ({macro.ElementDescriptor.Id.AsRaw()})";
 
             var idLabel = new Label { Text = idText.AsRaw() };
             var commandLabel = new Label { Text = macro.Command };
@@ -66,12 +66,15 @@ internal sealed class MacrosWindow : OSWindow {
                 }
             };
 
+            macroTable.AddChild(executeButton);
             macroTable.AddChild(idLabel);
             macroTable.AddChild(commandLabel);
-            macroTable.AddChild(executeButton);
         }
 
-        return macroTable;
+        return new ScrollContainer {
+            Children = { macroTable },
+            MinSize = new Vector2(1024, 700)
+        };
     }
 }
 

@@ -17,7 +17,9 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
 using DMCompiler.DM;
+using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects.Types;
+using OpenDreamRuntime.Rendering;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
 using Robust.Server;
@@ -25,13 +27,12 @@ using Robust.Shared.Asynchronous;
 using Vector4 = Robust.Shared.Maths.Vector4;
 
 namespace OpenDreamRuntime.Procs.Native;
+
 /// <remarks>
 /// Note that this proc container also includes global procs which are used to create some DM objects,
 /// like filter(), matrix(), etc.
 /// </remarks>
 internal static class DreamProcNativeRoot {
-    private static readonly DreamResourceManager _resourceManager = IoCManager.Resolve<DreamResourceManager>();
-
     [DreamProc("alert")]
     [DreamProcParameter("Usr", Type = DreamValueTypeFlag.DreamObject)]
     [DreamProcParameter("Message", Type = DreamValueTypeFlag.String)]
@@ -257,6 +258,7 @@ internal static class DreamProcNativeRoot {
             }
         }
 
+        var resourceManager = bundle.ResourceManager;
         bundle.AtomManager.AnimateAppearance(obj, TimeSpan.FromMilliseconds(time * 100), (AnimationEasing)easing, loop, flags, delay, chainAnim,
         appearance => {
             if (!pixelX.IsNull) {
@@ -355,7 +357,7 @@ internal static class DreamProcNativeRoot {
 
             if (!icon.IsNull) {
                 obj.SetVariableValue("icon", icon);
-                if(_resourceManager.TryLoadIcon(icon, out var iconResource))
+                if(resourceManager.TryLoadIcon(icon, out var iconResource))
                     appearance.Icon = iconResource.Id;
             }
 
@@ -391,6 +393,36 @@ internal static class DreamProcNativeRoot {
         return new DreamValue(char.ConvertFromUtf32(asciiValue));
     }
 
+    public static DreamList Block(DreamObjectTree objectTree, IDreamMapManager mapManager,
+        DreamObjectTurf corner1, DreamObjectTurf corner2) {
+        return Block(objectTree, mapManager, corner1.X, corner1.Y, corner1.Z, corner2.X, corner2.Y, corner2.Z);
+    }
+
+    public static DreamList Block(DreamObjectTree objectTree, IDreamMapManager mapManager,
+        int x1, int y1, int z1, int x2, int y2, int z2) {
+        int startX = Math.Min(x1, x2);
+        int startY = Math.Min(y1, y2);
+        int startZ = Math.Min(z1, z2);
+        int endX = Math.Max(x1, x2);
+        int endY = Math.Max(y1, y2);
+        int endZ = Math.Max(z1, z2);
+
+        DreamList turfs = objectTree.CreateList((endX - startX + 1) * (endY - startY + 1) * (endZ - startZ + 1));
+
+        // Collected in z-y-x order
+        for (int z = startZ; z <= endZ; z++) {
+            for (int y = startY; y <= endY; y++) {
+                for (int x = startX; x <= endX; x++) {
+                    if (mapManager.TryGetTurfAt((x, y), z, out var turf)) {
+                        turfs.AddValue(new DreamValue(turf));
+                    }
+                }
+            }
+        }
+
+        return turfs;
+    }
+
     [DreamProc("block")]
     [DreamProcParameter("Start", Type = DreamValueTypeFlag.DreamObject | DreamValueTypeFlag.Float)]
     [DreamProcParameter("End", Type = DreamValueTypeFlag.DreamObject | DreamValueTypeFlag.Float)]
@@ -399,61 +431,73 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("EndY", Type = DreamValueTypeFlag.Float)]
     [DreamProcParameter("EndZ", Type = DreamValueTypeFlag.Float)]
     public static DreamValue NativeProc_block(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-        (int X, int Y, int Z) startPos;
-        (int X, int Y, int Z) endPos;
-        if (bundle.GetArgument(0, "Start").TryGetValueAsDreamObject<DreamObjectTurf>(out var startT)) {
-            if (!bundle.GetArgument(1, "End").TryGetValueAsDreamObject<DreamObjectTurf>(out var endT))
+        var arg1 = bundle.GetArgument(0, "Start");
+        var arg2 = bundle.GetArgument(1, "End");
+
+        if (arg1.TryGetValueAsDreamObject<DreamObjectTurf>(out var startT)) {
+            if (!arg2.TryGetValueAsDreamObject<DreamObjectTurf>(out var endT))
                 return new DreamValue(bundle.ObjectTree.CreateList());
 
-            startPos = (startT.X, startT.Y, startT.Z);
-            endPos = (endT.X, endT.Y, endT.Z);
+            return new(Block(bundle.ObjectTree, bundle.MapManager, startT, endT));
         } else {
             // Need to check that we weren't passed something like block("cat", turf) which should return an empty list
-            if (bundle.GetArgument(1, "End").TryGetValueAsDreamObject<DreamObjectTurf>(out _)) {
+            if (arg2.TryGetValueAsDreamObject<DreamObjectTurf>(out _))
                 return new DreamValue(bundle.ObjectTree.CreateList());
-            }
+
             // coordinate-style
-            if (!bundle.GetArgument(0, "Start").TryGetValueAsInteger(out startPos.X)) {
-                startPos.X = 1; // First three default to 1 when passed null or invalid
-            }
-            if (!bundle.GetArgument(1, "End").TryGetValueAsInteger(out startPos.Y)) {
-                startPos.Y = 1;
-            }
-            if (!bundle.GetArgument(2, "StartZ").TryGetValueAsInteger(out startPos.Z)) {
-                startPos.Z = 1;
-            }
-            if (!bundle.GetArgument(3, "EndX").TryGetValueAsInteger(out endPos.X)) {
-                endPos.X = startPos.X; // Last three default to the start coords if null or invalid
-            }
-            if (!bundle.GetArgument(4, "EndY").TryGetValueAsInteger(out endPos.Y)) {
-                endPos.Y = startPos.Y;
-            }
-            if (!bundle.GetArgument(5, "EndZ").TryGetValueAsInteger(out endPos.Z)) {
-                endPos.Z = startPos.Z;
-            }
+            if (!arg1.TryGetValueAsInteger(out var x1))
+                x1 = 1; // First three default to 1 when passed null or invalid
+            if (!arg2.TryGetValueAsInteger(out var y1))
+                y1 = 1;
+            if (!bundle.GetArgument(2, "StartZ").TryGetValueAsInteger(out var z1))
+                z1 = 1;
+            if (!bundle.GetArgument(3, "EndX").TryGetValueAsInteger(out var x2))
+                x2 = x1; // Last three default to the start coords if null or invalid
+            if (!bundle.GetArgument(4, "EndY").TryGetValueAsInteger(out var y2))
+                y2 = y1;
+            if (!bundle.GetArgument(5, "EndZ").TryGetValueAsInteger(out var z2))
+                z2 = z1;
+
+            return new(Block(bundle.ObjectTree, bundle.MapManager, x1, y1, z1, x2, y2, z2));
+        }
+    }
+
+    [DreamProc("bounds_dist")]
+    [DreamProcParameter("Reference", Type = DreamValueTypeFlag.DreamObject)]
+    [DreamProcParameter("Target", Type = DreamValueTypeFlag.DreamObject)]
+    public static DreamValue NativeProc_bounds_dist(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        if (!bundle.GetArgument(0, "Reference").TryGetValueAsDreamObject<DreamObjectAtom>(out var origin) ||
+            !bundle.GetArgument(1, "Target").TryGetValueAsDreamObject<DreamObjectAtom>(out var target)) {
+            return new DreamValue(float.PositiveInfinity);
         }
 
-        int startX = Math.Min(startPos.X, endPos.X);
-        int startY = Math.Min(startPos.Y, endPos.Y);
-        int startZ = Math.Min(startPos.Z, endPos.Z);
-        int endX = Math.Max(startPos.X, endPos.X);
-        int endY = Math.Max(startPos.Y, endPos.Y);
-        int endZ = Math.Max(startPos.Z, endPos.Z);
-
-        DreamList turfs = bundle.ObjectTree.CreateList((endX - startX + 1) * (endY - startY + 1) * (endZ - startZ + 1));
-
-        // Collected in z-y-x order
-        for (int z = startZ; z <= endZ; z++) {
-            for (int y = startY; y <= endY; y++) {
-                for (int x = startX; x <= endX; x++) {
-                    if (bundle.MapManager.TryGetTurfAt((x, y), z, out var turf)) {
-                        turfs.AddValue(new DreamValue(turf));
-                    }
-                }
-            }
+        var position1 = bundle.AtomManager.GetAtomPosition(origin);
+        var position2 = bundle.AtomManager.GetAtomPosition(target);
+        if (position1.Z != position2.Z) {
+            return new DreamValue(float.PositiveInfinity);
         }
 
-        return new DreamValue(turfs);
+        //todo, support step for pixel movement
+        if (!origin.TryGetVariable("bound_width", out var originWidth)) {
+            originWidth = new(bundle.DreamManager.WorldInstance.IconSize);
+        }
+
+        if (!origin.TryGetVariable("bound_height", out var originHeight)) {
+            originHeight = new(bundle.DreamManager.WorldInstance.IconSize);
+        }
+
+        if (!target.TryGetVariable("bound_width", out var targetWidth)) {
+            targetWidth = new(bundle.DreamManager.WorldInstance.IconSize);
+        }
+
+        if (!origin.TryGetVariable("bound_height", out var targetHeight)) {
+            targetHeight = new(bundle.DreamManager.WorldInstance.IconSize);
+        }
+
+        return new DreamValue(MathF.Max(MathF.Abs(position2.X - position1.X) * bundle.DreamManager.WorldInstance.IconSize -
+                                    MathF.Abs(originWidth.MustGetValueAsFloat() + targetWidth.MustGetValueAsFloat()) / 2,
+                                    MathF.Abs(position2.Y - position1.Y) * bundle.DreamManager.WorldInstance.IconSize -
+                                    MathF.Abs(originHeight.MustGetValueAsFloat() + targetHeight.MustGetValueAsFloat()) / 2));
     }
 
     [DreamProc("ceil")]
@@ -549,6 +593,25 @@ internal static class DreamProcNativeRoot {
                 return DreamValue.False;
 
             if (!t2.Equals(t1, StringComparison.InvariantCultureIgnoreCase))
+                return DreamValue.False;
+        }
+
+        return DreamValue.True;
+    }
+
+    [DreamProc("cmptextEx")]
+    [DreamProcParameter("T1", Type = DreamValueTypeFlag.String)]
+    public static DreamValue NativeProc_cmptextEx(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        if (!bundle.GetArgument(0, "T1").TryGetValueAsString(out var t1))
+            return DreamValue.False;
+
+        for (int i = 1; i < bundle.Arguments.Length; i++) {
+            var arg = bundle.Arguments[i];
+
+            if (!arg.TryGetValueAsString(out var t2))
+                return DreamValue.False;
+
+            if (!t2.Equals(t1, StringComparison.InvariantCulture))
                 return DreamValue.False;
         }
 
@@ -900,11 +963,10 @@ internal static class DreamProcNativeRoot {
         actualstart += needle.Length-1;
         actualstart = Math.Max(Math.Min(text.Length, actualstart),0);
 
-        if(end > 0)
-            actualcount = actualstart - (end-1);
+        if (end > 0)
+            actualcount = actualstart - (end - 1) + needle.Length;
         else
-            actualcount  = actualstart - ((text.Length-1) + (end));
-        actualcount += needle.Length-1;
+            actualcount = actualstart - ((text.Length - 1) + (end));
         actualcount = Math.Max(Math.Min(actualstart+1, actualcount),0);
         int needleIndex = text.LastIndexOf(needle, actualstart, actualcount, StringComparison.OrdinalIgnoreCase);
         return new DreamValue(needleIndex + 1); //1-indexed, or 0 if not found (LastIndexOf returns -1 if not found)
@@ -942,7 +1004,7 @@ internal static class DreamProcNativeRoot {
         actualstart = Math.Max(Math.Min(text.Length, actualstart),0);
 
         if(end > 0)
-            actualcount = actualstart - (end-1);
+            actualcount = actualstart - (end-1) + needle.Length;
         else
             actualcount  = actualstart - ((text.Length-1) + (end));
         actualcount += needle.Length-1;
@@ -955,8 +1017,31 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("Icon", Type = DreamValueTypeFlag.String | DreamValueTypeFlag.DreamResource)]
     [DreamProcParameter("Object", Type = DreamValueTypeFlag.String | DreamValueTypeFlag.DreamResource)]
     public static DreamValue NativeProc_flick(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-        //TODO: Implement flick()
+        var iconArg = bundle.GetArgument(0, "Icon");
+        var objectArg = bundle.GetArgument(1, "Object");
 
+        if (!objectArg.TryGetValueAsDreamObject<DreamObjectAtom>(out var atom))
+            return DreamValue.Null;
+
+        var appearance = bundle.AtomManager.MustGetAppearance(atom);
+        int iconId;
+        if (iconArg.TryGetValueAsString(out var iconState)) {
+            if (appearance.Icon == null)
+                return DreamValue.Null;
+
+            iconId = appearance.Icon.Value;
+        } else if (iconArg.TryGetValueAsDreamResource(out var resource)) {
+            iconId = resource.Id;
+            iconState = appearance.IconState;
+        } else {
+            return DreamValue.Null;
+        }
+
+        var entitySystemManager = IoCManager.Resolve<IEntitySystemManager>();
+        if (!entitySystemManager.TryGetEntitySystem(out ServerAppearanceSystem? appearanceSystem))
+            return DreamValue.Null;
+
+        appearanceSystem.Flick(atom, iconId, iconState);
         return DreamValue.Null;
     }
 
@@ -1419,11 +1504,11 @@ internal static class DreamProcNativeRoot {
             writer.WriteStringValue(type.Path);
         else if (value.TryGetValueAsProc(out var proc))
             writer.WriteStringValue(proc.ToString());
-        else if (value.TryGetValueAsDreamList(out var list)) {
+        else if (value.TryGetValueAsIDreamList(out var list)) {
             if (list.IsAssociative) {
                 writer.WriteStartObject();
 
-                foreach (DreamValue listValue in list.GetValues()) {
+                foreach (DreamValue listValue in list.EnumerateValues()) {
                     var key = listValue.Stringify();
 
                     if (list.ContainsKey(listValue)) {
@@ -1441,27 +1526,40 @@ internal static class DreamProcNativeRoot {
             } else {
                 writer.WriteStartArray();
 
-                foreach (DreamValue listValue in list.GetValues()) {
+                foreach (DreamValue listValue in list.EnumerateValues()) {
                     JsonEncode(writer, listValue);
                 }
 
                 writer.WriteEndArray();
             }
         } else if (value.TryGetValueAsDreamObject(out var dreamObject)) {
-            if (dreamObject == null)
-                writer.WriteNullValue();
-            else if (dreamObject is DreamObjectMatrix matrix) { // Special behaviour for /matrix values
-                writer.WriteStartArray();
+            switch (dreamObject) {
+                case null:
+                    writer.WriteNullValue();
+                    break;
+                case DreamObjectMatrix matrix: {  // Special behaviour for /matrix values
+                    writer.WriteStartArray();
 
-                foreach (var f in DreamObjectMatrix.EnumerateMatrix(matrix)) {
-                    writer.WriteNumberValue(f);
+                    foreach (var f in DreamObjectMatrix.EnumerateMatrix(matrix)) {
+                        writer.WriteNumberValue(f);
+                    }
+
+                    writer.WriteEndArray();
+                    // This doesn't have any corresponding snowflaking in CreateValueFromJsonElement()
+                    // because BYOND actually just forgets that this was a matrix after doing json encoding.
+                    break;
                 }
-
-                writer.WriteEndArray();
-                // This doesn't have any corresponding snowflaking in CreateValueFromJsonElement()
-                // because BYOND actually just forgets that this was a matrix after doing json encoding.
-            } else
-                writer.WriteStringValue(value.Stringify());
+                case DreamObjectVector vector: { // Special behaviour for /vector values
+                    if (vector.Is3D)
+                        writer.WriteStringValue($"vector({vector.X},{vector.Y},{vector.Z})");
+                    else
+                        writer.WriteStringValue($"vector({vector.X},{vector.Y})");
+                    break;
+                }
+                default:
+                    writer.WriteStringValue(value.Stringify());
+                    break;
+            }
         } else if (value.TryGetValueAsDreamResource(out var dreamResource)) {
             writer.WriteStringValue(dreamResource.ResourcePath);
         } else {
@@ -1519,6 +1617,26 @@ internal static class DreamProcNativeRoot {
     public static DreamValue NativeProc_length_char(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
         DreamValue value = bundle.GetArgument(0, "E");
         return _length(value, false);
+    }
+
+    [DreamProc("lerp")]
+    [DreamProcParameter("A")]
+    [DreamProcParameter("B")]
+    [DreamProcParameter("factor", Type = DreamValueTypeFlag.Float)]
+    public static DreamValue NativeProc_lerp(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        DreamValue valA = bundle.GetArgument(0, "A");
+        DreamValue valB = bundle.GetArgument(1, "B");
+        DreamValue valFactor = bundle.GetArgument(2, "factor");
+
+        if (!valFactor.TryGetValueAsFloatCoerceNull(out var factor))
+            throw new Exception($"lerp factor {valFactor} is not a num");
+
+        // TODO: Support non-num arguments like vectors
+        if (valA.TryGetValueAsFloatCoerceNull(out var floatA) && valB.TryGetValueAsFloatCoerceNull(out var floatB)) {
+            return new DreamValue(floatA + (floatB - floatA) * factor);
+        }
+        // TODO: Change this to a type mismatch runtime once the other valid arg types are supported
+        throw new NotImplementedException($"lerp() currently only supports nums and null; got {valA} and {valB}");
     }
 
     [DreamProc("list2params")]
@@ -2406,6 +2524,22 @@ internal static class DreamProcNativeRoot {
         return DreamValue.Null;
     }
 
+    [DreamProc("sign")]
+    [DreamProcParameter("A", Type = DreamValueTypeFlag.Float)]
+    public static DreamValue NativeProc_sign(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        if (bundle.Arguments.Length != 1) throw new Exception($"expected 1 argument (found {bundle.Arguments.Length})");
+        DreamValue arg = bundle.GetArgument(0, "A");
+
+        // Any non-num returns 0
+        if (!arg.TryGetValueAsFloat(out var value)) return new DreamValue(0);
+
+        return value switch {
+            0 => new DreamValue(0),
+            < 0 => new DreamValue(-1),
+            _ => new DreamValue(1)
+        };
+    }
+
     [DreamProc("sleep")]
     [DreamProcParameter("Delay", Type = DreamValueTypeFlag.Float)]
     public static async Task<DreamValue> NativeProc_sleep(AsyncNativeProc.State state) {
@@ -3089,6 +3223,151 @@ internal static class DreamProcNativeRoot {
         return new DreamValue(HttpUtility.UrlEncode(plainText));
     }
 
+    [DreamProc("values_cut_over")]
+    [DreamProcParameter("Alist", Type = DreamValueTypeFlag.DreamObject)]
+    [DreamProcParameter("Max", Type = DreamValueTypeFlag.Float)]
+    [DreamProcParameter("inclusive", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    public static DreamValue NativeProc_values_cut_over(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        if (bundle.Arguments.Length < 2 || bundle.Arguments.Length > 3) throw new Exception($"expected 2-3 arguments (found {bundle.Arguments.Length})");
+
+        DreamValue argList = bundle.GetArgument(0, "Alist");
+        DreamValue argMin = bundle.GetArgument(1, "Max");
+        DreamValue argInclusive = bundle.GetArgument(2, "inclusive");
+
+        return values_cut_helper(argList, argMin, argInclusive, false);
+    }
+
+    [DreamProc("values_cut_under")]
+    [DreamProcParameter("Alist", Type = DreamValueTypeFlag.DreamObject)]
+    [DreamProcParameter("Min", Type = DreamValueTypeFlag.Float)]
+    [DreamProcParameter("inclusive", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    public static DreamValue NativeProc_values_cut_under(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        if (bundle.Arguments.Length < 2 || bundle.Arguments.Length > 3) throw new Exception($"expected 2-3 arguments (found {bundle.Arguments.Length})");
+
+        DreamValue argList = bundle.GetArgument(0, "Alist");
+        DreamValue argMin = bundle.GetArgument(1, "Min");
+        DreamValue argInclusive = bundle.GetArgument(2, "inclusive");
+
+        return values_cut_helper(argList, argMin, argInclusive, true);
+    }
+
+    private static DreamValue values_cut_helper(DreamValue argList, DreamValue argMin, DreamValue argInclusive, bool under) {
+        // BYOND explicitly doesn't check for any truthy value
+        bool inclusive = argInclusive.TryGetValueAsFloat(out var inclusiveValue) && inclusiveValue >= 1;
+
+        var cutCount = 0; // number of values cut from the list
+        var min = argMin.UnsafeGetValueAsFloat();
+
+        if (argList.TryGetValueAsDreamList(out var list)) {
+            if (!list.IsAssociative) {
+                cutCount = list.GetLength();
+                list.Cut();
+                return new DreamValue(cutCount);
+            }
+
+            var values = list.GetValues();
+            var assocValues = list.GetAssociativeValues();
+
+            // Nuke any keys without values
+            if (values.Count != assocValues.Count) {
+                for (var index = 0; index < values.Count; index++) {
+                    var val = values[index];
+                    if (!assocValues.ContainsKey(val)) {
+                        cutCount += 1;
+                        index -= 1;
+                        list.RemoveValue(val);
+                    }
+                }
+            }
+
+            foreach (var (key,value) in assocValues) {
+                if (value.TryGetValueAsFloat(out var valFloat)) {
+                    switch (inclusive) {
+                        case true when under && valFloat <= min:
+                        case true when !under && valFloat >= min:
+                        case false when under && valFloat < min:
+                        case false when !under && valFloat > min:
+                            list.RemoveValue(key);
+                            cutCount += 1;
+                            break;
+                    }
+                } else {
+                    list.RemoveValue(key); // Keys without numeric values seem to always be removed
+                    cutCount += 1;
+                }
+            }
+        }
+
+        return new DreamValue(cutCount);
+    }
+
+    [DreamProc("values_dot")]
+    [DreamProcParameter("A", Type = DreamValueTypeFlag.DreamObject)]
+    [DreamProcParameter("B", Type = DreamValueTypeFlag.DreamObject)]
+    public static DreamValue NativeProc_values_dot(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        if (bundle.Arguments.Length != 2) throw new Exception("expected 2 arguments");
+
+        DreamValue argA = bundle.GetArgument(0, "A");
+        DreamValue argB = bundle.GetArgument(1, "B");
+
+        float sum = 0; // Default return is 0 for invalid args
+
+        if (argA.TryGetValueAsDreamList(out var listA) && listA.IsAssociative && argB.TryGetValueAsDreamList(out var listB) && listB.IsAssociative) {
+            var aValues = listA.GetAssociativeValues();
+            var bValues = listB.GetAssociativeValues();
+
+            // sum += valueA * valueB
+            // for each assoc value whose key exists in both lists
+            // and when both assoc values are floats
+            foreach (var (key,value) in aValues) {
+                if (value.TryGetValueAsFloat(out var aFloat) && bValues.TryGetValue(key, out var bVal) &&
+                    bVal.TryGetValueAsFloat(out var bFloat)) {
+                    sum += (aFloat * bFloat);
+                }
+            }
+        }
+
+        return new DreamValue(sum);
+    }
+
+    [DreamProc("values_product")]
+    [DreamProcParameter("Alist", Type = DreamValueTypeFlag.DreamObject)]
+    public static DreamValue NativeProc_values_product(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        if (bundle.Arguments.Length != 1) throw new Exception("expected 1 argument");
+
+        DreamValue arg = bundle.GetArgument(0, "Alist");
+
+        float product = 1; // Default return is 1 for invalid args
+
+        if (arg.TryGetValueAsDreamList(out var list) && list.IsAssociative) {
+            var assocValues = list.GetAssociativeValues();
+            foreach (var (_,value) in assocValues) {
+                if(value.TryGetValueAsFloat(out var valFloat)) product *= valFloat;
+            }
+        }
+
+        return new DreamValue(product);
+    }
+
+    [DreamProc("values_sum")]
+    [DreamProcParameter("Alist", Type = DreamValueTypeFlag.DreamObject)]
+    public static DreamValue NativeProc_values_sum(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        if (bundle.Arguments.Length != 1) throw new Exception("expected 1 argument");
+
+        DreamValue arg = bundle.GetArgument(0, "Alist");
+
+        float sum = 0; // Default return is 0 for invalid args
+
+        if (arg.TryGetValueAsDreamList(out var list) && list.IsAssociative) {
+            var assocValues = list.GetAssociativeValues();
+            foreach (var (_,value) in assocValues) {
+                if(value.TryGetValueAsFloat(out var valFloat)) sum += valFloat;
+            }
+        }
+
+        return new DreamValue(sum);
+    }
+
     [DreamProc("view")]
     [DreamProcParameter("Dist", Type = DreamValueTypeFlag.Float, DefaultValue = 5)]
     [DreamProcParameter("Center", Type = DreamValueTypeFlag.DreamObject)]
@@ -3191,6 +3470,29 @@ internal static class DreamProcNativeRoot {
         bundle.GetArgument(3, "Speed").TryGetValueAsInteger(out var speed);
 
         bundle.WalkManager.StartWalkTowards(refAtom, trgAtom, lag, speed);
+        return DreamValue.Null;
+    }
+
+    [DreamProc("walk_to")]
+    [DreamProcParameter("Ref", Type = DreamValueTypeFlag.DreamObject)]
+    [DreamProcParameter("Trg", Type = DreamValueTypeFlag.DreamObject)]
+    [DreamProcParameter("Min", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    [DreamProcParameter("Lag", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    [DreamProcParameter("Speed", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    public static DreamValue NativeProc_walk_to(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        if (!bundle.GetArgument(0, "Ref").TryGetValueAsDreamObject<DreamObjectMovable>(out var refAtom))
+            return DreamValue.Null;
+
+        if (!bundle.GetArgument(1, "Trg").TryGetValueAsDreamObject<DreamObjectAtom>(out var trgAtom)) {
+            bundle.WalkManager.StopWalks(refAtom);
+            return DreamValue.Null;
+        }
+
+        bundle.GetArgument(2, "Min").TryGetValueAsInteger(out var min);
+        bundle.GetArgument(3, "Lag").TryGetValueAsInteger(out var lag);
+        bundle.GetArgument(4, "Speed").TryGetValueAsInteger(out var speed);
+
+        bundle.WalkManager.StartWalkTo(refAtom, trgAtom, min, lag, speed);
         return DreamValue.Null;
     }
 

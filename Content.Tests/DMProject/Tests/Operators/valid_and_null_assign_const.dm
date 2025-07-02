@@ -1,6 +1,6 @@
 //simple test of all basic assignment operators with valid and C(null) arguments
-//We can't be having const folding in here
-#define C(X) pick(X) 
+//Const fold everying
+#define C(X) X
 /proc/RunTest()
 	var/a = C(1)
 	a += C(1)

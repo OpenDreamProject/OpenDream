@@ -4,7 +4,7 @@ using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM;
 
 namespace DMCompiler.Compiler.DM {
-    internal partial class DMParser(DMCompiler compiler, DMLexer lexer) : Parser<Token>(compiler, lexer) {
+    public partial class DMParser(DMCompiler compiler, DMLexer lexer) : Parser<Token>(compiler, lexer) {
         protected Location CurrentLoc => Current().Location;
         protected DreamPath CurrentPath = DreamPath.Root;
 
@@ -76,7 +76,7 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_Dedent
         ];
 
-        private static readonly TokenType[] IdentifierTypes = [TokenType.DM_Identifier, TokenType.DM_Step];
+        private static readonly TokenType[] IdentifierTypes = [TokenType.DM_Identifier, TokenType.DM_Step, TokenType.DM_Proc];
 
         /// <summary>
         /// Used by <see cref="PathElement"/> to determine, keywords that may actually just be identifiers of a typename within a path, in a given context.
@@ -328,7 +328,7 @@ namespace DMCompiler.Compiler.DM {
                     var varDef = new DMASTObjectVarDefinition(loc, varPath, value, valType);
 
                     varDefinitions.Add(varDef);
-                    if (Check(TokenType.DM_Comma) || (isIndented && Newline())) {
+                    if (Check(TokenType.DM_Comma) || (isIndented && Delimiter())) {
                         Whitespace();
                         DMASTPath? newVarPath = Path();
 
@@ -2545,7 +2545,8 @@ namespace DMCompiler.Compiler.DM {
 
                 switch (procName) {
                     // Any number of arguments
-                    case "list": return new DMASTList(callLoc, callParameters);
+                    case "list": return new DMASTList(callLoc, callParameters, false);
+                    case "alist": return new DMASTList(callLoc, callParameters, true);
                     case "newlist": return new DMASTNewList(callLoc, callParameters);
                     case "addtext": return new DMASTAddText(callLoc, callParameters);
                     case "gradient": return new DMASTGradient(callLoc, callParameters);
@@ -2640,6 +2641,16 @@ namespace DMCompiler.Compiler.DM {
                         return callParameters.Length == 1
                             ? new DMASTLog(callLoc, callParameters[0].Value, null)
                             : new DMASTLog(callLoc, callParameters[1].Value, callParameters[0].Value);
+                    }
+                    case "astype": {
+                        if (callParameters.Length != 1 && callParameters.Length != 2) {
+                            Emit(WarningCode.InvalidArgumentCount, callLoc, "astype() requires 1 or 2 arguments");
+                            return new DMASTInvalidExpression(callLoc);
+                        }
+
+                        return callParameters.Length == 1
+                            ? new DMASTImplicitAsType(callLoc, callParameters[0].Value)
+                            : new DMASTAsType(callLoc, callParameters[0].Value, callParameters[1].Value);
                     }
                     case "istype": {
                         if (callParameters.Length != 1 && callParameters.Length != 2) {
@@ -2838,6 +2849,7 @@ namespace DMCompiler.Compiler.DM {
                 case "icon": return DMValueType.Icon;
                 case "path": return DMValueType.Path;
                 case "opendream_unimplemented": return DMValueType.Unimplemented;
+                case "opendream_unsupported": return DMValueType.Unsupported;
                 case "opendream_compiletimereadonly": return DMValueType.CompiletimeReadonly;
                 case "opendream_noconstfold": return DMValueType.NoConstFold;
                 default:

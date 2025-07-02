@@ -1,4 +1,5 @@
-﻿using OpenDreamShared.Rendering;
+﻿using OpenDreamClient.Interface;
+using OpenDreamShared.Rendering;
 using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Client.Player;
@@ -7,7 +8,8 @@ using Robust.Shared.Timing;
 
 namespace OpenDreamClient.Rendering;
 
-public sealed class DMISpriteSystem : EntitySystem {
+internal sealed class DMISpriteSystem : EntitySystem {
+    [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IGameTiming _gameTiming = default!;
     [Dependency] private readonly ClientAppearanceSystem _appearanceSystem = default!;
@@ -16,9 +18,6 @@ public sealed class DMISpriteSystem : EntitySystem {
     [Dependency] private readonly IPlayerManager _playerManager = default!;
     [Dependency] private readonly EntityLookupSystem _lookupSystem = default!;
     [Dependency] private readonly TransformSystem _transformSystem = default!;
-    [Dependency] private readonly MapSystem _mapSystem = default!;
-    [Dependency] private readonly ClientScreenOverlaySystem _screenOverlaySystem = default!;
-    [Dependency] private readonly ClientImagesSystem _clientImagesSystem = default!;
 
     public RenderTargetPool RenderTargetPool = default!;
 
@@ -34,7 +33,7 @@ public sealed class DMISpriteSystem : EntitySystem {
 
         RenderTargetPool = new(_clyde);
         _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
-        _mapOverlay = new DreamViewOverlay(RenderTargetPool, _transformSystem, _mapSystem, _lookupSystem, _appearanceSystem, _screenOverlaySystem, _clientImagesSystem);
+        _mapOverlay = new DreamViewOverlay(RenderTargetPool);
         _overlayManager.AddOverlay(_mapOverlay);
     }
 
@@ -42,6 +41,36 @@ public sealed class DMISpriteSystem : EntitySystem {
         RenderTargetPool = default!;
         _overlayManager.RemoveOverlay<DreamViewOverlay>();
         _mapOverlay = default!;
+    }
+
+    /// <summary>
+    /// Checks if a sprite should be visible to the player<br/>
+    /// Checks the appearance's invisibility, if it's inside the given AABB, and whether it's parented to another entity
+    /// </summary>
+    /// <param name="sprite">The sprite to check</param>
+    /// <param name="transform">The entity's transform, the parent check is skipped if this is null</param>
+    /// <param name="seeInvisibility">The eye's see_invisibility var</param>
+    /// <param name="worldAABB">The box visible to the viewport</param>
+    public bool IsVisible(DMISpriteComponent sprite, TransformComponent? transform, int? seeInvisibility, Box2? worldAABB) {
+        var icon = sprite.Icon;
+        if (icon.Appearance?.Invisibility > seeInvisibility)
+            return false;
+
+        if (transform != null) {
+            if (worldAABB != null) {
+                Box2? aabb = null;
+                icon.GetWorldAABB(_transformSystem.GetWorldPosition(transform), ref aabb);
+                if (aabb.HasValue && !worldAABB.Value.Intersects(aabb.Value))
+                    return false;
+            }
+
+            //Only render movables not inside another movable's contents (parented to the grid)
+            //TODO: Use RobustToolbox's container system/components?
+            if (transform.ParentUid != transform.GridUid)
+                return false;
+        }
+
+        return true;
     }
 
     private void OnIconSizeChanged(EntityUid uid) {
@@ -52,7 +81,7 @@ public sealed class DMISpriteSystem : EntitySystem {
     }
 
     private void HandleComponentAdd(EntityUid uid, DMISpriteComponent component, ref ComponentAdd args) {
-        component.Icon = new DreamIcon(RenderTargetPool, _gameTiming, _clyde, _appearanceSystem);
+        component.Icon = new DreamIcon(RenderTargetPool, _interfaceManager, _gameTiming, _clyde, _appearanceSystem);
         component.Icon.SizeChanged += () => OnIconSizeChanged(uid);
     }
 

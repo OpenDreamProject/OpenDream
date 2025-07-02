@@ -35,7 +35,7 @@ public sealed class DMIResource : DreamResource {
         dmiStream.Seek(0, SeekOrigin.Begin);
 
         Image<Rgba32> image = Image.Load<Rgba32>(dmiStream);
-        Texture = IoCManager.Resolve<IClyde>().LoadTextureFromImage(image);
+        Texture = IoCManager.Resolve<IClyde>().LoadTextureFromImage(image, name: $"DMI Resource #{Id}");
         IconSize = new Vector2i(description.Width, description.Height);
         Description = description;
 

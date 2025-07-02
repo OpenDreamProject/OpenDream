@@ -6,35 +6,76 @@ public class BytecodeOptimizer(DMCompiler compiler) {
     private readonly PeepholeOptimizer _peepholeOptimizer = new(compiler);
 
     internal void Optimize(List<IAnnotatedBytecode> input) {
+        if(compiler.Settings.NoOpts) // Optimizations are disabled
+            return;
+
         if (input.Count == 0)
             return;
 
         RemoveUnreferencedLabels(input);
         JoinAndForwardLabels(input);
         RemoveUnreferencedLabels(input);
+        RemoveImmediateJumps(input);
+        RemoveUnreferencedLabels(input);
 
         _peepholeOptimizer.RunPeephole(input);
+
+        // Run label optimizations again due to possibly removed jumps in peephole optimizers
+        RemoveUnreferencedLabels(input);
+        JoinAndForwardLabels(input);
+        RemoveUnreferencedLabels(input);
+        RemoveImmediateJumps(input);
+        RemoveUnreferencedLabels(input);
     }
 
     private void RemoveUnreferencedLabels(List<IAnnotatedBytecode> input) {
-        Dictionary<string, int> labelReferences = new();
+        Dictionary<string, int>? labelReferences = null;
         for (int i = 0; i < input.Count; i++) {
-            if (input[i] is AnnotatedBytecodeLabel label) {
-                labelReferences.TryAdd(label.LabelName, 0);
-            } else if (input[i] is AnnotatedBytecodeInstruction instruction) {
-                if (TryGetLabelName(instruction, out string? labelName)) {
-                    if (!labelReferences.TryAdd(labelName, 1)) {
-                        labelReferences[labelName]++;
+            switch (input[i]) {
+                case AnnotatedBytecodeLabel label:
+                    labelReferences ??= new Dictionary<string, int>();
+                    labelReferences.TryAdd(label.LabelName, 0);
+                    break;
+                case AnnotatedBytecodeInstruction instruction: {
+                    if (TryGetLabelName(instruction, out string? labelName)) {
+                        labelReferences ??= new Dictionary<string, int>();
+                        if (!labelReferences.TryAdd(labelName, 1)) {
+                            labelReferences[labelName] += 1;
+                        }
                     }
+
+                    break;
                 }
             }
         }
+
+        if (labelReferences == null) return;
+        var labelCount = labelReferences.Count;
 
         for (int i = 0; i < input.Count; i++) {
             if (input[i] is AnnotatedBytecodeLabel label) {
                 if (labelReferences[label.LabelName] == 0) {
                     input.RemoveAt(i);
-                    i--;
+                    i -= 1;
+                }
+
+                labelCount -= 1;
+                if (labelCount <= 0) break;
+            }
+        }
+    }
+
+    /**
+     * <summary>Removes jumps for which the next element is the jump's destination</summary>
+     */
+    private void RemoveImmediateJumps(List<IAnnotatedBytecode> input) {
+        for (int i = input.Count - 2; i >= 0; i--) {
+            if (input[i] is AnnotatedBytecodeInstruction { Opcode: Bytecode.DreamProcOpcode.Jump } instruction) {
+                if (input[i + 1] is AnnotatedBytecodeLabel followingLabel) {
+                    AnnotatedBytecodeLabel jumpLabelName = instruction.GetArg<AnnotatedBytecodeLabel>(0);
+                    if (jumpLabelName.LabelName == followingLabel.LabelName) {
+                        input.RemoveAt(i);
+                    }
                 }
             }
         }

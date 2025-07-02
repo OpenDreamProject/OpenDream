@@ -1,19 +1,22 @@
-﻿using OpenDreamClient.Resources;
+﻿using System.Diagnostics.CodeAnalysis;
+using OpenDreamClient.Resources;
 using OpenDreamClient.Resources.ResourceTypes;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
 using Robust.Client.Graphics;
 using Robust.Shared.Timing;
 using System.Linq;
+using OpenDreamClient.Interface;
 
 namespace OpenDreamClient.Rendering;
 
-internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming gameTiming, IClyde clyde, ClientAppearanceSystem appearanceSystem) : IDisposable {
+internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfaceManager interfaceManager, IGameTiming gameTiming, IClyde clyde, ClientAppearanceSystem appearanceSystem) : IDisposable {
     public delegate void SizeChangedEventHandler();
 
     public List<DreamIcon> Overlays { get; } = new();
     public List<DreamIcon> Underlays { get; } = new();
     public event SizeChangedEventHandler? SizeChanged;
+
     public DMIResource? DMI {
         get => _dmi;
         private set {
@@ -22,6 +25,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             CheckSizeChange();
         }
     }
+
     private DMIResource? _dmi;
 
     public int AnimationFrame {
@@ -70,8 +74,8 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
     private bool _animationComplete;
     private IRenderTexture? _cachedTexture;
 
-    public DreamIcon(RenderTargetPool renderTargetPool, IGameTiming gameTiming, IClyde clyde, ClientAppearanceSystem appearanceSystem, uint appearanceId,
-        AtomDirection? parentDir = null) : this(renderTargetPool, gameTiming, clyde, appearanceSystem) {
+    public DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfaceManager interfaceManager, IGameTiming gameTiming, IClyde clyde, ClientAppearanceSystem appearanceSystem, uint appearanceId,
+        AtomDirection? parentDir = null) : this(renderTargetPool, interfaceManager, gameTiming, clyde, appearanceSystem) {
         SetAppearance(appearanceId, parentDir);
     }
 
@@ -81,25 +85,28 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
         DMI = null; //triggers the removal of the onUpdateCallback
     }
 
-    public Texture? GetTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData, Texture? textureOverride = null) {
+    public Texture? GetTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData, Texture? textureOverride, ClientAppearanceSystem.Flick? flick) {
         Texture? frame;
 
         if (textureOverride == null) {
             if (Appearance == null || DMI == null)
                 return null;
 
-            var animationFrame = AnimationFrame;
-            if (CachedTexture != null && !_textureDirty)
+            var dmi = flick?.Icon ?? DMI;
+            var iconState = flick?.IconState ?? Appearance.IconState;
+            var animationFrame = flick?.GetAnimationFrame(gameTiming) ?? AnimationFrame;
+            if (animationFrame == -1) // A flick returns -1 for a finished animation
+                animationFrame = AnimationFrame;
+            if (CachedTexture != null && !_textureDirty && flick == null)
                 return CachedTexture.Texture;
 
             _textureDirty = false;
-            frame = DMI.GetState(Appearance.IconState)?.GetFrames(_direction)[animationFrame];
+            frame = dmi.GetState(iconState)?.GetFrames(_direction)[animationFrame];
         } else {
             frame = textureOverride;
         }
 
         var canSkipFullRender = Appearance?.Filters.Length is 0 or null &&
-                                    iconMetaData.ColorToApply == Color.White &&
                                     iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity) &&
                                     iconMetaData.AlphaToApply.Equals(1.0f);
 
@@ -177,23 +184,25 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
     /// </summary>
     /// <param name="appearanceAnimation">Animation to end</param>
     private void EndAppearanceAnimation(AppearanceAnimation? appearanceAnimation) {
-        if (appearanceAnimation == null){
-            if(_appearanceAnimations?.Count > 0) {
+        if (appearanceAnimation == null) {
+            if (_appearanceAnimations?.Count > 0) {
                 Appearance = _appearanceAnimations[^1].EndAppearance;
                 _appearanceAnimations.Clear();
             }
+
             return;
         }
-        if (_appearanceAnimations != null && _appearanceAnimations.Contains(appearanceAnimation!.Value)) {
-            _appearance = appearanceAnimation!.Value.EndAppearance;
-            _appearanceAnimations.Remove(appearanceAnimation!.Value);
+
+        if (_appearanceAnimations != null && _appearanceAnimations.Contains(appearanceAnimation.Value)) {
+            _appearance = appearanceAnimation.Value.EndAppearance;
+            _appearanceAnimations.Remove(appearanceAnimation.Value);
         }
     }
 
     public void GetWorldAABB(Vector2 worldPos, ref Box2? aabb) {
         if (DMI != null && Appearance != null) {
-            Vector2 size = DMI.IconSize / (float)EyeManager.PixelsPerMeter;
-            Vector2 pixelOffset = Appearance.TotalPixelOffset / (float)EyeManager.PixelsPerMeter;
+            Vector2 size = DMI.IconSize / (float)interfaceManager.IconSize;
+            Vector2 pixelOffset = Appearance.TotalPixelOffset / (float)interfaceManager.IconSize;
 
             worldPos += pixelOffset;
 
@@ -478,7 +487,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
 
         Overlays.Clear();
         foreach (var overlayAppearance in Appearance.Overlays) {
-            DreamIcon overlay = new DreamIcon(renderTargetPool, gameTiming, clyde, appearanceSystem, overlayAppearance.MustGetId(), _direction);
+            DreamIcon overlay = new DreamIcon(renderTargetPool, interfaceManager, gameTiming, clyde, appearanceSystem, overlayAppearance.MustGetId(), _direction);
             overlay.SizeChanged += CheckSizeChange;
 
             Overlays.Add(overlay);
@@ -486,7 +495,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
 
         Underlays.Clear();
         foreach (var underlayAppearance in Appearance.Underlays) {
-            DreamIcon underlay = new DreamIcon(renderTargetPool, gameTiming, clyde, appearanceSystem, underlayAppearance.MustGetId(), _direction);
+            DreamIcon underlay = new DreamIcon(renderTargetPool, interfaceManager, gameTiming, clyde, appearanceSystem, underlayAppearance.MustGetId(), _direction);
             underlay.SizeChanged += CheckSizeChange;
 
             Underlays.Add(underlay);
@@ -498,17 +507,23 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
     /// </summary>
     /// <remarks>In a separate method to avoid closure allocations when not executed</remarks>
     /// <returns>The final texture</returns>
+    [SuppressMessage("ReSharper", "AccessToModifiedClosure")] // RenderInRenderTarget executes immediately, shouldn't be an issue
     private IRenderTexture FullRenderTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData, Texture frame) {
-        // TODO: This should determine the size from the filters and their settings, not just double the original
-        var ping = renderTargetPool.Rent(frame.Size * 2);
+        Vector2 requiredRenderSpace = frame.Size;
+        foreach (var filter in iconMetaData.MainIcon!.Appearance!.Filters) {
+            var requiredSpace = filter.CalculateRequiredRenderSpace(frame.Size,
+                renderSource => viewOverlay.RenderSourceLookup.GetValueOrDefault(renderSource)?.Size ?? new(0, 0));
+
+            requiredRenderSpace = Vector2.Max(requiredRenderSpace, requiredSpace);
+        }
+
+        var ping = renderTargetPool.Rent((Vector2i)requiredRenderSpace);
         var pong = renderTargetPool.Rent(ping.Size);
 
         handle.RenderInRenderTarget(pong, () => {
             //we can use the color matrix shader here, since we don't need to blend
             //also because blend mode is none, we don't need to clear
-            var colorMatrix = iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity)
-                ? new ColorMatrix(iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply))
-                : iconMetaData.ColorMatrixToApply;
+            var colorMatrix = iconMetaData.ColorMatrixToApply;
 
             ShaderInstance colorShader = DreamViewOverlay.ColorInstance.Duplicate();
             colorShader.SetParameter("colorMatrix", colorMatrix.GetMatrix4());
@@ -516,7 +531,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
             colorShader.SetParameter("isPlaneMaster",iconMetaData.IsPlaneMaster);
             handle.UseShader(colorShader);
 
-            handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(pong.Size, frame.Size / 2));
+            handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(pong.Size, (pong.Size/2 - frame.Size/2)));
             handle.DrawTextureRect(frame, new Box2(Vector2.Zero, frame.Size));
         }, Color.Black.WithAlpha(0));
 
@@ -530,6 +545,20 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IGameTiming g
                 handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(pong.Size, Vector2.Zero));
                 handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, pong.Size));
             }, Color.Black.WithAlpha(0));
+
+            // The blur filter runs a more performant two passes
+            if (filterId.FilterType == "blur") {
+                s = appearanceSystem.GetFilterShader(filterId with {FilterType = "blur_vertical"}, viewOverlay.RenderSourceLookup);
+                (ping, pong) = (pong, ping);
+
+                handle.RenderInRenderTarget(ping, () => {
+                    handle.UseShader(s);
+
+                    // Technically this should be ping.Size, but they are the same size so avoid the extra closure alloc
+                    handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(pong.Size, Vector2.Zero));
+                    handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, pong.Size));
+                }, Color.Black.WithAlpha(0));
+            }
 
             (ping, pong) = (pong, ping);
         }

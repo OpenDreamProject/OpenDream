@@ -46,6 +46,11 @@ namespace OpenDreamRuntime.Objects {
         protected ServerVerbSystem? VerbSystem => ObjectDefinition.VerbSystem;
 
         protected Dictionary<string, DreamValue>? Variables;
+
+        #if TOOLS
+        protected ProfilerMemory? TracyMemoryId;
+        #endif
+
         //handle to the list of vars on this object so that it's only created once and refs to object.vars are consistent
         private DreamListVars? _varsList;
 
@@ -88,6 +93,11 @@ namespace OpenDreamRuntime.Objects {
             if (this is not DreamObjectAtom && IsSubtypeOf(ObjectTree.Datum)) {
                 ObjectDefinition.DreamManager.Datums.AddLast(new WeakDreamRef(this));
             }
+
+            #if TOOLS
+             //if it's not null, subclasses have done their own allocation
+            TracyMemoryId ??= Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamObject>() + ObjectDefinition.Variables.Count * Unsafe.SizeOf<DreamValue>() ), "/datum");
+            #endif
         }
 
         public virtual void Initialize(DreamProcArguments args) {
@@ -105,8 +115,14 @@ namespace OpenDreamRuntime.Objects {
             Deleted = true;
             //we release all relevant information, making this a very tiny object
             Variables = null;
+            _varsList?.Delete(possiblyThreaded);
+            _varsList = null;
 
             ObjectDefinition = null!;
+
+            #if TOOLS
+            TracyMemoryId?.ReleaseMemory();
+            #endif
         }
 
         /// <summary>
@@ -202,8 +218,8 @@ namespace OpenDreamRuntime.Objects {
                     return true;
                 default:
                     return (Variables?.TryGetValue(varName, out value) is true) ||
-                     (ObjectDefinition.Variables.TryGetValue(varName, out value) is true) ||
-                        (ObjectDefinition.GlobalVariables.TryGetValue(varName, out var globalIndex) is true) && ObjectDefinition.DreamManager.Globals.TryGetValue(globalIndex, out value);
+                     (ObjectDefinition.Variables.TryGetValue(varName, out value)) ||
+                        (ObjectDefinition.GlobalVariables.TryGetValue(varName, out var globalIndex)) && ObjectDefinition.DreamManager.Globals.TryGetValue(globalIndex, out value);
             }
         }
 
@@ -343,7 +359,7 @@ namespace OpenDreamRuntime.Objects {
         /// <summary>
         /// Get the display name of this object, WITH ALL FORMATTING EVALUATED OR REMOVED!
         /// </summary>
-        public string GetDisplayName(StringFormatEncoder.FormatSuffix? suffix = null) {
+        public virtual string GetDisplayName(StringFormatEncoder.FormatSuffix? suffix = null) {
             // /client is a little special and will return its key var
             // TODO: Maybe this should be an override to GetDisplayName()?
             if (this is DreamObjectClient client)

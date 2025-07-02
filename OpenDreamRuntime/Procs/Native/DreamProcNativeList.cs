@@ -163,6 +163,36 @@ namespace OpenDreamRuntime.Procs.Native {
             return itemRemoved;
         }
 
+        [DreamProc("Splice")]
+        [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
+        [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+        [DreamProcParameter("Item1")]
+        public static DreamValue NativeProc_Splice(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+            int startIndex = bundle.GetArgument(0, "Start").MustGetValueAsInteger(); //1-indexed
+            int end = bundle.GetArgument(1, "End").MustGetValueAsInteger(); //1-indexed
+            DreamList list = (DreamList)src!;
+
+            list.Cut(startIndex, end);
+
+            if (startIndex <= 0) startIndex = list.GetLength() + 1;
+            if (bundle.Arguments.Length < 3) return DreamValue.Null;
+
+            // i = 2 is Item1
+            for (var i = 2; i < bundle.Arguments.Length; i++) {
+                var item = bundle.Arguments[i];
+
+                if (item.TryGetValueAsDreamList(out var valueList)) {
+                    foreach (DreamValue value in valueList.GetValues()) {
+                        list.Insert(startIndex++, value);
+                    }
+                } else {
+                    list.Insert(startIndex++, item);
+                }
+            }
+
+            return DreamValue.Null;
+        }
+
         [DreamProc("Swap")]
         [DreamProcParameter("Index1", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("Index2", Type = DreamValueTypeFlag.Float)]

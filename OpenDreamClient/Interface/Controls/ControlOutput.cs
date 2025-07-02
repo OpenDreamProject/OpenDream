@@ -27,7 +27,7 @@ public sealed class ControlOutput(ControlDescriptor controlDescriptor, ControlWi
     public override void Output(string value, string? data) {
         var msg = new FormattedMessage(2);
 
-        msg.PushColor(Color.Black);
+        msg.PushColor(ControlDescriptor.TextColor.Value);
         msg.PushTag(new MarkupNode("font", null, null)); // Use the default font and font size
         // TODO: Look into using RobustToolbox's markup parser once it's customizable enough
         HtmlParser.Parse(value.Replace("\t", "    "), msg);

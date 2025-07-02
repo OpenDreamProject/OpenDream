@@ -22,7 +22,7 @@ public sealed class DummyDreamMapManager : IDreamMapManager {
 
     public void LoadMaps(List<DreamMapJson>? maps) { }
 
-    public void InitializeAtoms(List<DreamMapJson>? maps) { }
+    public void InitializeAtoms() { }
 
     public void SetTurf(DreamObjectTurf turf, DreamObjectDefinition type, DreamProcArguments creationArguments) { }
 

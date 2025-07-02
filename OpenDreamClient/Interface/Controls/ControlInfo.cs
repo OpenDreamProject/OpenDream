@@ -49,6 +49,9 @@ internal sealed class StatPanel : InfoPanel {
             //       I couldn't find a way to do this without recreating the FormattedMessage
             ValueLabel.MouseFilter = MouseFilterMode.Stop;
             ValueLabel.OnKeyBindDown += OnKeyBindDown;
+            if (_owner.InfoDescriptor.TextColor.Value != Color.Black) {
+                _textColor = _owner.InfoDescriptor.TextColor.Value;
+            }
         }
 
         public void Clear() {
@@ -137,9 +140,7 @@ internal sealed class StatPanel : InfoPanel {
 
     public override void UpdateElementDescriptor(ControlDescriptorInfo descriptor) {
         base.UpdateElementDescriptor(descriptor);
-
         var textColor = (descriptor.TextColor.Value != Color.Transparent) ? descriptor.TextColor.Value : Color.Black;
-
         foreach (var entry in _entries) {
             entry.SetTextColor(textColor);
         }
@@ -287,7 +288,7 @@ public sealed class ControlInfo : InterfaceControl {
             }
         };
 
-        if(ControlDescriptor.IsVisible.Value)
+        if (ControlDescriptor.IsVisible.Value)
             OnShowEvent();
         else
             OnHideEvent();
@@ -388,11 +389,11 @@ public sealed class ControlInfo : InterfaceControl {
 
     private void SortPanels() {
         _tabControl.Children.Clear();
-        foreach(var (_, statPanel) in _statPanels) {
+        foreach (var (_, statPanel) in _statPanels) {
             _tabControl.AddChild(statPanel);
         }
 
-        foreach(var (_, verbPanel) in _verbPanels) {
+        foreach (var (_, verbPanel) in _verbPanels) {
             _tabControl.AddChild(verbPanel);
         }
     }

@@ -2,7 +2,7 @@
 
 namespace DMCompiler.Compiler;
 
-internal class Lexer<TSourceType> {
+public class Lexer<TSourceType> {
     /// <summary>
     /// Location of token that'll be output by <see cref="GetCurrent"/>. If you skip through more
     /// </summary>
@@ -15,7 +15,7 @@ internal class Lexer<TSourceType> {
 
     public IEnumerable<TSourceType> Source { get; }
     public bool AtEndOfSource { get; private set; }
-    protected Queue<Token> _pendingTokenQueue = new();
+    protected readonly Queue<Token> PendingTokenQueue = new();
 
     private readonly IEnumerator<TSourceType> _sourceEnumerator;
     private TSourceType _current;
@@ -36,15 +36,15 @@ internal class Lexer<TSourceType> {
     }
 
     public Token GetNextToken() {
-        if (_pendingTokenQueue.Count > 0)
-            return _pendingTokenQueue.Dequeue();
+        if (PendingTokenQueue.Count > 0)
+            return PendingTokenQueue.Dequeue();
 
         var nextToken = ParseNextToken();
         while (nextToken.Type == TokenType.Skip) nextToken = ParseNextToken();
 
-        if (_pendingTokenQueue.Count > 0) {
-            _pendingTokenQueue.Enqueue(nextToken);
-            return _pendingTokenQueue.Dequeue();
+        if (PendingTokenQueue.Count > 0) {
+            PendingTokenQueue.Enqueue(nextToken);
+            return PendingTokenQueue.Dequeue();
         } else {
             return nextToken;
         }
@@ -94,7 +94,7 @@ internal class Lexer<TSourceType> {
     }
 }
 
-internal class TokenLexer : Lexer<Token> {
+public class TokenLexer : Lexer<Token> {
     /// <inheritdoc/>
     protected TokenLexer(string sourceName, IEnumerable<Token> source) : base(sourceName, source) {
         Advance();
@@ -105,7 +105,7 @@ internal class TokenLexer : Lexer<Token> {
 
         //Warnings and errors go straight to output, no processing
         while (current.Type is TokenType.Warning or TokenType.Error && !AtEndOfSource) {
-            _pendingTokenQueue.Enqueue(current);
+            PendingTokenQueue.Enqueue(current);
             current = base.Advance();
         }
 

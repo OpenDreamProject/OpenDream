@@ -47,8 +47,9 @@ public sealed class DMASTStringFormat(Location location, string value, DMASTExpr
     public readonly DMASTExpression?[] InterpolatedValues = interpolatedValues;
 }
 
-public sealed class DMASTList(Location location, DMASTCallParameter[] values) : DMASTExpression(location) {
+public sealed class DMASTList(Location location, DMASTCallParameter[] values, bool isAList) : DMASTExpression(location) {
     public readonly DMASTCallParameter[] Values = values;
+    public readonly bool IsAList = isAList; // list() or alist()
 
     public bool AllValuesConstant() {
         return Values.All(

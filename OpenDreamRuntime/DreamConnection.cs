@@ -26,6 +26,7 @@ public sealed class DreamConnection {
 
     [ViewVariables] private readonly Dictionary<string, List<(string, string, string?)>> _statPanels = new();
     [ViewVariables] private bool _currentlyUpdatingStat;
+    [ViewVariables] public TimeSpan? LastClickTime { get; set; }
 
     [ViewVariables] public ICommonSession? Session { get; private set; }
     [ViewVariables] public DreamObjectClient? Client { get; private set; }
@@ -158,6 +159,7 @@ public sealed class DreamConnection {
 
     public void SendClientInfoUpdate() {
         MsgUpdateClientInfo msg = new() {
+            IconSize = _dreamManager.WorldInstance.IconSize,
             View = Client!.View,
             ShowPopupMenus = Client!.ShowPopupMenus
         };
@@ -212,11 +214,13 @@ public sealed class DreamConnection {
         if (value.TryGetValueAsDreamObject<DreamObjectSound>(out var outputObject)) {
             ushort channel = (ushort)outputObject.GetVariable("channel").GetValueAsInteger();
             ushort volume = (ushort)outputObject.GetVariable("volume").GetValueAsInteger();
+            float offset = outputObject.GetVariable("offset").UnsafeGetValueAsFloat();
             DreamValue file = outputObject.GetVariable("file");
 
             var msg = new MsgSound() {
                 Channel = channel,
-                Volume = volume
+                Volume = volume,
+                Offset = offset
             };
 
             if (!file.TryGetValueAsDreamResource(out var soundResource)) {

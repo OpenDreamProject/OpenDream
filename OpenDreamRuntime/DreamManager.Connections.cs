@@ -371,7 +371,7 @@ public sealed class HotReloadCodeCommand : IConsoleCommand {
         }
 
         if (args.Length != 1) {
-            shell.WriteError("This command requires a file path to reload as an argument! Example: hotreloadresource ./path/to/compiled.json");
+            shell.WriteError("This command requires a file path to reload as an argument! Example: hotreloadcode ./path/to/compiled.json");
             return;
         }
 

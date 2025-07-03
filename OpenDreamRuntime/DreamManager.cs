@@ -151,7 +151,7 @@ public sealed partial class DreamManager {
     public bool TryGetGlobalProc(string name, [NotNullWhen(true)] out DreamProc? proc) {
         return _objectTree.TryGetGlobalProc(name, out proc);
     }
-  
+
     public void HotReloadJson(string? jsonPath) {
         if (string.IsNullOrEmpty(jsonPath) || !File.Exists(jsonPath))
             throw new FileNotFoundException("Could not find the specified json file");
@@ -164,12 +164,9 @@ public sealed partial class DreamManager {
         if (!json.Metadata.Version.Equals(OpcodeVerifier.GetOpcodesHash()))
             throw new Exception("Compiler opcode version does not match the runtime version!");
 
-        _compiledJson = json;
         var rootPath = Path.GetFullPath(Path.GetDirectoryName(jsonPath)!);
-        var resources = _compiledJson.Resources ?? Array.Empty<string>();
-        _dreamResourceManager.Initialize(rootPath, resources);
-        if(!string.IsNullOrEmpty(_compiledJson.Interface) && !_dreamResourceManager.DoesFileExist(_compiledJson.Interface))
-            throw new FileNotFoundException("Interface DMF not found at "+Path.Join(rootPath,_compiledJson.Interface));
+        var resources = json.Resources ?? Array.Empty<string>();
+        _dreamResourceManager.Initialize(rootPath, resources, json.Interface);
         _objectTree.LoadJson(json);
         DreamProcNative.SetupNativeProcs(_objectTree);
 

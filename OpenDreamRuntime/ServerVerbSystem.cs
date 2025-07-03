@@ -201,4 +201,13 @@ public sealed class ServerVerbSystem : VerbSystem {
                 return true;
         }
     }
+
+    /// <summary>
+    /// Clear all registered verbs. Does not update clients. Really don't use this unless you are immediately
+    /// repopulating the verb list.
+    /// </summary>
+    public void ClearAllVerbs() {
+        _verbs.Clear();
+        _verbIdToProc.Clear();
+    }
 }

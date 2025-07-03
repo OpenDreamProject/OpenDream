@@ -167,12 +167,20 @@ public sealed partial class DreamManager {
         var rootPath = Path.GetFullPath(Path.GetDirectoryName(jsonPath)!);
         var resources = json.Resources ?? Array.Empty<string>();
         _dreamResourceManager.Initialize(rootPath, resources, json.Interface);
+        if (_entitySystemManager.TryGetEntitySystem(out ServerVerbSystem? _verbSystem))
+            _verbSystem.ClearAllVerbs();
         _objectTree.LoadJson(json);
         DreamProcNative.SetupNativeProcs(_objectTree);
 
-        foreach(DreamObject dreamObject in IterateDatums()){
+        foreach (DreamObject dreamObject in IterateDatums()) {
             dreamObject.ObjectDefinition = _objectTree.GetObjectDefinition(_objectTree.GetTreeEntry(dreamObject.ObjectDefinition.Type).Id);
         }
+
+        foreach (var client in Connections) {
+            if(client.Client is not null)
+                _verbSystem?.UpdateClientVerbs(client.Client);
+        }
+
 
     }
 

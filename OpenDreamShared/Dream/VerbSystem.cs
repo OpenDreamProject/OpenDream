@@ -127,4 +127,16 @@ public class VerbSystem : EntitySystem {
         public int VerbId = verbId;
         public object?[] Arguments = arguments;
     }
+
+    [Serializable, NetSerializable]
+    public sealed class RegisterRepeatVerbEvent(ClientObjectReference src, int verbId) : EntityEventArgs {
+        public ClientObjectReference Src = src;
+        public int VerbId = verbId;
+    }
+
+    [Serializable, NetSerializable]
+    public sealed class UnregisterRepeatVerbEvent(ClientObjectReference src, int verbId) : EntityEventArgs {
+        public ClientObjectReference Src = src;
+        public int VerbId = verbId;
+    }
 }

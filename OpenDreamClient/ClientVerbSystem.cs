@@ -226,7 +226,7 @@ public sealed class ClientVerbSystem : VerbSystem {
     }
 
     private void OnRegisterVerbEvent(RegisterVerbEvent e) {
-        _verbs.Add(e.VerbId, e.VerbInfo);
+        _verbs[e.VerbId]= e.VerbInfo;
     }
 
     private void OnUpdateClientVerbsEvent(UpdateClientVerbsEvent e) {

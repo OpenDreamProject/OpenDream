@@ -327,6 +327,9 @@ namespace DMCompiler.Compiler.DM {
                     var valType = AsComplexTypes();
                     var varDef = new DMASTObjectVarDefinition(loc, varPath, value, valType);
 
+                    if (varDef.IsStatic && varDef.Name is "usr" or "src" or "args" or "world" or "global" or "callee" or "caller")
+                        Compiler.Emit(WarningCode.SoftReservedKeyword, loc, $"Global variable named {varDef.Name} DOES NOT overrides the built-in {varDef.Name}. This is a terrible idea, don't do that.");
+
                     varDefinitions.Add(varDef);
                     if (Check(TokenType.DM_Comma) || (isIndented && Delimiter())) {
                         Whitespace();
@@ -831,6 +834,11 @@ namespace DMCompiler.Compiler.DM {
                 if (vars == null) {
                     Emit(WarningCode.InvalidVarDefinition, "Expected a var declaration");
                     return new DMASTInvalidProcStatement(firstToken.Location);
+                }
+
+                foreach (var vardec in vars) {
+                    if (vardec.Name is "usr" or "src" or "args" or "world" or "global" or "callee" or "caller")
+                        Compiler.Emit(WarningCode.SoftReservedKeyword, vardec.Location, $"Local variable named {vardec.Name} overrides the built-in {vardec.Name} in this context.");
                 }
 
                 if (vars.Length > 1)
@@ -1771,6 +1779,9 @@ namespace DMCompiler.Compiler.DM {
                 Whitespace();
 
                 PathArray(ref path.Path);
+
+                if (path.Path.LastElement is "usr" or "src" or "args" or "world" or "global" or "callee" or "caller")
+                    Compiler.Emit(WarningCode.SoftReservedKeyword, loc, $"Proc parameter named {path.Path.LastElement} overrides the built-in {path.Path.LastElement} in this context.");
 
                 DMASTExpression? value = null;
                 DMASTExpression? possibleValues = null;

@@ -13,6 +13,8 @@ namespace OpenDreamRuntime.Objects.Types;
 
 [Virtual]
 public class DreamList : DreamObject, IDreamList {
+    private static readonly Stack<List<DreamValue>> ListPool = new();
+
     public override bool ShouldCallNew => false;
 
     public virtual bool IsAssociative => _associativeValues is { Count: > 0 };
@@ -25,7 +27,12 @@ public class DreamList : DreamObject, IDreamList {
     #endif
 
     public DreamList(DreamObjectDefinition listDef, int size) : base(listDef) {
-        _values = new List<DreamValue>(size);
+        if (size >= DreamManager.ListPoolThreshold && ListPool.TryPop(out var poppedValues)) {
+            _values = poppedValues;
+            _values.EnsureCapacity(size);
+        } else {
+            _values = new List<DreamValue>(size);
+        }
     }
 
     /// <summary>
@@ -75,6 +82,26 @@ public class DreamList : DreamObject, IDreamList {
                 lists = newLists;
             }
         }
+    }
+
+    // Hold on to large lists for reuse later
+    protected override void HandleDeletion(bool possiblyThreaded) {
+        if (_values.Capacity < DreamManager.ListPoolThreshold) {
+            base.HandleDeletion(possiblyThreaded);
+            return;
+        }
+
+        if (possiblyThreaded) {
+            EnterIntoDelQueue();
+            return;
+        }
+
+        if (ListPool.Count < DreamManager.ListPoolSize) {
+            _values.Clear();
+            ListPool.Push(_values);
+        }
+
+        base.HandleDeletion(possiblyThreaded);
     }
 
     public DreamList CreateCopy(int start = 1, int end = 0) {
@@ -221,7 +248,7 @@ public class DreamList : DreamObject, IDreamList {
                 //TODO emit configurable warning here
                 throw new InvalidOperationException("Setting a list size to a negative value is invalid");
             }
-            
+
             Cut(size + 1);
         }
 
@@ -279,6 +306,7 @@ public class DreamList : DreamObject, IDreamList {
     }
 
     #region Operators
+
     public override DreamValue OperatorIndex(DreamValue index, DMProcState state) {
         return GetValue(index);
     }
@@ -430,6 +458,7 @@ public class DreamList : DreamObject, IDreamList {
 
         return DreamValue.True;
     }
+
     #endregion Operators
 }
 

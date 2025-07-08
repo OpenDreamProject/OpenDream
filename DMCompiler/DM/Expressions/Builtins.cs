@@ -89,8 +89,12 @@ internal sealed class NewPath(DMCompiler compiler, Location location, IConstantP
                 var newProc = ctx.ObjectTree.GetNewProc(typeReference.Value.Id);
 
                 (argumentsType, stackSize) = arguments.EmitArguments(ctx, newProc);
+                if (variableOverrides.Count == 0) {
+                    ctx.Proc.PushNull();
+                } else {
+                    ctx.Proc.PushString(JsonSerializer.Serialize(variableOverrides));
+                }
 
-                ctx.Proc.PushString(JsonSerializer.Serialize(variableOverrides));
                 ctx.Proc.PushType(typeReference.Value.Id);
                 break;
             case ConstantProcReference procReference: // "new /proc/new_verb(Destination)" is a thing

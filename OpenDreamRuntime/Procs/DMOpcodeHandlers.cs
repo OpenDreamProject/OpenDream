@@ -198,7 +198,7 @@ namespace OpenDreamRuntime.Procs {
             var val = state.Pop();
             Dictionary<string, object?>? overrides = null;
             if (state.Pop().TryGetValueAsString(out var jsonDict)) {
-                overrides = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonDict);
+                overrides = JsonSerializer.Deserialize<Dictionary<string, object?>>(jsonDict);
             }
 
             if (!val.TryGetValueAsType(out var objectType)) {
@@ -242,7 +242,7 @@ namespace OpenDreamRuntime.Procs {
 
                 state.Proc.DreamMapManager.SetTurf(turf, objectDef, newArguments);
                 if (overrides is not null) {
-                    foreach (KeyValuePair<string, object> varOverride in overrides) {
+                    foreach (KeyValuePair<string, object?> varOverride in overrides) {
                         turf.SetVariable(varOverride.Key,
                             state.Proc.ObjectTree.GetDreamValueFromJsonElement(varOverride.Value));
                     }
@@ -254,7 +254,7 @@ namespace OpenDreamRuntime.Procs {
 
             var newObject = state.Proc.ObjectTree.CreateObject(objectType);
             if (overrides is not null) {
-                foreach (KeyValuePair<string, object> varOverride in overrides) {
+                foreach (KeyValuePair<string, object?> varOverride in overrides) {
                     newObject.SetVariable(varOverride.Key, state.Proc.ObjectTree.GetDreamValueFromJsonElement(varOverride.Value));
                 }
             }

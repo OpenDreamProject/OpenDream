@@ -613,6 +613,21 @@ public sealed class ClientVerbsList : DreamList {
         }
     }
 
+    public void HotReloadAll(DreamObjectTree objectTree) {
+        Verbs.Clear();
+
+        List<int>? verbs = _client.ObjectDefinition.Verbs;
+        if (verbs == null)
+            return;
+
+        Verbs.EnsureCapacity(verbs.Count);
+        foreach (int verbId in verbs) {
+            Verbs.Add(objectTree.Procs[verbId]);
+        }
+
+        _verbSystem!.HotReloadAllVerbs(_client);
+    }
+
     public override DreamValue GetValue(DreamValue key) {
         if (!key.TryGetValueAsInteger(out var index))
             throw new Exception($"Invalid index into verbs list: {key}");

@@ -122,6 +122,10 @@ public sealed class ServerVerbSystem : VerbSystem {
         RaiseNetworkEvent(new UpdateClientVerbsEvent(verbIds), client.Connection.Session!);
     }
 
+    public void HotReloadAllVerbs(DreamObjectClient client) {
+        RaiseNetworkEvent(new AllVerbsEvent(_verbs), client.Connection.Session!);
+    }
+
     private void OnPlayerStatusChanged(object? sender, SessionStatusEventArgs e) {
         if (e.NewStatus != SessionStatus.InGame)
             return;

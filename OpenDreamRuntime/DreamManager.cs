@@ -169,6 +169,7 @@ public sealed partial class DreamManager {
         _dreamResourceManager.Initialize(rootPath, resources, json.Interface);
         if (_entitySystemManager.TryGetEntitySystem(out ServerVerbSystem? _verbSystem))
             _verbSystem.ClearAllVerbs();
+
         _objectTree.LoadJson(json);
         DreamProcNative.SetupNativeProcs(_objectTree);
 
@@ -177,8 +178,10 @@ public sealed partial class DreamManager {
         }
 
         foreach (var client in Connections) {
-            if(client.Client is not null)
-                _verbSystem?.UpdateClientVerbs(client.Client);
+            if (client.Client is not null) {
+                client.Client.ClientVerbs.HotReloadAll(_objectTree);
+                _verbSystem!.UpdateClientVerbs(client.Client);
+            }
         }
 
 

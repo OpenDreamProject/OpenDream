@@ -1635,6 +1635,7 @@ internal static class DreamProcNativeRoot {
         if (valA.TryGetValueAsFloatCoerceNull(out var floatA) && valB.TryGetValueAsFloatCoerceNull(out var floatB)) {
             return new DreamValue(floatA + (floatB - floatA) * factor);
         }
+
         // TODO: Change this to a type mismatch runtime once the other valid arg types are supported
         throw new NotImplementedException($"lerp() currently only supports nums and null; got {valA} and {valB}");
     }
@@ -1642,9 +1643,10 @@ internal static class DreamProcNativeRoot {
     [DreamProc("list2params")]
     [DreamProcParameter("List")]
     public static DreamValue NativeProc_list2params(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-        if (!bundle.GetArgument(0, "List").TryGetValueAsDreamList(out DreamList? list))
+        if (!bundle.GetArgument(0, "List").TryGetValueAsIDreamList(out var list))
             return new DreamValue(string.Empty);
-        return new DreamValue(list2params(list));
+
+        return new DreamValue(List2Params(list));
     }
 
     [DreamProc("lowertext")]
@@ -2077,11 +2079,10 @@ internal static class DreamProcNativeRoot {
         return DreamProcNativeHelpers.HandleOviewersOhearers(bundle, usr, false);
     }
 
-    public static string list2params(DreamList list) {
+    private static string List2Params(IDreamList list) {
         StringBuilder paramBuilder = new StringBuilder();
 
-        List<DreamValue> values = list.GetValues();
-        foreach (DreamValue entry in values) {
+        foreach (DreamValue entry in list.EnumerateValues()) {
             if (list.ContainsKey(entry)) {
                 paramBuilder.Append(
                     $"{HttpUtility.UrlEncode(entry.Stringify())}={HttpUtility.UrlEncode(list.GetValue(entry).Stringify())}");
@@ -2097,7 +2098,7 @@ internal static class DreamProcNativeRoot {
         return paramBuilder.ToString();
     }
 
-    public static DreamList params2list(DreamObjectTree objectTree, string queryString) {
+    public static DreamList Params2List(DreamObjectTree objectTree, string queryString) {
         queryString = queryString.Replace(";", "&");
         NameValueCollection query = HttpUtility.ParseQueryString(queryString);
         DreamList list = objectTree.CreateList();
@@ -2140,7 +2141,7 @@ internal static class DreamProcNativeRoot {
         DreamList result;
 
         if (paramsValue.TryGetValueAsString(out var paramsString)) {
-            result = params2list(bundle.ObjectTree, paramsString);
+            result = Params2List(bundle.ObjectTree, paramsString);
         } else {
             result = bundle.ObjectTree.CreateList();
         }
@@ -3581,8 +3582,8 @@ internal static class DreamProcNativeRoot {
     public static DreamValue NativeProc_winset(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
         DreamValue player = bundle.GetArgument(0, "player");
         DreamValue controlId = bundle.GetArgument(1, "control_id");
+        DreamValue winsetParams = bundle.GetArgument(2, "params");
         string? winsetControlId = (!controlId.IsNull) ? controlId.GetValueAsString() : null;
-        string winsetParams = bundle.GetArgument(2, "params").GetValueAsString();
 
         DreamConnection? connection = null;
         if (player.TryGetValueAsDreamObject<DreamObjectMob>(out var mob)) {
@@ -3595,7 +3596,15 @@ internal static class DreamProcNativeRoot {
             throw new ArgumentException($"Invalid \"player\" argument {player}");
         }
 
-        connection.WinSet(winsetControlId, winsetParams);
+        if (!winsetParams.TryGetValueAsString(out var winsetParamsStr)) {
+            if (winsetParams.TryGetValueAsIDreamList(out var winsetParamsList)) {
+                winsetParamsStr = List2Params(winsetParamsList);
+            } else {
+                throw new ArgumentException($"Invalid \"params\" argument {winsetParams}");
+            }
+        }
+
+        connection.WinSet(winsetControlId, winsetParamsStr);
         return DreamValue.Null;
     }
 }

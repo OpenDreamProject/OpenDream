@@ -64,6 +64,14 @@ public sealed class ClientVerbSystem : VerbSystem {
         RaiseNetworkEvent(new ExecuteVerbEvent(src, verbId, arguments));
     }
 
+    public void StartRepeatingVerb(ClientObjectReference src, int verbId) {
+        RaiseNetworkEvent(new RegisterRepeatVerbEvent(src, verbId));
+    }
+
+    public void StopRepeatingVerb(ClientObjectReference src, int verbId) {
+        RaiseNetworkEvent(new UnregisterRepeatVerbEvent(src, verbId));
+    }
+
     public IEnumerable<VerbInfo> GetAllVerbs() {
         return _verbs.Values;
     }

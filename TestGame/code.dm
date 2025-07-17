@@ -10,6 +10,9 @@
 
 #define TURF_PLANE -10
 
+/client/verb/Think()
+	usr << pick("[src] thinks...", "[src] ponders...", "[src] wonders...")
+
 /obj/plane_master
 	appearance_flags = PLANE_MASTER
 
@@ -52,6 +55,12 @@
 		spawn(20)
 			toggleBlink()
 
+// this proc is overriden on `/mob` and the proc that should be called is the 2nd override, not this one
+/atom/movable
+	verb/pray()
+		set name = "Pray to Gods"
+		usr << "You pray to the gods."
+
 /mob
 	icon = 'icons/mob.dmi'
 	icon_state = "mob"
@@ -70,6 +79,14 @@
 	Login()
 		world.log << "login ran"
 		src.client.screen += new /obj/order_test_item/plane_master //used for render tests
+		
+	pray()
+		..()
+		usr << "You also pray to the square gods."
+
+	pray()
+		..()
+		usr << "You also pray to the rectangle gods."
 
 	verb/winget_test()
 		usr << "windows: [json_encode(winget(usr, null, "windows"))]"
@@ -152,6 +169,14 @@
 	verb/input_num()
 		var/v = input("A") as num
 		usr << "you entered [v]"
+		
+	verb/client_verbs()
+		set category = "Test"
+		var/verbs = ""
+		for (var/thing in typesof(/client/verb))
+			verbs += "[thing]\n"
+		usr << "Client verbs:\n[verbs]"
+		
 
 	verb/test_browse()
 		set category = "Test"

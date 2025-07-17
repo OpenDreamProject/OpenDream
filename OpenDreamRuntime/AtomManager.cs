@@ -389,6 +389,7 @@ public sealed class AtomManager {
                         if (!verbValue.TryGetValueAsProc(out var verb))
                             continue;
 
+
                         if (!verb.VerbId.HasValue)
                             VerbSystem?.RegisterVerb(verb);
                         if (appearance.Verbs.Contains(verb.VerbId!.Value))
@@ -763,7 +764,7 @@ public sealed class AtomManager {
 
         if (def.Verbs != null) {
             foreach (var verb in def.Verbs) {
-                var verbProc = _objectTree.Procs[verb];
+                var verbProc = _objectTree.Procs[verb.Value];
 
                 appearance.Verbs.Add(verbProc.VerbId!.Value);
             }

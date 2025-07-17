@@ -199,7 +199,7 @@ public sealed class DreamConnection {
     }
 
     public void HandleMsgTopic(MsgTopic pTopic) {
-        DreamList hrefList = DreamProcNativeRoot.params2list(_objectTree, HttpUtility.UrlDecode(pTopic.Query));
+        DreamList hrefList = DreamProcNativeRoot.Params2List(_objectTree, HttpUtility.UrlDecode(pTopic.Query));
         DreamValue srcRefValue = hrefList.GetValue(new DreamValue("src"));
         DreamValue src = DreamValue.Null;
 

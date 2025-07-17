@@ -214,6 +214,8 @@ public sealed class ClientVerbSystem : VerbSystem {
     }
 
     private void OnAllVerbsEvent(AllVerbsEvent e) {
+        _verbs.Clear();
+        _clientVerbs?.Clear();
         _verbs.EnsureCapacity(e.Verbs.Count);
 
         for (int i = 0; i < e.Verbs.Count; i++) {
@@ -226,7 +228,7 @@ public sealed class ClientVerbSystem : VerbSystem {
     }
 
     private void OnRegisterVerbEvent(RegisterVerbEvent e) {
-        _verbs.Add(e.VerbId, e.VerbInfo);
+        _verbs[e.VerbId]= e.VerbInfo;
     }
 
     private void OnUpdateClientVerbsEvent(UpdateClientVerbsEvent e) {

@@ -1175,12 +1175,12 @@ internal sealed class DMProc {
 
     public void FormatString(string value) {
         int formatCount = 0;
-        for (int i = 0; i < value.Length; i++) {
-            if (StringFormatEncoder.Decode(value[i], out var formatType))
-            {
-                if(StringFormatEncoder.IsInterpolation(formatType.Value))
-                    formatCount++;
-            }
+        foreach (var c in value) {
+            if (!StringFormatEncoder.Decode(c, out var formatType))
+                continue;
+
+            if(StringFormatEncoder.IsInterpolation(formatType.Value))
+                formatCount++;
         }
 
         ResizeStack(-(formatCount - 1)); //Shrinks by the amount of formats in the string, grows 1

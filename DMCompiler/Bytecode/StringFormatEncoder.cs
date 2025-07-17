@@ -30,7 +30,8 @@ public static class StringFormatEncoder {
         //States that Interpolated values can have (the [] thingies)
         StringifyWithArticle = 0x0,    //[] and we include an appropriate article for the resulting value, if necessary
         StringifyNoArticle = 0x1,      //[] and we never include an article (because it's elsewhere)
-        ReferenceOfValue = 0x2,        //\ref[]
+        NoStringify = 0x2,             //Appends no text at all
+        ReferenceOfValue = 0x3,        //\ref[]
 
         //States that macros can have
         //(these can have any arbitrary value as long as compiler/server/client all agree)

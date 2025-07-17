@@ -25,6 +25,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public Texture? TextureOverride;
     public string? Maptext;
     public Vector2i? MaptextSize;
+    public ParticleSystem? Particles;
     public ClientAppearanceSystem.Flick? Flick;
 
     public bool IsPlaneMaster => (AppearanceFlags & AppearanceFlags.PlaneMaster) != 0;
@@ -57,6 +58,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         TextureOverride = null;
         Maptext = null;
         MaptextSize = null;
+        Particles = null;
     }
 
     public Texture? GetTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle) {

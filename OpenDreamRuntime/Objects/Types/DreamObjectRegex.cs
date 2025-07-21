@@ -81,7 +81,7 @@ public sealed class DreamObjectRegex(DreamObjectDefinition objectDefinition) : D
     }
 
     public DreamValue FindHelper(string haystackString, int start, int end) {
-        Match match = Regex.Match(haystackString, Math.Clamp(start - 1, 0, haystackString.Length), end - start + 1);
+        Match match = Regex.Match(haystackString, start, end);
         if (match.Success) {
             SetVariable("index", new DreamValue(match.Index + 1));
             SetVariable("match", new DreamValue(match.Value));

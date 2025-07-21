@@ -876,7 +876,7 @@ internal static class DreamProcNativeRoot {
         }
 
         if (regex is not null) {
-            return regex.FindHelper(text, start, end);
+            return regex.FindHelper(text, start - 1, end - start);
         }
 
         int needleIndex = text.IndexOf(needle, start - 1, end - start, StringComparison.OrdinalIgnoreCase);
@@ -917,7 +917,7 @@ internal static class DreamProcNativeRoot {
         }
 
         if (regex is not null) {
-            return regex.FindHelper(text, start, end);
+            return regex.FindHelper(text, start - 1, end - start);
         }
 
         int needleIndex = text.IndexOf(needle, start - 1, end - start, StringComparison.InvariantCulture);

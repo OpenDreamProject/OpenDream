@@ -31,7 +31,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new DreamValue(0);
             }
 
-            return dreamRegex.FindHelper(haystackString, next, end);
+            return dreamRegex.FindHelper(haystackString, Math.Clamp(next - 1, 0, haystackString.Length), end - next + 1);
         }
 
         public static DreamValue RegexReplace(DreamObject regexInstance, DreamValue haystack, DreamValue replace, int start, int end) {

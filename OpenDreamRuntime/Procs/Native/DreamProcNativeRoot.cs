@@ -878,7 +878,26 @@ internal static class DreamProcNativeRoot {
         if (regex is not null) {
             Match match = regex.Regex.Match(text, start - 1, end - start);
 
-            return match.Success ? new DreamValue(match.Index + 1) : new DreamValue(0);
+            if (match.Success) {
+                regex.SetVariable("index", new DreamValue(match.Index + 1));
+                regex.SetVariable("match", new DreamValue(match.Value));
+                if (match.Groups.Count > 0) {
+                    DreamList groupList = bundle.ObjectTree.CreateList(match.Groups.Count);
+
+                    for (int i = 1; i < match.Groups.Count; i++) {
+                        groupList.AddValue(new DreamValue(match.Groups[i].Value));
+                    }
+
+                    regex.SetVariable("group", new DreamValue(groupList));
+                }
+
+                if(regex.IsGlobal)
+                    regex.SetVariable("next", new DreamValue(match.Index + match.Length + 1));
+
+                return new DreamValue(match.Index + 1);
+            }
+
+            return new DreamValue(0);
         }
 
         int needleIndex = text.IndexOf(needle, start - 1, end - start, StringComparison.OrdinalIgnoreCase);
@@ -920,8 +939,26 @@ internal static class DreamProcNativeRoot {
 
         if (regex is not null) {
             Match match = regex.Regex.Match(text, start - 1, end - start);
+            if (match.Success) {
+                regex.SetVariable("index", new DreamValue(match.Index + 1));
+                regex.SetVariable("match", new DreamValue(match.Value));
+                if (match.Groups.Count > 0) {
+                    DreamList groupList = bundle.ObjectTree.CreateList(match.Groups.Count);
 
-            return match.Success ? new DreamValue(match.Index + 1) : new DreamValue(0);
+                    for (int i = 1; i < match.Groups.Count; i++) {
+                        groupList.AddValue(new DreamValue(match.Groups[i].Value));
+                    }
+
+                    regex.SetVariable("group", new DreamValue(groupList));
+                }
+
+                if(regex.IsGlobal)
+                    regex.SetVariable("next", new DreamValue(match.Index + match.Length + 1));
+
+                return new DreamValue(match.Index + 1);
+            }
+
+            return new DreamValue(0);
         }
 
         int needleIndex = text.IndexOf(needle, start - 1, end - start, StringComparison.InvariantCulture);

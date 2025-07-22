@@ -613,7 +613,6 @@ namespace OpenDreamRuntime.Procs {
             if (!key.TryGetValueAsString(out string? property)) {
                 throw new Exception("Invalid var for initial() call: " + key);
             }
-
             DreamObjectDefinition objectDefinition;
             if (owner.TryGetValueAsDreamObject(out var dreamObject)) {
                 switch (dreamObject) {
@@ -632,7 +631,9 @@ namespace OpenDreamRuntime.Procs {
             } else if (owner.TryGetValueAsType(out var ownerType)) {
                 objectDefinition = ownerType.ObjectDefinition;
             } else {
-                throw new Exception($"Invalid owner for initial() call {owner}");
+                state.DreamManager.OptionalException<ArgumentException>(DMCompiler.Compiler.WarningCode.InitialVarOnPrimativeException, "Initial() attempted to get the initial value of a variable on a primative.");
+                state.Push(DreamValue.Null);
+                return ProcStatus.Continue;
             }
 
             var result = property switch {

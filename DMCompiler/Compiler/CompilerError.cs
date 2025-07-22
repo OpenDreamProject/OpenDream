@@ -83,6 +83,7 @@ public enum WarningCode {
 
     // 4000 - 4999 are reserved for runtime configuration. (TODO: Runtime doesn't know about configs yet!)
     ListNegativeSizeException = 4000, // When a list's length is decremented below zero, raise an exception.
+    InitialVarOnPrimativeException = 4001, // initial(foo.var) where foo is a variable containing a non-datum value.
 }
 
 public enum ErrorLevel {

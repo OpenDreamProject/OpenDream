@@ -25,6 +25,7 @@ using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
 using Robust.Server;
 using Robust.Shared.Asynchronous;
 using Vector4 = Robust.Shared.Maths.Vector4;
+using OpenDreamRuntime.Util;
 
 namespace OpenDreamRuntime.Procs.Native;
 
@@ -664,11 +665,7 @@ internal static class DreamProcNativeRoot {
         if (start > runes.Length)
             return new DreamValue(string.Empty);
 
-        var stringBuilder = new StringBuilder();
-        for (int i = start - 1; i < end - 1; i++) {
-            stringBuilder.Append(runes[i].ToString());
-        }
-        return new DreamValue(stringBuilder.ToString());
+        return new DreamValue(TextHelpers.RuneSubstring(runes, start - 1, end - 1));
     }
 
     [DreamProc("CRASH")]

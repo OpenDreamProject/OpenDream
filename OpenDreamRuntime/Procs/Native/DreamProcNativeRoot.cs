@@ -630,13 +630,13 @@ internal static class DreamProcNativeRoot {
         if (!bundle.GetArgument(1, "Start").TryGetValueAsInteger(out int start)) //1-indexed
             return new DreamValue("");
 
-        if (end <= 0) end += text.Length + 1;
-        else if (end > text.Length + 1) end = text.Length + 1;
+        var textAsBytes = Encoding.UTF8.GetBytes(text);
+        if (end <= 0) end += textAsBytes.Length + 1;
+        else if (end > textAsBytes.Length + 1) end = textAsBytes.Length + 1;
 
         if (start == 0) return new DreamValue("");
-        else if (start < 0) start += text.Length + 1;
-
-        return new DreamValue(text.Substring(start - 1, end - start));
+        else if (start < 0) start += textAsBytes.Length + 1;
+        return new DreamValue(Encoding.UTF8.GetString(new ArraySegment<byte>(textAsBytes, start - 1, end - start)));
     }
 
     [DreamProc("copytext_char")]
@@ -651,18 +651,24 @@ internal static class DreamProcNativeRoot {
         if (!bundle.GetArgument(1, "Start").TryGetValueAsInteger(out int start)) //1-indexed
             return new DreamValue("");
 
-        StringInfo textElements = new StringInfo(text);
+        ;
 
-        if (end <= 0) end += textElements.LengthInTextElements + 1;
-        else if (end > textElements.LengthInTextElements + 1) end = textElements.LengthInTextElements + 1;
+        Rune[] runes = text.EnumerateRunes().ToArray();
+
+        if (end <= 0) end += runes.Length + 1;
+        else if (end > runes.Length + 1) end = runes.Length + 1;
 
         if (start == 0) return new DreamValue("");
-        else if (start < 0) start += textElements.LengthInTextElements + 1;
+        else if (start < 0) start += runes.Length  + 1;
 
-        if (start > textElements.LengthInTextElements)
-            return new(string.Empty);
+        if (start > runes.Length)
+            return new DreamValue(string.Empty);
 
-        return new DreamValue(textElements.SubstringByTextElements(start - 1, end - start));
+        var stringBuilder = new StringBuilder();
+        for (int i = start - 1; i < end - 1; i++) {
+            stringBuilder.Append(runes[i].ToString());
+        }
+        return new DreamValue(stringBuilder.ToString());
     }
 
     [DreamProc("CRASH")]

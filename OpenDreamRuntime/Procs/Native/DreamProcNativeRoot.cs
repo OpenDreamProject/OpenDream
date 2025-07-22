@@ -1594,7 +1594,7 @@ internal static class DreamProcNativeRoot {
 
     public static DreamValue _length(DreamValue value, bool countBytes) {
         if (value.TryGetValueAsString(out var str)) {
-            return new DreamValue(countBytes ? str.Length : str.EnumerateRunes().Count());
+            return new DreamValue(countBytes ? Encoding.UTF8.GetByteCount(str) : str.EnumerateRunes().Count());
         } else if (value.TryGetValueAsDreamList(out var list)) {
             return new DreamValue(list.GetLength());
         } else if (value.Type is DreamValueType.Float or DreamValueType.DreamObject or DreamValueType.DreamType) {

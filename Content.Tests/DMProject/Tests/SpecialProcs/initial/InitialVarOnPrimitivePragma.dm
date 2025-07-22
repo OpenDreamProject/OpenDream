@@ -1,5 +1,5 @@
 // RUNTIME ERROR
-#pragma InitialVarOnPrimativeException error
+#pragma InitialVarOnPrimitiveException error
 
 /proc/initial_test(obj/A)
 	return initial(A.name)

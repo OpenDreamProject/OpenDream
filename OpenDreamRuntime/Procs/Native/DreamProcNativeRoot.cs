@@ -2779,30 +2779,46 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
     [DreamProcParameter("include_delimiters", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
     public static DreamValue NativeProc_splittext(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        return SplitText(bundle, src, usr, true);
+    }
+
+    [DreamProc("splittext_char")]
+    [DreamProcParameter("Text", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Delimiter", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
+    [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    [DreamProcParameter("include_delimiters", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    public static DreamValue NativeProc_splittext_char(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        return SplitText(bundle, src, usr, false);
+    }
+
+    private static DreamValue SplitText(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr, bool useByteLength) {
         if (!bundle.GetArgument(0, "Text").TryGetValueAsString(out var text)) {
             return new DreamValue(bundle.ObjectTree.CreateList());
         }
 
+        int consideredLength = useByteLength ? Encoding.UTF8.GetByteCount(text) : text.EnumerateRunes().Count();
         int start = 0;
         int end = 0;
-        if(bundle.GetArgument(2, "Start").TryGetValueAsInteger(out start))
+        if (bundle.GetArgument(2, "Start").TryGetValueAsInteger(out start))
             start -= 1; //1-indexed
-        if(bundle.GetArgument(3, "End").TryGetValueAsInteger(out end))
-            if(end == 0)
-                end = text.Length;
+        if (bundle.GetArgument(3, "End").TryGetValueAsInteger(out end))
+            if (end == 0)
+                end = consideredLength;
             else
                 end -= 1; //1-indexed
+
         bool includeDelimiters = false;
-        if(bundle.GetArgument(4, "include_delimiters").TryGetValueAsInteger(out var includeDelimitersInt))
+        if (bundle.GetArgument(4, "include_delimiters").TryGetValueAsInteger(out var includeDelimitersInt))
             includeDelimiters = includeDelimitersInt != 0; //idk why BYOND doesn't just use truthiness, but it doesn't, so...
 
-        if(start > 0 || end < text.Length)
-            text = text[Math.Max(start,0)..Math.Min(end, text.Length)];
+        if (start > 0 || end < consideredLength)
+            text = text[Math.Max(start, 0)..Math.Min(end, consideredLength)];
 
         var delim = bundle.GetArgument(1, "Delimiter"); //can either be a regex or string
 
         if (delim.TryGetValueAsDreamObject<DreamObjectRegex>(out var regexObject)) {
-            if(includeDelimiters) {
+            if (includeDelimiters) {
                 var values = new List<string>();
                 int pos = 0;
                 foreach (Match m in regexObject.Regex.Matches(text)) {
@@ -2818,13 +2834,13 @@ internal static class DreamProcNativeRoot {
             }
         } else if (delim.TryGetValueAsString(out var delimiter)) {
             string[] splitText;
-            if(includeDelimiters) {
+            if (includeDelimiters) {
                 //basically split on delimeter, and then add the delimiter back in after each split (except the last one)
-                splitText= text.Split(delimiter);
+                splitText = text.Split(delimiter);
                 string[] longerSplitText = new string[splitText.Length * 2 - 1];
-                for(int i = 0; i < splitText.Length; i++) {
+                for (int i = 0; i < splitText.Length; i++) {
                     longerSplitText[i * 2] = splitText[i];
-                    if(i < splitText.Length - 1)
+                    if (i < splitText.Length - 1)
                         longerSplitText[i * 2 + 1] = delimiter;
                 }
 

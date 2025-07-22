@@ -59,6 +59,8 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
             case DMReference.Type.World: return DMReference.World;
             case DMReference.Type.SuperProc: return DMReference.SuperProc;
             case DMReference.Type.ListIndex: return DMReference.ListIndex;
+            case DMReference.Type.Caller: return DMReference.Caller;
+            case DMReference.Type.Callee: return DMReference.Callee;
             default: throw new Exception($"Invalid reference type {refType}");
         }
     }

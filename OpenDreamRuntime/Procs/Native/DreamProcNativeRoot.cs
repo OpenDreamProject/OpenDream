@@ -876,9 +876,7 @@ internal static class DreamProcNativeRoot {
         }
 
         if (regex is not null) {
-            Match match = regex.Regex.Match(text, start - 1, end - start);
-
-            return match.Success ? new DreamValue(match.Index + 1) : new DreamValue(0);
+            return regex.FindHelper(text, start - 1, end - start);
         }
 
         int needleIndex = text.IndexOf(needle, start - 1, end - start, StringComparison.OrdinalIgnoreCase);
@@ -919,9 +917,7 @@ internal static class DreamProcNativeRoot {
         }
 
         if (regex is not null) {
-            Match match = regex.Regex.Match(text, start - 1, end - start);
-
-            return match.Success ? new DreamValue(match.Index + 1) : new DreamValue(0);
+            return regex.FindHelper(text, start - 1, end - start);
         }
 
         int needleIndex = text.IndexOf(needle, start - 1, end - start, StringComparison.InvariantCulture);

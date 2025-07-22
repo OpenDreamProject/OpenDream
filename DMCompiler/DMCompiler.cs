@@ -290,7 +290,7 @@ public class DMCompiler {
 
         var optionalErrors = new Dictionary<WarningCode, ErrorLevel>();
         foreach (var (code, level) in _errorConfig) {
-            if (Enumerable.Range(4000, 4999).Contains((int)code)) {
+            if (((int)code) is >= 4000 and <= 4999) {
                 optionalErrors.Add(code, level);
             }
         }

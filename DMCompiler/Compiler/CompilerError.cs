@@ -182,7 +182,10 @@ public struct CompilerEmission {
         {WarningCode.PickWeightedSyntax, ErrorLevel.Disabled},
         {WarningCode.AmbiguousInOrder, ErrorLevel.Warning},
         {WarningCode.ExtraToken, ErrorLevel.Warning},
-        {WarningCode.RuntimeSearchOperator, ErrorLevel.Disabled}
+        {WarningCode.RuntimeSearchOperator, ErrorLevel.Disabled},
+
+        //4000-4999
+        {WarningCode.ListNegativeSizeException, ErrorLevel.Disabled},
     };
 
     public CompilerEmission(ErrorLevel level, Location? location, string message) {

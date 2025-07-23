@@ -2755,22 +2755,23 @@ internal static class DreamProcNativeRoot {
         else if(text == "")
             return new DreamValue(insertText);
 
+        Rune[] runes = text.EnumerateRunes().ToArray();
+
         //runtime if start = 0 runtime error: bad text or out of bounds
-        StringInfo textElements = new StringInfo(text);
-        if(end == 0 || end > textElements.LengthInTextElements + 1)
-            end = textElements.LengthInTextElements+1;
+        if (end == 0 || end > runes.Length + 1)
+            end = runes.Length + 1;
         if(start < 0)
-            start = Math.Max(start + textElements.LengthInTextElements + 1, 1);
+            start = Math.Max(start + runes.Length + 1, 1);
         if(end < 0)
-            end = Math.Min(end + textElements.LengthInTextElements + 1, textElements.LengthInTextElements);
+            end = Math.Min(end + runes.Length + 1, runes.Length);
 
-        if(start == 0 || start > textElements.LengthInTextElements || start > end)
-            throw new Exception("bad text or out of bounds");
+        if(start == 0 || start > runes.Length || start > end)
+            throw new ArgumentException("bad text or out of bounds");
 
-        string result = textElements.SubstringByTextElements(0, start - 1);
+        string result = TextHelpers.RuneSubstring(runes, 0, start - 1);
         result += insertText;
-        if(end <= textElements.LengthInTextElements)
-            result += textElements.SubstringByTextElements(end - 1);
+        if(end <= runes.Length)
+            result += TextHelpers.RuneSubstring(runes, end - 1, 0);
 
         return new DreamValue(result);
     }

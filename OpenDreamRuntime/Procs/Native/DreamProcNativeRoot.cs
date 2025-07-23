@@ -1597,7 +1597,7 @@ internal static class DreamProcNativeRoot {
 
     public static DreamValue _length(DreamValue value, bool countBytes) {
         if (value.TryGetValueAsString(out var str)) {
-            return new DreamValue(countBytes ? Encoding.UTF8.GetByteCount(str) : str.EnumerateRunes().Count());
+            return new DreamValue(countBytes ? str.Length : str.EnumerateRunes().Count());
         } else if (value.TryGetValueAsDreamList(out var list)) {
             return new DreamValue(list.GetLength());
         } else if (value.Type is DreamValueType.Float or DreamValueType.DreamObject or DreamValueType.DreamType) {
@@ -2800,7 +2800,7 @@ internal static class DreamProcNativeRoot {
             return new DreamValue(bundle.ObjectTree.CreateList());
         }
 
-        int consideredLength = useByteLength ? Encoding.UTF8.GetByteCount(text) : text.EnumerateRunes().Count();
+        int consideredLength = useByteLength ? text.Length : text.EnumerateRunes().Count();
         int start = 0;
         int end = 0;
         if (bundle.GetArgument(2, "Start").TryGetValueAsInteger(out start))

@@ -2665,15 +2665,15 @@ internal static class DreamProcNativeRoot {
         int result = 0;
 
         IEnumerator<Rune> needlesRuneEnumerator = needles.EnumerateRunes();
-        IEnumerator<Rune> textElementEnumerator = TextHelpers.RuneSubstring(runes, start - 1, 0).EnumerateRunes();
+        IEnumerator<Rune> textRuneEnumerator = TextHelpers.RuneSubstring(runes, start - 1, 0).EnumerateRunes();
 
-        while(textElementEnumerator.MoveNext()) {
+        while(textRuneEnumerator.MoveNext()) {
             bool found = false;
             needlesRuneEnumerator.Reset();
 
             //lol O(N*M)
             while (needlesRuneEnumerator.MoveNext()) {
-                if (textElementEnumerator.Current.Equals(textElementEnumerator.Current)) {
+                if (textRuneEnumerator.Current.Equals(needlesRuneEnumerator.Current)) {
                     result++;
                     found = true;
                     break;

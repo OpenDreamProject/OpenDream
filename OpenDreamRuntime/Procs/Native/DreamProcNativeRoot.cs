@@ -631,13 +631,13 @@ internal static class DreamProcNativeRoot {
         if (!bundle.GetArgument(1, "Start").TryGetValueAsInteger(out int start)) //1-indexed
             return new DreamValue("");
 
-        var textAsBytes = Encoding.UTF8.GetBytes(text);
-        if (end <= 0) end += textAsBytes.Length + 1;
-        else if (end > textAsBytes.Length + 1) end = textAsBytes.Length + 1;
+        if (end <= 0) end += text.Length + 1;
+        else if (end > text.Length + 1) end = text.Length + 1;
 
         if (start == 0) return new DreamValue("");
-        else if (start < 0) start += textAsBytes.Length + 1;
-        return new DreamValue(Encoding.UTF8.GetString(new ArraySegment<byte>(textAsBytes, start - 1, end - start)));
+        else if (start < 0) start += text.Length + 1;
+
+        return new DreamValue(text.Substring(start - 1, end - start));
     }
 
     [DreamProc("copytext_char")]

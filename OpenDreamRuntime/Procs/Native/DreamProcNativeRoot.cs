@@ -2934,17 +2934,17 @@ internal static class DreamProcNativeRoot {
             return new DreamValue(0);
         }
 
-        StringInfo textElements = new StringInfo(text);
+        Rune[] runes = text.EnumerateRunes().ToArray();
 
         bundle.GetArgument(1, "pos").TryGetValueAsInteger(out var pos); //1-indexed
         if (pos == 0) pos = 1; //0 is same as 1
-        else if (pos < 0) pos += textElements.LengthInTextElements + 1; //Wraps around
+        else if (pos < 0) pos += runes.Length + 1; //Wraps around
 
-        if (pos > textElements.LengthInTextElements || pos < 1) {
+        if (pos > runes.Length || pos < 1) {
             return new DreamValue(0);
         } else {
             //practically identical to (our) text2ascii but more explicit about subchar indexing
-            return new DreamValue((int)textElements.SubstringByTextElements(pos - 1, 1)[0]);
+            return new DreamValue((int)runes[pos].ToString()[0]);
         }
     }
 

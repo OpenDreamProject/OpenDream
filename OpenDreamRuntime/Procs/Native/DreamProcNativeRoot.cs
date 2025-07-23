@@ -2656,24 +2656,24 @@ internal static class DreamProcNativeRoot {
             return new DreamValue(0);
         }
 
-        StringInfo textStringInfo = new StringInfo(text);
+        Rune[] runes = text.EnumerateRunes().ToArray();
 
         if(start < 0) {
-            start = Math.Max(start + textStringInfo.LengthInTextElements + 1, 1);
+            start = Math.Max(start + runes.Length + 1, 1);
         }
 
         int result = 0;
 
-        TextElementEnumerator needlesElementEnumerator = StringInfo.GetTextElementEnumerator(needles);
-        TextElementEnumerator textElementEnumerator = StringInfo.GetTextElementEnumerator(text, start - 1);
+        IEnumerator<Rune> needlesRuneEnumerator = needles.EnumerateRunes();
+        IEnumerator<Rune> textElementEnumerator = TextHelpers.RuneSubstring(runes, start - 1, 0).EnumerateRunes();
 
         while(textElementEnumerator.MoveNext()) {
             bool found = false;
-            needlesElementEnumerator.Reset();
+            needlesRuneEnumerator.Reset();
 
             //lol O(N*M)
-            while (needlesElementEnumerator.MoveNext()) {
-                if (textElementEnumerator.Current.Equals(needlesElementEnumerator.Current)) {
+            while (needlesRuneEnumerator.MoveNext()) {
+                if (textElementEnumerator.Current.Equals(textElementEnumerator.Current)) {
                     result++;
                     found = true;
                     break;

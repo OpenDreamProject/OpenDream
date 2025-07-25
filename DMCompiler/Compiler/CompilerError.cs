@@ -83,6 +83,7 @@ public enum WarningCode {
 
     // 4000 - 4999 are reserved for runtime configuration. (TODO: Runtime doesn't know about configs yet!)
     ListNegativeSizeException = 4000, // When a list's length is decremented below zero, raise an exception.
+    InitialVarOnPrimitiveException = 4001, // initial(foo.var) where foo is a variable containing a non-datum value.
 }
 
 public enum ErrorLevel {
@@ -186,6 +187,7 @@ public struct CompilerEmission {
 
         //4000-4999
         {WarningCode.ListNegativeSizeException, ErrorLevel.Disabled},
+        {WarningCode.InitialVarOnPrimitiveException, ErrorLevel.Disabled},
     };
 
     public CompilerEmission(ErrorLevel level, Location? location, string message) {

@@ -138,6 +138,17 @@ internal static class DreamProcNative {
         objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Splice);
         objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Swap);
 
+        //objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Add);
+        //objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Copy);
+        objectTree.SetNativeProc(objectTree.AssocList, DreamProcNativeList.NativeProc_Cut);
+        /*objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Find);
+        objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Insert);
+        objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Join);
+        objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Remove);
+        objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_RemoveAll);
+        objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Splice);
+        objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Swap);*/
+
         objectTree.SetNativeProc(objectTree.Matrix, DreamProcNativeMatrix.NativeProc_Add);
         objectTree.SetNativeProc(objectTree.Matrix, DreamProcNativeMatrix.NativeProc_Invert);
         objectTree.SetNativeProc(objectTree.Matrix, DreamProcNativeMatrix.NativeProc_Multiply);

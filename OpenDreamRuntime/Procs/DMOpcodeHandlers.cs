@@ -631,7 +631,7 @@ namespace OpenDreamRuntime.Procs {
             } else if (owner.TryGetValueAsType(out var ownerType)) {
                 objectDefinition = ownerType.ObjectDefinition;
             } else {
-                state.DreamManager.OptionalException<ArgumentException>(DMCompiler.Compiler.WarningCode.InitialVarOnPrimitiveException, "Initial() attempted to get the initial value of a variable on a primative.");
+                state.DreamManager.OptionalException<ArgumentException>(DMCompiler.Compiler.WarningCode.InitialVarOnPrimitiveException, "Initial() attempted to get the initial value of a variable on a primitive.");
                 state.Push(DreamValue.Null);
                 return ProcStatus.Continue;
             }

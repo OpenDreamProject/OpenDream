@@ -96,6 +96,7 @@ internal static class DreamProcNative {
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_splicetext);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_splicetext_char);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_splittext);
+        objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_splittext_char);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_stat);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_statpanel);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_text2ascii);

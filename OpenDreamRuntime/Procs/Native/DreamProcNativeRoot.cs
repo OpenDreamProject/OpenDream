@@ -25,6 +25,7 @@ using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
 using Robust.Server;
 using Robust.Shared.Asynchronous;
 using Vector4 = Robust.Shared.Maths.Vector4;
+using OpenDreamRuntime.Util;
 
 namespace OpenDreamRuntime.Procs.Native;
 
@@ -651,18 +652,20 @@ internal static class DreamProcNativeRoot {
         if (!bundle.GetArgument(1, "Start").TryGetValueAsInteger(out int start)) //1-indexed
             return new DreamValue("");
 
-        StringInfo textElements = new StringInfo(text);
+        ;
 
-        if (end <= 0) end += textElements.LengthInTextElements + 1;
-        else if (end > textElements.LengthInTextElements + 1) end = textElements.LengthInTextElements + 1;
+        Rune[] runes = text.EnumerateRunes().ToArray();
+
+        if (end <= 0) end += runes.Length + 1;
+        else if (end > runes.Length + 1) end = runes.Length + 1;
 
         if (start == 0) return new DreamValue("");
-        else if (start < 0) start += textElements.LengthInTextElements + 1;
+        else if (start < 0) start += runes.Length  + 1;
 
-        if (start > textElements.LengthInTextElements)
-            return new(string.Empty);
+        if (start > runes.Length)
+            return new DreamValue(string.Empty);
 
-        return new DreamValue(textElements.SubstringByTextElements(start - 1, end - start));
+        return new DreamValue(TextHelpers.RuneSubstring(runes, start - 1, end - 1));
     }
 
     [DreamProc("CRASH")]
@@ -2653,24 +2656,24 @@ internal static class DreamProcNativeRoot {
             return new DreamValue(0);
         }
 
-        StringInfo textStringInfo = new StringInfo(text);
+        Rune[] runes = text.EnumerateRunes().ToArray();
 
         if(start < 0) {
-            start = Math.Max(start + textStringInfo.LengthInTextElements + 1, 1);
+            start = Math.Max(start + runes.Length + 1, 1);
         }
 
         int result = 0;
 
-        TextElementEnumerator needlesElementEnumerator = StringInfo.GetTextElementEnumerator(needles);
-        TextElementEnumerator textElementEnumerator = StringInfo.GetTextElementEnumerator(text, start - 1);
+        IEnumerator<Rune> needlesRuneEnumerator = needles.EnumerateRunes();
+        IEnumerator<Rune> textRuneEnumerator = TextHelpers.RuneSubstring(runes, start - 1, 0).EnumerateRunes();
 
-        while(textElementEnumerator.MoveNext()) {
+        while(textRuneEnumerator.MoveNext()) {
             bool found = false;
-            needlesElementEnumerator.Reset();
+            needlesRuneEnumerator.Reset();
 
             //lol O(N*M)
-            while (needlesElementEnumerator.MoveNext()) {
-                if (textElementEnumerator.Current.Equals(needlesElementEnumerator.Current)) {
+            while (needlesRuneEnumerator.MoveNext()) {
+                if (textRuneEnumerator.Current.Equals(needlesRuneEnumerator.Current)) {
                     result++;
                     found = true;
                     break;
@@ -2752,22 +2755,23 @@ internal static class DreamProcNativeRoot {
         else if(text == "")
             return new DreamValue(insertText);
 
+        Rune[] runes = text.EnumerateRunes().ToArray();
+
         //runtime if start = 0 runtime error: bad text or out of bounds
-        StringInfo textElements = new StringInfo(text);
-        if(end == 0 || end > textElements.LengthInTextElements + 1)
-            end = textElements.LengthInTextElements+1;
+        if (end == 0 || end > runes.Length + 1)
+            end = runes.Length + 1;
         if(start < 0)
-            start = Math.Max(start + textElements.LengthInTextElements + 1, 1);
+            start = Math.Max(start + runes.Length + 1, 1);
         if(end < 0)
-            end = Math.Min(end + textElements.LengthInTextElements + 1, textElements.LengthInTextElements);
+            end = Math.Min(end + runes.Length + 1, runes.Length);
 
-        if(start == 0 || start > textElements.LengthInTextElements || start > end)
-            throw new Exception("bad text or out of bounds");
+        if(start == 0 || start > runes.Length || start > end)
+            throw new ArgumentException("bad text or out of bounds");
 
-        string result = textElements.SubstringByTextElements(0, start - 1);
+        string result = TextHelpers.RuneSubstring(runes, 0, start - 1);
         result += insertText;
-        if(end <= textElements.LengthInTextElements)
-            result += textElements.SubstringByTextElements(end - 1);
+        if(end <= runes.Length)
+            result += TextHelpers.RuneSubstring(runes, end - 1, 0);
 
         return new DreamValue(result);
     }
@@ -2779,30 +2783,46 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
     [DreamProcParameter("include_delimiters", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
     public static DreamValue NativeProc_splittext(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        return SplitText(bundle, src, usr, true);
+    }
+
+    [DreamProc("splittext_char")]
+    [DreamProcParameter("Text", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Delimiter", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
+    [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    [DreamProcParameter("include_delimiters", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    public static DreamValue NativeProc_splittext_char(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        return SplitText(bundle, src, usr, false);
+    }
+
+    private static DreamValue SplitText(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr, bool useByteLength) {
         if (!bundle.GetArgument(0, "Text").TryGetValueAsString(out var text)) {
             return new DreamValue(bundle.ObjectTree.CreateList());
         }
 
+        int consideredLength = useByteLength ? text.Length : text.EnumerateRunes().Count();
         int start = 0;
         int end = 0;
-        if(bundle.GetArgument(2, "Start").TryGetValueAsInteger(out start))
+        if (bundle.GetArgument(2, "Start").TryGetValueAsInteger(out start))
             start -= 1; //1-indexed
-        if(bundle.GetArgument(3, "End").TryGetValueAsInteger(out end))
-            if(end == 0)
-                end = text.Length;
+        if (bundle.GetArgument(3, "End").TryGetValueAsInteger(out end))
+            if (end == 0)
+                end = consideredLength;
             else
                 end -= 1; //1-indexed
+
         bool includeDelimiters = false;
-        if(bundle.GetArgument(4, "include_delimiters").TryGetValueAsInteger(out var includeDelimitersInt))
+        if (bundle.GetArgument(4, "include_delimiters").TryGetValueAsInteger(out var includeDelimitersInt))
             includeDelimiters = includeDelimitersInt != 0; //idk why BYOND doesn't just use truthiness, but it doesn't, so...
 
-        if(start > 0 || end < text.Length)
-            text = text[Math.Max(start,0)..Math.Min(end, text.Length)];
+        if (start > 0 || end < consideredLength)
+            text = text[Math.Max(start, 0)..Math.Min(end, consideredLength)];
 
         var delim = bundle.GetArgument(1, "Delimiter"); //can either be a regex or string
 
         if (delim.TryGetValueAsDreamObject<DreamObjectRegex>(out var regexObject)) {
-            if(includeDelimiters) {
+            if (includeDelimiters) {
                 var values = new List<string>();
                 int pos = 0;
                 foreach (Match m in regexObject.Regex.Matches(text)) {
@@ -2818,13 +2838,13 @@ internal static class DreamProcNativeRoot {
             }
         } else if (delim.TryGetValueAsString(out var delimiter)) {
             string[] splitText;
-            if(includeDelimiters) {
+            if (includeDelimiters) {
                 //basically split on delimeter, and then add the delimiter back in after each split (except the last one)
-                splitText= text.Split(delimiter);
+                splitText = text.Split(delimiter);
                 string[] longerSplitText = new string[splitText.Length * 2 - 1];
-                for(int i = 0; i < splitText.Length; i++) {
+                for (int i = 0; i < splitText.Length; i++) {
                     longerSplitText[i * 2] = splitText[i];
-                    if(i < splitText.Length - 1)
+                    if (i < splitText.Length - 1)
                         longerSplitText[i * 2 + 1] = delimiter;
                 }
 
@@ -2914,17 +2934,17 @@ internal static class DreamProcNativeRoot {
             return new DreamValue(0);
         }
 
-        StringInfo textElements = new StringInfo(text);
+        Rune[] runes = text.EnumerateRunes().ToArray();
 
         bundle.GetArgument(1, "pos").TryGetValueAsInteger(out var pos); //1-indexed
         if (pos == 0) pos = 1; //0 is same as 1
-        else if (pos < 0) pos += textElements.LengthInTextElements + 1; //Wraps around
+        else if (pos < 0) pos += runes.Length + 1; //Wraps around
 
-        if (pos > textElements.LengthInTextElements || pos < 1) {
+        if (pos > runes.Length || pos < 1) {
             return new DreamValue(0);
         } else {
             //practically identical to (our) text2ascii but more explicit about subchar indexing
-            return new DreamValue((int)textElements.SubstringByTextElements(pos - 1, 1)[0]);
+            return new DreamValue((int)runes[pos].ToString()[0]);
         }
     }
 

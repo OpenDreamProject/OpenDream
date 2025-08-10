@@ -1159,6 +1159,22 @@ namespace DMCompiler.Compiler.DM {
             return new DMASTProcStatementSpawn(loc, delay ?? new DMASTConstantInteger(loc, 0), body);
         }
 
+        private void ExtraColonPeriod() {
+            var token = Current();
+            if (token.Type is not (TokenType.DM_Colon or TokenType.DM_Period))
+                return;
+
+            Advance();
+
+            if (Current().Type is not (TokenType.DM_Semicolon or TokenType.Newline) && !WhitespaceTypes.Contains(Current().Type))
+            {
+                ReuseToken(token);
+                return;
+            }
+
+            Emit(WarningCode.ExtraToken, token.Location, "Extra token at end of proc statement");
+        }
+
         private DMASTProcStatementIf If() {
             var loc = Current().Location;
             Advance();
@@ -1175,9 +1191,7 @@ namespace DMCompiler.Compiler.DM {
 
             BracketWhitespace();
             ConsumeRightParenthesis();
-            if (Check(TokenType.DM_Colon) || Check(TokenType.DM_Period)) {
-                Emit(WarningCode.ExtraToken, loc, "Extra token at end of proc statement");
-            }
+            ExtraColonPeriod();
 
             Whitespace();
 
@@ -1217,9 +1231,7 @@ namespace DMCompiler.Compiler.DM {
             Whitespace();
 
             if (Check(TokenType.DM_RightParenthesis)) {
-                if (Check(TokenType.DM_Colon) || Check(TokenType.DM_Period)) {
-                    Emit(WarningCode.ExtraToken, loc, "Extra token at end of proc statement");
-                }
+                ExtraColonPeriod();
 
                 return new DMASTProcStatementInfLoop(loc, GetForBody(loc));
             }
@@ -1241,9 +1253,7 @@ namespace DMCompiler.Compiler.DM {
                 if (expr1 is DMASTAssign assign) {
                     ExpressionTo(out var endRange, out var step);
                     Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after to expression");
-                    if (Check(TokenType.DM_Colon) || Check(TokenType.DM_Period)) {
-                        Emit(WarningCode.ExtraToken, loc, "Extra token at end of proc statement");
-                    }
+                    ExtraColonPeriod();
 
                     return new DMASTProcStatementFor(loc, new DMASTExpressionInRange(loc, assign.LHS, assign.RHS, endRange, step), null, null, dmTypes, GetForBody(loc));
                 } else {
@@ -1257,26 +1267,20 @@ namespace DMCompiler.Compiler.DM {
                 DMASTExpression? listExpr = Expression();
                 Whitespace();
                 Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 2");
-                if (Check(TokenType.DM_Colon) || Check(TokenType.DM_Period)) {
-                    Emit(WarningCode.ExtraToken, loc, "Extra token at end of proc statement");
-                }
+                ExtraColonPeriod();
 
                 return new DMASTProcStatementFor(loc, new DMASTExpressionIn(loc, expr1, listExpr), null, null, dmTypes, GetForBody(loc));
             }
 
             if (!Check(ForSeparatorTypes)) {
                 Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 1");
-                if (Check(TokenType.DM_Colon) || Check(TokenType.DM_Period)) {
-                    Emit(WarningCode.ExtraToken, loc, "Extra token at end of proc statement");
-                }
+                ExtraColonPeriod();
 
                 return new DMASTProcStatementFor(loc, expr1, null, null, dmTypes, GetForBody(loc));
             }
 
             if (Check(TokenType.DM_RightParenthesis)) {
-                if (Check(TokenType.DM_Colon) || Check(TokenType.DM_Period)) {
-                    Emit(WarningCode.ExtraToken, loc, "Extra token at end of proc statement");
-                }
+                ExtraColonPeriod();
 
                 return new DMASTProcStatementFor(loc, expr1, null, null, dmTypes, GetForBody(loc));
             }
@@ -1293,17 +1297,13 @@ namespace DMCompiler.Compiler.DM {
 
             if (!Check(ForSeparatorTypes)) {
                 Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 2");
-                if (Check(TokenType.DM_Colon) || Check(TokenType.DM_Period)) {
-                    Emit(WarningCode.ExtraToken, loc, "Extra token at end of proc statement");
-                }
+                ExtraColonPeriod();
 
                 return new DMASTProcStatementFor(loc, expr1, expr2, null, dmTypes, GetForBody(loc));
             }
 
             if (Check(TokenType.DM_RightParenthesis)) {
-                if (Check(TokenType.DM_Colon) || Check(TokenType.DM_Period)) {
-                    Emit(WarningCode.ExtraToken, loc, "Extra token at end of proc statement");
-                }
+                ExtraColonPeriod();
 
                 return new DMASTProcStatementFor(loc, expr1, expr2, null, dmTypes, GetForBody(loc));
             }
@@ -1319,9 +1319,7 @@ namespace DMCompiler.Compiler.DM {
             }
 
             Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 3");
-            if (Check(TokenType.DM_Colon) || Check(TokenType.DM_Period)) {
-                Emit(WarningCode.ExtraToken, loc, "Extra token at end of proc statement");
-            }
+            ExtraColonPeriod();
 
             return new DMASTProcStatementFor(loc, expr1, expr2, expr3, dmTypes, GetForBody(loc));
 

@@ -12,7 +12,6 @@ using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Shared.Random;
-using Vector4 = Robust.Shared.Maths.Vector4;
 
 namespace OpenDreamRuntime.Procs {
     internal static partial class DMOpcodeHandlers {
@@ -2073,7 +2072,7 @@ namespace OpenDreamRuntime.Procs {
                     float s = Math.Clamp(color2Value, 0, 100) / 100f;
                     float v = Math.Clamp(color3Value, 0, 100) / 100f;
 
-                    color = Color.FromHsv((h, s, v, aValue / 255f));
+                    color = Color.FromHsv(new (h, s, v, aValue / 255f));
                     break;
                 }
                 case ColorHelpers.ColorSpace.HSL: {
@@ -2081,7 +2080,7 @@ namespace OpenDreamRuntime.Procs {
                     float s = Math.Clamp(color2Value, 0, 100) / 100f;
                     float l = Math.Clamp(color3Value, 0, 100) / 100f;
 
-                    color = Color.FromHsl((h, s, l, aValue / 255f));
+                    color = Color.FromHsl(new (h, s, l, aValue / 255f));
                     break;
                 }
                 default:
@@ -2927,8 +2926,8 @@ namespace OpenDreamRuntime.Procs {
                     returnVal = Color.InterpolateBetween(left.GetValueOrDefault(), right.GetValueOrDefault(), normalized);
                     break;
                 case 1 or 2: // HSV/HSL
-                    Vector4 vec1 = new(Color.ToHsv(left.GetValueOrDefault()));
-                    Vector4 vec2 = new(Color.ToHsv(right.GetValueOrDefault()));
+                    Vector4 vec1 = Color.ToHsv(left.GetValueOrDefault());
+                    Vector4 vec2 = Color.ToHsv(right.GetValueOrDefault());
 
                     // Some precision is lost when converting back to HSV at very small values this fixes that issue
                     if (normalized < 0.05f) {

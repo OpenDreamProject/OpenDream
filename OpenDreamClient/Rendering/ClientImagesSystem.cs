@@ -1,7 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using OpenDreamShared.Rendering;
-using Robust.Shared.Timing;
-using Vector3 = Robust.Shared.Maths.Vector3;
 
 namespace OpenDreamClient.Rendering;
 internal sealed class ClientImagesSystem : SharedClientImagesSystem {

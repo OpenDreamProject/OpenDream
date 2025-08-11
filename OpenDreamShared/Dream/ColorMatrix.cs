@@ -1,6 +1,7 @@
 ﻿using Robust.Shared.Maths;
 using Robust.Shared.Serialization;
 using System;
+using System.Numerics;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -209,8 +210,8 @@ public struct ColorMatrix {
         yield return c54;
     }
 
-    public Matrix4 GetMatrix4(){
-        return new Matrix4(
+    public Matrix4x4 GetMatrix4(){
+        return new Matrix4x4(
             c11, c12, c13, c14,
             c21, c22, c23, c24,
             c31, c32, c33, c34,

@@ -1,7 +1,6 @@
 ﻿using OpenDreamRuntime.Objects.Types;
 using OpenDreamShared.Rendering;
 using OpenDreamRuntime.Objects;
-using Vector3 = Robust.Shared.Maths.Vector3;
 using Robust.Server.GameStates;
 
 namespace OpenDreamRuntime.Rendering;

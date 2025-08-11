@@ -1,6 +1,6 @@
 ﻿using Robust.Shared.Analyzers;
 using Robust.Shared.GameObjects;
-using Robust.Shared.Maths;
+using System.Numerics;
 using Robust.Shared.Serialization;
 using System;
 

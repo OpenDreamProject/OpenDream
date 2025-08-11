@@ -24,7 +24,6 @@ using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
 using Robust.Server;
 using Robust.Shared.Asynchronous;
-using Vector4 = Robust.Shared.Maths.Vector4;
 using System.ComponentModel;
 using OpenDreamShared.Rendering;
 

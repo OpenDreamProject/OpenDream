@@ -114,7 +114,7 @@ jobs:
     - name: Compile Goonstation Master
       run: |
         touch goon/+secret/__secret.dme
-        main/bin/DMCompiler/DMCompiler goon/goonstation.dme --suppress-unimplemented --suppress-unsupported --version=515.1633
+        main/bin/DMCompiler/DMCompiler goon/goonstation.dme --suppress-unimplemented --suppress-unsupported
 
   compile-paradise:
     runs-on: ubuntu-latest

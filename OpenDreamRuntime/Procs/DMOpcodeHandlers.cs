@@ -9,10 +9,11 @@ using DMCompiler.Bytecode;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.Native;
+using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Shared.Random;
-using Vector4 = Robust.Shared.Maths.Vector4;
+using FormatSuffix = DMCompiler.Bytecode.StringFormatEncoder.FormatSuffix;
 
 namespace OpenDreamRuntime.Procs {
     internal static partial class DMOpcodeHandlers {
@@ -400,7 +401,7 @@ namespace OpenDreamRuntime.Procs {
 
             int interpCount = state.ReadInt();
 
-            StringFormatEncoder.FormatSuffix? postPrefix = null; // Prefix that needs the effects of a suffix
+            FormatSuffix? postPrefix = null; // Prefix that needs the effects of a suffix
 
             ReadOnlySpan<DreamValue> interps = state.PopCount(interpCount);
             int nextInterpIndex = 0; // If we find a prefix macro, this is what it points to
@@ -414,20 +415,20 @@ namespace OpenDreamRuntime.Procs {
 
                 switch (formatType) {
                     //Interp values
-                    case StringFormatEncoder.FormatSuffix.StringifyWithArticle:{
+                    case FormatSuffix.StringifyWithArticle:{
                         // TODO: use postPrefix for \th interpolation
                         formattedString.Append(interps[nextInterpIndex].Stringify());
                         prevInterpIndex = nextInterpIndex;
                         nextInterpIndex++;
                         continue;
                     }
-                    case StringFormatEncoder.FormatSuffix.ReferenceOfValue: {
+                    case FormatSuffix.ReferenceOfValue: {
                         formattedString.Append(state.DreamManager.CreateRef(interps[nextInterpIndex]));
                         //suffix macro marker is not updated because suffixes do not point to \ref[] interpolations
                         nextInterpIndex++;
                         continue;
                     }
-                    case StringFormatEncoder.FormatSuffix.StringifyNoArticle: {
+                    case FormatSuffix.StringifyNoArticle: {
                         if (interps[nextInterpIndex].TryGetValueAsDreamObject<DreamObject>(out var dreamObject)) {
                             formattedString.Append(dreamObject.GetNameUnformatted());
                         } else if (interps[nextInterpIndex].TryGetValueAsString(out var interpStr)) {
@@ -437,10 +438,10 @@ namespace OpenDreamRuntime.Procs {
                         // NOTE probably should put this above the TryGetAsDreamObject function and continue if formatting has occured
                         if(postPrefix != null) { // Cursed Hack
                             switch (postPrefix) {
-                                case StringFormatEncoder.FormatSuffix.LowerRoman:
+                                case FormatSuffix.LowerRoman:
                                     ToRoman(ref formattedString, interps, nextInterpIndex, false);
                                     break;
-                                case StringFormatEncoder.FormatSuffix.UpperRoman:
+                                case FormatSuffix.UpperRoman:
                                     ToRoman(ref formattedString, interps, nextInterpIndex, true);
                                     break;
                             }
@@ -453,23 +454,28 @@ namespace OpenDreamRuntime.Procs {
                         nextInterpIndex++;
                         continue;
                     }
+                    case FormatSuffix.NoStringify:
+                        prevInterpIndex = nextInterpIndex;
+                        nextInterpIndex++;
+                        break;
+
                     //Macro values//
                     //Prefix macros
-                    case StringFormatEncoder.FormatSuffix.UpperDefiniteArticle:
-                    case StringFormatEncoder.FormatSuffix.LowerDefiniteArticle: {
+                    case FormatSuffix.UpperDefiniteArticle:
+                    case FormatSuffix.LowerDefiniteArticle: {
                         if (interps[nextInterpIndex].TryGetValueAsDreamObject<DreamObject>(out var dreamObject)) {
                             bool hasName = dreamObject.TryGetVariable("name", out var objectName);
                             if (!hasName) continue;
                             string nameStr = objectName.Stringify();
                             if (!DreamObject.StringIsProper(nameStr)) {
-                                formattedString.Append(formatType == StringFormatEncoder.FormatSuffix.UpperDefiniteArticle ? "The " : "the ");
+                                formattedString.Append(formatType == FormatSuffix.UpperDefiniteArticle ? "The " : "the ");
                             }
                         }
 
                         continue;
                     }
-                    case StringFormatEncoder.FormatSuffix.UpperIndefiniteArticle:
-                    case StringFormatEncoder.FormatSuffix.LowerIndefiniteArticle: {
+                    case FormatSuffix.UpperIndefiniteArticle:
+                    case FormatSuffix.LowerIndefiniteArticle: {
                         var interpValue = interps[nextInterpIndex];
                         string displayName;
                         bool isPlural = false;
@@ -493,7 +499,7 @@ namespace OpenDreamRuntime.Procs {
                             break; // Proper nouns don't need articles, I guess.
 
                         // saves some wordiness with the ternaries below
-                        bool wasCapital = formatType == StringFormatEncoder.FormatSuffix.UpperIndefiniteArticle;
+                        bool wasCapital = formatType == FormatSuffix.UpperIndefiniteArticle;
 
                         if (isPlural)
                             formattedString.Append(wasCapital ? "Some " : "some ");
@@ -505,37 +511,37 @@ namespace OpenDreamRuntime.Procs {
                         break;
                     }
                     //Suffix macros
-                    case StringFormatEncoder.FormatSuffix.UpperSubjectPronoun:
+                    case FormatSuffix.UpperSubjectPronoun:
                         HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "He", "She", "They", "Tt" });
                         break;
-                    case StringFormatEncoder.FormatSuffix.LowerSubjectPronoun:
+                    case FormatSuffix.LowerSubjectPronoun:
                         HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "he", "she", "they", "it" });
                         break;
-                    case StringFormatEncoder.FormatSuffix.UpperPossessiveAdjective:
+                    case FormatSuffix.UpperPossessiveAdjective:
                         HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "His", "Her", "Their", "Its" });
                         break;
-                    case StringFormatEncoder.FormatSuffix.LowerPossessiveAdjective:
+                    case FormatSuffix.LowerPossessiveAdjective:
                         HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "his", "her", "their", "its" });
                         break;
-                    case StringFormatEncoder.FormatSuffix.ObjectPronoun:
+                    case FormatSuffix.ObjectPronoun:
                         HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "him", "her", "them", "it" });
                         break;
-                    case StringFormatEncoder.FormatSuffix.ReflexivePronoun:
+                    case FormatSuffix.ReflexivePronoun:
                         HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "himself", "herself", "themself", "itself" });
                         break;
-                    case StringFormatEncoder.FormatSuffix.UpperPossessivePronoun:
+                    case FormatSuffix.UpperPossessivePronoun:
                         HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "His", "Hers", "Theirs", "Its" });
                         break;
-                    case StringFormatEncoder.FormatSuffix.LowerPossessivePronoun:
+                    case FormatSuffix.LowerPossessivePronoun:
                         HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "his", "hers", "theirs", "its" });
                         break;
-                    case StringFormatEncoder.FormatSuffix.PluralSuffix:
+                    case FormatSuffix.PluralSuffix:
                         if (interps[prevInterpIndex].TryGetValueAsFloat(out var pluralNumber) && pluralNumber.Equals(1f))
                             continue;
 
                         formattedString.Append("s");
                         continue;
-                    case StringFormatEncoder.FormatSuffix.OrdinalIndicator:
+                    case FormatSuffix.OrdinalIndicator:
                         var interp = interps[prevInterpIndex];
                         if (interp.TryGetValueAsInteger(out var ordinalNumber)) {
                             // For some mystical reason byond converts \th to integers
@@ -579,14 +585,34 @@ namespace OpenDreamRuntime.Procs {
                         }
 
                         continue;
-                    case StringFormatEncoder.FormatSuffix.LowerRoman:
+                    case FormatSuffix.LowerRoman:
                         postPrefix = formatType;
                         continue;
-                    case StringFormatEncoder.FormatSuffix.UpperRoman:
+                    case FormatSuffix.UpperRoman:
                         postPrefix = formatType;
+                        continue;
+                    case FormatSuffix.Icon:
+                        var iconValue = interps[nextInterpIndex];
+                        if (!iconValue.TryGetValueAsDreamObject<DreamObjectAtom>(out var atom))
+                            continue;
+                        if (!state.Proc.AtomManager.TryGetAppearance(atom, out var appearance))
+                            continue;
+
+                        var entitySystemManager = IoCManager.Resolve<IEntitySystemManager>();
+                        if (!entitySystemManager.TryGetEntitySystem(out ServerAppearanceSystem? appearanceSystem))
+                            continue;
+                        if (!appearanceSystem.AddAppearance(appearance).TryGetId(out var appearanceId))
+                            continue;
+
+                        // Encode the 4-byte appearance ID as characters in the string
+                        var upper = (char)(((ushort)(appearanceId & 0xFFFF0000)) >> 16);
+                        var lower = (char)((ushort)(appearanceId & 0xFFFF));
+                        formattedString.Append(StringFormatting.Icon);
+                        formattedString.Append(upper);
+                        formattedString.Append(lower);
                         continue;
                     default:
-                        if (Enum.IsDefined(typeof(StringFormatEncoder.FormatSuffix), formatType)) {
+                        if (Enum.IsDefined(typeof(FormatSuffix), formatType)) {
                             //Likely an unimplemented text macro, ignore it
                             break;
                         }
@@ -2074,7 +2100,7 @@ namespace OpenDreamRuntime.Procs {
                     float s = Math.Clamp(color2Value, 0, 100) / 100f;
                     float v = Math.Clamp(color3Value, 0, 100) / 100f;
 
-                    color = Color.FromHsv((h, s, v, aValue / 255f));
+                    color = Color.FromHsv(new(h, s, v, aValue / 255f));
                     break;
                 }
                 case ColorHelpers.ColorSpace.HSL: {
@@ -2082,7 +2108,7 @@ namespace OpenDreamRuntime.Procs {
                     float s = Math.Clamp(color2Value, 0, 100) / 100f;
                     float l = Math.Clamp(color3Value, 0, 100) / 100f;
 
-                    color = Color.FromHsl((h, s, l, aValue / 255f));
+                    color = Color.FromHsl(new(h, s, l, aValue / 255f));
                     break;
                 }
                 default:
@@ -2928,8 +2954,8 @@ namespace OpenDreamRuntime.Procs {
                     returnVal = Color.InterpolateBetween(left.GetValueOrDefault(), right.GetValueOrDefault(), normalized);
                     break;
                 case 1 or 2: // HSV/HSL
-                    Vector4 vec1 = new(Color.ToHsv(left.GetValueOrDefault()));
-                    Vector4 vec2 = new(Color.ToHsv(right.GetValueOrDefault()));
+                    Vector4 vec1 = Color.ToHsv(left.GetValueOrDefault());
+                    Vector4 vec2 = Color.ToHsv(right.GetValueOrDefault());
 
                     // Some precision is lost when converting back to HSV at very small values this fixes that issue
                     if (normalized < 0.05f) {

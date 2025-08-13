@@ -30,13 +30,15 @@ public sealed class AppearanceControl : Control {
         _icon.SizeChanged += InvalidateMeasure;
     }
 
-    protected override void Draw(DrawingHandleScreen handle) {
-        var texture = _icon.GetTexture(_overlay, handle, new RendererMetaData {MainIcon = _icon}, null, null);
+    protected override void Draw(IRenderHandle renderHandle) {
+        var world = renderHandle.DrawingHandleWorld;
+
+        var texture = _icon.GetTexture(_overlay, world, new RendererMetaData {MainIcon = _icon}, null, null);
         if (texture is null)
             return;
 
         var position = new Vector2(0, PixelPosition.Y); // For, uh, some reason
-        handle.DrawTextureRect(texture, new UIBox2(position, position + PixelSize));
+        world.DrawTextureRect(texture, new Box2(position, position + PixelSize));
     }
 
     protected override Vector2 MeasureOverride(Vector2 availableSize) {

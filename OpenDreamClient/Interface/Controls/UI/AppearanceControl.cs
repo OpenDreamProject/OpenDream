@@ -32,13 +32,14 @@ public sealed class AppearanceControl : Control {
 
     protected override void Draw(IRenderHandle renderHandle) {
         var world = renderHandle.DrawingHandleWorld;
+        var screen = renderHandle.DrawingHandleScreen;
 
         var texture = _icon.GetTexture(_overlay, world, new RendererMetaData {MainIcon = _icon}, null, null);
         if (texture is null)
             return;
 
         var position = new Vector2(0, PixelPosition.Y); // For, uh, some reason
-        world.DrawTextureRect(texture, new Box2(position, position + PixelSize));
+        screen.DrawTextureRect(texture, new UIBox2(position, position + PixelSize));
     }
 
     protected override Vector2 MeasureOverride(Vector2 availableSize) {

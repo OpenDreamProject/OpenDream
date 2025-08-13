@@ -1166,8 +1166,7 @@ namespace DMCompiler.Compiler.DM {
 
             Advance();
 
-            if (Current().Type is not (TokenType.DM_Semicolon or TokenType.Newline) && !WhitespaceTypes.Contains(Current().Type))
-            {
+            if (Current().Type is not (TokenType.DM_Semicolon or TokenType.Newline) && !WhitespaceTypes.Contains(Current().Type)) {
                 ReuseToken(token);
                 return;
             }

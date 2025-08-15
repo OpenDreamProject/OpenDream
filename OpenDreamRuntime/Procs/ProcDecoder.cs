@@ -148,6 +148,7 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
 
             case DreamProcOpcode.CreateList:
             case DreamProcOpcode.CreateAssociativeList:
+            case DreamProcOpcode.CreateStrictAssociativeList:
             case DreamProcOpcode.PickWeighted:
             case DreamProcOpcode.PickUnweighted:
             case DreamProcOpcode.Spawn:

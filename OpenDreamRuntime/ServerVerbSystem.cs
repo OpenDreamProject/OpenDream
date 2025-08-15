@@ -18,7 +18,7 @@ public sealed class ServerVerbSystem : VerbSystem {
 
     private readonly List<VerbInfo> _verbs = new();
     private readonly Dictionary<int, DreamProc> _verbIdToProc = new();
-    private readonly Dictionary<DreamConnection, List<int /* verbId */>> _repeatingVerbs = new();
+    private readonly Dictionary<DreamConnection, List<(int, ClientObjectReference) /* verbId */>> _repeatingVerbs = new();
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.verbs");
 
@@ -138,17 +138,13 @@ public sealed class ServerVerbSystem : VerbSystem {
                 if (repeatingVerb.Value.Count == 0)
                     return;
                 var client = repeatingVerb.Key;
-                var verbId = repeatingVerb.Value.Last();
+                var (verbId, srcRef) = repeatingVerb.Value.Last();
 
-                var src = _dreamManager.GetFromClientReference(client, ClientObjectReference.Client);
+                var src = _dreamManager.GetFromClientReference(client, srcRef);
                 if (src == null || !_verbIdToProc.TryGetValue(verbId, out var verb) || !CanExecute(client, src, verb))
                     return;
 
-                using (Profiler.BeginZone("DM Execution", color: (uint)Color.LightPink.ToArgb()))
-                    DreamThread.Run($"Execute repeating {verb} by {client.Session!.Name}", async state => {
-                        await state.Call(verb, src, client.Mob);
-                        return DreamValue.Null;
-                    });
+                RunVerb(verb, $"repeating verb {verbId}", src, client);
             }
         }
     }
@@ -166,18 +162,27 @@ public sealed class ServerVerbSystem : VerbSystem {
             _repeatingVerbs.Add(conn, list);
         }
 
-        if (!list.Contains(msg.VerbId))
-            list.Add(msg.VerbId);
+        if (!list.Any(tuple => tuple.Item1 == msg.VerbId))
+            list.Add((msg.VerbId, msg.Src));
     }
 
     private void OnRepeatVerbStop(UnregisterRepeatVerbEvent msg, EntitySessionEventArgs args) {
         var conn = _dreamManager.GetConnectionBySession(args.SenderSession);
         if (_repeatingVerbs.TryGetValue(conn, out var verb)) {
-            verb.Remove(msg.VerbId);
+            verb.Remove((msg.VerbId, msg.Src));
             if (verb.Count == 0) {
                 _repeatingVerbs.Remove(conn);
             }
         }
+    }
+
+    private void RunVerb(DreamProc verb, string name, DreamObject? src, DreamConnection usr, params DreamValue[] arguments)
+    {
+        using (Profiler.BeginZone("DM Execution", color: (uint)Color.LightPink.ToArgb()))
+            DreamThread.Run($"Execute {name} by {usr.Session!.Name}", async state => {
+                await state.Call(verb, src, usr.Mob, arguments);
+                return DreamValue.Null;
+            });
     }
 
     private void OnVerbExecuted(ExecuteVerbEvent msg, EntitySessionEventArgs args) {
@@ -207,11 +212,7 @@ public sealed class ServerVerbSystem : VerbSystem {
                 }
             }
 
-            using (Profiler.BeginZone("DM Execution", color: (uint)Color.LightPink.ToArgb()))
-                DreamThread.Run($"Execute {msg.VerbId} by {connection.Session!.Name}", async state => {
-                    await state.Call(verb, src, connection.Mob, arguments);
-                    return DreamValue.Null;
-                });
+            RunVerb(verb, $"verb {msg.VerbId}", src, connection, arguments);
         }
     }
 

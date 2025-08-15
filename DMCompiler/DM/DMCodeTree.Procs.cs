@@ -37,6 +37,14 @@ internal partial class DMCodeTree {
                 var procs = dmObject.GetProcs(procDef.Name);
                 if (procs != null) {
                       var parent = compiler.DMObjectTree.AllProcs[procs[0]];
+                      proc.IsVerb = parent.IsVerb;
+                      if (proc.IsVerb) {
+                          proc.VerbName = parent.VerbName;
+                          proc.VerbCategory = parent.VerbCategory;
+                          proc.VerbDesc = parent.VerbDesc;
+                          proc.VerbSrc = parent.VerbSrc;
+                      }
+
                       if (parent.IsFinal)
                           compiler.Emit(WarningCode.FinalOverride, procDef.Location,
                               $"Proc \"{procDef.Name}()\" is final and cannot be overridden. Final declaration: {parent.Location}");
@@ -64,10 +72,6 @@ internal partial class DMCodeTree {
                 var procGlobalNode = new ProcGlobalVarNode(owner, proc, varDecl);
                 Children.Add(procGlobalNode);
                 codeTree._waitingNodes.Add(procGlobalNode);
-            }
-
-            if (proc.IsVerb) {
-                dmObject.AddVerb(proc);
             }
 
             return true;

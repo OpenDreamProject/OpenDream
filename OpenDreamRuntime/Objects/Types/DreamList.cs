@@ -617,7 +617,7 @@ public sealed class ClientVerbsList : DreamList {
         _client = client;
         _verbSystem = verbSystem;
 
-        List<int>? verbs = _client.ObjectDefinition.Verbs;
+        var verbs = _client.ObjectDefinition.Verbs?.Values;
         if (verbs == null)
             return;
 

@@ -85,7 +85,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
         DMI = null; //triggers the removal of the onUpdateCallback
     }
 
-    public Texture? GetTexture(DreamViewOverlay viewOverlay, DrawingHandleBase handle, RendererMetaData iconMetaData, Texture? textureOverride, ClientAppearanceSystem.Flick? flick) {
+    public Texture? GetTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData, Texture? textureOverride, ClientAppearanceSystem.Flick? flick) {
         Texture? frame;
 
         if (textureOverride == null) {
@@ -508,7 +508,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
     /// <remarks>In a separate method to avoid closure allocations when not executed</remarks>
     /// <returns>The final texture</returns>
     [SuppressMessage("ReSharper", "AccessToModifiedClosure")] // RenderInRenderTarget executes immediately, shouldn't be an issue
-    private IRenderTexture FullRenderTexture(DreamViewOverlay viewOverlay, DrawingHandleBase handle, RendererMetaData iconMetaData, Texture frame) {
+    private IRenderTexture FullRenderTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData, Texture frame) {
         Vector2 requiredRenderSpace = frame.Size;
         foreach (var filter in iconMetaData.MainIcon!.Appearance!.Filters) {
             var requiredSpace = filter.CalculateRequiredRenderSpace(frame.Size,
@@ -532,7 +532,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
             handle.UseShader(colorShader);
 
             handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(pong.Size, (pong.Size/2 - frame.Size/2)));
-            handle.DrawTexture(frame, Vector2.Zero);
+            handle.DrawTextureRect(frame, new Box2(Vector2.Zero, frame.Size));
         }, Color.Black.WithAlpha(0));
 
         foreach (DreamFilter filterId in iconMetaData.MainIcon!.Appearance!.Filters) {
@@ -543,7 +543,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
 
                 // Technically this should be ping.Size, but they are the same size so avoid the extra closure alloc
                 handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(pong.Size, Vector2.Zero));
-                handle.DrawTexture(pong.Texture, Vector2.Zero);
+                handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, pong.Size));
             }, Color.Black.WithAlpha(0));
 
             // The blur filter runs a more performant two passes
@@ -556,7 +556,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
 
                     // Technically this should be ping.Size, but they are the same size so avoid the extra closure alloc
                     handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(pong.Size, Vector2.Zero));
-                    handle.DrawTexture(pong.Texture, Vector2.Zero);
+                    handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, pong.Size));
                 }, Color.Black.WithAlpha(0));
             }
 

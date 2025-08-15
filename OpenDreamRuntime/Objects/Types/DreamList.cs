@@ -138,6 +138,21 @@ public class DreamList : DreamObject, IDreamList {
         return _values;
     }
 
+    public IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateAssocValues() {
+        return _associativeValues ?? [];
+    }
+
+    public DreamValue[] CopyToArray() {
+        return _values.ToArray();
+    }
+
+    public Dictionary<DreamValue, DreamValue> CopyAssocValues() {
+        if (_associativeValues is null)
+            return new();
+
+        return new(_associativeValues);
+    }
+
     public Dictionary<DreamValue, DreamValue> GetAssociativeValues() {
         return _associativeValues ??= new Dictionary<DreamValue, DreamValue>();
     }

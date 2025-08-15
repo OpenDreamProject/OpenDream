@@ -190,6 +190,7 @@ public sealed class DMProcState : ProcState {
     private const int NoTryCatchVar = -1;
 
     #region Opcode Handlers
+
     //Human-readable friendly version, which will be converted to a more efficient lookup at runtime.
     private static readonly Dictionary<DreamProcOpcode, OpcodeHandler> OpcodeHandlers = new() {
         {DreamProcOpcode.BitShiftLeft, DMOpcodeHandlers.BitShiftLeft},
@@ -343,6 +344,7 @@ public sealed class DMProcState : ProcState {
     };
 
     public static readonly unsafe delegate*<DMProcState, ProcStatus>[] OpcodeHandlersTable;
+
     #endregion
 
     public DreamManager DreamManager => _proc.DreamManager;
@@ -590,6 +592,7 @@ public sealed class DMProcState : ProcState {
     }
 
     #region Stack
+
     private DreamValue[] _stack = default!;
     private int _stackIndex;
     public ReadOnlyMemory<DreamValue> DebugStack() => _stack.AsMemory(0, _stackIndex);
@@ -638,9 +641,11 @@ public sealed class DMProcState : ProcState {
 
         return CreateProcArguments(values, proc, argumentsType, argumentStackSize);
     }
+
     #endregion
 
     #region Operands
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int ReadByte() {
         var r = _proc.Bytecode[_pc];
@@ -714,9 +719,11 @@ public sealed class DMProcState : ProcState {
     public (DMCallArgumentsType Type, int StackSize) ReadProcArguments() {
         return ((DMCallArgumentsType) ReadByte(), ReadInt());
     }
+
     #endregion
 
     #region References
+
     /// <summary>
     /// Takes a DMReference with a <see cref="DMReference.Type.ListIndex"/> type and returns the value being indexed
     /// as well as what it's being indexed with.
@@ -742,6 +749,7 @@ public sealed class DMProcState : ProcState {
 
     public void AssignReference(DreamReference reference, DreamValue value, bool peek = false) {
         switch (reference.Type) {
+            case DMReference.Type.NoRef: break;
             case DMReference.Type.Self: Result = value; break;
             case DMReference.Type.Argument: SetArgument(reference.Value, value); break;
             case DMReference.Type.Local: _localVariables[ArgumentCount + reference.Value] = value; break;
@@ -815,6 +823,7 @@ public sealed class DMProcState : ProcState {
 
     public DreamValue GetReferenceValue(DreamReference reference, bool peek = false) {
         switch (reference.Type) {
+            case DMReference.Type.NoRef: return DreamValue.Null;
             case DMReference.Type.Src: return new(Instance);
             case DMReference.Type.Usr: return new(Usr);
             case DMReference.Type.Self: return Result;
@@ -976,6 +985,7 @@ public sealed class DMProcState : ProcState {
     private static void ThrowAttemptedToIndexString(DreamValue index) {
         throw new Exception($"Attempted to index string with {index}");
     }
+
     #endregion References
 
     public IEnumerable<(string, DreamValue)> DebugArguments() {

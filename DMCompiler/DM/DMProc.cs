@@ -596,12 +596,11 @@ internal sealed class DMProc {
         }
     }
 
-    public void EnumerateAssoc(DMReference assocRef, DMReference listRef, DMReference outputRef) {
+    public void EnumerateAssoc(DMReference assocRef, DMReference outputRef) {
         if (_loopStack?.TryPeek(out var peek) ?? false) {
             WriteOpcode(DreamProcOpcode.EnumerateAssoc);
             WriteEnumeratorId(_enumeratorIdCounter - 1);
             WriteReference(assocRef);
-            WriteReference(listRef);
             WriteReference(outputRef);
             WriteLabel($"{peek}_end");
         } else {

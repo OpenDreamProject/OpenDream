@@ -1,5 +1,3 @@
-using System.Linq;
-
 namespace OpenDreamRuntime.Objects.Types;
 
 // TODO: An arglist given to New() can be used to initialize an alist with values

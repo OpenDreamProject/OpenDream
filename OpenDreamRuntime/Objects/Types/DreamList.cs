@@ -224,6 +224,10 @@ public class DreamList : DreamObject, IDreamList {
         UpdateTracyContentsMemory();
     }
 
+    public void DoCut(int start = 1, int end = 0) {
+        Cut(start, end);
+    }
+
     public void Insert(int index, DreamValue value) {
         _values.Insert(index - 1, value);
         UpdateTracyContentsMemory();

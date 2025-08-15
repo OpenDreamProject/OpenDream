@@ -47,6 +47,12 @@
 	var/gender = NEUTER as text|opendream_unsupported
 	var/glide_size as opendream_unimplemented
 	var/virtual_eye as opendream_unimplemented
+	
+	var/list/bounds as opendream_unimplemented
+	var/bound_x as opendream_unimplemented
+	var/bound_y as opendream_unimplemented
+	var/bound_width as opendream_unimplemented
+	var/bound_height as opendream_unimplemented
 
 	proc/New(TopicData)
 		// Search every mob for one with our ckey

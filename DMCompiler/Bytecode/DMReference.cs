@@ -15,6 +15,9 @@ public struct DMReference {
     public static readonly DMReference Invalid = new() { RefType = Type.Invalid };
 
     public enum Type : byte {
+        /// References nothing, reads return null and writes are no-op
+        NoRef,
+
         Src,
         Self,
         Usr,

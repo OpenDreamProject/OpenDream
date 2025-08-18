@@ -47,6 +47,12 @@
 	var/gender = NEUTER as text|opendream_unsupported
 	var/glide_size as opendream_unimplemented
 	var/virtual_eye as opendream_unimplemented
+	
+	var/list/bounds as opendream_unimplemented
+	var/bound_x as opendream_unimplemented
+	var/bound_y as opendream_unimplemented
+	var/bound_width as opendream_unimplemented
+	var/bound_height as opendream_unimplemented
 
 	proc/New(TopicData)
 		// Search every mob for one with our ckey
@@ -93,31 +99,40 @@
 	proc/Move(loc, dir)
 		mob.Move(loc, dir)
 
-	proc/North()
+	verb/North()
+		set name = ".north"
 		Move(get_step(mob, NORTH), NORTH)
 
-	proc/South()
+	verb/South()
+		set name = ".south"
 		Move(get_step(mob, SOUTH), SOUTH)
 
-	proc/East()
+	verb/East()
+		set name = ".east"
 		Move(get_step(mob, EAST), EAST)
 
-	proc/West()
+	verb/West()
+		set name = ".west"
 		Move(get_step(mob, WEST), WEST)
 
-	proc/Northeast()
+	verb/Northeast()
+		set name = ".northeast"
 		Move(get_step(mob, NORTHEAST), NORTHEAST)
 
-	proc/Southeast()
+	verb/Southeast()
+		set name = ".southeast"
 		Move(get_step(mob, SOUTHEAST), SOUTHEAST)
 
-	proc/Southwest()
+	verb/Southwest()
+		set name = ".southwest"
 		Move(get_step(mob, SOUTHWEST), SOUTHWEST)
 
-	proc/Northwest()
+	verb/Northwest()
+		set name = ".northwest"
 		Move(get_step(mob, NORTHWEST), NORTHWEST)
 
-	proc/Center()
+	verb/Center()
+		set name = ".center"
 		//TODO: walk(usr, 0)
 
 	proc/Click(atom/object, location, control, params)

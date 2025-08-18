@@ -349,7 +349,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             if (Windows.ContainsKey(windowId)) {
                 window = Windows[windowId];
             } else if (Menus.TryGetValue(windowId, out var menu)) {
-                if (menu.MenuElements.TryGetValue(elementId, out var menuElement))
+                if (menu.MenuElementsById.TryGetValue(elementId, out var menuElement))
                     return menuElement;
             } else if(MacroSets.TryGetValue(windowId, out var macroSet)) {
                 if (macroSet.Macros.TryGetValue(elementId, out var macroElement))
@@ -389,7 +389,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 if (menu.Id.Value == elementId)
                     return menu;
 
-                if (menu.MenuElements.TryGetValue(elementId, out var menuElement))
+                if (menu.MenuElementsById.TryGetValue(elementId, out var menuElement))
                     return menuElement;
             }
 
@@ -438,7 +438,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         }
     }
 
-    public void RunCommand(string fullCommand) {
+    public void RunCommand(string fullCommand, bool repeating = false) {
         switch (fullCommand) {
             case not null when fullCommand.StartsWith(".quit"):
                 IoCManager.Resolve<IClientNetManager>().ClientDisconnect(".quit used");
@@ -485,7 +485,11 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                     return;
 
                 if (argsRaw.Length == 1) { // No args given; Let the verb system handle the possible prompting
-                    verbSystem.ExecuteVerb(verbSrc, verbId);
+                    if (repeating) {
+                        verbSystem.StartRepeatingVerb(verbSrc, verbId);
+                    } else {
+                        verbSystem.ExecuteVerb(verbSrc, verbId);
+                    }
                 } else { // Attempt to parse the given arguments
                     List<string> args = new List<string>();
                     StringBuilder currentArg = new();
@@ -578,12 +582,16 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         }
     }
 
-    public void StartRepeatingCommand(string command) {
-        _netManager.ClientSendMessage(new MsgCommandRepeatStart() { Command = command });
-    }
-
     public void StopRepeatingCommand(string command) {
-        _netManager.ClientSendMessage(new MsgCommandRepeatStop() { Command = command });
+        string[] argsRaw = command.Split(' ', 2, StringSplitOptions.TrimEntries);
+        string parsedCommand = argsRaw[0].ToLowerInvariant(); // Case-insensitive
+
+        if (!_entitySystemManager.TryGetEntitySystem(out ClientVerbSystem? verbSystem))
+            return;
+        var ret = verbSystem.FindVerbWithCommandName(parsedCommand);
+        if (ret is not var (verbId, verbSrc, _))
+            return;
+        verbSystem.StopRepeatingVerb(verbSrc, verbId);
     }
 
     public string HandleEmbeddedWinget(string? controlId, string value, out bool hadWinget) {
@@ -1036,8 +1044,7 @@ public interface IDreamInterfaceManager {
 
     public void OpenAlert(string title, string message, string button1, string? button2, string? button3, Action<DreamValueType, object?>? onClose);
     public void Prompt(DreamValueType types, string title, string message, string defaultValue, Action<DreamValueType, object?>? onClose);
-    public void RunCommand(string fullCommand);
-    public void StartRepeatingCommand(string command);
+    public void RunCommand(string fullCommand, bool isRepeating = false);
     public void StopRepeatingCommand(string command);
     public void WinSet(string? controlId, string winsetParams);
     public string WinGet(string controlId, string queryValue, bool forceJson = false, bool forceSnowflake = false);

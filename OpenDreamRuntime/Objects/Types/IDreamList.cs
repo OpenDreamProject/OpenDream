@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace OpenDreamRuntime.Objects.Types;
 
 public interface IDreamList {
@@ -12,4 +14,13 @@ public interface IDreamList {
     public List<DreamValue> GetValues();
     public Dictionary<DreamValue, DreamValue> GetAssociativeValues();
     public void RemoveValue(DreamValue value);
+    public IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateAssocValues();
+
+    public DreamValue[] CopyToArray() {
+        return EnumerateValues().ToArray();
+    }
+
+    public Dictionary<DreamValue, DreamValue> CopyAssocValues() {
+        return new(EnumerateAssocValues());
+    }
 }

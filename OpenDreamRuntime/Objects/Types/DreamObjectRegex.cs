@@ -79,4 +79,33 @@ public sealed class DreamObjectRegex(DreamObjectDefinition objectDefinition) : D
             throw new Exception("Invalid regex pattern " + pattern);
         }
     }
+
+    public DreamValue FindHelper(string haystackString, int start, int end) {
+        Match match = Regex.Match(haystackString, start, end);
+        if (match.Success) {
+            SetVariable("index", new DreamValue(match.Index + 1));
+            SetVariable("match", new DreamValue(match.Value));
+            if (match.Groups.Count > 0) {
+                DreamList groupList = ObjectTree.CreateList(match.Groups.Count);
+
+                for (int i = 1; i < match.Groups.Count; i++) {
+                    groupList.AddValue(new DreamValue(match.Groups[i].Value));
+                }
+
+                SetVariable("group", new DreamValue(groupList));
+            }
+
+            if (IsGlobal) {
+                SetVariable("next", new DreamValue(match.Index + match.Length + 1));
+            }
+
+            return new DreamValue(match.Index + 1);
+        }
+
+        if (IsGlobal) {
+            SetVariable("next", DreamValue.Null);
+        }
+
+        return new DreamValue(0);
+    }
 }

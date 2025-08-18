@@ -65,7 +65,7 @@ internal sealed class DMProc {
     }
 
     public string Name => _astDefinition?.Name ?? "<init>";
-    public bool IsVerb => _astDefinition?.IsVerb ?? false;
+    public bool IsVerb { get; set; }
     public bool IsFinal => _astDefinition?.IsFinal ?? false;
     public readonly List<string> Parameters = new();
     public Location Location;
@@ -124,6 +124,7 @@ internal sealed class DMProc {
         if (_astDefinition?.IsOverride ?? false) Attributes |= ProcAttributes.IsOverride; // init procs don't have AST definitions
         Location = astDefinition?.Location ?? Location.Unknown;
         _scopes.Push(new DMProcScope());
+        IsVerb = _astDefinition?.IsVerb ?? false;
 
         if (_astDefinition is not null) {
             foreach (var parameter in _astDefinition!.Parameters) {
@@ -161,6 +162,9 @@ internal sealed class DMProc {
         if (_astDefinition is not null) { // It's null for initialization procs
             new DMProcBuilder(_compiler, _dmObject, this).ProcessProcDefinition(_astDefinition);
         }
+
+        if (IsVerb)
+            _dmObject.AddVerb(this);
     }
 
     public void ValidateReturnType(DMExpression expr) {
@@ -596,12 +600,11 @@ internal sealed class DMProc {
         }
     }
 
-    public void EnumerateAssoc(DMReference assocRef, DMReference listRef, DMReference outputRef) {
+    public void EnumerateAssoc(DMReference assocRef, DMReference outputRef) {
         if (_loopStack?.TryPeek(out var peek) ?? false) {
             WriteOpcode(DreamProcOpcode.EnumerateAssoc);
             WriteEnumeratorId(_enumeratorIdCounter - 1);
             WriteReference(assocRef);
-            WriteReference(listRef);
             WriteReference(outputRef);
             WriteLabel($"{peek}_end");
         } else {
@@ -1175,12 +1178,12 @@ internal sealed class DMProc {
 
     public void FormatString(string value) {
         int formatCount = 0;
-        for (int i = 0; i < value.Length; i++) {
-            if (StringFormatEncoder.Decode(value[i], out var formatType))
-            {
-                if(StringFormatEncoder.IsInterpolation(formatType.Value))
-                    formatCount++;
-            }
+        foreach (var c in value) {
+            if (!StringFormatEncoder.Decode(c, out var formatType))
+                continue;
+
+            if(StringFormatEncoder.IsInterpolation(formatType.Value))
+                formatCount++;
         }
 
         ResizeStack(-(formatCount - 1)); //Shrinks by the amount of formats in the string, grows 1

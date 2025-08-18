@@ -22,7 +22,7 @@
 
 /mob/verb/examine(atom/thing as obj|mob in world)
 	set category = null
-	usr << "This is [thing]. [thing.desc]"
+	usr << "This is \icon[thing] [thing]. [thing.desc]"
 
 /mob/verb/possess_key(mob/someone as mob in world)
 	set category = null

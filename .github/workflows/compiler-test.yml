@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout Main
       uses: actions/checkout@v2
@@ -34,12 +34,52 @@ jobs:
       run: dotnet build main/DMCompiler/DMCompiler.csproj --property WarningLevel=0 --configuration Release --no-restore /m
     - name: Build disassembler
       run: dotnet build main/DMDisassembler/DMDisassembler.csproj --property WarningLevel=0 --configuration Release --no-restore /m
+    - name: Cache build 
+      uses: actions/cache/save@v4
+      with:
+        path: main/bin
+        key: cache-${{ github.run_id }}-${{ github.run_attempt }}
+
+
+  compile-testgame:
+    runs-on: ubuntu-latest
+    needs: build
+    continue-on-error: true
+    steps:
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 9.0.100
+    - name: Checkout Main
+      uses: actions/checkout@v2
+      with:
+        path: main          
+    - name: Pop build cache
+      uses: actions/cache/restore@v4
+      with:
+        path: main/bin
+        key: cache-${{ github.run_id }}-${{ github.run_attempt }}
     - name: Compile TestGame
-      run: main\bin\DMCompiler\DMCompiler.exe main\TestGame\environment.dme --suppress-unimplemented
-    - name: Compile TestGame in directory
+      run: main/bin/DMCompiler/DMCompiler main/TestGame/environment.dme --suppress-unimplemented
+    - name: Compile TestGame in directory      
       run: |
-        cd main\TestGame\
-        ..\bin\DMCompiler\DMCompiler.exe environment.dme --suppress-unimplemented
+        cd main/TestGame/
+        ../bin/DMCompiler/DMCompiler environment.dme --suppress-unimplemented
+
+  compile-tgstation:
+    runs-on: ubuntu-latest
+    needs: build
+    continue-on-error: true
+    steps:
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 9.0.100      
+    - name: Pop build cache
+      uses: actions/cache/restore@v4
+      with:
+        path: main/bin
+        key: cache-${{ github.run_id }}-${{ github.run_attempt }}       
     - name: Checkout /tg/station Master
       uses: actions/checkout@v2
       with:
@@ -47,9 +87,24 @@ jobs:
         ref: master
         path: tg
     - name: Compile /tg/station Master
-      run: main\bin\DMCompiler\DMCompiler.exe tg\tgstation.dme --suppress-unimplemented --suppress-unsupported
+      run: main/bin/DMCompiler/DMCompiler tg/tgstation.dme --suppress-unimplemented --suppress-unsupported
     - name: Disassemble /tg/station Master
-      run: main\bin\DMDisassembler\DMDisassembler.exe tg\tgstation.json crash-on-test
+      run: main/bin/DMDisassembler/DMDisassembler tg/tgstation.json crash-on-test
+
+  compile-goonstation:
+    runs-on: ubuntu-latest
+    needs: build
+    continue-on-error: true
+    steps:
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 9.0.100      
+    - name: Pop build cache
+      uses: actions/cache/restore@v4
+      with:
+        path: main/bin
+        key: cache-${{ github.run_id }}-${{ github.run_attempt }}         
     - name: Checkout Goonstation Master
       uses: actions/checkout@v2
       with:
@@ -58,8 +113,23 @@ jobs:
         path: goon
     - name: Compile Goonstation Master
       run: |
-        New-Item goon\+secret\__secret.dme -type file
-        main\bin\DMCompiler\DMCompiler.exe goon\goonstation.dme --suppress-unimplemented --suppress-unsupported --version=515.1633
+        touch goon/+secret/__secret.dme
+        main/bin/DMCompiler/DMCompiler goon/goonstation.dme --suppress-unimplemented --suppress-unsupported
+
+  compile-paradise:
+    runs-on: ubuntu-latest
+    needs: build
+    continue-on-error: true
+    steps:
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 9.0.100      
+    - name: Pop build cache
+      uses: actions/cache/restore@v4
+      with:
+        path: main/bin
+        key: cache-${{ github.run_id }}-${{ github.run_attempt }}         
     - name: Checkout Paradise Master
       uses: actions/checkout@v2
       with:
@@ -67,7 +137,22 @@ jobs:
         ref: master
         path: para
     - name: Compile Paradise Master
-      run: main\bin\DMCompiler\DMCompiler.exe para\paradise.dme --suppress-unimplemented --suppress-unsupported
+      run: main/bin/DMCompiler/DMCompiler para/paradise.dme --suppress-unimplemented --suppress-unsupported
+
+  compile-nebula:
+    runs-on: ubuntu-latest
+    needs: build
+    continue-on-error: true
+    steps:
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 9.0.100      
+    - name: Pop build cache
+      uses: actions/cache/restore@v4
+      with:
+        path: main/bin
+        key: cache-${{ github.run_id }}-${{ github.run_attempt }}       
     - name: Checkout Nebula Dev
       uses: actions/checkout@v2
       with:
@@ -75,7 +160,22 @@ jobs:
         ref: dev
         path: nebula
     - name: Compile Nebula Dev
-      run: main\bin\DMCompiler\DMCompiler.exe nebula\nebula.dme --suppress-unimplemented --suppress-unsupported --version=516.1655
+      run: main/bin/DMCompiler/DMCompiler nebula/nebula.dme --suppress-unimplemented --suppress-unsupported --version=516.1655
+
+  compile-vgstation:
+    runs-on: ubuntu-latest
+    needs: build
+    continue-on-error: true
+    steps:
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 9.0.100      
+    - name: Pop build cache
+      uses: actions/cache/restore@v4
+      with:
+        path: main/bin
+        key: cache-${{ github.run_id }}-${{ github.run_attempt }}       
     - name: Checkout /vg/station Master
       uses: actions/checkout@v2
       with:
@@ -83,7 +183,22 @@ jobs:
         ref: Bleeding-Edge
         path: vg
     - name: Compile /vg/station Master
-      run: main\bin\DMCompiler\DMCompiler.exe vg\vgstation13.dme --suppress-unimplemented --suppress-unsupported --version=516.1655
+      run: main/bin/DMCompiler/DMCompiler vg/vgstation13.dme --suppress-unimplemented --suppress-unsupported --version=516.1655
+
+  compile-cm:
+    runs-on: ubuntu-latest
+    needs: build
+    continue-on-error: true
+    steps:
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 9.0.100      
+    - name: Pop build cache
+      uses: actions/cache/restore@v4
+      with:
+        path: main/bin
+        key: cache-${{ github.run_id }}-${{ github.run_attempt }}       
     - name: Checkout CM Master
       uses: actions/checkout@v2
       with:
@@ -91,7 +206,22 @@ jobs:
         ref: master
         path: cm
     - name: Compile CM Master
-      run: main\bin\DMCompiler\DMCompiler.exe cm\colonialmarines.dme --suppress-unimplemented --suppress-unsupported
+      run: main/bin/DMCompiler/DMCompiler cm/colonialmarines.dme --suppress-unimplemented --suppress-unsupported
+
+  compile-aurora:
+    runs-on: ubuntu-latest
+    needs: build
+    continue-on-error: true
+    steps:
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 9.0.100      
+    - name: Pop build cache
+      uses: actions/cache/restore@v4
+      with:
+        path: main/bin
+        key: cache-${{ github.run_id }}-${{ github.run_attempt }}       
     - name: Checkout Aurora Master
       uses: actions/checkout@v2
       with:
@@ -99,7 +229,22 @@ jobs:
         ref: master
         path: aurora
     - name: Compile Aurora Master
-      run: main\bin\DMCompiler\DMCompiler.exe aurora\aurorastation.dme --suppress-unimplemented --suppress-unsupported --version=516.1655
+      run: main/bin/DMCompiler/DMCompiler aurora/aurorastation.dme --suppress-unimplemented --suppress-unsupported --version=516.1655
+
+  compile-daedalus:
+    runs-on: ubuntu-latest
+    needs: build
+    continue-on-error: true
+    steps:
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 9.0.100      
+    - name: Pop build cache
+      uses: actions/cache/restore@v4
+      with:
+        path: main/bin
+        key: cache-${{ github.run_id }}-${{ github.run_attempt }}       
     - name: Checkout Daedalus Master
       uses: actions/checkout@v2
       with:
@@ -107,4 +252,4 @@ jobs:
         ref: master
         path: daedalus
     - name: Compile Daedalus Master
-      run: main\bin\DMCompiler\DMCompiler.exe daedalus\daedalus.dme --suppress-unimplemented --suppress-unsupported
+      run: main/bin/DMCompiler/DMCompiler daedalus/daedalus.dme --suppress-unimplemented --suppress-unsupported

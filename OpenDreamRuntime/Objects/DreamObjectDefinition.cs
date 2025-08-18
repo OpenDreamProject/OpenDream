@@ -47,7 +47,7 @@ public sealed class DreamObjectDefinition {
     private bool? _noConstructors = null;
     public readonly Dictionary<string, int> Procs = new();
     public readonly Dictionary<string, int> OverridingProcs = new();
-    public List<int>? Verbs;
+    public Dictionary<string, int>? Verbs;
 
     // Maps variables from their name to their initial value.
     public readonly Dictionary<string, DreamValue> Variables = new();
@@ -85,7 +85,7 @@ public sealed class DreamObjectDefinition {
         Procs = new Dictionary<string, int>(copyFrom.Procs);
         OverridingProcs = new Dictionary<string, int>(copyFrom.OverridingProcs);
         if (copyFrom.Verbs != null)
-            Verbs = new List<int>(copyFrom.Verbs);
+            Verbs = new Dictionary<string, int>(copyFrom.Verbs);
     }
 
     public DreamObjectDefinition(DreamManager dreamManager, DreamObjectTree objectTree, AtomManager atomManager, IDreamMapManager dreamMapManager, IMapManager mapManager, DreamResourceManager dreamResourceManager, WalkManager walkManager, IEntityManager entityManager, IPlayerManager playerManager, ISerializationManager serializationManager, ServerAppearanceSystem? appearanceSystem, TransformSystem? transformSystem, PvsOverrideSystem? pvsOverrideSystem, MetaDataSystem? metaDataSystem, ServerVerbSystem? verbSystem, TreeEntry? treeEntry) {
@@ -111,7 +111,7 @@ public sealed class DreamObjectDefinition {
             InitializationProc = Parent.InitializationProc;
             Variables = new Dictionary<string, DreamValue>(Parent.Variables);
             if (Parent.Verbs != null)
-                Verbs = new List<int>(Parent.Verbs);
+                Verbs = new Dictionary<string, int>(Parent.Verbs);
             if (Parent != ObjectTree.Root.ObjectDefinition) // Don't include root-level globals
                 GlobalVariables = new Dictionary<string, int>(Parent.GlobalVariables);
             if (Parent.ConstVariables != null)

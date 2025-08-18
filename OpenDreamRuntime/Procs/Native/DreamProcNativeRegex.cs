@@ -27,35 +27,11 @@ namespace OpenDreamRuntime.Procs.Native {
                 if (dreamRegex.IsGlobal) {
                     dreamRegex.SetVariable("next", DreamValue.Null);
                 }
-                return new DreamValue(0);
-            }
-
-            Match match = dreamRegex.Regex.Match(haystackString, Math.Clamp(next - 1, 0, haystackString.Length), end - next + 1);
-            if (match.Success) {
-                dreamRegex.SetVariable("index", new DreamValue(match.Index + 1));
-                dreamRegex.SetVariable("match", new DreamValue(match.Value));
-                if (match.Groups.Count > 0) {
-                    DreamList groupList = bundle.ObjectTree.CreateList(match.Groups.Count);
-
-                    for (int i = 1; i < match.Groups.Count; i++) {
-                        groupList.AddValue(new DreamValue(match.Groups[i].Value));
-                    }
-
-                    dreamRegex.SetVariable("group", new DreamValue(groupList));
-                }
-
-                if (dreamRegex.IsGlobal) {
-                    dreamRegex.SetVariable("next", new DreamValue(match.Index + match.Length + 1));
-                }
-
-                return new DreamValue(match.Index + 1);
-            } else {
-                if (dreamRegex.IsGlobal) {
-                    dreamRegex.SetVariable("next", DreamValue.Null);
-                }
 
                 return new DreamValue(0);
             }
+
+            return dreamRegex.FindHelper(haystackString, Math.Clamp(next - 1, 0, haystackString.Length), end - next + 1);
         }
 
         public static DreamValue RegexReplace(DreamObject regexInstance, DreamValue haystack, DreamValue replace, int start, int end) {

@@ -57,4 +57,19 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     public void RemoveValue(DreamValue value) {
         _values.Remove(value);
     }
+
+    public IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateAssocValues() {
+        return _values;
+    }
+
+    public DreamValue[] CopyToArray() {
+        var array = new DreamValue[_values.Count];
+
+        _values.Keys.CopyTo(array, 0);
+        return array;
+    }
+
+    public Dictionary<DreamValue, DreamValue> CopyAssocValues() {
+        return new(_values);
+    }
 }

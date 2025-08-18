@@ -349,7 +349,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             if (Windows.ContainsKey(windowId)) {
                 window = Windows[windowId];
             } else if (Menus.TryGetValue(windowId, out var menu)) {
-                if (menu.MenuElements.TryGetValue(elementId, out var menuElement))
+                if (menu.MenuElementsById.TryGetValue(elementId, out var menuElement))
                     return menuElement;
             } else if(MacroSets.TryGetValue(windowId, out var macroSet)) {
                 if (macroSet.Macros.TryGetValue(elementId, out var macroElement))
@@ -389,7 +389,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 if (menu.Id.Value == elementId)
                     return menu;
 
-                if (menu.MenuElements.TryGetValue(elementId, out var menuElement))
+                if (menu.MenuElementsById.TryGetValue(elementId, out var menuElement))
                     return menuElement;
             }
 

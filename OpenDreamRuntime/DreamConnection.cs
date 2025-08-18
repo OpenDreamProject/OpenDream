@@ -26,6 +26,7 @@ public sealed class DreamConnection {
 
     [ViewVariables] private readonly Dictionary<string, List<(string, string, string?)>> _statPanels = new();
     [ViewVariables] private bool _currentlyUpdatingStat;
+    [ViewVariables] public TimeSpan? LastClickTime { get; set; }
 
     [ViewVariables] public ICommonSession? Session { get; private set; }
     [ViewVariables] public DreamObjectClient? Client { get; private set; }
@@ -126,6 +127,8 @@ public sealed class DreamConnection {
             }
         }
 
+        _verbSystem?.RemoveConnectionFromRepeatingVerbs(this);
+
         Client.Delete();
         Client = null;
 
@@ -158,6 +161,7 @@ public sealed class DreamConnection {
 
     public void SendClientInfoUpdate() {
         MsgUpdateClientInfo msg = new() {
+            IconSize = _dreamManager.WorldInstance.IconSize,
             View = Client!.View,
             ShowPopupMenus = Client!.ShowPopupMenus
         };
@@ -197,7 +201,7 @@ public sealed class DreamConnection {
     }
 
     public void HandleMsgTopic(MsgTopic pTopic) {
-        DreamList hrefList = DreamProcNativeRoot.params2list(_objectTree, HttpUtility.UrlDecode(pTopic.Query));
+        DreamList hrefList = DreamProcNativeRoot.Params2List(_objectTree, HttpUtility.UrlDecode(pTopic.Query));
         DreamValue srcRefValue = hrefList.GetValue(new DreamValue("src"));
         DreamValue src = DreamValue.Null;
 
@@ -212,11 +216,13 @@ public sealed class DreamConnection {
         if (value.TryGetValueAsDreamObject<DreamObjectSound>(out var outputObject)) {
             ushort channel = (ushort)outputObject.GetVariable("channel").GetValueAsInteger();
             ushort volume = (ushort)outputObject.GetVariable("volume").GetValueAsInteger();
+            float offset = outputObject.GetVariable("offset").UnsafeGetValueAsFloat();
             DreamValue file = outputObject.GetVariable("file");
 
             var msg = new MsgSound() {
                 Channel = channel,
-                Volume = volume
+                Volume = volume,
+                Offset = offset
             };
 
             if (!file.TryGetValueAsDreamResource(out var soundResource)) {
@@ -251,40 +257,6 @@ public sealed class DreamConnection {
         };
 
         Session?.Channel.SendMessage(msg);
-    }
-
-    // TODO: Remove this. Vestigial and doesn't run all commands.
-    public void HandleCommand(string fullCommand) {
-        string[] args = fullCommand.Split(' ', StringSplitOptions.TrimEntries);
-        string command = args[0].ToLowerInvariant(); // Case-insensitive
-
-        switch (command) {
-            case ".north":
-            case ".east":
-            case ".south":
-            case ".west":
-            case ".northeast":
-            case ".southeast":
-            case ".southwest":
-            case ".northwest":
-            case ".center":
-                string movementProc = command switch {
-                    ".north" => "North",
-                    ".east" => "East",
-                    ".south" => "South",
-                    ".west" => "West",
-                    ".northeast" => "Northeast",
-                    ".southeast" => "Southeast",
-                    ".southwest" => "Southwest",
-                    ".northwest" => "Northwest",
-                    ".center" => "Center",
-                    _ => throw new ArgumentOutOfRangeException()
-                };
-
-                if (Mob != null)
-                    _walkManager.StopWalks(Mob);
-                Client?.SpawnProc(movementProc, Mob); break;
-        }
     }
 
     public Task<DreamValue> Prompt(DreamValueType types, string title, string message, string defaultValue) {

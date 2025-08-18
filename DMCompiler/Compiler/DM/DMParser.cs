@@ -4,7 +4,7 @@ using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM;
 
 namespace DMCompiler.Compiler.DM {
-    internal partial class DMParser(DMCompiler compiler, DMLexer lexer) : Parser<Token>(compiler, lexer) {
+    public partial class DMParser(DMCompiler compiler, DMLexer lexer) : Parser<Token>(compiler, lexer) {
         protected Location CurrentLoc => Current().Location;
         protected DreamPath CurrentPath = DreamPath.Root;
 
@@ -76,7 +76,7 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_Dedent
         ];
 
-        private static readonly TokenType[] IdentifierTypes = [TokenType.DM_Identifier, TokenType.DM_Step];
+        private static readonly TokenType[] IdentifierTypes = [TokenType.DM_Identifier, TokenType.DM_Step, TokenType.DM_Proc];
 
         /// <summary>
         /// Used by <see cref="PathElement"/> to determine, keywords that may actually just be identifiers of a typename within a path, in a given context.
@@ -327,8 +327,11 @@ namespace DMCompiler.Compiler.DM {
                     var valType = AsComplexTypes() ?? DMValueType.Anything;
                     var varDef = new DMASTObjectVarDefinition(loc, varPath, value, valType);
 
+                    if (varDef.IsStatic && varDef.Name is "usr" or "src" or "args" or "world" or "global" or "callee" or "caller")
+                        Compiler.Emit(WarningCode.SoftReservedKeyword, loc, $"Global variable named {varDef.Name} DOES NOT override the built-in {varDef.Name}. This is a terrible idea, don't do that.");
+
                     varDefinitions.Add(varDef);
-                    if (Check(TokenType.DM_Comma) || (isIndented && Newline())) {
+                    if (Check(TokenType.DM_Comma) || (isIndented && Delimiter())) {
                         Whitespace();
                         DMASTPath? newVarPath = Path();
 
@@ -833,6 +836,11 @@ namespace DMCompiler.Compiler.DM {
                     return new DMASTInvalidProcStatement(firstToken.Location);
                 }
 
+                foreach (var vardec in vars) {
+                    if (vardec.Name is "usr" or "src" or "args" or "world" or "global" or "callee" or "caller")
+                        Compiler.Emit(WarningCode.SoftReservedKeyword, vardec.Location, $"Local variable named {vardec.Name} overrides the built-in {vardec.Name} in this context.");
+                }
+
                 if (vars.Length > 1)
                     return new DMASTAggregate<DMASTProcStatementVarDeclaration>(firstToken.Location, vars);
                 return vars[0];
@@ -1151,6 +1159,21 @@ namespace DMCompiler.Compiler.DM {
             return new DMASTProcStatementSpawn(loc, delay ?? new DMASTConstantInteger(loc, 0), body);
         }
 
+        private void ExtraColonPeriod() {
+            var token = Current();
+            if (token.Type is not (TokenType.DM_Colon or TokenType.DM_Period))
+                return;
+
+            Advance();
+
+            if (Current().Type is not (TokenType.DM_Semicolon or TokenType.Newline) && !WhitespaceTypes.Contains(Current().Type)) {
+                ReuseToken(token);
+                return;
+            }
+
+            Emit(WarningCode.ExtraToken, token.Location, "Extra token at end of proc statement");
+        }
+
         private DMASTProcStatementIf If() {
             var loc = Current().Location;
             Advance();
@@ -1167,9 +1190,7 @@ namespace DMCompiler.Compiler.DM {
 
             BracketWhitespace();
             ConsumeRightParenthesis();
-            if (Check(TokenType.DM_Colon) || Check(TokenType.DM_Period)) {
-                Emit(WarningCode.ExtraToken, loc, "Extra token at end of proc statement");
-            }
+            ExtraColonPeriod();
 
             Whitespace();
 
@@ -1209,9 +1230,7 @@ namespace DMCompiler.Compiler.DM {
             Whitespace();
 
             if (Check(TokenType.DM_RightParenthesis)) {
-                if (Check(TokenType.DM_Colon) || Check(TokenType.DM_Period)) {
-                    Emit(WarningCode.ExtraToken, loc, "Extra token at end of proc statement");
-                }
+                ExtraColonPeriod();
 
                 return new DMASTProcStatementInfLoop(loc, GetForBody(loc));
             }
@@ -1233,9 +1252,7 @@ namespace DMCompiler.Compiler.DM {
                 if (expr1 is DMASTAssign assign) {
                     ExpressionTo(out var endRange, out var step);
                     Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after to expression");
-                    if (Check(TokenType.DM_Colon) || Check(TokenType.DM_Period)) {
-                        Emit(WarningCode.ExtraToken, loc, "Extra token at end of proc statement");
-                    }
+                    ExtraColonPeriod();
 
                     return new DMASTProcStatementFor(loc, new DMASTExpressionInRange(loc, assign.LHS, assign.RHS, endRange, step), null, null, dmTypes, GetForBody(loc));
                 } else {
@@ -1249,26 +1266,20 @@ namespace DMCompiler.Compiler.DM {
                 DMASTExpression? listExpr = Expression();
                 Whitespace();
                 Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 2");
-                if (Check(TokenType.DM_Colon) || Check(TokenType.DM_Period)) {
-                    Emit(WarningCode.ExtraToken, loc, "Extra token at end of proc statement");
-                }
+                ExtraColonPeriod();
 
                 return new DMASTProcStatementFor(loc, new DMASTExpressionIn(loc, expr1, listExpr), null, null, dmTypes, GetForBody(loc));
             }
 
             if (!Check(ForSeparatorTypes)) {
                 Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 1");
-                if (Check(TokenType.DM_Colon) || Check(TokenType.DM_Period)) {
-                    Emit(WarningCode.ExtraToken, loc, "Extra token at end of proc statement");
-                }
+                ExtraColonPeriod();
 
                 return new DMASTProcStatementFor(loc, expr1, null, null, dmTypes, GetForBody(loc));
             }
 
             if (Check(TokenType.DM_RightParenthesis)) {
-                if (Check(TokenType.DM_Colon) || Check(TokenType.DM_Period)) {
-                    Emit(WarningCode.ExtraToken, loc, "Extra token at end of proc statement");
-                }
+                ExtraColonPeriod();
 
                 return new DMASTProcStatementFor(loc, expr1, null, null, dmTypes, GetForBody(loc));
             }
@@ -1285,17 +1296,13 @@ namespace DMCompiler.Compiler.DM {
 
             if (!Check(ForSeparatorTypes)) {
                 Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 2");
-                if (Check(TokenType.DM_Colon) || Check(TokenType.DM_Period)) {
-                    Emit(WarningCode.ExtraToken, loc, "Extra token at end of proc statement");
-                }
+                ExtraColonPeriod();
 
                 return new DMASTProcStatementFor(loc, expr1, expr2, null, dmTypes, GetForBody(loc));
             }
 
             if (Check(TokenType.DM_RightParenthesis)) {
-                if (Check(TokenType.DM_Colon) || Check(TokenType.DM_Period)) {
-                    Emit(WarningCode.ExtraToken, loc, "Extra token at end of proc statement");
-                }
+                ExtraColonPeriod();
 
                 return new DMASTProcStatementFor(loc, expr1, expr2, null, dmTypes, GetForBody(loc));
             }
@@ -1311,9 +1318,7 @@ namespace DMCompiler.Compiler.DM {
             }
 
             Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 3");
-            if (Check(TokenType.DM_Colon) || Check(TokenType.DM_Period)) {
-                Emit(WarningCode.ExtraToken, loc, "Extra token at end of proc statement");
-            }
+            ExtraColonPeriod();
 
             return new DMASTProcStatementFor(loc, expr1, expr2, expr3, dmTypes, GetForBody(loc));
 
@@ -1767,6 +1772,9 @@ namespace DMCompiler.Compiler.DM {
                 Whitespace();
 
                 PathArray(ref path.Path);
+
+                if (path.Path.LastElement is "usr" or "src" or "args" or "world" or "global" or "callee" or "caller")
+                    Compiler.Emit(WarningCode.SoftReservedKeyword, loc, $"Proc parameter named {path.Path.LastElement} overrides the built-in {path.Path.LastElement} in this context.");
 
                 DMASTExpression? value = null;
                 DMASTExpression? possibleValues = null;
@@ -2545,7 +2553,8 @@ namespace DMCompiler.Compiler.DM {
 
                 switch (procName) {
                     // Any number of arguments
-                    case "list": return new DMASTList(callLoc, callParameters);
+                    case "list": return new DMASTList(callLoc, callParameters, false);
+                    case "alist": return new DMASTList(callLoc, callParameters, true);
                     case "newlist": return new DMASTNewList(callLoc, callParameters);
                     case "addtext": return new DMASTAddText(callLoc, callParameters);
                     case "gradient": return new DMASTGradient(callLoc, callParameters);
@@ -2640,6 +2649,16 @@ namespace DMCompiler.Compiler.DM {
                         return callParameters.Length == 1
                             ? new DMASTLog(callLoc, callParameters[0].Value, null)
                             : new DMASTLog(callLoc, callParameters[1].Value, callParameters[0].Value);
+                    }
+                    case "astype": {
+                        if (callParameters.Length != 1 && callParameters.Length != 2) {
+                            Emit(WarningCode.InvalidArgumentCount, callLoc, "astype() requires 1 or 2 arguments");
+                            return new DMASTInvalidExpression(callLoc);
+                        }
+
+                        return callParameters.Length == 1
+                            ? new DMASTImplicitAsType(callLoc, callParameters[0].Value)
+                            : new DMASTAsType(callLoc, callParameters[0].Value, callParameters[1].Value);
                     }
                     case "istype": {
                         if (callParameters.Length != 1 && callParameters.Length != 2) {
@@ -2838,6 +2857,7 @@ namespace DMCompiler.Compiler.DM {
                 case "icon": return DMValueType.Icon;
                 case "path": return DMValueType.Path;
                 case "opendream_unimplemented": return DMValueType.Unimplemented;
+                case "opendream_unsupported": return DMValueType.Unsupported;
                 case "opendream_compiletimereadonly": return DMValueType.CompiletimeReadonly;
                 case "opendream_noconstfold": return DMValueType.NoConstFold;
                 default:

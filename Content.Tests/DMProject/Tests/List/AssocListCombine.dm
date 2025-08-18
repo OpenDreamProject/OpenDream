@@ -1,7 +1,7 @@
 ﻿/proc/RunTest()
 	var/list/L = list("A")
 	L |= list("B" = 1)
-	ASSERT(L ~= list("A", "B"))
+	ASSERT(L ~= list("A", "B" = 1))
 	ASSERT(L["A"] == null)
 	ASSERT(L["B"] == 1)
 

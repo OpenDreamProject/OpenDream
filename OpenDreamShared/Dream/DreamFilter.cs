@@ -40,6 +40,46 @@ public partial record DreamFilter {
             _ => null
         };
     }
+
+    /// <summary>
+    /// Calculate the size of the texture necessary to render this filter
+    /// </summary>
+    /// <param name="baseSize">The size of the object the filter is being applied to</param>
+    /// <param name="textureSizeCallback">A callback that returns the size of a given render source</param>
+    public Vector2i CalculateRequiredRenderSpace(Vector2i baseSize, Func<string, Vector2i> textureSizeCallback) {
+        Vector2 requiredSpace = baseSize;
+
+        // All the "* 2" in here is because everything is rendered in the center,
+        // So every increase in size needs applied to both sides
+        switch (this) {
+            case DreamFilterAlpha alpha:
+                requiredSpace += Vector2.Abs(new(alpha.X, alpha.Y)) * 2;
+
+                if (!string.IsNullOrEmpty(alpha.RenderSource)) {
+                    var textureSize = textureSizeCallback(alpha.RenderSource);
+                    requiredSpace = Vector2.Max(requiredSpace, textureSize);
+                } else if (alpha.Icon != 0) {
+                    // TODO
+                }
+
+                break;
+            case DreamFilterBlur blur:
+                requiredSpace += new Vector2(blur.Size) * 2;
+                break;
+            case DreamFilterDropShadow dropShadow:
+                if (dropShadow.Size - dropShadow.X > 0)
+                    requiredSpace.X += (dropShadow.Size + dropShadow.X) * 2;
+
+                if (dropShadow.Size - dropShadow.Y > 0)
+                    requiredSpace.Y += (dropShadow.Size + dropShadow.Y) * 2;
+                break;
+            case DreamFilterOutline outline:
+                requiredSpace += new Vector2(outline.Size) * 2;
+                break;
+        }
+
+        return (Vector2i)requiredSpace;
+    }
 }
 
 [Serializable, NetSerializable]

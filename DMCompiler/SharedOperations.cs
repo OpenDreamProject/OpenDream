@@ -63,6 +63,18 @@ public static class SharedOperations {
         return MathF.Abs(a);
     }
 
+    //because BYOND has everything as a 32 bit float with 8 bit mantissa, we need to chop off the
+    //top 8 bits when bit shifting for parity
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int BitShiftLeft(int left, int right) {
+        return (left << right) & 0x00FFFFFF;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int BitShiftRight(int left, int right) {
+        return (left & 0x00FFFFFF) >> (right) ;
+    }
+
     public enum ColorSpace {
         RGB = 0,
         HSV = 1,
@@ -142,7 +154,7 @@ public static class SharedOperations {
                 float s = Math.Clamp(color2.Value, 0, 100) / 100f;
                 float v = Math.Clamp(color3.Value, 0, 100) / 100f;
 
-                color = Color.FromHsv((h, s, v, aValue / 255f));
+                color = Color.FromHsv(new(h, s, v, aValue / 255f));
                 break;
             }
             case ColorSpace.HSL: {
@@ -150,7 +162,7 @@ public static class SharedOperations {
                 float s = Math.Clamp(color2.Value, 0, 100) / 100f;
                 float l = Math.Clamp(color3.Value, 0, 100) / 100f;
 
-                color = Color.FromHsl((h, s, l, aValue / 255f));
+                color = Color.FromHsl(new(h, s, l, aValue / 255f));
                 break;
             }
             default:

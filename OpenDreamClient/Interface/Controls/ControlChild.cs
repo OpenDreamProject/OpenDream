@@ -10,7 +10,7 @@ namespace OpenDreamClient.Interface.Controls;
 internal sealed class ControlChild(ControlDescriptor controlDescriptor, ControlWindow window) : InterfaceControl(controlDescriptor, window) {
     private ControlDescriptorChild ChildDescriptor => (ControlDescriptorChild)ElementDescriptor;
 
-    private Splitter _splitter;
+    private Splitter _splitter = default!;
 
     protected override Control CreateUIElement() {
         _splitter = new Splitter();

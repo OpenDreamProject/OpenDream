@@ -3,11 +3,13 @@ proc/alert(Usr = usr, Message, Title, Button1 = "Ok", Button2, Button3) as text
 proc/animate(Object, time, loop, easing, flags, delay, pixel_x, pixel_y, pixel_z, maptext, maptext_width, maptext_height, maptext_x, maptext_y, dir, alpha, transform, color, luminosity, infra_luminosity, layer, glide_size, icon, icon_state, invisibility, suffix) as null
 proc/ascii2text(N) as text
 proc/block(atom/Start, atom/End, StartZ, EndX=Start, EndY=End, EndZ=StartZ) as /list
+proc/bounds_dist(atom/Ref, atom/Target) as num
 proc/ceil(A) as num
 proc/ckey(Key) as text|null
 proc/ckeyEx(Text) as text|null
 proc/clamp(Value, Low, High) as /list|num|null
 proc/cmptext(T1) as num
+proc/cmptextEx(T1) as num
 proc/copytext(T, Start = 1, End = 0) as text|null
 proc/copytext_char(T,Start=1,End=0) as text|null
 proc/CRASH(msg) as null
@@ -23,7 +25,6 @@ proc/findtextEx(Haystack, Needle, Start = 1, End = 0) as num
 proc/findlasttext(Haystack, Needle, Start = 0, End = 1) as num
 proc/findlasttextEx(Haystack, Needle, Start = 0, End = 1) as num
 proc/flick(Icon, Object)
-	set opendream_unimplemented = 1
 proc/flist(Path) as /list
 proc/floor(A) as num
 proc/fract(n) as num
@@ -55,6 +56,7 @@ proc/isturf(Loc1) as num
 proc/json_decode(JSON)
 proc/json_encode(Value, flags)
 proc/length_char(E) as num
+proc/lerp(A, B, factor)
 proc/list2params(List) as text
 proc/lowertext(T as text) as text
 proc/max(A) as num|text|null
@@ -82,6 +84,7 @@ proc/roll(ndice = 1, sides) as num
 proc/round(A, B) as num
 proc/sha1(input) as text|null
 proc/shutdown(Addr,Natural = 0)
+proc/sign(A) as num
 proc/sleep(Delay)
 proc/sorttext(T1, T2) as num
 proc/sorttextEx(T1, T2) as num
@@ -106,12 +109,16 @@ proc/typesof(Item1) as /list
 proc/uppertext(T as text) as text
 proc/url_decode(UrlText) as text
 proc/url_encode(PlainText, format = 0) as text
+proc/values_cut_over(Alist, Max, inclusive = 0) as num
+proc/values_cut_under(Alist, Min, inclusive = 0) as num
+proc/values_dot(A, B) as num
+proc/values_product(Alist) as num
+proc/values_sum(Alist) as num
 proc/view(Dist = 5, Center = usr) as /list
 proc/viewers(Depth, Center = usr) as /list
 proc/walk(Ref, Dir, Lag = 0, Speed = 0)
 proc/walk_rand(Ref,Lag = 0,Speed = 0)
 proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
-	set opendream_unimplemented = 1
 proc/walk_towards(Ref,Trg,Lag=0,Speed=0)
 proc/winclone(player, window_name, clone_name)
 proc/winexists(player, control_id) as text
@@ -119,6 +126,8 @@ proc/winget(player, control_id, params)
 proc/winset(player, control_id, params)
 
 #include "Defines.dm"
+#include "Types\AList.dm"
+#include "Types\Callee.dm"
 #include "Types\Client.dm"
 #include "Types\Database.dm"
 #include "Types\Datum.dm"
@@ -131,9 +140,11 @@ proc/winset(player, control_id, params)
 #include "Types\Matrix.dm"
 #include "Types\Mutable_Appearance.dm"
 #include "Types\Particles.dm"
+#include "Types\PixLoc.dm"
 #include "Types\Regex.dm"
 #include "Types\Savefile.dm"
 #include "Types\Sound.dm"
+#include "Types\Vector.dm"
 #include "Types\World.dm"
 #include "Types\Atoms\_Atom.dm"
 #include "Types\Atoms\Area.dm"

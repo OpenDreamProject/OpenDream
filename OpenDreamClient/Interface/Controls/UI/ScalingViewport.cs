@@ -13,6 +13,10 @@ namespace OpenDreamClient.Interface.Controls.UI;
 ///     Viewport control that has a fixed viewport size and scales it appropriately.
 /// </summary>
 public sealed class ScalingViewport : Control, IViewportControl {
+    public delegate void MouseMoveHandler(GUIMouseMoveEventArgs args);
+
+    public event MouseMoveHandler? OnMouseMove;
+
     [Dependency] private readonly IClyde _clyde = default!;
     [Dependency] private readonly IInputManager _inputManager = default!;
     [Dependency] private readonly IEntityManager _entityManager = default!;
@@ -111,7 +115,7 @@ public sealed class ScalingViewport : Control, IViewportControl {
         _inputManager.ViewportKeyEvent(this, args);
     }
 
-    protected override void Draw(DrawingHandleScreen handle) {
+    protected override void Draw(IRenderHandle handle) {
         EnsureViewportCreated();
 
         DebugTools.AssertNotNull(_viewport);
@@ -133,7 +137,7 @@ public sealed class ScalingViewport : Control, IViewportControl {
         var drawBox = GetDrawBox();
         var drawBoxGlobal = drawBox.Translated(GlobalPixelPosition);
         _viewport.RenderScreenOverlaysBelow(handle, this, drawBoxGlobal);
-        handle.DrawTextureRect(_viewport.RenderTarget.Texture, drawBox);
+        handle.DrawingHandleScreen.DrawTextureRect(_viewport.RenderTarget.Texture, drawBox);
         _viewport.RenderScreenOverlaysAbove(handle, this, drawBoxGlobal);
     }
 
@@ -291,6 +295,10 @@ public sealed class ScalingViewport : Control, IViewportControl {
             return Matrix3x2.Identity;
 
         return Matrix3Helpers.CreateTransform(GlobalPixelPosition + drawBox.TopLeft, 0, scaleFactor);
+    }
+
+    protected override void MouseMove(GUIMouseMoveEventArgs args) {
+        OnMouseMove?.Invoke(args);
     }
 }
 

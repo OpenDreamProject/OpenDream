@@ -6,7 +6,8 @@ public enum JsonVariableType {
     Proc = 2,
     List = 3,
     PositiveInfinity = 4,
-    NegativeInfinity = 5
+    NegativeInfinity = 5,
+    AList = 6
 }
 
 public sealed class DreamTypeJson {
@@ -14,7 +15,7 @@ public sealed class DreamTypeJson {
     public int? Parent { get; set; }
     public int? InitProc { get; set; }
     public List<List<int>>? Procs { get; set; }
-    public List<int>? Verbs { get; set; }
+    public HashSet<string>? Verbs { get; set; }
     public Dictionary<string, object>? Variables { get; set; }
     public Dictionary<string, int>? GlobalVariables { get; set; }
     public HashSet<string>? ConstVariables { get; set; }

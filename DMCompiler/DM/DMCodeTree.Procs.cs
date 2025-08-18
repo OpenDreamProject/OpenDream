@@ -20,6 +20,10 @@ internal partial class DMCodeTree {
 
             _defined = true;
 
+            // The name of every proc gets a string ID.
+            // BYOND assigns the ID after every string inside the proc is assigned, but we aren't replicating that here.
+            compiler.DMObjectTree.AddString(ProcName);
+
             bool hasProc = dmObject.HasProc(ProcName);
             if (hasProc && !IsOverride && !dmObject.OwnsProc(ProcName) && !procDef.Location.InDMStandard) {
                 compiler.Emit(WarningCode.DuplicateProcDefinition, procDef.Location,
@@ -28,6 +32,24 @@ internal partial class DMCodeTree {
             }
 
             DMProc proc = compiler.DMObjectTree.CreateDMProc(dmObject, procDef);
+
+            if (procDef.IsOverride) {
+                var procs = dmObject.GetProcs(procDef.Name);
+                if (procs != null) {
+                      var parent = compiler.DMObjectTree.AllProcs[procs[0]];
+                      proc.IsVerb = parent.IsVerb;
+                      if (proc.IsVerb) {
+                          proc.VerbName = parent.VerbName;
+                          proc.VerbCategory = parent.VerbCategory;
+                          proc.VerbDesc = parent.VerbDesc;
+                          proc.VerbSrc = parent.VerbSrc;
+                      }
+
+                      if (parent.IsFinal)
+                          compiler.Emit(WarningCode.FinalOverride, procDef.Location,
+                              $"Proc \"{procDef.Name}()\" is final and cannot be overridden. Final declaration: {parent.Location}");
+                }
+            }
 
             if (dmObject == compiler.DMObjectTree.Root) { // Doesn't belong to a type, this is a global proc
                 if(IsOverride) {
@@ -50,10 +72,6 @@ internal partial class DMCodeTree {
                 var procGlobalNode = new ProcGlobalVarNode(owner, proc, varDecl);
                 Children.Add(procGlobalNode);
                 codeTree._waitingNodes.Add(procGlobalNode);
-            }
-
-            if (proc.IsVerb) {
-                dmObject.AddVerb(proc);
             }
 
             return true;

@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using OpenDreamShared.Dream;
 using Robust.Shared.Utility;
 
 namespace OpenDreamClient.Interface.Html;
@@ -70,8 +71,13 @@ public static class HtmlParser {
                     string tagType = attributes[0].ToLowerInvariant();
 
                     currentText.Clear();
+                    bool isSelfClosing = IsSelfClosing(tagType, attributes);
                     if (closingTag) {
-                        if (tags.Count == 0) {
+                        if (isSelfClosing) {
+                            // ignore closing tags of void elements since they don't
+                            // do anything anyway. Should probably warn.
+                            return;
+                        } else if (tags.Count == 0) {
                             Sawmill.Error("Unexpected closing tag");
                             return;
                         } else if (tags.Peek() != tagType) {
@@ -82,9 +88,11 @@ public static class HtmlParser {
                         appendTo.Pop();
                         tags.Pop();
                     } else {
-                        tags.Push(tagType);
+                        if (!isSelfClosing) {
+                            tags.Push(tagType);
+                        }
 
-                        appendTo.PushTag(new MarkupNode(tagType, null, ParseAttributes(attributes)), selfClosing: attributes[^1] == "/");
+                        appendTo.PushTag(new MarkupNode(tagType, null, ParseAttributes(attributes)), selfClosing: isSelfClosing);
                     }
 
                     break;
@@ -129,6 +137,18 @@ public static class HtmlParser {
                     appendTo.PushNewline();
                     break;
                 default:
+                    // Not really HTML, but this is a very convenient place to put this
+                    if (c == StringFormatting.Icon) {
+                        // The appearance ID is encoded in the next 2 chars (4 bytes)
+                        var upper = (ushort)text[++i];
+                        var lower = (ushort)text[++i];
+                        var appearanceId = (uint)((upper << 16) | lower);
+
+                        PushCurrentText();
+                        appendTo.PushTag(new MarkupNode("icon", new(appearanceId), null), true);
+                        break;
+                    }
+
                     currentText.Append(c);
                     break;
             }
@@ -137,6 +157,39 @@ public static class HtmlParser {
         PushCurrentText();
         while (tags.TryPop(out _))
             appendTo.Pop();
+    }
+
+    /**
+     * <summary>
+     * Returns if a tag is written in old self-closing form, or if the tag
+     * represents a void element, which must have no children
+     * </summary>
+     */
+    private static bool IsSelfClosing(string tagType, string[] attributes) {
+        if (attributes[^1] == "/") {
+            return true;
+        }
+
+        switch (tagType) {
+            case "area":
+            case "base":
+            case "br":
+            case "col":
+            case "embed":
+            case "hr":
+            case "img":
+            case "input":
+            case "link":
+            case "meta":
+            case "param":
+            case "source":
+            case "track":
+            case "wbr":
+                return true;
+
+            default:
+                return false;
+        }
     }
 
     private static Dictionary<string, MarkupParameter> ParseAttributes(string[] attributes) {

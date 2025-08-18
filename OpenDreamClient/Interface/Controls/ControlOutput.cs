@@ -1,17 +1,17 @@
-﻿using OpenDreamClient.Interface.Descriptors;
+﻿using OpenDreamClient.Interface.Controls.UI;
+using OpenDreamClient.Interface.Descriptors;
 using OpenDreamClient.Interface.Html;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
-using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Utility;
 
 namespace OpenDreamClient.Interface.Controls;
 
 public sealed class ControlOutput(ControlDescriptor controlDescriptor, ControlWindow window) : InterfaceControl(controlDescriptor, window) {
-    private OutputPanel _textBox;
+    private OutputControl _textBox = default!;
 
     protected override Control CreateUIElement() {
-        _textBox = new OutputPanel();
+        _textBox = new OutputControl();
 
         return _textBox;
     }
@@ -27,9 +27,8 @@ public sealed class ControlOutput(ControlDescriptor controlDescriptor, ControlWi
     public override void Output(string value, string? data) {
         var msg = new FormattedMessage(2);
 
-        msg.PushColor(Color.Black);
+        msg.PushColor(ControlDescriptor.TextColor.Value);
         msg.PushTag(new MarkupNode("font", null, null)); // Use the default font and font size
-        // TODO: Look into using RobustToolbox's markup parser once it's customizable enough
         HtmlParser.Parse(value.Replace("\t", "    "), msg);
         msg.Pop();
         msg.Pop();

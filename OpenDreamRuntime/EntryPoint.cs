@@ -2,7 +2,6 @@
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamShared;
-using Robust.Server.ServerStatus;
 using Robust.Shared;
 using Robust.Shared.Configuration;
 using Robust.Shared.ContentPack;
@@ -23,7 +22,7 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IDreamDebugManager _debugManager = default!;
         [Dependency] private readonly ServerInfoManager _serverInfoManager = default!;
 
-        private DreamCommandSystem? _commandSystem;
+        private ServerVerbSystem? _serverVerbSystem;
 
         public override void Init() {
             IComponentFactory componentFactory = IoCManager.Resolve<IComponentFactory>();
@@ -52,13 +51,16 @@ namespace OpenDreamRuntime {
                         break;
                     }
 
+            if(_configManager.GetCVar(OpenDreamCVars.TracyEnable))
+                Profiler.Activate();
+
             _prototypeManager.LoadDirectory(new ResPath("/Resources/Prototypes"));
 
             _serverInfoManager.Initialize();
         }
 
         public override void PostInit() {
-            _commandSystem = _entitySystemManager.GetEntitySystem<DreamCommandSystem>();
+            _serverVerbSystem = _entitySystemManager.GetEntitySystem<ServerVerbSystem>();
 
             int debugAdapterPort = _configManager.GetCVar(OpenDreamCVars.DebugAdapterLaunched);
             if (debugAdapterPort == 0) {
@@ -86,7 +88,7 @@ namespace OpenDreamRuntime {
 
         public override void Update(ModUpdateLevel level, FrameEventArgs frameEventArgs) {
             if (level == ModUpdateLevel.PostEngine) {
-                _commandSystem!.RunRepeatingCommands();
+                _serverVerbSystem?.RunRepeatingVerbs();
                 _dreamManager.Update();
                 _debugManager.Update();
             }

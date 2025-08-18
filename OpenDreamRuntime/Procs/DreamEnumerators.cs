@@ -4,30 +4,31 @@ using OpenDreamRuntime.Objects.Types;
 namespace OpenDreamRuntime.Procs;
 
 public interface IDreamValueEnumerator {
-    public bool Enumerate(DMProcState state, DreamReference? reference);
+    /// <summary>
+    /// Perform the next enumeration, used to advance the state of many types of loops.
+    /// </summary>
+    /// <param name="state">The proc state that is executing this</param>
+    /// <param name="reference">The var to assign the output to</param>
+    /// <param name="assocReference">The var to assign an associated value to, for use by key-value pair loops</param>
+    /// <returns>Whether the enumeration succeeded or not</returns>
+    public bool Enumerate(DMProcState state, DreamReference reference, DreamReference assocReference);
 }
 
 /// <summary>
 /// Enumerates a range of numbers with a given step
 /// <code>for (var/i in 1 to 10 step 2)</code>
 /// </summary>
-internal sealed class DreamValueRangeEnumerator : IDreamValueEnumerator {
-    private float _current;
-    private readonly float _end;
-    private readonly float _step;
+internal sealed class DreamValueRangeEnumerator(float rangeStart, float rangeEnd, float step) : IDreamValueEnumerator {
+    private float _current = rangeStart - step;
 
-    public DreamValueRangeEnumerator(float rangeStart, float rangeEnd, float step) {
-        _current = rangeStart - step;
-        _end = rangeEnd;
-        _step = step;
-    }
+    public bool Enumerate(DMProcState state, DreamReference reference, DreamReference assocReference) {
+        _current += step;
 
-    public bool Enumerate(DMProcState state, DreamReference? reference) {
-        _current += _step;
-
-        bool successful = (_step > 0) ? _current <= _end : _current >= _end;
-        if (successful && reference != null) // Only assign if it was successful
-            state.AssignReference(reference.Value, new DreamValue(_current));
+        bool successful = (step > 0) ? _current <= rangeEnd : _current >= rangeEnd;
+        if (successful) { // Only assign if it was successful
+            state.AssignReference(reference, new DreamValue(_current));
+            state.AssignReference(assocReference, DreamValue.Null);
+        }
 
         return successful;
     }
@@ -36,30 +37,24 @@ internal sealed class DreamValueRangeEnumerator : IDreamValueEnumerator {
 /// <summary>
 /// Enumerates over an IEnumerable of DreamObjects, possibly filtering for a certain type
 /// </summary>
-internal sealed class DreamObjectEnumerator : IDreamValueEnumerator {
-    private readonly IEnumerator<DreamObject> _dreamObjectEnumerator;
-    private readonly TreeEntry? _filterType;
+internal sealed class DreamObjectEnumerator(IEnumerable<DreamObject> dreamObjects, TreeEntry? filterType = null) : IDreamValueEnumerator {
+    private readonly IEnumerator<DreamObject> _dreamObjectEnumerator = dreamObjects.GetEnumerator();
 
-    public DreamObjectEnumerator(IEnumerable<DreamObject> dreamObjects, TreeEntry? filterType = null) {
-        _dreamObjectEnumerator = dreamObjects.GetEnumerator();
-        _filterType = filterType;
-    }
-
-    public bool Enumerate(DMProcState state, DreamReference? reference) {
+    public bool Enumerate(DMProcState state, DreamReference reference, DreamReference assocReference) {
         bool success = _dreamObjectEnumerator.MoveNext();
 
         while(success && _dreamObjectEnumerator.Current.Deleted) //skip over deleted
             success = _dreamObjectEnumerator.MoveNext();
 
-        if (_filterType != null) {
-            while (success && (_dreamObjectEnumerator.Current.Deleted || !_dreamObjectEnumerator.Current.IsSubtypeOf(_filterType))) {
+        if (filterType != null) {
+            while (success && (_dreamObjectEnumerator.Current.Deleted || !_dreamObjectEnumerator.Current.IsSubtypeOf(filterType))) {
                 success = _dreamObjectEnumerator.MoveNext();
             }
         }
 
         // Assign regardless of success
-        if (reference != null)
-            state.AssignReference(reference.Value, success ? new DreamValue(_dreamObjectEnumerator.Current) : DreamValue.Null);
+        state.AssignReference(reference, success ? new DreamValue(_dreamObjectEnumerator.Current) : DreamValue.Null);
+        state.AssignReference(assocReference, DreamValue.Null);
         return success;
     }
 }
@@ -68,20 +63,19 @@ internal sealed class DreamObjectEnumerator : IDreamValueEnumerator {
 /// Enumerates over an array of DreamValues
 /// <code>for (var/i in list(1, 2, 3))</code>
 /// </summary>
-internal sealed class DreamValueArrayEnumerator : IDreamValueEnumerator {
-    private readonly DreamValue[] _dreamValueArray;
+internal sealed class DreamValueArrayEnumerator(DreamValue[] values, Dictionary<DreamValue, DreamValue>? assocValues) : IDreamValueEnumerator {
     private int _current = -1;
 
-    public DreamValueArrayEnumerator(DreamValue[] dreamValueArray) {
-        _dreamValueArray = dreamValueArray;
-    }
-
-    public bool Enumerate(DMProcState state, DreamReference? reference) {
+    public bool Enumerate(DMProcState state, DreamReference reference, DreamReference assocReference) {
         _current++;
 
-        bool success = _current < _dreamValueArray.Length;
-        if (reference != null)
-            state.AssignReference(reference.Value, success ? _dreamValueArray[_current] : DreamValue.Null); // Assign regardless of success
+        bool success = _current < values.Length;
+        var value = success ? values[_current] : DreamValue.Null;
+
+        // Assign regardless of success
+        state.AssignReference(reference, value);
+        if (assocReference != DreamReference.NoRef)
+            state.AssignReference(assocReference, assocValues?.GetValueOrDefault(value, DreamValue.Null) ?? DreamValue.Null);
         return success;
     }
 }
@@ -90,29 +84,24 @@ internal sealed class DreamValueArrayEnumerator : IDreamValueEnumerator {
 /// Enumerates over an array of DreamValues, filtering for a certain type
 /// <code>for (var/obj/item/I in contents)</code>
 /// </summary>
-internal sealed class FilteredDreamValueArrayEnumerator : IDreamValueEnumerator {
-    private readonly DreamValue[] _dreamValueArray;
-    private readonly TreeEntry _filterType;
+internal sealed class FilteredDreamValueArrayEnumerator(DreamValue[] values, Dictionary<DreamValue, DreamValue>? assocValues, TreeEntry filterType)
+    : IDreamValueEnumerator {
     private int _current = -1;
 
-    public FilteredDreamValueArrayEnumerator(DreamValue[] dreamValueArray, TreeEntry filterType) {
-        _dreamValueArray = dreamValueArray;
-        _filterType = filterType;
-    }
-
-    public bool Enumerate(DMProcState state, DreamReference? reference) {
+    public bool Enumerate(DMProcState state, DreamReference reference, DreamReference assocReference) {
         do {
             _current++;
-            if (_current >= _dreamValueArray.Length) {
-                if (reference != null)
-                    state.AssignReference(reference.Value, DreamValue.Null);
+            if (_current >= values.Length) {
+                state.AssignReference(reference, DreamValue.Null);
+                state.AssignReference(assocReference, DreamValue.Null);
                 return false;
             }
 
-            DreamValue value = _dreamValueArray[_current];
-            if (value.TryGetValueAsDreamObject(out var dreamObject) && (dreamObject?.IsSubtypeOf(_filterType) ?? false)) {
-                if (reference != null)
-                    state.AssignReference(reference.Value, value);
+            DreamValue value = values[_current];
+            if (value.TryGetValueAsDreamObject(out var dreamObject) && (dreamObject?.IsSubtypeOf(filterType) ?? false)) {
+                state.AssignReference(reference, value);
+                if (assocReference != DreamReference.NoRef)
+                    state.AssignReference(assocReference, assocValues?.GetValueOrDefault(value, DreamValue.Null) ?? DreamValue.Null);
                 return true;
             }
         } while (true);
@@ -123,19 +112,15 @@ internal sealed class FilteredDreamValueArrayEnumerator : IDreamValueEnumerator 
 /// Enumerates over all atoms in the world, possibly filtering for a certain type
 /// <code>for (var/obj/item/I in world)</code>
 /// </summary>
-internal sealed class WorldContentsEnumerator : IDreamValueEnumerator {
-    private readonly IEnumerator<DreamObjectAtom> _enumerator;
+internal sealed class WorldContentsEnumerator(AtomManager atomManager, TreeEntry? filterType) : IDreamValueEnumerator {
+    private readonly IEnumerator<DreamObjectAtom> _enumerator = atomManager.EnumerateAtoms(filterType).GetEnumerator();
 
-    public WorldContentsEnumerator(AtomManager atomManager, TreeEntry? filterType) {
-        _enumerator = atomManager.EnumerateAtoms(filterType).GetEnumerator();
-    }
-
-    public bool Enumerate(DMProcState state, DreamReference? reference) {
+    public bool Enumerate(DMProcState state, DreamReference reference, DreamReference assocReference) {
         bool success = _enumerator.MoveNext();
 
         // Assign regardless of success
-        if (reference != null)
-            state.AssignReference(reference.Value, new DreamValue(_enumerator.Current));
+        state.AssignReference(reference, new DreamValue(_enumerator.Current));
+        state.AssignReference(assocReference, DreamValue.Null);
         return success;
     }
 }

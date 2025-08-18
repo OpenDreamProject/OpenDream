@@ -12,15 +12,15 @@ namespace DMDisassembler;
 
 internal class Program {
     public static string JsonFile = string.Empty;
-    public static DreamCompiledJson CompiledJson;
-    public static DMProc GlobalInitProc = null;
-    public static List<DMProc> Procs = null;
-    public static Dictionary<string, DMType> AllTypes = null;
-    public static List<DMType> TypesById = null;
+    public static DreamCompiledJson CompiledJson = null!;
+    public static DMProc? GlobalInitProc;
+    public static DMProc[] Procs = Array.Empty<DMProc>();
+    public static Dictionary<string, DMType> AllTypes = new();
+    public static DMType[] TypesById = Array.Empty<DMType>();
 
     private static readonly string NoTypeSelectedMessage = "No type is selected";
 
-    private static DMType _selectedType = null;
+    private static DMType? _selectedType;
 
     static void Main(string[] args) {
         if (args.Length == 0 || Path.GetExtension(args[0]) != ".json") {
@@ -31,9 +31,16 @@ internal class Program {
         JsonFile = args[0];
 
         string compiledJsonText = File.ReadAllText(args[0]);
+        var deserialized = JsonSerializer.Deserialize<DreamCompiledJson>(compiledJsonText);
+        if (deserialized is null) {
+            Console.WriteLine("Failed to deserialize compiled json");
+            Environment.Exit(1);
+        }
 
-        CompiledJson = JsonSerializer.Deserialize<DreamCompiledJson>(compiledJsonText);
+        CompiledJson = deserialized;
+
         if (CompiledJson.GlobalInitProc != null) GlobalInitProc = new DMProc(CompiledJson.GlobalInitProc);
+
         LoadAllProcs();
         LoadAllTypes();
 
@@ -66,7 +73,7 @@ internal class Program {
 
             Console.Write("> ");
 
-            string input = Console.ReadLine();
+            string? input = Console.ReadLine();
             if (input == null) {
                 // EOF
                 break;
@@ -86,6 +93,7 @@ internal class Program {
                 case "d":
                 case "decompile": Decompile(split); break;
                 case "stats": Stats(GetArg()); break;
+                case "dump-types": DumpTypes(); break;
                 case "test-all": TestAll(); break;
                 case "dump-all": DumpAll(); break;
                 case "help": {
@@ -95,8 +103,7 @@ internal class Program {
                 default: Console.WriteLine($"Invalid command \"{command}\""); break;
             }
 
-            [CanBeNull]
-            string GetArg() {
+            string? GetArg() {
                 if (split.Length > 2) {
                     Console.WriteLine($"Command \"{command}\" takes 0 or 1 arguments. Ignoring extra arguments.");
                 }
@@ -106,7 +113,7 @@ internal class Program {
         }
     }
 
-    private static void PrintHelp([CanBeNull] string command) {
+    private static void PrintHelp(string? command) {
         if (string.IsNullOrEmpty(command)) {
             AllCommands();
             return;
@@ -119,6 +126,7 @@ internal class Program {
                 Console.WriteLine("Prints various statistics. Usage: stats [type]");
                 Console.WriteLine("Options for [type]:");
                 Console.WriteLine("procs-by-type         : Prints the number of proc declarations (not overrides) on each type in descending order");
+                Console.WriteLine("subtypes-by-type      : Prints the number of direct-descendant subtypes on each type in descending order");
                 Console.WriteLine("opcode-count          : Prints the number of occurrences for each opcode in descending order");
                 break;
             }
@@ -139,12 +147,13 @@ internal class Program {
             Console.WriteLine("list procs|globals        : List all globals, or all procs on a selected type");
             Console.WriteLine("decompile|d [name]        : Decompiles the proc on the selected type");
             Console.WriteLine("stats [type]              : Prints various stats about the game. Use \"help stats\" for more info");
+            Console.WriteLine("dump-types                : Writes a list of every type to a file");
             Console.WriteLine("dump-all                  : Decompiles every proc and writes the output to a file");
             Console.WriteLine("test-all                  : Tries to decompile every single proc to check for issues with this disassembler; not for production use");
         }
     }
 
-    private static void Stats([CanBeNull] string statType) {
+    private static void Stats(string? statType) {
         if (string.IsNullOrEmpty(statType)) {
             PrintHelp("stats");
             return;
@@ -153,6 +162,10 @@ internal class Program {
         switch (statType) {
             case "procs-by-type": {
                 ProcsByType();
+                return;
+            }
+            case "subtypes-by-type": {
+                SubtypesByType();
                 return;
             }
             case "opcode-count": {
@@ -187,6 +200,40 @@ internal class Program {
                     Console.WriteLine($"{type.Path}: {pair.Value:n0}");
                 }
             }
+        }
+
+        void SubtypesByType() {
+            Console.WriteLine("Counting all subtypes by type. This may take a moment.");
+            Dictionary<int, int> typeIdToSubtypeCount = new Dictionary<int, int>(TypesById.Length);
+
+            foreach (DMType type in TypesById) {
+                var parent = type.Json.Parent;
+                if (parent is null) continue;
+
+                if (typeIdToSubtypeCount.TryGetValue(parent.Value, out var count)) {
+                    typeIdToSubtypeCount[parent.Value] = count + 1;
+                } else {
+                    typeIdToSubtypeCount[parent.Value] = 1;
+                }
+            }
+
+            var outputFile = Path.ChangeExtension(JsonFile, ".txt")!;
+            var name = Path.GetFileName(outputFile);
+            var path = Path.GetDirectoryName(outputFile)!;
+            outputFile = Path.Combine(path, $"__od_subtypes-by-type_{name}");
+            using StreamWriter writer = new StreamWriter(outputFile, append: false, encoding: Encoding.UTF8, bufferSize: 65536);
+
+            writer.WriteLine("Type: Subtype Count");
+            foreach (var pair in typeIdToSubtypeCount.OrderByDescending(kvp => kvp.Value)) {
+                var type = TypesById[pair.Key];
+                if (pair.Key == 0) {
+                    writer.WriteLine($"<global>: {pair.Value:n0}");
+                } else {
+                    writer.WriteLine($"{type.Path}: {pair.Value:n0}");
+                }
+            }
+
+            Console.WriteLine($"Successfully dumped subtypes-by-type to {outputFile}");
         }
 
         void OpcodeCount() {
@@ -249,7 +296,7 @@ internal class Program {
         }
 
         string type = args[1];
-        if (AllTypes.TryGetValue(type, out DMType dmType)) {
+        if (AllTypes.TryGetValue(type, out DMType? dmType)) {
             _selectedType = dmType;
         } else {
             Console.WriteLine("Invalid type \"" + type + "\"");
@@ -321,7 +368,7 @@ internal class Program {
             } else {
                 Console.WriteLine("Selected type does not have an init proc");
             }
-        } else if (_selectedType.Procs.TryGetValue(name, out DMProc proc)) {
+        } else if (_selectedType.Procs.TryGetValue(name, out DMProc? proc)) {
             Console.WriteLine(proc.Decompile());
         } else {
             Console.WriteLine("No procs named \"" + name + "\"");
@@ -329,21 +376,23 @@ internal class Program {
     }
 
     private static void LoadAllProcs() {
-        Procs = new List<DMProc>(CompiledJson.Procs.Length);
+        Procs = new DMProc[CompiledJson.Procs.Length];
 
-        foreach (ProcDefinitionJson procDef in CompiledJson.Procs) {
-            Procs.Add(new DMProc(procDef));
+        for (var index = 0; index < CompiledJson.Procs.Length; index++) {
+            var procDef = CompiledJson.Procs[index];
+            Procs[index] = new DMProc(procDef);
         }
     }
 
     private static void LoadAllTypes() {
-        AllTypes = new Dictionary<string, DMType>(CompiledJson.Types.Length);
-        TypesById = new List<DMType>(CompiledJson.Types.Length);
+        AllTypes.EnsureCapacity(CompiledJson.Types.Length);
+        TypesById = new DMType[CompiledJson.Types.Length];
 
-        foreach (DreamTypeJson json in CompiledJson.Types) {
+        for (var index = 0; index < CompiledJson.Types.Length; index++) {
+            var json = CompiledJson.Types[index];
             var dmType = new DMType(json);
             AllTypes.Add(json.Path, dmType);
-            TypesById.Add(dmType);
+            TypesById[index] = dmType;
         }
 
         //Add global procs to the root type
@@ -361,7 +410,7 @@ internal class Program {
         int errored = 0, all = 0;
         foreach (DMProc proc in Procs) {
             string value = proc.Decompile();
-            if (proc.exception != null) {
+            if (proc.Exception != null) {
                 Console.WriteLine("Error disassembling " + PrettyPrintPath(proc));
                 Console.WriteLine(value);
                 ++errored;
@@ -374,6 +423,22 @@ internal class Program {
         return errored;
     }
 
+    private static void DumpTypes() {
+        Console.WriteLine("Dumping all types. This may take a moment.");
+
+        var outputFile = Path.ChangeExtension(JsonFile, ".txt")!;
+        var name = Path.GetFileName(outputFile);
+        var path = Path.GetDirectoryName(outputFile)!;
+        outputFile = Path.Combine(path, $"__od_types_{name}");
+        using StreamWriter writer = new StreamWriter(outputFile, append: false, encoding: Encoding.UTF8, bufferSize: 65536);
+
+        foreach (DMType type in TypesById) {
+                writer.WriteLine(type.Path);
+        }
+
+        Console.WriteLine($"Successfully dumped {TypesById.Length:n0} types to {outputFile}");
+    }
+
     private static void DumpAll() {
         Console.WriteLine("Dumping all procs. This may take a moment.");
         int errored = 0, all = 0;
@@ -383,7 +448,7 @@ internal class Program {
 
         foreach (DMProc proc in Procs) {
             string value = proc.Decompile();
-            if (proc.exception != null) {
+            if (proc.Exception != null) {
                 Console.WriteLine("Error disassembling " + PrettyPrintPath(proc));
                 ++errored;
             } else {
@@ -394,12 +459,12 @@ internal class Program {
             ++all;
         }
 
-        var procCount = errored > 0 ? $"{all - errored}/{all} ({errored} failed procs)" : $"all {all}";
+        var procCount = errored > 0 ? $"{(all - errored):n0}/{all:n0} ({errored:n0} failed procs)" : $"all {all:n0}";
         Console.WriteLine($"Successfully dumped {procCount} procs to {outputFile}");
     }
 
     private static string PrettyPrintPath(DMProc proc) {
-        var path = CompiledJson.Types![proc.OwningTypeId].Path;
+        var path = CompiledJson.Types[proc.OwningTypeId].Path;
         var args = proc.GetArguments();
 
         if(args is null)

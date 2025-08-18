@@ -15,15 +15,22 @@ namespace OpenDreamRuntime.Objects.Types;
 public sealed class DreamObjectWorld : DreamObject {
     public override bool ShouldCallNew => false; // Gets called manually later
 
+    public readonly ViewRange DefaultView;
+    public DreamResource? Log;
+
+    // DM code may request this info a *lot* so we use the more performant Environment.TickCount64 over RT's stopwatches
+    public float TickUsage =>
+        (Environment.TickCount64 - DreamManager.CurrentTickStart) / (float)(_gameTiming.TickPeriod.TotalMilliseconds) * 100;
+
+    public float Cpu { get; set; }
+    public readonly int IconSize;
+
     [Dependency] private readonly IBaseServer _server = default!;
     [Dependency] private readonly IGameTiming _gameTiming = default!;
     [Dependency] private readonly INetManager _netManager = default!;
     [Dependency] private readonly IConfigurationManager _cfg = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.world");
-
-    public readonly ViewRange DefaultView;
-    public DreamResource? Log;
 
     private double TickLag {
         get => _gameTiming.TickPeriod.TotalMilliseconds / 100;
@@ -34,8 +41,6 @@ public sealed class DreamObjectWorld : DreamObject {
         get => _gameTiming.TickRate;
         set => _gameTiming.TickRate = (byte)value;
     }
-
-    private DreamValue Params;
 
     /// <summary> Determines whether we try to show IPv6 or IPv4 to the user during .address and .internet_address queries.</summary>
     private bool DisplayIPv6 {
@@ -57,6 +62,8 @@ public sealed class DreamObjectWorld : DreamObject {
         }
     }
 
+    private DreamValue _params;
+
     /// <summary> Tries to return the address of the server, as it appears over the internet. May return null.</summary>
     private IPAddress? InternetAddress => null; //TODO: Implement this!
 
@@ -69,6 +76,12 @@ public sealed class DreamObjectWorld : DreamObject {
         if(objectDefinition.Variables["fps"].TryGetValueAsInteger(out var fpsVal) && fpsVal != 10) // To not override tick_lag, only set if it isn't the default 10 FPS
             SetFps(objectDefinition.Variables["fps"]);
         SetSleepOffline(objectDefinition.Variables["sleep_offline"]);
+
+        DreamValue iconSize = objectDefinition.Variables["icon_size"];
+        if (!iconSize.TryGetValueAsInteger(out IconSize)) {
+            _sawmill.Warning("world.icon_size did not contain a valid value. A default of 32 is being used.");
+            IconSize = 32;
+        }
 
         DreamValue view = objectDefinition.Variables["view"];
         if (view.TryGetValueAsString(out var viewString)) {
@@ -83,8 +96,8 @@ public sealed class DreamObjectWorld : DreamObject {
         }
 
         var worldParams = _cfg.GetCVar(OpenDreamCVars.WorldParams);
-        Params = worldParams != string.Empty ?
-            new DreamValue(DreamProcNativeRoot.params2list(ObjectTree, worldParams)) :
+        _params = worldParams != string.Empty ?
+            new DreamValue(DreamProcNativeRoot.Params2List(ObjectTree, worldParams)) :
             new DreamValue(ObjectTree.CreateList());
     }
 
@@ -116,7 +129,7 @@ public sealed class DreamObjectWorld : DreamObject {
                 return true;
 
             case "params":
-                value = Params;
+                value = _params;
                 return true;
 
             case "status":
@@ -157,9 +170,11 @@ public sealed class DreamObjectWorld : DreamObject {
                 return true;
 
             case "tick_usage":
-                var tickUsage = (_gameTiming.RealTime - _gameTiming.LastTick) / _gameTiming.TickPeriod;
+                value = new DreamValue(TickUsage);
+                return true;
 
-                value = new DreamValue(tickUsage * 100);
+            case "cpu":
+                value = new DreamValue(Cpu);
                 return true;
 
             case "maxx":
@@ -266,7 +281,7 @@ public sealed class DreamObjectWorld : DreamObject {
                 break;
 
             case "params":
-                Params = value;
+                _params = value;
                 break;
 
             case "tick_lag":

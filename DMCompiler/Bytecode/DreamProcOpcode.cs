@@ -26,7 +26,8 @@ public enum DreamProcOpcode : byte {
     MultiplyReference = 0xB,
     [OpcodeMetadata(-1, OpcodeArgType.Label)]
     JumpIfFalse = 0xC,
-    // 0xD
+    [OpcodeMetadata(0, OpcodeArgType.ListSize)]
+    CreateStrictAssociativeList = 0xD,
     [OpcodeMetadata(0, OpcodeArgType.Label)]
     Jump = 0xE,
     [OpcodeMetadata(-1)]
@@ -131,7 +132,8 @@ public enum DreamProcOpcode : byte {
     CreateFilteredListEnumerator = 0x41,
     [OpcodeMetadata(-1)]
     Power = 0x42,
-    //0x43,
+    [OpcodeMetadata(0, OpcodeArgType.EnumeratorId, OpcodeArgType.Reference, OpcodeArgType.Reference, OpcodeArgType.Label)]
+    EnumerateAssoc = 0x43,
     [OpcodeMetadata(-2)]
     Link = 0x44,
     [OpcodeMetadata(-3, OpcodeArgType.TypeId)]
@@ -140,7 +142,8 @@ public enum DreamProcOpcode : byte {
     Ftp = 0x46,
     [OpcodeMetadata(-1)]
     Initial = 0x47,
-    //0x48
+    [OpcodeMetadata(-1)]
+    AsType = 0x48,
     [OpcodeMetadata(-1)]
     IsType = 0x49,
     [OpcodeMetadata(-2)]
@@ -298,6 +301,10 @@ public enum DreamProcOpcode : byte {
     ReturnFloat = 0x98,
     [OpcodeMetadata(1, OpcodeArgType.Reference, OpcodeArgType.String)]
     IndexRefWithString = 0x99,
+    [OpcodeMetadata(2, OpcodeArgType.Float, OpcodeArgType.Reference)]
+    PushFloatAssign = 0x9A,
+    [OpcodeMetadata(true, 0, OpcodeArgType.Int)]
+    NPushFloatAssign = 0x9B,
 }
 // ReSharper restore MissingBlankLines
 

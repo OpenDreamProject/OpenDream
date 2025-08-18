@@ -31,6 +31,19 @@ internal abstract class LValue(Location location, DreamPath? path) : DMExpressio
     }
 }
 
+/// <summary>
+/// Used when there was an error regarding L-Values
+/// </summary>
+/// <remarks>Emit an error code before creating!</remarks>
+internal sealed class BadLValue(Location location) : LValue(location, null) {
+    public override void EmitPushValue(ExpressionContext ctx) {
+        // It's normal to have this expression exist when there are errors in the code
+        // But in the runtime we say it's a compiler bug because the compiler should never have output it
+        ctx.Proc.PushString("Encountered a bad LValue (compiler bug!)");
+        ctx.Proc.Throw();
+    }
+}
+
 // global
 internal class Global(Location location) : LValue(location, null) {
     public override DMReference EmitReference(ExpressionContext ctx, string endLabel,
@@ -73,6 +86,26 @@ internal sealed class Args(Location location) : LValue(location, DreamPath.List)
     }
 
     public override string GetNameof(ExpressionContext ctx) => "args";
+}
+
+// callee
+internal sealed class Callee(Location location) : LValue(location, DreamPath.Callee) {
+    public override DMReference EmitReference(ExpressionContext ctx, string endLabel,
+        ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+        return DMReference.Callee;
+    }
+
+    public override string GetNameof(ExpressionContext ctx) => "callee";
+}
+
+// caller
+internal sealed class Caller(Location location) : LValue(location, DreamPath.Callee) {
+    public override DMReference EmitReference(ExpressionContext ctx, string endLabel,
+        ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+        return DMReference.Caller;
+    }
+
+    public override string GetNameof(ExpressionContext ctx) => "caller";
 }
 
 // world
@@ -145,12 +178,7 @@ internal sealed class Field(Location location, DMVariable variable, DMComplexVal
     public override string GetNameof(ExpressionContext ctx) => variable.Name;
 
     public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
-        if (variable is { CanConstFold: true, Value: not null }) {
-            return variable.Value.TryAsConstant(compiler, out constant);
-        }
-
-        constant = null;
-        return false;
+        return variable.TryAsConstant(compiler, out constant);
     }
 
     public override string ToString() {
@@ -182,12 +210,8 @@ internal sealed class GlobalField(Location location, DreamPath? path, int id,  D
 
     public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
         DMVariable global = compiler.DMObjectTree.Globals[Id];
-        if (global.CanConstFold) {
-            return global.Value.TryAsConstant(compiler, out constant);
-        }
 
-        constant = null;
-        return false;
+        return global.TryAsConstant(compiler, out constant);
     }
 }
 

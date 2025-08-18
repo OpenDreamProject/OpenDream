@@ -389,7 +389,6 @@ public sealed class AtomManager {
                         if (!verbValue.TryGetValueAsProc(out var verb))
                             continue;
 
-
                         if (!verb.VerbId.HasValue)
                             VerbSystem?.RegisterVerb(verb);
                         if (appearance.Verbs.Contains(verb.VerbId!.Value))

@@ -162,7 +162,7 @@ public sealed class ServerVerbSystem : VerbSystem {
             _repeatingVerbs.Add(conn, list);
         }
 
-        if (!list.Any(tuple => tuple.Item1 == msg.VerbId))
+        if (list.All(tuple => tuple.Item1 != msg.VerbId))
             list.Add((msg.VerbId, msg.Src));
     }
 
@@ -176,13 +176,13 @@ public sealed class ServerVerbSystem : VerbSystem {
         }
     }
 
-    private void RunVerb(DreamProc verb, string name, DreamObject? src, DreamConnection usr, params DreamValue[] arguments)
-    {
-        using (Profiler.BeginZone("DM Execution", color: (uint)Color.LightPink.ToArgb()))
-            DreamThread.Run($"Execute {name} by {usr.Session!.Name}", async state => {
-                await state.Call(verb, src, usr.Mob, arguments);
-                return DreamValue.Null;
-            });
+    private void RunVerb(DreamProc verb, string name, DreamObject? src, DreamConnection usr, params DreamValue[] arguments) {
+        using var _ = Profiler.BeginZone("DM Execution", color: (uint)Color.LightPink.ToArgb());
+        
+        DreamThread.Run($"Execute {name} by {usr.Session!.Name}", async state => {
+            await state.Call(verb, src, usr.Mob, arguments);
+            return DreamValue.Null;
+        });
     }
 
     private void OnVerbExecuted(ExecuteVerbEvent msg, EntitySessionEventArgs args) {

@@ -56,9 +56,6 @@ public sealed class DummyDreamInterfaceManager : IDreamInterfaceManager {
     public void RunCommand(string fullCommand, bool repeating = false) {
     }
 
-    public void StartRepeatingCommand(string command) {
-    }
-
     public void StopRepeatingCommand(string command) {
     }
 }

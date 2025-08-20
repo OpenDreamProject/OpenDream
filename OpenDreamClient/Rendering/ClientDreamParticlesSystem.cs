@@ -1,6 +1,7 @@
 using JetBrains.Annotations;
 using OpenDreamClient.Interface;
 using OpenDreamShared.Rendering;
+using OpenDreamClient.Rendering.Particles;
 using Robust.Client.Graphics;
 using Robust.Shared.Random;
 using Robust.Shared.Timing;
@@ -16,8 +17,8 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
     [Dependency] private readonly IDreamInterfaceManager _dreamInterfaceManager = default!;
     [Dependency] private readonly IClyde _clyde = default!;
     public RenderTargetPool RenderTargetPool = default!;
-    private Random random = new();
-    private RendererMetaData defaultRenderMetaData = new(); //used for icon GetTexture(), never needs anything but default settings
+    private readonly Random _random = new();
+    private readonly RendererMetaData _defaultRenderMetaData = new(); //used for icon GetTexture(), never needs anything but default settings
 
     public override void Initialize() {
         base.Initialize();
@@ -33,24 +34,26 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
         else
             _particlesManager.CreateParticleSystem(uid, GetParticleSystemArgs(component));
     }
-    private void HandleComponentRemove(EntityUid uid, DreamParticlesComponent component, ref ComponentRemove args)
-    {
+
+    private void HandleComponentRemove(EntityUid uid, DreamParticlesComponent component, ref ComponentRemove args) {
         _particlesManager.DestroyParticleSystem(uid);
     }
 
     private ParticleSystemArgs GetParticleSystemArgs(DreamParticlesComponent component){
         Func<Texture?> textureFunc;
-        if(component.TextureList is null || component.TextureList.Length == 0)
+        if(component.TextureList.Length == 0)
             textureFunc = () => Texture.White;
         else{
             List<DreamIcon> icons = new(component.TextureList.Length);
             foreach(var appearance in component.TextureList){
-                DreamIcon icon = new DreamIcon(RenderTargetPool, _dreamInterfaceManager,  _gameTiming, _clyde, _appearanceSystem);
+                DreamIcon icon = new (RenderTargetPool, _dreamInterfaceManager,  _gameTiming, _clyde, _appearanceSystem);
                 icon.SetAppearance(appearance.MustGetId());
                 icons.Add(icon);
             }
-            textureFunc = () => random.Pick(icons).GetTexture(null!, null!, defaultRenderMetaData, null, null); //oh god, so hacky
+
+            textureFunc = () => _random.Pick(icons).GetTexture(null!, null!, _defaultRenderMetaData, null, null); //oh god, so hacky
         }
+
         var result = new ParticleSystemArgs(textureFunc, new Vector2i(component.Width, component.Height), (uint)component.Count, component.Spawning);
         result.Lifespan = GetGeneratorFloat(component.LifespanLow, component.LifespanHigh, component.LifespanDist);
         result.Fadein = GetGeneratorFloat(component.FadeInLow, component.FadeInHigh, component.FadeInDist);
@@ -84,13 +87,13 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
             case GeneratorDistribution.Constant:
                 return () => high;
             case GeneratorDistribution.Uniform:
-                return () => random.NextFloat(low, high);
+                return () => _random.NextFloat(low, high);
             case GeneratorDistribution.Normal:
-                return () => (float) Math.Clamp(random.NextGaussian((low+high)/2, (high-low)/6), low, high);
+                return () => (float) Math.Clamp(_random.NextGaussian((low+high)/2, (high-low)/6), low, high);
             case GeneratorDistribution.Linear:
-                return () => MathF.Sqrt(random.NextFloat(0, 1)) * (high - low) + low;
+                return () => MathF.Sqrt(_random.NextFloat(0, 1)) * (high - low) + low;
             case GeneratorDistribution.Square:
-                return () => MathF.Cbrt(random.NextFloat(0, 1)) * (high - low) + low;
+                return () => MathF.Cbrt(_random.NextFloat(0, 1)) * (high - low) + low;
             default:
                 throw new NotImplementedException();
         }

@@ -1,6 +1,6 @@
 ﻿using OpenDreamClient.Audio;
 using OpenDreamClient.Interface;
-using OpenDreamClient.Rendering;
+using OpenDreamClient.Rendering.Particles;
 using OpenDreamClient.Resources;
 using OpenDreamClient.States;
 

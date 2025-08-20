@@ -7,6 +7,7 @@ using OpenDreamShared.Dream;
 using Robust.Shared.Console;
 using Robust.Shared.Prototypes;
 using OpenDreamShared.Rendering;
+using OpenDreamClient.Rendering.Particles;
 using Robust.Client.GameObjects;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Profiling;

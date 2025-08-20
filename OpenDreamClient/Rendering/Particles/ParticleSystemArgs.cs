@@ -1,10 +1,7 @@
-using System;
-using System.Drawing;
-using System.Numerics;
-using Robust.Shared.Maths;
+using Robust.Client.Graphics;
 using Color = Robust.Shared.Maths.Color;
 
-namespace Robust.Client.Graphics;
+namespace OpenDreamClient.Rendering.Particles;
 
 /// <summary>
 ///     Arguments for creating a particle system
@@ -83,5 +80,4 @@ public sealed class ParticleSystemArgs {
         ParticleCount = particleCount;
         ParticlesPerSecond = particlesPerSecond;
     }
-
 }

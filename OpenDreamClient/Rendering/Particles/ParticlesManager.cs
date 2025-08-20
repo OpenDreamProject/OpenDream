@@ -5,7 +5,7 @@ using Robust.Client.Graphics;
 using Robust.Shared.Timing;
 
 
-namespace OpenDreamClient.Rendering;
+namespace OpenDreamClient.Rendering.Particles;
 
 /// <summary>
 ///     System for creating and managing particle effects.
@@ -22,11 +22,10 @@ public sealed class ParticlesManager
         // enable when part 2 is merged
         // _overlayManager.AddOverlay(new ParticlesOverlay());
     }
-    public void FrameUpdate(FrameEventArgs args)
-    {
+
+    public void FrameUpdate(FrameEventArgs args) {
         // can't use parallel foreach here because IoC doesn't have context in parallel tasks
-        foreach (var particleSys in _particleSystems.Values)
-        {
+        foreach (var particleSys in _particleSystems.Values) {
             particleSys.FrameUpdate(args);
         }
     }
@@ -50,28 +49,33 @@ public sealed class ParticlesManager
 public sealed class ParticleSystem {
 
     //unchanging
+    public Vector2i RenderSize { get => _particleSystemSize; }
 
-    public Vector2i RenderSize { get => _particleSystemSize;}
     /// <summary>
     ///  Size of drawing surface
     /// </summary>
     private Vector2i _particleSystemSize;
+
     /// <summary>
     ///  Maximum number of particles in this system. New particles will not be created while at this maximum.
     /// </summary>
     private uint _particleCount;
+
     /// <summary>
     ///  The number of new particles to create each second. No new particles will be created if we are at the maximum already.
     /// </summary>
     private float _particlesPerSecond;
+
     /// <summary>
     ///  The lower left hand back corner of the cuboid outside of which particles will be deactivated
     /// </summary>
     private Vector3 _lowerBound;
+
     /// <summary>
     ///  The upper right hand front corner of the cuboid outside of which particles will be deactivated
     /// </summary>
     private Vector3 _upperBound;
+
     /// <summary>
     /// The base transform to apply to all particles in this system
     /// </summary>
@@ -83,22 +87,27 @@ public sealed class ParticleSystem {
     /// A function which returns a float which is this particles lifespan in seconds
     /// </summary>
     private Func<float> _lifespan;
+
     /// <summary>
     /// A function which returns a float which is this particles fade-out time in seconds
     /// </summary>
     private Func<float> _fadeout;
+
     /// <summary>
     /// A function which returns a float which is this particles fade-in time in seconds
     /// </summary>
     private Func<float> _fadein;
+
     /// <summary>
     /// A function which returns a Texture which is this particles texture at spawning. Null textures will be re-evaluated each frame until not null
     /// </summary>
     private Func<Texture?> _icon;
+
     /// <summary>
     /// A function which returns a Vector3 which is this particles position at spawning
     /// </summary>
     private Func<Vector3> _spawnPosition;
+
     /// <summary>
     /// A function which returns a Vector3 which is this particles velocity at spawning
     /// </summary>
@@ -110,14 +119,16 @@ public sealed class ParticleSystem {
     /// A function which takes the life time of this particles and returns the Color of this particle
     /// </summary>
     private Func<float, Color> _color;
+
     /// <summary>
     /// A function which takes the life time of this particles and returns the transform of this particle. Note that this is multiplied with the base transform.
     /// </summary>
-    private Func<float,Matrix3x2> _transform;
+    private Func<float, Matrix3x2> _transform;
+
     /// <summary>
     /// A function which takes the life time of this particles and returns the an acceleration to apply to this particle
     /// </summary>
-    private Func<float,Vector3,Vector3> _acceleration;
+    private Func<float, Vector3, Vector3> _acceleration;
 
     /// <summary>
     /// Internal store for particles for this system

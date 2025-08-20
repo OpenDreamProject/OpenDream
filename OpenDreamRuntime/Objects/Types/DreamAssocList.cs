@@ -24,4 +24,19 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     public IEnumerable<DreamValue> EnumerateValues() {
         return _values.Keys; // The keys, counter-intuitively
     }
+
+    public IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateAssocValues() {
+        return _values;
+    }
+
+    public DreamValue[] CopyToArray() {
+        var array = new DreamValue[_values.Count];
+
+        _values.Keys.CopyTo(array, 0);
+        return array;
+    }
+
+    public Dictionary<DreamValue, DreamValue> CopyAssocValues() {
+        return new(_values);
+    }
 }

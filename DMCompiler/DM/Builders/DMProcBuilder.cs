@@ -259,20 +259,16 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                 ProcessStatementVarDeclaration(new DMASTProcStatementVarDeclaration(statementFor.Location, decl.DeclPath, null, DMValueType.Anything));
             }
 
-            if (statementFor is { Expression2: DMASTExpressionIn dmastIn, Expression3: null }) {
-                var expr2 = statementFor.Expression2 != null ? _exprBuilder.CreateIgnoreUnknownReference(statementFor.Expression2) : null;
+            if (statementFor is { Expression2: DMASTExpressionIn dmastIn, Expression3: null }) { // for(var/i,j in expr) or for(i,j in expr)
+                var valueVar = statementFor.Expression2 != null ? _exprBuilder.CreateIgnoreUnknownReference(statementFor.Expression2) : null;
+                var list = _exprBuilder.Create(dmastIn.RHS);
 
                 // TODO: Wow this sucks
-                if (expr2 is UnknownReference unknownRef) {
-                    if(statementFor.Expression1 is not DMASTVarDeclExpression || dmastIn.LHS is not DMASTIdentifier ident)
+                if (valueVar is UnknownReference unknownRef) { // j in var/i,j isn't already a var
+                    if(dmastIn.LHS is not DMASTIdentifier ident)
                         unknownRef.EmitCompilerError(compiler);
-                    else {
+                    else
                         ProcessStatementVarDeclaration(new DMASTProcStatementVarDeclaration(statementFor.Location, new DMASTPath(statementFor.Location, new DreamPath(ident.Identifier)), null, DMValueType.Anything));
-                        var meep = dmastIn.LHS;
-                        expr2 = _exprBuilder.Create(meep);
-                    }
-                } else {
-                    expr2 = _exprBuilder.Create(dmastIn.LHS);
                 }
 
                 DMASTExpression outputExpr;
@@ -282,10 +278,10 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                     outputExpr = statementFor.Expression1;
                 }
 
-                var outputVar = _exprBuilder.Create(outputExpr);
-                var list = _exprBuilder.Create(dmastIn.RHS);
+                var keyVar = _exprBuilder.Create(outputExpr);
+                valueVar = _exprBuilder.Create(dmastIn.LHS);
 
-                switch (outputVar) {
+                switch (keyVar) {
                     case Local outputLocal: {
                         outputLocal.LocalVar.ExplicitValueType = statementFor.DMTypes;
                         if(outputLocal.LocalVar is DMProc.LocalConstVariable)
@@ -298,7 +294,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                     }
                 }
 
-                switch (expr2) {
+                switch (valueVar) {
                     case Local assocLocal: {
                         assocLocal.LocalVar.ExplicitValueType = statementFor.DMTypes;
                         if(assocLocal.LocalVar is DMProc.LocalConstVariable)
@@ -311,7 +307,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                     }
                 }
 
-                ProcessStatementForList(list, outputVar, expr2, statementFor.DMTypes, statementFor.Body);
+                ProcessStatementForList(list, keyVar, valueVar, statementFor.DMTypes, statementFor.Body);
             } else if (statementFor.Expression2 != null || statementFor.Expression3 != null) {
                 var initializer = statementFor.Expression1 != null ? _exprBuilder.Create(statementFor.Expression1) : null;
                 var comparator = statementFor.Expression2 != null ? _exprBuilder.Create(statementFor.Expression2) : null;
@@ -459,9 +455,8 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
         } else {
             if (assocValue != null && list != null) {
                 DMReference assocRef = assocValue.EmitReference(ExprContext, string.Empty);
-                DMReference listRef = list.EmitReference(ExprContext, string.Empty);
                 DMReference outputRef = lValue.EmitReference(ExprContext, string.Empty);
-                proc.EnumerateAssoc(assocRef, listRef, outputRef);
+                proc.EnumerateAssoc(assocRef, outputRef);
             } else {
                 DMReference outputRef = lValue.EmitReference(ExprContext, string.Empty);
                 proc.Enumerate(outputRef);

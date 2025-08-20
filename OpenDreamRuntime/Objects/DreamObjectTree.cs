@@ -391,7 +391,11 @@ public sealed class DreamObjectTree {
 
             if (jsonType.Verbs != null) {
                 definition.Verbs ??= new(jsonType.Verbs.Count);
-                definition.Verbs.AddRange(jsonType.Verbs);
+
+                foreach (var verbName in jsonType.Verbs) {
+                    var verb = definition.GetProc(verbName);
+                    definition.Verbs[verb.Name] = verb.Id;
+                }
             }
 
             if (jsonType.InitProc != null) {

@@ -288,6 +288,13 @@ public class DMCompiler {
             interfaceFile = string.Empty;
         }
 
+        var optionalErrors = new Dictionary<WarningCode, ErrorLevel>();
+        foreach (var (code, level) in _errorConfig) {
+            if (((int)code) is >= 4000 and <= 4999) {
+                optionalErrors.Add(code, level);
+            }
+        }
+
         var jsonRep = DMObjectTree.CreateJsonRepresentation();
         var compiledDream = new DreamCompiledJson {
             Metadata = new DreamCompiledJsonMetadata { Version = OpcodeVerifier.GetOpcodesHash() },
@@ -296,7 +303,8 @@ public class DMCompiler {
             Maps = maps,
             Interface = interfaceFile,
             Types = jsonRep.Item1,
-            Procs = jsonRep.Item2
+            Procs = jsonRep.Item2,
+            OptionalErrors = optionalErrors,
         };
 
         if (GlobalInitProc.AnnotatedBytecode.GetLength() > 0)

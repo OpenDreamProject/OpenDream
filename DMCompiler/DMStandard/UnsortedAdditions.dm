@@ -30,6 +30,8 @@ proc/missile(Type, Start, End)
 	set opendream_unimplemented = TRUE
 /proc/splittext_char(Text,Start=1,End=0,Insert="")
 	set opendream_unimplemented = TRUE
+/proc/bound_pixloc(var/atom/Atom, var/Dir as num) as /pixloc
+	set opendream_unimplemented = TRUE
 
 /proc/_dm_db_new_con()
 	set opendream_unimplemented = TRUE

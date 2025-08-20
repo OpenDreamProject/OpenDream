@@ -10,6 +10,7 @@ using OpenDreamShared.Rendering;
 using Robust.Client.GameObjects;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Profiling;
+using Matrix3x2 = System.Numerics.Matrix3x2;
 using Robust.Client.ResourceManagement;
 using Robust.Client.UserInterface.RichText;
 using Robust.Shared.Enums;

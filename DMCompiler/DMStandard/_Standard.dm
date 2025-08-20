@@ -141,6 +141,7 @@ proc/winset(player, control_id, params)
 #include "Types\Matrix.dm"
 #include "Types\Mutable_Appearance.dm"
 #include "Types\Particles.dm"
+#include "Types\PixLoc.dm"
 #include "Types\Regex.dm"
 #include "Types\Savefile.dm"
 #include "Types\Sound.dm"

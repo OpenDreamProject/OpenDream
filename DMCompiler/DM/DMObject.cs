@@ -217,10 +217,10 @@ internal sealed class DMObject(DMCompiler compiler, int id, DreamPath path, DMOb
         }
 
         if (_verbs != null) {
-            typeJson.Verbs = new List<int>(_verbs.Count);
+            typeJson.Verbs = new HashSet<string>(_verbs.Count);
 
             foreach (var verb in _verbs) {
-                typeJson.Verbs.Add(verb.Id);
+                typeJson.Verbs.Add(verb.Name);
             }
         }
 

@@ -138,6 +138,21 @@ public class DreamList : DreamObject, IDreamList {
         return _values;
     }
 
+    public IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateAssocValues() {
+        return _associativeValues ?? [];
+    }
+
+    public DreamValue[] CopyToArray() {
+        return _values.ToArray();
+    }
+
+    public Dictionary<DreamValue, DreamValue> CopyAssocValues() {
+        if (_associativeValues is null)
+            return new();
+
+        return new(_associativeValues);
+    }
+
     public Dictionary<DreamValue, DreamValue> GetAssociativeValues() {
         return _associativeValues ??= new Dictionary<DreamValue, DreamValue>();
     }
@@ -245,8 +260,7 @@ public class DreamList : DreamObject, IDreamList {
             }
         } else {
             if (size < 0) {
-                //TODO emit configurable warning here
-                throw new InvalidOperationException("Setting a list size to a negative value is invalid");
+                DreamManager.OptionalException<InvalidOperationException>(DMCompiler.Compiler.WarningCode.ListNegativeSizeException, "Setting a list size to a negative value is invalid");
             }
 
             Cut(size + 1);
@@ -603,7 +617,7 @@ public sealed class ClientVerbsList : DreamList {
         _client = client;
         _verbSystem = verbSystem;
 
-        List<int>? verbs = _client.ObjectDefinition.Verbs;
+        var verbs = _client.ObjectDefinition.Verbs?.Values;
         if (verbs == null)
             return;
 

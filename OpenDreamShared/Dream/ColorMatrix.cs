@@ -17,90 +17,40 @@ namespace OpenDreamShared.Dream;
 /// that fixed arrays are """"""unsafe"""""" in this language.
 /// </remarks>
 [Serializable, NetSerializable, StructLayout(LayoutKind.Sequential)]
-public struct ColorMatrix {
-    public float c11;
-    public float c12;
-    public float c13;
-    public float c14;
+public struct ColorMatrix(
+    float m11, float m12, float m13, float m14,
+    float m21, float m22, float m23, float m24,
+    float m31, float m32, float m33, float m34,
+    float m41, float m42, float m43, float m44,
+    float m51, float m52, float m53, float m54) {
+    public float c11 = m11;
+    public float c12 = m12;
+    public float c13 = m13;
+    public float c14 = m14;
 
-    public float c21;
-    public float c22;
-    public float c23;
-    public float c24;
+    public float c21 = m21;
+    public float c22 = m22;
+    public float c23 = m23;
+    public float c24 = m24;
 
-    public float c31;
-    public float c32;
-    public float c33;
-    public float c34;
+    public float c31 = m31;
+    public float c32 = m32;
+    public float c33 = m33;
+    public float c34 = m34;
 
-    public float c41;
-    public float c42;
-    public float c43;
-    public float c44;
+    public float c41 = m41;
+    public float c42 = m42;
+    public float c43 = m43;
+    public float c44 = m44;
 
-    public float c51;
-    public float c52;
-    public float c53;
-    public float c54;
+    public float c51 = m51;
+    public float c52 = m52;
+    public float c53 = m53;
+    public float c54 = m54;
 
-    public ColorMatrix(float m11, float m12, float m13, float m14,
-                        float m21, float m22, float m23, float m24,
-                        float m31, float m32, float m33, float m34,
-                        float m41, float m42, float m43, float m44,
-                        float m51, float m52, float m53, float m54) {
-        c11 = m11;
-        c12 = m12;
-        c13 = m13;
-        c14 = m14;
-
-        c21 = m21;
-        c22 = m22;
-        c23 = m23;
-        c24 = m24;
-
-        c31 = m31;
-        c32 = m32;
-        c33 = m33;
-        c34 = m34;
-
-        c41 = m41;
-        c42 = m42;
-        c43 = m43;
-        c44 = m44;
-
-        c51 = m51;
-        c52 = m52;
-        c53 = m53;
-        c54 = m54;
-    }
-
-    public ColorMatrix(in ColorMatrix cloned) {
+    public ColorMatrix(in ColorMatrix cloned) : this(cloned.c11, cloned.c12, cloned.c13, cloned.c14, cloned.c21, cloned.c22, cloned.c23, cloned.c24, cloned.c31, cloned.c32, cloned.c33, cloned.c34, cloned.c41, cloned.c42, cloned.c43, cloned.c44, cloned.c51, cloned.c52, cloned.c53, cloned.c54) {
         //I have never, ever missed the "pointer to member access" goofball operator from C++
         //until this exact, debilitating moment
-        c11 = cloned.c11;
-        c12 = cloned.c12;
-        c13 = cloned.c13;
-        c14 = cloned.c14;
-
-        c21 = cloned.c21;
-        c22 = cloned.c22;
-        c23 = cloned.c23;
-        c24 = cloned.c24;
-
-        c31 = cloned.c31;
-        c32 = cloned.c32;
-        c33 = cloned.c33;
-        c34 = cloned.c34;
-
-        c41 = cloned.c41;
-        c42 = cloned.c42;
-        c43 = cloned.c43;
-        c44 = cloned.c44;
-
-        c51 = cloned.c51;
-        c52 = cloned.c52;
-        c53 = cloned.c53;
-        c54 = cloned.c54;
     }
 
     /// <summary>
@@ -108,22 +58,15 @@ public struct ColorMatrix {
     /// </summary>
     /// <remarks>Note: This constructor assumes that floats are zero-initialized.</remarks>
     /// <param name="basicColor"></param>
-    public ColorMatrix(in Color basicColor) {
-        c11 = basicColor.R;
-
-        c22 = basicColor.G;
-
-        c33 = basicColor.B;
-
-        c44 = basicColor.A;
+    public ColorMatrix(in Color basicColor) : this(basicColor.R, 0, 0, 0, 0, basicColor.G, 0, 0, 0, 0, basicColor.B, 0, 0, 0, 0, basicColor.A, 0, 0, 0, 0) {
     }
 
     public static ColorMatrix Identity =>
-        new ColorMatrix(1F, 0F, 0F, 0F,
-                        0F, 1F, 0F, 0F,
-                        0F, 0F, 1F, 0F,
-                        0F, 0F, 0F, 1F,
-                        0F, 0F, 0F, 0F);
+        new (1F, 0F, 0F, 0F,
+             0F, 1F, 0F, 0F,
+             0F, 0F, 1F, 0F,
+             0F, 0F, 0F, 1F,
+             0F, 0F, 0F, 0F);
 
     public void SetRow(int row, in Color color) {
         SetRow(row, color.R, color.G, color.B, color.A);
@@ -210,7 +153,7 @@ public struct ColorMatrix {
         yield return c54;
     }
 
-    public Matrix4x4 GetMatrix4(){
+    public Matrix4x4 GetMatrix4() {
         return new Matrix4x4(
             c11, c12, c13, c14,
             c21, c22, c23, c24,
@@ -219,7 +162,7 @@ public struct ColorMatrix {
         );
     }
 
-    public Vector4 GetOffsetVector(){
+    public Vector4 GetOffsetVector() {
         return new Vector4(c51, c52, c53, c54);
     }
 

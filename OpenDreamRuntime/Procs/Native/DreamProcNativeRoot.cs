@@ -1158,8 +1158,8 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("rand", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
     public static DreamValue NativeProc_generator(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
         string outputTypeString = bundle.GetArgument(0, "type").MustGetValueAsString();
-        var A = bundle.GetArgument(1, "A");
-        var B = bundle.GetArgument(2, "B");
+        var a = bundle.GetArgument(1, "A");
+        var b = bundle.GetArgument(2, "B");
         var distNum = bundle.GetArgument(3, "rand").MustGetValueAsInteger();
 
         GeneratorOutputType outputType;
@@ -1192,6 +1192,7 @@ internal static class DreamProcNativeRoot {
             default:
                 throw new InvalidEnumArgumentException("Invalid output type specified in generator()");
         }
+
         switch(distNum){
             case 0:
                 distribution = GeneratorDistribution.Uniform;
@@ -1208,8 +1209,8 @@ internal static class DreamProcNativeRoot {
             default:
                 throw new InvalidEnumArgumentException("Invalid distribution type specified in generator()");
         }
-        return new(new DreamObjectGenerator(bundle.ObjectTree.Generator.ObjectDefinition, A, B, outputType, distribution));
 
+        return new(new DreamObjectGenerator(bundle.ObjectTree.Generator.ObjectDefinition, a, b, outputType, distribution));
     }
 
     [DreamProc("hascall")]

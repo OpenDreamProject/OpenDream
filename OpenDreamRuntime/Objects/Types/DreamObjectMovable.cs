@@ -148,6 +148,7 @@ public class DreamObjectMovable : DreamObjectAtom {
                         ParticlesSystem!.MarkDirty((Entity, _particles.ParticlesComponent));
                         return;
                     }
+
                     if (_particles != null)
                         EntityManager.RemoveComponent(Entity, _particles.ParticlesComponent);
                     _particles = particles;
@@ -158,6 +159,7 @@ public class DreamObjectMovable : DreamObjectAtom {
                     if (_particles != null)
                         EntityManager.RemoveComponent(Entity, _particles.ParticlesComponent);
                 }
+
                 break;
             default:
                 base.SetVar(varName, value);

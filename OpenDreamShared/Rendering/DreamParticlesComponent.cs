@@ -38,11 +38,13 @@ public sealed partial class DreamParticlesComponent : Component {
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public Vector3 SpawnPositionLow;
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public GeneratorOutputType SpawnPositionType;
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public GeneratorDistribution SpawnPositionDist;
+
 	//Starting velocity of the particles
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public Vector3 SpawnVelocityHigh;
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public Vector3 SpawnVelocityLow;
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public GeneratorOutputType SpawnVelocityType;
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public GeneratorDistribution SpawnVelocityDist;
+
 	//Acceleration applied to the particles per second
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public Vector3 AccelerationHigh;
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public Vector3 AccelerationLow;
@@ -52,21 +54,25 @@ public sealed partial class DreamParticlesComponent : Component {
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public Vector3 FrictionLow;
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public GeneratorOutputType FrictionType;
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public GeneratorDistribution FrictionDist;
+
 	//Scaling applied to the particles in (x,y)
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public Vector2 ScaleHigh = Vector2.One;
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public Vector2 ScaleLow = Vector2.One;
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public GeneratorOutputType ScaleType;
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public GeneratorDistribution ScaleDist;
+
 	//Rotation applied to the particles in degrees
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public float RotationHigh;
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public float RotationLow;
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public GeneratorOutputType RotationType;
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public GeneratorDistribution RotationDist;
+
 	//Increase in scale per second
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public Vector2 GrowthHigh;
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public Vector2 GrowthLow;
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public GeneratorOutputType GrowthType;
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public GeneratorDistribution GrowthDist;
+
 	//Change in rotation per second
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public float SpinHigh;
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public float SpinLow;

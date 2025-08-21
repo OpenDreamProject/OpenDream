@@ -138,18 +138,18 @@ public sealed class ParticleSystem {
         _particleSystemSize = args.ParticleSystemSize;
         _particleCount = args.ParticleCount;
         _particlesPerSecond = args.ParticlesPerSecond;
-        _lowerBound = args.LowerDrawBound is null ? new Vector3(-_particleSystemSize.X, -_particleSystemSize.Y, float.MinValue) : args.LowerDrawBound.Value;
-        _upperBound = args.UpperDrawBound is null ? new Vector3(_particleSystemSize.X, _particleSystemSize.Y, float.MaxValue) : args.UpperDrawBound.Value;
+        _lowerBound = args.LowerDrawBound ?? new Vector3(-_particleSystemSize.X, -_particleSystemSize.Y, float.MinValue);
+        _upperBound = args.UpperDrawBound ?? new Vector3(_particleSystemSize.X, _particleSystemSize.Y, float.MaxValue);
         _icon = args.Icon;
-        _baseTransform = args.BaseTransform is null ? Matrix3x2.Identity : args.BaseTransform.Value;
-        _lifespan = args.Lifespan is null ? () => int.MaxValue : args.Lifespan;
-        _fadeout = args.Fadeout is null ? () => 0 : args.Fadeout;
-        _fadein = args.Fadein is null ? () => 0 : args.Fadein;
-        _spawnPosition = args.SpawnPosition is null ? () => Vector3.Zero : args.SpawnPosition;
-        _spawnVelocity = args.SpawnVelocity is null ? () => Vector3.Zero : args.SpawnVelocity;
-        _color = args.Color is null ? (_) => Color.White : args.Color;
-        _transform = args.Transform is null ? (_) => Matrix3x2.Identity : args.Transform;
-        _acceleration = args.Acceleration is null ? (_,_) => Vector3.Zero : args.Acceleration;
+        _baseTransform = args.BaseTransform ?? Matrix3x2.Identity;
+        _lifespan = args.Lifespan ?? (() => int.MaxValue);
+        _fadeout = args.Fadeout ?? (() => 0);
+        _fadein = args.Fadein ?? (() => 0);
+        _spawnPosition = args.SpawnPosition ?? (() => Vector3.Zero);
+        _spawnVelocity = args.SpawnVelocity ?? (() => Vector3.Zero);
+        _color = args.Color ?? ((_) => Color.White);
+        _transform = args.Transform ?? ((_) => Matrix3x2.Identity);
+        _acceleration = args.Acceleration ?? ((_, _) => Vector3.Zero);
 
         _particles = new Particle[_particleCount];
         for(int i=0; i<_particleCount; i++)
@@ -170,18 +170,18 @@ public sealed class ParticleSystem {
         }
 
         _particlesPerSecond = args.ParticlesPerSecond;
-        _lowerBound = args.LowerDrawBound is null ? new Vector3(-_particleSystemSize.X, -_particleSystemSize.Y, float.MinValue) : args.LowerDrawBound.Value;
-        _upperBound = args.UpperDrawBound is null ? new Vector3(_particleSystemSize.X, _particleSystemSize.Y, float.MaxValue) : args.UpperDrawBound.Value;
+_lowerBound = args.LowerDrawBound ?? new Vector3(-_particleSystemSize.X, -_particleSystemSize.Y, float.MinValue);
+        _upperBound = args.UpperDrawBound ?? new Vector3(_particleSystemSize.X, _particleSystemSize.Y, float.MaxValue);
         _icon = args.Icon;
-        _baseTransform = args.BaseTransform is null ? Matrix3x2.Identity : args.BaseTransform.Value;
-        _lifespan = args.Lifespan is null ? () => int.MaxValue : args.Lifespan;
-        _fadeout = args.Fadeout is null ? () => 0 : args.Fadeout;
-        _fadein = args.Fadein is null ? () => 0 : args.Fadein;
-        _spawnPosition = args.SpawnPosition is null ? () => Vector3.Zero : args.SpawnPosition;
-        _spawnVelocity = args.SpawnVelocity is null ? () => Vector3.Zero : args.SpawnVelocity;
-        _color = args.Color is null ? (_) => Color.White : args.Color;
-        _transform = args.Transform is null ? (_) => Matrix3x2.Identity : args.Transform;
-        _acceleration = args.Acceleration is null ? (_,_) => Vector3.Zero : args.Acceleration;
+        _baseTransform = args.BaseTransform ?? Matrix3x2.Identity;
+        _lifespan = args.Lifespan ?? (() => int.MaxValue);
+        _fadeout = args.Fadeout ?? (() => 0);
+        _fadein = args.Fadein ?? (() => 0);
+        _spawnPosition = args.SpawnPosition ?? (() => Vector3.Zero);
+        _spawnVelocity = args.SpawnVelocity ?? (() => Vector3.Zero);
+        _color = args.Color ?? ((_) => Color.White);
+        _transform = args.Transform ?? ((_) => Matrix3x2.Identity);
+        _acceleration = args.Acceleration ?? ((_, _) => Vector3.Zero);
     }
 
     public void FrameUpdate(FrameEventArgs args)

@@ -7,8 +7,8 @@ public sealed class DreamObjectParticles : DreamObject {
     public EntityUid Entity = EntityUid.Invalid;
     public DreamParticlesComponent ParticlesComponent;
 
-    private List<MutableAppearance> _icons = new();
-    private List<string> _iconStates = new();
+    private readonly List<MutableAppearance> _icons = new();
+    private readonly List<string> _iconStates = new();
 
     public DreamObjectParticles(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
         ParticlesComponent = new DreamParticlesComponent();
@@ -42,7 +42,7 @@ public sealed class DreamObjectParticles : DreamObject {
 
                 break;
             case "bound2": //list or vector
-                 if(value.TryGetValueAsDreamList(out var bound2List) && bound2List.GetLength() >= 3) {
+                if(value.TryGetValueAsDreamList(out var bound2List) && bound2List.GetLength() >= 3) {
                     List<DreamValue> dreamValues = (List<DreamValue>)bound2List.EnumerateValues();
                     ParticlesComponent.Bound2 = new Vector3(dreamValues[0].MustGetValueAsFloat(), dreamValues[1].MustGetValueAsFloat(), dreamValues[2].MustGetValueAsFloat());
                 } //else if vector

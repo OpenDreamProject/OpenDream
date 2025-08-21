@@ -54,22 +54,23 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
             textureFunc = () => _random.Pick(icons).GetTexture(null!, null!, _defaultRenderMetaData, null, null); //oh god, so hacky
         }
 
-        var result = new ParticleSystemArgs(textureFunc, new Vector2i(component.Width, component.Height), (uint)component.Count, component.Spawning);
-        result.Lifespan = GetGeneratorFloat(component.LifespanLow, component.LifespanHigh, component.LifespanDist);
-        result.Fadein = GetGeneratorFloat(component.FadeInLow, component.FadeInHigh, component.FadeInDist);
-        result.Fadeout = GetGeneratorFloat(component.FadeOutLow, component.FadeOutHigh, component.FadeOutDist);
-        if(component.Gradient.Length > 0)
-            result.Color = (float lifetime) => {
+        var result = new ParticleSystemArgs(textureFunc, new Vector2i(component.Width, component.Height), (uint)component.Count, component.Spawning) {
+            Lifespan = GetGeneratorFloat(component.LifespanLow, component.LifespanHigh, component.LifespanDist),
+            Fadein = GetGeneratorFloat(component.FadeInLow, component.FadeInHigh, component.FadeInDist),
+            Fadeout = GetGeneratorFloat(component.FadeOutLow, component.FadeOutHigh, component.FadeOutDist)
+        };
+        if (component.Gradient.Length > 0)
+            result.Color = (lifetime) => {
                 var colorIndex = (int)(lifetime * component.Gradient.Length);
                 colorIndex = Math.Clamp(colorIndex, 0, component.Gradient.Length - 1);
                 return component.Gradient[colorIndex];
             };
         else
-            result.Color = (float lifetime) => Color.White;
-        result.Acceleration = (float _ , Vector3 velocity) => GetGeneratorVector3(component.AccelerationLow, component.AccelerationHigh, component.AccelerationType, component.AccelerationDist)() + GetGeneratorVector3(component.DriftLow, component.DriftHigh, component.DriftType, component.DriftDist)() - velocity*GetGeneratorVector3(component.FrictionLow, component.FrictionHigh, component.FrictionType, component.FrictionDist)();
+            result.Color = (_) => Color.White;
+        result.Acceleration = (_ , velocity) => GetGeneratorVector3(component.AccelerationLow, component.AccelerationHigh, component.AccelerationType, component.AccelerationDist)() + GetGeneratorVector3(component.DriftLow, component.DriftHigh, component.DriftType, component.DriftDist)() - velocity*GetGeneratorVector3(component.FrictionLow, component.FrictionHigh, component.FrictionType, component.FrictionDist)();
         result.SpawnPosition = GetGeneratorVector3(component.SpawnPositionLow, component.SpawnPositionHigh, component.SpawnPositionType, component.SpawnPositionDist);
         result.SpawnVelocity = GetGeneratorVector3(component.SpawnVelocityLow, component.SpawnVelocityHigh, component.SpawnVelocityType, component.SpawnVelocityDist);
-        result.Transform = (float lifetime) => {
+        result.Transform = (_) => {
             var scale = GetGeneratorVector2(component.ScaleLow, component.ScaleHigh, component.ScaleType, component.ScaleDist)();
             var rotation = GetGeneratorFloat(component.RotationLow, component.RotationHigh, component.RotationDist)();
             var growth = GetGeneratorVector2(component.GrowthLow, component.GrowthHigh, component.GrowthType, component.GrowthDist)();

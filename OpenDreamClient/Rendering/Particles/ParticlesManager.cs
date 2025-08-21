@@ -4,7 +4,6 @@ using JetBrains.Annotations;
 using Robust.Client.Graphics;
 using Robust.Shared.Timing;
 
-
 namespace OpenDreamClient.Rendering.Particles;
 
 /// <summary>
@@ -47,9 +46,8 @@ public sealed class ParticlesManager
 }
 
 public sealed class ParticleSystem {
-
     //unchanging
-    public Vector2i RenderSize { get => _particleSystemSize; }
+    public Vector2i RenderSize => _particleSystemSize;
 
     /// <summary>
     ///  Size of drawing surface
@@ -135,7 +133,6 @@ public sealed class ParticleSystem {
     /// </summary>
     private Particle[] _particles;
 
-
     public ParticleSystem(ParticleSystemArgs args)
     {
         _particleSystemSize = args.ParticleSystemSize;
@@ -150,9 +147,9 @@ public sealed class ParticleSystem {
         _fadein = args.Fadein is null ? () => 0 : args.Fadein;
         _spawnPosition = args.SpawnPosition is null ? () => Vector3.Zero : args.SpawnPosition;
         _spawnVelocity = args.SpawnVelocity is null ? () => Vector3.Zero : args.SpawnVelocity;
-        _color = args.Color is null ? (float lifetime) => Color.White : args.Color;
-        _transform = args.Transform is null ? (float lifetime) => Matrix3x2.Identity : args.Transform;
-        _acceleration = args.Acceleration is null ? (float lifetime, Vector3 velocity) => Vector3.Zero : args.Acceleration;
+        _color = args.Color is null ? (_) => Color.White : args.Color;
+        _transform = args.Transform is null ? (_) => Matrix3x2.Identity : args.Transform;
+        _acceleration = args.Acceleration is null ? (_,_) => Vector3.Zero : args.Acceleration;
 
         _particles = new Particle[_particleCount];
         for(int i=0; i<_particleCount; i++)
@@ -171,6 +168,7 @@ public sealed class ParticleSystem {
                     newParticles[i] = new();
             _particles = newParticles;
         }
+
         _particlesPerSecond = args.ParticlesPerSecond;
         _lowerBound = args.LowerDrawBound is null ? new Vector3(-_particleSystemSize.X, -_particleSystemSize.Y, float.MinValue) : args.LowerDrawBound.Value;
         _upperBound = args.UpperDrawBound is null ? new Vector3(_particleSystemSize.X, _particleSystemSize.Y, float.MaxValue) : args.UpperDrawBound.Value;
@@ -181,70 +179,69 @@ public sealed class ParticleSystem {
         _fadein = args.Fadein is null ? () => 0 : args.Fadein;
         _spawnPosition = args.SpawnPosition is null ? () => Vector3.Zero : args.SpawnPosition;
         _spawnVelocity = args.SpawnVelocity is null ? () => Vector3.Zero : args.SpawnVelocity;
-        _color = args.Color is null ? (float lifetime) => Color.White : args.Color;
-        _transform = args.Transform is null ? (float lifetime) => Matrix3x2.Identity : args.Transform;
-        _acceleration = args.Acceleration is null ? (float lifetime, Vector3 velocity) => Vector3.Zero : args.Acceleration;
-
+        _color = args.Color is null ? (_) => Color.White : args.Color;
+        _transform = args.Transform is null ? (_) => Matrix3x2.Identity : args.Transform;
+        _acceleration = args.Acceleration is null ? (_,_) => Vector3.Zero : args.Acceleration;
     }
 
     public void FrameUpdate(FrameEventArgs args)
     {
         int particlesSpawned = 0;
         for(int i=0; i<_particleCount; i++){
-            if(_particles[i].active){
-                _particles[i].lifetime += args.DeltaSeconds;
-                _particles[i].transform = _baseTransform * _transform(_particles[i].lifetime);
-                _particles[i].color = _color(_particles[i].lifetime);
-                _particles[i].velocity += _acceleration(_particles[i].lifetime, _particles[i].velocity) * args.DeltaSeconds;
-                _particles[i].position += _particles[i].velocity*args.DeltaSeconds;
-                if(_particles[i].fadein > _particles[i].lifetime)
-                    _particles[i].color.A = Math.Clamp(_particles[i].lifetime/_particles[i].fadein, 0, 1);
-                if(_particles[i].fadeout > _particles[i].lifespan-_particles[i].lifetime)
-                    _particles[i].color.A = Math.Clamp((_particles[i].lifespan-_particles[i].lifetime)/_particles[i].fadeout, 0, 1);
+            if(_particles[i].Active){
+                _particles[i].Lifetime += args.DeltaSeconds;
+                _particles[i].Transform = _baseTransform * _transform(_particles[i].Lifetime);
+                _particles[i].Color = _color(_particles[i].Lifetime);
+                _particles[i].Velocity += _acceleration(_particles[i].Lifetime, _particles[i].Velocity) * args.DeltaSeconds;
+                _particles[i].Position += _particles[i].Velocity*args.DeltaSeconds;
+                if(_particles[i].Fadein > _particles[i].Lifetime)
+                    _particles[i].Color.A = Math.Clamp(_particles[i].Lifetime/_particles[i].Fadein, 0, 1);
+                if(_particles[i].Fadeout > _particles[i].Lifespan-_particles[i].Lifetime)
+                    _particles[i].Color.A = Math.Clamp((_particles[i].Lifespan-_particles[i].Lifetime)/_particles[i].Fadeout, 0, 1);
 
-                if(_particles[i].lifetime > _particles[i].lifespan || _particles[i].position.X > _upperBound.X || _particles[i].position.Y > _upperBound.Y || _particles[i].position.Z > _upperBound.Z || _particles[i].position.X < _lowerBound.X || _particles[i].position.Y < _lowerBound.Y || _particles[i].position.Z < _lowerBound.Z)
-                    _particles[i].active = false;
+                if(_particles[i].Lifetime > _particles[i].Lifespan || _particles[i].Position.X > _upperBound.X || _particles[i].Position.Y > _upperBound.Y || _particles[i].Position.Z > _upperBound.Z || _particles[i].Position.X < _lowerBound.X || _particles[i].Position.Y < _lowerBound.Y || _particles[i].Position.Z < _lowerBound.Z)
+                    _particles[i].Active = false;
 
-                if(_particles[i].texture is null)
-                    _particles[i].texture = _icon();
+                _particles[i].Texture ??= _icon();
             }
-            if (!_particles[i].active && particlesSpawned < _particlesPerSecond*args.DeltaSeconds) {
-                _particles[i].lifetime = 0;
-                _particles[i].texture = _icon();
-                _particles[i].position = _spawnPosition();
-                _particles[i].velocity = _spawnVelocity();
-                _particles[i].transform = _baseTransform * _transform(_particles[i].lifetime);
-                _particles[i].color = _color(_particles[i].lifetime);
-                _particles[i].lifespan = _lifespan();
-                _particles[i].fadein = _fadein();
-                _particles[i].fadeout = _fadeout();
-                _particles[i].active = true;
+
+            if (!_particles[i].Active && particlesSpawned < _particlesPerSecond*args.DeltaSeconds) {
+                _particles[i].Lifetime = 0;
+                _particles[i].Texture = _icon();
+                _particles[i].Position = _spawnPosition();
+                _particles[i].Velocity = _spawnVelocity();
+                _particles[i].Transform = _baseTransform * _transform(_particles[i].Lifetime);
+                _particles[i].Color = _color(_particles[i].Lifetime);
+                _particles[i].Lifespan = _lifespan();
+                _particles[i].Fadein = _fadein();
+                _particles[i].Fadeout = _fadeout();
+                _particles[i].Active = true;
                 particlesSpawned++;
             }
         }
     }
 
     public void Draw(DrawingHandleWorld handle, Matrix3x2 transform){
-        Array.Sort(_particles, (p1, p2) => p1.position.Z.CompareTo(p2.position.Z));
+        Array.Sort(_particles, (p1, p2) => p1.Position.Z.CompareTo(p2.Position.Z));
         foreach (var particle in _particles)
         {
-            if(particle.active && particle.texture is not null){
-                handle.SetTransform(particle.transform * transform);
-                handle.DrawTextureRect(particle.texture!, new Box2(new Vector2(particle.position.X, particle.position.Y), new Vector2(particle.position.X, particle.position.Y)+particle.texture!.Size), particle.color);
+            if(particle is { Active: true, Texture: not null }){
+                handle.SetTransform(particle.Transform * transform);
+                handle.DrawTextureRect(particle.Texture!, new Box2(new Vector2(particle.Position.X, particle.Position.Y), new Vector2(particle.Position.X, particle.Position.Y)+particle.Texture!.Size), particle.Color);
             }
         }
     }
 }
 
 internal struct Particle {
-    public Texture? texture;
-    public Vector3 position;
-    public Vector3 velocity;
-    public Matrix3x2 transform;
-    public Color color;
-    public float lifetime;
-    public float lifespan;
-    public float fadein;
-    public float fadeout;
-    public bool active;
+    public Texture? Texture;
+    public Vector3 Position;
+    public Vector3 Velocity;
+    public Matrix3x2 Transform;
+    public Color Color;
+    public float Lifetime;
+    public float Lifespan;
+    public float Fadein;
+    public float Fadeout;
+    public bool Active;
 }

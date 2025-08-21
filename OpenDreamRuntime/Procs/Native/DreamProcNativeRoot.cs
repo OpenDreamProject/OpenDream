@@ -550,7 +550,7 @@ internal static class DreamProcNativeRoot {
 
         if (value.TryGetValueAsDreamList(out var list)) {
             DreamList tmp = bundle.ObjectTree.CreateList();
-            foreach (DreamValue val in list.GetValues()) {
+            foreach (DreamValue val in list.EnumerateValues()) {
                 if (!val.TryGetValueAsFloat(out float floatVal))
                     continue;
 
@@ -2103,7 +2103,7 @@ internal static class DreamProcNativeRoot {
         DreamList rangeList = bundle.ObjectTree.CreateList(range.Height * range.Width);
         foreach (var turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
             rangeList.AddValue(new DreamValue(turf));
-            foreach (DreamValue content in turf.Contents.GetValues()) {
+            foreach (DreamValue content in turf.Contents.EnumerateValues()) {
                 rangeList.AddValue(content);
             }
         }
@@ -2257,7 +2257,7 @@ internal static class DreamProcNativeRoot {
         //Have to include centre
         rangeList.AddValue(new DreamValue(center));
         if(center.TryGetVariable("contents", out var centerContents) && centerContents.TryGetValueAsDreamList(out var centerContentsList)) {
-            foreach(DreamValue content in centerContentsList.GetValues()) {
+            foreach(DreamValue content in centerContentsList.EnumerateValues()) {
                 rangeList.AddValue(content);
             }
         }
@@ -2266,7 +2266,7 @@ internal static class DreamProcNativeRoot {
             if(center.TryGetVariable("loc",out DreamValue centerLoc) && centerLoc.TryGetValueAsDreamObject<DreamObjectAtom>(out var centerLocObject)) {
                 rangeList.AddValue(centerLoc);
                 if(centerLocObject.GetVariable("contents").TryGetValueAsDreamList(out var locContentsList)) {
-                    foreach (DreamValue content in locContentsList.GetValues()) {
+                    foreach (DreamValue content in locContentsList.EnumerateValues()) {
                         rangeList.AddValue(content);
                     }
                 }
@@ -2276,7 +2276,7 @@ internal static class DreamProcNativeRoot {
         //And then everything else
         foreach (var turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
             rangeList.AddValue(new DreamValue(turf));
-            foreach (DreamValue content in turf.Contents.GetValues()) {
+            foreach (DreamValue content in turf.Contents.EnumerateValues()) {
                 rangeList.AddValue(content);
             }
         }
@@ -2903,7 +2903,7 @@ internal static class DreamProcNativeRoot {
 
     private static void OutputToStatPanel(DreamManager dreamManager, DreamConnection connection, DreamValue name, DreamValue value) {
         if (name.IsNull && value.TryGetValueAsDreamList(out var list)) {
-            foreach (var item in list.GetValues())
+            foreach (var item in list.EnumerateValues())
                 OutputToStatPanel(dreamManager, connection, name, item);
         } else {
             string nameStr = name.Stringify();
@@ -3464,7 +3464,7 @@ internal static class DreamProcNativeRoot {
             return new(view);
 
         if (center.TryGetVariable("contents", out var centerContents) && centerContents.TryGetValueAsDreamList(out var centerContentsList)) {
-            foreach (var item in centerContentsList.GetValues()) {
+            foreach (var item in centerContentsList.EnumerateValues()) {
                 view.AddValue(item);
             }
         }

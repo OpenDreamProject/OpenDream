@@ -746,13 +746,13 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
     private IEnumerable<Variable> ExpandList(RequestVariables req, DreamList list) {
         if (list.IsAssociative) {
             var assoc = list.GetAssociativeValues();
-            foreach (var (i, key) in list.GetValues().Select((v, i) => (i + 1, v)).Skip(req.Arguments.Start ?? 0).Take((req.Arguments.Count ?? int.MaxValue) / 2)) {
+            foreach (var (i, key) in list.EnumerateValues().Select((v, i) => (i + 1, v)).Skip(req.Arguments.Start ?? 0).Take((req.Arguments.Count ?? int.MaxValue) / 2)) {
                 assoc.TryGetValue(key, out var value);
                 yield return DescribeValue($"keys[{i}]", key);
                 yield return DescribeValue($"vals[{i}]", value);
             }
         } else {
-            foreach (var (i, value) in list.GetValues().Select((v, i) => (i + 1, v)).Skip(req.Arguments.Start ?? 0).Take(req.Arguments.Count ?? int.MaxValue)) {
+            foreach (var (i, value) in list.EnumerateValues().Select((v, i) => (i + 1, v)).Skip(req.Arguments.Start ?? 0).Take(req.Arguments.Count ?? int.MaxValue)) {
                 yield return DescribeValue($"[{i}]", value);
             }
         }
@@ -848,7 +848,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
             requestHotReloadResource.RespondError(client, "No file provided for a hot reload");
             return;
         }
-        
+
         _sawmill.Debug("Debug adapter triggered resource hot reload for "+requestHotReloadResource.Arguments.FilePath);
         try {
             _dreamManager.HotReloadResource(requestHotReloadResource.Arguments.FilePath);

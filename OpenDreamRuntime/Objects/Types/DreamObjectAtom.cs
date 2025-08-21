@@ -109,7 +109,7 @@ public class DreamObjectAtom : DreamObject {
 
                 if (value.TryGetValueAsDreamList(out var valueList)) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue overlayValue in valueList.GetValues()) {
+                    foreach (DreamValue overlayValue in valueList.EnumerateValues()) {
                         Overlays.AddValue(overlayValue);
                     }
                 } else if (!value.IsNull) {
@@ -123,7 +123,7 @@ public class DreamObjectAtom : DreamObject {
 
                 if (value.TryGetValueAsDreamList(out var valueList)) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue underlayValue in valueList.GetValues()) {
+                    foreach (DreamValue underlayValue in valueList.EnumerateValues()) {
                         Underlays.AddValue(underlayValue);
                     }
                 } else if (!value.IsNull) {
@@ -137,7 +137,7 @@ public class DreamObjectAtom : DreamObject {
 
                 if (value.TryGetValueAsDreamList(out var valueList)) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue visContentsValue in valueList.GetValues()) {
+                    foreach (DreamValue visContentsValue in valueList.EnumerateValues()) {
                         VisContents.AddValue(visContentsValue);
                     }
                 } else if (!value.IsNull) {

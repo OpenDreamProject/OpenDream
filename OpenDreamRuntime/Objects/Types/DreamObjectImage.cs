@@ -150,7 +150,7 @@ public sealed class DreamObjectImage : DreamObject {
 
                 if (valueList != null) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue overlayValue in valueList.GetValues()) {
+                    foreach (DreamValue overlayValue in valueList.EnumerateValues()) {
                         _overlays.AddValue(overlayValue);
                     }
                 } else if (!value.IsNull) {
@@ -183,7 +183,7 @@ public sealed class DreamObjectImage : DreamObject {
 
                 if (valueList != null) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue underlayValue in valueList.GetValues()) {
+                    foreach (DreamValue underlayValue in valueList.EnumerateValues()) {
                         _underlays.AddValue(underlayValue);
                     }
                 } else if (!value.IsNull) {

@@ -60,8 +60,8 @@ jobs:
       with:
         directory: ./TestResults
         fail_ci_if_error: true
-        token: 88da3cb6-72db-4373-be20-e3091d483fc3
-        slug: amylizzle/OpenDream
+        token: ${{ secrets.CODECOV_TOKEN }}
+        slug: OpenDream/OpenDream
         verbose: true
         handle_no_reports_found: true
     - name: Publish DMCompiler

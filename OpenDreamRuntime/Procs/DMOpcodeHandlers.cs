@@ -2065,18 +2065,18 @@ namespace OpenDreamRuntime.Procs {
                         else
                             throw new Exception($"Invalid or double arg \"{name}\"");
                     }
-
-                    values[0] = (null, color1.UnsafeGetValueAsFloat());
-                    values[1] = (null, color2.UnsafeGetValueAsFloat());
-                    values[2] = (null, color3.UnsafeGetValueAsFloat());
-                    if(a.TryGetValueAsFloat(out var aVal))
-                        values[3] = (null, aVal);
-                    else
-                        values[3] = (null, null);
-                    values[4] = (null, (float)space);
-
-                    result = SharedOperations.ParseRgb(values);
                 }
+
+                values[0] = (null, color1.UnsafeGetValueAsFloat());
+                values[1] = (null, color2.UnsafeGetValueAsFloat());
+                values[2] = (null, color3.UnsafeGetValueAsFloat());
+                if(a.TryGetValueAsFloat(out var aVal))
+                    values[3] = (null, aVal);
+                else
+                    values[3] = (null, null);
+                values[4] = (null, (float)space);
+
+                result = SharedOperations.ParseRgb(values);
             } else {
                 result = "#000000";
             }

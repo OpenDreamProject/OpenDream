@@ -10,3 +10,8 @@
 
 	ASSERT(rgb(291.70734, 63.07692, 61.764706, 128, COLORSPACE_HSL) == "#ca60db80" )
 	//ASSERT(rgb(291.70734, 68.2215, 55.423534, space=COLORSPACE_HCY) == "#ca60db") // TODO Support HCY
+
+	ASSERT(rgb(r=1, g=2, b=3) == "#010203")
+	ASSERT(rgb(b=3, g=2, r=1) == "#010203")
+	ASSERT(rgb(radical=1, goblin=2, baddies=3) == "#010203")
+	ASSERT(rgb(r=1, 2, 3) == "#010203")

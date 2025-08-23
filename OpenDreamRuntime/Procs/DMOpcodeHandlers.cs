@@ -2004,31 +2004,34 @@ namespace OpenDreamRuntime.Procs {
             var argumentValues = state.PopCount(argumentInfo.StackSize);
             var arguments = state.CollectProcArguments(argumentValues, argumentInfo.Type, argumentInfo.StackSize);
 
-            DreamValue color1 = default;
-            DreamValue color2 = default;
-            DreamValue color3 = default;
-            DreamValue a = DreamValue.Null;
-            ColorHelpers.ColorSpace space = ColorHelpers.ColorSpace.RGB;
-
-            if (arguments.Item1 != null) {
+            string result = "#000000";
+            if (arguments.Item1 is not null) {
                 if (arguments.Item1.Length is < 3 or > 5)
                     throw new Exception("Expected 3 to 5 arguments for rgb()");
+                (string?, float?)[] values = new (string?, float?)[arguments.Item1.Length];
+                for (int i = 0; i < arguments.Item1.Length; i++) {
+                    var val = arguments.Item1[i].UnsafeGetValueAsFloat();
+                    values[i] = (null, val);
+                }
 
-                color1 = arguments.Item1[0];
-                color2 = arguments.Item1[1];
-                color3 = arguments.Item1[2];
-                a = (arguments.Item1.Length >= 4) ? arguments.Item1[3] : DreamValue.Null;
-                if (arguments.Item1.Length == 5)
-                    space = (ColorHelpers.ColorSpace)(int)arguments.Item1[4].UnsafeGetValueAsFloat();
+                result = SharedOperations.ParseRgb(values);
             } else if (arguments.Item2 != null) {
+                if (arguments.Item2.Count is < 3 or > 5)
+                    throw new Exception("Expected 3 to 5 arguments for rgb()");
+                (string?, float?)[] values = new (string?, float?)[5];
+                DreamValue color1 = default;
+                DreamValue color2 = default;
+                DreamValue color3 = default;
+                DreamValue a = DreamValue.Null;
+                SharedOperations.ColorSpace space = SharedOperations.ColorSpace.RGB;
                 foreach (var arg in arguments.Item2) {
                     if (arg.Key.TryGetValueAsInteger(out var position)) {
                         switch (position) {
-                            case 1: color1 = arg.Value; break;
-                            case 2: color2 = arg.Value; break;
-                            case 3: color3 = arg.Value; break;
-                            case 4: a = arg.Value; break;
-                            case 5: space = (ColorHelpers.ColorSpace)(int)arg.Value.UnsafeGetValueAsFloat(); break;
+                            case 1: color1 = arg.Value; continue;
+                            case 2: color2 = arg.Value; continue;
+                            case 3: color3 = arg.Value; continue;
+                            case 4: a = arg.Value; continue;
+                            case 5: space = (SharedOperations.ColorSpace)(int)arg.Value.UnsafeGetValueAsFloat(); continue;
                             default: throw new Exception($"Invalid argument key {position}");
                         }
                     } else {
@@ -2036,88 +2039,49 @@ namespace OpenDreamRuntime.Procs {
 
                         if (name.StartsWith("r", StringComparison.InvariantCultureIgnoreCase) && color1 == default) {
                             color1 = arg.Value;
-                            space = ColorHelpers.ColorSpace.RGB;
+                            space = SharedOperations.ColorSpace.RGB;
                         } else if (name.StartsWith("g", StringComparison.InvariantCultureIgnoreCase) && color2 == default) {
                             color2 = arg.Value;
-                            space = ColorHelpers.ColorSpace.RGB;
+                            space = SharedOperations.ColorSpace.RGB;
                         } else if (name.StartsWith("b", StringComparison.InvariantCultureIgnoreCase) && color3 == default) {
                             color3 = arg.Value;
-                            space = ColorHelpers.ColorSpace.RGB;
+                            space = SharedOperations.ColorSpace.RGB;
                         } else if (name.StartsWith("h", StringComparison.InvariantCultureIgnoreCase) && color1 == default) {
                             color1 = arg.Value;
-                            space = ColorHelpers.ColorSpace.HSV;
-                        } else if (name.StartsWith("s", StringComparison.InvariantCultureIgnoreCase) && color2 == default) {
+                            space = SharedOperations.ColorSpace.HSV;
+                        } else if (name != "space" && name.StartsWith("s", StringComparison.InvariantCultureIgnoreCase) && color2 == default) {
                             color2 = arg.Value;
-                            space = ColorHelpers.ColorSpace.HSV;
+                            space = SharedOperations.ColorSpace.HSV;
                         } else if (name.StartsWith("v", StringComparison.InvariantCultureIgnoreCase) && color3 == default) {
                             color3 = arg.Value;
-                            space = ColorHelpers.ColorSpace.HSV;
+                            space = SharedOperations.ColorSpace.HSV;
                         } else if (name.StartsWith("l", StringComparison.InvariantCultureIgnoreCase) && color3 == default) {
                             color3 = arg.Value;
-                            space = ColorHelpers.ColorSpace.HSL;
+                            space = SharedOperations.ColorSpace.HSL;
                         } else if (name.StartsWith("a", StringComparison.InvariantCultureIgnoreCase) && a == default)
                             a = arg.Value;
                         else if (name == "space" && space == default)
-                            space = (ColorHelpers.ColorSpace)(int)arg.Value.UnsafeGetValueAsFloat();
+                            space = (SharedOperations.ColorSpace)(int)arg.Value.UnsafeGetValueAsFloat();
                         else
                             throw new Exception($"Invalid or double arg \"{name}\"");
                     }
                 }
 
-                if (color1 == default)
-                    throw new Exception("Missing first component");
-                if (color2 == default)
-                    throw new Exception("Missing second color component");
-                if (color3 == default)
-                    throw new Exception("Missing third color component");
+                values[0] = (null, color1.UnsafeGetValueAsFloat());
+                values[1] = (null, color2.UnsafeGetValueAsFloat());
+                values[2] = (null, color3.UnsafeGetValueAsFloat());
+                if(a.TryGetValueAsFloat(out var aVal))
+                    values[3] = (null, aVal);
+                else
+                    values[3] = (null, null);
+                values[4] = (null, (float)space);
+
+                result = SharedOperations.ParseRgb(values);
             } else {
-                state.Push(DreamValue.Null);
-                return ProcStatus.Continue;
+                result = "#000000";
             }
 
-            float color1Value = color1.UnsafeGetValueAsFloat();
-            float color2Value = color2.UnsafeGetValueAsFloat();
-            float color3Value = color3.UnsafeGetValueAsFloat();
-            byte aValue = a.IsNull ? (byte)255 : (byte)Math.Clamp((int)a.UnsafeGetValueAsFloat(), 0, 255);
-            Color color;
-
-            switch (space) {
-                case ColorHelpers.ColorSpace.RGB: {
-                    byte r = (byte)Math.Clamp(color1Value, 0, 255);
-                    byte g = (byte)Math.Clamp(color2Value, 0, 255);
-                    byte b = (byte)Math.Clamp(color3Value, 0, 255);
-
-                    color = new Color(r, g, b, aValue);
-                    break;
-                }
-                case ColorHelpers.ColorSpace.HSV: {
-                    // TODO: Going beyond the max defined in the docs returns a different value. Don't know why.
-                    float h = Math.Clamp(color1Value, 0, 360) / 360f;
-                    float s = Math.Clamp(color2Value, 0, 100) / 100f;
-                    float v = Math.Clamp(color3Value, 0, 100) / 100f;
-
-                    color = Color.FromHsv(new(h, s, v, aValue / 255f));
-                    break;
-                }
-                case ColorHelpers.ColorSpace.HSL: {
-                    float h = Math.Clamp(color1Value, 0, 360) / 360f;
-                    float s = Math.Clamp(color2Value, 0, 100) / 100f;
-                    float l = Math.Clamp(color3Value, 0, 100) / 100f;
-
-                    color = Color.FromHsl(new(h, s, l, aValue / 255f));
-                    break;
-                }
-                default:
-                    throw new Exception($"Unimplemented color space {space}");
-            }
-
-            // TODO: There is a difference between passing null and not passing a fourth arg at all
-            if (a.IsNull) {
-                state.Push(new DreamValue($"#{color.RByte:X2}{color.GByte:X2}{color.BByte:X2}".ToLower()));
-            } else {
-                state.Push(new DreamValue($"#{color.RByte:X2}{color.GByte:X2}{color.BByte:X2}{color.AByte:X2}".ToLower()));
-            }
-
+            state.Push(new DreamValue(result));
             return ProcStatus.Continue;
         }
 

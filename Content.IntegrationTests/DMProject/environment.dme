@@ -9,5 +9,6 @@
 #include "Tests/image.dm"
 #include "Tests/filter_initial.dm"
 #include "Tests/string_interpolation.dm"
+#include "Tests/output_string.dm"
 #include "map.dmm"
 #include "interface.dmf"

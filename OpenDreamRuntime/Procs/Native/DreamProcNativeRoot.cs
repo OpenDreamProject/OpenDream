@@ -3109,7 +3109,7 @@ internal static class DreamProcNativeRoot {
 
         // If Dir is not an integer, throw
         if (!dirArg.TryGetValueAsInteger(out int possibleDir)) {
-            throw new Exception($"expected icon, matrix or integer");
+            throw new Exception("expected icon, matrix or integer");
         }
 
         AtomDirection dir = (AtomDirection)possibleDir;

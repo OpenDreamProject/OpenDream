@@ -16,6 +16,7 @@
     <PackageReference Include="Byond.TopicSender" />
     <PackageReference Include="Tracy-CSharp" />
     <PackageReference Include="OpenDreamByondApi" />
+    <PackageReference Include="SpaceWizards.Sodium" />
   </ItemGroup>
 
   <Import Project="..\RobustToolbox\MSBuild\Robust.Properties.targets" />

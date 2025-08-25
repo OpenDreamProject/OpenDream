@@ -6,6 +6,7 @@
         <Configuration>
           <Format>cobertura</Format>
           <Include>[DMCompiler*]*,[OpenDream*]*</Include>
+          <Exclude>[OpenDreamPackaging]*</Exclude>
           <SkipAutoProps>true</SkipAutoProps>
         </Configuration>
       </DataCollector>

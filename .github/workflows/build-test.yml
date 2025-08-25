@@ -55,15 +55,25 @@ jobs:
       run: |
         dotnet run --project OpenDreamPackageTool --no-build --configuration Release -- --server --hybrid-acz --configuration Release --platform ${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }} --output output_release/
         dotnet run --project OpenDreamPackageTool --no-build --configuration Release -- --server --hybrid-acz --configuration Tools --platform ${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }} --output output_tools/
-    - name: Upload Test Coverage to CodeCov
-      uses: codecov/codecov-action@v5
+    - name: Code Coverage Report
+      uses: irongut/CodeCoverageSummary@v1.3.0
       with:
-        directory: ./TestResults
-        fail_ci_if_error: true
-        token: ${{ secrets.CODECOV_TOKEN }}
-        slug: OpenDream/OpenDream
-        verbose: true
-        handle_no_reports_found: true
+        filename: ./TestResults/**/coverage.cobertura.xml
+        badge: true
+        fail_below_min: false
+        format: markdown
+        hide_branch_rate: false
+        hide_complexity: true
+        indicators: true
+        output: both
+        thresholds: '60 80'
+
+    - name: Add Coverage PR Comment
+      uses: marocchino/sticky-pull-request-comment@v2
+      if: github.event_name == 'pull_request'
+      with:
+        recreate: true
+        path: code-coverage-results.md
     - name: Publish DMCompiler
       if: github.event_name == 'push'
       run: dotnet publish DMCompiler -c Release -o output_release/DMCompiler_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}

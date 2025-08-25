@@ -1,19 +1,19 @@
-﻿/obj/A/var/TestSrcVar = "A"
-/obj/A/proc/TestSrcProc()
+﻿/datum/A/var/TestSrcVar = "A"
+/datum/A/proc/TestSrcProc()
 	return "A"
 
-/obj/B/var/TestSrcVar = "B"
-/obj/B/proc/TestSrcProc()
+/datum/B/var/TestSrcVar = "B"
+/datum/B/proc/TestSrcProc()
 	return "B"
 
-/obj/A/proc/Test()
+/datum/A/proc/Test()
 	ASSERT(TestSrcVar == "A")
 	ASSERT(TestSrcProc() == "A")
-	src = new /obj/B()
+	src = new /datum/B()
 	ASSERT(TestSrcVar == "B")
 	ASSERT(TestSrcProc() == "B")
 
 /proc/RunTest()
-	var/obj/A/a = new()
+	var/datum/A/a = new()
 
 	a.Test()

@@ -1,13 +1,13 @@
-/obj
-    var/obj/inner/o2
+/datum
+    var/datum/inner/o2
 
-/obj/inner
+/datum/inner
     var/ele = 2
     proc/elefn()
         return 4
 
 /proc/RunTest()
-    var/obj/o = new
-    o.o2 = new /obj/inner
+    var/datum/o = new
+    o.o2 = new /datum/inner
     ASSERT(o:o2.ele == 2)
     ASSERT(o:o2.elefn() == 4)

@@ -1,7 +1,7 @@
 
 //# issue 651
 
-/obj/a
+/datum/a
 	proc/la(a,b)
 		ASSERT(a == 6)
 		ASSERT(b == 2)
@@ -13,5 +13,5 @@
 			..()
 
 /proc/RunTest()
-	var/obj/a/b/o = new
+	var/datum/a/b/o = new
 	o.la(1,2)

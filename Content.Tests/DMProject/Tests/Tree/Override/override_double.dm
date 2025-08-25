@@ -1,14 +1,14 @@
 
-/obj/proc/A()
+/datum/proc/A()
 	return 1
 
-/obj/A()
+/datum/A()
 	return 2
 
-/obj/A()
+/datum/A()
 	return 3
 
-var/obj/a = new
+var/datum/a = new
 
 /proc/RunTest()
 	ASSERT(a.A() == 3)

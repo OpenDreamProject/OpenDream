@@ -1,13 +1,13 @@
 
 //# issue 114
 
-/obj
+/datum
     var/ele = 2
     proc/elefn()
         return 4
 
 /proc/new_obj()
-    return new /obj
+    return new /datum
 
 /proc/RunTest()
     ASSERT(new_obj().ele == 2)

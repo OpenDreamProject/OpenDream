@@ -1,10 +1,10 @@
 ﻿/atom
 	parent_type = /datum
 
-	var/name = null
-	var/text = null
-	var/desc = null
-	var/suffix = null as opendream_unimplemented
+	var/name = null as text|null
+	var/text = null as text|null
+	var/desc = null as text|null
+	var/suffix = null as text|null|opendream_unimplemented
 
 	// The initialization/usage of these lists is handled internally by the runtime
 	var/tmp/list/verbs = null
@@ -14,35 +14,38 @@
 	var/tmp/list/vis_locs = null as opendream_unimplemented
 	var/list/vis_contents = null
 
-	var/tmp/atom/loc
-	var/dir = SOUTH
-	var/tmp/x = 0
-	var/tmp/y = 0
-	var/tmp/z = 0
-	var/pixel_x = 0
-	var/pixel_y = 0
-	var/pixel_z = 0
-	var/pixel_w = 0
+	var/tmp/atom/loc as /atom|null
+	var/dir = SOUTH as num
+	var/tmp/x = 0 as num
+	var/tmp/y = 0 as num
+	var/tmp/z = 0 as num
+	var/pixel_x = 0 as num
+	var/pixel_y = 0 as num
+	var/pixel_z = 0 as num
+	var/pixel_w = 0 as num
 	
-	var/icon_w = 0 as opendream_unimplemented
-	var/icon_z = 0 as opendream_unimplemented
+	var/icon_w = 0 as num|opendream_unimplemented
+	var/icon_z = 0 as num|opendream_unimplemented
 
-	var/icon = null
-	var/icon_state = ""
-	var/layer = 2.0
-	var/plane = 0
-	var/alpha = 255
-	var/color = "#FFFFFF"
-	var/invisibility = 0
-	var/mouse_opacity = 1
-	var/infra_luminosity = 0 as opendream_unimplemented
-	var/luminosity = 0 as opendream_unimplemented
-	var/opacity = 0
+	var/icon = null as icon|null
+	var/icon_state = "" as text|null
+	var/layer = 2.0 as num
+	var/plane = 0 as num
+	var/alpha = 255 as num
+	// currently we coerce text (hex string) and list(num) (color matrix) to the color type
+	// in the future this should probably be colorstring|colormatrix|null or something
+	// or 'as color' could be a shorthand for that
+	var/color = "#FFFFFF" as color|null
+	var/invisibility = 0 as num
+	var/mouse_opacity = 1 as num
+	var/infra_luminosity = 0 as num|opendream_unimplemented
+	var/luminosity = 0 as num|opendream_unimplemented
+	var/opacity = 0 as num
 	var/matrix/transform
-	var/blend_mode = 0
+	var/blend_mode = 0 as num
 
 	var/gender = NEUTER
-	var/density = FALSE
+	var/density = FALSE as num
 
 	var/maptext = null
 

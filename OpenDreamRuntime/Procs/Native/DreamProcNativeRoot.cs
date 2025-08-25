@@ -3107,7 +3107,10 @@ internal static class DreamProcNativeRoot {
             return DreamProcNativeMatrix._NativeProc_TurnInternal(bundle.ObjectTree, clonedMatrix, angle);
         }
 
-        dirArg.TryGetValueAsInteger(out int possibleDir);
+        // If Dir is not an integer, throw
+        if (!dirArg.TryGetValueAsInteger(out int possibleDir)) {
+            throw new Exception("expected icon, matrix or integer");
+        }
 
         AtomDirection dir = (AtomDirection)possibleDir;
         float? dirAngle = dir switch {

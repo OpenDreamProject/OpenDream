@@ -8,6 +8,8 @@ on:
 
 jobs:
   build:
+    permissions:
+      pull-requests: write
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
@@ -37,7 +39,7 @@ jobs:
       shell: pwsh
       run: |
         $env:COMPlus_gcServer=1
-        dotnet test --no-build Content.Tests/Content.Tests.csproj -v n --collect "XPlat Code Coverage" --results-directory:"./TestResults/"
+        dotnet test --no-build Content.Tests/Content.Tests.csproj -v n --settings tests.runsettings --collect "XPlat Code Coverage" --results-directory:"./TestResults/"
     - name: Content.Tests (Optimizations Disabled)
       shell: pwsh
       env:
@@ -49,7 +51,7 @@ jobs:
       shell: pwsh
       run: |
         $env:COMPlus_gcServer=1
-        dotnet test --no-build Content.IntegrationTests/Content.IntegrationTests.csproj -v n --collect "XPlat Code Coverage" --results-directory:"./TestResults/"
+        dotnet test --no-build Content.IntegrationTests/Content.IntegrationTests.csproj -v n --settings tests.runsettings --collect "XPlat Code Coverage" --results-directory:"./TestResults/"
     - name: Publish OpenDream
       if: github.event_name == 'push'
       run: |

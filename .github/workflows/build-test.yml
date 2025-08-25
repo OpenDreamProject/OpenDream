@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     permissions:
-      pull-requests: write
+      actions: read
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]

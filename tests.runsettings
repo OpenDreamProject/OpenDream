@@ -4,8 +4,8 @@
     <DataCollectors>
       <DataCollector friendlyName="XPlat code coverage">
         <Configuration>
-          <Format>cobertura,opencover</Format>
-          <ExcludeByFile>RobustToolbox/**/*.cs,</ExcludeByFile> <!-- Globbing filter -->
+          <Format>cobertura</Format>
+          <Include>[DMCompiler*]*,[OpenDream*]*</Include>
           <SkipAutoProps>true</SkipAutoProps>
         </Configuration>
       </DataCollector>

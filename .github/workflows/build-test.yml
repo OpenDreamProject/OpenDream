@@ -9,10 +9,8 @@ on:
 jobs:
   build:
     permissions:
-      issues: write
       pull-requests: write
       contents: read
-      actions: read
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
@@ -60,25 +58,35 @@ jobs:
       run: |
         dotnet run --project OpenDreamPackageTool --no-build --configuration Release -- --server --hybrid-acz --configuration Release --platform ${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }} --output output_release/
         dotnet run --project OpenDreamPackageTool --no-build --configuration Release -- --server --hybrid-acz --configuration Tools --platform ${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }} --output output_tools/
-    - name: Code Coverage Report
-      uses: irongut/CodeCoverageSummary@v1.3.0
+
+    - name: ReportGenerator
+      uses: danielpalme/ReportGenerator-GitHub-Action@5.4.12
       with:
-        filename: ./TestResults/**/coverage.cobertura.xml
-        badge: true
-        fail_below_min: false
-        format: markdown
-        hide_branch_rate: false
-        hide_complexity: true
-        indicators: true
-        output: both
-        thresholds: '60 80'
+        reports: './TestResults/**/coverage.cobertura.xml' # REQUIRED # The coverage reports that should be parsed (separated by semicolon). Globbing is supported.
+        targetdir: 'coveragereport' # REQUIRED # The directory where the generated report should be saved.
+        reporttypes: 'MarkdownSummaryGithub' # The output formats and scope (separated by semicolon) Values: Badges, Clover, Cobertura, OpenCover, CsvSummary, Html, Html_Dark, Html_Light, Html_BlueRed, HtmlChart, HtmlInline, HtmlInline_AzurePipelines, HtmlInline_AzurePipelines_Dark, HtmlInline_AzurePipelines_Light, HtmlSummary, Html_BlueRed_Summary, JsonSummary, CodeClimate, Latex, LatexSummary, lcov, MarkdownSummary, MarkdownAssembliesSummary, MarkdownSummaryGithub, MarkdownDeltaSummary, MHtml, SvgChart, SonarQube, TeamCitySummary, TextSummary, TextDeltaSummary, Xml, XmlSummary
+        sourcedirs: '' # Optional directories which contain the corresponding source code (separated by semicolon). The source directories are used if coverage report contains classes without path information.
+        historydir: '' # Optional directory for storing persistent coverage information. Can be used in future reports to show coverage evolution.
+        workingdir: '' # Optional working directory. If available, the targetdir, sourcedirs and historydir are interpreted relative to the working directory (only if not specified as absolute paths).
+        plugins: '' # Optional plugin files for custom reports or custom history storage (separated by semicolon).
+        assemblyfilters: '+*' # Optional list of assemblies that should be included or excluded in the report. Exclusion filters take precedence over inclusion filters. Wildcards are allowed.
+        classfilters: '+*' # Optional list of classes that should be included or excluded in the report. Exclusion filters take precedence over inclusion filters. Wildcards are allowed.
+        filefilters: '+*' # Optional list of files that should be included or excluded in the report. Exclusion filters take precedence over inclusion filters. Wildcards are allowed.
+        riskhotspotassemblyfilters: '+*' # Optional list of assemblies that should be included or excluded in the risk hotspots. Exclusion filters take precedence over inclusion filters. Wildcards are allowed.
+        riskhotspotclassfilters: '+*' # Optional list of classes that should be included or excluded in the risk hotspots. Exclusion filters take precedence over inclusion filters. Wildcards are allowed.
+        verbosity: 'Info' # The verbosity level of the log messages. Values: Verbose, Info, Warning, Error, Off
+        title: '' # Optional title.
+        tag: '${{ github.run_number }}_${{ github.run_id }}' # Optional tag or build version.
+        license: '' # Optional license for PRO version. Get your license here: https://reportgenerator.io/pro
+        customSettings: '' # Optional custom settings (separated by semicolon). See: https://github.com/danielpalme/ReportGenerator/wiki/Settings.
+        toolpath: 'reportgeneratortool' # Default directory for installing the dotnet tool.
 
     - name: Add Coverage PR Comment
       uses: marocchino/sticky-pull-request-comment@v2
       if: github.event_name == 'pull_request'
       with:
         recreate: true
-        path: code-coverage-results.md
+        path: coveragereport/SummaryGithub.md
     - name: Publish DMCompiler
       if: github.event_name == 'push'
       run: dotnet publish DMCompiler -c Release -o output_release/DMCompiler_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}

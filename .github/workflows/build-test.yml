@@ -60,6 +60,7 @@ jobs:
         dotnet run --project OpenDreamPackageTool --no-build --configuration Release -- --server --hybrid-acz --configuration Tools --platform ${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }} --output output_tools/
 
     - name: ReportGenerator
+      if: matrix.os == 'ubuntu-latest'
       uses: danielpalme/ReportGenerator-GitHub-Action@5.4.12
       with:
         reports: './TestResults/**/coverage.cobertura.xml' # REQUIRED # The coverage reports that should be parsed (separated by semicolon). Globbing is supported.
@@ -83,7 +84,7 @@ jobs:
 
     - name: Add Coverage PR Comment
       uses: marocchino/sticky-pull-request-comment@v2
-      if: github.event_name == 'pull_request'
+      if: github.event_name == 'pull_request' && matrix.os == 'ubuntu-latest'
       with:
         recreate: true
         path: coveragereport/SummaryGithub.md

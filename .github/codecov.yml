@@ -1,6 +1,0 @@
-comment:
-  layout: "header, diff, changes"
-ignore:
-  - "Content.Test"
-  - "OpenDreamPackaging"
-  - "OpenDreamServer"

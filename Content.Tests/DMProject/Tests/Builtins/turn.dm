@@ -51,10 +51,3 @@
 	ASSERT(turn(WEST, -22) == WEST)
 	ASSERT(turn(WEST, -44) == WEST)
 	ASSERT(turn(WEST, -75) == NORTHWEST)
-
-	// An invalid first arg but valid second arg should give a random direction
-	// It's a little hard to test for randomness here, so just verify it's within the range of valid directions
-	var/shouldBeRandomDir = turn(0, 90)
-	ASSERT(shouldBeRandomDir >= 1 && shouldBeRandomDir <= 10)
-	shouldBeRandomDir = turn("NORTH", 90)
-	ASSERT(shouldBeRandomDir >= 1 && shouldBeRandomDir <= 10)

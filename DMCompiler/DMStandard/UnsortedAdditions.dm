@@ -14,8 +14,6 @@
 	set opendream_unimplemented = TRUE
 /proc/findtextEx_char(Haystack,Needle,Start=1,End=0)
 	set opendream_unimplemented = TRUE
-/proc/generator(type, A, B, rand)
-	set opendream_unimplemented = TRUE
 /proc/load_resource(File)
 	set opendream_unimplemented = TRUE
 proc/missile(Type, Start, End)

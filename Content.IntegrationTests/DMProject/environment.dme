@@ -9,5 +9,7 @@
 #include "Tests/image.dm"
 #include "Tests/filter_initial.dm"
 #include "Tests/string_interpolation.dm"
+#include "Tests/change_area_appearance.dm"
+#include "Tests/change_world_size.dm"
 #include "map.dmm"
 #include "interface.dmf"

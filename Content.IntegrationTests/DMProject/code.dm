@@ -36,4 +36,6 @@
 	test_images()
 	test_filter_init()
 	test_string_interpolation()
+	test_output_string_null()
+
 	world.log << "IntegrationTests successful, /world/New() exiting..."

@@ -1,7 +1,7 @@
 
-/obj
+/datum
 	var/thing[]
 
 /proc/RunTest()
-	var/obj/o = new
+	var/datum/o = new
 	ASSERT(isnull(o.thing))

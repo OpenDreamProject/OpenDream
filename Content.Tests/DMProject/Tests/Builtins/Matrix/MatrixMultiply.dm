@@ -20,3 +20,15 @@
 	M.Multiply("a")
 	if(M ~! matrix(0, 0, 0, 0, 0, 0))
 		CRASH("Unexpected matrix/Multiply(\"a\") result: [json_encode(M)]")
+
+	M = matrix()
+	M *= 2
+	if(M ~! matrix(2, 0, 0, 0, 2, 0))
+		CRASH("Unexpected matrix *= 2 result: [json_encode(M)]")
+
+	M /= 2
+	if(M ~! matrix(1, 0, 0, 0, 1, 0))
+		CRASH("Unexpected matrix /= 2 result: [json_encode(M)]")
+
+	N = new /matrix(M)
+	ASSERT(M ~= N && M != N)

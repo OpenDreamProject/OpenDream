@@ -37,19 +37,28 @@ jobs:
       shell: pwsh
       run: |
         $env:COMPlus_gcServer=1
-        dotnet test --no-build Content.Tests/Content.Tests.csproj -v n
+        dotnet test --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults Content.Tests/Content.Tests.csproj -v n
     - name: Content.Tests (Optimizations Disabled)
       shell: pwsh
       env:
         NO_OPTS: "true"
       run: |
         $env:COMPlus_gcServer=1
-        dotnet test --no-build Content.Tests/Content.Tests.csproj -v n
+        dotnet test --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults Content.Tests/Content.Tests.csproj -v n
     - name: Content.IntegrationTests
       shell: pwsh
       run: |
         $env:COMPlus_gcServer=1
-        dotnet test --no-build Content.IntegrationTests/Content.IntegrationTests.csproj -v n
+        dotnet test --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults Content.IntegrationTests/Content.IntegrationTests.csproj -v n
+
+    - name: Upload Coverage to CodeCov
+      uses: codecov/codecov-action@v5
+      with:
+        directory: ./TestResults
+        fail_ci_if_error: false
+        token: ${{ secrets.CODECOV_TOKEN }}
+        verbose: true
+        handle_no_reports_found: true
     - name: Publish OpenDream
       if: github.event_name == 'push'
       run: |

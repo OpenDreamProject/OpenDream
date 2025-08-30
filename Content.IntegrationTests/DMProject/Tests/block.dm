@@ -1,4 +1,4 @@
-﻿/proc/test_block()
+﻿/datum/unit_test/block/RunTest()
 	var/list/block_turfs = block(locate(1,1,1), locate(2,2,2))
 	var/list/block_coords = block(1,1,1,2,2,2)
 	

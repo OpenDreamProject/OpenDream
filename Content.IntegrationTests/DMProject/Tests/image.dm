@@ -2,7 +2,7 @@
 	plane = 123
 	icon_state = "subclass"
 
-/proc/test_images()
+/datum/unit_test/image/RunTest()
 	ASSERT(image('icons.dmi', "mob") != null)
 
 	var/image/test = new /image/subclass

@@ -1,7 +1,7 @@
 /mob/proc/test()
 	return
 
-/proc/test_verb_duplicate()
+/datum/unit_test/verb_duplicate/RunTest()
 	var/mob/m = new
 	m.verbs += /mob/proc/test
 	m.verbs += /mob/proc/test

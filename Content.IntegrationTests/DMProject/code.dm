@@ -27,8 +27,9 @@
 
 /world/New()
 	for(var/subtype in typesof(/datum/unit_test))
-		if(subtype == /datum/unit_test)
+		if(subtype == /datum/unit_test) //skip the base class
 			continue
 		var/datum/unit_test/TEST = new subtype()
 		TEST.RunTest()
+		del(TEST) //and clean up
 	world.log << "IntegrationTests successful, /world/New() exiting..."

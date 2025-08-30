@@ -3,7 +3,7 @@
 	icon_state = "subclass"
 
 /datum/unit_test/image/RunTest()
-	//ASSERT(image('icons.dmi', "mob") != null)
+	ASSERT(image('icons.dmi', "mob") != null)
 
 	var/image/test = new /image/subclass
 	ASSERT(test.plane == 123)

@@ -21,7 +21,7 @@ namespace DMCompiler;
 public class DMCompiler {
     public readonly HashSet<WarningCode> UniqueEmissions = new();
     public DMCompilerSettings Settings;
-    public IReadOnlyList<string> ResourceDirectories => _resourceDirectories;
+    public IReadOnlyList<string> ResourceDirectories => _resourceDirectories.Distinct().ToList().AsReadOnly();
 
     internal readonly DMCodeTree DMCodeTree;
     internal readonly DMObjectTree DMObjectTree;
@@ -128,6 +128,7 @@ public class DMCompiler {
                 string fileName = Path.GetFileName(files[i]);
 
                 preproc.IncludeFile(includeDir, fileName, false);
+                compiler.AddResourceDirectory(includeDir, Location.Internal);
             }
 
             // Adds the root of the DM project to FILE_DIR

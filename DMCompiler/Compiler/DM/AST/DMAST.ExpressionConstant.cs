@@ -20,7 +20,11 @@ public sealed class DMASTConstantResource(Location location, string path) : DMAS
 
 public sealed class DMASTConstantNull(Location location) : DMASTExpressionConstant(location);
 
-public sealed class DMASTConstantPath(Location location, DMASTPath value, Dictionary<string, DMASTExpression>? varOverrides) : DMASTExpressionConstant(location) {
+public sealed class DMASTConstantPath(Location location, DMASTPath value) : DMASTExpressionConstant(location) {
+    public readonly DMASTPath Value = value;
+}
+
+public sealed class DMASTModifiedType(Location location, DMASTPath value, Dictionary<string, DMASTExpression>? varOverrides) : DMASTExpressionConstant(location) {
     public readonly DMASTPath Value = value;
     public readonly Dictionary<string, DMASTExpression>? VarOverrides = varOverrides;
 }

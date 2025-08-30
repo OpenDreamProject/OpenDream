@@ -2213,6 +2213,7 @@ namespace DMCompiler.Compiler.DM {
 
                 DMASTExpression? newExpression = type switch {
                     DMASTConstantPath path => new DMASTNewPath(loc, path, parameters),
+                    DMASTModifiedType modifiedType => new DMASTNewModifiedType(loc, modifiedType, parameters),
                     not null => new DMASTNewExpr(loc, type, parameters),
                     null => new DMASTNewInferred(loc, parameters),
                 };
@@ -2250,7 +2251,7 @@ namespace DMCompiler.Compiler.DM {
                 return constant;
 
             if (Path(true) is { } path) {
-                DMASTExpressionConstant pathConstant = new DMASTConstantPath(loc, path, null);
+                DMASTExpressionConstant pathConstant = new DMASTConstantPath(loc, path);
 
                 while (Check(TokenType.DM_Period)) {
                     DMASTPath? search = Path();
@@ -2285,7 +2286,7 @@ namespace DMCompiler.Compiler.DM {
                         }
                     }
 
-                    pathConstant = new DMASTConstantPath(loc, path, overrides);
+                    pathConstant = new DMASTModifiedType(loc, path, overrides);
                     Check(TokenType.DM_Dedent);
                     BracketWhitespace();
                     Whitespace(true);

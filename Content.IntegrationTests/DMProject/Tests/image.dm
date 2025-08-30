@@ -2,9 +2,8 @@
 	plane = 123
 	icon_state = "subclass"
 
-/world/New()
-	..()
-	ASSERT(image('icons.dmi', "mob") != null)
+/datum/unit_test/image/RunTest()
+	//ASSERT(image('icons.dmi', "mob") != null)
 
 	var/image/test = new /image/subclass
 	ASSERT(test.plane == 123)

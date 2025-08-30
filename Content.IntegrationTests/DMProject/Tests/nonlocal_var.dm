@@ -10,7 +10,6 @@
 		out += dir
 		ASSERT(out == 14)
 
-/world/New()
-	..()
+/datum/unit_test/nonlocal_var/RunTest()
 	var/mob/m = new
 	m.dodir()

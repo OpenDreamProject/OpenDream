@@ -2,8 +2,7 @@
 	name = "hello"
 	desc = "this is a thing"
 
-/world/New()
-	..()
+/datum/unit_test/atom_appearance/RunTest()
 	var/obj/thingtocopy/T = new()
 	var/obj/otherthing = new()
 	otherthing.appearance = T.appearance

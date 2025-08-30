@@ -7,8 +7,7 @@
 /obj/notatallblurry
 	filters = list()
 
-/world/New()
-	..()
+/datum/unit_test/filter_initial/RunTest()
 	var/obj/veryblurry/VB = new()
 	ASSERT(length(VB.filters) == 1)
 	var/obj/blurry/B = new()

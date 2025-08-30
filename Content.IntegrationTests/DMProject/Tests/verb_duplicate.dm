@@ -1,9 +1,9 @@
 /mob/proc/test()
-    return
+	return
 
 /world/New()
-    ..()
-    var/mob/m = new
-    m.verbs += /mob/proc/test
-    m.verbs += /mob/proc/test
-    ASSERT(m.verbs.len == 1)
+	..()
+	var/mob/m = new
+	m.verbs += /mob/proc/test
+	m.verbs += /mob/proc/test
+	ASSERT(m.verbs.len == 1)

@@ -3,6 +3,7 @@ proc/alert(Usr = usr, Message, Title, Button1 = "Ok", Button2, Button3) as text
 proc/animate(Object, time, loop, easing, flags, delay, pixel_x, pixel_y, pixel_z, maptext, maptext_width, maptext_height, maptext_x, maptext_y, dir, alpha, transform, color, luminosity, infra_luminosity, layer, glide_size, icon, icon_state, invisibility, suffix) as null
 proc/ascii2text(N) as text
 proc/block(atom/Start, atom/End, StartZ, EndX=Start, EndY=End, EndZ=StartZ) as /list
+proc/bounds_dist(atom/Ref, atom/Target) as num
 proc/ceil(A) as num
 proc/ckey(Key) as text|null
 proc/ckeyEx(Text) as text|null
@@ -24,7 +25,6 @@ proc/findtextEx(Haystack, Needle, Start = 1, End = 0) as num
 proc/findlasttext(Haystack, Needle, Start = 0, End = 1) as num
 proc/findlasttextEx(Haystack, Needle, Start = 0, End = 1) as num
 proc/flick(Icon, Object)
-	set opendream_unimplemented = 1
 proc/flist(Path) as /list
 proc/floor(A) as num
 proc/fract(n) as num
@@ -127,6 +127,7 @@ proc/winset(player, control_id, params)
 
 #include "Defines.dm"
 #include "Types\AList.dm"
+#include "Types\Callee.dm"
 #include "Types\Client.dm"
 #include "Types\Database.dm"
 #include "Types\Datum.dm"
@@ -139,6 +140,7 @@ proc/winset(player, control_id, params)
 #include "Types\Matrix.dm"
 #include "Types\Mutable_Appearance.dm"
 #include "Types\Particles.dm"
+#include "Types\PixLoc.dm"
 #include "Types\Regex.dm"
 #include "Types\Savefile.dm"
 #include "Types\Sound.dm"

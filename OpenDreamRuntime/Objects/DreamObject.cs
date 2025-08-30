@@ -115,6 +115,8 @@ namespace OpenDreamRuntime.Objects {
             Deleted = true;
             //we release all relevant information, making this a very tiny object
             Variables = null;
+            _varsList?.Delete(possiblyThreaded);
+            _varsList = null;
 
             ObjectDefinition = null!;
 
@@ -216,8 +218,8 @@ namespace OpenDreamRuntime.Objects {
                     return true;
                 default:
                     return (Variables?.TryGetValue(varName, out value) is true) ||
-                     (ObjectDefinition.Variables.TryGetValue(varName, out value) is true) ||
-                        (ObjectDefinition.GlobalVariables.TryGetValue(varName, out var globalIndex) is true) && ObjectDefinition.DreamManager.Globals.TryGetValue(globalIndex, out value);
+                     (ObjectDefinition.Variables.TryGetValue(varName, out value)) ||
+                        (ObjectDefinition.GlobalVariables.TryGetValue(varName, out var globalIndex)) && ObjectDefinition.DreamManager.Globals.TryGetValue(globalIndex, out value);
             }
         }
 
@@ -357,7 +359,7 @@ namespace OpenDreamRuntime.Objects {
         /// <summary>
         /// Get the display name of this object, WITH ALL FORMATTING EVALUATED OR REMOVED!
         /// </summary>
-        public string GetDisplayName(StringFormatEncoder.FormatSuffix? suffix = null) {
+        public virtual string GetDisplayName(StringFormatEncoder.FormatSuffix? suffix = null) {
             // /client is a little special and will return its key var
             // TODO: Maybe this should be an override to GetDisplayName()?
             if (this is DreamObjectClient client)

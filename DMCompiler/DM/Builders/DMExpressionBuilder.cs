@@ -587,6 +587,31 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
 
     private DMExpression BuildIdentifier(DMASTIdentifier identifier, DreamPath? inferredPath = null) {
         var name = identifier.Identifier;
+        if (scopeMode == Normal) {
+            // ReSharper disable once ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
+            var localVar = ctx.Proc?.GetLocalVariable(name);
+            if (localVar is not null) {
+                return new Local(identifier.Location, localVar);
+            }
+        }
+
+        var field = ctx.Type.GetVariable(name);
+        if (field != null && (scopeMode == Normal || field.IsConst)) {
+            return new Field(identifier.Location, field, field.ValType);
+        }
+
+        var globalId = ctx.Proc?.GetGlobalVariableId(name) ?? ctx.Type.GetGlobalVariableId(name);
+
+        if (globalId != null) {
+            if (field is not null)
+                Compiler.Emit(WarningCode.AmbiguousVarStatic, identifier.Location, $"Static var definition cannot reference instance variable \"{name}\" but a global exists");
+
+            var globalVar = ObjectTree.Globals[globalId.Value];
+            var global = new GlobalField(identifier.Location, globalVar.Type, globalId.Value, globalVar.ValType);
+            //soft reserved keywords DO NOT override globals
+            if (name is not ("usr" or "src" or "args" or "world" or "global" or "callee" or "caller"))
+                return global;
+        }
 
         switch (name) {
             case "src":
@@ -595,6 +620,10 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                 return new Usr(identifier.Location);
             case "args":
                 return new Args(identifier.Location);
+            case "callee":
+                return new Callee(identifier.Location);
+            case "caller":
+                return new Caller(identifier.Location);
             case "world":
                 if (scopeMode == FirstPassStatic) // world is not available on the first pass
                     return UnknownIdentifier(identifier.Location, "world");
@@ -615,28 +644,6 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
             case "global":
                 return new Global(identifier.Location);
             default: {
-                if (scopeMode == Normal) {
-                    var localVar = ctx.Proc?.GetLocalVariable(name);
-                    if (localVar != null)
-                        return new Local(identifier.Location, localVar);
-                }
-
-                var field = ctx.Type.GetVariable(name);
-                if (field != null && (scopeMode == Normal || field.IsConst)) {
-                    return new Field(identifier.Location, field, field.ValType);
-                }
-
-                var globalId = ctx.Proc?.GetGlobalVariableId(name) ?? ctx.Type.GetGlobalVariableId(name);
-
-                if (globalId != null) {
-                    if (field is not null)
-                        Compiler.Emit(WarningCode.AmbiguousVarStatic, identifier.Location, $"Static var definition cannot reference instance variable \"{name}\" but a global exists");
-
-                    var globalVar = ObjectTree.Globals[globalId.Value];
-                    var global = new GlobalField(identifier.Location, globalVar.Type, globalId.Value, globalVar.ValType);
-                    return global;
-                }
-
                 return UnknownIdentifier(identifier.Location, name);
             }
         }
@@ -1007,6 +1014,11 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                                     $"{prevPath}.{field} is not implemented and will have unexpected behavior");
                             }
 
+                            if (property.ValType.IsUnsupported) {
+                                Compiler.UnsupportedWarning(deref.Location,
+                                    $"{prevPath}.{field} will not be supported");
+                            }
+
                             operations = new Dereference.Operation[newOperationCount];
                             astOperationOffset += i + 1;
                             i = -1;
@@ -1024,6 +1036,11 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                             if (property.ValType.IsUnimplemented) {
                                 Compiler.UnimplementedWarning(deref.Location,
                                     $"{prevPath}.{field} is not implemented and will have unexpected behavior");
+                            }
+
+                            if (property.ValType.IsUnsupported){
+                                Compiler.UnsupportedWarning(deref.Location,
+                                    $"{prevPath}.{field} will not be supported");
                             }
 
                             operations = new Dereference.Operation[newOperationCount];
@@ -1075,6 +1092,9 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                             return UnknownReference(callOperation.Location, $"Type {prevPath.Value} does not exist");
                         if (!fromObject.HasProc(field))
                             return UnknownIdentifier(callOperation.Location, field);
+
+                        var procId = fromObject.GetProcs(field)![^1];
+                        ObjectTree.AllProcs[procId].EmitUsageWarnings(callOperation.Location);
                     }
 
                     operation = new Dereference.CallOperation {

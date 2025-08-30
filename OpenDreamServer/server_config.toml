@@ -1,0 +1,17 @@
+# Welcome to the example configuration file!
+# Remember that if this is in bin/Content.Server or such, it may be overwritten on build.
+# Consider copying it and using the --config-file and --data-dir options.
+
+# You can find general documentation on cvars here: https://docs.spacestation14.com/en/general-development/tips/config-file-reference.html
+# A full list of cvars for OpenDream can be found in this file: ./OpenDream/OpenDreamShared/OpenDreamCVars.cs
+# A full list of cvars for the Robust Toolbox engine can be found here: https://github.com/space-wizards/RobustToolbox/blob/master/Robust.Shared/CVars.cs
+
+# The following is a commented-out example config:
+
+#[opendream]
+## The path to DMCompiler's output
+#json_path = ""
+## If true, exceptions will always print to the console in addition to the world.log file (if set)
+#always_show_exceptions = false
+## The port used to listen for /world/Topic() calls
+#topic_port = 25567

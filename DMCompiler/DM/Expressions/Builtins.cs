@@ -204,6 +204,53 @@ internal sealed class Rgb(Location location, ArgumentList arguments) : DMExpress
 
         ctx.Proc.Rgb(argInfo.Type, argInfo.StackSize);
     }
+
+    // TODO: This needs to have full parity with the rgb opcode. This is a simplified implementation for the most common case rgb(R, G, B)
+    public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
+        (string?, float?)[] values = new (string?, float?)[arguments.Length];
+
+        bool validArgs = true;
+
+        if (arguments.Length < 3 || arguments.Length > 5) {
+            compiler.Emit(WarningCode.BadExpression, Location, $"rgb: expected 3 to 5 arguments (found {arguments.Length})");
+            constant = null;
+            return false;
+        }
+
+        for (var index = 0; index < arguments.Expressions.Length; index++) {
+            var (name, expr) = arguments.Expressions[index];
+            if (!expr.TryAsConstant(compiler, out var constExpr)) {
+                constant = null;
+                return false;
+            }
+
+            if (constExpr is not Number num) {
+                validArgs = false;
+                values[index] = (name, null);
+                continue;
+            }
+
+            values[index] = (name, num.Value);
+        }
+
+        if (!validArgs) {
+            compiler.Emit(WarningCode.FallbackBuiltinArgument, Location,
+                "Non-numerical rgb argument(s) will always return \"00\"");
+        }
+
+        string result;
+        try {
+            result = SharedOperations.ParseRgb(values);
+        } catch (Exception e) {
+            compiler.Emit(WarningCode.BadExpression, Location, e.Message);
+            constant = null;
+            return false;
+        }
+
+        constant = new String(Location, result);
+
+        return true;
+    }
 }
 
 // pick(prob(50);x, prob(200);y)

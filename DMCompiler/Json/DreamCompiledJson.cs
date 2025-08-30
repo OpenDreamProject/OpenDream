@@ -11,6 +11,8 @@ public sealed class DreamCompiledJson {
     public string? Interface { get; set; }
     public required DreamTypeJson[] Types { get; set; }
     public required ProcDefinitionJson[] Procs { get; set; }
+
+    public required Dictionary<Compiler.WarningCode, Compiler.ErrorLevel> OptionalErrors { get; set; }
 }
 
 public sealed class DreamCompiledJsonMetadata {

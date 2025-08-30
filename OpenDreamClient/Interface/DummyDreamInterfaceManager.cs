@@ -19,6 +19,7 @@ public sealed class DummyDreamInterfaceManager : IDreamInterfaceManager {
     public ControlMap? DefaultMap => null;
     public ViewRange View => new(5);
     public bool ShowPopupMenus => true;
+    public int IconSize => 32;
 
     [Dependency] private readonly IClientNetManager _netManager = default!;
 
@@ -52,10 +53,7 @@ public sealed class DummyDreamInterfaceManager : IDreamInterfaceManager {
     public void Prompt(DreamValueType types, string title, string message, string defaultValue, Action<DreamValueType, object?>? onClose) {
     }
 
-    public void RunCommand(string fullCommand) {
-    }
-
-    public void StartRepeatingCommand(string command) {
+    public void RunCommand(string fullCommand, bool repeating = false) {
     }
 
     public void StopRepeatingCommand(string command) {

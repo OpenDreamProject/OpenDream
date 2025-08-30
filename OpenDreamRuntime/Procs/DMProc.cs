@@ -187,7 +187,10 @@ public sealed class DMProcState : ProcState {
 
     private static readonly ArrayPool<DreamValue> DreamValuePool = ArrayPool<DreamValue>.Create();
 
+    private const int NoTryCatchVar = -1;
+
     #region Opcode Handlers
+
     //Human-readable friendly version, which will be converted to a more efficient lookup at runtime.
     private static readonly Dictionary<DreamProcOpcode, OpcodeHandler> OpcodeHandlers = new() {
         {DreamProcOpcode.BitShiftLeft, DMOpcodeHandlers.BitShiftLeft},
@@ -244,6 +247,8 @@ public sealed class DMProcState : ProcState {
         {DreamProcOpcode.Error, DMOpcodeHandlers.Error},
         {DreamProcOpcode.IsInList, DMOpcodeHandlers.IsInList},
         {DreamProcOpcode.PushFloat, DMOpcodeHandlers.PushFloat},
+        {DreamProcOpcode.PushFloatAssign, DMOpcodeHandlers.PushFloatAssign},
+        {DreamProcOpcode.NPushFloatAssign, DMOpcodeHandlers.NPushFloatAssign},
         {DreamProcOpcode.ModulusReference, DMOpcodeHandlers.ModulusReference},
         {DreamProcOpcode.CreateListEnumerator, DMOpcodeHandlers.CreateListEnumerator},
         {DreamProcOpcode.Enumerate, DMOpcodeHandlers.Enumerate},
@@ -339,6 +344,7 @@ public sealed class DMProcState : ProcState {
     };
 
     public static readonly unsafe delegate*<DMProcState, ProcStatus>[] OpcodeHandlersTable;
+
     #endregion
 
     public DreamManager DreamManager => _proc.DreamManager;
@@ -350,25 +356,23 @@ public sealed class DMProcState : ProcState {
 
     public DreamObject? Usr;
     public int ArgumentCount;
-    private readonly Stack<int> _catchPosition = new();
-    private readonly Stack<int> _catchVarIndex = new();
-    private const int NoTryCatchVar = -1;
     public readonly IDreamValueEnumerator?[] Enumerators = new IDreamValueEnumerator?[16];
 
     public int ProgramCounter => _pc;
-    private int _pc;
-
-    private bool _firstResume = true;
-
-    // Contains both arguments (at index 0) and local vars (at index ArgumentCount)
-    private DreamValue[] _localVariables = default!;
-
-    private DMProc _proc = default!;
     public override DMProc Proc => _proc;
 
 #if TOOLS
     public override (string SourceFile, int Line) TracyLocationId => _proc.GetSourceAtOffset(_pc+1);
 #endif
+
+    private DMProc _proc = default!;
+    private bool _firstResume = true;
+    private int _pc;
+    private readonly Stack<int> _catchPosition = new();
+    private readonly Stack<int> _catchVarIndex = new();
+
+    /// Contains both arguments (at index 0) and local vars (at index ArgumentCount)
+    private DreamValue[] _localVariables = default!;
 
     /// Static initializer for maintainer friendly OpcodeHandlers to performance friendly _opcodeHandlers
     static unsafe DMProcState() {
@@ -588,6 +592,7 @@ public sealed class DMProcState : ProcState {
     }
 
     #region Stack
+
     private DreamValue[] _stack = default!;
     private int _stackIndex;
     public ReadOnlyMemory<DreamValue> DebugStack() => _stack.AsMemory(0, _stackIndex);
@@ -636,9 +641,11 @@ public sealed class DMProcState : ProcState {
 
         return CreateProcArguments(values, proc, argumentsType, argumentStackSize);
     }
+
     #endregion
 
     #region Operands
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int ReadByte() {
         var r = _proc.Bytecode[_pc];
@@ -685,6 +692,8 @@ public sealed class DMProcState : ProcState {
             case DMReference.Type.World:
             case DMReference.Type.SuperProc:
             case DMReference.Type.ListIndex:
+            case DMReference.Type.Callee:
+            case DMReference.Type.Caller:
                 return new DreamReference(refType, 0);
             case DMReference.Type.Argument:
             case DMReference.Type.Local:
@@ -710,9 +719,11 @@ public sealed class DMProcState : ProcState {
     public (DMCallArgumentsType Type, int StackSize) ReadProcArguments() {
         return ((DMCallArgumentsType) ReadByte(), ReadInt());
     }
+
     #endregion
 
     #region References
+
     /// <summary>
     /// Takes a DMReference with a <see cref="DMReference.Type.ListIndex"/> type and returns the value being indexed
     /// as well as what it's being indexed with.
@@ -738,6 +749,7 @@ public sealed class DMProcState : ProcState {
 
     public void AssignReference(DreamReference reference, DreamValue value, bool peek = false) {
         switch (reference.Type) {
+            case DMReference.Type.NoRef: break;
             case DMReference.Type.Self: Result = value; break;
             case DMReference.Type.Argument: SetArgument(reference.Value, value); break;
             case DMReference.Type.Local: _localVariables[ArgumentCount + reference.Value] = value; break;
@@ -811,6 +823,7 @@ public sealed class DMProcState : ProcState {
 
     public DreamValue GetReferenceValue(DreamReference reference, bool peek = false) {
         switch (reference.Type) {
+            case DMReference.Type.NoRef: return DreamValue.Null;
             case DMReference.Type.Src: return new(Instance);
             case DMReference.Type.Usr: return new(Usr);
             case DMReference.Type.Self: return Result;
@@ -819,6 +832,18 @@ public sealed class DMProcState : ProcState {
             case DMReference.Type.Local: return _localVariables[ArgumentCount + reference.Value];
             case DMReference.Type.Args: return new(new ProcArgsList(Proc.ObjectTree.List.ObjectDefinition, this));
             case DMReference.Type.World: return new(DreamManager.WorldInstance);
+            case DMReference.Type.Callee: {
+                // TODO: BYOND seems to reuse the same object. At least, callee == callee
+                var callee = Proc.ObjectTree.CreateObject<DreamObjectCallee>(Proc.ObjectTree.Callee);
+
+                callee.ProcState = this;
+                callee.ProcStateId = Id;
+                return new(callee);
+            }
+            case DMReference.Type.Caller: {
+                // TODO
+                return DreamValue.Null;
+            }
             case DMReference.Type.Field: {
                 DreamValue owner = peek ? Peek() : Pop();
 
@@ -870,6 +895,8 @@ public sealed class DMProcState : ProcState {
             case DMReference.Type.Local:
             case DMReference.Type.Args:
             case DMReference.Type.SrcField:
+            case DMReference.Type.Callee:
+            case DMReference.Type.Caller:
                 return;
             case DMReference.Type.ListIndex:
                 PopDrop();
@@ -879,7 +906,8 @@ public sealed class DMProcState : ProcState {
             case DMReference.Type.Field:
                 PopDrop();
                 return;
-            default: ThrowPopInvalidType(reference.Type);
+            default:
+                ThrowPopInvalidType(reference.Type);
                 return;
         }
     }
@@ -957,6 +985,7 @@ public sealed class DMProcState : ProcState {
     private static void ThrowAttemptedToIndexString(DreamValue index) {
         throw new Exception($"Attempted to index string with {index}");
     }
+
     #endregion References
 
     public IEnumerable<(string, DreamValue)> DebugArguments() {

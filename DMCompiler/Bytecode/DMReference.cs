@@ -10,9 +10,14 @@ public struct DMReference {
     public static readonly DMReference World = new() { RefType = Type.World };
     public static readonly DMReference SuperProc = new() { RefType = Type.SuperProc };
     public static readonly DMReference ListIndex = new() { RefType = Type.ListIndex };
+    public static readonly DMReference Callee = new() { RefType = Type.Callee };
+    public static readonly DMReference Caller = new() { RefType = Type.Caller };
     public static readonly DMReference Invalid = new() { RefType = Type.Invalid };
 
     public enum Type : byte {
+        /// References nothing, reads return null and writes are no-op
+        NoRef,
+
         Src,
         Self,
         Usr,
@@ -27,6 +32,8 @@ public struct DMReference {
         Field,
         SrcField,
         SrcProc,
+        Callee,
+        Caller,
 
         /// <summary>
         /// Something went wrong in the creation of this DMReference, and so this reference is not valid

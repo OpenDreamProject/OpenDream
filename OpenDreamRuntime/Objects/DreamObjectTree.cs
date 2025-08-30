@@ -26,30 +26,31 @@ public sealed class DreamObjectTree {
     public List<string> Strings { get; private set; } //TODO: Store this somewhere else
     public DreamProc? GlobalInitProc { get; private set; }
 
-    public TreeEntry Root { get; private set; }
-    public TreeEntry List { get; private set; }
-    public TreeEntry AssocList { get; private set; }
-    public TreeEntry World { get; private set; }
-    public TreeEntry Client { get; private set; }
-    public TreeEntry Datum { get; private set; }
-    public TreeEntry Sound { get; private set; }
-    public TreeEntry Matrix { get; private set; }
-    public TreeEntry Exception { get; private set; }
-    public TreeEntry Savefile { get; private set; }
-    public TreeEntry Database { get; private set; }
-    public TreeEntry DatabaseQuery { get; private set; }
-    public TreeEntry Regex { get; private set; }
-    public TreeEntry Filter { get; private set; }
-    public TreeEntry Vector { get; private set; }
-    public TreeEntry Icon { get; private set; }
-    public TreeEntry Image { get; private set; }
-    public TreeEntry MutableAppearance { get; private set; }
-    public TreeEntry Atom { get; private set; }
-    public TreeEntry Area { get; private set; }
-    public TreeEntry Turf { get; private set; }
-    public TreeEntry Movable { get; private set; }
-    public TreeEntry Obj { get; private set; }
-    public TreeEntry Mob { get; private set; }
+    public TreeEntry Root { get; private set; } = default!;
+    public TreeEntry List { get; private set; } = default!;
+    public TreeEntry AssocList { get; private set; } = default!;
+    public TreeEntry World { get; private set; } = default!;
+    public TreeEntry Client { get; private set; } = default!;
+    public TreeEntry Datum { get; private set; } = default!;
+    public TreeEntry Sound { get; private set; } = default!;
+    public TreeEntry Matrix { get; private set; } = default!;
+    public TreeEntry Exception { get; private set; } = default!;
+    public TreeEntry Callee { get; private set; } = default!;
+    public TreeEntry Savefile { get; private set; } = default!;
+    public TreeEntry Database { get; private set; } = default!;
+    public TreeEntry DatabaseQuery { get; private set; } = default!;
+    public TreeEntry Regex { get; private set; } = default!;
+    public TreeEntry Filter { get; private set; } = default!;
+    public TreeEntry Vector { get; private set; } = default!;
+    public TreeEntry Icon { get; private set; } = default!;
+    public TreeEntry Image { get; private set; } = default!;
+    public TreeEntry MutableAppearance { get; private set; } = default!;
+    public TreeEntry Atom { get; private set; } = default!;
+    public TreeEntry Area { get; private set; } = default!;
+    public TreeEntry Turf { get; private set; } = default!;
+    public TreeEntry Movable { get; private set; } = default!;
+    public TreeEntry Obj { get; private set; } = default!;
+    public TreeEntry Mob { get; private set; } = default!;
 
     private FrozenDictionary<string, TreeEntry> _pathToType = FrozenDictionary<string, TreeEntry>.Empty;
     private FrozenDictionary<string, int> _globalProcIds = FrozenDictionary<string, int>.Empty;
@@ -145,46 +146,46 @@ public sealed class DreamObjectTree {
     /// (by calling the result of <see cref="DreamObject.InitProc(DreamThread, DreamObject?, DreamProcArguments)"/> or <see cref="DreamObject.InitSpawn(DreamProcArguments)"/>)
     /// </remarks>
     public DreamObject CreateObject(TreeEntry type) {
-        using (Profiler.BeginZone($"new {type}")) {
-            if (type == List)
-                return CreateList();
-            if (type == Savefile)
-                return new DreamObjectSavefile(Savefile.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(DatabaseQuery))
-                return new DreamObjectDatabaseQuery(type.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(Database))
-                return new DreamObjectDatabase(type.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(Matrix))
-                return new DreamObjectMatrix(type.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(Sound))
-                return new DreamObjectSound(type.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(Regex))
-                return new DreamObjectRegex(type.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(Image))
-                return new DreamObjectImage(type.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(Icon))
-                return new DreamObjectIcon(type.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(Filter))
-                return new DreamObjectFilter(type.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(Mob))
-                return new DreamObjectMob(type.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(Movable))
-                return new DreamObjectMovable(type.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(Area))
-                return new DreamObjectArea(type.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(Atom))
-                return new DreamObjectAtom(type.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(Client))
-                throw new Exception("Cannot create objects of type /client");
-            if (type.ObjectDefinition.IsSubtypeOf(Turf))
-                throw new Exception("New turfs must be created by the map manager");
-            if (type.ObjectDefinition.IsSubtypeOf(Exception))
-                return new DreamObjectException(type.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(Vector))
-                return new DreamObjectVector(type.ObjectDefinition);
+        if (type == List)
+            return CreateList();
+        if (type == Savefile)
+            return new DreamObjectSavefile(Savefile.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(DatabaseQuery))
+            return new DreamObjectDatabaseQuery(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Database))
+            return new DreamObjectDatabase(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Matrix))
+            return new DreamObjectMatrix(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Sound))
+            return new DreamObjectSound(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Regex))
+            return new DreamObjectRegex(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Image))
+            return new DreamObjectImage(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Icon))
+            return new DreamObjectIcon(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Filter))
+            return new DreamObjectFilter(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Mob))
+            return new DreamObjectMob(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Movable))
+            return new DreamObjectMovable(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Area))
+            return new DreamObjectArea(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Atom))
+            return new DreamObjectAtom(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Client))
+            throw new Exception("Cannot create objects of type /client");
+        if (type.ObjectDefinition.IsSubtypeOf(Turf))
+            throw new Exception("New turfs must be created by the map manager");
+        if (type.ObjectDefinition.IsSubtypeOf(Exception))
+            return new DreamObjectException(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Callee))
+            return new DreamObjectCallee(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Vector))
+            return new DreamObjectVector(type.ObjectDefinition);
 
-            return new DreamObject(type.ObjectDefinition);
-        }
+        return new DreamObject(type.ObjectDefinition);
     }
 
     public T CreateObject<T>(TreeEntry type) where T : DreamObject {
@@ -319,6 +320,7 @@ public sealed class DreamObjectTree {
         Sound = GetTreeEntry("/sound");
         Matrix = GetTreeEntry("/matrix");
         Exception = GetTreeEntry("/exception");
+        Callee = GetTreeEntry("/callee");
         Savefile = GetTreeEntry("/savefile");
         Database = GetTreeEntry("/database");
         DatabaseQuery = GetTreeEntry("/database/query");
@@ -377,7 +379,11 @@ public sealed class DreamObjectTree {
 
             if (jsonType.Verbs != null) {
                 definition.Verbs ??= new(jsonType.Verbs.Count);
-                definition.Verbs.AddRange(jsonType.Verbs);
+
+                foreach (var verbName in jsonType.Verbs) {
+                    var verb = definition.GetProc(verbName);
+                    definition.Verbs[verb.Name] = verb.Id;
+                }
             }
 
             if (jsonType.InitProc != null) {

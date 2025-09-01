@@ -22,20 +22,14 @@
 	if(a + b != 75)
 		CRASH("Map probably failed to load; expected 75 tiles in the map, instead found [a + b].")
 
+/datum/unit_test/proc/RunTest()
+	throw EXCEPTION("You must override RunTest()")
 
 /world/New()
-	..()
-	test_world_init()
-	test_block()
-	test_bounds_dist()
-	test_color_matrix()
-	test_range()
-	test_verb_duplicate()
-	test_appearance()
-	test_nonlocal_var()
-	test_images()
-	test_filter_init()
-	test_string_interpolation()
-	test_change_area_appearance()
-	test_change_world_size()
+	for(var/subtype in typesof(/datum/unit_test))
+		if(subtype == /datum/unit_test) //skip the base class
+			continue
+		var/datum/unit_test/TEST = new subtype()
+		TEST.RunTest()
+		del(TEST) //and clean up
 	world.log << "IntegrationTests successful, /world/New() exiting..."

@@ -38,9 +38,9 @@ public static class Program {
         if (!TryParseArgs(args, out var options))
             return 1;
 
-        if (!File.Exists("OpenDream.sln")) {
+        if (!File.Exists("OpenDream.slnx")) {
             Console.Error.WriteLine(
-                "You must run this tool from the root of the OpenDream repo. OpenDream.sln was not found.");
+                "You must run this tool from the root of the OpenDream repo. OpenDream.slnx was not found.");
             return 1;
         }
 

@@ -6,7 +6,7 @@
 	name = "Blorpo"
 	gender = MALE
 
-/proc/test_string_interpolation()
+/datum/unit_test/string_interpolation/RunTest()
 	var/obj/blombo/b = new
 	var/obj/blorpo/b2 = new
 	var/result_text = "[b]? Nobody likes \him. \He is awful! Unlike [b2]. \He is pretty cool!"

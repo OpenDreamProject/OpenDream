@@ -21,7 +21,7 @@ namespace DMCompiler;
 public class DMCompiler {
     public readonly HashSet<WarningCode> UniqueEmissions = new();
     public DMCompilerSettings Settings;
-    public IReadOnlyList<string> ResourceDirectories => _resourceDirectories.Distinct().ToList().AsReadOnly();
+    public IReadOnlyCollection<string> ResourceDirectories => _resourceDirectories;
 
     internal readonly DMCodeTree DMCodeTree;
     internal readonly DMObjectTree DMObjectTree;
@@ -29,7 +29,7 @@ public class DMCompiler {
     internal readonly BytecodeOptimizer BytecodeOptimizer;
 
     private readonly Dictionary<WarningCode, ErrorLevel> _errorConfig;
-    private readonly List<string> _resourceDirectories = new();
+    private readonly HashSet<string> _resourceDirectories = new();
     private string? _codeDirectory;
     private DateTime _compileStartTime;
     private int _errorCount;

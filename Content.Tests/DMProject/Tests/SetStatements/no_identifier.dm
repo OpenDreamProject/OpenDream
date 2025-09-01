@@ -1,0 +1,4 @@
+// COMPILE ERROR OD0001
+/proc/RunTest()
+	set
+	return

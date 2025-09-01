@@ -1,4 +1,4 @@
-/proc/test_change_world_size()
+/datum/unit_test/test_change_world_size/RunTest()
 	var/oldz = world.maxz
 	var/oldx = world.maxx
 	var/oldy = world.maxy

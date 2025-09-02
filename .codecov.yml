@@ -9,3 +9,7 @@ comment: false
 codecov:
   max_report_age: off
   require_ci_to_pass: no
+ignore:
+  - "Content.Test"
+  - "OpenDreamPackaging"
+  - "OpenDreamServer"

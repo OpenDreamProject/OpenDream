@@ -70,7 +70,7 @@ public struct DreamValue : IEquatable<DreamValue> {
     //ReSharper disable once NotAccessedField.Local
     private readonly ProfilerMemory? _tracyMemoryId; //only used for strings, since everything else is a value type or handled in DreamObject
     #endif
-    
+
     public DreamValue(string value) {
         DebugTools.Assert(value != null);
         Type = DreamValueType.String;
@@ -134,11 +134,6 @@ public struct DreamValue : IEquatable<DreamValue> {
         }
     }
 
-    [Obsolete("Deprecated. Use TryGetValueAsString() or MustGetValueAsString() instead.")]
-    public string GetValueAsString() {
-        return MustGetValueAsString();
-    }
-
     public readonly bool TryGetValueAsString([NotNullWhen(true)] out string? value) {
         if (Type == DreamValueType.String) {
             value = Unsafe.As<string>(_refValue)!;
@@ -159,12 +154,6 @@ public struct DreamValue : IEquatable<DreamValue> {
     [MethodImpl(MethodImplOptions.NoInlining)]
     private void ThrowInvalidCastString() {
         throw new InvalidCastException("Value " + this + " was not the expected type of string");
-    }
-
-    //Casts a float value to an integer
-    [Obsolete("Deprecated. Use TryGetValueAsInteger() or MustGetValueAsInteger() instead.")]
-    public int GetValueAsInteger() {
-        return MustGetValueAsInteger();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

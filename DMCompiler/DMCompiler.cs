@@ -21,7 +21,7 @@ namespace DMCompiler;
 public class DMCompiler {
     public readonly HashSet<WarningCode> UniqueEmissions = new();
     public DMCompilerSettings Settings;
-    public IReadOnlyList<string> ResourceDirectories => _resourceDirectories;
+    public IReadOnlyCollection<string> ResourceDirectories => _resourceDirectories;
 
     internal readonly DMCodeTree DMCodeTree;
     internal readonly DMObjectTree DMObjectTree;
@@ -29,7 +29,7 @@ public class DMCompiler {
     internal readonly BytecodeOptimizer BytecodeOptimizer;
 
     private readonly Dictionary<WarningCode, ErrorLevel> _errorConfig;
-    private readonly List<string> _resourceDirectories = new();
+    private readonly HashSet<string> _resourceDirectories = new();
     private string? _codeDirectory;
     private DateTime _compileStartTime;
     private int _errorCount;
@@ -98,6 +98,8 @@ public class DMCompiler {
 
     public void AddResourceDirectory(string dir, Location loc) {
         dir = dir.Replace('\\', Path.DirectorySeparatorChar);
+        if (string.IsNullOrWhiteSpace(dir))
+                dir = Path.GetFullPath(".");
         if (!Directory.Exists(dir)) {
             Emit(WarningCode.InvalidFileDirDefine, loc,
                 $"Folder \"{Path.GetRelativePath(_codeDirectory ?? ".", dir)}\" does not exist");
@@ -128,6 +130,7 @@ public class DMCompiler {
                 string fileName = Path.GetFileName(files[i]);
 
                 preproc.IncludeFile(includeDir, fileName, false);
+                compiler.AddResourceDirectory(includeDir, Location.Internal);
             }
 
             // Adds the root of the DM project to FILE_DIR

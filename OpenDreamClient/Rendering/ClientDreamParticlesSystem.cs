@@ -109,11 +109,20 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
             case GeneratorOutputType.Box:
                 return () => new Vector2(GetGeneratorFloat(low.X, high.X, distribution)(), GetGeneratorFloat(low.Y, high.Y, distribution)());
             case GeneratorOutputType.Circle:
-            case GeneratorOutputType.Sphere:
+                var theta = _random.NextFloat(0, 360);
+                //polar -> cartesian, radius between low and high, angle uniform sample
+                return () => new Vector2(MathF.Cos(theta) * GetGeneratorFloat(low.X, high.X, distribution)(), MathF.Sin(theta) * GetGeneratorFloat(low.Y, high.Y, distribution)());
             case GeneratorOutputType.Square:
-            case GeneratorOutputType.Cube:
+                return () =>
+                {
+                    var x = GetGeneratorFloat(-high.X, high.X, distribution)();
+                    var y = GetGeneratorFloat(-high.Y, high.Y, distribution)();
+                    if (MathF.Abs(x) < low.X)
+                        y = _random.NextByte() > 128 ? GetGeneratorFloat(-high.Y, -low.Y, distribution)() : GetGeneratorFloat(low.Y, high.Y, distribution)();
+                    return new(x, y);
+                };
             default:
-                throw new NotImplementedException("Unimplemented generator output type");
+                throw new NotImplementedException($"Unimplemented generator output type {type}");
         }
     }
 
@@ -125,12 +134,32 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem
                 return () => Vector3.Lerp(low, high, GetGeneratorFloat(0,1,distribution)());
             case GeneratorOutputType.Box:
                 return () => new Vector3(GetGeneratorFloat(low.X, high.X, distribution)(), GetGeneratorFloat(low.Y, high.Y, distribution)(), GetGeneratorFloat(low.Z, high.Z, distribution)());
-            case GeneratorOutputType.Circle:
             case GeneratorOutputType.Sphere:
-            case GeneratorOutputType.Square:
+                var theta = _random.NextFloat(0, 360);
+                var phi = _random.NextFloat(0, 180);
+                //3d polar -> cartesian, radius between low and high, angle uniform sample
+                return () => new Vector3(
+                    MathF.Cos(theta) * MathF.Sin(phi) * GetGeneratorFloat(low.X, high.X, distribution)(),
+                    MathF.Sin(theta) * MathF.Sin(phi) * GetGeneratorFloat(low.Y, high.Y, distribution)(),
+                    MathF.Cos(phi) * GetGeneratorFloat(low.Z, high.Z, distribution)()
+                );
             case GeneratorOutputType.Cube:
+                return () =>
+                {
+                    var x = GetGeneratorFloat(-high.X, high.X, distribution)();
+                    var y = GetGeneratorFloat(-high.Y, high.Y, distribution)();
+                    var z = GetGeneratorFloat(-high.Z, high.Z, distribution)();
+                    if (MathF.Abs(x) < low.X)
+                        y = _random.NextByte() > 128 ? GetGeneratorFloat(-high.Y, -low.Y, distribution)() : GetGeneratorFloat(low.Y, high.Y, distribution)();
+                    if (MathF.Abs(y) < low.Y)
+                        z = _random.NextByte() > 128 ? GetGeneratorFloat(-high.Z, -low.Z, distribution)() : GetGeneratorFloat(low.Z, high.Z, distribution)();
+                    return new(x, y, z);
+                };
+            case GeneratorOutputType.Circle:
+            case GeneratorOutputType.Square:
+                return () => new Vector3(GetGeneratorVector2(new(low.X, low.Y), new(high.X, high.Y), type, distribution)(),0);
             default:
-                throw new NotImplementedException("Unimplemented generator output type");
+                throw new NotImplementedException($"Unimplemented generator output type {type}");
         }
     }
 }

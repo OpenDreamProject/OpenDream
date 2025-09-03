@@ -70,6 +70,7 @@ internal static partial class DreamProcNativeHelpers {
                     if (mapMgr.TryGetTurfAt((startingCrossX+i, centerPos.Y - d), centerPos.Z, out var crissTurf)) {
                         yield return crissTurf;
                     }
+
                     //the cross
                     if (mapMgr.TryGetTurfAt((startingCrossX + i, centerPos.Y + d), centerPos.Z, out var crossTurf)) {
                         yield return crossTurf;
@@ -346,6 +347,7 @@ internal static partial class DreamProcNativeHelpers {
                 return false;
             }
         }
+
         return true;
     }
 
@@ -381,6 +383,7 @@ internal static partial class DreamProcNativeHelpers {
                             }
                         }
                     }
+
                     return true;
                 case 9: // list(rr,rg,rb, gr,gg,gb, br,bg,bb)
                     for (var row = 0; row < listArray.Count && row < 3; ++row) {
@@ -390,6 +393,7 @@ internal static partial class DreamProcNativeHelpers {
                                            listArray[offset + 2].MustGetValueAsFloat(),
                                            0f);
                     }
+
                     return true;
                 case 12: // list(rr,rg,rb, gr,gg,gb, br,bg,bb, cr,cg,cb)
                     for (var row = 0; row < listArray.Count && row < 3; ++row) {
@@ -399,6 +403,7 @@ internal static partial class DreamProcNativeHelpers {
                                            listArray[offset + 2].MustGetValueAsFloat(),
                                            0f);
                     }
+
                     //We skip over the alpha row in this one. It's kinda wonky.
                     matrix.SetRow(4, listArray[9].MustGetValueAsFloat(),
                                      listArray[10].MustGetValueAsFloat(),
@@ -414,6 +419,7 @@ internal static partial class DreamProcNativeHelpers {
                                            listArray[offset + 2].MustGetValueAsFloat(),
                                            listArray[offset + 3].MustGetValueAsFloat());
                     }
+
                     return true;
                 case 20: // list(rr, rg, rb, ra, gr, gg, gb, ga, br, bg, bb, ba, ar, ag, ab, aa, cr, cg, cb, ca)
                     for (var row = 0; row < listArray.Count && row < 5; ++row) {
@@ -423,6 +429,7 @@ internal static partial class DreamProcNativeHelpers {
                                            listArray[offset + 2].MustGetValueAsFloat(),
                                            listArray[offset + 3].MustGetValueAsFloat());
                     }
+
                     return true;
                 default:
                     return false;

@@ -522,8 +522,8 @@ public struct DMFPropertyBool(bool value) : IDMFProperty {
 }
 
 #region Serializers
-/// TLDR everything is a string passed to the constructor
 
+/// TLDR everything is a string passed to the constructor
 [TypeSerializer]
 public sealed class DMFPropertyStringSerializer : ITypeSerializer<DMFPropertyString, ValueDataNode>, ITypeCopyCreator<DMFPropertyString> {
     public DMFPropertyString Read(ISerializationManager serializationManager, ValueDataNode node,

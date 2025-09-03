@@ -13,6 +13,7 @@ public sealed class StoppedEvent : IEvent {
      * 'function breakpoint', 'data breakpoint', 'instruction breakpoint', etc.
      */
     [JsonPropertyName("reason")] public required string Reason { get; set; }
+
     public const string ReasonStep = "step";
     public const string ReasonBreakpoint = "breakpoint";
     public const string ReasonException = "exception";

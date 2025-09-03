@@ -391,7 +391,6 @@ public sealed class DreamConnection {
         } else {
             _sawmill.Error($"Client({Session}) requested a browse_rsc file they had not been permitted to request ({filename}).");
         }
-
     }
 
     public void Browse(string? body, string? options) {

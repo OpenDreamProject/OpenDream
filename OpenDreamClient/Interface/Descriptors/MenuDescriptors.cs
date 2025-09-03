@@ -16,7 +16,6 @@ public sealed partial class MenuDescriptor : ElementDescriptor {
 
     [UsedImplicitly]
     public MenuDescriptor() {
-
     }
 
     public override MenuElementDescriptor CreateChildDescriptor(ISerializationManager serializationManager, MappingDataNode attributes) {
@@ -35,8 +34,6 @@ public sealed partial class MenuDescriptor : ElementDescriptor {
 }
 
 public sealed partial class MenuElementDescriptor : ElementDescriptor {
-
-
     [DataField("command")]
     public DMFPropertyString Command { get; private set; }
 
@@ -51,6 +48,7 @@ public sealed partial class MenuElementDescriptor : ElementDescriptor {
 
     [DataField("group")]
     public DMFPropertyString Group { get; private set; }
+
     [DataField("index")]
     public DMFPropertyNum Index { get; private set; }
 

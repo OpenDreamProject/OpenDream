@@ -30,6 +30,7 @@ public sealed class RequestExceptionInfo : Request {
          * Mode that caused the exception notification to be raised.
          */
         [JsonPropertyName("breakMode")] public required string BreakMode { get; set; }
+
         // enum ExceptionBreakMode, no custom values
         public const string BreakModeNever = "never";
         public const string BreakModeAlways = "always";

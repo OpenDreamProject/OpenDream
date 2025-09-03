@@ -16,6 +16,7 @@ namespace OpenDreamShared.Network.Messages {
         public ushort Volume;
         public float Offset;
         public int? ResourceId;
+
         public FormatType? Format; // TODO: This should probably be sent along with the sound resource instead somehow
         //TODO: Frequency and friends
 

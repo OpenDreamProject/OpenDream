@@ -10,7 +10,6 @@ public sealed class DreamObjectMatrix : DreamObject {
     // TODO: Store a/b/c/d/e/f as fields instead of as DM vars
 
     public DreamObjectMatrix(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
-
     }
 
     public override void Initialize(DreamProcArguments args) {
@@ -196,6 +195,7 @@ public sealed class DreamObjectMatrix : DreamObject {
             if (!leftValue.Equals(rightValue))
                 return DreamValue.False;
         }
+
         return DreamValue.True;
     }
 
@@ -256,6 +256,7 @@ public sealed class DreamObjectMatrix : DreamObject {
 
         return base.OperatorRemove(b);
     }
+
     #endregion Operators
 
     #region Helpers
@@ -446,6 +447,7 @@ public sealed class DreamObjectMatrix : DreamObject {
         } catch (InvalidCastException) {
             throw new InvalidOperationException($"Invalid matrices '{lMatrix}' and '{rMatrix}' cannot be added.");
         }
+
         lMatrix.SetVariableValue("a", new DreamValue(lA + rA));
         lMatrix.SetVariableValue("b", new DreamValue(lB + rB));
         lMatrix.SetVariableValue("c", new DreamValue(lC + rC));
@@ -486,6 +488,7 @@ public sealed class DreamObjectMatrix : DreamObject {
         } catch (InvalidCastException) {
             throw new InvalidOperationException($"Invalid matrices '{lMatrix}' and '{rMatrix}' cannot be subtracted.");
         }
+
         lMatrix.SetVariableValue("a", new DreamValue(lA - rA));
         lMatrix.SetVariableValue("b", new DreamValue(lB - rB));
         lMatrix.SetVariableValue("c", new DreamValue(lC - rC));
@@ -526,6 +529,7 @@ public sealed class DreamObjectMatrix : DreamObject {
         } catch (InvalidCastException) {
             throw new InvalidOperationException($"Invalid matrices '{lMatrix}' and '{rMatrix}' cannot be multiplied.");
         }
+
         lMatrix.SetVariableValue("a", new DreamValue(lA*rA + lD*rB));
         lMatrix.SetVariableValue("b", new DreamValue(lB*rA + lE*rB));
         lMatrix.SetVariableValue("c", new DreamValue(lC*rA + lF*rB + rC));
@@ -533,5 +537,6 @@ public sealed class DreamObjectMatrix : DreamObject {
         lMatrix.SetVariableValue("e", new DreamValue(lB*rD + lE*rE));
         lMatrix.SetVariableValue("f", new DreamValue(lC*rD + lF*rE + rF));
     }
+
     #endregion Helpers
 }

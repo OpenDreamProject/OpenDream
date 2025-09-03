@@ -72,6 +72,7 @@ public sealed class StackFrame {
      * Values: 'normal', 'label', 'subtle'
      */
     [JsonPropertyName("presentationHint")] public string? PresentationHint { get; set; }
+
     public const string PresentationHintNormal = "normal";
     public const string PresentationHintLabel = "label";
     public const string PresentationHintSubtle = "subtle";

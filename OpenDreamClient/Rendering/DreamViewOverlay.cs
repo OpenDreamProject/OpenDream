@@ -785,6 +785,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
 }
 
 #region Render Toggle Commands
+
 public sealed class ToggleScreenOverlayCommand : IConsoleCommand {
     // ReSharper disable once StringLiteralTypo
     public string Command => "togglescreenoverlay";
@@ -824,4 +825,5 @@ public sealed class ToggleMouseOverlayCommand : IConsoleCommand {
         }
     }
 }
+
 #endregion

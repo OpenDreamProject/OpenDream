@@ -11,7 +11,6 @@ internal static class DreamProcNativeSavefile {
     [DreamProcParameter("path", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("file", Type = DreamValueTypeFlag.String | DreamValueTypeFlag.DreamResource)]
     public static DreamValue NativeProc_ExportText(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-
         var savefile = (DreamObjectSavefile)src!;
         DreamValue path = bundle.GetArgument(0, "path");
         DreamValue file = bundle.GetArgument(1, "file");
@@ -33,6 +32,7 @@ internal static class DreamProcNativeSavefile {
                 throw new ArgumentException($"Invalid file value {file}");
             }
         }
+
         return new DreamValue(result);
     }
 
@@ -44,6 +44,7 @@ internal static class DreamProcNativeSavefile {
             key = ".";
             indent = 0; //either way, set indent to 0 so we know we're not at the start anymore
         }
+
         switch(value) {
             case DreamObjectSavefile.SFDreamPrimitive primitiveValue:
                 if(primitiveValue.Value.IsNull)
@@ -56,6 +57,7 @@ internal static class DreamProcNativeSavefile {
                         result += $"{new string('\t', indent)}{key} = {primitiveValue.Value.MustGetValueAsFloat()}\n";
                         break;
                 }
+
                 break;
             case DreamObjectSavefile.SFDreamFileValue fileValue:
                 result += $"{new string('\t', indent)}{key} = \nfiledata(\"";
@@ -93,6 +95,7 @@ internal static class DreamProcNativeSavefile {
             result += ExportTextInternal(savefile, indent + 1);
             savefile.CurrentPath = "../";
         }
+
         return result;
     }
 
@@ -107,6 +110,7 @@ internal static class DreamProcNativeSavefile {
                     case DreamValue.DreamValueType.Float:
                         return $"{primitiveValue.Value.MustGetValueAsFloat()}";
                 }
+
                 throw new NotImplementedException($"Unhandled list entry type {listEntry} in ExportTextInternalListFormat()");
             case DreamObjectSavefile.SFDreamObjectPathValue objectValue:
                 return $"object(\"{objectValue.Path}\")";
@@ -122,13 +126,13 @@ internal static class DreamProcNativeSavefile {
                         result += ExportTextInternalListFormat(listValue.AssocKeys[i]);
                     result += ",";
                 }
+
                 result = result.TrimEnd(',');
                 result += ")";
                 return result;
             default:
                 throw new NotImplementedException($"Unhandled list entry type {listEntry} in ExportTextInternalListFormat()");
         }
-
     }
 
     [DreamProc("Flush")]

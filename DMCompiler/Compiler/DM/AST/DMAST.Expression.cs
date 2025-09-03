@@ -201,6 +201,7 @@ public sealed class DMASTDereference(
         /// The location of the operation.
         /// </summary>
         public required Location Location;
+
         /// <summary>
         /// Whether we should short circuit if the expression we are accessing is null.
         /// </summary>
@@ -212,6 +213,7 @@ public sealed class DMASTDereference(
         /// Name of the identifier.
         /// </summary>
         public required string Identifier;
+
         /// <summary>
         /// Whether we should check if the variable exists or not.
         /// </summary>
@@ -247,7 +249,6 @@ public sealed class DMASTCallableProcIdentifier(Location location, string identi
 }
 
 public sealed class DMASTCallableSuper(Location location) : DMASTExpression(location), IDMASTCallable;
-
 public sealed class DMASTCallableSelf(Location location) : DMASTExpression(location), IDMASTCallable;
 
 public sealed class DMASTScopeIdentifier(

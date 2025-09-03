@@ -672,6 +672,7 @@ public sealed class DMPreprocessor(DMCompiler compiler, bool enableDirectives) :
                     compiler.Emit(WarningCode.BadDirective, warningTypeToken.Location, "Runtime pragmas do not support directive: info");
                     return;
                 }
+
                 compiler.SetPragma(warningCode, ErrorLevel.Notice);
                 break;
             case "warning":
@@ -680,6 +681,7 @@ public sealed class DMPreprocessor(DMCompiler compiler, bool enableDirectives) :
                     compiler.Emit(WarningCode.BadDirective, warningTypeToken.Location, "Runtime pragmas do not support directive: warn");
                     return;
                 }
+
                 compiler.SetPragma(warningCode, ErrorLevel.Warning);
                 break;
             case "error":

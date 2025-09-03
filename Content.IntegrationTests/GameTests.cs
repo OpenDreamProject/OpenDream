@@ -5,7 +5,6 @@ using OpenDreamRuntime;
 namespace Content.IntegrationTests {
     [TestFixture]
     public sealed class GameTests : ContentIntegrationTest {
-
         /// <summary>
         /// Tests to make sure the IntegrationTest project does not runtime.
         /// </summary>

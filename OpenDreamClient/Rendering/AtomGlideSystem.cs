@@ -85,7 +85,8 @@ public sealed class AtomGlideSystem : EntitySystem {
             }
 
             _ignoreMoveEvent = true;
-            _transformSystem.SetLocalPositionNoLerp(glide.Uid, newPos, glide.Transform);
+            if(!_entityManager.Deleted(glide.Uid))
+                _transformSystem.SetLocalPositionNoLerp(glide.Uid, newPos, glide.Transform);
             _ignoreMoveEvent = false;
         }
     }

@@ -1,3 +1,3 @@
-// COMPILE ERROR OD0100
+// COMPILE ERROR OD0013
 /proc/RunTest()
 	var/a = pick(prob(50);1)

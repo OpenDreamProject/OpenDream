@@ -110,6 +110,7 @@ internal sealed class LocateInferred(Location location, DreamPath path, DMExpres
         if (!ctx.ObjectTree.TryGetTypeId(path, out var typeId)) {
             ctx.Compiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {path} does not exist");
             ctx.Proc.PushNull(); // prevents a negative stack size error
+            ctx.Proc.Error();
             return;
         }
 

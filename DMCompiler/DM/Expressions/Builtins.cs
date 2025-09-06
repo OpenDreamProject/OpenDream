@@ -257,7 +257,7 @@ internal sealed class Pick(Location location, Pick.PickValue[] values) : DMExpre
 
         if (weighted) {
             if (values.Length == 1) {
-                ctx.Compiler.Emit(WarningCode.BadArgument, Location, "Weighted pick() with one argument"); // BYOND errors with "extra args"
+                ctx.Compiler.Emit(WarningCode.InvalidArgumentCount, Location, "Weighted pick() with one argument"); // BYOND errors with "extra args"
             }
 
             ctx.Compiler.Emit(WarningCode.PickWeightedSyntax, Location, "Use of weighted pick() syntax");

@@ -35,6 +35,7 @@ public sealed class DreamObjectDefinition {
     public string Type => TreeEntry.Path;
     public DreamObjectDefinition? Parent => TreeEntry.ParentEntry?.ObjectDefinition;
     public int? InitializationProc;
+
     public bool NoConstructors {
         get {
             if (_noConstructors is not { } res)
@@ -51,10 +52,13 @@ public sealed class DreamObjectDefinition {
 
     // Maps variables from their name to their initial value.
     public readonly Dictionary<string, DreamValue> Variables = new();
+
     // Maps /static variables from name to their index in the global variable table.
     public readonly Dictionary<string, int> GlobalVariables = new();
+
     // Contains hashes of variables that are tagged /const.
     public HashSet<string>? ConstVariables = null;
+
     // Contains hashes of variables that are tagged /tmp.
     public HashSet<string>? TmpVariables = null;
 

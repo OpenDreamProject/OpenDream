@@ -26,7 +26,6 @@ public sealed class DreamObjectException(DreamObjectDefinition objectDefinition)
                 base.SetVar(varName, value);
                 return;
         }
-
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {

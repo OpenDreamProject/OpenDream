@@ -3,8 +3,8 @@ using OpenDreamRuntime.Objects.Types;
 using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
 
 namespace OpenDreamRuntime.Procs.Native;
-internal static class DreamProcNativeMatrix {
 
+internal static class DreamProcNativeMatrix {
     [DreamProc("Add")]
     [DreamProcParameter("Matrix2", Type = DreamValueTypeFlag.DreamObject)]
     public static DreamValue NativeProc_Add(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
@@ -13,10 +13,10 @@ internal static class DreamProcNativeMatrix {
             DreamObjectMatrix.AddMatrix((DreamObjectMatrix)src!, matrixArg);
             return new DreamValue(src!);
         }
+
         // On invalid input, throw runtime
         throw new Exception($"Invalid matrix for addition: {possibleMatrix.ToString()}");
     }
-
 
     [DreamProc("Invert")]
     public static DreamValue NativeProc_Invert(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
@@ -35,15 +35,18 @@ internal static class DreamProcNativeMatrix {
             DreamObjectMatrix.MultiplyMatrix((DreamObjectMatrix)src!, matrixArg);
             return new DreamValue(src!);
         }
+
         // The other valid call is with a number "n"
         if (possibleMatrix.TryGetValueAsFloat(out float n)) {
             DreamObjectMatrix.ScaleMatrix((DreamObjectMatrix)src!, n, n);
             return new DreamValue(src!);
         }
+
         // Special case: If null was passed, return src
         if (possibleMatrix.Equals(DreamValue.Null)) {
             return new DreamValue(src!);
         }
+
         // Give up and turn the input into the zero matrix on invalid input
         DreamObjectMatrix.ScaleMatrix((DreamObjectMatrix)src!, 0, 0);
         return new DreamValue(src!);
@@ -69,10 +72,10 @@ internal static class DreamProcNativeMatrix {
             DreamObjectMatrix.SubtractMatrix((DreamObjectMatrix)src!, matrixArg);
             return new DreamValue(src!);
         }
+
         // On invalid input, throw runtime
         throw new Exception($"Invalid matrix for subtraction: {possibleMatrix.ToString()}");
     }
-
 
     [DreamProc("Translate")]
     [DreamProcParameter("x", Type = DreamValueTypeFlag.Float)]
@@ -109,6 +112,7 @@ internal static class DreamProcNativeMatrix {
         if (!angleArg.TryGetValueAsFloat(out float angle)) {
             return new DreamValue(src!); // Defaults to input on invalid angle
         }
+
         return _NativeProc_TurnInternal(bundle.ObjectTree, (DreamObjectMatrix)src!, angle);
     }
 

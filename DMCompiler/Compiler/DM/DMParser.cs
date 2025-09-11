@@ -195,6 +195,7 @@ namespace DMCompiler.Compiler.DM {
                     if (statements.Count == 0) return null;
                 }
             } while (Delimiter());
+
             Whitespace();
 
             return statements;
@@ -673,6 +674,7 @@ namespace DMCompiler.Compiler.DM {
                         procStatements.Add(statement);
                 }
             } while (Delimiter() || statement is DMASTProcStatementLabel);
+
             Whitespace();
 
             return (procStatements.Count > 0 ? procStatements : null, setStatements.Count > 0 ? setStatements : null);
@@ -1518,6 +1520,7 @@ namespace DMCompiler.Compiler.DM {
 
                     Delimiter();
                 } while (Check(TokenType.DM_Comma));
+
                 Whitespace();
                 ConsumeRightParenthesis();
                 Whitespace();
@@ -1837,7 +1840,6 @@ namespace DMCompiler.Compiler.DM {
             DMASTExpression? value = ExpressionAssign();
 
             while (value != null && Check(TokenType.DM_In)) {
-
                 Whitespace();
                 DMASTExpression? list = ExpressionAssign();
                 RequireExpression(ref list, "Expected a container to search in");
@@ -2349,6 +2351,7 @@ namespace DMCompiler.Compiler.DM {
 
             while (Check(TokenType.Newline)) {
             }
+
             return hasNewline;
         }
 
@@ -2800,7 +2803,6 @@ namespace DMCompiler.Compiler.DM {
                         Compiler.Emit(WarningCode.BadToken, CurrentLoc,
                             $"Only one type path can be used, ignoring {pathType}");
                 }
-
             } while (Check(TokenType.DM_Bar));
 
             if (parenthetical) {

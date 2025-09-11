@@ -300,14 +300,12 @@ public sealed class InterfaceMacro : InterfaceElement {
             return;
         }
 
-
         string? keyName = ParsedKeybind.KeyToKeyName(args.Key);
         if (keyName == null)
             return;
         string command = Command.Replace("[[*]]", keyName);
         _interfaceManager.RunCommand(command);
         // args.Handle() omitted on purpose, in BYOND both the "specific" keybind and the ANY keybind are triggered
-
     }
 
     private void OnMacroPress(ICommonSession? session) {
@@ -327,7 +325,6 @@ public sealed class InterfaceMacro : InterfaceElement {
         } else if (_isRelease) {
             _interfaceManager.RunCommand(Command);
         }
-
     }
 
     private static KeyBindingRegistration? CreateMacroBinding(BoundKeyFunction function, ParsedKeybind keybind) {

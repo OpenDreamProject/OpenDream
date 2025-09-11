@@ -132,6 +132,7 @@ public static class DMIParser {
                     if (i != frames.Length - 1)
                         text.Append(',');
                 }
+
                 text.AppendLine();
             }
 

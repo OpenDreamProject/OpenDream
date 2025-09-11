@@ -982,8 +982,8 @@ internal static class DreamProcNativeRoot {
             return new DreamValue(failCount == 2 ? 1 : 0);
         }
 
-        int start = bundle.GetArgument(2, "Start").GetValueAsInteger(); //1-indexed
-        int end = bundle.GetArgument(3, "End").GetValueAsInteger(); //1-indexed
+        int start = bundle.GetArgument(2, "Start").MustGetValueAsInteger(); //1-indexed
+        int end = bundle.GetArgument(3, "End").MustGetValueAsInteger(); //1-indexed
         int actualstart;
         int actualcount;
 
@@ -2258,7 +2258,7 @@ internal static class DreamProcNativeRoot {
         DreamValue needle = bundle.GetArgument(1, "Needle");
         DreamValue replacementArg = bundle.GetArgument(2, "Replacement");
         bundle.GetArgument(3, "Start").TryGetValueAsInteger(out var start); //1-indexed
-        int end = bundle.GetArgument(4, "End").GetValueAsInteger(); //1-indexed
+        int end = bundle.GetArgument(4, "End").MustGetValueAsInteger(); //1-indexed
 
         if (needle.TryGetValueAsDreamObject<DreamObjectRegex>(out var regexObject)) {
             // According to the docs, this is the same as /regex.Replace()
@@ -2351,8 +2351,8 @@ internal static class DreamProcNativeRoot {
             return new DreamValue(result.ToString());
         }
 
-        int start = bundle.GetArgument(3, "Start").GetValueAsInteger(); //1-indexed
-        int end = bundle.GetArgument(4, "End").GetValueAsInteger(); //1-indexed
+        int start = bundle.GetArgument(3, "Start").MustGetValueAsInteger(); //1-indexed
+        int end = bundle.GetArgument(4, "End").MustGetValueAsInteger(); //1-indexed
 
         if (start == 0) { // Return unmodified
             return new(text);
@@ -2870,7 +2870,7 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("Name")]
     [DreamProcParameter("Value")]
     public static DreamValue NativeProc_statpanel(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-        string panel = bundle.GetArgument(0, "Panel").GetValueAsString();
+        string panel = bundle.GetArgument(0, "Panel").MustGetValueAsString();
         DreamValue name = bundle.GetArgument(1, "Name");
         DreamValue value = bundle.GetArgument(2, "Value");
 
@@ -3607,7 +3607,7 @@ internal static class DreamProcNativeRoot {
         DreamValue player = bundle.GetArgument(0, "player");
         DreamValue controlId = bundle.GetArgument(1, "control_id");
         DreamValue winsetParams = bundle.GetArgument(2, "params");
-        string? winsetControlId = (!controlId.IsNull) ? controlId.GetValueAsString() : null;
+        string? winsetControlId = (!controlId.IsNull) ? controlId.MustGetValueAsString() : null;
 
         DreamConnection? connection = null;
         if (player.TryGetValueAsDreamObject<DreamObjectMob>(out var mob)) {

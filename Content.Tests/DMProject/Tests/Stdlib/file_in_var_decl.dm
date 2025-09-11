@@ -1,9 +1,9 @@
 
 //# issue 689
 
-/obj
+/datum
 	var/a = file("test.dm")
 
 /proc/RunTest()
-	var/obj/o = new
+	var/datum/o = new
 	ASSERT(isfile(o.a))

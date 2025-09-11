@@ -7,6 +7,6 @@
 /obj/ty/proc/fn(mob/user)
 	user << "test"
 
-/proc/RunTest()
+/datum/unit_test/test_output_string_null/RunTest()
 	var/obj/ty/o = new
 

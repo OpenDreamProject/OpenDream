@@ -1,11 +1,11 @@
-/obj/listhaver
+/datum/listhaver
 	var/list/C[][] = list()
 	var/D[] = new()
 
 /proc/RunTest()
 	var/a[]
 	var/b[5]
-	var/obj/listhaver/LH = new /obj/listhaver()
+	var/datum/listhaver/LH = new /datum/listhaver()
 	ASSERT(islist(LH.C))
 	ASSERT(islist(LH.D))
 

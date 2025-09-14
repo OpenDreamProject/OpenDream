@@ -56,9 +56,6 @@ public sealed class DMFLexer(string source) {
                 _parsingAttributeName = true; // Still parsing an attribute name, the last one was actually an element name!
                 return new(TokenType.Period, c);
             case '&': // & is a valid splitter as well
-                Advance();
-                _parsingAttributeName = true;
-                return new(TokenType.Semicolon, c);
             case ';':
                 Advance();
                 _parsingAttributeName = true;

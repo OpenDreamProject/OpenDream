@@ -54,7 +54,7 @@ internal sealed class BinaryNot(Location location, DMExpression expr) : UnaryOp(
         if (!Expr.TryAsConstant(compiler, out constant) || constant is not Number constantNum)
             return false;
 
-        constant = new Number(Location, ~(int)constantNum.Value);
+        constant = new Number(Location, (~(int)constantNum.Value) & 0xFFFFFF);
         return true;
     }
 

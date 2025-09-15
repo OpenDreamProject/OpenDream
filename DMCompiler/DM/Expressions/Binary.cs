@@ -145,7 +145,7 @@ internal sealed class Modulo(Location location, DMExpression lhs, DMExpression r
         }
 
         if (lhs is Number lhsNum && rhs is Number rhsNum) {
-            constant = new Number(Location, lhsNum.Value % rhsNum.Value);
+            constant = new Number(Location, (int)lhsNum.Value % (int)rhsNum.Value);
         } else {
             constant = null;
             return false;
@@ -384,11 +384,6 @@ internal sealed class BinaryOr(Location location, DMExpression lhs, DMExpression
 // x == y
 internal sealed class Equal(Location location, DMExpression lhs, DMExpression rhs) : BinaryOp(location, lhs, rhs) {
     public override void EmitPushValue(ExpressionContext ctx) {
-        if (TryAsConstant(ctx.Compiler, out var constant)) {
-            constant.EmitPushValue(ctx);
-            return;
-        }
-
         LHS.EmitPushValue(ctx);
         RHS.EmitPushValue(ctx);
         ctx.Proc.Equal();
@@ -398,11 +393,6 @@ internal sealed class Equal(Location location, DMExpression lhs, DMExpression rh
 // x != y
 internal sealed class NotEqual(Location location, DMExpression lhs, DMExpression rhs) : BinaryOp(location, lhs, rhs) {
     public override void EmitPushValue(ExpressionContext ctx) {
-        if (TryAsConstant(ctx.Compiler, out var constant)) {
-            constant.EmitPushValue(ctx);
-            return;
-        }
-
         LHS.EmitPushValue(ctx);
         RHS.EmitPushValue(ctx);
         ctx.Proc.NotEqual();
@@ -412,11 +402,6 @@ internal sealed class NotEqual(Location location, DMExpression lhs, DMExpression
 // x ~= y
 internal sealed class Equivalent(Location location, DMExpression lhs, DMExpression rhs) : BinaryOp(location, lhs, rhs) {
     public override void EmitPushValue(ExpressionContext ctx) {
-        if (TryAsConstant(ctx.Compiler, out var constant)) {
-            constant.EmitPushValue(ctx);
-            return;
-        }
-
         LHS.EmitPushValue(ctx);
         RHS.EmitPushValue(ctx);
         ctx.Proc.Equivalent();
@@ -426,11 +411,6 @@ internal sealed class Equivalent(Location location, DMExpression lhs, DMExpressi
 // x ~! y
 internal sealed class NotEquivalent(Location location, DMExpression lhs, DMExpression rhs) : BinaryOp(location, lhs, rhs) {
     public override void EmitPushValue(ExpressionContext ctx) {
-        if (TryAsConstant(ctx.Compiler, out var constant)) {
-            constant.EmitPushValue(ctx);
-            return;
-        }
-
         LHS.EmitPushValue(ctx);
         RHS.EmitPushValue(ctx);
         ctx.Proc.NotEquivalent();

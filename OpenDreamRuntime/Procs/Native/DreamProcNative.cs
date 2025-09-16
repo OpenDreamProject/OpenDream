@@ -34,6 +34,7 @@ internal static class DreamProcNative {
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_floor);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_fract);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_ftime);
+        objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_generator);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_get_step_to);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_get_steps_to);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_hascall);

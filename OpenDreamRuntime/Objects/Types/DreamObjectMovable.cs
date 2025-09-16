@@ -20,6 +20,7 @@ public class DreamObjectMovable : DreamObjectAtom {
     private readonly TransformComponent _transformComponent;
     private readonly MovableContentsList _contents;
     private string? _screenLoc;
+    private DreamObjectParticles? _particles;
 
     private string? ScreenLoc {
         get => _screenLoc;
@@ -94,6 +95,9 @@ public class DreamObjectMovable : DreamObjectAtom {
 
                 value = new DreamValue(locs);
                 return true;
+            case "particles":
+                value = new(_particles);
+                return true;
             default:
                 return base.TryGetVar(varName, out value);
         }
@@ -137,6 +141,25 @@ public class DreamObjectMovable : DreamObjectAtom {
                 value.TryGetValueAsString(out var screenLoc);
 
                 ScreenLoc = screenLoc;
+                break;
+            case "particles":
+                if (value.TryGetValueAsDreamObject<DreamObjectParticles>(out var particles)) {
+                    if(particles == _particles){
+                        ParticlesSystem!.MarkDirty((Entity, _particles.ParticlesComponent));
+                        return;
+                    }
+
+                    if (_particles != null)
+                        EntityManager.RemoveComponent(Entity, _particles.ParticlesComponent);
+                    _particles = particles;
+                    EntityManager.AddComponent(Entity, _particles.ParticlesComponent);
+                    ParticlesSystem!.MarkDirty((Entity, _particles.ParticlesComponent));
+                } else {
+                    _particles = null;
+                    if (_particles != null)
+                        EntityManager.RemoveComponent(Entity, _particles.ParticlesComponent);
+                }
+
                 break;
             default:
                 base.SetVar(varName, value);

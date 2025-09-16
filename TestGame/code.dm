@@ -349,5 +349,3 @@
 /world/New()
 	..()
 	world.log << "World loaded!"
-	var/foo
-	initial(issaved(foo))

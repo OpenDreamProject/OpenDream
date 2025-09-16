@@ -84,6 +84,7 @@ namespace OpenDreamRuntime.Objects {
                 }
             }
         }
+
         private string? _tag;
 
         public DreamObject(DreamObjectDefinition objectDefinition) {
@@ -168,6 +169,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         #region Variables
+
         public virtual bool IsSaved(string name) {
             return ObjectDefinition.Variables.ContainsKey(name)
                 && !ObjectDefinition.GlobalVariables.ContainsKey(name)
@@ -271,9 +273,11 @@ namespace OpenDreamRuntime.Objects {
             Variables ??= new(4);
             Variables[name] = value;
         }
+
         #endregion Variables
 
         #region Proc Helpers
+
         public DreamProc GetProc(string procName) {
             DebugTools.Assert(!Deleted, "Cannot call GetProc() on a deleted object");
 
@@ -317,9 +321,11 @@ namespace OpenDreamRuntime.Objects {
             var proc = GetProc(procName);
             return DreamThread.Run(proc, this, usr, arguments);
         }
+
         #endregion Proc Helpers
 
         #region Name Helpers
+
         // This could probably be placed elsewhere. Not sure where tho
         /// <returns>true if \proper noun formatting should be used, false if \improper</returns>
         public static bool StringIsProper(string str) {
@@ -404,9 +410,11 @@ namespace OpenDreamRuntime.Objects {
 
             return name;
         }
+
         #endregion Name Helpers
 
         #region Operators
+
         // +
         public virtual DreamValue OperatorAdd(DreamValue b, DMProcState state) {
             if (TryExecuteOperatorOverload(state, "operator+", new DreamProcArguments(b), out var result))
@@ -519,6 +527,7 @@ namespace OpenDreamRuntime.Objects {
 
             throw new InvalidOperationException($"Cannot assign {value} to index {index} of {this}");
         }
+
         #endregion Operators
 
         private bool TryExecuteOperatorOverload(

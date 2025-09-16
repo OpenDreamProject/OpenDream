@@ -333,7 +333,7 @@ internal sealed class IsSaved(Location location, DMExpression expr) : DMExpressi
                 return;
             default:
                 ctx.Compiler.Emit(WarningCode.BadArgument, expr.Location, $"can't get saved value of {expr}");
-                ctx.Proc.Error();
+                ctx.Proc.PushNullAndError();
                 return;
         }
     }
@@ -358,7 +358,7 @@ internal sealed class AsTypeInferred(Location location, DMExpression expr, Dream
     public override void EmitPushValue(ExpressionContext ctx) {
         if (!ctx.ObjectTree.TryGetTypeId(path, out var typeId)) {
             ctx.Compiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {path} does not exist");
-
+            ctx.Proc.PushNullAndError();
             return;
         }
 
@@ -386,7 +386,7 @@ internal sealed class IsTypeInferred(Location location, DMExpression expr, Dream
     public override void EmitPushValue(ExpressionContext ctx) {
         if (!ctx.ObjectTree.TryGetTypeId(path, out var typeId)) {
             ctx.Compiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {path} does not exist");
-
+            ctx.Proc.PushNullAndError();
             return;
         }
 
@@ -634,7 +634,7 @@ internal class Initial(Location location, DMExpression expr) : DMExpression(loca
         }
 
         ctx.Compiler.Emit(WarningCode.BadArgument, Expression.Location, $"can't get initial value of {Expression}");
-        ctx.Proc.Error();
+        ctx.Proc.PushNullAndError();
     }
 }
 

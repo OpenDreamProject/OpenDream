@@ -18,6 +18,11 @@ internal sealed class Negate(Location location, DMExpression expr) : UnaryOp(loc
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         Expr.EmitPushValue(ctx);
         ctx.Proc.Negate();
     }
@@ -33,6 +38,11 @@ internal sealed class Not(Location location, DMExpression expr) : UnaryOp(locati
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         Expr.EmitPushValue(ctx);
         ctx.Proc.Not();
     }
@@ -44,11 +54,16 @@ internal sealed class BinaryNot(Location location, DMExpression expr) : UnaryOp(
         if (!Expr.TryAsConstant(compiler, out constant) || constant is not Number constantNum)
             return false;
 
-        constant = new Number(Location, ~(int)constantNum.Value);
+        constant = new Number(Location, (~(int)constantNum.Value) & 0xFFFFFF);
         return true;
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         Expr.EmitPushValue(ctx);
         ctx.Proc.BinaryNot();
     }

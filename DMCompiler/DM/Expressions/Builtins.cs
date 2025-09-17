@@ -50,6 +50,7 @@ internal sealed class StringFormat(Location location, string value, DMExpression
 internal sealed class Arglist(Location location, DMExpression expr) : DMExpression(location) {
     public override void EmitPushValue(ExpressionContext ctx) {
         ctx.Compiler.Emit(WarningCode.BadExpression, Location, "invalid use of arglist");
+        ctx.Proc.PushNullAndError();
     }
 
     public void EmitPushArglist(ExpressionContext ctx) {

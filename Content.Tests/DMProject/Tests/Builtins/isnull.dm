@@ -1,6 +1,6 @@
 /proc/RunTest()
 	ASSERT(isnull(null))
-	var/obj/O = new()
+	var/datum/O = new()
 	ASSERT(!isnull(O))
 	del(O)
 	ASSERT(isnull(O))

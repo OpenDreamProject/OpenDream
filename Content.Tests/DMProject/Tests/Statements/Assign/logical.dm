@@ -1,10 +1,10 @@
 
 //# issue 612
 
-/obj
+/datum
 	var/a = 1
 
-var/obj/o
+var/datum/o
 
 /proc/RunTest()
 	o ||= new()

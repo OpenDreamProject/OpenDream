@@ -709,6 +709,11 @@ internal sealed class Sin(Location location, DMExpression expr) : DMExpression(l
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         expr.EmitPushValue(ctx);
         ctx.Proc.Sin();
     }
@@ -734,6 +739,11 @@ internal sealed class Cos(Location location, DMExpression expr) : DMExpression(l
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         expr.EmitPushValue(ctx);
         ctx.Proc.Cos();
     }
@@ -759,6 +769,11 @@ internal sealed class Tan(Location location, DMExpression expr) : DMExpression(l
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         expr.EmitPushValue(ctx);
         ctx.Proc.Tan();
     }
@@ -789,6 +804,11 @@ internal sealed class ArcSin(Location location, DMExpression expr) : DMExpressio
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         expr.EmitPushValue(ctx);
         ctx.Proc.ArcSin();
     }
@@ -819,6 +839,11 @@ internal sealed class ArcCos(Location location, DMExpression expr) : DMExpressio
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         expr.EmitPushValue(ctx);
         ctx.Proc.ArcCos();
     }
@@ -844,6 +869,11 @@ internal sealed class ArcTan(Location location, DMExpression expr) : DMExpressio
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         expr.EmitPushValue(ctx);
         ctx.Proc.ArcTan();
     }
@@ -873,6 +903,11 @@ internal sealed class ArcTan2(Location location, DMExpression xExpr, DMExpressio
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         xExpr.EmitPushValue(ctx);
         yExpr.EmitPushValue(ctx);
         ctx.Proc.ArcTan2();
@@ -904,6 +939,11 @@ internal sealed class Sqrt(Location location, DMExpression expr) : DMExpression(
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         expr.EmitPushValue(ctx);
         ctx.Proc.Sqrt();
     }
@@ -946,6 +986,11 @@ internal sealed class Log(Location location, DMExpression expr, DMExpression? ba
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         expr.EmitPushValue(ctx);
         if (baseExpr == null) {
             ctx.Proc.LogE();
@@ -976,6 +1021,11 @@ internal sealed class Abs(Location location, DMExpression expr) : DMExpression(l
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         expr.EmitPushValue(ctx);
         ctx.Proc.Abs();
     }

@@ -148,8 +148,9 @@ internal struct ParsedKeybind {
         {";", Keyboard.Key.SemiColon}, // undocumented but works in BYOND
         {",", Keyboard.Key.Comma},
         {".", Keyboard.Key.Period},
+        {"`", Keyboard.Key.Grave},
         //TODO: Right shift/ctrl/alt
-        {"SHIFT", Keyboard.Key.Shift},
+        { "SHIFT", Keyboard.Key.Shift},
         {"CTRL", Keyboard.Key.Control},
         {"ALT", Keyboard.Key.Alt},
     };

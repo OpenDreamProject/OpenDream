@@ -2,6 +2,7 @@ using DMCompiler.Compiler.DMPreprocessor;
 using System.Linq;
 using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM;
+using DMCompiler.Compiler.Tools;
 
 namespace DMCompiler.Compiler.DM {
     public partial class DMParser(DMCompiler compiler, DMLexer lexer) : Parser<Token>(compiler, lexer) {
@@ -172,208 +173,223 @@ namespace DMCompiler.Compiler.DM {
             Newline();
             Consume(TokenType.EndOfFile, "Expected EOF");
             return new DMASTFile(loc, new DMASTBlockInner(loc, statements.ToArray()));
+
         }
 
         private List<DMASTStatement>? BlockInner() {
-            List<DMASTStatement> statements = new();
+            using (Profiler.BeginZone("BlockInner")) {
+                List<DMASTStatement> statements = new();
 
-            do {
-                Whitespace();
-                DreamPath oldPath = CurrentPath;
-                DMASTStatement? statement = Statement();
-
-                CurrentPath = oldPath;
-
-                if (statement != null) {
-                    if (!PeekDelimiter() && Current().Type is not (TokenType.DM_Dedent or TokenType.DM_RightCurlyBracket or TokenType.EndOfFile)) {
-                        Emit(WarningCode.BadToken, "Expected end of object statement");
-                    }
-
+                do {
                     Whitespace();
-                    statements.Add(statement);
-                } else {
-                    if (statements.Count == 0) return null;
-                }
-            } while (Delimiter());
-            Whitespace();
+                    DreamPath oldPath = CurrentPath;
+                    DMASTStatement? statement = Statement();
 
-            return statements;
+                    CurrentPath = oldPath;
+
+                    if (statement != null) {
+                        if (!PeekDelimiter() && Current().Type is not (TokenType.DM_Dedent or TokenType.DM_RightCurlyBracket or TokenType.EndOfFile)) {
+                            Emit(WarningCode.BadToken, "Expected end of object statement");
+                        }
+
+                        Whitespace();
+                        statements.Add(statement);
+                    } else {
+                        if (statements.Count == 0) return null;
+                    }
+                } while (Delimiter());
+                Whitespace();
+
+                return statements;
+            }
         }
 
         protected DMASTStatement? Statement() {
-            var loc = CurrentLoc;
+            using (Profiler.BeginZone("Statement")) {
+                var loc = CurrentLoc;
 
-            if (Current().Type == TokenType.DM_Semicolon) { // A lone semicolon creates a "null statement" (like C)
-                // Note that we do not consume the semicolon here
-                return new DMASTNullStatement(loc);
-            }
-
-            DMASTPath? path = Path();
-            if (path is null)
-                return null;
-            Whitespace();
-            CurrentPath = CurrentPath.Combine(path.Path);
-
-            //Proc definition
-            if (Check(TokenType.DM_LeftParenthesis)) {
-                Compiler.VerbosePrint($"Parsing proc {CurrentPath}()");
-                BracketWhitespace();
-                var parameters = DefinitionParameters(out var wasIndeterminate);
-
-                if (Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.DM_Comma && !wasIndeterminate) {
-                    if (parameters.Count > 0) // Separate error handling mentions the missing right-paren
-                        Emit(WarningCode.BadToken, $"{parameters.Last().Name}: missing comma ',' or right-paren ')'");
-
-                    parameters.AddRange(DefinitionParameters(out wasIndeterminate));
+                if (Current().Type == TokenType.DM_Semicolon) { // A lone semicolon creates a "null statement" (like C)
+                                                                // Note that we do not consume the semicolon here
+                    return new DMASTNullStatement(loc);
                 }
 
-                if (!wasIndeterminate && Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.EndOfFile) {
-                    // BYOND doesn't specify the arg
-                    Emit(WarningCode.BadToken, $"Bad argument definition '{Current().PrintableText}'");
-                    Advance();
-                    BracketWhitespace();
-                    Check(TokenType.DM_Comma);
-                    BracketWhitespace();
-                    parameters.AddRange(DefinitionParameters(out _));
-                }
-
-                BracketWhitespace();
-                ConsumeRightParenthesis();
+                DMASTPath? path = Path();
+                if (path is null)
+                    return null;
                 Whitespace();
+                CurrentPath = CurrentPath.Combine(path.Path);
 
-                // Proc return type
-                var types = AsComplexTypes();
+                //Proc definition
+                if (Check(TokenType.DM_LeftParenthesis)) {
+                    using (Profiler.BeginZone($"Proc Def")) {
+                        Compiler.VerbosePrint($"Parsing proc {CurrentPath}()");
+                        BracketWhitespace();
+                        var parameters = DefinitionParameters(out var wasIndeterminate);
 
-                DMASTProcBlockInner? procBlock = ProcBlock();
-                if (procBlock is null) {
-                    DMASTProcStatement? procStatement = ProcStatement();
+                        if (Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.DM_Comma && !wasIndeterminate) {
+                            if (parameters.Count > 0) // Separate error handling mentions the missing right-paren
+                                Emit(WarningCode.BadToken, $"{parameters.Last().Name}: missing comma ',' or right-paren ')'");
 
-                    if (procStatement is not null) {
-                        procBlock = new DMASTProcBlockInner(loc, procStatement);
-                    }
-                }
-
-                if (procBlock?.Statements.Length is 0 or null) {
-                    Compiler.Emit(WarningCode.EmptyProc, loc,
-                        "Empty proc detected - add an explicit \"return\" statement");
-                }
-
-                if (path.IsOperator) {
-                    List<DMASTProcStatement> procStatements = procBlock.Statements.ToList();
-                    Location tokenLoc = procBlock.Location;
-                    //add ". = src" as the first expression in the operator
-                    DMASTProcStatementExpression assignEqSrc = new DMASTProcStatementExpression(tokenLoc,
-                        new DMASTAssign(tokenLoc, new DMASTCallableSelf(tokenLoc),
-                            new DMASTIdentifier(tokenLoc, "src")));
-                    procStatements.Insert(0, assignEqSrc);
-
-                    procBlock = new DMASTProcBlockInner(loc, procStatements.ToArray(), procBlock.SetStatements);
-                }
-
-                return new DMASTProcDefinition(loc, CurrentPath, parameters.ToArray(), procBlock, types);
-            }
-
-            //Var definition(s)
-            if (CurrentPath.FindElement("var") != -1) {
-                bool isIndented = false;
-                DreamPath varPath = CurrentPath;
-                List<DMASTObjectVarDefinition> varDefinitions = new();
-
-                var possibleNewline = Current();
-                if (Newline()) {
-                    if (Check(TokenType.DM_Indent)) {
-                        isIndented = true;
-                        DMASTPath? newVarPath = Path();
-                        if (newVarPath == null) {
-                            Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
-                            return new DMASTInvalidStatement(CurrentLoc);
+                            parameters.AddRange(DefinitionParameters(out wasIndeterminate));
                         }
 
-                        varPath = CurrentPath.AddToPath(newVarPath.Path.PathString);
-                    } else {
-                        ReuseToken(possibleNewline);
-                    }
-                } else if (Current().Type == TokenType.DM_Identifier) { // "var foo" instead of "var/foo"
-                    DMASTPath? newVarPath = Path();
-                    if (newVarPath == null) {
-                        Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
-                        return new DMASTInvalidStatement(CurrentLoc);
-                    }
-
-                    varPath = CurrentPath.AddToPath(newVarPath.Path.PathString);
-                }
-
-                while (true) {
-                    Whitespace();
-
-                    DMASTExpression? value = PathArray(ref varPath);
-
-                    if (Check(TokenType.DM_Equals)) {
-                        if (value != null) Warning("List doubly initialized");
-
-                        Whitespace();
-                        value = Expression();
-                        RequireExpression(ref value);
-                    } else if (Check(TokenType.DM_DoubleSquareBracketEquals)) {
-                        if (value != null) Warning("List doubly initialized");
-
-                        Whitespace();
-                        value = Expression();
-                        RequireExpression(ref value);
-                    } else if (value == null) {
-                        value = new DMASTConstantNull(loc);
-                    }
-
-                    var valType = AsComplexTypes() ?? DMValueType.Anything;
-                    var varDef = new DMASTObjectVarDefinition(loc, varPath, value, valType);
-
-                    if (varDef.IsStatic && varDef.Name is "usr" or "src" or "args" or "world" or "global" or "callee" or "caller")
-                        Compiler.Emit(WarningCode.SoftReservedKeyword, loc, $"Global variable named {varDef.Name} DOES NOT override the built-in {varDef.Name}. This is a terrible idea, don't do that.");
-
-                    varDefinitions.Add(varDef);
-                    if (Check(TokenType.DM_Comma) || (isIndented && Delimiter())) {
-                        Whitespace();
-                        DMASTPath? newVarPath = Path();
-
-                        if (newVarPath == null) {
-                            Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
-                            break;
+                        if (!wasIndeterminate && Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.EndOfFile) {
+                            // BYOND doesn't specify the arg
+                            Emit(WarningCode.BadToken, $"Bad argument definition '{Current().PrintableText}'");
+                            Advance();
+                            BracketWhitespace();
+                            Check(TokenType.DM_Comma);
+                            BracketWhitespace();
+                            parameters.AddRange(DefinitionParameters(out _));
                         }
 
-                        varPath = CurrentPath.AddToPath(
-                            isIndented ? newVarPath.Path.PathString
-                                       : "../" + newVarPath.Path.PathString);
-                    } else {
-                        break;
+                        BracketWhitespace();
+                        ConsumeRightParenthesis();
+                        Whitespace();
+
+                        // Proc return type
+                        var types = AsComplexTypes();
+
+                        DMASTProcBlockInner? procBlock = ProcBlock();
+                        if (procBlock is null) {
+                            DMASTProcStatement? procStatement = ProcStatement();
+
+                            if (procStatement is not null) {
+                                procBlock = new DMASTProcBlockInner(loc, procStatement);
+                            }
+                        }
+
+                        if (procBlock?.Statements.Length is 0 or null) {
+                            Compiler.Emit(WarningCode.EmptyProc, loc,
+                                "Empty proc detected - add an explicit \"return\" statement");
+                        }
+
+                        if (path.IsOperator) {
+                            List<DMASTProcStatement> procStatements = procBlock.Statements.ToList();
+                            Location tokenLoc = procBlock.Location;
+                            //add ". = src" as the first expression in the operator
+                            DMASTProcStatementExpression assignEqSrc = new DMASTProcStatementExpression(tokenLoc,
+                                new DMASTAssign(tokenLoc, new DMASTCallableSelf(tokenLoc),
+                                    new DMASTIdentifier(tokenLoc, "src")));
+                            procStatements.Insert(0, assignEqSrc);
+
+                            procBlock = new DMASTProcBlockInner(loc, procStatements.ToArray(), procBlock.SetStatements);
+                        }
+
+                        return new DMASTProcDefinition(loc, CurrentPath, parameters.ToArray(), procBlock, types);
                     }
                 }
 
-                if (isIndented)
-                    Consume(TokenType.DM_Dedent, "Expected end of var block");
+                //Var definition(s)
+                if (CurrentPath.FindElement("var") != -1) {
+                    using (Profiler.BeginZone($"Var Def")) {
+                        bool isIndented = false;
+                        DreamPath varPath = CurrentPath;
+                        List<DMASTObjectVarDefinition> varDefinitions = new();
 
-                return (varDefinitions.Count == 1)
-                    ? varDefinitions[0]
-                    : new DMASTMultipleObjectVarDefinitions(loc, varDefinitions.ToArray());
+                        var possibleNewline = Current();
+                        if (Newline()) {
+                            if (Check(TokenType.DM_Indent)) {
+                                isIndented = true;
+                                DMASTPath? newVarPath = Path();
+                                if (newVarPath == null) {
+                                    Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
+                                    return new DMASTInvalidStatement(CurrentLoc);
+                                }
+
+                                varPath = CurrentPath.AddToPath(newVarPath.Path.PathString);
+                            } else {
+                                ReuseToken(possibleNewline);
+                            }
+                        } else if (Current().Type == TokenType.DM_Identifier) { // "var foo" instead of "var/foo"
+                            DMASTPath? newVarPath = Path();
+                            if (newVarPath == null) {
+                                Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
+                                return new DMASTInvalidStatement(CurrentLoc);
+                            }
+
+                            varPath = CurrentPath.AddToPath(newVarPath.Path.PathString);
+                        }
+
+                        while (true) {
+                            Whitespace();
+
+                            DMASTExpression? value = PathArray(ref varPath);
+
+                            if (Check(TokenType.DM_Equals)) {
+                                if (value != null) Warning("List doubly initialized");
+
+                                Whitespace();
+                                value = Expression();
+                                RequireExpression(ref value);
+                            } else if (Check(TokenType.DM_DoubleSquareBracketEquals)) {
+                                if (value != null) Warning("List doubly initialized");
+
+                                Whitespace();
+                                value = Expression();
+                                RequireExpression(ref value);
+                            } else if (value == null) {
+                                value = new DMASTConstantNull(loc);
+                            }
+
+                            var valType = AsComplexTypes() ?? DMValueType.Anything;
+                            var varDef = new DMASTObjectVarDefinition(loc, varPath, value, valType);
+
+                            if (varDef.IsStatic && varDef.Name is "usr" or "src" or "args" or "world" or "global" or "callee" or "caller")
+                                Compiler.Emit(WarningCode.SoftReservedKeyword, loc, $"Global variable named {varDef.Name} DOES NOT override the built-in {varDef.Name}. This is a terrible idea, don't do that.");
+
+                            varDefinitions.Add(varDef);
+                            if (Check(TokenType.DM_Comma) || (isIndented && Delimiter())) {
+                                Whitespace();
+                                DMASTPath? newVarPath = Path();
+
+                                if (newVarPath == null) {
+                                    Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
+                                    break;
+                                }
+
+                                varPath = CurrentPath.AddToPath(
+                                    isIndented ? newVarPath.Path.PathString
+                                               : "../" + newVarPath.Path.PathString);
+                            } else {
+                                break;
+                            }
+                        }
+
+                        if (isIndented)
+                            Consume(TokenType.DM_Dedent, "Expected end of var block");
+
+                        return (varDefinitions.Count == 1)
+                            ? varDefinitions[0]
+                            : new DMASTMultipleObjectVarDefinitions(loc, varDefinitions.ToArray());
+                    }
+                }
+
+                //Var override
+                if (Check(TokenType.DM_Equals)) {
+                    using (Profiler.BeginZone($"Var Override")) {
+                        Whitespace();
+                        DMASTExpression? value = Expression();
+                        RequireExpression(ref value);
+
+                        return new DMASTObjectVarOverride(loc, CurrentPath, value);
+                    }
+                }
+
+                //Object definition
+                if (Block() is { } block) {
+                    using (Profiler.BeginZone($"Object Def")) {
+                        Compiler.VerbosePrint($"Parsed object {CurrentPath}");
+                        return new DMASTObjectDefinition(loc, CurrentPath, block);
+                    }
+                }
+
+                //Empty object definition
+                using (Profiler.BeginZone($"Object Def Empty")) {
+                    Compiler.VerbosePrint($"Parsed object {CurrentPath} - empty");
+                    return new DMASTObjectDefinition(loc, CurrentPath, null);
+                }
             }
-
-            //Var override
-            if (Check(TokenType.DM_Equals)) {
-                Whitespace();
-                DMASTExpression? value = Expression();
-                RequireExpression(ref value);
-
-                return new DMASTObjectVarOverride(loc, CurrentPath, value);
-            }
-
-            //Object definition
-            if (Block() is { } block) {
-                Compiler.VerbosePrint($"Parsed object {CurrentPath}");
-                return new DMASTObjectDefinition(loc, CurrentPath, block);
-            }
-
-            //Empty object definition
-            Compiler.VerbosePrint($"Parsed object {CurrentPath} - empty");
-            return new DMASTObjectDefinition(loc, CurrentPath, null);
         }
 
         /// <summary>

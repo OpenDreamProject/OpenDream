@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using DMCompiler.Compiler.DM;
+using DMCompiler.Compiler.Tools;
 
 namespace DMCompiler.Compiler.DMPreprocessor;
 
@@ -201,45 +202,46 @@ public sealed class DMPreprocessor(DMCompiler compiler, bool enableDirectives) :
         string filePath = Path.Combine(includeDir, file);
         filePath = filePath.Replace('\\', Path.DirectorySeparatorChar);
         filePath = Path.GetFullPath(filePath); // Strips out path operators
+        using (Profiler.BeginZone($"IncludeFile {filePath}")) {
+            if (_includedFiles.Contains(filePath)) {
+                compiler.Emit(WarningCode.FileAlreadyIncluded, includedFrom ?? Location.Internal, $"File \"{filePath}\" was already included");
+                return;
+            }
 
-        if (_includedFiles.Contains(filePath)) {
-            compiler.Emit(WarningCode.FileAlreadyIncluded, includedFrom ?? Location.Internal, $"File \"{filePath}\" was already included");
-            return;
-        }
+            if (!File.Exists(filePath)) {
+                compiler.Emit(WarningCode.MissingIncludedFile, includedFrom ?? Location.Internal, $"Could not find included file \"{filePath}\"");
+                return;
+            }
 
-        if (!File.Exists(filePath)) {
-            compiler.Emit(WarningCode.MissingIncludedFile, includedFrom ?? Location.Internal, $"Could not find included file \"{filePath}\"");
-            return;
-        }
+            compiler.VerbosePrint($"Including {file}");
+            _includedFiles.Add(filePath);
 
-        compiler.VerbosePrint($"Including {file}");
-        _includedFiles.Add(filePath);
+            switch (Path.GetExtension(filePath)) {
+                case ".dmp":
+                case ".dmm":
+                    IncludedMaps.Add(filePath);
+                    break;
+                case ".dmf":
+                    if (IncludedInterface != null) {
+                        if (IncludedInterface == filePath) {
+                            compiler.Emit(WarningCode.FileAlreadyIncluded, includedFrom ?? Location.Internal, $"Interface \"{filePath}\" was already included");
+                            break;
+                        }
 
-        switch (Path.GetExtension(filePath)) {
-            case ".dmp":
-            case ".dmm":
-                IncludedMaps.Add(filePath);
-                break;
-            case ".dmf":
-                if (IncludedInterface != null) {
-                    if(IncludedInterface == filePath) {
-                        compiler.Emit(WarningCode.FileAlreadyIncluded, includedFrom ?? Location.Internal, $"Interface \"{filePath}\" was already included");
+                        compiler.Emit(WarningCode.InvalidInclusion, includedFrom ?? Location.Internal, $"Attempted to include a second interface file ({filePath}) while one was already included ({IncludedInterface})");
                         break;
                     }
 
-                    compiler.Emit(WarningCode.InvalidInclusion, includedFrom ?? Location.Internal, $"Attempted to include a second interface file ({filePath}) while one was already included ({IncludedInterface})");
+                    IncludedInterface = filePath;
                     break;
-                }
-
-                IncludedInterface = filePath;
-                break;
-            case ".dms":
-                // Webclient interface file. Probably never gonna be supported.
-                compiler.UnimplementedWarning(includedFrom ?? Location.Internal, "DMS files are not supported");
-                break;
-            default:
-                PreprocessFile(includeDir, file, isDMStandard);
-                break;
+                case ".dms":
+                    // Webclient interface file. Probably never gonna be supported.
+                    compiler.UnimplementedWarning(includedFrom ?? Location.Internal, "DMS files are not supported");
+                    break;
+                default:
+                    PreprocessFile(includeDir, file, isDMStandard);
+                    break;
+            }
         }
     }
 

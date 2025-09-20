@@ -15,6 +15,7 @@ using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM.Builders;
 using DMCompiler.Json;
 using DMCompiler.Optimizer;
+using DMCompiler.Compiler.Tools;
 
 namespace DMCompiler;
 
@@ -47,53 +48,62 @@ public class DMCompiler {
         if (_compileStartTime != default)
             throw new Exception("Create a new DMCompiler to compile again");
 
-        UniqueEmissions.Clear();
-        Settings = settings;
-        _resourceDirectories.Clear();
-        _errorCount = 0;
-        _warningCount = 0;
-        _compileStartTime = DateTime.Now;
+        Profiler.Activate();
+        using (Profiler.BeginZone("DMCompiler")) {
+            UniqueEmissions.Clear();
+            Settings = settings;
+            _resourceDirectories.Clear();
+            _errorCount = 0;
+            _warningCount = 0;
+            _compileStartTime = DateTime.Now;
 
-        //TODO: Only use InvariantCulture where necessary instead of it being the default
-        CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+            //TODO: Only use InvariantCulture where necessary instead of it being the default
+            CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
 
 #if DEBUG
-        ForcedWarning("This compiler was compiled in the Debug .NET configuration. This will impact compile speed.");
+            ForcedWarning("This compiler was compiled in the Debug .NET configuration. This will impact compile speed.");
 #endif
 
-        if (settings.SuppressUnimplementedWarnings)
-            Emit(WarningCode.UnimplementedAccess, Location.Internal,
-                "Unimplemented proc & var warnings are currently suppressed");
+            if (settings.SuppressUnimplementedWarnings)
+                Emit(WarningCode.UnimplementedAccess, Location.Internal,
+                    "Unimplemented proc & var warnings are currently suppressed");
 
-        if (settings.NoOpts)
-            ForcedWarning("Compiler optimizations (const folding, peephole opts, etc.) are disabled via the \"--no-opts\" arg. This results in slower code execution and is not representative of OpenDream performance.");
+            if (settings.NoOpts)
+                ForcedWarning("Compiler optimizations (const folding, peephole opts, etc.) are disabled via the \"--no-opts\" arg. This results in slower code execution and is not representative of OpenDream performance.");
 
-        var preprocessor = Preprocess(this, settings.Files, settings.MacroDefines);
-        var successfulCompile = false;
-        if (preprocessor is not null && Compile(preprocessor)) {
-            //Output file is the first file with the extension changed to .json
-            string outputFile = Path.ChangeExtension(settings.Files[0], "json");
-            List<DreamMapJson> maps = ConvertMaps(this, preprocessor.IncludedMaps);
+            var preprocessor = Preprocess(this, settings.Files, settings.MacroDefines);
+            var successfulCompile = false;
+            if (preprocessor is not null && Compile(preprocessor)) {
+                using (Profiler.BeginZone("Write Output")) {
+                    //Output file is the first file with the extension changed to .json
+                    string outputFile = Path.ChangeExtension(settings.Files[0], "json");
+                    List<DreamMapJson> maps;
+                    using (Profiler.BeginZone("Converting Maps"))
+                        maps = ConvertMaps(this, preprocessor.IncludedMaps);
 
-            if (_errorCount == 0) {
-                var output = SaveJson(maps, preprocessor.IncludedInterface, outputFile);
+                    if (_errorCount == 0) {
+                        using (Profiler.BeginZone("Writing JSON")){
+                        var output = SaveJson(maps, preprocessor.IncludedInterface, outputFile);
 
-                if (_errorCount == 0) {
-                    successfulCompile = true;
-                    Console.WriteLine($"Compilation succeeded with {_warningCount} warnings");
-                    Console.WriteLine(output);
+                            if (_errorCount == 0) {
+                                successfulCompile = true;
+                                Console.WriteLine($"Compilation succeeded with {_warningCount} warnings");
+                                Console.WriteLine(output);
+                            }
+                        }
+                    }
                 }
             }
+
+            if (!successfulCompile) {
+                Console.WriteLine($"Compilation failed with {_errorCount} errors and {_warningCount} warnings");
+            }
+
+            TimeSpan duration = DateTime.Now - _compileStartTime;
+            Console.WriteLine($"Total time: {duration:mm\\:ss}");
+
+            return successfulCompile;
         }
-
-        if (!successfulCompile) {
-            Console.WriteLine($"Compilation failed with {_errorCount} errors and {_warningCount} warnings");
-        }
-
-        TimeSpan duration = DateTime.Now - _compileStartTime;
-        Console.WriteLine($"Total time: {duration:mm\\:ss}");
-
-        return successfulCompile;
     }
 
     public void AddResourceDirectory(string dir, Location loc) {
@@ -110,110 +120,123 @@ public class DMCompiler {
     }
 
     private DMPreprocessor? Preprocess(DMCompiler compiler, List<string> files, Dictionary<string, string>? macroDefines) {
+        using (Profiler.BeginZone("Preprocess")){
         DMPreprocessor? Build() {
-            DMPreprocessor preproc = new DMPreprocessor(compiler, true);
-            if (macroDefines != null) {
-                foreach (var (key, value) in macroDefines) {
-                    preproc.DefineMacro(key, value);
+                DMPreprocessor preproc = new DMPreprocessor(compiler, true);
+                if (macroDefines != null) {
+                    foreach (var (key, value) in macroDefines) {
+                        preproc.DefineMacro(key, value);
+                    }
+                }
+
+                // NB: IncludeFile pushes newly seen files to a stack, so push
+                // them in reverse order to process them in forward order.
+                for (var i = files.Count - 1; i >= 0; i--) {
+                    if (!File.Exists(files[i])) {
+                        Console.WriteLine($"'{files[i]}' does not exist");
+                        return null;
+                    }
+
+                    string includeDir = Path.GetDirectoryName(files[i]);
+                    string fileName = Path.GetFileName(files[i]);
+
+                    preproc.IncludeFile(includeDir, fileName, false);
+                    compiler.AddResourceDirectory(includeDir, Location.Internal);
+                }
+
+                // Adds the root of the DM project to FILE_DIR
+                _codeDirectory = Path.GetDirectoryName(files[0]) ?? "";
+                if (string.IsNullOrWhiteSpace(_codeDirectory))
+                    _codeDirectory = Path.GetFullPath(".");
+                compiler.AddResourceDirectory(_codeDirectory, Location.Internal);
+
+                string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
+                string dmStandardDirectory = Path.Join(compilerDirectory, "DMStandard");
+
+                // Push DMStandard to the top of the stack, prioritizing it.
+                if (!Settings.NoStandard) {
+                    preproc.IncludeFile(dmStandardDirectory, "_Standard.dm", true);
+                }
+
+                return preproc;
+            }
+
+            if (Settings.DumpPreprocessor) {
+                //Preprocessing is done twice because the output is used up when dumping it
+                var preproc = Build();
+                if (preproc != null) {
+                    var result = new StringBuilder();
+                    foreach (Token t in preproc) {
+                        result.Append(t.Text);
+                    }
+
+                    string outputDir = Path.GetDirectoryName(Settings.Files[0]);
+                    string outputPath = Path.Combine(outputDir, "preprocessor_dump.dm");
+
+                    File.WriteAllText(outputPath, result.ToString());
+                    Console.WriteLine($"Preprocessor output dumped to {outputPath}");
                 }
             }
 
-            // NB: IncludeFile pushes newly seen files to a stack, so push
-            // them in reverse order to process them in forward order.
-            for (var i = files.Count - 1; i >= 0; i--) {
-                if (!File.Exists(files[i])) {
-                    Console.WriteLine($"'{files[i]}' does not exist");
-                    return null;
-                }
-
-                string includeDir = Path.GetDirectoryName(files[i]);
-                string fileName = Path.GetFileName(files[i]);
-
-                preproc.IncludeFile(includeDir, fileName, false);
-                compiler.AddResourceDirectory(includeDir, Location.Internal);
-            }
-
-            // Adds the root of the DM project to FILE_DIR
-            _codeDirectory = Path.GetDirectoryName(files[0]) ?? "";
-            if (string.IsNullOrWhiteSpace(_codeDirectory))
-                _codeDirectory = Path.GetFullPath(".");
-            compiler.AddResourceDirectory(_codeDirectory, Location.Internal);
-
-            string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
-            string dmStandardDirectory = Path.Join(compilerDirectory, "DMStandard");
-
-            // Push DMStandard to the top of the stack, prioritizing it.
-            if (!Settings.NoStandard) {
-                preproc.IncludeFile(dmStandardDirectory, "_Standard.dm", true);
-            }
-
-            return preproc;
+            return Build();
         }
-
-        if (Settings.DumpPreprocessor) {
-            //Preprocessing is done twice because the output is used up when dumping it
-            var preproc = Build();
-            if (preproc != null) {
-                var result = new StringBuilder();
-                foreach (Token t in preproc) {
-                    result.Append(t.Text);
-                }
-
-                string outputDir = Path.GetDirectoryName(Settings.Files[0]);
-                string outputPath = Path.Combine(outputDir, "preprocessor_dump.dm");
-
-                File.WriteAllText(outputPath, result.ToString());
-                Console.WriteLine($"Preprocessor output dumped to {outputPath}");
-            }
-        }
-
-        return Build();
     }
 
     private bool Compile(IEnumerable<Token> preprocessedTokens) {
-        DMLexer dmLexer = new DMLexer("<unknown>", preprocessedTokens);
-        DMParser dmParser = new DMParser(this, dmLexer);
+        using (Profiler.BeginZone("Compile")) {
+            DMLexer dmLexer = new DMLexer("<unknown>", preprocessedTokens);
+            DMParser dmParser = new DMParser(this, dmLexer);
 
-        VerbosePrint("Parsing");
-        DMASTFile astFile = dmParser.File();
+            VerbosePrint("Parsing");
+            DMASTFile astFile;
+            using (Profiler.BeginZone($"Parsing"))
+                astFile = dmParser.File();
 
-        DMASTFolder astSimplifier = new DMASTFolder();
-        VerbosePrint("Constant folding");
-        astSimplifier.FoldAst(astFile);
+            DMASTFolder astSimplifier;
+            using (Profiler.BeginZone($"Const Folding")) {
+                astSimplifier = new DMASTFolder();
+                VerbosePrint("Constant folding");
+                astSimplifier.FoldAst(astFile);
+            }
 
-        DMCodeTreeBuilder dmCodeTreeBuilder = new(this);
-        dmCodeTreeBuilder.BuildCodeTree(astFile);
+            using (Profiler.BeginZone($"Building Code Tree")) {
+                DMCodeTreeBuilder dmCodeTreeBuilder = new(this);
+                dmCodeTreeBuilder.BuildCodeTree(astFile);
+            }
 
-        return _errorCount == 0;
+            return _errorCount == 0;
+        }
     }
 
     /// <summary> Emits the given warning, according to its ErrorLevel as set in our config. </summary>
     /// <returns> True if the warning was an error, false if not.</returns>
     public bool Emit(WarningCode code, Location loc, string message) {
-        if (!_errorConfig.TryGetValue(code, out var level)) {
-            ForcedError(loc, $"Unknown warning code \"{code}\". Is it being used before the preprocessor has set it? Emission: \"{message}\"");
-            return true;
-        }
+        using (Profiler.BeginZone($"Emit")) {
+            if (!_errorConfig.TryGetValue(code, out var level)) {
+                ForcedError(loc, $"Unknown warning code \"{code}\". Is it being used before the preprocessor has set it? Emission: \"{message}\"");
+                return true;
+            }
 
-        var emission = new CompilerEmission(level, code, loc, message);
-        switch (emission.Level) {
-            case ErrorLevel.Disabled:
-                return false;
-            case ErrorLevel.Notice:
-                if (!Settings.NoticesEnabled)
+            var emission = new CompilerEmission(level, code, loc, message);
+            switch (emission.Level) {
+                case ErrorLevel.Disabled:
                     return false;
-                break;
-            case ErrorLevel.Warning:
-                ++_warningCount;
-                break;
-            case ErrorLevel.Error:
-                ++_errorCount;
-                break;
-        }
+                case ErrorLevel.Notice:
+                    if (!Settings.NoticesEnabled)
+                        return false;
+                    break;
+                case ErrorLevel.Warning:
+                    ++_warningCount;
+                    break;
+                case ErrorLevel.Error:
+                    ++_errorCount;
+                    break;
+            }
 
-        UniqueEmissions.Add(emission.Code);
-        Console.WriteLine(emission);
-        return level == ErrorLevel.Error;
+            UniqueEmissions.Add(emission.Code);
+            Console.WriteLine(emission);
+            return level == ErrorLevel.Error;
+        }
     }
 
     /// <summary>

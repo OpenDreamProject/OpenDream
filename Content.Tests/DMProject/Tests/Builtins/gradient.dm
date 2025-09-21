@@ -17,6 +17,6 @@
 	ASSERT(gradient("#ff0000", "#000064", space=COLORSPACE_HSV, 1) == "#000064")
 	ASSERT(gradient("#ff0000", "#000064", space=COLORSPACE_HSV, 0) == "#ff0000")
 	ASSERT(gradient(0, "#ff0000", 0.5, "#00ff00", 1, "#0000ff", 0.96) == "#0014ea")
-	ASSERT(gradient(0, "white", 0.5, new /obj(), 1, "white", 0.75) == "#7f7f7f7f")
+	ASSERT(gradient(0, "white", 0.5, new /datum(), 1, "white", 0.75) == "#7f7f7f7f")
 
 	ASSERT(gradient(arglist(list(index = 0.5, "red", "black"))) == "#7f0000")

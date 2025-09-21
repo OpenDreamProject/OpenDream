@@ -150,7 +150,7 @@ internal struct ParsedKeybind {
         {".", Keyboard.Key.Period},
         {"`", Keyboard.Key.Tilde},
         //TODO: Right shift/ctrl/alt
-        { "SHIFT", Keyboard.Key.Shift},
+        {"SHIFT", Keyboard.Key.Shift},
         {"CTRL", Keyboard.Key.Control},
         {"ALT", Keyboard.Key.Alt},
     };

@@ -4,6 +4,7 @@ using OpenDreamShared.Resources;
 using Robust.Client.Graphics;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 
 namespace OpenDreamClient.Resources.ResourceTypes;
 
@@ -54,10 +55,28 @@ public sealed class DMIResource : DreamResource {
         return _states[stateName];
     }
 
+    public Image<Rgba32>? GetStateAsImage(string? stateName, AtomDirection dir) {
+        using Stream dmiStream = new MemoryStream(Data);
+        DMIParser.ParsedDMIDescription description = DMIParser.ParseDMI(dmiStream);
+
+        dmiStream.Seek(0, SeekOrigin.Begin);
+
+        Image<Rgba32> image = Image.Load<Rgba32>(dmiStream);
+        if (!(description.GetStateOrDefault(stateName)?.Directions.TryGetValue(dir, out var state) ?? false))
+            return null;
+
+        var result = image.Clone();
+        result.Mutate(clone => {
+            clone.Resize(new Size(description.Width, description.Height));
+            clone.Crop(new Rectangle(state[0].X, state[0].Y, state[0].X + description.Width, state[0].Y + description.Height));
+        });
+        return result;
+    }
+
     private bool IsValidPNG() {
         if (Data.Length < PngHeader.Length) return false;
 
-        for (int i=0; i<PngHeader.Length; i++) {
+        for (int i = 0; i < PngHeader.Length; i++) {
             if (Data[i] != PngHeader[i]) return false;
         }
 

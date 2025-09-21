@@ -16,6 +16,7 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
     public ScalingViewport Viewport { get; private set; }
 
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+    [Dependency] private readonly IClyde _clyde = default!;
     private MouseInputSystem? _mouseInput;
     private ClientAppearanceSystem? _appearanceSystem;
 
@@ -140,7 +141,9 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
     private void UpdateAtomUnderMouse(ClientObjectReference? atom, Vector2 relativePos, Vector2i iconPos) {
         if (!_atomUnderMouse.Equals(atom)) {
             _entitySystemManager.Resolve(ref _appearanceSystem);
-
+            //appearnace lookup for mouse_over_pointer and mouse_drag_pointer and mouse_drop_zone along with client's mouse_pointer_icon
+            //work out the logic and set the cursor
+            _clyde.SetCursor(_interfaceManager.Cursors[0]);
             var name = (atom != null) ? _appearanceSystem.GetName(atom.Value) : string.Empty;
             Window?.SetStatus(name);
 

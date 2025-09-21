@@ -1,6 +1,7 @@
 using OpenDreamClient.Interface.Controls;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Network.Messages;
+using Robust.Client.Graphics;
 using Robust.Shared.Network;
 using Robust.Shared.Timing;
 
@@ -20,6 +21,7 @@ public sealed class DummyDreamInterfaceManager : IDreamInterfaceManager {
     public ViewRange View => new(5);
     public bool ShowPopupMenus => true;
     public int IconSize => 32;
+    public ICursor?[] Cursors => new ICursor?[4];
 
     [Dependency] private readonly IClientNetManager _netManager = default!;
 

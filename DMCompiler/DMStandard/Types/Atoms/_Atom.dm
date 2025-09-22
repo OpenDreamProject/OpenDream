@@ -56,9 +56,9 @@
 	var/step_x as opendream_unimplemented
 	var/step_y as opendream_unimplemented
 	var/render_source
-	var/tmp/mouse_drag_pointer as opendream_unimplemented
-	var/tmp/mouse_drop_pointer as opendream_unimplemented
-	var/tmp/mouse_over_pointer as opendream_unimplemented
+	var/tmp/mouse_drag_pointer 
+	var/tmp/mouse_drop_pointer 
+	var/tmp/mouse_over_pointer 
 	var/render_target
 	var/vis_flags as opendream_unimplemented
 

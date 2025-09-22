@@ -1176,6 +1176,14 @@ internal sealed class DMProc {
         WriteOpcode(DreamProcOpcode.PushGlobalVars);
     }
 
+    /// <summary>
+    /// Prevents negative stack size errors when other compile errors occur
+    /// </summary>
+    public void PushNullAndError() {
+        PushNull();
+        Error();
+    }
+
     public void FormatString(string value) {
         int formatCount = 0;
         foreach (var c in value) {

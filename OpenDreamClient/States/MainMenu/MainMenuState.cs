@@ -132,7 +132,6 @@ public sealed class MainMenuState : State {
         }
     }
 
-
     private void _onConnectFailed(object? _, NetConnectFailArgs args) {
         _userInterfaceManager.Popup($"Failed to connect: {args.Reason}");
         _netManager.ConnectFailed -= _onConnectFailed;

@@ -554,9 +554,9 @@ internal sealed class DMPreprocessorLexer {
                 token = null; // maybe should use ref instead of out?
                 return false;
         }
+
         return true;
     }
-
 
     ///<summary>
     /// Lex a string <br/>

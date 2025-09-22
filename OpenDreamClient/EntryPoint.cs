@@ -2,6 +2,7 @@ using System.Globalization;
 using OpenDreamClient.Audio;
 using OpenDreamClient.Interface;
 using OpenDreamClient.Rendering;
+using OpenDreamClient.Rendering.Particles;
 using OpenDreamClient.Resources;
 using OpenDreamClient.States;
 using OpenDreamShared;
@@ -23,6 +24,7 @@ public sealed class EntryPoint : GameClient {
     [Dependency] private readonly ILightManager _lightManager = default!;
     [Dependency] private readonly IConfigurationManager _configurationManager = default!;
     [Dependency] private readonly IClientNetManager _netManager = default!;
+    [Dependency] private readonly ParticlesManager _particleManager = default!;
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
 
     private const string IEUserAgent =
@@ -50,7 +52,7 @@ public sealed class EntryPoint : GameClient {
 
         // This needs to happen after all IoC registrations, but before IoC.BuildGraph();
         foreach (var callback in TestingCallbacks) {
-            var cast = (ClientModuleTestingCallbacks) callback;
+            var cast = (ClientModuleTestingCallbacks)callback;
             cast.ClientBeforeIoC?.Invoke();
         }
 
@@ -70,6 +72,7 @@ public sealed class EntryPoint : GameClient {
         IoCManager.Resolve<ILocalizationManager>().LoadCulture(new CultureInfo("en-US"));
 
         IoCManager.Resolve<IClyde>().SetWindowTitle("OpenDream");
+        _particleManager.Initialize(); //TODO remove when particles RT PR is merged
     }
 
     public override void PostInit() {
@@ -96,6 +99,7 @@ public sealed class EntryPoint : GameClient {
         switch (level) {
             case ModUpdateLevel.FramePostEngine:
                 _dreamInterface.FrameUpdate(frameEventArgs);
+                _particleManager.FrameUpdate(frameEventArgs); //TODO remove when particles RT PR is merged
                 break;
             case ModUpdateLevel.PostEngine:
                 break;

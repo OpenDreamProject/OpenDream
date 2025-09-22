@@ -1,4 +1,5 @@
 using DMCompiler.Compiler.DM.AST;
+using DMCompiler.Compiler.Tools;
 
 namespace DMCompiler.DM.Builders;
 
@@ -11,20 +12,24 @@ internal class DMCodeTreeBuilder(DMCompiler compiler) {
         _leftDMStandard = false;
 
         // Add everything in the AST to the code tree
-        ProcessBlockInner(astFile.BlockInner, DreamPath.Root);
+        using (Profiler.BeginZone($"AST"))
+            ProcessBlockInner(astFile.BlockInner, DreamPath.Root);
 
         // Now define everything in the code tree
-        CodeTree.DefineEverything();
+        using (Profiler.BeginZone($"Define Everything"))
+            CodeTree.DefineEverything();
         if (compiler.Settings.PrintCodeTree)
             CodeTree.Print();
 
         // Create each types' initialization proc (initializes vars that aren't constants)
-        foreach (DMObject dmObject in compiler.DMObjectTree.AllObjects)
-            dmObject.CreateInitializationProc();
+        using (Profiler.BeginZone($"Init Procs"))
+            foreach (DMObject dmObject in compiler.DMObjectTree.AllObjects)
+                dmObject.CreateInitializationProc();
 
         // Compile every proc
-        foreach (DMProc proc in compiler.DMObjectTree.AllProcs)
-            proc.Compile();
+        using (Profiler.BeginZone($"Procs"))
+            foreach (DMProc proc in compiler.DMObjectTree.AllProcs)
+                proc.Compile();
     }
 
     private void ProcessBlockInner(DMASTBlockInner blockInner, DreamPath currentType) {

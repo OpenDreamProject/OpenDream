@@ -340,15 +340,16 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                     Cursors[2] = Cursors[0];
                     Cursors[3] = Cursors[0];
                 } else {
-                    var baseState = resource.GetStateAsImage("all", AtomDirection.South);
-                    var overState = resource.GetStateAsImage("all", AtomDirection.South);
-                    var dragState = resource.GetStateAsImage("all", AtomDirection.South);
-                    var dropState = resource.GetStateAsImage("all", AtomDirection.South);
+                    var baseState = resource.GetStateAsImage("", AtomDirection.South);
+                    var overState = resource.GetStateAsImage("over", AtomDirection.South);
+                    var dragState = resource.GetStateAsImage("drag", AtomDirection.South);
+                    var dropState = resource.GetStateAsImage("drop", AtomDirection.South);
                     Cursors[0] = baseState is null ? null : _clyde.CreateCursor(baseState, new(32, 32));
                     Cursors[1] = overState is null ? null : _clyde.CreateCursor(overState, new(32, 32));
                     Cursors[2] = dragState is null ? null : _clyde.CreateCursor(dragState, new(32, 32));
                     Cursors[3] = dropState is null ? null : _clyde.CreateCursor(dropState, new(32, 32));
                 }
+                //TODO should trigger a cursor update immediately
             });
         else {
             Cursors[0] = null;

@@ -28,6 +28,9 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
     [Dependency] private readonly IConfigurationManager _configurationManager = default!;
     [Dependency] private readonly IDreamInterfaceManager _dreamInterfaceManager = default!;
     [Dependency] private readonly ClientAppearanceSystem _appearanceSystem = default!;
+    [Dependency] private readonly IClyde _clyde = default!;
+
+    public bool IsDragging { get => _selectedEntity?.IsDrag ?? false; }
 
     private DreamViewOverlay? _dreamViewOverlay;
     private ContextMenuPopup _contextMenu = default!;
@@ -193,25 +196,66 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
         var clickParams = CreateClickParams(viewport, args, underMouse.Value.IconPosition); // If client.show_popup_menu is disabled, this will handle sending right clicks
 
         _selectedEntity = new(atom, args.PointerLocation, clickParams);
+        //cursor stuff
+        if (_appearanceSystem.TryGetAppearance(atom, out var atomAppearance)) {
+            SetCursorFromDefine(atomAppearance.MouseDragPointer, 2); //2 is drag
+        }
         return true;
     }
 
     private bool OnRelease(ScalingViewport viewport, GUIBoundKeyEventArgs args) {
-        if (_selectedEntity == null)
+        if (_selectedEntity == null) {
+            SetCursorFromDefine(0, 0); //default
             return false;
+        }
+
+        var overAtom = GetAtomUnderMouse(viewport, args.RelativePixelPosition, args.PointerLocation);
+        if (overAtom is not null && _appearanceSystem.TryGetAppearance(overAtom.Value.Atom, out var atomAppearance)) {
+            SetCursorFromDefine(atomAppearance.MouseOverPointer, 1); //1 is over
+        } else
+            SetCursorFromDefine(0, 0);
 
         if (!_selectedEntity.IsDrag) {
             RaiseNetworkEvent(new AtomClickedEvent(_selectedEntity.Atom, _selectedEntity.ClickParams));
         } else {
-            var overAtom = GetAtomUnderMouse(viewport, args.RelativePixelPosition, args.PointerLocation);
 
             RaiseNetworkEvent(new AtomDraggedEvent(_selectedEntity.Atom, overAtom?.Atom, _selectedEntity.ClickParams));
         }
+
 
         _selectedEntity = null;
         return true;
     }
 
+    public void SetCursorFromDefine(int define, int activePos) {
+        switch (define) {
+                case 0: //MOUSE_INACTIVE_POINTER
+                    _clyde.SetCursor(_dreamInterfaceManager.Cursors[0]);
+                    break;
+                case 1: //MOUSE_ACTIVE_POINTER
+                    _clyde.SetCursor(_dreamInterfaceManager.Cursors[activePos]);
+                    break;
+                //skipping 2 is intentional, it's what byond does
+                case 3: //MOUSE_DRAG_POINTER
+                    _clyde.SetCursor(_clyde.GetStandardCursor(StandardCursorShape.Move));
+                    break;
+                case 4: //MOUSE_DROP_POINTER
+                    _clyde.SetCursor(_clyde.GetStandardCursor(StandardCursorShape.NotAllowed));
+                    break;
+                case 5: //MOUSE_ARROW_POINTER
+                    _clyde.SetCursor(_clyde.GetStandardCursor(StandardCursorShape.Arrow));
+                    break;
+                case 6: //MOUSE_CROSSHAIRS_POINTER
+                    _clyde.SetCursor(_clyde.GetStandardCursor(StandardCursorShape.Crosshair));
+                    break;
+                case 7: //MOUSE_HAND_POINTER
+                    _clyde.SetCursor(_clyde.GetStandardCursor(StandardCursorShape.Hand));
+                    break;
+                default: //invalid
+                    _clyde.SetCursor(null); //default cursor
+                    break;
+            }
+    }
     private ClickParams CreateClickParams(ScalingViewport viewport, GUIBoundKeyEventArgs args, Vector2i iconPos) {
         bool right = args.Function == EngineKeyFunctions.UIRightClick;
         bool middle = args.Function == OpenDreamKeyFunctions.MouseMiddle;
@@ -221,7 +265,7 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
         UIBox2i viewportBox = viewport.GetDrawBox();
         Vector2 screenLocPos = (args.RelativePixelPosition - viewportBox.TopLeft) / viewportBox.Size * viewport.ViewportSize;
         float screenLocY = viewport.ViewportSize.Y - screenLocPos.Y; // Flip the Y
-        ScreenLocation screenLoc = new ScreenLocation((int) screenLocPos.X, (int) screenLocY, 32); // TODO: icon_size other than 32
+        ScreenLocation screenLoc = new ScreenLocation((int)screenLocPos.X, (int)screenLocY, 32); // TODO: icon_size other than 32
 
         // TODO: Take icon transformations into account for iconPos
         return new(screenLoc, right, middle, shift, ctrl, alt, iconPos.X, iconPos.Y);

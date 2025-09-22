@@ -20,6 +20,7 @@ namespace DMCompiler;
 
 public class DMCompiler {
     public readonly HashSet<WarningCode> UniqueEmissions = new();
+    public readonly List<string> CompilerMessages = new();
     public DMCompilerSettings Settings;
     public IReadOnlyCollection<string> ResourceDirectories => _resourceDirectories;
 
@@ -211,6 +212,8 @@ public class DMCompiler {
                 break;
         }
 
+        if (Settings.StoreMessages)
+            CompilerMessages.Add(new CompilerEmission(ErrorLevel.Error, loc, message).ToString());
         UniqueEmissions.Add(emission.Code);
         Console.WriteLine(emission);
         return level == ErrorLevel.Error;
@@ -375,6 +378,7 @@ public struct DMCompilerSettings {
     public bool NoStandard = false;
     public bool Verbose = false;
     public bool PrintCodeTree = false;
+    public bool StoreMessages = false;
     public Dictionary<string, string>? MacroDefines = null;
 
     /// <summary> The value of the DM_VERSION macro </summary>

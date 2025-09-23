@@ -15,6 +15,12 @@ public interface IDreamList {
     public Dictionary<DreamValue, DreamValue> GetAssociativeValues();
     public void RemoveValue(DreamValue value);
     public IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateAssocValues();
+    public void AddValue(DreamValue value);
+    public IDreamList CreateCopy(int start = 1, int end = 0);
+    public int FindValue(DreamValue value, int start = 1, int end = 0);
+    public void Insert(int index, DreamValue value);
+    public bool ContainsValue(DreamValue value);
+    public void Swap(int index1, int index2);
 
     public DreamValue[] CopyToArray() {
         return EnumerateValues().ToArray();

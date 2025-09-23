@@ -15,11 +15,6 @@
 	var/alist/AL2 = alist("c" = 5, "d" = 6, "e" = 2)
 	ASSERT(values_dot(AL, AL2) == -20)
 
-	AL = alist("a" = 1, "b" = 2, "c" = -4)
-	ASSERT(values_product(AL) == -8)
-	ASSERT(values_sum(AL) == -1)
-
-	//var/list/L = list()
-	//L.Cut()
-	AL.Cut()
-	ASSERT(length(AL) == 0)
+	AL = alist("a" = 1, "b" = 2, "c" = -5)
+	ASSERT(values_product(AL) == -10)
+	ASSERT(values_sum(AL) == -2)

@@ -9,6 +9,12 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
 
     private readonly Dictionary<DreamValue, DreamValue> _values = new(size);
 
+    public DreamAssocList(DreamObjectDefinition listDef, Dictionary<DreamValue, DreamValue>? values) : this(listDef, values?.Count ?? 0) {
+        if (values != null) {
+            _values = values;
+        }
+    }
+
     public void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
         _values[key] = value;
     }
@@ -72,4 +78,53 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     public Dictionary<DreamValue, DreamValue> CopyAssocValues() {
         return new(_values);
     }
+
+    public void AddValue(DreamValue value) {
+        //if (GetValue(value) != DreamValue.Null) {
+        if(ContainsValue(value)) {
+            return; // calling Add("c") on alist("c" = 5) does not change anything
+        }
+        _values[value] = DreamValue.Null;
+    }
+
+    public IDreamList CreateCopy(int start = 1, int end = 0) {
+        if (start == 0) ++start; //start being 0 and start being 1 are equivalent
+
+        var values = GetValues();
+        if (end > values.Count + 1 || start > values.Count + 1) throw new Exception("list index out of bounds");
+        if (end == 0) end = values.Count + 1;
+        if (end <= start)
+            return new DreamAssocList(ObjectDefinition, 0);
+
+        Dictionary<DreamValue, DreamValue> copyValues = new Dictionary<DreamValue, DreamValue>(_values);
+
+        return new DreamAssocList(ObjectDefinition, copyValues);
+    }
+
+    public int FindValue(DreamValue value, int start = 1, int end = 0) {
+        // Unlike list.Find(), alist.Find() doesn't pay attention to start and end, and returns a boolean 0/1 instead of the position of the found object
+        if(ContainsValue(value)) {
+            return 1;
+        }
+        return 0;
+    }
+
+    public void Insert(int index, DreamValue value) {
+        throw new Exception("insert not allowed for this list");
+    }
+
+    public void Swap(int index1, int index2) {
+        throw new Exception("swap not allowed for this list");
+    }
+
+    public bool ContainsValue(DreamValue value) {
+        var keys = GetValues();
+        for (int i = 0; i < keys.Count; i++) {
+            if (keys[i].Equals(value))
+                return true;
+        }
+
+        return false;
+    }
+
 }

@@ -273,10 +273,10 @@ public sealed class DreamConnection {
         return task;
     }
 
-    public async Task<DreamValue> PromptList(DreamValueType types, DreamList list, string title, string message, DreamValue defaultValue) {
-        List<DreamValue> listValues = list.GetValues();
+    public async Task<DreamValue> PromptList(DreamValueType types, IDreamList list, string title, string message, DreamValue defaultValue) {
+        DreamValue[] listValues = list.CopyToArray();
 
-        List<string> promptValues = new(listValues.Count);
+        List<string> promptValues = new(listValues.Length);
         foreach (var value in listValues) {
             if (types.HasFlag(DreamValueType.Obj) && !value.TryGetValueAsDreamObject<DreamObjectMovable>(out _))
                 continue;
@@ -307,7 +307,7 @@ public sealed class DreamConnection {
 
         // The client returns the index of the selected item, this needs turned back into the DreamValue.
         var selectedIndex = await task;
-        if (selectedIndex.TryGetValueAsInteger(out int index) && index < listValues.Count) {
+        if (selectedIndex.TryGetValueAsInteger(out int index) && index < listValues.Length) {
             return listValues[index];
         }
 

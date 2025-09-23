@@ -303,16 +303,19 @@ public static unsafe partial class ByondApi {
                 return 0;
             }
 
-            var srcDreamVals = srcList.GetValues();
-            int length = srcDreamVals.Count;
+            int length = srcList.GetLength();
             *len = (uint)length;
             if (list == null || providedBufLen < length) {
                 return 0;
             }
 
             try {
-                for (int i = 0; i < length; i++) {
-                    list[i] = ValueToByondApi(srcDreamVals[i]);
+                int i = 0;
+                foreach (var value in srcList.EnumerateValues()) {
+                    if (i >= length)
+                        throw new Exception($"List {srcList} had more elements than the expected {length}");
+
+                    list[i++] = ValueToByondApi(value);
                 }
             } catch (Exception) {
                 return 0;
@@ -706,7 +709,7 @@ public static unsafe partial class ByondApi {
                     corner1->x, corner1->y, corner1->z,
                     corner2->x, corner2->y, corner2->z);
 
-                foreach (var turf in turfs.GetValues()) {
+                foreach (var turf in turfs.EnumerateValues()) {
                     list.Add(ValueToByondApi(turf));
                 }
             } catch (Exception) {
@@ -879,15 +882,10 @@ public static unsafe partial class ByondApi {
                 var objectDef = treeEntry.ObjectDefinition;
 
                 var arglistVal = ValueFromDreamApi(*cArglist);
-                if (!arglistVal.TryGetValueAsDreamList(out DreamList? arglist)) return 0;
+                if (!arglistVal.TryGetValueAsIDreamList(out var arglist)) return 0;
 
                 // Copy the arglist's values to a new array to ensure no shenanigans
-                var argListValues = arglist.GetValues();
-                var argValues = new DreamValue[argListValues.Count];
-                for (int i = 0; i < argListValues.Count; i++) {
-                    argValues[i] = argListValues[i];
-                }
-
+                var argValues = arglist.CopyToArray();
                 var args = new DreamProcArguments(argValues);
 
                 // TODO: This is code duplicated with DMOpcodeHandlers.CreateObject()

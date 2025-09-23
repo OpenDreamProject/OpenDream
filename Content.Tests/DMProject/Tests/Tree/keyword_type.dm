@@ -1,12 +1,12 @@
 
 //# issue 679
 
-/obj/step/ty
-/obj/throw/ty
-/obj/null/ty
-/obj/switch/ty
-/obj/spawn/ty
+/datum/step/ty
+/datum/throw/ty
+/datum/null/ty
+/datum/switch/ty
+/datum/spawn/ty
 
 /proc/RunTest()
-	var/obj/throw/o = new
-	ASSERT(istype(o, /obj/throw))
+	var/datum/throw/o = new
+	ASSERT(istype(o, /datum/throw))

@@ -436,13 +436,14 @@ public sealed class DreamObjectSavefile : DreamObject {
                     if(dreamList.IsAssociative)
                         jsonEncodedList.AssocData = new List<SFDreamJsonValue?>(dreamList.GetLength()); //only init the list if it's needed
 
-                    foreach (var keyValue in dreamList.GetValues()) { //get all normal values and keys
+                    foreach (var keyValue in dreamList.EnumerateValues()) { //get all normal values and keys
                         if(keyValue.TryGetValueAsDreamObject(out var _) && !keyValue.IsNull) {
                             SFDreamJsonValue jsonEncodedObject = SerializeDreamValue(keyValue, thisObjectCount);
                             //merge the object subdirectories into the list parent directory
                             foreach(var key in jsonEncodedObject.Keys) {
                                 jsonEncodedList[key] = jsonEncodedObject[key];
                             }
+
                             //we already merged the nodes into the parent, so clear them from the child
                             jsonEncodedObject.Clear();
                             //add the object path to the list
@@ -451,6 +452,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                         } else {
                             jsonEncodedList.AssocKeys.Add(SerializeDreamValue(keyValue));
                         }
+
                         if(dreamList.IsAssociative) { //if it's an assoc list, check if this value is a key
                             if(!dreamList.ContainsKey(keyValue)) {
                                 jsonEncodedList.AssocData!.Add(null); //store an actual null if this key does not have an associated value - this is distinct from storing DreamValue.Null
@@ -462,6 +464,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                                     foreach(var key in jsonEncodedObject.Keys) {
                                         jsonEncodedList[key] = jsonEncodedObject[key];
                                     }
+
                                     //we already merged the nodes into the parent, so clear them from the child
                                     jsonEncodedObject.Clear();
                                     //add the object path to the list
@@ -509,11 +512,13 @@ public sealed class DreamObjectSavefile : DreamObject {
                             Crc32 = CalculateCrc32(iconResource.ResourceData),
                             Data = Convert.ToBase64String(iconResource.ResourceData)};
                     }
+
                     //Call the Write proc on the object - note that this is a weird one, it does not need to call parent to the native function to save the object
                     dreamObject.SpawnProc("Write", null, [new DreamValue(this)]);
                     jsonEncodedObject[jsonEncodedObject.Path] = objectVars;
                     return jsonEncodedObject;
                 }
+
                 break;
             // noop
             case DreamValue.DreamValueType.DreamProc:

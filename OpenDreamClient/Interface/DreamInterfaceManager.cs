@@ -61,7 +61,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     public Dictionary<string, InterfaceMenu> Menus { get; } = new();
     public Dictionary<string, InterfaceMacroSet> MacroSets { get; } = new();
     private Dictionary<WindowId, ControlWindow> ClydeWindowIdToControl { get; } = new();
-    public ICursor?[] Cursors { get; private set; } = new ICursor?[4];
+    public CursorHolder Cursors { get; private set; } = new();
 
     public ViewRange View {
         get => _view;
@@ -335,27 +335,25 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             _dreamResource.LoadResourceAsync<DMIResource>(msg.CursorResource, resource => {
                 var allState = resource.GetStateAsImage("all", AtomDirection.South);
                 if (allState is not null) { //all overrides all possible states
-                    Cursors[0] = _clyde.CreateCursor(allState!, new(32, 32));
-                    Cursors[1] = Cursors[0];
-                    Cursors[2] = Cursors[0];
-                    Cursors[3] = Cursors[0];
+                    Cursors.BaseCursor = _clyde.CreateCursor(allState!, new(32, 32));
+                    Cursors.DragCursor = Cursors.BaseCursor;
+                    Cursors.DropCursor = Cursors.BaseCursor;
+                    Cursors.OverCursor = Cursors.BaseCursor;
+                    Cursors.AllStateSet = true;
                 } else {
                     var baseState = resource.GetStateAsImage("", AtomDirection.South);
                     var overState = resource.GetStateAsImage("over", AtomDirection.South);
                     var dragState = resource.GetStateAsImage("drag", AtomDirection.South);
                     var dropState = resource.GetStateAsImage("drop", AtomDirection.South);
-                    Cursors[0] = baseState is null ? null : _clyde.CreateCursor(baseState, new(32, 32));
-                    Cursors[1] = overState is null ? null : _clyde.CreateCursor(overState, new(32, 32));
-                    Cursors[2] = dragState is null ? null : _clyde.CreateCursor(dragState, new(32, 32));
-                    Cursors[3] = dropState is null ? null : _clyde.CreateCursor(dropState, new(32, 32));
+                    Cursors.BaseCursor = baseState is null ? null : _clyde.CreateCursor(baseState, new(32, 32));
+                    Cursors.DragCursor = overState is null ? null : _clyde.CreateCursor(overState, new(32, 32));
+                    Cursors.DropCursor = dragState is null ? null : _clyde.CreateCursor(dragState, new(32, 32));
+                    Cursors.OverCursor = dropState is null ? null : _clyde.CreateCursor(dropState, new(32, 32));
                 }
                 //TODO should trigger a cursor update immediately
             });
         else {
-            Cursors[0] = null;
-            Cursors[1] = null;
-            Cursors[2] = null;
-            Cursors[3] = null;
+            Cursors = new(); //reset to default
         }
 
     }
@@ -1056,6 +1054,16 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     }
 }
 
+public sealed class CursorHolder {
+    public ICursor? BaseCursor;
+    public ICursor? DragCursor;
+    public ICursor? OverCursor;
+    public ICursor? DropCursor;
+    public bool AllStateSet = false;
+
+    public CursorHolder() {}
+}
+
 public interface IDreamInterfaceManager {
     Dictionary<string, ControlWindow> Windows { get; }
     Dictionary<string, InterfaceMenu> Menus { get; }
@@ -1067,7 +1075,7 @@ public interface IDreamInterfaceManager {
     public ViewRange View { get; }
     public bool ShowPopupMenus { get; }
     public int IconSize { get; }
-    public ICursor?[] Cursors { get; }
+    public CursorHolder Cursors { get; }
 
     void Initialize();
     void FrameUpdate(FrameEventArgs frameEventArgs);

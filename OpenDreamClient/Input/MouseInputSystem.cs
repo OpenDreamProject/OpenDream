@@ -198,22 +198,22 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
         _selectedEntity = new(atom, args.PointerLocation, clickParams);
         //cursor stuff
         if (_appearanceSystem.TryGetAppearance(atom, out var atomAppearance)) {
-            SetCursorFromDefine(atomAppearance.MouseDragPointer, 2); //2 is drag
+            SetCursorFromDefine(atomAppearance.MouseDragPointer, _dreamInterfaceManager.Cursors.DragCursor);
         }
         return true;
     }
 
     private bool OnRelease(ScalingViewport viewport, GUIBoundKeyEventArgs args) {
         if (_selectedEntity == null) {
-            SetCursorFromDefine(0, 0); //default
+            SetCursorFromDefine(0, _dreamInterfaceManager.Cursors.BaseCursor); //default
             return false;
         }
 
         var overAtom = GetAtomUnderMouse(viewport, args.RelativePixelPosition, args.PointerLocation);
         if (overAtom is not null && _appearanceSystem.TryGetAppearance(overAtom.Value.Atom, out var atomAppearance)) {
-            SetCursorFromDefine(atomAppearance.MouseOverPointer, 1); //1 is over
+            SetCursorFromDefine(atomAppearance.MouseOverPointer, _dreamInterfaceManager.Cursors.OverCursor);
         } else
-            SetCursorFromDefine(0, 0);
+            SetCursorFromDefine(0, _dreamInterfaceManager.Cursors.BaseCursor);
 
         if (!_selectedEntity.IsDrag) {
             RaiseNetworkEvent(new AtomClickedEvent(_selectedEntity.Atom, _selectedEntity.ClickParams));
@@ -227,13 +227,17 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
         return true;
     }
 
-    public void SetCursorFromDefine(int define, int activePos) {
+    public void SetCursorFromDefine(int define, ICursor? activeCursor) {
+        if (_dreamInterfaceManager.Cursors.AllStateSet) {
+            _clyde.SetCursor(_dreamInterfaceManager.Cursors.BaseCursor);
+            return;
+        }
         switch (define) {
                 case 0: //MOUSE_INACTIVE_POINTER
-                    _clyde.SetCursor(_dreamInterfaceManager.Cursors[0]);
+                    _clyde.SetCursor(_dreamInterfaceManager.Cursors.BaseCursor);
                     break;
                 case 1: //MOUSE_ACTIVE_POINTER
-                    _clyde.SetCursor(_dreamInterfaceManager.Cursors[activePos]);
+                    _clyde.SetCursor(activeCursor);
                     break;
                 //skipping 2 is intentional, it's what byond does
                 case 3: //MOUSE_DRAG_POINTER

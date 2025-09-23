@@ -21,7 +21,7 @@ public sealed class DummyDreamInterfaceManager : IDreamInterfaceManager {
     public ViewRange View => new(5);
     public bool ShowPopupMenus => true;
     public int IconSize => 32;
-    public ICursor?[] Cursors => new ICursor?[4];
+    public CursorHolder Cursors => new();
 
     [Dependency] private readonly IClientNetManager _netManager = default!;
 

@@ -754,6 +754,10 @@ public sealed class AtomManager {
         def.TryGetVariable("maptext_height", out var maptextHeightVar);
         def.TryGetVariable("maptext_x", out var maptextXVar);
         def.TryGetVariable("maptext_y", out var maptextYVar);
+        def.TryGetVariable("mouse_over_pointer", out var mouseOverPointer);
+	    def.TryGetVariable("mouse_drag_pointer", out var mouseDragPointer);
+	    def.TryGetVariable("mouse_drop_pointer", out var mouseDropPointer);
+	    def.TryGetVariable("mouse_drop_zone", out var mouseDropZone);
 
         appearance = MutableAppearance.Get();
         SetAppearanceVar(appearance, "name", nameVar);
@@ -780,6 +784,10 @@ public sealed class AtomManager {
         SetAppearanceVar(appearance, "maptext_height", maptextHeightVar);
         SetAppearanceVar(appearance, "maptext_x", maptextXVar);
         SetAppearanceVar(appearance, "maptext_y", maptextYVar);
+        SetAppearanceVar(appearance, "mouse_over_pointer", mouseOverPointer);
+	    SetAppearanceVar(appearance, "mouse_drag_pointer", mouseDragPointer);
+	    SetAppearanceVar(appearance, "mouse_drop_pointer", mouseDropPointer);
+	    SetAppearanceVar(appearance, "mouse_drop_zone", mouseDropZone);
 
         if (def.TryGetVariable("transform", out var transformVar) && transformVar.TryGetValueAsDreamObject<DreamObjectMatrix>(out var transformMatrix)) {
             appearance.Transform = DreamObjectMatrix.MatrixToTransformFloatArray(transformMatrix);

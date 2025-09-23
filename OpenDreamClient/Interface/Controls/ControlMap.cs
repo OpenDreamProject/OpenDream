@@ -16,6 +16,7 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
     public ScalingViewport Viewport { get; private set; }
 
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+    [Dependency] private readonly IDreamInterfaceManager _dreamInterfaceManager = default!;
     private MouseInputSystem? _mouseInput;
     private ClientAppearanceSystem? _appearanceSystem;
 
@@ -152,11 +153,11 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
                 _mouseInput?.HandleAtomMouseEntered(Viewport, relativePos, atom.Value, iconPos);
                 if ( _appearanceSystem.TryGetAppearance(atom.Value, out var atomAppearance)) {
                     if((_mouseInput?.IsDragging ?? false) && atomAppearance.MouseDropZone)
-                        _mouseInput?.SetCursorFromDefine(atomAppearance.MouseDropPointer, 3); //3 is drop
+                        _mouseInput?.SetCursorFromDefine(atomAppearance.MouseDropPointer, _dreamInterfaceManager.Cursors.DropCursor);
                     else
-                        _mouseInput?.SetCursorFromDefine(atomAppearance.MouseOverPointer, 1); //1 is over
+                        _mouseInput?.SetCursorFromDefine(atomAppearance.MouseOverPointer, _dreamInterfaceManager.Cursors.OverCursor);
                 } else
-                    _mouseInput?.SetCursorFromDefine(0, 0);
+                    _mouseInput?.SetCursorFromDefine(0, _dreamInterfaceManager.Cursors.BaseCursor);
 
             }
         } else if (atom.HasValue) {

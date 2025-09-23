@@ -65,8 +65,7 @@ public sealed class DMIResource : DreamResource {
         if (!(description.GetStateOrDefault(stateName)?.Directions.TryGetValue(dir, out var state) ?? false))
             return null;
 
-        var result = image.Clone();
-        result.Mutate(clone => {
+        var result = image.Clone(clone => {
             clone.Resize(new Size(description.Width, description.Height));
             clone.Crop(new Rectangle(state[0].X, state[0].Y, state[0].X + description.Width, state[0].Y + description.Height));
         });

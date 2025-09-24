@@ -34,6 +34,9 @@ namespace OpenDreamRuntime.Procs.Native {
                 DreamList listCopy = (DreamList)list.CreateCopy(start, end)!;
                 return new DreamValue(listCopy);
             } else if (list is DreamAssocList) {
+                if (start != 1 || end != 0) {
+                    throw new Exception("list index out of bounds");
+                }
                 DreamAssocList listCopy = (DreamAssocList)list.CreateCopy(start, end)!;
                 return new DreamValue(listCopy);
             } else {

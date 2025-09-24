@@ -337,7 +337,7 @@ public class DreamList : DreamObject, IDreamList {
     }
 
     public override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
-        DreamList listCopy = (DreamList)CreateCopy()!;
+        DreamList listCopy = (DreamList)CreateCopy();
 
         if (b.TryGetValueAsDreamList(out var bList)) {
             foreach (DreamValue value in bList.EnumerateValues()) {
@@ -355,7 +355,7 @@ public class DreamList : DreamObject, IDreamList {
     }
 
     public override DreamValue OperatorSubtract(DreamValue b, DMProcState state) {
-        DreamList listCopy = (DreamList)CreateCopy()!;
+        DreamList listCopy = (DreamList)CreateCopy();
 
         if (b.TryGetValueAsDreamList(out var bList)) {
             foreach (DreamValue value in bList.EnumerateValues()) {
@@ -374,7 +374,7 @@ public class DreamList : DreamObject, IDreamList {
         if (b.TryGetValueAsDreamList(out var bList)) {  // List | List
             list = Union(bList);
         } else {                                        // List | x
-            list = (DreamList)CreateCopy()!;
+            list = (DreamList)CreateCopy();
             list.AddValue(b);
         }
 

@@ -101,8 +101,6 @@
 	grow = list(0.01, 0)
 	fadein = 0
 
-
-
 /mob
 	icon = 'icons/mob.dmi'
 	icon_state = "mob"

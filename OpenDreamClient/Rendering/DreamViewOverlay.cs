@@ -43,7 +43,6 @@ internal sealed partial class DreamViewOverlay : Overlay {
     [Dependency] private readonly IPlayerManager _playerManager = default!;
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly ParticlesManager _particlesManager = default!;
-
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly IClyde _clyde = default!;
@@ -478,7 +477,6 @@ internal sealed partial class DreamViewOverlay : Overlay {
             handle.UseShader(GetBlendAndColorShader(iconMetaData, ignoreColor: true));
             iconMetaData.Particles.Draw(handle, CalculateDrawingMatrix(iconMetaData.TransformToApply, pixelPosition, iconMetaData.Particles.RenderSize, renderTargetSize));
         }
-
     }
 
     /// <summary>

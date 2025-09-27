@@ -10,14 +10,12 @@ namespace OpenDreamClient.Rendering.Particles;
 ///     System for creating and managing particle effects.
 /// </summary>
 [PublicAPI]
-public sealed class ParticlesManager
-{
-    private Dictionary<EntityUid,ParticleSystem> _particleSystems = new();
+public sealed class ParticlesManager {
+    private Dictionary<EntityUid, ParticleSystem> _particleSystems = new();
     public List<EntityUid> GetEntitiesWithParticles => _particleSystems.Keys.ToList();
     [Dependency] private IOverlayManager _overlayManager = default!;
 
-    public void Initialize()
-    {
+    public void Initialize() {
         // enable when part 2 is merged
         // _overlayManager.AddOverlay(new ParticlesOverlay());
     }
@@ -29,18 +27,17 @@ public sealed class ParticlesManager
         }
     }
 
-    public ParticleSystem CreateParticleSystem(EntityUid entity, ParticleSystemArgs args)
-    {
+    public ParticleSystem CreateParticleSystem(EntityUid entity, ParticleSystemArgs args) {
         var newSystem = new ParticleSystem(args);
         _particleSystems.Add(entity, newSystem);
         return newSystem;
     }
 
-    public void DestroyParticleSystem(EntityUid entity){
+    public void DestroyParticleSystem(EntityUid entity) {
         _particleSystems.Remove(entity);
     }
 
-    public bool TryGetParticleSystem(EntityUid entity, [NotNullWhen(true)] out ParticleSystem? system){
+    public bool TryGetParticleSystem(EntityUid entity, [NotNullWhen(true)] out ParticleSystem? system) {
         return _particleSystems.TryGetValue(entity, out system);
     }
 }
@@ -133,8 +130,7 @@ public sealed class ParticleSystem {
     /// </summary>
     private Particle[] _particles;
 
-    public ParticleSystem(ParticleSystemArgs args)
-    {
+    public ParticleSystem(ParticleSystemArgs args) {
         _particleSystemSize = args.ParticleSystemSize;
         _particleCount = args.ParticleCount;
         _particlesPerSecond = args.ParticlesPerSecond;
@@ -147,22 +143,22 @@ public sealed class ParticleSystem {
         _fadein = args.Fadein ?? (() => 0);
         _spawnPosition = args.SpawnPosition ?? (() => Vector3.Zero);
         _spawnVelocity = args.SpawnVelocity ?? (() => Vector3.Zero);
-        _color = args.Color ?? ((_) => Color.White);
-        _transform = args.Transform ?? ((_) => Matrix3x2.Identity);
+        _color = args.Color ?? (_ => Color.White);
+        _transform = args.Transform ?? (_ => Matrix3x2.Identity);
         _acceleration = args.Acceleration ?? ((_, _) => Vector3.Zero);
 
         _particles = new Particle[_particleCount];
-        for(int i=0; i<_particleCount; i++)
+        for (int i = 0; i < _particleCount; i++)
             _particles[i] = new();
     }
 
-    public void UpdateSystem(ParticleSystemArgs args){
+    public void UpdateSystem(ParticleSystemArgs args) {
         _particleSystemSize = args.ParticleSystemSize;
-        if(_particleCount != args.ParticleCount){
+        if (_particleCount != args.ParticleCount) {
             _particleCount = args.ParticleCount;
             Particle[] newParticles = new Particle[_particleCount];
-            for(int i = 0; i <_particleCount; i++)
-                if(i < _particles.Length)
+            for (int i = 0; i < _particleCount; i++)
+                if (i < _particles.Length)
                     newParticles[i] = _particles[i];
                 else
                     newParticles[i] = new();
@@ -170,7 +166,7 @@ public sealed class ParticleSystem {
         }
 
         _particlesPerSecond = args.ParticlesPerSecond;
-_lowerBound = args.LowerDrawBound ?? new Vector3(-_particleSystemSize.X, -_particleSystemSize.Y, float.MinValue);
+        _lowerBound = args.LowerDrawBound ?? new Vector3(-_particleSystemSize.X, -_particleSystemSize.Y, float.MinValue);
         _upperBound = args.UpperDrawBound ?? new Vector3(_particleSystemSize.X, _particleSystemSize.Y, float.MaxValue);
         _icon = args.Icon;
         _baseTransform = args.BaseTransform ?? Matrix3x2.Identity;
@@ -179,16 +175,15 @@ _lowerBound = args.LowerDrawBound ?? new Vector3(-_particleSystemSize.X, -_parti
         _fadein = args.Fadein ?? (() => 0);
         _spawnPosition = args.SpawnPosition ?? (() => Vector3.Zero);
         _spawnVelocity = args.SpawnVelocity ?? (() => Vector3.Zero);
-        _color = args.Color ?? ((_) => Color.White);
-        _transform = args.Transform ?? ((_) => Matrix3x2.Identity);
+        _color = args.Color ?? (_ => Color.White);
+        _transform = args.Transform ?? (_ => Matrix3x2.Identity);
         _acceleration = args.Acceleration ?? ((_, _) => Vector3.Zero);
     }
 
-    public void FrameUpdate(FrameEventArgs args)
-    {
+    public void FrameUpdate(FrameEventArgs args) {
         int particlesSpawned = 0;
-        for(int i=0; i<_particleCount; i++){
-            if(_particles[i].Active){
+        for (int i = 0; i < _particleCount; i++) {
+            if (_particles[i].Active) {
                 _particles[i].Lifetime += args.DeltaSeconds;
                 _particles[i].Transform = _baseTransform * _transform(_particles[i].Lifetime);
                 _particles[i].Color = _color(_particles[i].Lifetime);
@@ -199,13 +194,16 @@ _lowerBound = args.LowerDrawBound ?? new Vector3(-_particleSystemSize.X, -_parti
                 if(_particles[i].Fadeout > _particles[i].Lifespan-_particles[i].Lifetime)
                     _particles[i].Color.A = Math.Clamp((_particles[i].Lifespan-_particles[i].Lifetime)/_particles[i].Fadeout, 0, 1);
 
-                if(_particles[i].Lifetime > _particles[i].Lifespan || _particles[i].Position.X > _upperBound.X || _particles[i].Position.Y > _upperBound.Y || _particles[i].Position.Z > _upperBound.Z || _particles[i].Position.X < _lowerBound.X || _particles[i].Position.Y < _lowerBound.Y || _particles[i].Position.Z < _lowerBound.Z)
+                if (_particles[i].Lifetime > _particles[i].Lifespan || _particles[i].Position.X > _upperBound.X ||
+                    _particles[i].Position.Y > _upperBound.Y || _particles[i].Position.Z > _upperBound.Z ||
+                    _particles[i].Position.X < _lowerBound.X || _particles[i].Position.Y < _lowerBound.Y ||
+                    _particles[i].Position.Z < _lowerBound.Z)
                     _particles[i].Active = false;
 
                 _particles[i].Texture ??= _icon();
             }
 
-            if (!_particles[i].Active && particlesSpawned < _particlesPerSecond*args.DeltaSeconds) {
+            if (!_particles[i].Active && particlesSpawned < _particlesPerSecond * args.DeltaSeconds) {
                 _particles[i].Lifetime = 0;
                 _particles[i].Texture = _icon();
                 _particles[i].Position = _spawnPosition();
@@ -221,13 +219,15 @@ _lowerBound = args.LowerDrawBound ?? new Vector3(-_particleSystemSize.X, -_parti
         }
     }
 
-    public void Draw(DrawingHandleWorld handle, Matrix3x2 transform){
+    public void Draw(DrawingHandleWorld handle, Matrix3x2 transform) {
         Array.Sort(_particles, (p1, p2) => p1.Position.Z.CompareTo(p2.Position.Z));
-        foreach (var particle in _particles)
-        {
-            if(particle is { Active: true, Texture: not null }){
+        foreach (var particle in _particles) {
+            if (particle is { Active: true, Texture: not null }) {
                 handle.SetTransform(particle.Transform * transform);
-                handle.DrawTextureRect(particle.Texture!, new Box2(new Vector2(particle.Position.X, particle.Position.Y), new Vector2(particle.Position.X, particle.Position.Y)+particle.Texture!.Size), particle.Color);
+                handle.DrawTextureRect(particle.Texture!,
+                    new Box2(new Vector2(particle.Position.X, particle.Position.Y),
+                        new Vector2(particle.Position.X, particle.Position.Y) + particle.Texture!.Size),
+                    particle.Color);
             }
         }
     }

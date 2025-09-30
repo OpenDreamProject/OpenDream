@@ -1,0 +1,5 @@
+/proc/RunTest()
+	var/alist/AL = alist("a" = 1, "b" = 2, "c" = -4)
+	AL.Cut()
+	ASSERT(length(AL) == 0)
+	ASSERT(!("a" in AL))

@@ -72,7 +72,6 @@ public sealed class EntryPoint : GameClient {
         IoCManager.Resolve<ILocalizationManager>().LoadCulture(new CultureInfo("en-US"));
 
         IoCManager.Resolve<IClyde>().SetWindowTitle("OpenDream");
-        _particleManager.Initialize(); //TODO remove when particles RT PR is merged
     }
 
     public override void PostInit() {

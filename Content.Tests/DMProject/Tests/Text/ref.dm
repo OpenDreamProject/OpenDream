@@ -1,7 +1,7 @@
 /proc/RunTest()
-	var/obj/thing = new()
-	var/obj/thing2 = new()
-	var/obj/thing3 = new()
+	var/datum/thing = new()
+	var/datum/thing2 = new()
+	var/datum/thing3 = new()
 	var/not_this_one = "\ref[thing]"
 	var/ref = "\ref[thing2]"
 	var/not_this_one_either = "\ref[thing]"

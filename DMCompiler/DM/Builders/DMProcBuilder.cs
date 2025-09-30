@@ -709,10 +709,10 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                         Constant lower = GetCaseValue(range.RangeStart);
                         Constant upper = GetCaseValue(range.RangeEnd);
 
-                        Constant CoerceBound(Constant bound) {
+                        Constant CoerceBound(Constant bound, bool upperRange) {
                             if (bound is Null) { // We do a little null coercion, as a treat
                                 compiler.Emit(WarningCode.MalformedRange, range.RangeStart.Location,
-                                    "Malformed range, lower bound is coerced from null to 0");
+                                    $"Malformed range, {(upperRange ? "upper" : "lower")} bound is coerced from null to 0");
                                 return new Number(lower.Location, 0.0f);
                             }
 
@@ -720,15 +720,15 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                             //We are (hopefully) deviating from parity here and just calling that a Compiler error.
                             if (bound is not Number) {
                                 compiler.Emit(WarningCode.InvalidRange, range.RangeStart.Location,
-                                    "Invalid range, lower bound is not a number");
+                                    $"Invalid range, {(upperRange ? "upper" : "lower")} bound is not a number");
                                 bound = new Number(bound.Location, 0.0f);
                             }
 
                             return bound;
                         }
 
-                        lower = CoerceBound(lower);
-                        upper = CoerceBound(upper);
+                        lower = CoerceBound(lower, false);
+                        upper = CoerceBound(upper, true);
 
                         lower.EmitPushValue(ExprContext);
                         upper.EmitPushValue(ExprContext);

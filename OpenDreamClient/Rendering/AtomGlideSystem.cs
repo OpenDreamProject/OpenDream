@@ -52,7 +52,7 @@ public sealed class AtomGlideSystem : EntitySystem {
         for (int i = 0; i < _currentGlides.Count; i++) {
             var glide = _currentGlides[i];
 
-            if (glide.Sprite.Icon.Appearance == null) {
+            if (_entityManager.Deleted(glide.Uid) || glide.Sprite.Icon.Appearance == null) {
                 _currentGlides.RemoveSwap(i--);
                 continue;
             }

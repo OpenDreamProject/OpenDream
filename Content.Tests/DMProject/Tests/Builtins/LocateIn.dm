@@ -1,6 +1,6 @@
 /proc/RunTest()
-    var/obj/obj1 = new()
-    var/obj/obj2 = new()
+    var/datum/obj1 = new()
+    var/datum/obj2 = new()
     var/list/things = list(obj1,"beep","thing","stuff")
     var/A = locate(ref(obj1)) in things
     ASSERT(A == obj1)

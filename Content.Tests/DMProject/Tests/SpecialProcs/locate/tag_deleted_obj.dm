@@ -1,11 +1,11 @@
 
 //# issue 647
 
-/obj
+/datum
 	var/const/c = 5
 
 /proc/RunTest()
-	var/obj/o = new
+	var/datum/o = new
 	o.tag = "tag"
 	ASSERT(locate("tag").c == 5)
 	del(o)

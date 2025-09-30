@@ -25,6 +25,7 @@
     <Project Path="RobustToolbox/Robust.Shared.Scripting/Robust.Shared.Scripting.csproj" />
     <Project Path="RobustToolbox/Robust.Shared/Robust.Shared.csproj" />
     <Project Path="RobustToolbox/Robust.UnitTesting/Robust.UnitTesting.csproj" />
+    <Project Path="RobustToolbox/Robust.Xaml/Robust.Xaml.csproj" />
   </Folder>
   <Folder Name="/RobustToolbox/cefglue/">
     <Project Path="RobustToolbox/cefglue/CefGlue/CefGlue.csproj" />
@@ -70,5 +71,4 @@
   <Project Path="OpenDreamRuntime/OpenDreamRuntime.csproj" />
   <Project Path="OpenDreamServer/OpenDreamServer.csproj" />
   <Project Path="OpenDreamShared/OpenDreamShared.csproj" />
-  <Project Path="RobustToolbox/Robust.Xaml/Robust.Xaml.csproj" />
 </Solution>

@@ -20,6 +20,7 @@ public sealed class Scope {
      * etc.
      */
     [JsonPropertyName("presentationHint")] public string? PresentationHint { get; set; }
+
     public const string PresentationHintArguments = "arguments";
     public const string PresentationHintLocals = "locals";
     public const string PresentationHintRegisters = "registers";

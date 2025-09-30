@@ -59,29 +59,27 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem {
         var result = new ParticleSystemArgs(textureFunc, new Vector2i(component.Width, component.Height), (uint)component.Count, component.Spawning) {
             Lifespan = GetGeneratorFloat(component.LifespanLow, component.LifespanHigh, component.LifespanDist),
             Fadein = GetGeneratorFloat(component.FadeInLow, component.FadeInHigh, component.FadeInDist),
-            Fadeout = GetGeneratorFloat(component.FadeOutLow, component.FadeOutHigh, component.FadeOutDist)
+            Fadeout = GetGeneratorFloat(component.FadeOutLow, component.FadeOutHigh, component.FadeOutDist),
+            Color = component.Gradient.Length > 0
+                ? lifetime => {
+                    var colorIndex = (int)(lifetime * component.Gradient.Length);
+                    colorIndex = Math.Clamp(colorIndex, 0, component.Gradient.Length - 1);
+                    return component.Gradient[colorIndex];
+                }
+                : _ => Color.White,
+            Acceleration = (_ , velocity) => GetGeneratorVector3(component.AccelerationLow, component.AccelerationHigh, component.AccelerationType, component.AccelerationDist)() + GetGeneratorVector3(component.DriftLow, component.DriftHigh, component.DriftType, component.DriftDist)() - velocity*GetGeneratorVector3(component.FrictionLow, component.FrictionHigh, component.FrictionType, component.FrictionDist)(),
+            SpawnPosition = GetGeneratorVector3(component.SpawnPositionLow, component.SpawnPositionHigh, component.SpawnPositionType, component.SpawnPositionDist),
+            SpawnVelocity = GetGeneratorVector3(component.SpawnVelocityLow, component.SpawnVelocityHigh, component.SpawnVelocityType, component.SpawnVelocityDist),
+            Transform = _ => {
+                var scale = GetGeneratorVector2(component.ScaleLow, component.ScaleHigh, component.ScaleType, component.ScaleDist)();
+                var rotation = GetGeneratorFloat(component.RotationLow, component.RotationHigh, component.RotationDist)();
+                var growth = GetGeneratorVector2(component.GrowthLow, component.GrowthHigh, component.GrowthType, component.GrowthDist)();
+                var spin = GetGeneratorFloat(component.SpinLow, component.SpinHigh, component.SpinDist)();
+                return Matrix3x2.CreateScale(scale.X + growth.X, scale.Y + growth.Y) *
+                       Matrix3x2.CreateRotation(rotation + spin);
+            },
+            BaseTransform = Matrix3x2.Identity
         };
-
-        if (component.Gradient.Length > 0)
-            result.Color = lifetime => {
-                var colorIndex = (int)(lifetime * component.Gradient.Length);
-                colorIndex = Math.Clamp(colorIndex, 0, component.Gradient.Length - 1);
-                return component.Gradient[colorIndex];
-            };
-        else
-            result.Color = _ => Color.White;
-        result.Acceleration = (_ , velocity) => GetGeneratorVector3(component.AccelerationLow, component.AccelerationHigh, component.AccelerationType, component.AccelerationDist)() + GetGeneratorVector3(component.DriftLow, component.DriftHigh, component.DriftType, component.DriftDist)() - velocity*GetGeneratorVector3(component.FrictionLow, component.FrictionHigh, component.FrictionType, component.FrictionDist)();
-        result.SpawnPosition = GetGeneratorVector3(component.SpawnPositionLow, component.SpawnPositionHigh, component.SpawnPositionType, component.SpawnPositionDist);
-        result.SpawnVelocity = GetGeneratorVector3(component.SpawnVelocityLow, component.SpawnVelocityHigh, component.SpawnVelocityType, component.SpawnVelocityDist);
-        result.Transform = _ => {
-            var scale = GetGeneratorVector2(component.ScaleLow, component.ScaleHigh, component.ScaleType, component.ScaleDist)();
-            var rotation = GetGeneratorFloat(component.RotationLow, component.RotationHigh, component.RotationDist)();
-            var growth = GetGeneratorVector2(component.GrowthLow, component.GrowthHigh, component.GrowthType, component.GrowthDist)();
-            var spin = GetGeneratorFloat(component.SpinLow, component.SpinHigh, component.SpinDist)();
-            return Matrix3x2.CreateScale(scale.X + growth.X, scale.Y + growth.Y) *
-                Matrix3x2.CreateRotation(rotation + spin);
-        };
-        result.BaseTransform = Matrix3x2.Identity;
 
         return result;
     }

@@ -1,4 +1,3 @@
-
 using System.Numerics;
 using OpenDreamShared.Dream;
 using Robust.Shared.Analyzers;

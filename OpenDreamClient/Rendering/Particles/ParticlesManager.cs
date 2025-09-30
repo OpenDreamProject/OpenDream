@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using JetBrains.Annotations;
 using Robust.Client.Graphics;
 using Robust.Shared.Timing;
@@ -11,14 +10,7 @@ namespace OpenDreamClient.Rendering.Particles;
 /// </summary>
 [PublicAPI]
 public sealed class ParticlesManager {
-    private Dictionary<EntityUid, ParticleSystem> _particleSystems = new();
-    public List<EntityUid> GetEntitiesWithParticles => _particleSystems.Keys.ToList();
-    [Dependency] private IOverlayManager _overlayManager = default!;
-
-    public void Initialize() {
-        // enable when part 2 is merged
-        // _overlayManager.AddOverlay(new ParticlesOverlay());
-    }
+    private readonly Dictionary<EntityUid, ParticleSystem> _particleSystems = new();
 
     public void FrameUpdate(FrameEventArgs args) {
         // can't use parallel foreach here because IoC doesn't have context in parallel tasks

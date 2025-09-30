@@ -112,7 +112,6 @@
 	gender = MALE
 	see_invisible = 101
 	
-
 	New()
 		..()
 		loc = locate(5, 5, 1)
@@ -134,7 +133,6 @@
 		else
 			particles = null
 			usr << "poof"
-		
 
 	verb/winget_test()
 		usr << "windows: [json_encode(winget(usr, null, "windows"))]"
@@ -414,3 +412,5 @@
 /world/New()
 	..()
 	world.log << "World loaded!"
+	var/particles/A = new()
+	A.width = null

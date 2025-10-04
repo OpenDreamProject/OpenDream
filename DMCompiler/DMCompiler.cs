@@ -213,7 +213,12 @@ public class DMCompiler {
         }
 
         if (Settings.StoreMessages)
-            CompilerMessages.Add(new CompilerEmission(ErrorLevel.Error, loc, message).ToString());
+            if (CompilerMessages.Count < 1000)
+                CompilerMessages.Add(new CompilerEmission(ErrorLevel.Error, loc, message).ToString());
+            else {
+                Settings.StoreMessages = false;
+                CompilerMessages.Add("COMPILER WARNING: No longer storing error messages due to excessive counts.");
+            }
         UniqueEmissions.Add(emission.Code);
         Console.WriteLine(emission);
         return level == ErrorLevel.Error;

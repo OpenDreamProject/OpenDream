@@ -4,7 +4,7 @@
 // An undocumented proc
 // Doesn't evaluate DM as you might expect, but instead DMScript
 /proc/eval(script)
-	set opendream_unimplemented = TRUE
+	set opendream_unsupported = "eval() is officialy deprecated"
 
 /proc/findlasttext_char(Haystack,Needle,Start=0,End=1)
 	set opendream_unimplemented = TRUE

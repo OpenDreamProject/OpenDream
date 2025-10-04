@@ -52,7 +52,7 @@
 	var/host opendream_unsupported //contains the key of the world's host - unsupported as OD server does not run as a user
 	var/map_format = TOPDOWN_MAP as opendream_unimplemented
 	var/cache_lifespan = 30 as opendream_unsupported //used to control cache expiry in RSC - unsupported due to no RSC
-	var/executor as opendream_unimplemented
+	var/executor as opendream_unsupported // DMCGI nonsense - there will be no ODCGI
 	
 	// An OpenDream read-only var that tells you what port Topic() is listening on
 	// Remove OPENDREAM_TOPIC_PORT_EXISTS if this is ever removed

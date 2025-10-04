@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using NUnit.Framework;
 
 // This it outside of any namespace so it affects the whole assembly.
@@ -22,10 +23,11 @@ public sealed class SetupCompileDm {
         List<string> files = [DmEnvironment, .. Directory.EnumerateFiles(TestFilesDirectory, "*.dm")];
         bool successfulCompile = compiler.Compile(new() {
             Files = files,
-            DumpPreprocessor = true
+            DumpPreprocessor = true,
+            StoreMessages = true,
         });
 
-        Assert.That(successfulCompile && File.Exists(CompiledProject), "Failed to compile DM test project!");
+        Assert.That(successfulCompile && File.Exists(CompiledProject), "Failed to compile DM test project!\r\n"+String.Join("\r\n", compiler.CompilerMessages));
     }
 
     [OneTimeTearDown]

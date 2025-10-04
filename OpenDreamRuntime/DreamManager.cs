@@ -21,7 +21,6 @@ using Robust.Server.Player;
 using Robust.Shared.Asynchronous;
 using Robust.Shared.Timing;
 using System.Diagnostics.CodeAnalysis;
-using Microsoft.CodeAnalysis.Elfie.Serialization;
 
 namespace OpenDreamRuntime;
 

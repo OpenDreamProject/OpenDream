@@ -479,7 +479,7 @@ namespace OpenDreamRuntime {
                 line = source.Item2;
             }
 
-            dreamMan.HandleException(exception, msg, file, line);
+            dreamMan.HandleException(exception, msg, file, line, inWorldError: _current?.Proc?.OwningType == dreamMan.WorldInstance.ObjectDefinition.TreeEntry && _current.Proc.Name == "Error");
             IoCManager.Resolve<IDreamDebugManager>().HandleException(this, exception);
         }
 

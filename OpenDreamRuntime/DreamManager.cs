@@ -21,6 +21,7 @@ using Robust.Server.Player;
 using Robust.Shared.Asynchronous;
 using Robust.Shared.Timing;
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.CodeAnalysis.Elfie.Serialization;
 
 namespace OpenDreamRuntime;
 
@@ -435,7 +436,7 @@ public sealed partial class DreamManager {
         }
     }
 
-    public void HandleException(Exception e, string msg = "", string file = "", int line = 0) {
+    public void HandleException(Exception e, string msg = "", string file = "", int line = 0, bool inWorldError = false) {
         if (string.IsNullOrEmpty(msg)) { // Just print the C# exception if we don't override the message
             msg = e.Message;
         }
@@ -452,8 +453,12 @@ public sealed partial class DreamManager {
         obj.Desc = new DreamValue(msg);
         obj.Line = new DreamValue(line);
         obj.File = new DreamValue(file);
-
-        WorldInstance.SpawnProc("Error", usr: null, new DreamValue(obj));
+        if (!inWorldError) // if an error occurs in /world/Error(), don't call it again
+            WorldInstance.SpawnProc("Error", usr: null, new DreamValue(obj));
+        else {
+            _sawmill.Error("CRITICAL: An error occurred in /world/Error()");
+            WriteWorldLog(msg);
+        }
     }
 
     public void OptionalException<T>(WarningCode code, string exceptionText) where T : Exception {

@@ -74,7 +74,6 @@
 		return FALSE;
 
 	proc/Error(exception)
-		set opendream_unimplemented = TRUE
 
 	proc/Reboot()
 		set opendream_unimplemented = TRUE

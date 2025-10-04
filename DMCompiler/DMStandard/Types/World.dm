@@ -29,14 +29,14 @@
 	var/byond_version = DM_VERSION
 	var/byond_build = DM_BUILD
 
-	var/version = 0 as opendream_unsupported //only used to notify users on the hub - unsupported due to no hub
+	var/version = 0 as num|opendream_unsupported //only used to notify users on the hub - unsupported due to no hub
 
 	var/address
 	var/port = 0 as opendream_compiletimereadonly
 	var/internet_address = "127.0.0.1" as opendream_unimplemented
 	var/url as opendream_unimplemented
-	var/visibility = 0 as opendream_unsupported //used to control server appearing on the hub - unsupported due to no hub
-	var/status as opendream_unsupported //used to display a message appearing under the server on the hub - unsupported due to no hub
+	var/visibility = 0 as num|opendream_unsupported //used to control server appearing on the hub - unsupported due to no hub
+	var/status = "" as text|opendream_unsupported //used to display a message appearing under the server on the hub - unsupported due to no hub
 	var/process
 	var/list/params = null
 
@@ -45,14 +45,14 @@
 	var/const/system_type as opendream_noconstfold
 
 	var/map_cpu = 0 as opendream_unimplemented
-	var/hub as opendream_unsupported //used to mark a game as unique on the hub - unsupported due to no hub
-	var/hub_password as opendream_unsupported //authentication for above - unsupported due to no hub
+	var/hub = "" as text|opendream_unsupported //used to mark a game as unique on the hub - unsupported due to no hub
+	var/hub_password = "" as text|opendream_unsupported //authentication for above - unsupported due to no hub
 	var/reachable as opendream_unimplemented
-	var/game_state as opendream_unsupported //used to display server joinability on the hub - does not actually affect joining - unsupported due to no hub
-	var/host as opendream_unsupported //contains the key of the world's host - unsupported as OD server does not run as a user
+	var/game_state = 0 as num|opendream_unsupported //used to display server joinability on the hub - does not actually affect joining - unsupported due to no hub
+	var/host = "" as text|opendream_unsupported //contains the key of the world's host - unsupported as OD server does not run as a user
 	var/map_format = TOPDOWN_MAP as opendream_unimplemented
-	var/cache_lifespan = 30 as opendream_unsupported //used to control cache expiry in RSC - unsupported due to no RSC
-	var/executor as opendream_unsupported // DMCGI nonsense - there will be no ODCGI
+	var/cache_lifespan = 30 as num|opendream_unsupported //used to control cache expiry in RSC - unsupported due to no RSC
+	var/executor = "" as text|opendream_unsupported // DMCGI nonsense - there will be no ODCGI
 	
 	// An OpenDream read-only var that tells you what port Topic() is listening on
 	// Remove OPENDREAM_TOPIC_PORT_EXISTS if this is ever removed

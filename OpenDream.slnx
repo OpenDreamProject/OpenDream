@@ -18,16 +18,14 @@
     <Project Path="RobustToolbox/Robust.Client/Robust.Client.csproj" />
     <Project Path="RobustToolbox/Robust.LoaderApi/Robust.LoaderApi/Robust.LoaderApi.csproj" />
     <Project Path="RobustToolbox/Robust.Packaging/Robust.Packaging.csproj" />
-    <Project Path="RobustToolbox/Robust.Serialization.Generator/Robust.Serialization.Generator.csproj">
-      <BuildType Solution="Tools|Any CPU" Project="Debug" />
-      <BuildType Solution="Tools|x64" Project="Release" />
-    </Project>
+    <Project Path="RobustToolbox/Robust.Serialization.Generator/Robust.Serialization.Generator.csproj" />
     <Project Path="RobustToolbox/Robust.Server/Robust.Server.csproj" />
     <Project Path="RobustToolbox/Robust.Shared.CompNetworkGenerator/Robust.Shared.CompNetworkGenerator.csproj" />
     <Project Path="RobustToolbox/Robust.Shared.Maths/Robust.Shared.Maths.csproj" />
     <Project Path="RobustToolbox/Robust.Shared.Scripting/Robust.Shared.Scripting.csproj" />
     <Project Path="RobustToolbox/Robust.Shared/Robust.Shared.csproj" />
     <Project Path="RobustToolbox/Robust.UnitTesting/Robust.UnitTesting.csproj" />
+    <Project Path="RobustToolbox/Robust.Xaml/Robust.Xaml.csproj" />
   </Folder>
   <Folder Name="/RobustToolbox/cefglue/">
     <Project Path="RobustToolbox/cefglue/CefGlue/CefGlue.csproj" />
@@ -57,25 +55,20 @@
     <File Path="TestGame/icons/displace.dmi" />
     <File Path="TestGame/icons/mob.dmi" />
     <File Path="TestGame/icons/turf.dmi" />
+    <File Path="TestGame/icons/bee.dmi" />
+  </Folder>
+  <Folder Name="/TestGame/icons/effects/">
+    <File Path="TestGame/icons/effects/effects.dmi" />
+    <File Path="TestGame/icons/effects/lines.dmi" />
   </Folder>
   <Project Path="Content.IntegrationTests/Content.IntegrationTests.csproj" />
   <Project Path="Content.Tests/Content.Tests.csproj" />
   <Project Path="DMCompiler/DMCompiler.csproj" />
   <Project Path="DMDisassembler/DMDisassembler.csproj" />
   <Project Path="OpenDreamClient/OpenDreamClient.csproj" />
-  <Project Path="OpenDreamPackageTool/OpenDreamPackageTool.csproj">
-    <BuildType Solution="Tools|Any CPU" Project="Debug" />
-    <BuildType Solution="Tools|x64" Project="Release" />
-  </Project>
-  <Project Path="OpenDreamPackaging/OpenDreamPackaging.csproj">
-    <BuildType Solution="Tools|Any CPU" Project="Debug" />
-    <BuildType Solution="Tools|x64" Project="Release" />
-  </Project>
+  <Project Path="OpenDreamPackageTool/OpenDreamPackageTool.csproj" />
+  <Project Path="OpenDreamPackaging/OpenDreamPackaging.csproj" />
   <Project Path="OpenDreamRuntime/OpenDreamRuntime.csproj" />
   <Project Path="OpenDreamServer/OpenDreamServer.csproj" />
   <Project Path="OpenDreamShared/OpenDreamShared.csproj" />
-  <Project Path="RobustToolbox/Robust.Xaml/Robust.Xaml.csproj">
-    <BuildType Solution="Tools|Any CPU" Project="Debug" />
-    <BuildType Solution="Tools|x64" Project="Release" />
-  </Project>
 </Solution>

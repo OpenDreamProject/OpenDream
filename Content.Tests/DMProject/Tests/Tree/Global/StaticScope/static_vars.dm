@@ -19,7 +19,7 @@ var/c = 999
 		inner_c++
 		return inner_c
 
-/obj
+/datum
 	var/const/c = 5
 	subobj1
 		var/static/s = dynamic_value()
@@ -29,9 +29,9 @@ var/c = 999
 		var/global/g = dynamic_value()
 
 /proc/RunTest()
-	var/obj/subobj1/o1 = new
-	var/obj/subobj1/o2 = new
-	var/obj/subobj2/o3 = new
+	var/datum/subobj1/o1 = new
+	var/datum/subobj1/o2 = new
+	var/datum/subobj2/o3 = new
 
 	ASSERT(static_proc() == 1003)
 	ASSERT(static_proc_shadowed() == 700)

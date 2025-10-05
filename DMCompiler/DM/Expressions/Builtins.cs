@@ -100,7 +100,7 @@ internal sealed class NewPath(DMCompiler compiler, Location location, IConstantP
                 break;
             case ConstantProcReference procReference: // "new /proc/new_verb(Destination)" is a thing
                 (argumentsType, stackSize) = arguments.EmitArguments(ctx, ctx.ObjectTree.AllProcs[procReference.Value.Id]);
-                if(variableOverrides is null || variableOverrides.Count > 0) {
+                if(variableOverrides is not null && variableOverrides.Count > 0) {
                     ctx.Compiler.Emit(WarningCode.BadExpression, Location, "Cannot add a Var Override to a proc");
                     ctx.Proc.PushNull();
                     return;

@@ -76,7 +76,7 @@ internal sealed class New(DMCompiler compiler, Location location, DMExpression e
 
 // new /x/y/z (...)
 internal sealed class NewPath(DMCompiler compiler, Location location, IConstantPath create,
-    Dictionary<string, object?> variableOverrides, ArgumentList arguments) : DMExpression(location) {
+    Dictionary<string, object?>? variableOverrides, ArgumentList arguments) : DMExpression(location) {
     public override DreamPath? Path => (create is ConstantTypeReference typeReference) ? typeReference.Path : null;
     public override DMComplexValueType ValType => Path?.GetAtomType(compiler) ?? DMValueType.Anything;
 
@@ -90,7 +90,7 @@ internal sealed class NewPath(DMCompiler compiler, Location location, IConstantP
                 var newProc = ctx.ObjectTree.GetNewProc(typeReference.Value.Id);
 
                 (argumentsType, stackSize) = arguments.EmitArguments(ctx, newProc);
-                if (variableOverrides.Count == 0) {
+                if (variableOverrides is null || variableOverrides.Count == 0) {
                     ctx.Proc.PushNull();
                 } else {
                     ctx.Proc.PushString(JsonSerializer.Serialize(variableOverrides));
@@ -100,7 +100,7 @@ internal sealed class NewPath(DMCompiler compiler, Location location, IConstantP
                 break;
             case ConstantProcReference procReference: // "new /proc/new_verb(Destination)" is a thing
                 (argumentsType, stackSize) = arguments.EmitArguments(ctx, ctx.ObjectTree.AllProcs[procReference.Value.Id]);
-                if(variableOverrides.Count > 0) {
+                if(variableOverrides is null || variableOverrides.Count > 0) {
                     ctx.Compiler.Emit(WarningCode.BadExpression, Location, "Cannot add a Var Override to a proc");
                     ctx.Proc.PushNull();
                     return;

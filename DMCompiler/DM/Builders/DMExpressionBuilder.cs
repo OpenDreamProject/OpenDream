@@ -284,7 +284,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                     break;
                 }
 
-                result = new NewPath(Compiler, newPath.Location, path, new Dictionary<string, object?>(),
+                result = new NewPath(Compiler, newPath.Location, path, null,
                     BuildArgumentList(newPath.Location, newPath.Parameters, inferredPath));
                 break;
             case DMASTNewModifiedType newModifiedType:

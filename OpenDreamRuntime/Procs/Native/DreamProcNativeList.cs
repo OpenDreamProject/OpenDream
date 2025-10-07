@@ -37,7 +37,8 @@ namespace OpenDreamRuntime.Procs.Native {
                 if (start != 1 || end != 0) {
                     throw new Exception("list index out of bounds");
                 }
-                DreamAssocList listCopy = (DreamAssocList)list.CreateCopy(start, end)!;
+
+                DreamAssocList listCopy = (DreamAssocList)list.CreateCopy(start, end);
                 return new DreamValue(listCopy);
             } else {
                 throw new Exception("Unhandled IDreamList child in NativeProc_Copy.");

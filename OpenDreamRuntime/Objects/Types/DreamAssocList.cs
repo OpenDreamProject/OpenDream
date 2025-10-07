@@ -46,10 +46,13 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         if (start != 1) {
             throw new Exception($"Cut() was called with non-default start value of {start}.");
         }
+
         if (end != 0) {
             throw new Exception($"Cut() was called with non-default end value of {end}.");
         }
+
         _values.Clear();
+
     }
 
     public List<DreamValue> GetValues() {
@@ -84,6 +87,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         if(ContainsValue(value)) {
             return; // calling Add("c") on alist("c" = 5) does not change anything
         }
+
         _values[value] = DreamValue.Null;
     }
 
@@ -96,7 +100,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         if (end <= start)
             return new DreamAssocList(ObjectDefinition, 0);
 
-        Dictionary<DreamValue, DreamValue> copyValues = new Dictionary<DreamValue, DreamValue>(_values);
+        Dictionary<DreamValue, DreamValue> copyValues = new(_values);
 
         return new DreamAssocList(ObjectDefinition, copyValues);
     }
@@ -106,6 +110,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         if(ContainsValue(value)) {
             return 1;
         }
+
         return 0;
     }
 
@@ -119,9 +124,10 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
 
     public bool ContainsValue(DreamValue value) {
         var keys = GetValues();
-        for (int i = 0; i < keys.Count; i++) {
-            if (keys[i].Equals(value))
+        foreach (var key in keys) {
+            if (key.Equals(value)) {
                 return true;
+            }
         }
 
         return false;

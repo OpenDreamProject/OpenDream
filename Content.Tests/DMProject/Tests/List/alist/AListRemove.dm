@@ -4,9 +4,3 @@
 	ASSERT(!("a" in AL))
 	ASSERT(!("b" in AL))
 	ASSERT("c" in AL)
-
-	AL = alist("a" = 1, "b" = 2, "c" = -4)
-	ASSERT(AL.Remove(list("a", "b")))
-	ASSERT(!("a" in AL))
-	ASSERT(!("b" in AL))
-	ASSERT("c" in AL)

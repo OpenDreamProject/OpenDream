@@ -3,7 +3,6 @@ using OpenDreamRuntime.Procs;
 
 namespace OpenDreamRuntime.Objects.Types;
 
-// TODO: An arglist given to New() can be used to initialize an alist with values
 public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : DreamObject(aListDef), IDreamList {
     public bool IsAssociative => true;
 
@@ -82,7 +81,6 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     }
 
     public void AddValue(DreamValue value) {
-        //if (GetValue(value) != DreamValue.Null) {
         if(ContainsValue(value)) {
             return; // calling Add("c") on alist("c" = 5) does not change anything
         }

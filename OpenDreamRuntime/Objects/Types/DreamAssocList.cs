@@ -52,7 +52,6 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         }
 
         _values.Clear();
-
     }
 
     public List<DreamValue> GetValues() {

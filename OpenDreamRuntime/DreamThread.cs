@@ -485,6 +485,7 @@ namespace OpenDreamRuntime {
                 var top = _stack.ElementAt(_stack.Count - 1); //only the top of the stack can be /world/Error
                 inWorldError = top.Proc?.OwningType == dreamMan.WorldInstance.ObjectDefinition.TreeEntry && top.Proc?.Name == "Error";
             }
+
             dreamMan.HandleException(exception, msg, file, line, inWorldError: inWorldError);
             IoCManager.Resolve<IDreamDebugManager>().HandleException(this, exception);
         }

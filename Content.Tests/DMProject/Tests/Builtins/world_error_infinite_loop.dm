@@ -6,6 +6,9 @@ var/error_loop_count = 0
 	if(error_loop_count > 1)
 		world.log << "this is a test failure"
 		return
+	SubError()	
+
+/proc/SubError()
 	CRASH("error handling error")
 
 /proc/TestProc()

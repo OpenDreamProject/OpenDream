@@ -479,7 +479,19 @@ namespace OpenDreamRuntime {
                 line = source.Item2;
             }
 
-            dreamMan.HandleException(exception, msg, file, line, inWorldError: _current?.Proc?.OwningType == dreamMan.WorldInstance.ObjectDefinition.TreeEntry && _current.Proc.Name == "Error");
+            bool inWorldError = _current?.Proc?.OwningType == dreamMan.WorldInstance.ObjectDefinition.TreeEntry && _current.Proc.Name == "Error";
+            if (!inWorldError) {
+                //if we're not directly in /world.Error, check the whole stack
+                var stackSnapshot = _stack.ToArray();
+
+                for (int i = stackSnapshot.Count()-1; i >= 0; i--) {
+                    if (stackSnapshot[i].Proc?.OwningType == dreamMan.WorldInstance.ObjectDefinition.TreeEntry && stackSnapshot[i].Proc?.Name == "Error") {
+                        inWorldError = true;
+                        break;
+                    }
+                }
+            }
+            dreamMan.HandleException(exception, msg, file, line, inWorldError: inWorldError);
             IoCManager.Resolve<IDreamDebugManager>().HandleException(this, exception);
         }
 

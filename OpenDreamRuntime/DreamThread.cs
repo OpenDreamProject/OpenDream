@@ -480,7 +480,7 @@ namespace OpenDreamRuntime {
             }
 
             bool inWorldError = _current?.Proc?.OwningType == dreamMan.WorldInstance.ObjectDefinition.TreeEntry && _current.Proc.Name == "Error";
-            if (!inWorldError) {
+            if (!inWorldError && _stack.Count > 0) {
                 //if we're not directly in /world.Error, check the stack
                 var top = _stack.ElementAt(_stack.Count - 1); //only the top of the stack can be /world/Error
                 inWorldError = top.Proc?.OwningType == dreamMan.WorldInstance.ObjectDefinition.TreeEntry && top.Proc?.Name == "Error";

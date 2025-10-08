@@ -35,8 +35,8 @@
 	var/port = 0 as opendream_compiletimereadonly
 	var/internet_address = "127.0.0.1" as opendream_unimplemented
 	var/url as opendream_unimplemented
-	var/visibility = 0 as num|opendream_unsupported //used to control server appearing on the hub - unsupported due to no hub
-	var/status = "" as text|opendream_unsupported //used to display a message appearing under the server on the hub - unsupported due to no hub
+	var/visibility = 0 as num|opendream_unimplemented //used to control server appearing on the hub - this will have to use ServerStatusCode.Offline/Online
+	var/status = "" as text|opendream_unimplemented //used to display a message appearing under the server on the hub - this will have to use the server desc on the hub
 	var/process
 	var/list/params = null
 

@@ -152,6 +152,8 @@ public sealed class DreamObjectTree {
     public DreamObject CreateObject(TreeEntry type) {
         if (type == List)
             return CreateList();
+        if (type == AssocList)
+            return CreateAssocList();
         if (type == Savefile)
             return new DreamObjectSavefile(Savefile.ObjectDefinition);
         if (type.ObjectDefinition.IsSubtypeOf(DatabaseQuery))

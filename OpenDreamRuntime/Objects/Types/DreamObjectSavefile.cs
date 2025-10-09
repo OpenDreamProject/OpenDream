@@ -9,7 +9,6 @@ using OpenDreamRuntime.Resources;
 
 namespace OpenDreamRuntime.Objects.Types;
 
-
 public sealed class DreamObjectSavefile : DreamObject {
     private readonly DreamObjectTree _objectTree;
 
@@ -25,8 +24,8 @@ public sealed class DreamObjectSavefile : DreamObject {
 
     private static ISawmill? _sawmill;
 
-
     public override bool ShouldCallNew => false;
+
     /// <summary>
     /// Temporary savefiles should be deleted when the DreamObjectSavefile is deleted. Temporary savefiles can be created by creating a new savefile datum with a null filename or an entry in the world's resource cache
     /// </summary>
@@ -78,7 +77,6 @@ public sealed class DreamObjectSavefile : DreamObject {
         }
     }
 
-
     public DreamObjectSavefile(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
         CurrentDir = _rootNode = new SFDreamDir();
         _objectTree ??= objectDefinition.ObjectTree;
@@ -109,6 +107,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                     Resource = null;
                     throw new InvalidDataException($"Error parsing savefile {filename}: Is the savefile corrupted or using a BYOND version? BYOND savefiles are not compatible with OpenDream. Details: {e}");
                 }
+
                 SavefileDirectories.Add(filename, _rootNode);
             } else {
                 //_rootNode is created in constructor
@@ -179,16 +178,19 @@ public sealed class DreamObjectSavefile : DreamObject {
                             foreach(var key in CurrentDir.Keys) {
                                 newCurrentDir[key] = CurrentDir[key];
                             }
+
                             CurrentDir.Clear();
                             parentDir[CurrentPath.Split("/").Last()] = newCurrentDir;
                         } else {
                             CurrentDir.Clear();
                         }
                     }
+
                     _eof = true;
                 } else {
                     _eof = false;
                 }
+
                 break;
             default:
                 throw new Exception($"Cannot set var \"{varName}\" on savefiles");
@@ -236,6 +238,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                 _sawmill.Error($"Error flushing savefile {savefile.Resource!.ResourcePath}: {e}");
             }
         }
+
         SavefilesToFlush.Clear();
     }
 
@@ -287,8 +290,10 @@ public sealed class DreamObjectSavefile : DreamObject {
                 else
                     return tempDir;
             }
+
             tempDir = newDir;
         }
+
         return tempDir;
     }
 
@@ -313,6 +318,7 @@ public sealed class DreamObjectSavefile : DreamObject {
             foreach(var key in value.Keys) {
                 newDir[key] = value[key];
             }
+
             CurrentDir[newIndex] = newDir;
             SavefilesToFlush.Add(this);
         }
@@ -337,6 +343,7 @@ public sealed class DreamObjectSavefile : DreamObject {
             } else {
                 CurrentDir = _rootNode = newCurrentDir;
             }
+
             SavefilesToFlush.Add(this);
             return;
         }
@@ -351,6 +358,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                     newValue[key] = oldValue[key];
                 }
             }
+
             CurrentDir[index] = newValue;
         } else {
             string oldPath = CurrentPath;
@@ -358,6 +366,7 @@ public sealed class DreamObjectSavefile : DreamObject {
             SetSavefileValue(pathArray[pathArray.Length - 1], value);
             CurrentPath = oldPath;
         }
+
         SavefilesToFlush.Add(this);
     }
 
@@ -376,6 +385,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                     else
                         l.AddValue(DeserializeJsonValue(sfDreamListValue.AssocKeys[i]));
                 }
+
                 return new DreamValue(l);
             case SFDreamObjectPathValue sfDreamObjectPath:
                 SFDreamJsonValue storedObjectVars = sfDreamObjectPath;
@@ -393,6 +403,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                             continue;
                         resultObj.SetVariable(key, DeserializeJsonValue(storedObjectVars[key]));
                     }
+
                     resultObj.InitSpawn(new DreamProcArguments());
                     resultObj.SpawnProc("Read", null, [new DreamValue(this)]);
                     return new DreamValue(resultObj);
@@ -407,6 +418,7 @@ public sealed class DreamObjectSavefile : DreamObject {
             case SFDreamPrimitive sfDreamPrimitive:
                 return sfDreamPrimitive.Value;
         }
+
         return DreamValue.Null;
     }
 
@@ -542,6 +554,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                     crc >>= 1;
             }
         }
+
         return ~crc;
     }
 
@@ -567,21 +580,25 @@ public sealed class DreamObjectSavefile : DreamObject {
             get => _nodes[key];
             set => _nodes[key] = value;
         }
+
         public bool TryGetValue(string key, [MaybeNullWhen(false)] out SFDreamJsonValue value) => _nodes.TryGetValue(key, out value);
+
         [JsonIgnore]
         public Dictionary<string, SFDreamJsonValue>.KeyCollection Keys => _nodes.Keys;
+
         [JsonIgnore]
         public int Count => _nodes.Count;
+
         public void Clear() => _nodes.Clear();
         public bool Remove(string key) => _nodes.Remove(key);
         public bool ContainsKey(string key) => _nodes.ContainsKey(key);
-
     }
 
     /// <summary>
     /// Dummy type for directories
     /// </summary>
     public sealed class SFDreamDir : SFDreamJsonValue;
+
     /// <summary>
     /// Standard DM types except objects and type paths
     /// </summary>
@@ -589,6 +606,7 @@ public sealed class DreamObjectSavefile : DreamObject {
         [JsonInclude]
         public DreamValue Value = DreamValue.Null;
     }
+
     /// <summary>
     /// Standard DM type paths
     /// </summary>
@@ -603,6 +621,7 @@ public sealed class DreamObjectSavefile : DreamObject {
     public sealed class SFDreamListValue : SFDreamJsonValue {
         [JsonInclude]
         public List<SFDreamJsonValue> AssocKeys = new();
+
         [JsonInclude]
         public List<SFDreamJsonValue?>? AssocData;
     }
@@ -621,18 +640,22 @@ public sealed class DreamObjectSavefile : DreamObject {
     public sealed class SFDreamFileValue : SFDreamJsonValue {
         [JsonInclude]
         public string? Name;
+
         [JsonInclude]
         public string? Ext;
+
         [JsonInclude]
         public required int Length;
+
         [JsonInclude]
         public uint Crc32 = 0x00000000;
+
         [JsonInclude]
         public string Encoding = "base64";
+
         [JsonInclude]
         public required string Data;
     }
 
     #endregion
-
 }

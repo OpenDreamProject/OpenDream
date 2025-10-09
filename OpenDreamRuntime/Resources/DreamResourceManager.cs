@@ -8,6 +8,7 @@ using OpenDreamShared.Network.Messages;
 using OpenDreamShared.Resources;
 using Robust.Server.ServerStatus;
 using Robust.Shared.Network;
+using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Utility;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -18,7 +19,7 @@ public sealed class DreamResourceManager {
     [Dependency] private readonly IServerNetManager _netManager = default!;
     [Dependency] private readonly IStatusHost _statusHost = default!;
     [Dependency] private readonly IDependencyCollection _dependencyCollection = default!;
-
+    [Dependency] private readonly ISerializationManager _serializationManager = default!;
     public string RootPath { get; private set; } = default!;
     public DreamResource? InterfaceFile { get; private set; }
 
@@ -83,6 +84,9 @@ public sealed class DreamResourceManager {
         DreamResource GetResource() {
             // Create a new type of resource based on its extension
             switch (Path.GetExtension(resourcePath)) {
+                case ".dmf":
+                    resource = new DMFResource(resourceId, resourcePath, resourcePath, _serializationManager);
+                    break;
                 case ".dmi":
                 case ".png":
                     resource = new IconResource(resourceId, resourcePath, resourcePath);

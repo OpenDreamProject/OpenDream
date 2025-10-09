@@ -1,9 +1,13 @@
-﻿using System.Linq;
-using OpenDreamClient.Interface.DMF;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using OpenDreamShared.Interface.DMF;
+using Robust.Shared.Analyzers;
 using Robust.Shared.Serialization.Manager;
+using Robust.Shared.Serialization.Manager.Attributes;
 using Robust.Shared.Serialization.Markdown.Mapping;
 
-namespace OpenDreamClient.Interface.Descriptors;
+namespace OpenDreamShared.Interface.Descriptors;
 
 public sealed class InterfaceDescriptor {
     public readonly List<WindowDescriptor> WindowDescriptors;

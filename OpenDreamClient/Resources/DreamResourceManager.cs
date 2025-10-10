@@ -21,6 +21,7 @@ public interface IDreamResourceManager {
     /// </param>
     /// <typeparam name="T">The type of resource to load as.</typeparam>
     void LoadResourceAsync<T>(int resourceId, Action<T> onLoadCallback) where T : DreamResource;
+
     void LookupResourceAsync(string resourcePath, Action<int> onSuccess, Action onFailure);
 
     ResPath GetCacheFilePath(string filename);
@@ -138,10 +139,11 @@ internal sealed class DreamResourceManager : IDreamResourceManager {
 
     private void RxLookupResourceResponse(MsgLookupResourceResponse message) {
         if (_pendingResourceLookups.TryGetValue(message.ResourcePathOrRef, out var pendingResourceLookup)) {
-            if (message.Success)
+            if (message.Success) {
+                _resourcePathToIdCache[message.ResourcePathOrRef] = message.ResourceId;
                 foreach (var successCallback in pendingResourceLookup.SuccessCallbacks)
                     successCallback.Invoke(message.ResourceId);
-            else
+            } else
                 foreach (var failureCallback in pendingResourceLookup.FailureCallbacks)
                     failureCallback.Invoke();
         } else {
@@ -261,7 +263,7 @@ internal sealed class DreamResourceManager : IDreamResourceManager {
     /// Used for lookup of resource IDs from paths and ref strings.
     /// Note that this will fail for any resource that has not already been loaded by the server.
     /// </summary>
-    /// <param name="resourcePath"></param>Either a path 'path/to/resource.dmi' or a ref '\ref[0xDEADBEEF]'
+    /// <param name="resourcePathOrRef"></param>Either a path 'path/to/resource.dmi' or a ref '\ref[0xDEADBEEF]'
     /// <param name="onSuccess"></param>Action to invoke on successful lookup
     /// <param name="onFailure"></param>Action to invoke on failed lookup (ie, the server does not have a loaded resource that matches this string)
     public void LookupResourceAsync(string resourcePathOrRef, Action<int> onSuccess, Action onFailure) {

@@ -126,7 +126,7 @@ public sealed class DreamResourceManager {
     }
 
     public void ProcessQueuedResourceLoads() {
-        while(_queuedResourceLoads.Count() > 0) {
+        while(_queuedResourceLoads.Any()) {
             LoadResource(_queuedResourceLoads.Pop());
         }
     }

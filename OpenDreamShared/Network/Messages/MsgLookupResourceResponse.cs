@@ -9,7 +9,7 @@ public sealed class MsgLookupResourceResponse : NetMessage {
 
     public int ResourceId;
     public string ResourcePathOrRef = "";
-    public bool Success = false;
+    public bool Success;
 
     public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {
         ResourceId = buffer.ReadInt32();

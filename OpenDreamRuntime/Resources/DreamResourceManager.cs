@@ -107,6 +107,7 @@ public sealed class DreamResourceManager {
             return resource;
         }
 
+
         if (_resourcePathToId.TryGetValue(resourcePath, out resourceId)) {
             resource = _resourceCache[resourceId];
         } else {
@@ -224,8 +225,11 @@ public sealed class DreamResourceManager {
 
     public void RxRequestResource(MsgRequestResource pRequestResource) {
         if (TryLoadResource(pRequestResource.ResourceId, out var resource)) {
+            if(resource.ResourceData is null) {
+                throw new Exception($"Attempted to send a bad resource {resource.ResourcePath} with ID {resource.Id}");
+            }
             var msg = new MsgResource {
-                ResourceId = resource.Id, ResourceData = resource.ResourceData
+                ResourceId = resource.Id, ResourceData = resource.ResourceData!
             };
 
             pRequestResource.MsgChannel.SendMessage(msg);

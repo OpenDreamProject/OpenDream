@@ -283,6 +283,9 @@ internal sealed class DreamResourceManager : IDreamResourceManager {
                 if (_pendingResourceLookups.ContainsKey(resourcePathOrRef)) {
                     _sawmill.Warning(
                         $"Resource id {resourcePathOrRef} lookup was requested, but is still not received {timeout} seconds later.");
+                    foreach (var failureCallback in _pendingResourceLookups[resourcePathOrRef].FailureCallbacks)
+                        failureCallback.Invoke();
+                    _pendingResourceLookups.Remove(resourcePathOrRef);
                 }
             });
         } else {

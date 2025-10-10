@@ -240,21 +240,20 @@ namespace OpenDreamRuntime {
         }
 
         private void RxLookupResourceRequest(MsgLookupResource message) {
-            var player = _playerManager.GetSessionByChannel(message.MsgChannel);
             if (_dreamResourceManager.TryLoadResource(message.ResourcePathOrRef, out var dreamResource)) {
                 var msg = new MsgLookupResourceResponse() {
                     ResourceId = dreamResource.Id,
                     ResourcePathOrRef = message.ResourcePathOrRef,
                     Success = true
                 };
-                player.Channel.SendMessage(msg);
+                message.MsgChannel.SendMessage(msg);
             } else {
                 var msg = new MsgLookupResourceResponse() {
                     ResourceId = 0,
                     ResourcePathOrRef = message.ResourcePathOrRef,
                     Success = false
                 };
-                player.Channel.SendMessage(msg);
+                message.MsgChannel.SendMessage(msg);
             }
         }
 

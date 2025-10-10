@@ -32,7 +32,7 @@ public sealed class DMFResource : DreamResource {
                     if (!string.IsNullOrEmpty(button.Image.AsRaw())) {
                         //we must queue these rather than load them directly, because otherwise IDs are wrong
                         //can't load a resource in the middle of loading a resource
-                        IoCManager.Resolve<DreamResourceManager>().QueueResourceLoad(button.Image.AsRaw());
+                        IoCManager.Resolve<DreamResourceManager>().QueueResourceLoad(button.Image.AsRaw().Replace("\\","/"));
                     }
                 }
             }

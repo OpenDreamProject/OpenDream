@@ -48,15 +48,16 @@ internal sealed class ControlButton(ControlDescriptor controlDescriptor, Control
         if (!string.IsNullOrEmpty(controlDescriptor.Image.Value)) {
             TextureRect image = new();
             var dreamResourceManager = IoCManager.Resolve<IDreamResourceManager>();
-            dreamResourceManager.LookupResourceAsync(controlDescriptor.Image.AsRaw(),
+            dreamResourceManager.LookupResourceAsync(controlDescriptor.Image.AsRaw().Replace("\\","/"),
                 (resourceId) => dreamResourceManager.LoadResourceAsync<DMIResource>(resourceId, dmi => {
                     image.Texture = dmi.Texture;
                 }),
-                () => _button.Text = "Bad Image Ref"
+                () => _button.Text = "Bad Image Ref" //todo broken image texture
             );
 
             image.Stretch = TextureRect.StretchMode.KeepCentered;
             image.RectClipContent = true;
+            _button.RemoveAllChildren();
             _button.AddChild(image);
         }
     }

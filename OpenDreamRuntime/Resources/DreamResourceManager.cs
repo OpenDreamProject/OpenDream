@@ -21,12 +21,13 @@ public sealed class DreamResourceManager {
     [Dependency] private readonly IDependencyCollection _dependencyCollection = default!;
     [Dependency] private readonly ISerializationManager _serializationManager = default!;
     public string RootPath { get; private set; } = default!;
-    public DreamResource? InterfaceFile { get; private set; }
+    public DMFResource? InterfaceFile { get; private set; }
 
     private DreamAczProvider _aczProvider = default!;
     private readonly List<DreamResource> _resourceCache = new();
     private readonly Dictionary<string, int> _resourcePathToId = new();
     private readonly Dictionary<string, IconResource> _md5ToGeneratedIcon = new();
+    private readonly List<string> _queuedResourceLoads = new();
 
     private ISawmill _sawmill = default!;
 
@@ -67,7 +68,7 @@ public sealed class DreamResourceManager {
 
         if (!string.IsNullOrWhiteSpace(interfaceFile)) {
             if (DoesFileExist(interfaceFile))
-                InterfaceFile = LoadResource(interfaceFile);
+                InterfaceFile = (DMFResource)LoadResource(interfaceFile);
             else
                 throw new FileNotFoundException("Interface DMF not found at " + Path.Join(rootPath, interfaceFile));
         }
@@ -115,7 +116,18 @@ public sealed class DreamResourceManager {
             _resourcePathToId.Add(resourcePath, resourceId);
         }
 
+        ProcessQueuedResourceLoads();
         return resource;
+    }
+
+    public void QueueResourceLoad(string resourcePath) {
+        _queuedResourceLoads.Add(resourcePath);
+    }
+
+    public void ProcessQueuedResourceLoads() {
+        while(_queuedResourceLoads.Count() > 0) {
+            LoadResource(_queuedResourceLoads.Pop());
+        }
     }
 
     public bool TryLoadResource(int resourceId, [NotNullWhen(true)] out DreamResource? resource) {

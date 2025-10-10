@@ -48,7 +48,7 @@ internal sealed class ControlButton(ControlDescriptor controlDescriptor, Control
         if (!string.IsNullOrEmpty(controlDescriptor.Image.Value)) {
             TextureRect image = new();
             var dreamResourceManager = IoCManager.Resolve<IDreamResourceManager>();
-            dreamResourceManager.LookupResourceAsync(controlDescriptor.Image.AsString(),
+            dreamResourceManager.LookupResourceAsync(controlDescriptor.Image.AsRaw(),
                 (resourceId) => dreamResourceManager.LoadResourceAsync<DMIResource>(resourceId, dmi => {
                     image.Texture = dmi.Texture;
                 }),

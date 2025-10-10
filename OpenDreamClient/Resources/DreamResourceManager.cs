@@ -285,6 +285,9 @@ internal sealed class DreamResourceManager : IDreamResourceManager {
                         $"Resource id {resourcePathOrRef} lookup was requested, but is still not received {timeout} seconds later.");
                 }
             });
+        } else {
+            _pendingResourceLookups[resourcePathOrRef].SuccessCallbacks.Add(onSuccess);
+            _pendingResourceLookups[resourcePathOrRef].FailureCallbacks.Add(onFailure);
         }
     }
 

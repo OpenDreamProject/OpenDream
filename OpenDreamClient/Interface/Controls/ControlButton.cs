@@ -1,4 +1,6 @@
 ﻿using OpenDreamClient.Interface.Controls.UI;
+using OpenDreamClient.Resources;
+using OpenDreamClient.Resources.ResourceTypes;
 using OpenDreamShared.Interface.Descriptors;
 using Robust.Client.ResourceManagement;
 using Robust.Client.UserInterface;
@@ -42,6 +44,21 @@ internal sealed class ControlButton(ControlDescriptor controlDescriptor, Control
             PatchMarginLeft = 2,
             PatchMarginRight = 2
         };
+
+        if (!string.IsNullOrEmpty(controlDescriptor.Image.Value)) {
+            TextureRect image = new();
+            var dreamResourceManager = IoCManager.Resolve<IDreamResourceManager>();
+            dreamResourceManager.LookupResourceAsync(controlDescriptor.Image.AsString(),
+                (resourceId) => dreamResourceManager.LoadResourceAsync<DMIResource>(resourceId, dmi => {
+                    image.Texture = dmi.Texture;
+                }),
+                () => _button.Text = "Bad Image Ref"
+            );
+
+            image.Stretch = TextureRect.StretchMode.KeepCentered;
+            image.RectClipContent = true;
+            _button.AddChild(image);
+        }
     }
 
     private void OnButtonClick(BaseButton.ButtonEventArgs args) {

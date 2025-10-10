@@ -11,7 +11,7 @@ public sealed class DMFResource : DreamResource {
 
     public DMFResource(int id, string? filePath, string? resourcePath, ISerializationManager serializationManager) : base(id, filePath, resourcePath) {
         //parse and extract resources, loading them into the cache
-        var lexer = new DMFLexer(ResourceData!.ToString()!);
+        var lexer = new DMFLexer(ReadAsString() ?? "");
         var parser = new DMFParser(lexer, serializationManager);
         InterfaceDescriptor interfaceDescriptor = parser.Interface();
 

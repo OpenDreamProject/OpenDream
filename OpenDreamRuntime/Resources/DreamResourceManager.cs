@@ -128,9 +128,10 @@ public sealed class DreamResourceManager {
         return false;
     }
 
-    public bool TryLoadResource(string resourcePath, [NotNullWhen(true)] out DreamResource? resource) {
+    public bool TryLoadResource(string resourcePathOrRef, [NotNullWhen(true)] out DreamResource? resource) {
         resource = null;
-        return _resourcePathToId.TryGetValue(resourcePath, out var resourceId) && TryLoadResource(resourceId, out resource);
+        //TODO lookup by \ref[] string
+        return _resourcePathToId.TryGetValue(resourcePathOrRef, out var resourceId) && TryLoadResource(resourceId, out resource);
     }
 
     public bool TryLoadIcon(DreamValue value, [NotNullWhen(true)] out IconResource? icon) {

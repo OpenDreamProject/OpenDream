@@ -2,7 +2,7 @@
 using System.Net;
 using System.Text;
 using System.Web;
-using OpenDreamClient.Interface.Descriptors;
+using OpenDreamShared.Interface.Descriptors;
 using OpenDreamClient.Resources;
 using OpenDreamShared.Network.Messages;
 using Robust.Client.Graphics;

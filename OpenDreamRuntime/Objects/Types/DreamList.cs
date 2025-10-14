@@ -178,9 +178,10 @@ public class DreamList : DreamObject, IDreamList {
                 _values[keyInteger - 1] = value;
             }
         } else {
-            if (!ContainsValue(key)) _values.Add(key);
-
             _associativeValues ??= new Dictionary<DreamValue, DreamValue>(1);
+            if (!_associativeValues.ContainsKey(key)) {
+                _values.Add(key);
+            }
             _associativeValues[key] = value;
         }
 

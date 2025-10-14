@@ -240,7 +240,7 @@ public sealed class DreamConnection {
                 else if (resourcePath.EndsWith(".wav"))
                     msg.Format = MsgSound.FormatType.Wav;
                 else
-                    throw new Exception($"Sound {value} is not a supported file type");
+                    throw new Exception($"Sound {resourcePath} is not a supported file type");
             }
 
             Session?.Channel.SendMessage(msg);

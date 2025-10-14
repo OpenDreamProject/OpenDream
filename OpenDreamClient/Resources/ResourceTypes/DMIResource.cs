@@ -27,8 +27,6 @@ public sealed class DMIResource : DreamResource {
     }
 
     private void ProcessDMIData() {
-        if (!IsValidPNG()) throw new Exception("Attempted to create a DMI using an invalid PNG");
-
         using Stream dmiStream = new MemoryStream(Data);
         DMIParser.ParsedDMIDescription description = DMIParser.ParseDMI(dmiStream);
 

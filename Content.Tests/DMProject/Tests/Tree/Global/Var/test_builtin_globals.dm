@@ -1,5 +1,11 @@
 
 /proc/RunTest()
+	// just to be safe, check that a few of the defines are actually correct
+	ASSERT(global.vars["UNIX"] == "UNIX") 
+	ASSERT(global.vars["TRUE"] == 1)
+	ASSERT(global.vars["FALSE"] == 0)
+	
+	// Test all of the builtin global vars
 	ASSERT(global.vars["UNIX"] == UNIX)
 	ASSERT(global.vars["NORTH"] == NORTH)
 	ASSERT(global.vars["SOUTH"] == SOUTH)

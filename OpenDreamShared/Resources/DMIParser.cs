@@ -282,7 +282,7 @@ public static class DMIParser {
             throw new Exception($"Unrecognized BMP header (size {headerSize})");
         }
 
-        // Use CreateSplitStates if world.map_format == TILED_ICON_MAP
+        // TODO: Use CreateSplitStates if world.map_format == TILED_ICON_MAP
         return ParsedDMIDescription.CreateSingleFrame((int)width, (int)height);
     }
 

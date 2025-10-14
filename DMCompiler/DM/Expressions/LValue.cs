@@ -27,7 +27,7 @@ internal abstract class LValue(Location location, DreamPath? path) : DMExpressio
 
     public virtual void EmitPushInitial(ExpressionContext ctx) {
         ctx.Compiler.Emit(WarningCode.BadExpression, Location, $"Can't get initial value of {this}");
-        ctx.Proc.Error();
+        ctx.Proc.PushNullAndError();
     }
 }
 

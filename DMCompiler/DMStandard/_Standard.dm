@@ -126,7 +126,7 @@ proc/winexists(player, control_id) as text
 proc/winget(player, control_id, params)
 proc/winset(player, control_id, params)
 
-#include "_Globals.dm"
+#include "_Globals.dm" // This needs to go before the defines
 #include "Defines.dm"
 #include "Types\AList.dm"
 #include "Types\Callee.dm"

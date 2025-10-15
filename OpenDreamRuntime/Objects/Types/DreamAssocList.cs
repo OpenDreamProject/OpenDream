@@ -3,6 +3,7 @@ using OpenDreamRuntime.Procs;
 
 namespace OpenDreamRuntime.Objects.Types;
 
+// TODO: An arglist given to New() can be used to initialize an alist with values
 public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : DreamObject(aListDef), IDreamList {
     public bool IsAssociative => true;
 
@@ -81,7 +82,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     }
 
     public void AddValue(DreamValue value) {
-        if(ContainsValue(value)) {
+        if (ContainsValue(value)) {
             return; // calling Add("c") on alist("c" = 5) does not change anything
         }
 
@@ -89,22 +90,17 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     }
 
     public IDreamList CreateCopy(int start = 1, int end = 0) {
-        if (start == 0) ++start; //start being 0 and start being 1 are equivalent
-
-        var values = GetValues();
-        if (end > values.Count + 1 || start > values.Count + 1) throw new Exception("list index out of bounds");
-        if (end == 0) end = values.Count + 1;
-        if (end <= start)
-            return new DreamAssocList(ObjectDefinition, 0);
+        if (start != 1 || end != 0) {
+            throw new Exception("list index out of bounds");
+        }
 
         Dictionary<DreamValue, DreamValue> copyValues = new(_values);
-
         return new DreamAssocList(ObjectDefinition, copyValues);
     }
 
     public int FindValue(DreamValue value, int start = 1, int end = 0) {
         // Unlike list.Find(), alist.Find() doesn't pay attention to start and end, and returns a boolean 0/1 instead of the position of the found object
-        if(ContainsValue(value)) {
+        if (ContainsValue(value)) {
             return 1;
         }
 
@@ -120,14 +116,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     }
 
     public bool ContainsValue(DreamValue value) {
-        var keys = GetValues();
-        foreach (var key in keys) {
-            if (key.Equals(value)) {
-                return true;
-            }
-        }
-
-        return false;
+        return _values.ContainsKey(value);
     }
 
 }

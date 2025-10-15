@@ -22,7 +22,7 @@ public class DreamList : DreamObject, IDreamList {
     /// <summary>
     /// Looks up the key to find the index
     /// </summary>
-    private readonly Dictionary<DreamValue, int> reverseLookup = [];
+    private readonly Dictionary<DreamValue, int> _reverseLookup = [];
     private readonly List<DreamValue> _values;
     private Dictionary<DreamValue, DreamValue>? _associativeValues;
 
@@ -35,8 +35,8 @@ public class DreamList : DreamObject, IDreamList {
             _values = poppedValues;
             _values.EnsureCapacity(size);
             foreach (var value in poppedValues) {
-                if (!reverseLookup.TryAdd(value, 1)) {
-                    reverseLookup[value] += 1;
+                if (!_reverseLookup.TryAdd(value, 1)) {
+                    _reverseLookup[value] += 1;
                 }
             }
 
@@ -51,8 +51,8 @@ public class DreamList : DreamObject, IDreamList {
     public DreamList(DreamObjectDefinition listDef, List<DreamValue> values, Dictionary<DreamValue, DreamValue>? associativeValues) : base(listDef) {
         _values = values;
         foreach (var value in values) {
-            if (!reverseLookup.TryAdd(value, 1)) {
-                reverseLookup[value] += 1;
+            if (!_reverseLookup.TryAdd(value, 1)) {
+                _reverseLookup[value] += 1;
             }
         }
         _associativeValues = associativeValues;
@@ -192,20 +192,20 @@ public class DreamList : DreamObject, IDreamList {
             if (allowGrowth && keyInteger == index) {
                 _values.Add(value);
 
-                if (!reverseLookup.TryAdd(value, 1)) {
-                    reverseLookup[value] += 1;
+                if (!_reverseLookup.TryAdd(value, 1)) {
+                    _reverseLookup[value] += 1;
                 }
             } else {
                 _values[keyInteger - 1] = value;
 
-                if (!reverseLookup.TryAdd(value, 1)) {
-                    reverseLookup[value] += 1;
+                if (!_reverseLookup.TryAdd(value, 1)) {
+                    _reverseLookup[value] += 1;
                 }
 
             }
         } else {
-            if (!reverseLookup.TryAdd(key, 1)) {
-                reverseLookup[key] += 1;
+            if (!_reverseLookup.TryAdd(key, 1)) {
+                _reverseLookup[key] += 1;
             } else {
                 _values.Add(key);
             }
@@ -221,9 +221,9 @@ public class DreamList : DreamObject, IDreamList {
         int valueIndex = _values.LastIndexOf(value);
 
         if (valueIndex != -1) {
-            if(reverseLookup.TryGetValue(value, out int element)) {
+            if(_reverseLookup.TryGetValue(value, out int element)) {
                 if (element - 1 <= 0) {
-                    reverseLookup.Remove(value);
+                    _reverseLookup.Remove(value);
                 }
             }
 
@@ -236,8 +236,8 @@ public class DreamList : DreamObject, IDreamList {
 
     public virtual void AddValue(DreamValue value) {
         _values.Add(value); 
-        if (!reverseLookup.TryAdd(value, 1)) {
-            reverseLookup[value] += 1;
+        if (!_reverseLookup.TryAdd(value, 1)) {
+            _reverseLookup[value] += 1;
         }
 
         UpdateTracyContentsMemory();
@@ -245,7 +245,7 @@ public class DreamList : DreamObject, IDreamList {
 
     //Does not include associations
     public virtual bool ContainsValue(DreamValue value) {
-        if(reverseLookup.ContainsKey(value)) {
+        if(_reverseLookup.ContainsKey(value)) {
             return true;
         }
         for (int i = 0; i < _values.Count; i++) {
@@ -284,10 +284,10 @@ public class DreamList : DreamObject, IDreamList {
             var elements = _values.GetRange(index, len);
 
             foreach (var element in elements) {
-                var rlCache = reverseLookup[element] -= 1;
+                var rlCache = _reverseLookup[element] -= 1;
 
                 if (rlCache <= 0) {
-                    reverseLookup.Remove(element);
+                    _reverseLookup.Remove(element);
                 }
             }
 
@@ -299,8 +299,8 @@ public class DreamList : DreamObject, IDreamList {
 
     public void Insert(int index, DreamValue value) {
         _values.Insert(index - 1, value);
-        if (!reverseLookup.TryAdd(value, 1)) {
-            reverseLookup[value] += 1;
+        if (!_reverseLookup.TryAdd(value, 1)) {
+            _reverseLookup[value] += 1;
         }
         UpdateTracyContentsMemory();
     }

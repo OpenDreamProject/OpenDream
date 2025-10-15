@@ -220,8 +220,9 @@ public class DreamList : DreamObject, IDreamList {
         int valueIndex = _values.LastIndexOf(value);
 
         if (valueIndex != -1) {
-            if(_reverseLookup.TryGetValue(value, out int element)) {
-                if (element - 1 <= 0) {
+            if(_reverseLookup.ContainsKey(value)) {
+                var rLCount = _reverseLookup[value] -= 1;
+                if (rLCount <= 0) {
                     _reverseLookup.Remove(value);
                 }
             }

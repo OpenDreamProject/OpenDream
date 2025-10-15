@@ -34,7 +34,6 @@ namespace OpenDreamRuntime.Procs.Native {
                 DreamList listCopy = (DreamList)list.CreateCopy(start, end);
                 return new DreamValue(listCopy);
             } else if (list is DreamAssocList) {
-
                 DreamAssocList listCopy = (DreamAssocList)list.CreateCopy(start, end);
                 return new DreamValue(listCopy);
             } else {

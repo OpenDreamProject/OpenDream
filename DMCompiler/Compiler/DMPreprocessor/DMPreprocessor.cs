@@ -55,6 +55,7 @@ public sealed class DMPreprocessor(DMCompiler compiler, bool enableDirectives) :
                     break;
                 case TokenType.EndOfFile:
                     _lexerStack.Pop();
+                    yield return new Token(TokenType.Newline, "\n", token.Location, null);
                     break;
                 case TokenType.Newline:
                     _canUseDirective = true;

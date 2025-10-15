@@ -1021,6 +1021,7 @@ namespace DMCompiler.Compiler.DM {
                 Token attributeToken = Current();
                 if(!Check(TokenType.DM_Identifier)) {
                     Emit(WarningCode.BadToken, "Expected an identifier for set declaration");
+                    setDeclarations.Add(new DMASTProcStatementSet(loc, "", new DMASTConstantNull(loc), false)); // prevents emitting a second error later in Set()
                     return setDeclarations.ToArray();
                 }
 
@@ -1397,7 +1398,18 @@ namespace DMCompiler.Compiler.DM {
 
             Newline();
             Whitespace();
-            Consume(TokenType.DM_While, "Expected 'while'");
+            if (!Check(TokenType.DM_While)) {
+                // "do while()" (no newline) puts the 'while' in the body; the prior MissingBody check only handled it with a newline
+                if(body.Statements is [DMASTProcStatementWhile]) {
+                    Emit(WarningCode.MissingBody, "Expected statement - do-while requires a non-empty block");
+                } else {
+                    Emit(WarningCode.BadToken, "Expected 'while'");
+                }
+
+                LocateNextStatement();
+                return new DMASTProcStatementDoWhile(loc, new DMASTInvalidExpression(loc), body);
+            }
+
             Whitespace();
             Consume(TokenType.DM_LeftParenthesis, "Expected '('");
             Whitespace();
@@ -1472,19 +1484,21 @@ namespace DMCompiler.Compiler.DM {
 
         private DMASTProcStatementSwitch.SwitchCase[] SwitchInner() {
             List<DMASTProcStatementSwitch.SwitchCase> switchCases = new();
-            DMASTProcStatementSwitch.SwitchCase? switchCase = SwitchCase();
+            DMASTProcStatementSwitch.SwitchCase? switchCase = SwitchCase(out var empty);
 
             while (switchCase is not null) {
-                switchCases.Add(switchCase);
+                if(!empty) // Empty switch cases (e.g. 'if()') appear to be a no-op; definitely not equivalent to 'if(null)'
+                    switchCases.Add(switchCase);
                 Newline();
                 Whitespace();
-                switchCase = SwitchCase();
+                switchCase = SwitchCase(out empty);
             }
 
             return switchCases.ToArray();
         }
 
-        private DMASTProcStatementSwitch.SwitchCase? SwitchCase() {
+        private DMASTProcStatementSwitch.SwitchCase? SwitchCase(out bool empty) {
+            empty = false;
             if (Check(TokenType.DM_If)) {
                 List<DMASTExpression> expressions = new();
 
@@ -1496,8 +1510,11 @@ namespace DMCompiler.Compiler.DM {
 
                     DMASTExpression? expression = Expression();
                     if (expression == null) {
-                        if (expressions.Count == 0)
-                            Compiler.Emit(WarningCode.BadExpression, Current().Location, "Expected an expression");
+                        if (expressions.Count == 0) {
+                            empty = true;
+                            Compiler.Emit(WarningCode.SuspiciousSwitchCase, CurrentLoc,
+                                "Empty switch case will never execute");
+                        }
 
                         break;
                     }
@@ -1518,6 +1535,7 @@ namespace DMCompiler.Compiler.DM {
 
                     Delimiter();
                 } while (Check(TokenType.DM_Comma));
+
                 Whitespace();
                 ConsumeRightParenthesis();
                 Whitespace();
@@ -2254,12 +2272,9 @@ namespace DMCompiler.Compiler.DM {
 
                 while (Check(TokenType.DM_Period)) {
                     DMASTPath? search = Path();
-                    if (search == null) {
-                        Emit(WarningCode.MissingExpression, "Expected a path for an upward search");
-                        break;
+                    if (search != null) {
+                        pathConstant = new DMASTUpwardPathSearch(loc, pathConstant, search);
                     }
-
-                    pathConstant = new DMASTUpwardPathSearch(loc, pathConstant, search);
                 }
 
                 Whitespace(); // whitespace between path and modified type
@@ -2309,9 +2324,11 @@ namespace DMCompiler.Compiler.DM {
             if (Check(TokenType.DM_Call)) {
                 Whitespace();
                 DMASTCallParameter[]? callParameters = ProcCall();
+
+                bool invalid = false;
                 if (callParameters == null || callParameters.Length < 1 || callParameters.Length > 2) {
                     Emit(WarningCode.InvalidArgumentCount, "call()() must have 2 parameters");
-                    return new DMASTInvalidExpression(loc);
+                    invalid = true; // we want to parse the second pair of parentheses still
                 }
 
                 Whitespace();
@@ -2321,7 +2338,7 @@ namespace DMCompiler.Compiler.DM {
                     procParameters = [];
                 }
 
-                return new DMASTCall(loc, callParameters, procParameters);
+                return invalid ? new DMASTInvalidExpression(loc): new DMASTCall(loc, callParameters!, procParameters);
             }
 
             return null;

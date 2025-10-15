@@ -28,7 +28,7 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 9.0.100
+        dotnet-version: 9.0.x
     - name: Install dependencies
       run: dotnet restore
     - name: Build
@@ -37,33 +37,33 @@ jobs:
       shell: pwsh
       run: |
         $env:COMPlus_gcServer=1
-        dotnet test --no-build Content.Tests/Content.Tests.csproj -v n --collect "XPlat Code Coverage" --results-directory:"./TestResults/"
+        dotnet test --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults Content.Tests/Content.Tests.csproj -v n
     - name: Content.Tests (Optimizations Disabled)
       shell: pwsh
       env:
         NO_OPTS: "true"
       run: |
         $env:COMPlus_gcServer=1
-        dotnet test --no-build Content.Tests/Content.Tests.csproj -v n
+        dotnet test --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults Content.Tests/Content.Tests.csproj -v n
     - name: Content.IntegrationTests
       shell: pwsh
       run: |
         $env:COMPlus_gcServer=1
-        dotnet test --no-build Content.IntegrationTests/Content.IntegrationTests.csproj -v n --collect "XPlat Code Coverage" --results-directory:"./TestResults/"
+        dotnet test --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults Content.IntegrationTests/Content.IntegrationTests.csproj -v n
+
+    - name: Upload Coverage to CodeCov
+      uses: codecov/codecov-action@v5
+      with:
+        directory: ./TestResults
+        fail_ci_if_error: false
+        token: ${{ secrets.CODECOV_TOKEN }}
+        verbose: true
+        handle_no_reports_found: true
     - name: Publish OpenDream
       if: github.event_name == 'push'
       run: |
         dotnet run --project OpenDreamPackageTool --no-build --configuration Release -- --server --hybrid-acz --configuration Release --platform ${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }} --output output_release/
         dotnet run --project OpenDreamPackageTool --no-build --configuration Release -- --server --hybrid-acz --configuration Tools --platform ${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }} --output output_tools/
-    - name: Upload Test Coverage to CodeCov
-      uses: codecov/codecov-action@v5
-      with:
-        directory: ./TestResults
-        fail_ci_if_error: true
-        token: ${{ secrets.CODECOV_TOKEN }}
-        slug: OpenDream/OpenDream
-        verbose: true
-        handle_no_reports_found: true
     - name: Publish DMCompiler
       if: github.event_name == 'push'
       run: dotnet publish DMCompiler -c Release -o output_release/DMCompiler_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}

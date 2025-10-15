@@ -51,6 +51,8 @@ public sealed class DreamObjectTree {
     public TreeEntry Movable { get; private set; } = default!;
     public TreeEntry Obj { get; private set; } = default!;
     public TreeEntry Mob { get; private set; } = default!;
+    public TreeEntry Generator { get; private set; } = default!;
+    public TreeEntry Particles { get; private set; } = default!;
 
     private FrozenDictionary<string, TreeEntry> _pathToType = FrozenDictionary<string, TreeEntry>.Empty;
     private FrozenDictionary<string, int> _globalProcIds = FrozenDictionary<string, int>.Empty;
@@ -72,6 +74,7 @@ public sealed class DreamObjectTree {
     private PvsOverrideSystem? _pvsOverrideSystem;
     private MetaDataSystem? _metaDataSystem;
     private ServerVerbSystem? _verbSystem;
+    private ServerDreamParticlesSystem? _particlesSystem;
 
     public void LoadJson(DreamCompiledJson json) {
         var types = json.Types;
@@ -85,6 +88,7 @@ public sealed class DreamObjectTree {
         _entitySystemManager.TryGetEntitySystem(out _pvsOverrideSystem);
         _entitySystemManager.TryGetEntitySystem(out _metaDataSystem);
         _entitySystemManager.TryGetEntitySystem(out _verbSystem);
+        _entitySystemManager.TryGetEntitySystem(out _particlesSystem);
 
         Strings = json.Strings;
 
@@ -148,6 +152,8 @@ public sealed class DreamObjectTree {
     public DreamObject CreateObject(TreeEntry type) {
         if (type == List)
             return CreateList();
+        if (type == AssocList)
+            return CreateAssocList();
         if (type == Savefile)
             return new DreamObjectSavefile(Savefile.ObjectDefinition);
         if (type.ObjectDefinition.IsSubtypeOf(DatabaseQuery))
@@ -174,6 +180,10 @@ public sealed class DreamObjectTree {
             return new DreamObjectArea(type.ObjectDefinition);
         if (type.ObjectDefinition.IsSubtypeOf(Atom))
             return new DreamObjectAtom(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Generator))
+            throw new Exception("Cannot create objects of type /generator without the generator() proc");
+        if (type.ObjectDefinition.IsSubtypeOf(Particles))
+            return new DreamObjectParticles(type.ObjectDefinition);
         if (type.ObjectDefinition.IsSubtypeOf(Client))
             throw new Exception("Cannot create objects of type /client");
         if (type.ObjectDefinition.IsSubtypeOf(Turf))
@@ -336,6 +346,8 @@ public sealed class DreamObjectTree {
         Movable = GetTreeEntry("/atom/movable");
         Obj = GetTreeEntry("/obj");
         Mob = GetTreeEntry("/mob");
+        Particles = GetTreeEntry("/particles");
+        Generator = GetTreeEntry("/generator");
 
         // Load procs first so types can set their init proc's super proc
         LoadProcsFromJson(procs, globalProcs);
@@ -360,7 +372,7 @@ public sealed class DreamObjectTree {
         foreach (TreeEntry type in GetAllDescendants(Root)) {
             int typeId = type.Id;
             DreamTypeJson jsonType = types[typeId];
-            var definition = new DreamObjectDefinition(_dreamManager, this, _atomManager, _dreamMapManager, _mapManager, _dreamResourceManager, _walkManager, _entityManager, _playerManager, _serializationManager, _appearanceSystem, _transformSystem, _pvsOverrideSystem, _metaDataSystem, _verbSystem, type);
+            var definition = new DreamObjectDefinition(_dreamManager, this, _atomManager, _dreamMapManager, _mapManager, _dreamResourceManager, _walkManager, _entityManager, _playerManager, _serializationManager, _appearanceSystem, _transformSystem, _pvsOverrideSystem, _metaDataSystem, _verbSystem, _particlesSystem, type);
 
             type.ObjectDefinition = definition;
             type.TreeIndex = treeIndex++;

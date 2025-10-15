@@ -1,5 +1,5 @@
 ﻿//Tests that /proc/range() is iterating along the correct, wonky path
-/proc/test_range()
+/datum/unit_test/range/RunTest()
 	world.maxx = world.maxy = 5
 	//Test that it goes in the right order
 	var/list/correctCoordinates = list(

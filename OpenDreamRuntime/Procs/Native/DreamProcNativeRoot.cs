@@ -1660,7 +1660,7 @@ internal static class DreamProcNativeRoot {
     public static DreamValue _length(DreamValue value, bool countBytes) {
         if (value.TryGetValueAsString(out var str)) {
             return new DreamValue(countBytes ? str.Length : str.EnumerateRunes().Count());
-        } else if (value.TryGetValueAsDreamList(out var list)) {
+        } else if (value.TryGetValueAsIDreamList(out var list)) {
             return new DreamValue(list.GetLength());
         } else if (value.Type is DreamValueType.Float or DreamValueType.DreamObject or DreamValueType.DreamType) {
             return new DreamValue(0);
@@ -3322,10 +3322,10 @@ internal static class DreamProcNativeRoot {
         if (bundle.Arguments.Length < 2 || bundle.Arguments.Length > 3) throw new Exception($"expected 2-3 arguments (found {bundle.Arguments.Length})");
 
         DreamValue argList = bundle.GetArgument(0, "Alist");
-        DreamValue argMin = bundle.GetArgument(1, "Max");
+        DreamValue argMax = bundle.GetArgument(1, "Max");
         DreamValue argInclusive = bundle.GetArgument(2, "inclusive");
 
-        return values_cut_helper(argList, argMin, argInclusive, false);
+        return values_cut_helper(argList, argMax, argInclusive, false);
     }
 
     [DreamProc("values_cut_under")]
@@ -3349,7 +3349,7 @@ internal static class DreamProcNativeRoot {
         var cutCount = 0; // number of values cut from the list
         var min = argMin.UnsafeGetValueAsFloat();
 
-        if (argList.TryGetValueAsDreamList(out var list)) {
+        if (argList.TryGetValueAsIDreamList(out var list)) {
             if (!list.IsAssociative) {
                 cutCount = list.GetLength();
                 list.Cut();
@@ -3403,7 +3403,7 @@ internal static class DreamProcNativeRoot {
 
         float sum = 0; // Default return is 0 for invalid args
 
-        if (argA.TryGetValueAsDreamList(out var listA) && listA.IsAssociative && argB.TryGetValueAsDreamList(out var listB) && listB.IsAssociative) {
+        if (argA.TryGetValueAsIDreamList(out var listA) && listA.IsAssociative && argB.TryGetValueAsIDreamList(out var listB) && listB.IsAssociative) {
             var aValues = listA.GetAssociativeValues();
             var bValues = listB.GetAssociativeValues();
 
@@ -3430,7 +3430,7 @@ internal static class DreamProcNativeRoot {
 
         float product = 1; // Default return is 1 for invalid args
 
-        if (arg.TryGetValueAsDreamList(out var list) && list.IsAssociative) {
+        if (arg.TryGetValueAsIDreamList(out var list) && list.IsAssociative) {
             var assocValues = list.GetAssociativeValues();
             foreach (var (_,value) in assocValues) {
                 if(value.TryGetValueAsFloat(out var valFloat)) product *= valFloat;
@@ -3449,7 +3449,7 @@ internal static class DreamProcNativeRoot {
 
         float sum = 0; // Default return is 0 for invalid args
 
-        if (arg.TryGetValueAsDreamList(out var list) && list.IsAssociative) {
+        if (arg.TryGetValueAsIDreamList(out var list) && list.IsAssociative) {
             var assocValues = list.GetAssociativeValues();
             foreach (var (_,value) in assocValues) {
                 if(value.TryGetValueAsFloat(out var valFloat)) sum += valFloat;

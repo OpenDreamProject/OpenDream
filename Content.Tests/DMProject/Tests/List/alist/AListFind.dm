@@ -1,0 +1,5 @@
+/proc/RunTest()
+	var/alist/AL = alist("a" = 1, "b" = 2, "c" = -4)
+	ASSERT(AL.Find("a"))
+	ASSERT(AL.Find("a", 2, 3))
+	ASSERT(!AL.Find("d"))

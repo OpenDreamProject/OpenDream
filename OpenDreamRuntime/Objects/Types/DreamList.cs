@@ -246,15 +246,7 @@ public class DreamList : DreamObject, IDreamList {
 
     //Does not include associations
     public virtual bool ContainsValue(DreamValue value) {
-        if(_reverseLookup.ContainsKey(value)) {
-            return true;
-        }
-        for (int i = 0; i < _values.Count; i++) {
-            if (_values[i].Equals(value))
-                return true;
-        }
-
-        return false;
+        return _reverseLookup.ContainsKey(value);
     }
 
     public virtual bool ContainsKey(DreamValue value) {

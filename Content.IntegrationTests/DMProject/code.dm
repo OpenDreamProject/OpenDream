@@ -33,3 +33,5 @@
 		TEST.RunTest()
 		del(TEST) //and clean up
 	world.log << "IntegrationTests successful, /world/New() exiting..."
+	spawn(10)
+		Del(world)

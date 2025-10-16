@@ -6,3 +6,8 @@
 
 	L1 += L2
 	ASSERT(L1["B"] == 2)
+	ASSERT(L1.len == 2)
+
+	// Lists are fun
+	L1 += L2
+	ASSERT(L1.len == 3)

@@ -3,7 +3,9 @@
 	AL.Add("c", "d")
 	ASSERT(AL["c"] == -4)
 	ASSERT(AL["d"] == null)
+	ASSERT(AL.len = 4)
 
 	AL.Add(list("c", "d"))
 	ASSERT(AL["c"] == -4)
 	ASSERT(AL["d"] == null)
+	ASSERT(AL.len = 4)

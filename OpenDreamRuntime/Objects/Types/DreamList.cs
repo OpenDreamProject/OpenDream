@@ -195,6 +195,12 @@ public class DreamList : DreamObject, IDreamList {
                     _reverseLookup[value] += 1;
                 }
             } else {
+                var oldValue = _values[keyInteger - 1];
+                var rLCount = _reverseLookup[oldValue] -= 1;
+                if(rLCount <= 0) {
+                    _reverseLookup.Remove(oldValue);
+                }
+
                 _values[keyInteger - 1] = value;
 
                 if (!_reverseLookup.TryAdd(value, 1)) {

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 touch errors.log
-DreamDaemon Content.IntegrationTets/DMProject/environment.dmb -once -close -trusted -verbose -invisible
+DreamDaemon Content.IntegrationTets/DMProject/environment.m.dmb -once -close -trusted -verbose -invisible
 if [ -s "errors.log" ]
 then
 	echo "Errors detected!"

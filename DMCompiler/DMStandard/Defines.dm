@@ -61,7 +61,7 @@
 
 //world.system_type
 #define UNIX "UNIX"
-#define MS_WINDOWS "MS_WINDOWS"
+#define MS_WINDOWS "MS Windows"
 
 //Icon blending functions
 #define ICON_ADD 0
@@ -179,11 +179,11 @@
 //see mouse handling
 #define MOUSE_INACTIVE_POINTER 0
 #define MOUSE_ACTIVE_POINTER 1
-#define MOUSE_DRAG_POINTER 2
-#define MOUSE_DROP_POINTER 3
-#define MOUSE_ARROW_POINTER 4
-#define MOUSE_CROSSHAIRS_POINTER 5
-#define MOUSE_HAND_POINTER 6
+#define MOUSE_DRAG_POINTER 3
+#define MOUSE_DROP_POINTER 4
+#define MOUSE_ARROW_POINTER 5
+#define MOUSE_CROSSHAIRS_POINTER 6
+#define MOUSE_HAND_POINTER 7
 
 //client.control_freak
 #define CONTROL_FREAK_ALL 		(1<<0)

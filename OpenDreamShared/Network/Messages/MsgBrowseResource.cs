@@ -8,15 +8,15 @@ public sealed class MsgBrowseResource : NetMessage {
     public override MsgGroups MsgGroup => MsgGroups.EntityEvent;
 
     public string Filename = string.Empty;
-    public int DataHash;
+    public byte[] DataHash = [];
 
     public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {
         Filename = buffer.ReadString();
-        DataHash = buffer.ReadVariableInt32();
+        DataHash = buffer.ReadBytes(32);
     }
 
     public override void WriteToBuffer(NetOutgoingMessage buffer, IRobustSerializer serializer) {
         buffer.Write(Filename);
-        buffer.WriteVariableInt32(DataHash);
+        buffer.Write(DataHash);
     }
 }

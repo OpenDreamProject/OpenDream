@@ -5,6 +5,8 @@ using Robust.Shared.Configuration;
 using Robust.Shared.ContentPack;
 using Robust.Shared.Network;
 using Robust.Shared.Utility;
+using System.Linq;
+using SpaceWizards.Sodium;
 
 namespace OpenDreamClient.Resources;
 
@@ -69,21 +71,32 @@ internal sealed class DreamResourceManager : IDreamResourceManager {
     }
 
     private void RxBrowseResource(MsgBrowseResource message) {
-        _sawmill.Debug($"Received cache check for {message.Filename}");
+        _sawmill.Debug($"Received cache check for {message.Filename} hash: {BitConverter.ToString(message.DataHash)}");
         EnsureCacheDirectory();
-        if(_resourceManager.UserData.Exists(GetCacheFilePath(message.Filename))){ //TODO CHECK HASH
+        if(_resourceManager.UserData.Exists(GetCacheFilePath(message.Filename)) && GetFileHash(GetCacheFilePath(message.Filename)).SequenceEqual(message.DataHash)){
             _sawmill.Debug($"Cache hit for {message.Filename}");
         } else {
             if(_activeBrowseRscRequests.Contains(message.Filename)) //we've already requested it, don't need to do it again
                 return;
-            _sawmill.Debug($"Cache miss for {message.Filename}, requesting from server.");
+            if (_resourceManager.UserData.Exists(GetCacheFilePath(message.Filename))) {
+                _sawmill.Debug($"Cache hit for {message.Filename} but hashes did not match (hash: {BitConverter.ToString(GetFileHash(GetCacheFilePath(message.Filename)))}). Re-requesting!");
+                _resourceManager.UserData.Delete(GetCacheFilePath(message.Filename));
+            } else
+                _sawmill.Debug($"Cache miss for {message.Filename}, requesting from server.");
             _activeBrowseRscRequests.Add(message.Filename);
             _netManager.ServerChannel?.SendMessage(new MsgBrowseResourceRequest(){ Filename = message.Filename});
         }
     }
 
+    private byte[] GetFileHash(ResPath path) {
+        var stream = _resourceManager.UserData.OpenRead(path);
+        Span<byte> filebytes = new(new byte[stream.Length]);
+        stream.ReadToEnd(filebytes);
+        return CryptoGenericHashBlake2B.Hash(32, filebytes, ReadOnlySpan<byte>.Empty);
+    }
+
     private void RxBrowseResourceResponse(MsgBrowseResourceResponse message) {
-        if(_activeBrowseRscRequests.Contains(message.Filename)) {
+        if (_activeBrowseRscRequests.Contains(message.Filename)) {
             _activeBrowseRscRequests.Remove(message.Filename);
             EnsureCacheDirectory();
             CreateCacheFile(message.Filename, message.Data);
@@ -227,7 +240,7 @@ internal sealed class DreamResourceManager : IDreamResourceManager {
 
                 return _resourceManager.UserData.Exists(actualPath);
             } else {
-                _sawmill.Error("Cache was ensured for a file that does not exist in cache and is not requested. Probably somebody called browse() without browse_rsc() first.");
+                _sawmill.Error($"Cache was ensured for a file ({filename}) that does not exist in cache and is not requested. Probably somebody called browse() without browse_rsc() first.");
                 return false;
             }
         }

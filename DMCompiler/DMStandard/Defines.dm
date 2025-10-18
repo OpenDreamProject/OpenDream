@@ -61,7 +61,7 @@
 
 //world.system_type
 #define UNIX "UNIX"
-#define MS_WINDOWS "MS_WINDOWS"
+#define MS_WINDOWS "MS Windows"
 
 //Icon blending functions
 #define ICON_ADD 0

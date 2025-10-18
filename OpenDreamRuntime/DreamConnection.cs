@@ -9,6 +9,7 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Network.Messages;
 using Robust.Shared.Enums;
 using Robust.Shared.Player;
+using SpaceWizards.Sodium;
 
 namespace OpenDreamRuntime;
 
@@ -241,7 +242,7 @@ public sealed class DreamConnection {
                 else if (resourcePath.EndsWith(".wav"))
                     msg.Format = MsgSound.FormatType.Wav;
                 else
-                    throw new Exception($"Sound {value} is not a supported file type");
+                    throw new Exception($"Sound {resourcePath} is not a supported file type");
             }
 
             Session?.Channel.SendMessage(msg);
@@ -374,7 +375,7 @@ public sealed class DreamConnection {
 
         var msg = new MsgBrowseResource() {
             Filename = filename,
-            DataHash = resource.ResourceData.Length //TODO: make a quick hash that can work clientside too
+            DataHash = CryptoGenericHashBlake2B.Hash(32, resource.ResourceData!, ReadOnlySpan<byte>.Empty)
         };
         _permittedBrowseRscFiles[filename] = resource;
 
@@ -385,7 +386,7 @@ public sealed class DreamConnection {
         if(_permittedBrowseRscFiles.TryGetValue(filename, out var dreamResource)) {
             var msg = new MsgBrowseResourceResponse() {
                 Filename = filename,
-                Data = dreamResource.ResourceData! //honestly if this is null, something mega fucked up has happened and we should error hard
+                Data = dreamResource.ResourceData!, //honestly if this is null, something mega fucked up has happened and we should error hard
             };
             _permittedBrowseRscFiles.Remove(filename);
             Session?.Channel.SendMessage(msg);

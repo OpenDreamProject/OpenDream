@@ -104,14 +104,14 @@ public class DreamList : DreamObject, IDreamList {
         base.HandleDeletion(possiblyThreaded);
     }
 
-    public DreamList CreateCopy(int start = 1, int end = 0) {
+    public IDreamList CreateCopy(int start = 1, int end = 0) {
         if (start == 0) ++start; //start being 0 and start being 1 are equivalent
 
         var values = GetValues();
         if (end > values.Count + 1 || start > values.Count + 1) throw new Exception("list index out of bounds");
         if (end == 0) end = values.Count + 1;
         if (end <= start)
-            return new(ObjectDefinition, 0);
+            return new DreamList(ObjectDefinition, 0);
 
         List<DreamValue> copyValues = values.GetRange(start - 1, end - start);
 
@@ -124,7 +124,7 @@ public class DreamList : DreamObject, IDreamList {
             }
         }
 
-        return new(ObjectDefinition, copyValues, associativeValues);
+        return new DreamList(ObjectDefinition, copyValues, associativeValues);
     }
 
     /// <summary>
@@ -333,7 +333,7 @@ public class DreamList : DreamObject, IDreamList {
     }
 
     public override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
-        DreamList listCopy = CreateCopy();
+        DreamList listCopy = (DreamList)CreateCopy();
 
         if (b.TryGetValueAsDreamList(out var bList)) {
             foreach (DreamValue value in bList.EnumerateValues()) {
@@ -351,7 +351,7 @@ public class DreamList : DreamObject, IDreamList {
     }
 
     public override DreamValue OperatorSubtract(DreamValue b, DMProcState state) {
-        DreamList listCopy = CreateCopy();
+        DreamList listCopy = (DreamList)CreateCopy();
 
         if (b.TryGetValueAsDreamList(out var bList)) {
             foreach (DreamValue value in bList.EnumerateValues()) {
@@ -370,7 +370,7 @@ public class DreamList : DreamObject, IDreamList {
         if (b.TryGetValueAsDreamList(out var bList)) {  // List | List
             list = Union(bList);
         } else {                                        // List | x
-            list = CreateCopy();
+            list = (DreamList)CreateCopy();
             list.AddValue(b);
         }
 

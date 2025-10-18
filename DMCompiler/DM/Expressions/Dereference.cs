@@ -335,6 +335,10 @@ internal sealed class ScopeReference(DMObjectTree objectTree, Location location,
     public override string GetNameof(ExpressionContext ctx) => dmVar.Name;
 
     public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
+        if (expression is Field && dmVar.TryAsConstant(compiler, out constant)) {
+            return true;
+        }
+
         if (expression is not IConstantPath) {
             constant = null;
             return false;

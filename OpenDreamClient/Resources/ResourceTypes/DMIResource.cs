@@ -9,8 +9,6 @@ using SixLabors.ImageSharp.Processing;
 namespace OpenDreamClient.Resources.ResourceTypes;
 
 public sealed class DMIResource : DreamResource {
-    private static readonly byte[] PngHeader = [0x89, 0x50, 0x4E, 0x47, 0xD, 0xA, 0x1A, 0xA];
-
     public Texture Texture;
     public Vector2i IconSize;
     public DMIParser.ParsedDMIDescription Description;
@@ -28,8 +26,6 @@ public sealed class DMIResource : DreamResource {
     }
 
     private void ProcessDMIData() {
-        if (!IsValidPNG()) throw new Exception("Attempted to create a DMI using an invalid PNG");
-
         using Stream dmiStream = new MemoryStream(Data);
         DMIParser.ParsedDMIDescription description = DMIParser.ParseDMI(dmiStream);
 
@@ -70,16 +66,6 @@ public sealed class DMIResource : DreamResource {
             clone.Crop(new Rectangle(state[0].X, state[0].Y, state[0].X + description.Width, state[0].Y + description.Height));
         });
         return result;
-    }
-
-    private bool IsValidPNG() {
-        if (Data.Length < PngHeader.Length) return false;
-
-        for (int i = 0; i < PngHeader.Length; i++) {
-            if (Data[i] != PngHeader[i]) return false;
-        }
-
-        return true;
     }
 
     public struct State {

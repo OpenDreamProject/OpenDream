@@ -120,7 +120,7 @@ public sealed class DreamIcon(DreamManager dreamManager, DreamResourceManager re
         int currentFrame = 0;
         foreach (var iconStatePair in States) {
             var iconState = iconStatePair.Value;
-            ParsedDMIState newState = new() { Name = iconStatePair.Key, Loop = false, Rewind = false };
+            ParsedDMIState newState = new(iconStatePair.Key) { Loop = false, Rewind = false };
 
             newDescription.States.Add(newState.Name, newState);
 

@@ -90,12 +90,12 @@ public sealed class DreamResourceManager {
                     break;
                 case ".dmi":
                 case ".png":
+                case ".bmp":
                     resource = new IconResource(resourceId, resourcePath, resourcePath);
                     break;
                 case ".jpg":
                 case ".rsi": // RT-specific, not in BYOND
                 case ".gif":
-                case ".bmp":
                     // TODO implement other icon file types
                     goto default;
 

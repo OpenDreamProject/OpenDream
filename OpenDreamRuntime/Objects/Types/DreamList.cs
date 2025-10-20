@@ -223,15 +223,17 @@ public class DreamList : DreamObject, IDreamList {
     }
 
     public virtual void RemoveValue(DreamValue value) {
-        _associativeValues?.Remove(value);
-        if (_reverseLookup.ContainsKey(value)) {
-            var rLCount = _reverseLookup[value] -= 1;
-            if (rLCount <= 0) {
-                _reverseLookup.Remove(value);
-            }
-            _reverseLookup[value] = rLCount;
+        int valueIndex = _values.LastIndexOf(value);
 
-            int valueIndex = _values.LastIndexOf(value);
+        if (valueIndex != -1) {
+            if (_reverseLookup.ContainsKey(value)) {
+                var rLCount = _reverseLookup[value] -= 1;
+                if (rLCount <= 0) {
+                    _reverseLookup.Remove(value);
+                }
+            }
+
+            _associativeValues?.Remove(value);
             _values.RemoveAt(valueIndex);
         }
 

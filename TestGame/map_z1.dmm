@@ -39,15 +39,17 @@
 "M" = (/mob,/turf,/area)
 "N" = (/obj/plaque/animation_turf_test,/turf,/area)
 "O" = (/obj/plaque/animation_test,/turf,/area)
+"Q" = (/obj/bin,/turf,/area)
 "R" = (/turf/blue,/area/withicon)
 "S" = (/obj/button/animation_turf_test,/turf,/area)
+"W" = (/obj/rubbish,/turf,/area)
 "X" = (/turf,/area/withicon)
 "Z" = (/obj/button/animation_test,/turf,/area)
 
 (1,1,1) = {"
 bbbbbbbbbbbbbbbbbbbbbb
-bedciklwopsuaaaaaaaaab
-bfghjmnxqrtvaaaaaaaaab
+bedciklwopsuQaaaaaaaab
+bfghjmnxqrtvWaaaaaaaab
 byADFGZSaaaaaaaaaaaaab
 bzBEHIONaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab

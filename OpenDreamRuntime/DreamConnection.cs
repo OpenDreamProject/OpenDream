@@ -215,8 +215,8 @@ public sealed class DreamConnection {
 
     public void OutputDreamValue(DreamValue value) {
         if (value.TryGetValueAsDreamObject<DreamObjectSound>(out var outputObject)) {
-            ushort channel = (ushort)outputObject.GetVariable("channel").GetValueAsInteger();
-            ushort volume = (ushort)outputObject.GetVariable("volume").GetValueAsInteger();
+            ushort channel = (ushort)outputObject.GetVariable("channel").MustGetValueAsInteger();
+            ushort volume = (ushort)outputObject.GetVariable("volume").MustGetValueAsInteger();
             float offset = outputObject.GetVariable("offset").UnsafeGetValueAsFloat();
             DreamValue file = outputObject.GetVariable("file");
 
@@ -392,7 +392,6 @@ public sealed class DreamConnection {
         } else {
             _sawmill.Error($"Client({Session}) requested a browse_rsc file they had not been permitted to request ({filename}).");
         }
-
     }
 
     public void Browse(string? body, string? options) {

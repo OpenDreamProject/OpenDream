@@ -435,6 +435,7 @@ namespace OpenDreamRuntime {
             else {
                 _current.AppendStackFrame(builder);
             }
+
             builder.AppendLine();
 
             foreach (var frame in _stack) {

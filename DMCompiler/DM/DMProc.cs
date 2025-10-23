@@ -203,6 +203,8 @@ internal sealed class DMProc {
         _compiler.BytecodeOptimizer.Optimize(AnnotatedBytecode.GetAnnotatedBytecode());
         ControlFlowGraph controlFlowGraph = new ControlFlowGraph(_compiler);
         controlFlowGraph.Build(AnnotatedBytecode.GetAnnotatedBytecode());
+        if (Name == "foo")
+            controlFlowGraph.Dump();
 
         List<ProcArgumentJson>? arguments = null;
         if (_parameters.Count > 0) {

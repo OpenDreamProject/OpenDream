@@ -24,6 +24,16 @@ public struct OpcodeMetadata(int stackDelta = 0, bool variableArgs = false, para
     public readonly int StackDelta = stackDelta; // Net change in stack size caused by this opcode
     public readonly List<OpcodeArgType> RequiredArgs = [..requiredArgs]; // The types of arguments this opcode requires
     public readonly bool VariableArgs = variableArgs; // Whether this opcode takes a variable number of arguments
+
+    // TODO: We should just enforce the position of the label arg instead of doing this
+    public int? GetLabelIndex() {
+        for (var index = 0; index < RequiredArgs.Count; index++) {
+            var arg = RequiredArgs[index];
+            if (arg == OpcodeArgType.Label) return index;
+        }
+
+        return null;
+    }
 }
 
 /// <summary>

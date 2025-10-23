@@ -1,3 +1,4 @@
+using System.Linq;
 using DMCompiler.Bytecode;
 
 namespace DMCompiler.Optimizer;
@@ -5,13 +6,26 @@ namespace DMCompiler.Optimizer;
 internal class ControlFlowGraph(DMCompiler compiler) {
     // The first AnnotatedBytecodeLabel or AnnotatedBytecodeInstruction in each block; blocks are separated by labels and terminators
     List<int> BlockLeaderIndices = new(){0}; // start of instructions (idx 0) is a leader
-
-    Dictionary<int, BasicBlock> StartIndexToBlock = new(); // The first instruction/label of the block
+    Dictionary<IAnnotatedBytecode, BasicBlock> StartBytecodeToBlock = new(); // The first instruction/label of the block
     List<BasicBlock> Blocks = new();
 
     public void Build(List<IAnnotatedBytecode> bytecode) {
         BuildBlocks(bytecode);
         WireEdges(bytecode);
+        PruneUnreachable();
+    }
+
+    public string Dump() {
+        var sb = new System.Text.StringBuilder();
+        foreach (var b in Blocks) {
+            sb.AppendLine($"B{b.Id} [{b.StartIndex}..{b.EndIndexExclusive}):");
+            foreach (var ins in b.Instructions) sb.AppendLine($"  {ins}");
+            sb.Append("  succs: ").AppendLine(string.Join(", ", b.Successors.Select(s => $"B{s.Id}")));
+            sb.AppendLine();
+        }
+
+        var result = sb.ToString();
+        return result;
     }
 
     private void BuildBlocks(List<IAnnotatedBytecode> bytecode) {
@@ -41,7 +55,7 @@ internal class ControlFlowGraph(DMCompiler compiler) {
                 block.Terminator = ins;
 
             Blocks.Add(block);
-            StartIndexToBlock.Add(start, block);
+            StartBytecodeToBlock.Add(bytecode[start], block);
         }
     }
 
@@ -87,27 +101,56 @@ internal class ControlFlowGraph(DMCompiler compiler) {
             // terminator handling
             if (block.Terminator != null && block.Terminator.Opcode == DreamProcOpcode.Jump) { // Only unconditional jump has successors
                 var jumpLabel = block.Terminator.GetArg<AnnotatedBytecodeLabel>(0);
-                var edgeBlock = LabelToBlock(bytecode, jumpLabel);
-                if(edgeBlock is not null) block.AddEdge(edgeBlock);
+                var edgeBlock = StartBytecodeToBlock[jumpLabel];
+                block.AddEdge(edgeBlock);
                 continue;
             }
 
             // conditional branch and fallthrough
             if (block.Instructions[^1] is AnnotatedBytecodeInstruction inst && IsConditionalBranch(inst.Opcode)) {
                 var metadata = OpcodeMetadataCache.GetMetadata(inst.Opcode);
-                var targetLabel = metadata.GetLabel();
+                var targetLabelIdx = metadata.GetLabelIndex();
+                if (targetLabelIdx is not null) {
+                    var targetLabel = bytecode[targetLabelIdx.Value];
+                    var targetBlock = StartBytecodeToBlock[targetLabel];
+                    block.AddEdge(targetBlock);
+                }
+
+                // implied fallthrough to next instruction
+                var offset = 1;
+                while (bytecode[idx + offset] is not AnnotatedBytecodeInstruction) {
+                    offset++;
+                    if(idx + offset >= Blocks.Count) break;
+                }
+
+                if (idx + offset < Blocks.Count) block.AddEdge(Blocks[idx + offset]);
+                continue;
             }
+
+            // pure fallthrough
+            if (idx + 1 < Blocks.Count) block.AddEdge(Blocks[idx + 1]);
         }
     }
 
-    private BasicBlock? LabelToBlock(List<IAnnotatedBytecode> bytecode, AnnotatedBytecodeLabel label) {
-        foreach (var index in BlockLeaderIndices) {
-            if(bytecode[index] == label)
-                return Blocks[index];
+    private void PruneUnreachable() {
+        var seen = new HashSet<BasicBlock>();
+        var stack = new Stack<BasicBlock>();
+        stack.Push(Blocks[0]);
+        while (stack.Count > 0) {
+            var block = stack.Pop();
+            if (!seen.Add(block)) continue;
+            foreach (var successor in block.Successors) stack.Push(successor);
         }
 
-        return null;
+        Blocks.RemoveAll(b => !seen.Contains(b));
+
+        // Fix succs/preds after prune
+        foreach (var block in Blocks) {
+            block.Successors.RemoveAll(s => !seen.Contains(s));
+            block.Predecessors.RemoveAll(p => !seen.Contains(p));
+        }
     }
+
 }
 
 /// <summary>

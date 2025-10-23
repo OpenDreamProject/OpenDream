@@ -201,6 +201,8 @@ internal sealed class DMProc {
         var serializer = new AnnotatedBytecodeSerializer(_compiler);
 
         _compiler.BytecodeOptimizer.Optimize(AnnotatedBytecode.GetAnnotatedBytecode());
+        ControlFlowGraph controlFlowGraph = new ControlFlowGraph(_compiler);
+        controlFlowGraph.Build(AnnotatedBytecode.GetAnnotatedBytecode());
 
         List<ProcArgumentJson>? arguments = null;
         if (_parameters.Count > 0) {

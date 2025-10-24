@@ -2,10 +2,14 @@
 set -euo pipefail
 
 touch errors.log
+base="Content.Tests/DMProject/environment.dme"
 
 find Content.Tests/DMProject/Tests -type f -name "*.dm" | while read -r file; do
-	echo "Running dm.sh on $file"
-	tools/ci/dm.sh -DBYOND_UNIT_TEST=$file Content.Tests/DMProject/environment.dme  
+	
+
+	relative=$(realpath --relative-to="$(dirname "$base")" "$file")
+	echo "Running dm.sh on $relative"
+	tools/ci/dm.sh -DBYOND_UNIT_TEST="$relative" $base
 	echo "Running $file"
 	DreamDaemon Content.Tests/DMProject/environment.dmb -once -close -trusted -verbose -invisible
 done

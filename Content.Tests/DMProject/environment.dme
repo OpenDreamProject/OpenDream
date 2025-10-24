@@ -9,5 +9,5 @@
 #include "interface.dmf"
 // END_INCLUDE
 /world/New()
-    RunTest()
-    Del()
+	RunTest()
+	Del()

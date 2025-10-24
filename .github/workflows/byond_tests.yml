@@ -42,10 +42,14 @@ jobs:
           echo "LD_LIBRARY_PATH=/home/runner/BYOND/byond/bin:$LD_LIBRARY_PATH" >> $GITHUB_ENV
           echo "MANPATH=/home/runner/BYOND/byond/man:$MANPATH" >> $GITHUB_ENV
 
-      - name: Build Unit Tests
+      - name: Build Integration Unit Tests
         run: |
           tools/ci/dm.sh Content.IntegrationTests/DMProject/environment.dme
 
-      - name: Run Unit Tests
+      - name: Run Integration Unit Tests
         run: |
           tools/ci/run_integration_test.sh
+
+      - name: Run Full Unit Tests
+        run: |
+          tools/ci/run_unit_tests.sh

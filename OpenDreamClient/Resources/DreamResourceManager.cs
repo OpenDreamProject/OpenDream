@@ -152,6 +152,7 @@ internal sealed class DreamResourceManager : IDreamResourceManager {
 
     private void RxLookupResourceResponse(MsgLookupResourceResponse message) {
         if (_pendingResourceLookups.TryGetValue(message.ResourcePathOrRef, out var pendingResourceLookup)) {
+            _pendingResourceLookups.Remove(message.ResourcePathOrRef);
             if (message.Success) {
                 _resourcePathToIdCache[message.ResourcePathOrRef] = message.ResourceId;
                 foreach (var successCallback in pendingResourceLookup.SuccessCallbacks)

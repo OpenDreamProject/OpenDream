@@ -20,6 +20,7 @@ public sealed class DreamResourceManager {
     [Dependency] private readonly IStatusHost _statusHost = default!;
     [Dependency] private readonly IDependencyCollection _dependencyCollection = default!;
     [Dependency] private readonly ISerializationManager _serializationManager = default!;
+    
     public string RootPath { get; private set; } = default!;
     public DMFResource? InterfaceFile { get; private set; }
 
@@ -106,7 +107,6 @@ public sealed class DreamResourceManager {
 
             return resource;
         }
-
 
         if (_resourcePathToId.TryGetValue(resourcePath, out resourceId)) {
             resource = _resourceCache[resourceId];
@@ -229,7 +229,7 @@ public sealed class DreamResourceManager {
                 throw new Exception($"Attempted to send a bad resource {resource.ResourcePath} with ID {resource.Id}");
             }
             var msg = new MsgResource {
-                ResourceId = resource.Id, ResourceData = resource.ResourceData!
+                ResourceId = resource.Id, ResourceData = resource.ResourceData
             };
 
             pRequestResource.MsgChannel.SendMessage(msg);

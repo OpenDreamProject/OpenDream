@@ -151,8 +151,7 @@ internal sealed class DreamResourceManager : IDreamResourceManager {
     }
 
     private void RxLookupResourceResponse(MsgLookupResourceResponse message) {
-        if (_pendingResourceLookups.TryGetValue(message.ResourcePathOrRef, out var pendingResourceLookup)) {
-            _pendingResourceLookups.Remove(message.ResourcePathOrRef);
+        if (_pendingResourceLookups.Remove(message.ResourcePathOrRef, out var pendingResourceLookup)) {
             if (message.Success) {
                 _resourcePathToIdCache[message.ResourcePathOrRef] = message.ResourceId;
                 foreach (var successCallback in pendingResourceLookup.SuccessCallbacks)
@@ -301,7 +300,6 @@ internal sealed class DreamResourceManager : IDreamResourceManager {
                         $"Resource id {resourcePathOrRef} lookup was requested, but is still not received {timeout} seconds later.");
                     foreach (var failureCallback in _pendingResourceLookups[resourcePathOrRef].FailureCallbacks)
                         failureCallback.Invoke();
-                    _pendingResourceLookups.Remove(resourcePathOrRef);
                 }
             });
         } else {

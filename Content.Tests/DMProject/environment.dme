@@ -7,7 +7,6 @@
 // END_PREFERENCES
 // BEGIN_INCLUDE
 #include "interface.dmf"
-#include "map.dmm"
 // END_INCLUDE
 #ifdef BYOND_UNIT_TEST
 #warn BYOND_UNIT_TEST

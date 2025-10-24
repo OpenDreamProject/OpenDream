@@ -8,8 +8,5 @@
 // BEGIN_INCLUDE
 #include "interface.dmf"
 // END_INCLUDE
-#ifdef BYOND_UNIT_TEST
-#warn BYOND_UNIT_TEST
 RunTest()
 Del(world)
-#endif

@@ -10,5 +10,6 @@
 #include "map.dmm"
 // END_INCLUDE
 #ifdef BYOND_UNIT_TEST
+#include BYOND_UNIT_TEST
 RunTest()
 #endif

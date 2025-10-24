@@ -295,10 +295,10 @@ internal sealed class DreamResourceManager : IDreamResourceManager {
 
             var timeout = _cfg.GetCVar(OpenDreamCVars.DownloadTimeout);
             Robust.Shared.Timing.Timer.Spawn(TimeSpan.FromSeconds(timeout), () => {
-                if (_pendingResourceLookups.ContainsKey(resourcePathOrRef)) {
+                if (_pendingResourceLookups.TryGetValue(resourcePathOrRef, out var pendingLookup)) {
                     _sawmill.Warning(
                         $"Resource id {resourcePathOrRef} lookup was requested, but is still not received {timeout} seconds later.");
-                    foreach (var failureCallback in _pendingResourceLookups[resourcePathOrRef].FailureCallbacks)
+                    foreach (var failureCallback in pendingLookup.FailureCallbacks)
                         failureCallback.Invoke();
                 }
             });

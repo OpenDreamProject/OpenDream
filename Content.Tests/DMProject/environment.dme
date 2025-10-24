@@ -12,4 +12,5 @@
 #warn BYOND_UNIT_TEST
 #include BYOND_UNIT_TEST
 RunTest()
+del(world)
 #endif

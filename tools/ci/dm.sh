@@ -1,6 +1,44 @@
 #!/bin/bash
 
+dmepath=""
 retval=1
+
+for var
+do
+	if [[ $var != -* && $var == *.dme ]]
+	then
+		dmepath=`echo $var | sed -r 's/.{4}$//'`
+		break
+	fi
+done
+
+if [[ $dmepath == "" ]]
+then
+	echo "No .dme file specified, aborting."
+	exit 1
+fi
+
+if [[ -a $dmepath.m.dme ]]
+then
+	rm $dmepath.m.dme
+fi
+
+cp $dmepath.dme $dmepath.m.dme
+if [[ $? != 0 ]]
+then
+	echo "Failed to make modified dme, aborting."
+	exit 2
+fi
+
+for var
+do
+	arg=`echo $var | sed -r 's/^.{2}//'`
+	if [[ $var == -I* ]]
+	then
+		sed -i "1i#include $arg" $dmepath.m.dme
+		continue
+	fi
+done
 
 #windows
 if [[ `uname` == MINGW* ]]
@@ -24,7 +62,7 @@ then
 		exit 3
 	fi
 
-	"$dm" "$@" 2>&1 | tee result.log
+	"$dm" $dmepath.m.dme 2>&1 | tee result.log
 	retval=$?
 	if ! grep '\- 0 errors, 0 warnings' result.log
 	then
@@ -33,7 +71,7 @@ then
 else
 	if hash DreamMaker 2>/dev/null
 	then
-		DreamMaker -max_errors 0 "$@" 2>&1 | tee result.log
+		DreamMaker -max_errors 0 $dmepath.m.dme 2>&1 | tee result.log
 		retval=$?
 		if ! grep '\- 0 errors, 0 warnings' result.log
 		then
@@ -45,6 +83,9 @@ else
 	fi
 fi
 
-rm $dmepath.dme
+mv $dmepath.m.dmb $dmepath.dmb
+mv $dmepath.m.rsc $dmepath.rsc
+
+rm $dmepath.m.dme
 
 exit $retval

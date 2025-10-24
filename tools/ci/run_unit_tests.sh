@@ -9,7 +9,7 @@ find Content.Tests/DMProject/Tests -type f -name "*.dm" | while read -r file; do
 
 	relative=$(realpath --relative-to="$(dirname "$base")" "$file")
 	echo "Running dm.sh on $relative"
-	tools/ci/dm.sh -DBYOND_UNIT_TEST=\"$relative\" $base
+	tools/ci/dm.sh -I\"$relative\" $base
 	echo "Running $relative"
 	DreamDaemon Content.Tests/DMProject/environment.dmb -once -close -trusted -verbose -invisible
 done

@@ -5,7 +5,8 @@ touch errors.log
 
 find Content.Tests/DMProject/Tests -type f -name "*.dm" | while read -r file; do
 	echo "Running dm.sh on $file"
-	"dm.sh" Content.Tests/DMProject/environment.dme -DBYOND_UNIT_TEST="$file" 
+	tools/ci/dm.sh Content.Tests/DMProject/environment.dme -DBYOND_UNIT_TEST="$file" 
+	echo "Running $file"
 	DreamDaemon Content.Tests/DMProject/environment.dmb -once -close -trusted -verbose -invisible
 done
 

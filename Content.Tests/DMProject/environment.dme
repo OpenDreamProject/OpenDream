@@ -10,7 +10,6 @@
 // END_INCLUDE
 #ifdef BYOND_UNIT_TEST
 #warn BYOND_UNIT_TEST
-#include BYOND_UNIT_TEST
 RunTest()
-del(world)
+Del(world)
 #endif

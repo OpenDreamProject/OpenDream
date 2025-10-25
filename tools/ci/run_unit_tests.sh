@@ -16,6 +16,12 @@ while read -r file; do
 		echo "Skipping $relative due to NOBYOND mark"
 		continue
 	fi
+	if [[ $first_line == "// IGNORE"* ]]; then
+		#skip this one, it won't work in byond
+		echo "Skipping $relative due to IGNORE mark"
+		continue
+	fi
+	
 
 	echo "Compiling $relative"
 	if ! tools/ci/dm.sh -I\"$relative\" $base; then

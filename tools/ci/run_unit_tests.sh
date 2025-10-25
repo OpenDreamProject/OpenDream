@@ -1,9 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
-touch errors.log
+touch summary.log
 base="Content.Tests/DMProject/environment.dme"
 testsfailed=0
+byondcrashes=0
+testpassed=0
 
 find Content.Tests/DMProject/Tests -type f -name "*.dm" | while read -r file; do
 	first_line=$(head -n 1 "$file" || echo "")
@@ -19,16 +21,19 @@ find Content.Tests/DMProject/Tests -type f -name "*.dm" | while read -r file; do
 	if ! tools/ci/dm.sh -I\"$relative\" $base; then
 		if [[ $first_line == "// COMPILE ERROR"* ]] then	#expected compile error, should fail to compile
 			echo "Expected compile failure, test passed"
+			((testpassed++))
 			continue
 		else
 			echo "TEST FAILED: $relative"
-			testsfailed=1
+			echo "TEST FAILED: $relative" >> summary.log
+			((testsfailed++))
 			continue		
 		fi
 	else
 		if [[ $first_line == "// COMPILE ERROR"* ]] then	#expected compile error, should fail to compile
 			echo "TEST FAILED: Expected compile failure"
-			testsfailed=1
+			echo "TEST FAILED: $relative" >> summary.log
+			((testsfailed++))
 		fi
 	fi
 
@@ -36,7 +41,8 @@ find Content.Tests/DMProject/Tests -type f -name "*.dm" | while read -r file; do
 	touch Content.Tests/DMProject/errors.log
 	if ! DreamDaemon Content.Tests/DMProject/environment.dmb -once -close -trusted -verbose -invisible; then
 		echo "TEST FAILED: BYOND CRASHED!"
-		testsfailed=1
+		echo "TEST FAILED: $relative" >> summary.log
+		((byondcrashes++))
 		sed -i '/^[[:space:]]*$/d' Content.Tests/DMProject/errors.log
 		cat Content.Tests/DMProject/errors.log
 		rm Content.Tests/DMProject/errors.log
@@ -45,20 +51,31 @@ find Content.Tests/DMProject/Tests -type f -name "*.dm" | while read -r file; do
 		if [[ $first_line == "// RUNTIME ERROR"* ]]	then #expected runtime error, should compile but then fail to run
 			echo "Expected runtime error, test passed"
 			rm Content.Tests/DMProject/errors.log
+			((testpassed++))
 			continue
 		else
 			echo "Errors detected!"
 			sed -i '/^[[:space:]]*$/d' Content.Tests/DMProject/errors.log
 			cat Content.Tests/DMProject/errors.log
 			echo "TEST FAILED: $relative"
-			testsfailed=1
 			rm Content.Tests/DMProject/errors.log
+			echo "TEST FAILED: $relative" >> summary.log
+			((testsfailed++))
 			continue
 		fi
 	else
 		echo "Test passed: $relative"
+		((testpassed++))
 	fi
 done
 
+
+echo "--------------------------------------------------------------------------------"
+echo "Test Summary"
+echo "--------------------------------------------------------------------------------"
+echo "passed: $testspassed, failed: $testsfailed, BYOND crashes: $byondcrashes"
+echo "--------------------------------------------------------------------------------"
+echo "failed tests:"
+cat summary.log
 exit $testsfailed
 

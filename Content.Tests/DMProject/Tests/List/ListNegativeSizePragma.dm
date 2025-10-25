@@ -1,4 +1,5 @@
 // RUNTIME ERROR
+// NOBYOND
 #pragma ListNegativeSizeException error
 
 /proc/DecrementList()

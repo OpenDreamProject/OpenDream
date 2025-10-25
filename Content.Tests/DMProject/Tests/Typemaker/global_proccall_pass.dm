@@ -1,3 +1,4 @@
+// NOBYOND
 #pragma InvalidReturnType error
 /proc/foo() as text
 	return "bar"

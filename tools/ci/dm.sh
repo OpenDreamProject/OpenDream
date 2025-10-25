@@ -59,7 +59,7 @@ then
 	if [[ $dm == "" ]]
 	then
 		echo "Couldn't find the DreamMaker executable, aborting."
-		exit 0
+		exit 3
 	fi
 
 	"$dm" $dmepath.m.dme 2>&1 | tee result.log
@@ -79,7 +79,7 @@ else
 		fi
 	else
 		echo "Couldn't find the DreamMaker executable, aborting."
-		exit 0
+		exit 3
 	fi
 fi
 

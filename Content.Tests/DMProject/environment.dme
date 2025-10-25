@@ -9,6 +9,6 @@
 #include "interface.dmf"
 // END_INCLUDE
 /world/New()
-    world.log = file("errors.log")
+	world.log = file("errors.log")
 	RunTest()
 	Del()

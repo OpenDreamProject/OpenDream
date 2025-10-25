@@ -34,7 +34,13 @@ find Content.Tests/DMProject/Tests -type f -name "*.dm" | while read -r file; do
 
 	echo "Running $relative"
 	touch Content.Tests/DMProject/errors.log
-	DreamDaemon Content.Tests/DMProject/environment.dmb -once -close -trusted -verbose -invisible
+	if ! DreamDaemon Content.Tests/DMProject/environment.dmb -once -close -trusted -verbose -invisible; then
+		echo "TEST FAILED: BYOND CRASHED!"
+		testsfailed=1
+		sed -i '/^[[:space:]]*$/d' Content.Tests/DMProject/errors.log
+		cat Content.Tests/DMProject/errors.log
+		rm Content.Tests/DMProject/errors.log
+	fi
 	if [ -s "Content.Tests/DMProject/errors.log" ]; then
 		if [[ $first_line == "// RUNTIME ERROR"* ]]	then #expected runtime error, should compile but then fail to run
 			echo "Expected runtime error, test passed"

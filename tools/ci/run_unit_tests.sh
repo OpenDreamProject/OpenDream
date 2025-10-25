@@ -30,19 +30,20 @@ find Content.Tests/DMProject/Tests -type f -name "*.dm" | while read -r file; do
 	echo "Running $relative"
 	touch errors.log
 	DreamDaemon Content.Tests/DMProject/environment.dmb -once -close -trusted -verbose -invisible
-		
-	if [[ -s "errors.log" && $first_line == "// RUNTIME ERROR"* ]]	then #expected runtime error, should compile but then fail to run
-		echo "Expected runtime error, test passed"
-		rm errors.log
-		continue
-	else
-		echo "Errors detected!"
-		sed -i '/^[[:space:]]*$/d' ./errors.log
-		cat errors.log
-		echo "TEST FAILED: $relative"
-		testsfailed=1
-		rm errors.log
-		continue
+	if [ -s "errors.log" ] then
+		if [[ $first_line == "// RUNTIME ERROR"* ]]	then #expected runtime error, should compile but then fail to run
+			echo "Expected runtime error, test passed"
+			rm errors.log
+			continue
+		else
+			echo "Errors detected!"
+			sed -i '/^[[:space:]]*$/d' ./errors.log
+			cat errors.log
+			echo "TEST FAILED: $relative"
+			testsfailed=1
+			rm errors.log
+			continue
+		fi
 	fi
 
 exit $testsfailed

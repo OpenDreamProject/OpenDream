@@ -1,4 +1,4 @@
-﻿/proc/RunTest()
+/proc/RunTest()
 	var/list/L1 = list("A" = 1)
 	var/list/L2 = list("B" = 2)
 

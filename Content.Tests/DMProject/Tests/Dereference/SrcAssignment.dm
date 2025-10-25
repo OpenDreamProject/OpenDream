@@ -1,4 +1,4 @@
-﻿/datum/A/var/TestSrcVar = "A"
+/datum/A/var/TestSrcVar = "A"
 /datum/A/proc/TestSrcProc()
 	return "A"
 

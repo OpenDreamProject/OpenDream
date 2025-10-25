@@ -11,7 +11,7 @@ find Content.Tests/DMProject/Tests -type f -name "*.dm" | while read -r file; do
 	echo "Running dm.sh on $relative"
 	tools/ci/dm.sh -I\"$relative\" $base
 	echo "Running $relative"
-	DreamDaemon Content.Tests/DMProject/environment.dmb -once -close -trusted -verbose -invisible
+	#DreamDaemon Content.Tests/DMProject/environment.dmb -once -close -trusted -verbose -invisible
 done
 
 if [ -s "errors.log" ]

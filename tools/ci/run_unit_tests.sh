@@ -25,6 +25,11 @@ find Content.Tests/DMProject/Tests -type f -name "*.dm" | while read -r file; do
 			testsfailed=1
 			continue		
 		fi
+	else
+		if [[ $first_line == "// COMPILE ERROR"* ]] then	#expected compile error, should fail to compile
+			echo "TEST FAILED: Expected compile failure"
+			testsfailed=1
+		fi
 	fi
 
 	echo "Running $relative"
@@ -44,6 +49,8 @@ find Content.Tests/DMProject/Tests -type f -name "*.dm" | while read -r file; do
 			rm Content.Tests/DMProject/errors.log
 			continue
 		fi
+	else
+		echo "Test passed: $relative"
 	fi
 done
 

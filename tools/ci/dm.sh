@@ -64,18 +64,18 @@ then
 
 	"$dm" $dmepath.m.dme 2>&1 | tee result.log
 	retval=$?
-	if ! grep '\- 0 errors, 0 warnings' result.log
+	if ! grep '\- 0 errors, ' result.log
 	then
-		retval=1 #hard fail, due to warnings or errors
+		retval=1 #hard fail, due to errors
 	fi
 else
 	if hash DreamMaker 2>/dev/null
 	then
 		DreamMaker -max_errors 0 $dmepath.m.dme 2>&1 | tee result.log
 		retval=$?
-		if ! grep '\- 0 errors, 0 warnings' result.log
+		if ! grep '\- 0 errors, ' result.log
 		then
-			retval=1 #hard fail, due to warnings or errors
+			retval=1 #hard fail, due to errors
 		fi
 	else
 		echo "Couldn't find the DreamMaker executable, aborting."

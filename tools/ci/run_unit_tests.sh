@@ -3,6 +3,7 @@ set -euo pipefail
 
 touch errors.log
 base="Content.Tests/DMProject/environment.dme"
+testsfailed=0
 
 find Content.Tests/DMProject/Tests -type f -name "*.dm" | while read -r file; do
 	first_line=$(head -n 1 "$file" || echo "")
@@ -21,30 +22,29 @@ find Content.Tests/DMProject/Tests -type f -name "*.dm" | while read -r file; do
 			continue
 		else
 			echo "TEST FAILED: $relative"
+			testsfailed=1
 			continue		
 		fi
 	fi
 
 	echo "Running $relative"
-	if ! DreamDaemon Content.Tests/DMProject/environment.dmb -once -close -trusted -verbose -invisible; then
-		if [[ $first_line == "// RUNTIME ERROR"* ]]	then #expected runtime error, should compile but then fail to run
-			echo "Expected runtime error, test passed"
-			continue
-		else
-			echo "TEST FAILED: $relative"
-			continue
-		fi
+	touch errors.log
+	DreamDaemon Content.Tests/DMProject/environment.dmb -once -close -trusted -verbose -invisible
+		
+	if [[ -s "errors.log" && $first_line == "// RUNTIME ERROR"* ]]	then #expected runtime error, should compile but then fail to run
+		echo "Expected runtime error, test passed"
+		rm errors.log
+		continue
+	else
+		echo "Errors detected!"
+		sed -i '/^[[:space:]]*$/d' ./errors.log
+		cat errors.log
+		echo "TEST FAILED: $relative"
+		testsfailed=1
+		rm errors.log
+		continue
 	fi
-	
+
+exit $testsfailed
 done
 
-if [ -s "errors.log" ]
-then
-	echo "Errors detected!"
-	sed -i '/^[[:space:]]*$/d' ./errors.log
-	cat errors.log
-	exit 1
-else
-	echo "No errors detected."
-	exit 0
-fi

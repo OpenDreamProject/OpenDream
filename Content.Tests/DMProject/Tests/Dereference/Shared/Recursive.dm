@@ -1,4 +1,4 @@
-﻿// IGNORE
+// IGNORE
 
 /datum/recursive
 	var/datum/recursive/inner

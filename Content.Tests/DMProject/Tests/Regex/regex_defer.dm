@@ -1,4 +1,4 @@
-﻿/proc/regex_callback(match, group1, group2)
+/proc/regex_callback(match, group1, group2)
 	. = "good"
 
 	// The proc should return back to regex/Replace here despite being not being a `waitfor=0` proc

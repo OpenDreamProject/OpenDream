@@ -1,4 +1,4 @@
-﻿/proc/RunTest()
+/proc/RunTest()
 	var/datum/a = new
 	var/datum/b = null
 

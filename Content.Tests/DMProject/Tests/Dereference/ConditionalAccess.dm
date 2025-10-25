@@ -1,4 +1,4 @@
-﻿#include "Shared/Recursive.dm"
+#include "Shared/Recursive.dm"
 
 /proc/RunTest()
 	var/datum/recursive/R = new()

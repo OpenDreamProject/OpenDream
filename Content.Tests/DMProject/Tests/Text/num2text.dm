@@ -1,4 +1,4 @@
-﻿/proc/RunTest()
+/proc/RunTest()
 
 	// MinDigits / Radix
 	ASSERT(num2text(999.23123, 4, 10) == "0999")

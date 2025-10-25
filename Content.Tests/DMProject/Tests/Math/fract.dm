@@ -1,4 +1,4 @@
-﻿/proc/RunTest()
+/proc/RunTest()
 	ASSERT(fract(6) == 0)
 	ASSERT(fract(1.5) == 0.5)
 	ASSERT(fract(-1.5) == -0.5)

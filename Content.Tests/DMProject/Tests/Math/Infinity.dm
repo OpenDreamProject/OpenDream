@@ -1,4 +1,4 @@
-﻿/var/inf = 1.#INF // Can be encoded in an object var
+/var/inf = 1.#INF // Can be encoded in an object var
 
 /proc/RunTest()
 	ASSERT(isinf(inf))

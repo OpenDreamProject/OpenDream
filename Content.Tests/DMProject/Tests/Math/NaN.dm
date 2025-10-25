@@ -1,4 +1,4 @@
-﻿/proc/RunTest()
+/proc/RunTest()
 	ASSERT(!isnan(1.#INF))
 	ASSERT(!isnan(null))
 	ASSERT(!isnan(5))

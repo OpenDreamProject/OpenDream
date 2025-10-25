@@ -1,2 +1,2 @@
-﻿/proc/RunTest(datum/arg = new())
+/proc/RunTest(datum/arg = new())
 	ASSERT(istype(arg, /datum))

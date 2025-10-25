@@ -1,4 +1,4 @@
-﻿/datum/proc/call_target()
+/datum/proc/call_target()
 	return 13
 
 /proc/RunTest()

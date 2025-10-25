@@ -1,4 +1,4 @@
-﻿var/call_number = 0
+var/call_number = 0
 
 /proc/AssertCallNumber(num)
 	call_number++

@@ -1,4 +1,4 @@
-﻿/proc/RunTest()
+/proc/RunTest()
 	ASSERT(rgb(255, 255, 255) =="#ffffff")
 	ASSERT(rgb(255, 0, 0) == "#ff0000" )
 	ASSERT(rgb(0, 0, 255) == "#0000ff")

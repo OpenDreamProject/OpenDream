@@ -1,4 +1,4 @@
-﻿// IGNORE
+// IGNORE
 // This test case is currently broken
 #include "Shared/Recursive.dm"
 

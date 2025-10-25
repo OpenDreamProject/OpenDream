@@ -1,4 +1,4 @@
-﻿/proc/RunTest()
+/proc/RunTest()
 	ASSERT(nonspantext("Hello, World!", ", ", -1) == 1)
 	ASSERT(nonspantext("Hello, World!", ", ", 3) == 3)
 	ASSERT(nonspantext("Hello, World!", ", ", 7) == 0)

@@ -1,4 +1,4 @@
-﻿// RUNTIME ERROR, NO RETURN
+// RUNTIME ERROR, NO RETURN
 
 /proc/RunTest()
 	. = TRUE

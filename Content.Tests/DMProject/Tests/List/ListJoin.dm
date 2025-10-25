@@ -1,4 +1,4 @@
-﻿/proc/RunTest()
+/proc/RunTest()
 	var/list/L = list(1, 2, 3, 4, 5)
 
 	ASSERT(L.Join(";") == "1;2;3;4;5")

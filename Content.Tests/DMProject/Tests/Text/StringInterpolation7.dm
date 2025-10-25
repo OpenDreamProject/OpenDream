@@ -1,4 +1,4 @@
-﻿/datum/thing
+/datum/thing
 	var/name = "thing"
 
 /datum/Thing

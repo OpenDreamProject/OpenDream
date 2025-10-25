@@ -1,2 +1,2 @@
-﻿/proc/RunTest()
+/proc/RunTest()
 	ASSERT(TRUE)

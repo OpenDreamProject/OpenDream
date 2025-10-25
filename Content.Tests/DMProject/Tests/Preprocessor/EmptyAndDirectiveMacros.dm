@@ -1,4 +1,4 @@
-﻿#define EMPTY
+#define EMPTY
 #define EMPTY_FN(a)
 #define DEFINE #define
 #define DEFINE_WITH_EMPTY EMPTY #define

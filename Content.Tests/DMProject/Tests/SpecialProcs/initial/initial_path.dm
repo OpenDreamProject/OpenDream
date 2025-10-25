@@ -1,4 +1,4 @@
-﻿/datum/one
+/datum/one
 	var/text = "one"
 	var/datum/two/two
 

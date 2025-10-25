@@ -1,4 +1,4 @@
-﻿/proc/RunTest()
+/proc/RunTest()
 	ASSERT(trunc(5.5) == 5)
 	ASSERT(trunc(null) == 0)
 	ASSERT(trunc(99.762) == 99)

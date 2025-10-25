@@ -1,4 +1,4 @@
-﻿/datum/proc/test1()
+/datum/proc/test1()
 	return
 
 /datum/proc/test2()

@@ -25,7 +25,7 @@ while read -r file; do
 
 	echo "Compiling $relative"
 	if ! tools/ci/dm.sh -I\"$relative\" $base; then
-		if [[ $first_line == "// COMPILE ERROR"* ]] then	#expected compile error, should fail to compile
+		if [[ $first_line == "// COMPILE ERROR"* || $first_line == "//COMPILE ERROR"* ]] then	#expected compile error, should fail to compile
 			echo "Expected compile failure, test passed"
 			testspassed=$((testspassed + 1))
 			continue
@@ -36,7 +36,7 @@ while read -r file; do
 			continue		
 		fi
 	else
-		if [[ $first_line == "// COMPILE ERROR"* ]] then	#expected compile error, should fail to compile
+		if [[ $first_line == "// COMPILE ERROR"* || $first_line == "//COMPILE ERROR"* ]] then	#expected compile error, should fail to compile
 			echo "TEST FAILED: Expected compile failure"
 			echo "TEST FAILED: $relative" >> summary.log
 			testsfailed=$((testsfailed + 1))
@@ -55,7 +55,7 @@ while read -r file; do
 		rm Content.Tests/DMProject/errors.log
 	fi
 	if [ -s "Content.Tests/DMProject/errors.log" ]; then
-		if [[ $first_line == "// RUNTIME ERROR"* ]]	then #expected runtime error, should compile but then fail to run
+		if [[ $first_line == "// RUNTIME ERROR"* || $first_line == "//RUNTIME ERROR"* ]]	then #expected runtime error, should compile but then fail to run
 			echo "Expected runtime error, test passed"
 			rm Content.Tests/DMProject/errors.log
 			testspassed=$((testspassed + 1))

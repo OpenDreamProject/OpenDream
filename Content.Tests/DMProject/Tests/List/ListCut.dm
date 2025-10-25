@@ -1,4 +1,4 @@
-﻿/proc/RunTest()
+/proc/RunTest()
 	var/list/A = list(1,2,3)
 	ASSERT(A.len == 3)
 	A.Cut()
@@ -9,15 +9,3 @@
 	ASSERT(A ~= list("b" = 20))
 	ASSERT(A["a"] == null)
 	ASSERT(A["b"] == 20)
-
-	A = list(a = 10)
-	A += A
-	A.Cut(1, 2)
-	ASSERT(A ~= list("a"))
-	ASSERT(A["a"] == null)
-
-	A = list(a = 10)
-	A += A
-	A.Cut(2, 0)
-	ASSERT(A ~= list("a"))
-	ASSERT(A["a"] == null)

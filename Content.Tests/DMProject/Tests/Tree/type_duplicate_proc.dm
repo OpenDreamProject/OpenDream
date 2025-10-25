@@ -1,4 +1,5 @@
 //COMPILE ERROR OD2101
+// NOBYOND
 #pragma DuplicateProcDefinition error
 
 //Issue OD#933: https://github.com/OpenDreamProject/OpenDream/issues/933

@@ -1,4 +1,4 @@
-﻿/datum/parent
+/datum/parent
 	proc/f(a)
 		return a
 

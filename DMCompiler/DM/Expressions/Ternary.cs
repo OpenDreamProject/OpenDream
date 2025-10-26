@@ -22,6 +22,11 @@ internal sealed class Ternary(DMCompiler compiler, Location location, DMExpressi
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         string cLabel = ctx.Proc.NewLabelName();
         string endLabel = ctx.Proc.NewLabelName();
 

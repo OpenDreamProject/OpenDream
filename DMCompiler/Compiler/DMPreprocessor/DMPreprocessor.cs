@@ -55,6 +55,7 @@ public sealed class DMPreprocessor(DMCompiler compiler, bool enableDirectives) :
                     break;
                 case TokenType.EndOfFile:
                     _lexerStack.Pop();
+                    yield return new Token(TokenType.Newline, "\n", token.Location, null);
                     break;
                 case TokenType.Newline:
                     _canUseDirective = true;
@@ -658,7 +659,9 @@ public sealed class DMPreprocessor(DMCompiler compiler, bool enableDirectives) :
             return;
         }
 
-        switch(warningTypeToken.Text.ToLower()) {
+        var isRuntimePragma = ((int)warningCode) is >= 4000 and <= 4999;
+
+        switch (warningTypeToken.Text.ToLower()) {
             case "disabled":
             case "disable":
                 compiler.SetPragma(warningCode, ErrorLevel.Disabled);
@@ -666,10 +669,18 @@ public sealed class DMPreprocessor(DMCompiler compiler, bool enableDirectives) :
             case "notice":
             case "pedantic":
             case "info":
+                if (isRuntimePragma) {
+                    compiler.Emit(WarningCode.BadDirective, warningTypeToken.Location, "Runtime pragmas do not support directive: info");
+                    return;
+                }
                 compiler.SetPragma(warningCode, ErrorLevel.Notice);
                 break;
             case "warning":
             case "warn":
+                if (isRuntimePragma) {
+                    compiler.Emit(WarningCode.BadDirective, warningTypeToken.Location, "Runtime pragmas do not support directive: warn");
+                    return;
+                }
                 compiler.SetPragma(warningCode, ErrorLevel.Warning);
                 break;
             case "error":

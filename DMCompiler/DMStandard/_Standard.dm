@@ -29,6 +29,7 @@ proc/flist(Path) as /list
 proc/floor(A) as num
 proc/fract(n) as num
 proc/ftime(File, IsCreationTime = 0) as num
+proc/generator(type, A, B, rand) as /generator
 proc/get_step_to(Ref, Trg, Min=0) as num
 proc/get_steps_to(Ref, Trg, Min=0) as num
 proc/gradient(A, index)
@@ -125,6 +126,7 @@ proc/winexists(player, control_id) as text
 proc/winget(player, control_id, params)
 proc/winset(player, control_id, params)
 
+#include "_Globals.dm" // This needs to go before the defines
 #include "Defines.dm"
 #include "Types\AList.dm"
 #include "Types\Callee.dm"
@@ -140,6 +142,7 @@ proc/winset(player, control_id, params)
 #include "Types\Matrix.dm"
 #include "Types\Mutable_Appearance.dm"
 #include "Types\Particles.dm"
+#include "Types\PixLoc.dm"
 #include "Types\Regex.dm"
 #include "Types\Savefile.dm"
 #include "Types\Sound.dm"

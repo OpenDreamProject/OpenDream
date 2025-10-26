@@ -51,6 +51,8 @@ public sealed class DreamObjectTree {
     public TreeEntry Movable { get; private set; } = default!;
     public TreeEntry Obj { get; private set; } = default!;
     public TreeEntry Mob { get; private set; } = default!;
+    public TreeEntry Generator { get; private set; } = default!;
+    public TreeEntry Particles { get; private set; } = default!;
 
     private FrozenDictionary<string, TreeEntry> _pathToType = FrozenDictionary<string, TreeEntry>.Empty;
     private FrozenDictionary<string, int> _globalProcIds = FrozenDictionary<string, int>.Empty;
@@ -72,6 +74,7 @@ public sealed class DreamObjectTree {
     private PvsOverrideSystem? _pvsOverrideSystem;
     private MetaDataSystem? _metaDataSystem;
     private ServerVerbSystem? _verbSystem;
+    private ServerDreamParticlesSystem? _particlesSystem;
 
     public void LoadJson(DreamCompiledJson json) {
         var types = json.Types;
@@ -85,6 +88,7 @@ public sealed class DreamObjectTree {
         _entitySystemManager.TryGetEntitySystem(out _pvsOverrideSystem);
         _entitySystemManager.TryGetEntitySystem(out _metaDataSystem);
         _entitySystemManager.TryGetEntitySystem(out _verbSystem);
+        _entitySystemManager.TryGetEntitySystem(out _particlesSystem);
 
         Strings = json.Strings;
 
@@ -146,48 +150,52 @@ public sealed class DreamObjectTree {
     /// (by calling the result of <see cref="DreamObject.InitProc(DreamThread, DreamObject?, DreamProcArguments)"/> or <see cref="DreamObject.InitSpawn(DreamProcArguments)"/>)
     /// </remarks>
     public DreamObject CreateObject(TreeEntry type) {
-        using (Profiler.BeginZone($"new {type}")) {
-            if (type == List)
-                return CreateList();
-            if (type == Savefile)
-                return new DreamObjectSavefile(Savefile.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(DatabaseQuery))
-                return new DreamObjectDatabaseQuery(type.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(Database))
-                return new DreamObjectDatabase(type.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(Matrix))
-                return new DreamObjectMatrix(type.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(Sound))
-                return new DreamObjectSound(type.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(Regex))
-                return new DreamObjectRegex(type.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(Image))
-                return new DreamObjectImage(type.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(Icon))
-                return new DreamObjectIcon(type.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(Filter))
-                return new DreamObjectFilter(type.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(Mob))
-                return new DreamObjectMob(type.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(Movable))
-                return new DreamObjectMovable(type.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(Area))
-                return new DreamObjectArea(type.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(Atom))
-                return new DreamObjectAtom(type.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(Client))
-                throw new Exception("Cannot create objects of type /client");
-            if (type.ObjectDefinition.IsSubtypeOf(Turf))
-                throw new Exception("New turfs must be created by the map manager");
-            if (type.ObjectDefinition.IsSubtypeOf(Exception))
-                return new DreamObjectException(type.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(Callee))
-                return new DreamObjectCallee(type.ObjectDefinition);
-            if (type.ObjectDefinition.IsSubtypeOf(Vector))
-                return new DreamObjectVector(type.ObjectDefinition);
+        if (type == List)
+            return CreateList();
+        if (type == AssocList)
+            return CreateAssocList();
+        if (type == Savefile)
+            return new DreamObjectSavefile(Savefile.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(DatabaseQuery))
+            return new DreamObjectDatabaseQuery(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Database))
+            return new DreamObjectDatabase(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Matrix))
+            return new DreamObjectMatrix(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Sound))
+            return new DreamObjectSound(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Regex))
+            return new DreamObjectRegex(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Image))
+            return new DreamObjectImage(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Icon))
+            return new DreamObjectIcon(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Filter))
+            return new DreamObjectFilter(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Mob))
+            return new DreamObjectMob(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Movable))
+            return new DreamObjectMovable(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Area))
+            return new DreamObjectArea(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Atom))
+            return new DreamObjectAtom(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Generator))
+            throw new Exception("Cannot create objects of type /generator without the generator() proc");
+        if (type.ObjectDefinition.IsSubtypeOf(Particles))
+            return new DreamObjectParticles(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Client))
+            throw new Exception("Cannot create objects of type /client");
+        if (type.ObjectDefinition.IsSubtypeOf(Turf))
+            throw new Exception("New turfs must be created by the map manager");
+        if (type.ObjectDefinition.IsSubtypeOf(Exception))
+            return new DreamObjectException(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Callee))
+            return new DreamObjectCallee(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Vector))
+            return new DreamObjectVector(type.ObjectDefinition);
 
-            return new DreamObject(type.ObjectDefinition);
-        }
+        return new DreamObject(type.ObjectDefinition);
     }
 
     public T CreateObject<T>(TreeEntry type) where T : DreamObject {
@@ -338,6 +346,8 @@ public sealed class DreamObjectTree {
         Movable = GetTreeEntry("/atom/movable");
         Obj = GetTreeEntry("/obj");
         Mob = GetTreeEntry("/mob");
+        Particles = GetTreeEntry("/particles");
+        Generator = GetTreeEntry("/generator");
 
         // Load procs first so types can set their init proc's super proc
         LoadProcsFromJson(procs, globalProcs);
@@ -362,7 +372,7 @@ public sealed class DreamObjectTree {
         foreach (TreeEntry type in GetAllDescendants(Root)) {
             int typeId = type.Id;
             DreamTypeJson jsonType = types[typeId];
-            var definition = new DreamObjectDefinition(_dreamManager, this, _atomManager, _dreamMapManager, _mapManager, _dreamResourceManager, _walkManager, _entityManager, _playerManager, _serializationManager, _appearanceSystem, _transformSystem, _pvsOverrideSystem, _metaDataSystem, _verbSystem, type);
+            var definition = new DreamObjectDefinition(_dreamManager, this, _atomManager, _dreamMapManager, _mapManager, _dreamResourceManager, _walkManager, _entityManager, _playerManager, _serializationManager, _appearanceSystem, _transformSystem, _pvsOverrideSystem, _metaDataSystem, _verbSystem, _particlesSystem, type);
 
             type.ObjectDefinition = definition;
             type.TreeIndex = treeIndex++;
@@ -381,7 +391,11 @@ public sealed class DreamObjectTree {
 
             if (jsonType.Verbs != null) {
                 definition.Verbs ??= new(jsonType.Verbs.Count);
-                definition.Verbs.AddRange(jsonType.Verbs);
+
+                foreach (var verbName in jsonType.Verbs) {
+                    var verb = definition.GetProc(verbName);
+                    definition.Verbs[verb.Name] = verb.Id;
+                }
             }
 
             if (jsonType.InitProc != null) {

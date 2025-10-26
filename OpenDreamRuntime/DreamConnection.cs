@@ -9,6 +9,7 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Network.Messages;
 using Robust.Shared.Enums;
 using Robust.Shared.Player;
+using SpaceWizards.Sodium;
 
 namespace OpenDreamRuntime;
 
@@ -127,6 +128,8 @@ public sealed class DreamConnection {
             }
         }
 
+        _verbSystem?.RemoveConnectionFromRepeatingVerbs(this);
+
         Client.Delete();
         Client = null;
 
@@ -199,7 +202,7 @@ public sealed class DreamConnection {
     }
 
     public void HandleMsgTopic(MsgTopic pTopic) {
-        DreamList hrefList = DreamProcNativeRoot.params2list(_objectTree, HttpUtility.UrlDecode(pTopic.Query));
+        DreamList hrefList = DreamProcNativeRoot.Params2List(_objectTree, HttpUtility.UrlDecode(pTopic.Query));
         DreamValue srcRefValue = hrefList.GetValue(new DreamValue("src"));
         DreamValue src = DreamValue.Null;
 
@@ -238,7 +241,7 @@ public sealed class DreamConnection {
                 else if (resourcePath.EndsWith(".wav"))
                     msg.Format = MsgSound.FormatType.Wav;
                 else
-                    throw new Exception($"Sound {value} is not a supported file type");
+                    throw new Exception($"Sound {resourcePath} is not a supported file type");
             }
 
             Session?.Channel.SendMessage(msg);
@@ -257,40 +260,6 @@ public sealed class DreamConnection {
         Session?.Channel.SendMessage(msg);
     }
 
-    // TODO: Remove this. Vestigial and doesn't run all commands.
-    public void HandleCommand(string fullCommand) {
-        string[] args = fullCommand.Split(' ', StringSplitOptions.TrimEntries);
-        string command = args[0].ToLowerInvariant(); // Case-insensitive
-
-        switch (command) {
-            case ".north":
-            case ".east":
-            case ".south":
-            case ".west":
-            case ".northeast":
-            case ".southeast":
-            case ".southwest":
-            case ".northwest":
-            case ".center":
-                string movementProc = command switch {
-                    ".north" => "North",
-                    ".east" => "East",
-                    ".south" => "South",
-                    ".west" => "West",
-                    ".northeast" => "Northeast",
-                    ".southeast" => "Southeast",
-                    ".southwest" => "Southwest",
-                    ".northwest" => "Northwest",
-                    ".center" => "Center",
-                    _ => throw new ArgumentOutOfRangeException()
-                };
-
-                if (Mob != null)
-                    _walkManager.StopWalks(Mob);
-                Client?.SpawnProc(movementProc, Mob); break;
-        }
-    }
-
     public Task<DreamValue> Prompt(DreamValueType types, string title, string message, string defaultValue) {
         var task = MakePromptTask(out var promptId);
         var msg = new MsgPrompt {
@@ -305,10 +274,10 @@ public sealed class DreamConnection {
         return task;
     }
 
-    public async Task<DreamValue> PromptList(DreamValueType types, DreamList list, string title, string message, DreamValue defaultValue) {
-        List<DreamValue> listValues = list.GetValues();
+    public async Task<DreamValue> PromptList(DreamValueType types, IDreamList list, string title, string message, DreamValue defaultValue) {
+        DreamValue[] listValues = list.CopyToArray();
 
-        List<string> promptValues = new(listValues.Count);
+        List<string> promptValues = new(listValues.Length);
         foreach (var value in listValues) {
             if (types.HasFlag(DreamValueType.Obj) && !value.TryGetValueAsDreamObject<DreamObjectMovable>(out _))
                 continue;
@@ -339,7 +308,7 @@ public sealed class DreamConnection {
 
         // The client returns the index of the selected item, this needs turned back into the DreamValue.
         var selectedIndex = await task;
-        if (selectedIndex.TryGetValueAsInteger(out int index) && index < listValues.Count) {
+        if (selectedIndex.TryGetValueAsInteger(out int index) && index < listValues.Length) {
             return listValues[index];
         }
 
@@ -405,7 +374,7 @@ public sealed class DreamConnection {
 
         var msg = new MsgBrowseResource() {
             Filename = filename,
-            DataHash = resource.ResourceData.Length //TODO: make a quick hash that can work clientside too
+            DataHash = CryptoGenericHashBlake2B.Hash(32, resource.ResourceData!, ReadOnlySpan<byte>.Empty)
         };
         _permittedBrowseRscFiles[filename] = resource;
 
@@ -416,7 +385,7 @@ public sealed class DreamConnection {
         if(_permittedBrowseRscFiles.TryGetValue(filename, out var dreamResource)) {
             var msg = new MsgBrowseResourceResponse() {
                 Filename = filename,
-                Data = dreamResource.ResourceData! //honestly if this is null, something mega fucked up has happened and we should error hard
+                Data = dreamResource.ResourceData!, //honestly if this is null, something mega fucked up has happened and we should error hard
             };
             _permittedBrowseRscFiles.Remove(filename);
             Session?.Channel.SendMessage(msg);

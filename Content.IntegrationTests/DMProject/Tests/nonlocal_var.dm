@@ -10,6 +10,6 @@
 		out += dir
 		ASSERT(out == 14)
 
-/proc/test_nonlocal_var()
+/datum/unit_test/nonlocal_var/RunTest()
 	var/mob/m = new
 	m.dodir()

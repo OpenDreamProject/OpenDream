@@ -68,7 +68,7 @@ public enum WarningCode {
     ImplicitNullType = 2703, //  Raised when a null variable isn't explicitly statically typed as nullable
     LostTypeInfo = 2704, // An operation led to lost type information
     UnimplementedAccess = 2800, // When accessing unimplemented procs and vars
-    UnsupportedAccess  = 2801, // accessing procs and vars that wont be implemented
+    UnsupportedAccess = 2801, // accessing procs and vars that wont be implemented
 
     // 3000 - 3999 are reserved for stylistic configuration.
     EmptyBlock = 3100,
@@ -82,6 +82,8 @@ public enum WarningCode {
     RuntimeSearchOperator = 3300,
 
     // 4000 - 4999 are reserved for runtime configuration. (TODO: Runtime doesn't know about configs yet!)
+    ListNegativeSizeException = 4000, // When a list's length is decremented below zero, raise an exception.
+    InitialVarOnPrimitiveException = 4001, // initial(foo.var) where foo is a variable containing a non-datum value.
 }
 
 public enum ErrorLevel {
@@ -181,7 +183,11 @@ public struct CompilerEmission {
         {WarningCode.PickWeightedSyntax, ErrorLevel.Disabled},
         {WarningCode.AmbiguousInOrder, ErrorLevel.Warning},
         {WarningCode.ExtraToken, ErrorLevel.Warning},
-        {WarningCode.RuntimeSearchOperator, ErrorLevel.Disabled}
+        {WarningCode.RuntimeSearchOperator, ErrorLevel.Disabled},
+
+        //4000-4999
+        {WarningCode.ListNegativeSizeException, ErrorLevel.Disabled},
+        {WarningCode.InitialVarOnPrimitiveException, ErrorLevel.Disabled},
     };
 
     public CompilerEmission(ErrorLevel level, Location? location, string message) {

@@ -97,7 +97,7 @@ public sealed class DreamObjectWorld : DreamObject {
 
         var worldParams = _cfg.GetCVar(OpenDreamCVars.WorldParams);
         _params = worldParams != string.Empty ?
-            new DreamValue(DreamProcNativeRoot.params2list(ObjectTree, worldParams)) :
+            new DreamValue(DreamProcNativeRoot.Params2List(ObjectTree, worldParams)) :
             new DreamValue(ObjectTree.CreateList());
     }
 

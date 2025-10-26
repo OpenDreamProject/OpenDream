@@ -132,7 +132,7 @@ public sealed class DreamObjectImage : DreamObject {
                 // Otherwise it attempts to create an appearance and creates a new (normal) list with that appearance
                 if (ObjectDefinition.IsSubtypeOf(ObjectTree.MutableAppearance)) {
                     if (valueList != null) {
-                        _overlays = valueList.CreateCopy();
+                        _overlays = (DreamList)valueList.CreateCopy();
                     } else {
                         var overlay = DreamOverlaysList.CreateOverlayAppearance(AtomManager, value, AtomManager.MustGetAppearance(this).Icon);
                         if (overlay == null)
@@ -150,7 +150,7 @@ public sealed class DreamObjectImage : DreamObject {
 
                 if (valueList != null) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue overlayValue in valueList.GetValues()) {
+                    foreach (DreamValue overlayValue in valueList.EnumerateValues()) {
                         _overlays.AddValue(overlayValue);
                     }
                 } else if (!value.IsNull) {
@@ -165,7 +165,7 @@ public sealed class DreamObjectImage : DreamObject {
                 // See the comment in the overlays setter for info on this
                 if (ObjectDefinition.IsSubtypeOf(ObjectTree.MutableAppearance)) {
                     if (valueList != null) {
-                        _underlays = valueList.CreateCopy();
+                        _underlays = (DreamList)valueList.CreateCopy();
                     } else {
                         var underlay = DreamOverlaysList.CreateOverlayAppearance(AtomManager, value, AtomManager.MustGetAppearance(this).Icon);
                         if (underlay == null)
@@ -183,7 +183,7 @@ public sealed class DreamObjectImage : DreamObject {
 
                 if (valueList != null) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue underlayValue in valueList.GetValues()) {
+                    foreach (DreamValue underlayValue in valueList.EnumerateValues()) {
                         _underlays.AddValue(underlayValue);
                     }
                 } else if (!value.IsNull) {

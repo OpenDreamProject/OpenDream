@@ -13,3 +13,4 @@
 	ASSERT(L[b] == 2)
 	ASSERT(L["c"] == 3)
 	ASSERT(L[c] == null)
+	ASSERT(L.len == 3)

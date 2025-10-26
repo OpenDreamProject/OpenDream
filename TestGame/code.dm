@@ -22,7 +22,7 @@
 
 /mob/verb/examine(atom/thing as obj|mob in world)
 	set category = null
-	usr << "This is [thing]. [thing.desc]"
+	usr << "This is \icon[thing] [thing]. [thing.desc]"
 
 /mob/verb/possess_key(mob/someone as mob in world)
 	set category = null
@@ -52,6 +52,55 @@
 		spawn(20)
 			toggleBlink()
 
+/particles/swarm/bees
+	icon = 'icons/bee.dmi'
+	icon_state = list("mini-bee"=1, "mini-bee2"=1)
+	friction = 0.1
+	count = 10
+	spawning = 0.35
+	fade = 5
+	fadein = 5
+	lifespan = generator("num", 50, 80, LINEAR_RAND)
+	width = 64
+	position = generator("box", list(-10,-10,0), list(10,10,50))
+	bound1 = list(-32, -32, -100)
+	bound2 = list(32, 32, 100)
+	gravity = list(0, -0.1)
+	drift = generator("box", list(-0.4, -0.1, 0), list(0.4, 0.15, 0))
+	velocity = generator("box", list(-2, -0.1, 0), list(2, 0.5, 0))
+	height = 64
+
+/particles/rack_smoke
+	icon = 'icons/effects/effects.dmi'
+	icon_state = list("smoke")
+	color = "#777777"
+	width = 150
+	height = 200
+	count = 200
+	lifespan = generator("num", 20, 35, UNIFORM_RAND)
+	fade = generator("num", 50, 100, UNIFORM_RAND)
+	position = generator("box", list(-4,0,0), list(4,15,0), UNIFORM_RAND)
+	velocity = generator("box", list(-1,0.5,0), list(1,2,0), NORMAL_RAND)
+	gravity = list(0.07, 0.02, 0)
+	grow = list(0.02, 0)
+	fadein = 10
+
+/particles/rack_spark
+	icon = 'icons/effects/lines.dmi'
+	icon_state = list("lght")
+	color = "#ffffff"
+	spawning = 0.1
+	count = 20
+	lifespan = generator("num", 1, 3, UNIFORM_RAND)
+	fade = 0
+	position = generator("box", list(-10,-20,0), list(10,20,0), UNIFORM_RAND)
+	velocity = list(0, 0, 0)
+	gravity = list(0, 0, 0)
+	scale = generator("box", list(0.1,0.1,1), list(0.3,0.3,1), UNIFORM_RAND)
+	rotation = generator("num", 0, 360, UNIFORM_RAND)
+	grow = list(0.01, 0)
+	fadein = 0
+
 /mob
 	icon = 'icons/mob.dmi'
 	icon_state = "mob"
@@ -62,7 +111,7 @@
 	desc = "Such a beautiful smile."
 	gender = MALE
 	see_invisible = 101
-
+	
 	New()
 		..()
 		loc = locate(5, 5, 1)
@@ -70,6 +119,20 @@
 	Login()
 		world.log << "login ran"
 		src.client.screen += new /obj/order_test_item/plane_master //used for render tests
+
+	verb/add_particles()
+		if(istype(particles, /particles/swarm/bees))
+			particles = new /particles/rack_smoke
+			usr << "oh no you're on fire"
+		else if(istype(particles, /particles/rack_smoke))
+			particles = new /particles/rack_spark
+			usr << "get zapped nerd"
+		else if(istype(particles, /particles/rack_spark) || isnull(particles))
+			particles = new /particles/swarm/bees
+			usr << "not the bees!"
+		else
+			particles = null
+			usr << "poof"
 
 	verb/winget_test()
 		usr << "windows: [json_encode(winget(usr, null, "windows"))]"
@@ -349,3 +412,5 @@
 /world/New()
 	..()
 	world.log << "World loaded!"
+	var/particles/A = new()
+	A.width = null

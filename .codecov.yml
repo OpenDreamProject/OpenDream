@@ -1,0 +1,15 @@
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 3%
+    patch: off
+comment: false
+codecov:
+  max_report_age: off
+  require_ci_to_pass: no
+ignore:
+  - "Content.Tests"
+  - "OpenDreamPackaging"
+  - "OpenDreamServer"

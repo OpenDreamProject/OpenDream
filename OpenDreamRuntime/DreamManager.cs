@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Threading;
 using DMCompiler.Bytecode;
 using DMCompiler.Json;
+using DMCompiler.Compiler;
 using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
@@ -42,7 +43,7 @@ public sealed partial class DreamManager {
     public Dictionary<string, List<DreamObject>> Tags { get; } = new();
     public DreamProc ImageConstructor, ImageFactoryProc;
     public int ListPoolThreshold, ListPoolSize;
-
+    public Dictionary<WarningCode, ErrorLevel> OptionalErrors { get; private set; } = new();
     public bool Initialized { get; private set; }
     public GameTick InitializedTick { get; private set; }
     public bool IsShutDown { get; private set; }
@@ -85,7 +86,7 @@ public sealed partial class DreamManager {
     }
 
     public void StartWorld() {
-        using (Profiler.BeginZone("StartWorld", color:(uint)Color.OrangeRed.ToArgb())) {
+        using (Profiler.BeginZone("StartWorld", color: (uint)Color.OrangeRed.ToArgb())) {
             // It is now OK to call user code, like /New procs.
             Initialized = true;
             InitializedTick = _gameTiming.CurTick;
@@ -113,15 +114,15 @@ public sealed partial class DreamManager {
 
     public void Update() {
         if (!Initialized)
-                return;
+            return;
 
-        using (Profiler.BeginZone("Tick", color:(uint)Color.OrangeRed.ToArgb())) {
+        using (Profiler.BeginZone("Tick", color: (uint)Color.OrangeRed.ToArgb())) {
             CurrentTickStart = Environment.TickCount64;
 
-            using (Profiler.BeginZone("DM Execution", color:(uint)Color.LightPink.ToArgb()))
+            using (Profiler.BeginZone("DM Execution", color: (uint)Color.LightPink.ToArgb()))
                 _procScheduler.Process();
 
-            using (Profiler.BeginZone("Map Update", color:(uint)Color.LightPink.ToArgb())){
+            using (Profiler.BeginZone("Map Update", color: (uint)Color.LightPink.ToArgb())) {
                 UpdateStat();
                 _dreamMapManager.UpdateTiles();
             }
@@ -129,12 +130,12 @@ public sealed partial class DreamManager {
             using (Profiler.BeginZone("ByondApi Thread Syncs"))
                 ByondApi.ByondApi.ExecuteThreadSyncs();
 
-            using (Profiler.BeginZone("Disk IO", color:(uint)Color.LightPink.ToArgb()))
+            using (Profiler.BeginZone("Disk IO", color: (uint)Color.LightPink.ToArgb()))
                 DreamObjectSavefile.FlushAllUpdates();
 
             WorldInstance.Cpu = WorldInstance.TickUsage;
 
-            using (Profiler.BeginZone("Deletion Queue", color:(uint)Color.LightPink.ToArgb()))
+            using (Profiler.BeginZone("Deletion Queue", color: (uint)Color.LightPink.ToArgb()))
                 ProcessDelQueue();
         }
 
@@ -163,6 +164,8 @@ public sealed partial class DreamManager {
         if (!json.Metadata.Version.Equals(OpcodeVerifier.GetOpcodesHash())) {
             _sawmill.Error("Compiler opcode version does not match the runtime version!");
         }
+
+        OptionalErrors = json.OptionalErrors;
 
         var rootPath = Path.GetFullPath(Path.GetDirectoryName(jsonPath)!);
         var resources = json.Resources ?? Array.Empty<string>();
@@ -243,12 +246,12 @@ public sealed partial class DreamManager {
                 refType = RefType.Null;
                 idx = 0;
             } else {
-                if(refObject.Deleted) {
+                if (refObject.Deleted) {
                     // i dont believe this will **ever** be called, but just to be sure, funky errors /might/ appear in the future if someone does a fucky wucky and calls this on a deleted object.
                     throw new Exception("Cannot create reference ID for an object that is deleted");
                 }
 
-                switch(refObject){
+                switch (refObject) {
                     case DreamObjectTurf: refType = RefType.DreamObjectTurf; break;
                     case DreamObjectMob: refType = RefType.DreamObjectMob; break;
                     case DreamObjectArea: refType = RefType.DreamObjectArea; break;
@@ -257,7 +260,7 @@ public sealed partial class DreamManager {
                     case DreamObjectFilter: refType = RefType.DreamObjectFilter; break;
                     default: {
                         refType = RefType.DreamObjectDatum;
-                        if(refObject.IsSubtypeOf(_objectTree.Obj))
+                        if (refObject.IsSubtypeOf(_objectTree.Obj))
                             refType = RefType.DreamObject;
                         else if (refObject.GetType() == typeof(DreamList))
                             refType = RefType.DreamObjectList;
@@ -265,7 +268,7 @@ public sealed partial class DreamManager {
                     }
                 }
 
-                if (refObject.RefId is not {} id) {
+                if (refObject.RefId is not { } id) {
                     idx = Interlocked.Increment(ref _dreamObjectRefIdCounter);
                     refObject.RefId = idx;
 
@@ -293,7 +296,7 @@ public sealed partial class DreamManager {
         } else if (value.TryGetValueAsDreamResource(out var refRsc)) {
             refType = RefType.DreamResource;
             idx = refRsc.Id;
-        }  else if (value.TryGetValueAsProc(out var proc)) {
+        } else if (value.TryGetValueAsProc(out var proc)) {
             refType = RefType.Proc;
             idx = proc.Id;
         } else if (value.TryGetValueAsFloat(out var floatValue)) {
@@ -432,7 +435,7 @@ public sealed partial class DreamManager {
         }
     }
 
-    public void HandleException(Exception e, string msg = "", string file = "", int line = 0) {
+    public void HandleException(Exception e, string msg = "", string file = "", int line = 0, bool inWorldError = false) {
         if (string.IsNullOrEmpty(msg)) { // Just print the C# exception if we don't override the message
             msg = e.Message;
         }
@@ -441,16 +444,27 @@ public sealed partial class DreamManager {
         OnException?.Invoke(this, e);
 
         // Invoke world.Error()
-        var obj =_objectTree.CreateObject<DreamObjectException>(_objectTree.Exception);
-        if(e is DMThrowException throwException)
+        var obj = _objectTree.CreateObject<DreamObjectException>(_objectTree.Exception);
+        if (e is DMThrowException throwException)
             obj.Name = throwException.Value;
         else
             obj.Name = new DreamValue(e.Message);
-        obj.Desc =  new DreamValue(msg);
+        obj.Desc = new DreamValue(msg);
         obj.Line = new DreamValue(line);
         obj.File = new DreamValue(file);
+        if (!inWorldError) // if an error occurs in /world/Error(), don't call it again
+            WorldInstance.SpawnProc("Error", usr: null, new DreamValue(obj));
+        else {
+            _sawmill.Error("CRITICAL: An error occurred in /world/Error()");
+            WriteWorldLog(msg);
+        }
+    }
 
-        WorldInstance.SpawnProc("Error", usr: null, new DreamValue(obj));
+    public void OptionalException<T>(WarningCode code, string exceptionText) where T : Exception {
+        if (OptionalErrors.TryGetValue(code, out var level) && level == ErrorLevel.Error) {
+            T exception = (T)Activator.CreateInstance(typeof(T), exceptionText)!;
+            throw exception;
+        }
     }
 }
 

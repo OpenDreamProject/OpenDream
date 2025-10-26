@@ -20,8 +20,9 @@ namespace DMCompiler;
 
 public class DMCompiler {
     public readonly HashSet<WarningCode> UniqueEmissions = new();
+    public readonly List<string> CompilerMessages = new();
     public DMCompilerSettings Settings;
-    public IReadOnlyList<string> ResourceDirectories => _resourceDirectories;
+    public IReadOnlyCollection<string> ResourceDirectories => _resourceDirectories;
 
     internal readonly DMCodeTree DMCodeTree;
     internal readonly DMObjectTree DMObjectTree;
@@ -29,7 +30,7 @@ public class DMCompiler {
     internal readonly BytecodeOptimizer BytecodeOptimizer;
 
     private readonly Dictionary<WarningCode, ErrorLevel> _errorConfig;
-    private readonly List<string> _resourceDirectories = new();
+    private readonly HashSet<string> _resourceDirectories = new();
     private string? _codeDirectory;
     private DateTime _compileStartTime;
     private int _errorCount;
@@ -98,6 +99,8 @@ public class DMCompiler {
 
     public void AddResourceDirectory(string dir, Location loc) {
         dir = dir.Replace('\\', Path.DirectorySeparatorChar);
+        if (string.IsNullOrWhiteSpace(dir))
+                dir = Path.GetFullPath(".");
         if (!Directory.Exists(dir)) {
             Emit(WarningCode.InvalidFileDirDefine, loc,
                 $"Folder \"{Path.GetRelativePath(_codeDirectory ?? ".", dir)}\" does not exist");
@@ -128,6 +131,7 @@ public class DMCompiler {
                 string fileName = Path.GetFileName(files[i]);
 
                 preproc.IncludeFile(includeDir, fileName, false);
+                compiler.AddResourceDirectory(includeDir, Location.Internal);
             }
 
             // Adds the root of the DM project to FILE_DIR
@@ -208,6 +212,13 @@ public class DMCompiler {
                 break;
         }
 
+        if (Settings.StoreMessages)
+            if (CompilerMessages.Count < 1000)
+                CompilerMessages.Add(emission.ToString());
+            else {
+                Settings.StoreMessages = false;
+                CompilerMessages.Add(new CompilerEmission(ErrorLevel.Warning, null, "No longer storing error messages due to excessive error counts.").ToString());
+            }
         UniqueEmissions.Add(emission.Code);
         Console.WriteLine(emission);
         return level == ErrorLevel.Error;
@@ -288,6 +299,13 @@ public class DMCompiler {
             interfaceFile = string.Empty;
         }
 
+        var optionalErrors = new Dictionary<WarningCode, ErrorLevel>();
+        foreach (var (code, level) in _errorConfig) {
+            if (((int)code) is >= 4000 and <= 4999) {
+                optionalErrors.Add(code, level);
+            }
+        }
+
         var jsonRep = DMObjectTree.CreateJsonRepresentation();
         var compiledDream = new DreamCompiledJson {
             Metadata = new DreamCompiledJsonMetadata { Version = OpcodeVerifier.GetOpcodesHash() },
@@ -296,7 +314,8 @@ public class DMCompiler {
             Maps = maps,
             Interface = interfaceFile,
             Types = jsonRep.Item1,
-            Procs = jsonRep.Item2
+            Procs = jsonRep.Item2,
+            OptionalErrors = optionalErrors,
         };
 
         if (GlobalInitProc.AnnotatedBytecode.GetLength() > 0)
@@ -364,6 +383,7 @@ public struct DMCompilerSettings {
     public bool NoStandard = false;
     public bool Verbose = false;
     public bool PrintCodeTree = false;
+    public bool StoreMessages = false;
     public Dictionary<string, string>? MacroDefines = null;
 
     /// <summary> The value of the DM_VERSION macro </summary>

@@ -70,12 +70,62 @@ public static class DMIParser {
 
             return text.ToString();
         }
+
+        public static ParsedDMIDescription CreateSingleFrame(int width, int height) {
+            var desc = new ParsedDMIDescription {
+                Width = width,
+                Height = height
+            };
+
+            var state = new ParsedDMIState(string.Empty);
+            var frame = new ParsedDMIFrame {
+                X = 0,
+                Y = 0,
+                Delay = TimeSpan.FromMilliseconds(100)
+            };
+
+            state.Directions.Add(AtomDirection.South, new [] { frame });
+            desc.States.Add(state.Name, state);
+            return desc;
+        }
+
+        /// <summary>
+        /// Create DMI information that splits a larger image into icon states with the names "x,y"<br/>
+        /// https://www.byond.com/docs/ref/info.html#/{notes}/tiled-icons
+        /// </summary>
+        /// <param name="width">Width of the whole image</param>
+        /// <param name="height">Height of the whole image</param>
+        /// <param name="iconSize">The size to split each icon state into</param>
+        public static ParsedDMIDescription CreateSplitStates(uint width, uint height, int iconSize) {
+            var desc = new ParsedDMIDescription {
+                Width = iconSize,
+                Height = iconSize
+            };
+
+            var xCount = (int)Math.Max(Math.Ceiling((float)width / iconSize), 1);
+            var yCount = (int)Math.Max(Math.Ceiling((float)height / iconSize), 1);
+            for (int x = 0; x < xCount; x++) {
+                for (int y = 0; y < yCount; y++) {
+                    var state = new ParsedDMIState($"{x},{y}");
+                    var frame = new ParsedDMIFrame {
+                        X = x * iconSize,
+                        Y = (yCount * iconSize) - (y + 1) * iconSize, // "0,0" starts from the bottom left
+                        Delay = TimeSpan.FromMilliseconds(100)
+                    };
+
+                    state.Directions.Add(AtomDirection.South, new [] { frame });
+                    desc.States.Add(state.Name, state);
+                }
+            }
+
+            return desc;
+        }
     }
 
-    public sealed class ParsedDMIState {
-        public string Name = string.Empty;
+    public sealed class ParsedDMIState(string name) {
+        public string Name = name;
         public bool Loop = true;
-        public bool Rewind = false;
+        public bool Rewind;
 
         // TODO: This can only contain either 1, 4, or 8 directions. Enforcing this could simplify some things.
         public readonly Dictionary<AtomDirection, ParsedDMIFrame[]> Directions = new();
@@ -132,6 +182,7 @@ public static class DMIParser {
                     if (i != frames.Length - 1)
                         text.Append(',');
                 }
+
                 text.AppendLine();
             }
 
@@ -207,9 +258,36 @@ public static class DMIParser {
     }
 
     public static ParsedDMIDescription ParseDMI(Stream stream) {
-        if (!VerifyPNG(stream)) throw new Exception("Provided stream was not a valid PNG");
+        if (VerifyBmp(stream)) {
+            return ParseDMIBmp(stream);
+        } else if (VerifyPng(stream)) {
+            return ParseDMIPng(stream);
+        } else {
+            throw new Exception("Provided stream was not a valid image format (invalid magic bytes)");
+        }
+    }
 
-        BinaryReader reader = new BinaryReader(stream);
+    private static ParsedDMIDescription ParseDMIBmp(Stream stream) {
+        stream.Seek(14, SeekOrigin.Begin);
+        var reader = new BinaryReader(stream);
+        var headerSize = reader.ReadUInt32();
+        uint width, height;
+        if (headerSize == 12) { // Old DIB header
+            width = reader.ReadUInt16();
+            height = reader.ReadUInt16();
+        } else if (headerSize == 40) { // New DIB header
+            width = reader.ReadUInt32();
+            height = reader.ReadUInt32();
+        } else {
+            throw new Exception($"Unrecognized BMP header (size {headerSize})");
+        }
+
+        // TODO: Use CreateSplitStates if world.map_format == TILED_ICON_MAP
+        return ParsedDMIDescription.CreateSingleFrame((int)width, (int)height);
+    }
+
+    private static ParsedDMIDescription ParseDMIPng(Stream stream) {
+        var reader = new BinaryReader(stream);
         Vector2u? imageSize = null;
 
         while (stream.Position < stream.Length) {
@@ -248,7 +326,7 @@ public static class DMIParser {
 
                             uncompressedData = new byte[uncompressedDataStream.Length];
                             uncompressedDataStream.Seek(0, SeekOrigin.Begin);
-                            uncompressedDataStream.Read(uncompressedData);
+                            uncompressedDataStream.ReadExactly(uncompressedData);
                         } else {
                             //The text is not compressed so nothing fancy is required
                             uncompressedData = reader.ReadBytes((int) chunkLength - keyword.Length - 1);
@@ -270,23 +348,7 @@ public static class DMIParser {
         if (imageSize != null) {
             // No DMI description found, but we do have an image header
             // So treat this PNG as a single icon frame spanning the whole image
-
-            var desc = new ParsedDMIDescription() {
-                Width = (int)imageSize.Value.X,
-                Height = (int)imageSize.Value.Y
-            };
-
-            var state = new ParsedDMIState();
-
-            var frame = new ParsedDMIFrame() {
-                X = 0,
-                Y = 0,
-                Delay = TimeSpan.FromMilliseconds(100)
-            };
-
-            state.Directions.Add(AtomDirection.South, new [] { frame });
-            desc.States.Add(state.Name, state);
-            return desc;
+            return ParsedDMIDescription.CreateSingleFrame((int)imageSize.Value.X, (int)imageSize.Value.Y);
         }
 
         throw new Exception("PNG is missing an image header");
@@ -358,11 +420,8 @@ public static class DMIParser {
 
                         currentStateFrameCount = 1;
                         currentStateFrameDelays = null;
-
-                        currentState = new ParsedDMIState();
-                        currentState.Name = stateName;
-                        if (!description.States.ContainsKey(stateName)) description.States.Add(stateName, currentState);
-
+                        currentState = new ParsedDMIState(stateName);
+                        description.States.TryAdd(stateName, currentState);
                         break;
                     case "dirs":
                         currentStateDirectionCount = int.Parse(value);
@@ -443,15 +502,21 @@ public static class DMIParser {
         }
     }
 
-    private static bool VerifyPNG(Stream stream) {
-        byte[] header = new byte[PngHeader.Length];
-        if (stream.Read(header, 0, header.Length) < header.Length) return false;
-
-        for (int i = 0; i < PngHeader.Length; i++) {
-            if (header[i] != PngHeader[i]) return false;
+    private static bool VerifyPng(Stream stream) {
+        stream.Seek(0, SeekOrigin.Begin);
+        foreach (var t in PngHeader) {
+            if (stream.ReadByte() != t) return false;
         }
 
         return true;
+    }
+
+    private static bool VerifyBmp(Stream stream) {
+        stream.Seek(0, SeekOrigin.Begin);
+        if (stream.ReadByte() == 0x42 && stream.ReadByte() == 0x4D)
+            return true;
+
+        return false;
     }
 
     private static uint ReadBigEndianUint32(BinaryReader reader) {

@@ -385,7 +385,7 @@ public sealed class AtomManager {
                 appearance.Verbs.Clear();
 
                 if (value.TryGetValueAsDreamList(out var valueList)) {
-                    foreach (DreamValue verbValue in valueList.GetValues()) {
+                    foreach (DreamValue verbValue in valueList.EnumerateValues()) {
                         if (!verbValue.TryGetValueAsProc(out var verb))
                             continue;
 
@@ -763,7 +763,7 @@ public sealed class AtomManager {
 
         if (def.Verbs != null) {
             foreach (var verb in def.Verbs) {
-                var verbProc = _objectTree.Procs[verb];
+                var verbProc = _objectTree.Procs[verb.Value];
 
                 appearance.Verbs.Add(verbProc.VerbId!.Value);
             }

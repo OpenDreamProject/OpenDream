@@ -34,6 +34,7 @@ internal static class DreamProcNative {
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_floor);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_fract);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_ftime);
+        objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_generator);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_get_step_to);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_get_steps_to);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_hascall);
@@ -137,6 +138,17 @@ internal static class DreamProcNative {
         objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_RemoveAll);
         objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Splice);
         objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Swap);
+
+        objectTree.SetNativeProc(objectTree.AssocList, DreamProcNativeList.NativeProc_Add);
+        objectTree.SetNativeProc(objectTree.AssocList, DreamProcNativeList.NativeProc_Copy);
+        objectTree.SetNativeProc(objectTree.AssocList, DreamProcNativeList.NativeProc_Cut);
+        objectTree.SetNativeProc(objectTree.AssocList, DreamProcNativeList.NativeProc_Find);
+        objectTree.SetNativeProc(objectTree.AssocList, DreamProcNativeList.NativeProc_Insert);
+        objectTree.SetNativeProc(objectTree.AssocList, DreamProcNativeList.NativeProc_Join);
+        objectTree.SetNativeProc(objectTree.AssocList, DreamProcNativeList.NativeProc_Remove);
+        objectTree.SetNativeProc(objectTree.AssocList, DreamProcNativeList.NativeProc_RemoveAll);
+        objectTree.SetNativeProc(objectTree.AssocList, DreamProcNativeList.NativeProc_Splice);
+        objectTree.SetNativeProc(objectTree.AssocList, DreamProcNativeList.NativeProc_Swap);
 
         objectTree.SetNativeProc(objectTree.Matrix, DreamProcNativeMatrix.NativeProc_Add);
         objectTree.SetNativeProc(objectTree.Matrix, DreamProcNativeMatrix.NativeProc_Invert);

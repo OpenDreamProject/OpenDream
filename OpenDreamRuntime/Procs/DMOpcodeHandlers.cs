@@ -9,14 +9,16 @@ using DMCompiler.Bytecode;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.Native;
+using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Shared.Random;
-using Vector4 = Robust.Shared.Maths.Vector4;
+using FormatSuffix = DMCompiler.Bytecode.StringFormatEncoder.FormatSuffix;
 
 namespace OpenDreamRuntime.Procs {
     internal static partial class DMOpcodeHandlers {
         #region Values
+
         public static ProcStatus PushReferenceValue(DMProcState state) {
             DreamReference reference = state.ReadReference();
 
@@ -103,10 +105,10 @@ namespace OpenDreamRuntime.Procs {
         }
 
         private static IDreamValueEnumerator GetContentsEnumerator(AtomManager atomManager, DreamValue value, TreeEntry? filterType) {
-            if (!value.TryGetValueAsDreamList(out var list)) {
+            if (!value.TryGetValueAsIDreamList(out var list)) {
                 if (value.TryGetValueAsDreamObject(out var dreamObject)) {
                     if (dreamObject == null)
-                        return new DreamValueArrayEnumerator(Array.Empty<DreamValue>());
+                        return new DreamValueArrayEnumerator([], null);
 
                     if (dreamObject is DreamObjectAtom) {
                         list = dreamObject.GetVariable("contents").MustGetValueAsDreamList();
@@ -121,15 +123,16 @@ namespace OpenDreamRuntime.Procs {
                 if (list is WorldContentsList)
                     return new WorldContentsEnumerator(atomManager, filterType);
 
-                var values = list.GetValues().ToArray();
+                var values = list.CopyToArray();
+                var assocValues = list.IsAssociative ? list.CopyAssocValues() : null;
 
                 return filterType == null
-                    ? new DreamValueArrayEnumerator(values)
-                    : new FilteredDreamValueArrayEnumerator(values, filterType);
+                    ? new DreamValueArrayEnumerator(values, assocValues)
+                    : new FilteredDreamValueArrayEnumerator(values, assocValues, filterType);
             }
 
             // BYOND ignores all floats, strings, types, etc. here and just doesn't run the loop.
-            return new DreamValueArrayEnumerator(Array.Empty<DreamValue>());
+            return new DreamValueArrayEnumerator([], null);
         }
 
         public static ProcStatus CreateListEnumerator(DMProcState state) {
@@ -274,7 +277,7 @@ namespace OpenDreamRuntime.Procs {
             var jumpToIfFailure = state.ReadInt();
 
             var enumerator = state.Enumerators[enumeratorId];
-            if (enumerator == null || !enumerator.Enumerate(state, outputRef, false))
+            if (enumerator == null || !enumerator.Enumerate(state, outputRef, DreamReference.NoRef))
                 state.Jump(jumpToIfFailure);
 
             return ProcStatus.Continue;
@@ -283,25 +286,12 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus EnumerateAssoc(DMProcState state) {
             var enumeratorId = state.ReadInt();
             var assocRef = state.ReadReference();
-            var listRef = state.ReadReference();
             var outputRef = state.ReadReference();
             var jumpToIfFailure = state.ReadInt();
 
             var enumerator = state.Enumerators[enumeratorId];
-            if (enumerator == null || !enumerator.Enumerate(state, outputRef, true)) {
-                // Ensure relevant stack values are popped
-                state.GetReferenceValue(outputRef);
-                state.GetReferenceValue(listRef);
-                state.GetReferenceValue(assocRef);
-
+            if (enumerator == null || !enumerator.Enumerate(state, outputRef, assocRef))
                 state.Jump(jumpToIfFailure);
-            } else {
-                var outputVal = state.GetReferenceValue(outputRef);
-                var listVal = state.GetReferenceValue(listRef);
-                var indexVal = state.GetIndex(listVal, outputVal, state);
-
-                state.AssignReference(assocRef, indexVal);
-            }
 
             return ProcStatus.Continue;
         }
@@ -311,7 +301,7 @@ namespace OpenDreamRuntime.Procs {
             var enumerator = state.Enumerators[enumeratorId];
             var jumpToIfFailure = state.ReadInt();
 
-            if (enumerator == null || !enumerator.Enumerate(state, null, false))
+            if (enumerator == null || !enumerator.Enumerate(state, DreamReference.NoRef, DreamReference.NoRef))
                 state.Jump(jumpToIfFailure);
 
             return ProcStatus.Continue;
@@ -400,7 +390,7 @@ namespace OpenDreamRuntime.Procs {
 
             int interpCount = state.ReadInt();
 
-            StringFormatEncoder.FormatSuffix? postPrefix = null; // Prefix that needs the effects of a suffix
+            FormatSuffix? postPrefix = null; // Prefix that needs the effects of a suffix
 
             ReadOnlySpan<DreamValue> interps = state.PopCount(interpCount);
             int nextInterpIndex = 0; // If we find a prefix macro, this is what it points to
@@ -414,20 +404,20 @@ namespace OpenDreamRuntime.Procs {
 
                 switch (formatType) {
                     //Interp values
-                    case StringFormatEncoder.FormatSuffix.StringifyWithArticle:{
+                    case FormatSuffix.StringifyWithArticle:{
                         // TODO: use postPrefix for \th interpolation
                         formattedString.Append(interps[nextInterpIndex].Stringify());
                         prevInterpIndex = nextInterpIndex;
                         nextInterpIndex++;
                         continue;
                     }
-                    case StringFormatEncoder.FormatSuffix.ReferenceOfValue: {
+                    case FormatSuffix.ReferenceOfValue: {
                         formattedString.Append(state.DreamManager.CreateRef(interps[nextInterpIndex]));
                         //suffix macro marker is not updated because suffixes do not point to \ref[] interpolations
                         nextInterpIndex++;
                         continue;
                     }
-                    case StringFormatEncoder.FormatSuffix.StringifyNoArticle: {
+                    case FormatSuffix.StringifyNoArticle: {
                         if (interps[nextInterpIndex].TryGetValueAsDreamObject<DreamObject>(out var dreamObject)) {
                             formattedString.Append(dreamObject.GetNameUnformatted());
                         } else if (interps[nextInterpIndex].TryGetValueAsString(out var interpStr)) {
@@ -437,10 +427,10 @@ namespace OpenDreamRuntime.Procs {
                         // NOTE probably should put this above the TryGetAsDreamObject function and continue if formatting has occured
                         if(postPrefix != null) { // Cursed Hack
                             switch (postPrefix) {
-                                case StringFormatEncoder.FormatSuffix.LowerRoman:
+                                case FormatSuffix.LowerRoman:
                                     ToRoman(ref formattedString, interps, nextInterpIndex, false);
                                     break;
-                                case StringFormatEncoder.FormatSuffix.UpperRoman:
+                                case FormatSuffix.UpperRoman:
                                     ToRoman(ref formattedString, interps, nextInterpIndex, true);
                                     break;
                             }
@@ -453,23 +443,28 @@ namespace OpenDreamRuntime.Procs {
                         nextInterpIndex++;
                         continue;
                     }
+                    case FormatSuffix.NoStringify:
+                        prevInterpIndex = nextInterpIndex;
+                        nextInterpIndex++;
+                        break;
+
                     //Macro values//
                     //Prefix macros
-                    case StringFormatEncoder.FormatSuffix.UpperDefiniteArticle:
-                    case StringFormatEncoder.FormatSuffix.LowerDefiniteArticle: {
+                    case FormatSuffix.UpperDefiniteArticle:
+                    case FormatSuffix.LowerDefiniteArticle: {
                         if (interps[nextInterpIndex].TryGetValueAsDreamObject<DreamObject>(out var dreamObject)) {
                             bool hasName = dreamObject.TryGetVariable("name", out var objectName);
                             if (!hasName) continue;
                             string nameStr = objectName.Stringify();
                             if (!DreamObject.StringIsProper(nameStr)) {
-                                formattedString.Append(formatType == StringFormatEncoder.FormatSuffix.UpperDefiniteArticle ? "The " : "the ");
+                                formattedString.Append(formatType == FormatSuffix.UpperDefiniteArticle ? "The " : "the ");
                             }
                         }
 
                         continue;
                     }
-                    case StringFormatEncoder.FormatSuffix.UpperIndefiniteArticle:
-                    case StringFormatEncoder.FormatSuffix.LowerIndefiniteArticle: {
+                    case FormatSuffix.UpperIndefiniteArticle:
+                    case FormatSuffix.LowerIndefiniteArticle: {
                         var interpValue = interps[nextInterpIndex];
                         string displayName;
                         bool isPlural = false;
@@ -493,7 +488,7 @@ namespace OpenDreamRuntime.Procs {
                             break; // Proper nouns don't need articles, I guess.
 
                         // saves some wordiness with the ternaries below
-                        bool wasCapital = formatType == StringFormatEncoder.FormatSuffix.UpperIndefiniteArticle;
+                        bool wasCapital = formatType == FormatSuffix.UpperIndefiniteArticle;
 
                         if (isPlural)
                             formattedString.Append(wasCapital ? "Some " : "some ");
@@ -505,37 +500,37 @@ namespace OpenDreamRuntime.Procs {
                         break;
                     }
                     //Suffix macros
-                    case StringFormatEncoder.FormatSuffix.UpperSubjectPronoun:
+                    case FormatSuffix.UpperSubjectPronoun:
                         HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "He", "She", "They", "Tt" });
                         break;
-                    case StringFormatEncoder.FormatSuffix.LowerSubjectPronoun:
+                    case FormatSuffix.LowerSubjectPronoun:
                         HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "he", "she", "they", "it" });
                         break;
-                    case StringFormatEncoder.FormatSuffix.UpperPossessiveAdjective:
+                    case FormatSuffix.UpperPossessiveAdjective:
                         HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "His", "Her", "Their", "Its" });
                         break;
-                    case StringFormatEncoder.FormatSuffix.LowerPossessiveAdjective:
+                    case FormatSuffix.LowerPossessiveAdjective:
                         HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "his", "her", "their", "its" });
                         break;
-                    case StringFormatEncoder.FormatSuffix.ObjectPronoun:
+                    case FormatSuffix.ObjectPronoun:
                         HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "him", "her", "them", "it" });
                         break;
-                    case StringFormatEncoder.FormatSuffix.ReflexivePronoun:
+                    case FormatSuffix.ReflexivePronoun:
                         HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "himself", "herself", "themself", "itself" });
                         break;
-                    case StringFormatEncoder.FormatSuffix.UpperPossessivePronoun:
+                    case FormatSuffix.UpperPossessivePronoun:
                         HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "His", "Hers", "Theirs", "Its" });
                         break;
-                    case StringFormatEncoder.FormatSuffix.LowerPossessivePronoun:
+                    case FormatSuffix.LowerPossessivePronoun:
                         HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "his", "hers", "theirs", "its" });
                         break;
-                    case StringFormatEncoder.FormatSuffix.PluralSuffix:
+                    case FormatSuffix.PluralSuffix:
                         if (interps[prevInterpIndex].TryGetValueAsFloat(out var pluralNumber) && pluralNumber.Equals(1f))
                             continue;
 
                         formattedString.Append("s");
                         continue;
-                    case StringFormatEncoder.FormatSuffix.OrdinalIndicator:
+                    case FormatSuffix.OrdinalIndicator:
                         var interp = interps[prevInterpIndex];
                         if (interp.TryGetValueAsInteger(out var ordinalNumber)) {
                             // For some mystical reason byond converts \th to integers
@@ -579,14 +574,34 @@ namespace OpenDreamRuntime.Procs {
                         }
 
                         continue;
-                    case StringFormatEncoder.FormatSuffix.LowerRoman:
+                    case FormatSuffix.LowerRoman:
                         postPrefix = formatType;
                         continue;
-                    case StringFormatEncoder.FormatSuffix.UpperRoman:
+                    case FormatSuffix.UpperRoman:
                         postPrefix = formatType;
+                        continue;
+                    case FormatSuffix.Icon:
+                        var iconValue = interps[nextInterpIndex];
+                        if (!iconValue.TryGetValueAsDreamObject<DreamObjectAtom>(out var atom))
+                            continue;
+                        if (!state.Proc.AtomManager.TryGetAppearance(atom, out var appearance))
+                            continue;
+
+                        var entitySystemManager = IoCManager.Resolve<IEntitySystemManager>();
+                        if (!entitySystemManager.TryGetEntitySystem(out ServerAppearanceSystem? appearanceSystem))
+                            continue;
+                        if (!appearanceSystem.AddAppearance(appearance).TryGetId(out var appearanceId))
+                            continue;
+
+                        // Encode the 4-byte appearance ID as characters in the string
+                        var upper = (char)(((ushort)(appearanceId & 0xFFFF0000)) >> 16);
+                        var lower = (char)((ushort)(appearanceId & 0xFFFF));
+                        formattedString.Append(StringFormatting.Icon);
+                        formattedString.Append(upper);
+                        formattedString.Append(lower);
                         continue;
                     default:
-                        if (Enum.IsDefined(typeof(StringFormatEncoder.FormatSuffix), formatType)) {
+                        if (Enum.IsDefined(typeof(FormatSuffix), formatType)) {
                             //Likely an unimplemented text macro, ignore it
                             break;
                         }
@@ -632,7 +647,9 @@ namespace OpenDreamRuntime.Procs {
             } else if (owner.TryGetValueAsType(out var ownerType)) {
                 objectDefinition = ownerType.ObjectDefinition;
             } else {
-                throw new Exception($"Invalid owner for initial() call {owner}");
+                state.DreamManager.OptionalException<ArgumentException>(DMCompiler.Compiler.WarningCode.InitialVarOnPrimitiveException, "Initial() attempted to get the initial value of a variable on a primitive.");
+                state.Push(DreamValue.Null);
+                return ProcStatus.Continue;
             }
 
             var result = property switch {
@@ -662,7 +679,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue value = state.Pop();
 
             if (listValue.TryGetValueAsDreamObject(out var listObject) && listObject != null) {
-                DreamList? list = listObject as DreamList;
+                IDreamList? list = listObject as IDreamList;
 
                 if (list == null) {
                     if (listObject is DreamObjectAtom or DreamObjectWorld) {
@@ -735,9 +752,11 @@ namespace OpenDreamRuntime.Procs {
             state.Push(new DreamValue(new DreamGlobalVars(state.Proc.ObjectTree.List.ObjectDefinition)));
             return ProcStatus.Continue;
         }
+
         #endregion Values
 
         #region Math
+
         public static ProcStatus Add(DMProcState state) {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
@@ -1341,9 +1360,11 @@ namespace OpenDreamRuntime.Procs {
 
             return ProcStatus.Continue;
         }
+
         #endregion Math
 
         #region Comparisons
+
         public static ProcStatus CompareEquals(DMProcState state) {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
@@ -1478,15 +1499,15 @@ namespace OpenDreamRuntime.Procs {
                 if (dreamObject.IsSubtypeOf(type)) {
                     return doCast ? new DreamValue(dreamObject) : DreamValue.True;
                 }
-
-                return nullOrFalse;
             }
 
             return nullOrFalse;
         }
+
         #endregion Comparisons
 
         #region Flow
+
         public static ProcStatus Call(DMProcState state) {
             DreamReference procRef = state.ReadReference();
             var argumentInfo = state.ReadProcArguments();
@@ -1852,9 +1873,11 @@ namespace OpenDreamRuntime.Procs {
             state.SetReturn(state.GetReferenceValue(reference));
             return ProcStatus.Returned;
         }
+
         #endregion Flow
 
         #region Builtins
+
         public static ProcStatus GetStep(DMProcState state) {
             var d = state.Pop();
             var l = state.Pop();
@@ -1981,31 +2004,34 @@ namespace OpenDreamRuntime.Procs {
             var argumentValues = state.PopCount(argumentInfo.StackSize);
             var arguments = state.CollectProcArguments(argumentValues, argumentInfo.Type, argumentInfo.StackSize);
 
-            DreamValue color1 = default;
-            DreamValue color2 = default;
-            DreamValue color3 = default;
-            DreamValue a = DreamValue.Null;
-            ColorHelpers.ColorSpace space = ColorHelpers.ColorSpace.RGB;
-
-            if (arguments.Item1 != null) {
+            string result = "#000000";
+            if (arguments.Item1 is not null) {
                 if (arguments.Item1.Length is < 3 or > 5)
                     throw new Exception("Expected 3 to 5 arguments for rgb()");
+                (string?, float?)[] values = new (string?, float?)[arguments.Item1.Length];
+                for (int i = 0; i < arguments.Item1.Length; i++) {
+                    var val = arguments.Item1[i].UnsafeGetValueAsFloat();
+                    values[i] = (null, val);
+                }
 
-                color1 = arguments.Item1[0];
-                color2 = arguments.Item1[1];
-                color3 = arguments.Item1[2];
-                a = (arguments.Item1.Length >= 4) ? arguments.Item1[3] : DreamValue.Null;
-                if (arguments.Item1.Length == 5)
-                    space = (ColorHelpers.ColorSpace)(int)arguments.Item1[4].UnsafeGetValueAsFloat();
+                result = SharedOperations.ParseRgb(values);
             } else if (arguments.Item2 != null) {
+                if (arguments.Item2.Count is < 3 or > 5)
+                    throw new Exception("Expected 3 to 5 arguments for rgb()");
+                (string?, float?)[] values = new (string?, float?)[5];
+                DreamValue color1 = default;
+                DreamValue color2 = default;
+                DreamValue color3 = default;
+                DreamValue a = DreamValue.Null;
+                SharedOperations.ColorSpace space = SharedOperations.ColorSpace.RGB;
                 foreach (var arg in arguments.Item2) {
                     if (arg.Key.TryGetValueAsInteger(out var position)) {
                         switch (position) {
-                            case 1: color1 = arg.Value; break;
-                            case 2: color2 = arg.Value; break;
-                            case 3: color3 = arg.Value; break;
-                            case 4: a = arg.Value; break;
-                            case 5: space = (ColorHelpers.ColorSpace)(int)arg.Value.UnsafeGetValueAsFloat(); break;
+                            case 1: color1 = arg.Value; continue;
+                            case 2: color2 = arg.Value; continue;
+                            case 3: color3 = arg.Value; continue;
+                            case 4: a = arg.Value; continue;
+                            case 5: space = (SharedOperations.ColorSpace)(int)arg.Value.UnsafeGetValueAsFloat(); continue;
                             default: throw new Exception($"Invalid argument key {position}");
                         }
                     } else {
@@ -2013,88 +2039,49 @@ namespace OpenDreamRuntime.Procs {
 
                         if (name.StartsWith("r", StringComparison.InvariantCultureIgnoreCase) && color1 == default) {
                             color1 = arg.Value;
-                            space = ColorHelpers.ColorSpace.RGB;
+                            space = SharedOperations.ColorSpace.RGB;
                         } else if (name.StartsWith("g", StringComparison.InvariantCultureIgnoreCase) && color2 == default) {
                             color2 = arg.Value;
-                            space = ColorHelpers.ColorSpace.RGB;
+                            space = SharedOperations.ColorSpace.RGB;
                         } else if (name.StartsWith("b", StringComparison.InvariantCultureIgnoreCase) && color3 == default) {
                             color3 = arg.Value;
-                            space = ColorHelpers.ColorSpace.RGB;
+                            space = SharedOperations.ColorSpace.RGB;
                         } else if (name.StartsWith("h", StringComparison.InvariantCultureIgnoreCase) && color1 == default) {
                             color1 = arg.Value;
-                            space = ColorHelpers.ColorSpace.HSV;
-                        } else if (name.StartsWith("s", StringComparison.InvariantCultureIgnoreCase) && color2 == default) {
+                            space = SharedOperations.ColorSpace.HSV;
+                        } else if (name != "space" && name.StartsWith("s", StringComparison.InvariantCultureIgnoreCase) && color2 == default) {
                             color2 = arg.Value;
-                            space = ColorHelpers.ColorSpace.HSV;
+                            space = SharedOperations.ColorSpace.HSV;
                         } else if (name.StartsWith("v", StringComparison.InvariantCultureIgnoreCase) && color3 == default) {
                             color3 = arg.Value;
-                            space = ColorHelpers.ColorSpace.HSV;
+                            space = SharedOperations.ColorSpace.HSV;
                         } else if (name.StartsWith("l", StringComparison.InvariantCultureIgnoreCase) && color3 == default) {
                             color3 = arg.Value;
-                            space = ColorHelpers.ColorSpace.HSL;
+                            space = SharedOperations.ColorSpace.HSL;
                         } else if (name.StartsWith("a", StringComparison.InvariantCultureIgnoreCase) && a == default)
                             a = arg.Value;
                         else if (name == "space" && space == default)
-                            space = (ColorHelpers.ColorSpace)(int)arg.Value.UnsafeGetValueAsFloat();
+                            space = (SharedOperations.ColorSpace)(int)arg.Value.UnsafeGetValueAsFloat();
                         else
                             throw new Exception($"Invalid or double arg \"{name}\"");
                     }
                 }
 
-                if (color1 == default)
-                    throw new Exception("Missing first component");
-                if (color2 == default)
-                    throw new Exception("Missing second color component");
-                if (color3 == default)
-                    throw new Exception("Missing third color component");
+                values[0] = (null, color1.UnsafeGetValueAsFloat());
+                values[1] = (null, color2.UnsafeGetValueAsFloat());
+                values[2] = (null, color3.UnsafeGetValueAsFloat());
+                if(a.TryGetValueAsFloat(out var aVal))
+                    values[3] = (null, aVal);
+                else
+                    values[3] = (null, null);
+                values[4] = (null, (float)space);
+
+                result = SharedOperations.ParseRgb(values);
             } else {
-                state.Push(DreamValue.Null);
-                return ProcStatus.Continue;
+                result = "#000000";
             }
 
-            float color1Value = color1.UnsafeGetValueAsFloat();
-            float color2Value = color2.UnsafeGetValueAsFloat();
-            float color3Value = color3.UnsafeGetValueAsFloat();
-            byte aValue = a.IsNull ? (byte)255 : (byte)Math.Clamp((int)a.UnsafeGetValueAsFloat(), 0, 255);
-            Color color;
-
-            switch (space) {
-                case ColorHelpers.ColorSpace.RGB: {
-                    byte r = (byte)Math.Clamp(color1Value, 0, 255);
-                    byte g = (byte)Math.Clamp(color2Value, 0, 255);
-                    byte b = (byte)Math.Clamp(color3Value, 0, 255);
-
-                    color = new Color(r, g, b, aValue);
-                    break;
-                }
-                case ColorHelpers.ColorSpace.HSV: {
-                    // TODO: Going beyond the max defined in the docs returns a different value. Don't know why.
-                    float h = Math.Clamp(color1Value, 0, 360) / 360f;
-                    float s = Math.Clamp(color2Value, 0, 100) / 100f;
-                    float v = Math.Clamp(color3Value, 0, 100) / 100f;
-
-                    color = Color.FromHsv((h, s, v, aValue / 255f));
-                    break;
-                }
-                case ColorHelpers.ColorSpace.HSL: {
-                    float h = Math.Clamp(color1Value, 0, 360) / 360f;
-                    float s = Math.Clamp(color2Value, 0, 100) / 100f;
-                    float l = Math.Clamp(color3Value, 0, 100) / 100f;
-
-                    color = Color.FromHsl((h, s, l, aValue / 255f));
-                    break;
-                }
-                default:
-                    throw new Exception($"Unimplemented color space {space}");
-            }
-
-            // TODO: There is a difference between passing null and not passing a fourth arg at all
-            if (a.IsNull) {
-                state.Push(new DreamValue($"#{color.RByte:X2}{color.GByte:X2}{color.BByte:X2}".ToLower()));
-            } else {
-                state.Push(new DreamValue($"#{color.RByte:X2}{color.GByte:X2}{color.BByte:X2}{color.AByte:X2}".ToLower()));
-            }
-
+            state.Push(new DreamValue(result));
             return ProcStatus.Continue;
         }
 
@@ -2291,9 +2278,11 @@ namespace OpenDreamRuntime.Procs {
 
             return ProcStatus.Continue;
         }
+
         #endregion Builtins
 
         #region Others
+
         private static void PerformOutput(DreamValue a, DreamValue b) {
             if (a.TryGetValueAsDreamResource(out var resource)) {
                 resource.Output(b);
@@ -2639,9 +2628,11 @@ namespace OpenDreamRuntime.Procs {
 
             return state.Call(proc, instance, arguments);
         }
+
         #endregion Others
 
         #region Helpers
+
         [SuppressMessage("ReSharper", "CompareOfFloatsByEqualityOperator")]
         public static bool IsEqual(DreamValue first, DreamValue second) {
             // null should only ever be equal to null
@@ -2927,8 +2918,8 @@ namespace OpenDreamRuntime.Procs {
                     returnVal = Color.InterpolateBetween(left.GetValueOrDefault(), right.GetValueOrDefault(), normalized);
                     break;
                 case 1 or 2: // HSV/HSL
-                    Vector4 vec1 = new(Color.ToHsv(left.GetValueOrDefault()));
-                    Vector4 vec2 = new(Color.ToHsv(right.GetValueOrDefault()));
+                    Vector4 vec1 = Color.ToHsv(left.GetValueOrDefault());
+                    Vector4 vec2 = Color.ToHsv(right.GetValueOrDefault());
 
                     // Some precision is lost when converting back to HSV at very small values this fixes that issue
                     if (normalized < 0.05f) {
@@ -2984,9 +2975,11 @@ namespace OpenDreamRuntime.Procs {
             DreamProcNativeIcon.Blend(iconObj.Icon, blend, DreamIconOperationBlend.BlendType.Add, 0, 0);
             return new DreamValue(iconObj);
         }
+
         #endregion Helpers
 
         #region Peephole Optimizations
+
         public static ProcStatus NullRef(DMProcState state) {
             state.AssignReference(state.ReadReference(), DreamValue.Null);
             return ProcStatus.Continue;
@@ -3220,6 +3213,7 @@ namespace OpenDreamRuntime.Procs {
             state.SetReturn(new DreamValue(state.ReadFloat()));
             return ProcStatus.Returned;
         }
+
         #endregion
     }
 }

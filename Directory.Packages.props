@@ -1,6 +1,7 @@
 <Project>
   <Import Project="RobustToolbox/Directory.Packages.props" />
   <ItemGroup>
+    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="NUnit.ConsoleRunner" Version="3.15.0" />
     <PackageVersion Include="Byond.TopicSender" Version="8.0.1" />
     <PackageVersion Include="Tracy-CSharp" Version="0.11.1-hotfix" />

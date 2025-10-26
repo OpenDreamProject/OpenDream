@@ -69,7 +69,7 @@ public sealed class DreamObjectTurf : DreamObjectAtom {
                 Contents.Cut();
 
                 if (value.TryGetValueAsDreamList(out var valueList)) {
-                    foreach (DreamValue contentValue in valueList.GetValues()) {
+                    foreach (DreamValue contentValue in valueList.EnumerateValues()) {
                         Contents.AddValue(contentValue);
                     }
                 }

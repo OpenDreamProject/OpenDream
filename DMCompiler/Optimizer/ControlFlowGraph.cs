@@ -15,8 +15,9 @@ internal class ControlFlowGraph(DMCompiler compiler, DMProc proc) {
     public void Build(List<IAnnotatedBytecode> bytecode) {
         BuildBlocks(bytecode);
         if (Blocks.Count == 0) return; // empty proc declaration
+
         WireEdges(bytecode);
-        //PruneUnreachable();
+        PruneUnreachable();
     }
 
     // TODO: It would be nice to print the arguments properly for all opcodes; need to pass CFG info to DMDisassembler somehow
@@ -34,7 +35,7 @@ internal class ControlFlowGraph(DMCompiler compiler, DMProc proc) {
                 if(ins is AnnotatedBytecodeLabel label)
                     sb.AppendLine($"  {label.LabelName}");
             }
-            // TODO: successors are wrong? maybe?
+
             sb.Append("  predecessors: ").AppendLine(string.Join(", ", b.Predecessors.Select(s => $"B{s.Id}")));
             sb.Append("  successors: ").AppendLine(string.Join(", ", b.Successors.Select(s => $"B{s.Id}")));
             sb.AppendLine();
@@ -116,19 +117,20 @@ internal class ControlFlowGraph(DMCompiler compiler, DMProc proc) {
             var block = Blocks[idx];
             if (block.Instructions.Count == 0) { // empty block, fall through to next
                 if(idx + 1 < Blocks.Count)
-                    block.AddEdge(Blocks[idx + 1]);
+                    block.AddEdge(Blocks[idx + 1], Proc);
             }
 
             // TODO: switch() handling
 
             // terminator handling
-            if (block.Terminator != null && block.Terminator.Opcode == DreamProcOpcode.Jump) { // Only unconditional jump has successors
-                var jumpLabel = block.Terminator.GetArg<AnnotatedBytecodeLabel>(0);
-                if(StartBytecodeToBlock.TryGetValue(jumpLabel, out var edgeBlock)) // TODO: I don't think this should fail? but it does?
-                    block.AddEdge(edgeBlock);
-                else {
-                    Console.WriteLine("f");
+            if (block.Terminator != null) {
+                if (block.Terminator.Opcode == DreamProcOpcode.Jump) { // Only unconditional jump has successors
+                    var jumpLabel = block.Terminator.GetArg<AnnotatedBytecodeLabel>(0);
+                    if (StartBytecodeToBlock.TryGetValue(jumpLabel, out var edgeBlock))
+                        block.AddEdge(edgeBlock, Proc);
                 }
+
+                // other terminators just don't have successors; continue
                 continue;
             }
 
@@ -141,7 +143,7 @@ internal class ControlFlowGraph(DMCompiler compiler, DMProc proc) {
                 if (targetLabelIdx is not null) {
                     var targetLabel = bytecode[targetLabelIdx.Value];
                     var targetBlock = StartBytecodeToBlock[targetLabel];
-                    block.AddEdge(targetBlock);
+                    block.AddEdge(targetBlock, Proc);
                 }
 
                 // implied fallthrough to next instruction
@@ -151,12 +153,12 @@ internal class ControlFlowGraph(DMCompiler compiler, DMProc proc) {
                     if(idx + offset >= Blocks.Count) break;
                 }
 
-                if (idx + offset < Blocks.Count) block.AddEdge(Blocks[idx + offset]);
+                if (idx + offset < Blocks.Count) block.AddEdge(Blocks[idx + offset], Proc);
                 continue;
             }
 
             // pure fallthrough
-            if (idx + 1 < Blocks.Count) block.AddEdge(Blocks[idx + 1]);
+            if (idx + 1 < Blocks.Count) block.AddEdge(Blocks[idx + 1], Proc);
         }
     }
 
@@ -170,6 +172,9 @@ internal class ControlFlowGraph(DMCompiler compiler, DMProc proc) {
             foreach (var successor in block.Successors) stack.Push(successor);
         }
 
+        if(Proc.Name == "foo")
+            Console.WriteLine("Done");
+
         Blocks.RemoveAll(b => !seen.Contains(b));
 
         // Fix succs/preds after prune
@@ -178,7 +183,6 @@ internal class ControlFlowGraph(DMCompiler compiler, DMProc proc) {
             block.Predecessors.RemoveAll(p => !seen.Contains(p));
         }
     }
-
 }
 
 /// <summary>

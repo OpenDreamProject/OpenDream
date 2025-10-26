@@ -9,6 +9,8 @@
 #include "interface.dmf"
 // END_INCLUDE
 /world/New()
+	spawn(300)
+		Del() // just in case
 	world.log = file("errors.log")
 	RunTest()
 	Del()

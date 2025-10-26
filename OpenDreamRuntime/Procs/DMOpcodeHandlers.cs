@@ -272,9 +272,9 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus Enumerate(DMProcState state) {
+            var jumpToIfFailure = state.ReadInt();
             var enumeratorId = state.ReadInt();
             var outputRef = state.ReadReference();
-            var jumpToIfFailure = state.ReadInt();
 
             var enumerator = state.Enumerators[enumeratorId];
             if (enumerator == null || !enumerator.Enumerate(state, outputRef, DreamReference.NoRef))
@@ -284,10 +284,10 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus EnumerateAssoc(DMProcState state) {
+            var jumpToIfFailure = state.ReadInt();
             var enumeratorId = state.ReadInt();
             var assocRef = state.ReadReference();
             var outputRef = state.ReadReference();
-            var jumpToIfFailure = state.ReadInt();
 
             var enumerator = state.Enumerators[enumeratorId];
             if (enumerator == null || !enumerator.Enumerate(state, outputRef, assocRef))
@@ -297,9 +297,9 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus EnumerateNoAssign(DMProcState state) {
+            var jumpToIfFailure = state.ReadInt();
             var enumeratorId = state.ReadInt();
             var enumerator = state.Enumerators[enumeratorId];
-            var jumpToIfFailure = state.ReadInt();
 
             if (enumerator == null || !enumerator.Enumerate(state, DreamReference.NoRef, DreamReference.NoRef))
                 state.Jump(jumpToIfFailure);
@@ -1645,8 +1645,8 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus JumpIfTrueReference(DMProcState state) {
-            DreamReference reference = state.ReadReference();
             int position = state.ReadInt();
+            DreamReference reference = state.ReadReference();
 
             var value = state.GetReferenceValue(reference, true);
 
@@ -1660,8 +1660,8 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus JumpIfFalseReference(DMProcState state) {
-            DreamReference reference = state.ReadReference();
             int position = state.ReadInt();
+            DreamReference reference = state.ReadReference();
 
             var value = state.GetReferenceValue(reference, true);
 
@@ -3061,8 +3061,8 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus JumpIfReferenceFalse(DMProcState state) {
-            DreamReference reference = state.ReadReference();
             int jumpTo = state.ReadInt();
+            DreamReference reference = state.ReadReference();
 
             DreamValue value = state.GetReferenceValue(reference);
 
@@ -3074,8 +3074,9 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus SwitchOnFloat(DMProcState state) {
-            float testValue = state.ReadFloat();
             int casePosition = state.ReadInt();
+            float testValue = state.ReadFloat();
+
             var test = state.Pop();
             if (test.TryGetValueAsFloat(out var value)) {
                 if (testValue.Equals(value)) {
@@ -3091,8 +3092,9 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus SwitchOnString(DMProcState state) {
-            string testValue = state.ReadString();
             int casePosition = state.ReadInt();
+            string testValue = state.ReadString();
+
             var test = state.Pop();
             if (test.TryGetValueAsString(out var value)) {
                 if (testValue.Equals(value)) {

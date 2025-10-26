@@ -210,7 +210,7 @@ internal sealed class JumpIfReferenceFalse : IOptimization {
 
         input.RemoveRange(index, 2);
         input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.JumpIfReferenceFalse,
-            [pushVal, jumpLabel]));
+            [jumpLabel, pushVal]));
     }
 }
 
@@ -256,7 +256,7 @@ internal sealed class SwitchOnFloat : IOptimization {
         AnnotatedBytecodeLabel jumpLabel = secondInstruction.GetArg<AnnotatedBytecodeLabel>(0);
 
         input.RemoveRange(index, 2);
-        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.SwitchOnFloat, [pushVal, jumpLabel]));
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.SwitchOnFloat, [jumpLabel, pushVal]));
     }
 }
 
@@ -284,7 +284,7 @@ internal sealed class SwitchOnString : IOptimization {
         AnnotatedBytecodeLabel jumpLabel = secondInstruction.GetArg<AnnotatedBytecodeLabel>(0);
 
         input.RemoveRange(index, 2);
-        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.SwitchOnString, [pushVal, jumpLabel]));
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.SwitchOnString, [jumpLabel, pushVal]));
     }
 }
 

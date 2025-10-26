@@ -596,9 +596,9 @@ internal sealed class DMProc {
     public void Enumerate(DMReference reference) {
         if (_loopStack?.TryPeek(out var peek) ?? false) {
             WriteOpcode(DreamProcOpcode.Enumerate);
+            WriteLabel($"{peek}_end");
             WriteEnumeratorId(_enumeratorIdCounter - 1);
             WriteReference(reference);
-            WriteLabel($"{peek}_end");
         } else {
             _compiler.ForcedError(Location, "Cannot peek empty loop stack");
         }
@@ -607,10 +607,10 @@ internal sealed class DMProc {
     public void EnumerateAssoc(DMReference assocRef, DMReference outputRef) {
         if (_loopStack?.TryPeek(out var peek) ?? false) {
             WriteOpcode(DreamProcOpcode.EnumerateAssoc);
+            WriteLabel($"{peek}_end");
             WriteEnumeratorId(_enumeratorIdCounter - 1);
             WriteReference(assocRef);
             WriteReference(outputRef);
-            WriteLabel($"{peek}_end");
         } else {
             _compiler.ForcedError(Location, "Cannot peek empty loop stack");
         }
@@ -619,8 +619,8 @@ internal sealed class DMProc {
     public void EnumerateNoAssign() {
         if (_loopStack?.TryPeek(out var peek) ?? false) {
             WriteOpcode(DreamProcOpcode.EnumerateNoAssign);
-            WriteEnumeratorId(_enumeratorIdCounter - 1);
             WriteLabel($"{peek}_end");
+            WriteEnumeratorId(_enumeratorIdCounter - 1);
         } else {
             _compiler.ForcedError(Location, "Cannot peek empty loop stack");
         }
@@ -865,14 +865,14 @@ internal sealed class DMProc {
 
     public void JumpIfTrueReference(DMReference reference, string label) {
         WriteOpcode(DreamProcOpcode.JumpIfTrueReference);
-        WriteReference(reference, affectStack: false);
         WriteLabel(label);
+        WriteReference(reference, affectStack: false);
     }
 
     public void JumpIfFalseReference(DMReference reference, string label) {
         WriteOpcode(DreamProcOpcode.JumpIfFalseReference);
-        WriteReference(reference, affectStack: false);
         WriteLabel(label);
+        WriteReference(reference, affectStack: false);
     }
 
     public void DereferenceField(string field) {

@@ -103,10 +103,10 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
                 return (opcode, ReadFloat());
 
             case DreamProcOpcode.SwitchOnFloat:
-                return (opcode, ReadFloat(), ReadInt());
+                return (opcode, ReadInt(), ReadFloat());
 
             case DreamProcOpcode.SwitchOnString:
-                return (opcode, ReadString(), ReadInt());
+                return (opcode, ReadInt(), ReadString());
 
             case DreamProcOpcode.Assign:
             case DreamProcOpcode.Append:
@@ -175,15 +175,15 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
             case DreamProcOpcode.JumpIfTrueReference:
             case DreamProcOpcode.JumpIfFalseReference:
             case DreamProcOpcode.JumpIfReferenceFalse:
-                return (opcode, ReadReference(), ReadInt());
+                return (opcode, ReadInt(), ReadReference());
 
             case DreamProcOpcode.Try:
                 return (opcode, ReadInt(), ReadReference());
 
             case DreamProcOpcode.Enumerate:
-                return (opcode, ReadInt(), ReadReference(), ReadInt());
+                return (opcode, ReadInt(), ReadInt(), ReadReference());
             case DreamProcOpcode.EnumerateAssoc:
-                return (opcode, ReadInt(), ReadReference(), ReadReference(), ReadInt());
+                return (opcode, ReadInt(), ReadInt(), ReadReference(), ReadReference());
 
             case DreamProcOpcode.CreateFilteredListEnumerator:
             case DreamProcOpcode.EnumerateNoAssign:
@@ -290,12 +290,12 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
                 text.AppendFormat("0x{0:x}", jumpPosition);
                 break;
 
-            case (DreamProcOpcode.SwitchOnFloat, float value, int jumpPosition):
+            case (DreamProcOpcode.SwitchOnFloat, int jumpPosition, float value):
                 text.Append(value);
                 text.AppendFormat(" 0x{0:x}", jumpPosition);
                 break;
 
-            case (DreamProcOpcode.SwitchOnString, string value, int jumpPosition):
+            case (DreamProcOpcode.SwitchOnString, int jumpPosition, string value):
                 text.Append('"');
                 text.Append(value);
                 text.Append("\" ");
@@ -304,7 +304,7 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
 
             case (DreamProcOpcode.JumpIfFalseReference
                     or DreamProcOpcode.JumpIfTrueReference
-                    or DreamProcOpcode.JumpIfReferenceFalse, DMReference reference, int jumpPosition):
+                    or DreamProcOpcode.JumpIfReferenceFalse, int jumpPosition, DMReference reference):
                 text.Append(reference.ToString());
                 text.AppendFormat(" 0x{0:x}", jumpPosition);
                 break;
@@ -429,16 +429,16 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
                 return jumpPosition;
             case (DreamProcOpcode.JumpIfFalseReference
                     or DreamProcOpcode.JumpIfTrueReference
-                    or DreamProcOpcode.JumpIfReferenceFalse, DMReference, int jumpPosition):
+                    or DreamProcOpcode.JumpIfReferenceFalse, int jumpPosition, DMReference):
                 return jumpPosition;
             case (DreamProcOpcode.SwitchOnFloat
-                    or DreamProcOpcode.SwitchOnString, float or string, int jumpPosition):
+                    or DreamProcOpcode.SwitchOnString, int jumpPosition, float or string):
                 return jumpPosition;
             case (DreamProcOpcode.Try, int jumpPosition, DMReference):
                 return jumpPosition;
-            case (DreamProcOpcode.Enumerate, DMReference, int jumpPosition):
+            case (DreamProcOpcode.Enumerate, int jumpPosition, DMReference):
                 return jumpPosition;
-            case (DreamProcOpcode.EnumerateAssoc, DMReference, DMReference, DMReference, int jumpPosition):
+            case (DreamProcOpcode.EnumerateAssoc, int jumpPosition, DMReference, DMReference, DMReference):
                 return jumpPosition;
             default:
                 return null;

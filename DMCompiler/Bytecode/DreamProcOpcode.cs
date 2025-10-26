@@ -1,5 +1,7 @@
 ﻿namespace DMCompiler.Bytecode;
 
+// TODO: Validate in CI that the label (if present) is always the first arg
+
 // ReSharper disable MissingBlankLines
 public enum DreamProcOpcode : byte {
     [OpcodeMetadata(-1)]
@@ -116,7 +118,7 @@ public enum DreamProcOpcode : byte {
     ModulusReference = 0x39,
     [OpcodeMetadata(-1, OpcodeArgType.EnumeratorId)]
     CreateListEnumerator = 0x3A,
-    [OpcodeMetadata(0, OpcodeArgType.EnumeratorId, OpcodeArgType.Reference, OpcodeArgType.Label)]
+    [OpcodeMetadata(0, OpcodeArgType.Label, OpcodeArgType.EnumeratorId, OpcodeArgType.Reference)]
     Enumerate = 0x3B,
     [OpcodeMetadata(0, OpcodeArgType.EnumeratorId)]
     DestroyEnumerator = 0x3C,
@@ -132,7 +134,7 @@ public enum DreamProcOpcode : byte {
     CreateFilteredListEnumerator = 0x41,
     [OpcodeMetadata(-1)]
     Power = 0x42,
-    [OpcodeMetadata(0, OpcodeArgType.EnumeratorId, OpcodeArgType.Reference, OpcodeArgType.Reference, OpcodeArgType.Label)]
+    [OpcodeMetadata(0, OpcodeArgType.Label, OpcodeArgType.EnumeratorId, OpcodeArgType.Reference, OpcodeArgType.Reference)]
     EnumerateAssoc = 0x43,
     [OpcodeMetadata(-2)]
     Link = 0x44,
@@ -198,9 +200,9 @@ public enum DreamProcOpcode : byte {
     JumpIfNull = 0x64,
     [OpcodeMetadata(0, OpcodeArgType.Label)]
     JumpIfNullNoPop = 0x65,
-    [OpcodeMetadata(0, OpcodeArgType.Reference, OpcodeArgType.Label)]
+    [OpcodeMetadata(0, OpcodeArgType.Label, OpcodeArgType.Reference)]
     JumpIfTrueReference = 0x66,
-    [OpcodeMetadata(0, OpcodeArgType.Reference, OpcodeArgType.Label)]
+    [OpcodeMetadata(0, OpcodeArgType.Label, OpcodeArgType.Reference)]
     JumpIfFalseReference = 0x67,
     [OpcodeMetadata(0, OpcodeArgType.String)]
     DereferenceField = 0x68,
@@ -221,7 +223,7 @@ public enum DreamProcOpcode : byte {
     TryNoValue = 0x70,
     [OpcodeMetadata]
     EndTry = 0x71,
-    [OpcodeMetadata(0, OpcodeArgType.EnumeratorId, OpcodeArgType.Label)]
+    [OpcodeMetadata(0, OpcodeArgType.Label, OpcodeArgType.EnumeratorId)]
     EnumerateNoAssign = 0x72,
     [OpcodeMetadata(0, OpcodeArgType.ArgType, OpcodeArgType.StackDelta)]
     Gradient = 0x73,
@@ -272,11 +274,11 @@ public enum DreamProcOpcode : byte {
     PushNResources = 0x89,
     [OpcodeMetadata(2, OpcodeArgType.String, OpcodeArgType.Float)]
     PushStringFloat = 0x8A,
-    [OpcodeMetadata(0, OpcodeArgType.Reference, OpcodeArgType.Label)]
+    [OpcodeMetadata(0, OpcodeArgType.Label, OpcodeArgType.Reference)]
     JumpIfReferenceFalse = 0x8B,
     [OpcodeMetadata(true, 0, OpcodeArgType.Int)]
     PushNStrings = 0x8C,
-    [OpcodeMetadata(0, OpcodeArgType.Float, OpcodeArgType.Label)]
+    [OpcodeMetadata(0,  OpcodeArgType.Label, OpcodeArgType.Float)]
     SwitchOnFloat = 0x8D,
     [OpcodeMetadata(true, 0, OpcodeArgType.Int)]
     PushNOfStringFloats = 0x8E,
@@ -288,7 +290,7 @@ public enum DreamProcOpcode : byte {
     CreateListNRefs = 0x91,
     [OpcodeMetadata(true, 1, OpcodeArgType.Int)]
     CreateListNResources = 0x92,
-    [OpcodeMetadata(0, OpcodeArgType.String, OpcodeArgType.Label)]
+    [OpcodeMetadata(0, OpcodeArgType.Label, OpcodeArgType.String)]
     SwitchOnString = 0x93,
     //0x94
     [OpcodeMetadata(0, OpcodeArgType.TypeId)]

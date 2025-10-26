@@ -49,6 +49,9 @@ internal class ControlFlowGraph(DMCompiler compiler, DMProc proc) {
         // TODO: Validate switch() behavior
         // TODO: Proper try/catch exception handler shenanigans
 
+        if(Proc.Name == "push" && Proc.Location.Line == 102)
+            Console.WriteLine("b");
+
         if (bytecode.Count == 0)
             return; // empty proc
 
@@ -141,6 +144,16 @@ internal class ControlFlowGraph(DMCompiler compiler, DMProc proc) {
         _ => false
     };
 
+    private bool IsEnumeratorSetup(DreamProcOpcode op) => op switch {
+        DreamProcOpcode.CreateFilteredListEnumerator
+            or DreamProcOpcode.CreateListEnumerator
+            or DreamProcOpcode.CreateRangeEnumerator
+            or DreamProcOpcode.CreateTypeEnumerator
+            => true,
+        _ => false
+    };
+
+
     /// <summary>
     /// Build successor/predecessor edges for all blocks
     /// Assumes:
@@ -150,6 +163,9 @@ internal class ControlFlowGraph(DMCompiler compiler, DMProc proc) {
     ///   - non-branching last instruction -> implicit fallthrough only
     /// </summary>
     private void WireEdges(List<IAnnotatedBytecode> bytecode) {
+        if(Proc.Name == "push" && Proc.Location.Line == 102)
+            Console.WriteLine("p");
+
         foreach (var block in Blocks) {
             // Fetch the last real instruction (usually == block.Terminator)
             var lastInstr = block.Terminator;
@@ -227,7 +243,7 @@ internal class ControlFlowGraph(DMCompiler compiler, DMProc proc) {
         // Drop unreachable blocks from Blocks
         var deadBlocks = Blocks.Where(b => !seen.Contains(b)).ToList();
         foreach (var deadBlock in deadBlocks) {
-            //compiler.ForcedWarning(deadBlock.Instructions[0].GetLocation(), "Dead code lol");
+           compiler.ForcedWarning(deadBlock.Instructions[0].GetLocation(), "Dead code lol");
             Blocks.Remove(deadBlock);
         }
 

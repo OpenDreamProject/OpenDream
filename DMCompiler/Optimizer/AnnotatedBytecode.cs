@@ -52,11 +52,11 @@ internal sealed class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
     }
 
     public override bool Equals(object? obj) {
-        return obj is AnnotatedBytecodeInstruction other && Opcode == other.Opcode && StackSizeDelta == other.StackSizeDelta && Location.Equals(other.Location);
+        return obj is AnnotatedBytecodeInstruction other && Opcode == other.Opcode && StackSizeDelta == other.StackSizeDelta && Location.Equals(other.Location) && _args == other._args;
     }
 
     public override int GetHashCode() {
-        return HashCode.Combine(Opcode, StackSizeDelta, Location);
+        return HashCode.Combine(Opcode, StackSizeDelta, Location, _args);
     }
 
     private void ValidateArgs(OpcodeMetadata metadata, List<IAnnotatedBytecode> args) {

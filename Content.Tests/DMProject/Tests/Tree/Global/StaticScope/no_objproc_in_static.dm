@@ -1,4 +1,4 @@
-// COMPILE ERROR
+// COMPILE ERROR OD0404 
 
 /var/outer1 = "A"
 

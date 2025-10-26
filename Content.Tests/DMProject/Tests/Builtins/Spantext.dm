@@ -13,4 +13,4 @@
     ASSERT(spantext_char("aaa","a",-4) == 3)
     ASSERT(spantext("aa𐀀𐀀bb", "𐀀",3) == 4) //DM evaluates this as 8 and the next as 4. Because it mangles
     ASSERT(spantext_char("aa𐀀𐀀bb", "𐀀",3) == 2) //the chars. We instead want 4 and 2 respectively.
-#ifdef
+#endif

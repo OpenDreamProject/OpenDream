@@ -28,7 +28,7 @@ internal class ControlFlowGraph(DMCompiler compiler, DMProc proc) {
             sb.AppendLine($"B{b.Id} [{b.StartIndex}..{b.EndIndexExclusive}):");
             foreach (var ins in b.Instructions) {
                 if(ins is AnnotatedBytecodeInstruction opcode)
-                    if(opcode.Opcode == DreamProcOpcode.Jump)
+                    if(IsConditionalBranch(opcode.Opcode) || opcode.Opcode == DreamProcOpcode.Jump)
                         sb.AppendLine($"  {opcode.Opcode} {opcode.GetArg<AnnotatedBytecodeLabel>(0).LabelName}");
                     else
                         sb.AppendLine($"  {opcode.Opcode}");
@@ -46,39 +46,64 @@ internal class ControlFlowGraph(DMCompiler compiler, DMProc proc) {
     }
 
     private void BuildBlocks(List<IAnnotatedBytecode> bytecode) {
-        if (bytecode.Count == 0) return; // empty proc declaration // TODO: We can probably use this case to optimize caller procs
-        for (var index = 0; index < bytecode.Count; index++) {
-            switch (bytecode[index])
-            {
+        if (bytecode.Count == 0)
+            return; // empty proc
+
+        for (int i = 0; i < bytecode.Count; i++) {
+            switch (bytecode[i]) {
                 case AnnotatedBytecodeLabel:
-                    BlockLeaderIndices.Add(index);
+                    // Labels always start a new block
+                    if (!BlockLeaderIndices.Contains(i))
+                        BlockLeaderIndices.Add(i);
                     break;
+
                 case AnnotatedBytecodeInstruction inst:
-                    if(index + 1 < bytecode.Count && IsTerminator(inst.Opcode) && bytecode[index + 1] is not AnnotatedBytecodeLabel) // labels are handled by the above case & also don't include the final instruction
-                        BlockLeaderIndices.Add(index + 1);
+                    bool endsBlock =
+                        IsTerminator(inst.Opcode) ||
+                        IsConditionalBranch(inst.Opcode);
+
+                    if (endsBlock) {
+                        int nextIdx = i + 1;
+                        if (nextIdx < bytecode.Count) {
+                            // next instruction (or next label) starts a new block
+                            if (!BlockLeaderIndices.Contains(nextIdx))
+                                BlockLeaderIndices.Add(nextIdx);
+                        }
+                    }
+
                     break;
             }
-
-            // TODO: Better handling for "catch" blocks / proper exception handling table
-            // TODO: switch() statements aren't properly split into blocks yet
         }
 
-        for (int idx = 0; idx < BlockLeaderIndices.Count; idx++) {
-            var start = BlockLeaderIndices[idx];
-            var end = (idx + 1 < BlockLeaderIndices.Count) ? BlockLeaderIndices[idx + 1] : bytecode.Count;
+        for (int bi = 0; bi < BlockLeaderIndices.Count; bi++) {
+            int start = BlockLeaderIndices[bi];
+            int end = (bi + 1 < BlockLeaderIndices.Count)
+                ? BlockLeaderIndices[bi + 1]
+                : bytecode.Count;
 
-            var block = new BasicBlock() {Id = idx, StartIndex = start, EndIndexExclusive = end};
-            for (int i = start; i < end; i++)
-                block.Instructions.Add(bytecode[i]);
-            if (block.Instructions.Count > 0 && block.Instructions[^1] is AnnotatedBytecodeInstruction ins && IsTerminator(ins.Opcode))
-                block.Terminator = ins;
+            var block = new BasicBlock {
+                Id = bi,
+                StartIndex = start,
+                EndIndexExclusive = end
+            };
 
-            if(block.Instructions.Count == 0)
-                Console.WriteLine("e");
+            for (int j = start; j < end; j++) {
+                block.Instructions.Add(bytecode[j]);
+            }
+
+            // The last actual instruction in this block might be a branch/jump/return/etc.
+            for (int j = end - 1; j >= start; j--) {
+                if (bytecode[j] is AnnotatedBytecodeInstruction lastIns) {
+                    // treat conditional branches as legal terminators too
+                    if (IsTerminator(lastIns.Opcode) || IsConditionalBranch(lastIns.Opcode)) {
+                        block.Terminator = lastIns;
+                    }
+
+                    break;
+                }
+            }
 
             Blocks.Add(block);
-            if(bytecode[start] is AnnotatedBytecodeLabel label && label.LabelName == "label3")
-                Console.WriteLine("e");
             StartBytecodeToBlock[bytecode[start]] = block;
         }
     }
@@ -93,6 +118,7 @@ internal class ControlFlowGraph(DMCompiler compiler, DMProc proc) {
         _ => false
     };
 
+    // TODO: Consider moving this to a bool on OpcodeMetadata?
     private bool IsConditionalBranch(DreamProcOpcode op) => op switch {
         DreamProcOpcode.JumpIfFalse
             or DreamProcOpcode.BooleanAnd
@@ -112,54 +138,66 @@ internal class ControlFlowGraph(DMCompiler compiler, DMProc proc) {
         _ => false
     };
 
+    /// <summary>
+    /// Build successor/predecessor edges for all blocks
+    /// Assumes:
+    ///   - block.Terminator is the last control-flow-relevant instruction
+    ///   - IsTerminator(op) -> no fallthrough
+    ///   - IsConditionalBranch(op) -> has an arg label and does fallthrough
+    ///   - non-branching last instruction -> implicit fallthrough only
+    /// </summary>
     private void WireEdges(List<IAnnotatedBytecode> bytecode) {
-        for (var idx = 0; idx < Blocks.Count; idx++) {
-            var block = Blocks[idx];
-            if (block.Instructions.Count == 0) { // empty block, fall through to next
-                if(idx + 1 < Blocks.Count)
-                    block.AddEdge(Blocks[idx + 1], Proc);
-            }
+        foreach (var block in Blocks) {
+            // Fetch the last real instruction (usually == block.Terminator)
+            var lastInstr = block.Terminator;
 
-            // TODO: switch() handling
-
-            // terminator handling
-            if (block.Terminator != null) {
-                if (block.Terminator.Opcode == DreamProcOpcode.Jump) { // Only unconditional jump has successors
-                    var jumpLabel = block.Terminator.GetArg<AnnotatedBytecodeLabel>(0);
-                    if (StartBytecodeToBlock.TryGetValue(jumpLabel, out var edgeBlock))
-                        block.AddEdge(edgeBlock, Proc);
-                }
-
-                // other terminators just don't have successors; continue
+            // are we in a block that is only a single label?
+            if (lastInstr is null && block.Instructions is [AnnotatedBytecodeLabel])
                 continue;
+
+            lastInstr ??= GetLastInstruction(block);
+
+            var op = lastInstr!.Opcode;
+
+            // Conditionals but also unconditional Jump can have successors
+            if (IsConditionalBranch(op) || op == DreamProcOpcode.Jump) {
+                var labelObj = lastInstr.GetArg<AnnotatedBytecodeLabel>(0);
+                var targetBlock = StartBytecodeToBlock[labelObj];
+                block.AddEdge(targetBlock, Proc);
             }
 
-            if(block.Instructions.Count == 0) continue; // TODO: This shouldn't be happening/necessary
-
-            // conditional branch and fallthrough
-            if (block.Instructions[^1] is AnnotatedBytecodeInstruction inst && IsConditionalBranch(inst.Opcode)) {
-                var metadata = OpcodeMetadataCache.GetMetadata(inst.Opcode);
-                var targetLabelIdx = metadata.GetLabelIndex();
-                if (targetLabelIdx is not null) {
-                    var targetLabel = bytecode[targetLabelIdx.Value];
-                    var targetBlock = StartBytecodeToBlock[targetLabel];
-                    block.AddEdge(targetBlock, Proc);
-                }
-
-                // implied fallthrough to next instruction
-                var offset = 1;
-                while (bytecode[idx + offset] is not AnnotatedBytecodeInstruction) {
-                    offset++;
-                    if(idx + offset >= Blocks.Count) break;
-                }
-
-                if (idx + offset < Blocks.Count) block.AddEdge(Blocks[idx + offset], Proc);
-                continue;
+            if (!IsTerminator(op)) {
+                AddFallthroughEdge(block, bytecode);
             }
-
-            // pure fallthrough
-            if (idx + 1 < Blocks.Count) block.AddEdge(Blocks[idx + 1], Proc);
         }
+    }
+
+    private AnnotatedBytecodeInstruction? GetLastInstruction(BasicBlock block)
+    {
+        for (int i = block.Instructions.Count - 1; i >= 0; i--) {
+            if (block.Instructions[i] is AnnotatedBytecodeInstruction abi) {
+                return abi;
+            }
+        }
+
+        return null;
+    }
+
+    // Add the fallthrough edge: from this block to the block that starts exactly at EndIndexExclusive (the next instruction after this block).
+    private void AddFallthroughEdge(
+        BasicBlock from,
+        List<IAnnotatedBytecode> bytecode)
+    {
+        int nextInstrIndex = from.EndIndexExclusive;
+        if (nextInstrIndex >= bytecode.Count)
+            return;
+
+        var leaderKey = bytecode[nextInstrIndex];
+        if (!StartBytecodeToBlock.TryGetValue(leaderKey, out var fallBlock))
+            return;
+
+        if (fallBlock != from)
+            from.AddEdge(fallBlock, Proc);
     }
 
     private void PruneUnreachable() {

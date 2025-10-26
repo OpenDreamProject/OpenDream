@@ -1,3 +1,4 @@
+// NOBYOND - more unicode memes
 /proc/RunTest()
     ASSERT(spantext("apples, oranges",", ",7) == 2)
     ASSERT(spantext("","b",1) == 0)

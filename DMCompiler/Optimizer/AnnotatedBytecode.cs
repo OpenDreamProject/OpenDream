@@ -51,6 +51,14 @@ internal sealed class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
         _args = args;
     }
 
+    public override bool Equals(object? obj) {
+        return obj is AnnotatedBytecodeInstruction other && Opcode == other.Opcode && StackSizeDelta == other.StackSizeDelta && Location.Equals(other.Location);
+    }
+
+    public override int GetHashCode() {
+        return HashCode.Combine(Opcode, StackSizeDelta, Location);
+    }
+
     private void ValidateArgs(OpcodeMetadata metadata, List<IAnnotatedBytecode> args) {
         if (metadata.VariableArgs) {
             if (args[0] is not AnnotatedBytecodeInteger) {
@@ -490,6 +498,16 @@ internal sealed class AnnotatedBytecodeLabel(string labelName, Location location
 
     public Location GetLocation() {
         return Location;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is AnnotatedBytecodeLabel other && LabelName == other.LabelName;
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(LabelName);
     }
 }
 

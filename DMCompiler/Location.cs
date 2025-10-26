@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace DMCompiler;
@@ -30,5 +31,13 @@ public readonly struct Location(string filePath, int? line, int? column, bool in
         }
 
         return builder.ToString();
+    }
+
+    public override bool Equals(object? obj) {
+        return obj is Location other && other.InDMStandard == InDMStandard && other.Line == Line && other.Column == Column && other.SourceFile == SourceFile;
+    }
+
+    public override int GetHashCode() {
+        return HashCode.Combine(InDMStandard, Line, Column, SourceFile);
     }
 }

@@ -201,7 +201,7 @@ internal sealed class DMProc {
         var serializer = new AnnotatedBytecodeSerializer(_compiler);
 
         _compiler.BytecodeOptimizer.Optimize(AnnotatedBytecode.GetAnnotatedBytecode());
-        ControlFlowGraph controlFlowGraph = new ControlFlowGraph(_compiler);
+        ControlFlowGraph controlFlowGraph = new ControlFlowGraph(_compiler, this);
         controlFlowGraph.Build(AnnotatedBytecode.GetAnnotatedBytecode());
         if (Name == "foo")
             controlFlowGraph.Dump();

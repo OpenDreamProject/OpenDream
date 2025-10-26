@@ -46,6 +46,9 @@ internal class ControlFlowGraph(DMCompiler compiler, DMProc proc) {
     }
 
     private void BuildBlocks(List<IAnnotatedBytecode> bytecode) {
+        // TODO: Validate switch() behavior
+        // TODO: Proper try/catch exception handler shenanigans
+
         if (bytecode.Count == 0)
             return; // empty proc
 
@@ -151,8 +154,8 @@ internal class ControlFlowGraph(DMCompiler compiler, DMProc proc) {
             // Fetch the last real instruction (usually == block.Terminator)
             var lastInstr = block.Terminator;
 
-            // are we in a block that is only a single label?
-            if (lastInstr is null && block.Instructions is [AnnotatedBytecodeLabel])
+            // are we in a block that is only a single non-instruction?
+            if (lastInstr is null && block.Instructions is not [AnnotatedBytecodeInstruction])
                 continue;
 
             lastInstr ??= GetLastInstruction(block);
@@ -163,6 +166,10 @@ internal class ControlFlowGraph(DMCompiler compiler, DMProc proc) {
             if (IsConditionalBranch(op) || op == DreamProcOpcode.Jump) {
                 var labelObj = lastInstr.GetArg<AnnotatedBytecodeLabel>(0);
                 var targetBlock = StartBytecodeToBlock[labelObj];
+                if (!StartBytecodeToBlock.TryGetValue(labelObj, out targetBlock)) {
+                    Console.WriteLine($"[CFG] Missing label resolution for {Proc.Name}: " +
+                                      $"{lastInstr.Opcode} -> {labelObj.LabelName}");
+                }
                 block.AddEdge(targetBlock, Proc);
             }
 
@@ -201,24 +208,46 @@ internal class ControlFlowGraph(DMCompiler compiler, DMProc proc) {
     }
 
     private void PruneUnreachable() {
+        if (Blocks.Count == 0)
+            return;
+
+        // Reachability from entry
         var seen = new HashSet<BasicBlock>();
         var stack = new Stack<BasicBlock>();
         stack.Push(Blocks[0]);
+
         while (stack.Count > 0) {
             var block = stack.Pop();
             if (!seen.Add(block)) continue;
-            foreach (var successor in block.Successors) stack.Push(successor);
+            foreach (var succ in block.Successors) {
+                stack.Push(succ);
+            }
         }
 
-        if(Proc.Name == "foo")
-            Console.WriteLine("Done");
+        // Drop unreachable blocks from Blocks
+        var deadBlocks = Blocks.Where(b => !seen.Contains(b)).ToList();
+        foreach (var deadBlock in deadBlocks) {
+            //compiler.ForcedWarning(deadBlock.Instructions[0].GetLocation(), "Dead code lol");
+            Blocks.Remove(deadBlock);
+        }
 
-        Blocks.RemoveAll(b => !seen.Contains(b));
-
-        // Fix succs/preds after prune
+        // Trim edges that still point to removed blocks
         foreach (var block in Blocks) {
             block.Successors.RemoveAll(s => !seen.Contains(s));
             block.Predecessors.RemoveAll(p => !seen.Contains(p));
+        }
+
+        // Repair symmetry between Successors and Predecessors
+        foreach (var block in Blocks) {
+            foreach (var succ in block.Successors) {
+                if (!succ.Predecessors.Contains(block))
+                    succ.Predecessors.Add(block);
+            }
+
+            foreach (var pred in block.Predecessors) {
+                if (!pred.Successors.Contains(block))
+                    pred.Successors.Add(block);
+            }
         }
     }
 }
@@ -264,11 +293,6 @@ internal sealed class BasicBlock
     public List<BasicBlock> Predecessors { get; } = new();
 
     /// <summary>
-    /// True if this block is reachable from the proc start after CFG construction
-    /// </summary>
-    public bool Reachable { get; set; } = true;
-
-    /// <summary>
     /// Adds a bidirectional edge to another block
     /// </summary>
     public void AddEdge(BasicBlock successor, DMProc proc)
@@ -276,6 +300,7 @@ internal sealed class BasicBlock
         if (proc.Name == "foo") {
             Console.WriteLine("q");
         }
+
         if (!Successors.Contains(successor))
             Successors.Add(successor);
         if (!successor.Predecessors.Contains(this))

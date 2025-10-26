@@ -1,4 +1,4 @@
-// NO BYOND -- float precision memes
+// NOBYOND -- float precision memes
 #define COLORCOMPARE(rgb, r, g, b) ASSERT((rgb[1] == r) && (rgb[2] == g) && (rgb[3] == b))
 
 /proc/RunTest()

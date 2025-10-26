@@ -1,45 +1,63 @@
 using System.Linq;
+using System.Text;
 using DMCompiler.Bytecode;
+using DMCompiler.DM;
 
 namespace DMCompiler.Optimizer;
 
-internal class ControlFlowGraph(DMCompiler compiler) {
+internal class ControlFlowGraph(DMCompiler compiler, DMProc proc) {
     // The first AnnotatedBytecodeLabel or AnnotatedBytecodeInstruction in each block; blocks are separated by labels and terminators
     List<int> BlockLeaderIndices = new(){0}; // start of instructions (idx 0) is a leader
     Dictionary<IAnnotatedBytecode, BasicBlock> StartBytecodeToBlock = new(); // The first instruction/label of the block
     List<BasicBlock> Blocks = new();
+    private DMProc Proc = proc;
 
     public void Build(List<IAnnotatedBytecode> bytecode) {
         BuildBlocks(bytecode);
+        if (Blocks.Count == 0) return; // empty proc declaration
         WireEdges(bytecode);
-        PruneUnreachable();
+        //PruneUnreachable();
     }
 
-    public string Dump() {
+    // TODO: It would be nice to print the arguments properly for all opcodes; need to pass CFG info to DMDisassembler somehow
+    public void Dump() {
         var sb = new System.Text.StringBuilder();
+        sb.AppendLine("Dumping control flow graph...");
         foreach (var b in Blocks) {
             sb.AppendLine($"B{b.Id} [{b.StartIndex}..{b.EndIndexExclusive}):");
-            foreach (var ins in b.Instructions) sb.AppendLine($"  {ins}");
-            sb.Append("  succs: ").AppendLine(string.Join(", ", b.Successors.Select(s => $"B{s.Id}")));
+            foreach (var ins in b.Instructions) {
+                if(ins is AnnotatedBytecodeInstruction opcode)
+                    if(opcode.Opcode == DreamProcOpcode.Jump)
+                        sb.AppendLine($"  {opcode.Opcode} {opcode.GetArg<AnnotatedBytecodeLabel>(0).LabelName}");
+                    else
+                        sb.AppendLine($"  {opcode.Opcode}");
+                if(ins is AnnotatedBytecodeLabel label)
+                    sb.AppendLine($"  {label.LabelName}");
+            }
+            // TODO: successors are wrong? maybe?
+            sb.Append("  predecessors: ").AppendLine(string.Join(", ", b.Predecessors.Select(s => $"B{s.Id}")));
+            sb.Append("  successors: ").AppendLine(string.Join(", ", b.Successors.Select(s => $"B{s.Id}")));
             sb.AppendLine();
         }
 
         var result = sb.ToString();
-        return result;
+        Console.WriteLine(result);
     }
 
     private void BuildBlocks(List<IAnnotatedBytecode> bytecode) {
-        for (var index = 0; index < bytecode.Count - 1; index++) { // - 1 because anything at the end of bytecode can't be a leader
+        if (bytecode.Count == 0) return; // empty proc declaration // TODO: We can probably use this case to optimize caller procs
+        for (var index = 0; index < bytecode.Count; index++) {
             switch (bytecode[index])
             {
                 case AnnotatedBytecodeLabel:
                     BlockLeaderIndices.Add(index);
                     break;
                 case AnnotatedBytecodeInstruction inst:
-                    if(IsTerminator(inst.Opcode))
+                    if(index + 1 < bytecode.Count && IsTerminator(inst.Opcode) && bytecode[index + 1] is not AnnotatedBytecodeLabel) // labels are handled by the above case & also don't include the final instruction
                         BlockLeaderIndices.Add(index + 1);
                     break;
             }
+
             // TODO: Better handling for "catch" blocks / proper exception handling table
             // TODO: switch() statements aren't properly split into blocks yet
         }
@@ -54,8 +72,13 @@ internal class ControlFlowGraph(DMCompiler compiler) {
             if (block.Instructions.Count > 0 && block.Instructions[^1] is AnnotatedBytecodeInstruction ins && IsTerminator(ins.Opcode))
                 block.Terminator = ins;
 
+            if(block.Instructions.Count == 0)
+                Console.WriteLine("e");
+
             Blocks.Add(block);
-            StartBytecodeToBlock.Add(bytecode[start], block);
+            if(bytecode[start] is AnnotatedBytecodeLabel label && label.LabelName == "label3")
+                Console.WriteLine("e");
+            StartBytecodeToBlock[bytecode[start]] = block;
         }
     }
 
@@ -101,10 +124,15 @@ internal class ControlFlowGraph(DMCompiler compiler) {
             // terminator handling
             if (block.Terminator != null && block.Terminator.Opcode == DreamProcOpcode.Jump) { // Only unconditional jump has successors
                 var jumpLabel = block.Terminator.GetArg<AnnotatedBytecodeLabel>(0);
-                var edgeBlock = StartBytecodeToBlock[jumpLabel];
-                block.AddEdge(edgeBlock);
+                if(StartBytecodeToBlock.TryGetValue(jumpLabel, out var edgeBlock)) // TODO: I don't think this should fail? but it does?
+                    block.AddEdge(edgeBlock);
+                else {
+                    Console.WriteLine("f");
+                }
                 continue;
             }
+
+            if(block.Instructions.Count == 0) continue; // TODO: This shouldn't be happening/necessary
 
             // conditional branch and fallthrough
             if (block.Instructions[^1] is AnnotatedBytecodeInstruction inst && IsConditionalBranch(inst.Opcode)) {
@@ -201,8 +229,11 @@ internal sealed class BasicBlock
     /// <summary>
     /// Adds a bidirectional edge to another block
     /// </summary>
-    public void AddEdge(BasicBlock successor)
+    public void AddEdge(BasicBlock successor, DMProc proc)
     {
+        if (proc.Name == "foo") {
+            Console.WriteLine("q");
+        }
         if (!Successors.Contains(successor))
             Successors.Add(successor);
         if (!successor.Predecessors.Contains(this))

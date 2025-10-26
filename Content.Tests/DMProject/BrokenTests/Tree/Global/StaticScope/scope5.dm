@@ -19,6 +19,6 @@
 	else
 		return 5
 
-/proc/main()
+/proc/RunTest()
 	world.log << (aproc())
 	world.log << (bproc())

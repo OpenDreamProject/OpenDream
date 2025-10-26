@@ -1,4 +1,4 @@
-// RUNTIME ERROR
+// COMPILE ERROR
 
 /var/outer1 = "A"
 
@@ -24,7 +24,7 @@ proc/test_inner1()
 		return 3
 
 	proc/test_inner2()
-		var/static/inner2 = test_outer2()
+		var/static/inner2 = test_outer2() //because this is static and trying to act on an instance proc
 		return inner2
 
 	verb/test()

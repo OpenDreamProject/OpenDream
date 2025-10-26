@@ -4,7 +4,7 @@
 /proc/closing_brace1() {
 	var/z = 1
 	if (z) {
-		. = z++
+		. = ++z
 		}
 	}
 

@@ -265,6 +265,10 @@ public sealed class AtomManager {
             case "maptext_height":
             case "maptext_x":
             case "maptext_y":
+            case "mouse_drag_pointer":
+            case "mouse_drop_pointer":
+            case "mouse_drop_zone":
+            case "mouse_over_pointer":
                 return true;
 
             // Get/SetAppearanceVar doesn't handle filters right now
@@ -422,6 +426,18 @@ public sealed class AtomManager {
             case "maptext_y":
                 value.TryGetValueAsInteger(out appearance.MaptextOffset.Y);
                 break;
+            case "mouse_drag_pointer":
+                value.TryGetValueAsInteger(out appearance.MouseDragPointer);
+                break;
+            case "mouse_drop_pointer":
+                value.TryGetValueAsInteger(out appearance.MouseDropPointer);
+                break;
+            case "mouse_drop_zone":
+                appearance.MouseDropZone = value.IsTruthy();
+                break;
+            case "mouse_over_pointer":
+                value.TryGetValueAsInteger(out appearance.MouseOverPointer);
+                break;
             case "appearance":
                 throw new Exception("Cannot assign the appearance var on an appearance");
 
@@ -530,6 +546,14 @@ public sealed class AtomManager {
                 return new(appearance.MaptextOffset.X);
             case "maptext_y":
                 return new(appearance.MaptextOffset.Y);
+            case "mouse_drag_pointer":
+                return new(appearance.MouseDragPointer);
+            case "mouse_drop_pointer":
+                return new(appearance.MouseDropPointer);
+            case "mouse_drop_zone":
+                return appearance.MouseDropZone ? DreamValue.True : DreamValue.False;
+            case "mouse_over_pointer":
+                return new(appearance.MouseOverPointer);
             case "appearance":
                 MutableAppearance appearanceCopy = appearance.ToMutable(); // Return a copy
                 return new(appearanceCopy);
@@ -730,6 +754,10 @@ public sealed class AtomManager {
         def.TryGetVariable("maptext_height", out var maptextHeightVar);
         def.TryGetVariable("maptext_x", out var maptextXVar);
         def.TryGetVariable("maptext_y", out var maptextYVar);
+        def.TryGetVariable("mouse_over_pointer", out var mouseOverPointer);
+	    def.TryGetVariable("mouse_drag_pointer", out var mouseDragPointer);
+	    def.TryGetVariable("mouse_drop_pointer", out var mouseDropPointer);
+	    def.TryGetVariable("mouse_drop_zone", out var mouseDropZone);
 
         appearance = MutableAppearance.Get();
         SetAppearanceVar(appearance, "name", nameVar);
@@ -756,6 +784,10 @@ public sealed class AtomManager {
         SetAppearanceVar(appearance, "maptext_height", maptextHeightVar);
         SetAppearanceVar(appearance, "maptext_x", maptextXVar);
         SetAppearanceVar(appearance, "maptext_y", maptextYVar);
+        SetAppearanceVar(appearance, "mouse_over_pointer", mouseOverPointer);
+	    SetAppearanceVar(appearance, "mouse_drag_pointer", mouseDragPointer);
+	    SetAppearanceVar(appearance, "mouse_drop_pointer", mouseDropPointer);
+	    SetAppearanceVar(appearance, "mouse_drop_zone", mouseDropZone);
 
         if (def.TryGetVariable("transform", out var transformVar) && transformVar.TryGetValueAsDreamObject<DreamObjectMatrix>(out var transformMatrix)) {
             appearance.Transform = DreamObjectMatrix.MatrixToTransformFloatArray(transformMatrix);

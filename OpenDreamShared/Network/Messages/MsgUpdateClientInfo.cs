@@ -13,6 +13,7 @@ public sealed class MsgUpdateClientInfo : NetMessage {
 
     public int IconSize;
     public ViewRange View;
+    public int CursorResource;
 
     public bool ShowPopupMenus;
 
@@ -20,6 +21,7 @@ public sealed class MsgUpdateClientInfo : NetMessage {
         IconSize = buffer.ReadInt32();
         View = new(buffer.ReadInt32(), buffer.ReadInt32());
         ShowPopupMenus = buffer.ReadBoolean();
+        CursorResource = buffer.ReadInt32();
     }
 
     public override void WriteToBuffer(NetOutgoingMessage buffer, IRobustSerializer serializer) {
@@ -27,5 +29,6 @@ public sealed class MsgUpdateClientInfo : NetMessage {
         buffer.Write(View.Width);
         buffer.Write(View.Height);
         buffer.Write(ShowPopupMenus);
+        buffer.Write(CursorResource);
     }
 }

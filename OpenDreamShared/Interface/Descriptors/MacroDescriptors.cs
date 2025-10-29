@@ -1,9 +1,11 @@
-﻿using JetBrains.Annotations;
-using OpenDreamClient.Interface.DMF;
+﻿using System.Collections.Generic;
+using JetBrains.Annotations;
+using OpenDreamShared.Interface.DMF;
 using Robust.Shared.Serialization.Manager;
+using Robust.Shared.Serialization.Manager.Attributes;
 using Robust.Shared.Serialization.Markdown.Mapping;
 
-namespace OpenDreamClient.Interface.Descriptors;
+namespace OpenDreamShared.Interface.Descriptors;
 
 public sealed partial class MacroSetDescriptor : ElementDescriptor {
     private readonly List<MacroDescriptor> _macros = new();
@@ -37,5 +39,5 @@ public sealed partial class MacroSetDescriptor : ElementDescriptor {
 [UsedImplicitly]
 public sealed partial class MacroDescriptor : ElementDescriptor {
     [DataField("command")]
-    public string Command  { get; private set; }
+    public string Command { get; private set; } = default!;
 }

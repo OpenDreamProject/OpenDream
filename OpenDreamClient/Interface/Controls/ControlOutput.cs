@@ -1,5 +1,5 @@
 ﻿using OpenDreamClient.Interface.Controls.UI;
-using OpenDreamClient.Interface.Descriptors;
+using OpenDreamShared.Interface.Descriptors;
 using OpenDreamClient.Interface.Html;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;

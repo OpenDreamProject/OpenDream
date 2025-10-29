@@ -1,10 +1,15 @@
-﻿using JetBrains.Annotations;
-using OpenDreamClient.Interface.DMF;
+﻿using System;
+using System.Collections.Generic;
+using System.Drawing;
+using JetBrains.Annotations;
+using OpenDreamShared.Interface.DMF;
+using Robust.Shared.Analyzers;
 using Robust.Shared.Serialization.Manager;
+using Robust.Shared.Serialization.Manager.Attributes;
 using Robust.Shared.Serialization.Markdown.Mapping;
 using Robust.Shared.Serialization.Markdown.Value;
 
-namespace OpenDreamClient.Interface.Descriptors;
+namespace OpenDreamShared.Interface.Descriptors;
 
 [Virtual]
 public partial class ControlDescriptor : ElementDescriptor {

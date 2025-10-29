@@ -1,12 +1,13 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using OpenDreamClient.Interface.Descriptors;
+using OpenDreamShared.Interface.Descriptors;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
-using Token = OpenDreamClient.Interface.DMF.DMFLexer.Token;
-using TokenType = OpenDreamClient.Interface.DMF.DMFLexer.TokenType;
+using Token = OpenDreamShared.Interface.DMF.DMFLexer.Token;
+using TokenType = OpenDreamShared.Interface.DMF.DMFLexer.TokenType;
 
-namespace OpenDreamClient.Interface.DMF;
+namespace OpenDreamShared.Interface.DMF;
 
 public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializationManager) {
     public List<string> Errors = new();

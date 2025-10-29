@@ -1,4 +1,6 @@
-﻿namespace OpenDreamClient.Interface.DMF;
+﻿using System.Collections.Generic;
+
+namespace OpenDreamShared.Interface.DMF;
 
 public sealed class DMFWinSet(
     string? element,

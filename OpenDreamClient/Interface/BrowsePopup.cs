@@ -1,6 +1,6 @@
 ﻿using OpenDreamClient.Interface.Controls;
-using OpenDreamClient.Interface.Descriptors;
-using OpenDreamClient.Interface.DMF;
+using OpenDreamShared.Interface.Descriptors;
+using OpenDreamShared.Interface.DMF;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface.Controls;
 

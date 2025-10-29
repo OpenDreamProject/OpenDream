@@ -7,5 +7,10 @@
 // END_PREFERENCES
 // BEGIN_INCLUDE
 #include "interface.dmf"
-#include "map.dmm"
 // END_INCLUDE
+/world/New()
+	spawn(300)
+		Del() // just in case
+	world.log = file("errors.log")
+	RunTest()
+	Del()

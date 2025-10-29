@@ -1,4 +1,4 @@
-﻿/proc/RunTest()
+/proc/RunTest()
 	ASSERT("\roman[1.5]" == "i")
 	ASSERT("\roman [1.5]" == " i")
 	ASSERT("\Roman[1.5]" == "I")

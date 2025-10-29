@@ -1,4 +1,4 @@
-﻿/proc/RunTest()
+/proc/RunTest()
 	var/a = "World"
 	var/b = "Hello"
 	var/c = "Goodbye"

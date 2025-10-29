@@ -1,4 +1,4 @@
-﻿
+
 /proc/RunTest()
 	// null violates the holy trichotomy here, with how it compares to an empty string.
 	ASSERT( (null > "") == 0 )

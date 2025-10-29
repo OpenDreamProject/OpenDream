@@ -284,8 +284,55 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                     break;
                 }
 
-                result = new NewPath(Compiler, newPath.Location, path,
+                result = new NewPath(Compiler, newPath.Location, path, null,
                     BuildArgumentList(newPath.Location, newPath.Parameters, inferredPath));
+                break;
+            case DMASTNewModifiedType newModifiedType:
+                if (BuildExpression(newModifiedType.Type, inferredPath) is not IConstantPath typePath) {
+                    result = BadExpression(WarningCode.BadExpression, newModifiedType.Type.Location,
+                        "Expected a path expression");
+                    break;
+                }
+
+                Dictionary<string, object?> overrides = new();
+                if (newModifiedType.Type.VarOverrides is null) {
+                    result = new NewPath(Compiler, newModifiedType.Location, typePath, overrides,
+                        BuildArgumentList(newModifiedType.Location, newModifiedType.Parameters, inferredPath));
+                    break;
+                }
+
+                if (!ObjectTree.TryGetDMObject(newModifiedType.Type.Value.Path, out var owner)) {
+                    return UnknownReference(newModifiedType.Type.Location, $"Type {newModifiedType.Type.Value.Path} does not exist");
+                }
+
+                var failed = false;
+                foreach (KeyValuePair<string, DMASTExpression> varOverride in newModifiedType.Type.VarOverrides) {
+                    if (!owner.HasLocalVariable(varOverride.Key)) {
+                        return UnknownIdentifier(newModifiedType.Type.Location, varOverride.Key);
+                    }
+
+                    if (!BuildExpression(varOverride.Value, inferredPath)
+                            .TryAsConstant(Compiler, out var jsonConstant)) {
+                        if (!BuildExpression(varOverride.Value, inferredPath)
+                                .TryAsJsonRepresentation(Compiler, out var jsonValue)) {
+                            failed = true;
+                            break;
+                        }
+
+                        overrides[varOverride.Key] = jsonValue;
+                    } else {
+                        jsonConstant.TryAsJsonRepresentation(Compiler, out var jsonValue);
+                        overrides[varOverride.Key] = jsonValue;
+                    }
+                }
+
+                if (failed) {
+                    result = BadExpression(WarningCode.BadExpression, newModifiedType.Type.Location, "Expected a constant expression");
+                    break;
+                }
+
+                result = new NewPath(Compiler, newModifiedType.Location, typePath, overrides,
+                    BuildArgumentList(newModifiedType.Location, newModifiedType.Parameters, inferredPath));
                 break;
             case DMASTNewExpr newExpr:
                 result = new New(Compiler, newExpr.Location,
@@ -305,7 +352,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                     break;
                 }
 
-                result = new NewPath(Compiler, newInferred.Location, inferredType,
+                result = new NewPath(Compiler, newInferred.Location, inferredType, new Dictionary<string, object?>(),
                     BuildArgumentList(newInferred.Location, newInferred.Parameters, inferredPath));
                 break;
             case DMASTPreIncrement preIncrement:
@@ -456,6 +503,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
             case DMASTConstantString constString: return new String(constant.Location, constString.Value);
             case DMASTConstantResource constResource: return new Resource(Compiler, constant.Location, constResource.Path);
             case DMASTConstantPath constPath: return BuildPath(constant.Location, constPath.Value.Path);
+            case DMASTModifiedType constModifiedPath: return BuildPath(constant.Location, constModifiedPath.Value.Path);
             case DMASTUpwardPathSearch upwardSearch:
                 BuildExpression(upwardSearch.Path).TryAsConstant(Compiler, out var pathExpr);
                 if (pathExpr is not IConstantPath expr)

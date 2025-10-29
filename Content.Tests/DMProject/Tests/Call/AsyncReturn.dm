@@ -1,4 +1,4 @@
-﻿/proc/async_return()
+/proc/async_return()
 	. = 420
 	sleep(0)
 	return 1337

@@ -1,4 +1,4 @@
-﻿/proc/RunTest()
+/proc/RunTest()
 	try
 		try
 			throw 5

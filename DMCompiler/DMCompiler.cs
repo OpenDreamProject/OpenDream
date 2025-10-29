@@ -178,10 +178,7 @@ public class DMCompiler {
         VerbosePrint("Parsing");
         DMASTFile astFile = dmParser.File();
 
-        DMASTFolder astSimplifier = new DMASTFolder();
-        VerbosePrint("Constant folding");
-        astSimplifier.FoldAst(astFile);
-
+        VerbosePrint("Building code tree");
         DMCodeTreeBuilder dmCodeTreeBuilder = new(this);
         dmCodeTreeBuilder.BuildCodeTree(astFile);
 

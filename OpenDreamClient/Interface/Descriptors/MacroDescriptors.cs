@@ -16,7 +16,6 @@ public sealed partial class MacroSetDescriptor : ElementDescriptor {
 
     [UsedImplicitly]
     public MacroSetDescriptor() {
-
     }
 
     public override MacroDescriptor CreateChildDescriptor(ISerializationManager serializationManager, MappingDataNode attributes) {

@@ -2411,7 +2411,7 @@ namespace OpenDreamRuntime.Procs {
                 throw new Exception("Invalid browse_rsc() recipient");
             }
 
-            connection?.BrowseResource(file, filename.IsNull ? Path.GetFileName(file.ResourcePath) : filename.GetValueAsString());
+            connection?.BrowseResource(file, filename.IsNull ? Path.GetFileName(file.ResourcePath) : filename.MustGetValueAsString());
             return ProcStatus.Continue;
         }
 
@@ -2429,7 +2429,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus OutputControl(DMProcState state) {
-            string control = state.Pop().GetValueAsString();
+            string control = state.Pop().MustGetValueAsString();
             string message = state.Pop().Stringify();
             if (!state.Pop().TryGetValueAsDreamObject(out var receiver) || receiver == null)
                 return ProcStatus.Continue;

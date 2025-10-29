@@ -57,7 +57,6 @@ public sealed partial class ProcScheduler {
         return tcs.Task;
     }
 
-
     /// <summary>
     /// Insert a ticker into the queue to maintain sorted order
     /// </summary>

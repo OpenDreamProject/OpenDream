@@ -20,6 +20,7 @@ public sealed class RequestVariables : Request {
          * Values: 'indexed', 'named'
          */
         [JsonPropertyName("filter")] public string? Filter { get; set; }
+
         public const string FilterIndexed = "indexed";
         public const string FilterNamed = "named";
 

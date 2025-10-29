@@ -27,6 +27,7 @@ public sealed class VariablePresentationHint {
      * etc.
      */
     [JsonPropertyName("kind")] public string? Kind { get; set; }
+
     public const string KindProperty = "property";
     public const string KindMethod = "method";
     public const string KindClass = "class";
@@ -57,6 +58,7 @@ public sealed class VariablePresentationHint {
      * etc.
      */
     [JsonPropertyName("attributes")] public IEnumerable<string>? Attributes { get; set; }
+
     public const string AttributeStatic = "static";
     public const string AttributeConstant = "constant";
     public const string AttributeReadOnly = "readOnly";
@@ -72,6 +74,7 @@ public sealed class VariablePresentationHint {
      * Values: 'public', 'private', 'protected', 'internal', 'final', etc.
      */
     [JsonPropertyName("visibility")] public string? Visiblity { get; set; }
+
     public const string VisibilityPublic = "public";
     public const string VisibilityPrivate = "private";
     public const string VisibilityProtected = "protected";

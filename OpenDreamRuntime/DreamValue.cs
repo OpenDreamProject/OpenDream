@@ -61,6 +61,11 @@ public struct DreamValue : IEquatable<DreamValue> {
         get => new DreamValue(0f);
     }
 
+    public static DreamValue EmptyString {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => new DreamValue("");
+    }
+
     public readonly DreamValueType Type;
 
     private object? _refValue;
@@ -70,7 +75,7 @@ public struct DreamValue : IEquatable<DreamValue> {
     //ReSharper disable once NotAccessedField.Local
     private readonly ProfilerMemory? _tracyMemoryId; //only used for strings, since everything else is a value type or handled in DreamObject
     #endif
-    
+
     public DreamValue(string value) {
         DebugTools.Assert(value != null);
         Type = DreamValueType.String;

@@ -8,4 +8,4 @@
 	ASSERT("\roman[1.#INF]" == "inf")
 	ASSERT("\roman[-1.#INF]" == "-inf")
 	ASSERT("\roman [-1.#INF]" == " -inf")
-	ASSERT("\roman[1.#IND]" == "�")
+	ASSERT("\roman[1.#IND]" == "-")

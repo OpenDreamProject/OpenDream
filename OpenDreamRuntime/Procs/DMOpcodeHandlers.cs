@@ -357,7 +357,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if(float.IsNaN(value)) {
-                formattedString.Append('�'); //fancy-ish way to represent
+                formattedString.Append('-'); //BYOND prints - for this
                 return;
             }
 
@@ -367,7 +367,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (float.IsInfinity(value)) {
-                formattedString.Append('∞');
+                formattedString.Append("inf");
                 return;
             }
 

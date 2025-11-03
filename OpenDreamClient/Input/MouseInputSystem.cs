@@ -1,7 +1,7 @@
 ﻿using OpenDreamClient.Input.ContextMenu;
 using OpenDreamClient.Interface;
 using OpenDreamClient.Interface.Controls.UI;
-using OpenDreamClient.Interface.Descriptors;
+using OpenDreamShared.Interface.Descriptors;
 using OpenDreamClient.Rendering;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Input;

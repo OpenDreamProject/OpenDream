@@ -55,6 +55,7 @@ public sealed class DMFLexer(string source) {
                 Advance();
                 _parsingAttributeName = true; // Still parsing an attribute name, the last one was actually an element name!
                 return new(TokenType.Period, c);
+            case '&': // & is a valid splitter as well
             case ';':
                 Advance();
                 _parsingAttributeName = true;
@@ -126,7 +127,7 @@ public sealed class DMFLexer(string source) {
                 var textBuilder = new StringBuilder();
                 textBuilder.Append(c);
 
-                while (!char.IsWhiteSpace(Advance()) && GetCurrent() is not ';' and not '=' and not '?' and not ':' && !(_parsingAttributeName && GetCurrent() == '.') && !AtEndOfSource)
+                while (!char.IsWhiteSpace(Advance()) && GetCurrent() is not ';' and not '&'  and not '=' and not '?' and not ':' && !(_parsingAttributeName && GetCurrent() == '.') && !AtEndOfSource)
                     textBuilder.Append(GetCurrent());
 
                 var text = textBuilder.ToString();

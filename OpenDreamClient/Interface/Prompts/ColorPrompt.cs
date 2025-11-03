@@ -120,7 +120,6 @@ internal static class ColorPromptStylesheet {
         };
     }
 
-
     public static Stylesheet Make() {
         var sliderFillBox = MakeSliderFill(Color.FromHex("#3E6C45"));
         var sliderBackBox = MakeSliderOutline(PanelDark);

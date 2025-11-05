@@ -8,7 +8,7 @@
 	query.Add()
 	
 	// Execute without a command does nothing
-	query.Execute()
+	query.Execute(db)
 	
 	// and shouldn't report an error
 	ASSERT(!query.Error())

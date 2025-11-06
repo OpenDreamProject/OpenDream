@@ -116,8 +116,10 @@ internal sealed class Divide(Location location, DMExpression lhs, DMExpression r
 
         if (lhs is Number lhsNum && rhs is Number rhsNum) {
             constant = new Number(Location, lhsNum.Value / rhsNum.Value);
-        } else if (lhs is Number lhsNumNull && rhs is Null) {
-            constant = new Number(Location, lhsNumNull.Value);
+        } else if (rhs is Null) {
+            compiler.ForcedError(Location, "Division by null is invalid!");
+            constant = null;
+            return false;
         } else {
             constant = null;
             return false;

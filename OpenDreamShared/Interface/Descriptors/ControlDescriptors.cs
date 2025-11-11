@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 using JetBrains.Annotations;
 using OpenDreamShared.Interface.DMF;
 using Robust.Shared.Analyzers;
+using Robust.Shared.Maths;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Manager.Attributes;
 using Robust.Shared.Serialization.Markdown.Mapping;

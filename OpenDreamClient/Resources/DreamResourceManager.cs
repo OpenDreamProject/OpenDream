@@ -5,6 +5,8 @@ using Robust.Shared.Configuration;
 using Robust.Shared.ContentPack;
 using Robust.Shared.Network;
 using Robust.Shared.Utility;
+using System.Linq;
+using SpaceWizards.Sodium;
 
 namespace OpenDreamClient.Resources;
 
@@ -22,6 +24,8 @@ public interface IDreamResourceManager {
     /// <typeparam name="T">The type of resource to load as.</typeparam>
     void LoadResourceAsync<T>(int resourceId, Action<T> onLoadCallback) where T : DreamResource;
 
+    void LookupResourceAsync(string resourcePath, Action<int> onSuccess, Action onFailure);
+
     ResPath GetCacheFilePath(string filename);
     public bool EnsureCacheFile(string filename, int timeoutSeconds = 5);
 }
@@ -29,6 +33,8 @@ public interface IDreamResourceManager {
 internal sealed class DreamResourceManager : IDreamResourceManager {
     private readonly Dictionary<int, LoadingResourceEntry> _loadingResources = new();
     private readonly Dictionary<int, DreamResource> _resourceCache = new();
+    private readonly Dictionary<string, PendingResourceLookup> _pendingResourceLookups = new();
+    private readonly Dictionary<string, int> _resourcePathToIdCache = new(); //note this can contain both \ref[]s and paths
 
     [Dependency] private readonly IResourceManager _resourceManager = default!;
     [Dependency] private readonly IClientNetManager _netManager = default!;
@@ -47,14 +53,16 @@ internal sealed class DreamResourceManager : IDreamResourceManager {
         _netManager.RegisterNetMessage<MsgBrowseResource>(RxBrowseResource);
         _netManager.RegisterNetMessage<MsgBrowseResourceResponse>(RxBrowseResourceResponse);
         _netManager.RegisterNetMessage<MsgRequestResource>();
+        _netManager.RegisterNetMessage<MsgLookupResource>();
+        _netManager.RegisterNetMessage<MsgLookupResourceResponse>(RxLookupResourceResponse);
         _netManager.RegisterNetMessage<MsgResource>(RxResource);
         _netManager.RegisterNetMessage<MsgNotifyResourceUpdate>(RxResourceUpdateNotification);
     }
 
     private void EnsureCacheDirectory() {
-        if(_cacheDirectory != default)
+        if (_cacheDirectory != default)
             return;
-        if(_netManager.ServerChannel is null)
+        if (_netManager.ServerChannel is null)
             throw new Exception("Server doesn't appear to be connected, can't use cache right now!");
 
         var address = _netManager.ServerChannel.RemoteEndPoint.ToString();
@@ -69,21 +77,32 @@ internal sealed class DreamResourceManager : IDreamResourceManager {
     }
 
     private void RxBrowseResource(MsgBrowseResource message) {
-        _sawmill.Debug($"Received cache check for {message.Filename}");
+        _sawmill.Debug($"Received cache check for {message.Filename} hash: {BitConverter.ToString(message.DataHash)}");
         EnsureCacheDirectory();
-        if(_resourceManager.UserData.Exists(GetCacheFilePath(message.Filename))){ //TODO CHECK HASH
+        if(_resourceManager.UserData.Exists(GetCacheFilePath(message.Filename)) && GetFileHash(GetCacheFilePath(message.Filename)).SequenceEqual(message.DataHash)){
             _sawmill.Debug($"Cache hit for {message.Filename}");
         } else {
-            if(_activeBrowseRscRequests.Contains(message.Filename)) //we've already requested it, don't need to do it again
+            if (_activeBrowseRscRequests.Contains(message.Filename)) //we've already requested it, don't need to do it again
                 return;
-            _sawmill.Debug($"Cache miss for {message.Filename}, requesting from server.");
+            if (_resourceManager.UserData.Exists(GetCacheFilePath(message.Filename))) {
+                _sawmill.Debug($"Cache hit for {message.Filename} but hashes did not match (hash: {BitConverter.ToString(GetFileHash(GetCacheFilePath(message.Filename)))}). Re-requesting!");
+                _resourceManager.UserData.Delete(GetCacheFilePath(message.Filename));
+            } else
+                _sawmill.Debug($"Cache miss for {message.Filename}, requesting from server.");
             _activeBrowseRscRequests.Add(message.Filename);
-            _netManager.ServerChannel?.SendMessage(new MsgBrowseResourceRequest(){ Filename = message.Filename});
+            _netManager.ServerChannel?.SendMessage(new MsgBrowseResourceRequest() { Filename = message.Filename });
         }
     }
 
+    private byte[] GetFileHash(ResPath path) {
+        var stream = _resourceManager.UserData.OpenRead(path);
+        Span<byte> filebytes = new(new byte[stream.Length]);
+        stream.ReadToEnd(filebytes);
+        return CryptoGenericHashBlake2B.Hash(32, filebytes, ReadOnlySpan<byte>.Empty);
+    }
+
     private void RxBrowseResourceResponse(MsgBrowseResourceResponse message) {
-        if(_activeBrowseRscRequests.Contains(message.Filename)) {
+        if (_activeBrowseRscRequests.Contains(message.Filename)) {
             _activeBrowseRscRequests.Remove(message.Filename);
             EnsureCacheDirectory();
             CreateCacheFile(message.Filename, message.Data);
@@ -96,7 +115,7 @@ internal sealed class DreamResourceManager : IDreamResourceManager {
         if (_loadingResources.ContainsKey(message.ResourceId)) {
             LoadingResourceEntry entry = _loadingResources[message.ResourceId];
             DreamResource resource;
-            if(_resourceCache.ContainsKey(message.ResourceId)){
+            if (_resourceCache.ContainsKey(message.ResourceId)) {
                 _resourceCache[message.ResourceId].UpdateData(message.ResourceData); //we update instead of replacing so we don't have to replace the handle in everything that uses it
                 _resourceCache[message.ResourceId].OnUpdateCallbacks.ForEach(cb => cb.Invoke());
                 resource = _resourceCache[message.ResourceId];
@@ -131,7 +150,21 @@ internal sealed class DreamResourceManager : IDreamResourceManager {
         }
     }
 
-    public void LoadResourceAsync<T>(int resourceId, Action<T> onLoadCallback) where T:DreamResource {
+    private void RxLookupResourceResponse(MsgLookupResourceResponse message) {
+        if (_pendingResourceLookups.Remove(message.ResourcePathOrRef, out var pendingResourceLookup)) {
+            if (message.Success) {
+                _resourcePathToIdCache[message.ResourcePathOrRef] = message.ResourceId;
+                foreach (var successCallback in pendingResourceLookup.SuccessCallbacks)
+                    successCallback.Invoke(message.ResourceId);
+            } else
+                foreach (var failureCallback in pendingResourceLookup.FailureCallbacks)
+                    failureCallback.Invoke();
+        } else {
+            throw new Exception($"Recieved unexpected resource lookup response for {message.ResourcePathOrRef} (id: {message.ResourceId})");
+        }
+    }
+
+    public void LoadResourceAsync<T>(int resourceId, Action<T> onLoadCallback) where T : DreamResource {
         DreamResource? resource = GetCachedResource(resourceId);
 
         if (resource != null) {
@@ -176,8 +209,8 @@ internal sealed class DreamResourceManager : IDreamResourceManager {
     }
 
     private DreamResource LoadResourceFromData(Type resourceType, int resourceId, byte[] data) {
-        var resource = (DreamResource) _typeFactory.CreateInstance(resourceType,
-            new object[] {resourceId, data});
+        var resource = (DreamResource)_typeFactory.CreateInstance(resourceType,
+            new object[] { resourceId, data });
 
         _resourceCache[resourceId] = resource;
         return resource;
@@ -215,19 +248,19 @@ internal sealed class DreamResourceManager : IDreamResourceManager {
     /// <returns></returns>
     public bool EnsureCacheFile(string filename, int timeoutSeconds = 5) {
         var actualPath = GetCacheFilePath(filename);
-        if(_resourceManager.UserData.Exists(actualPath)) {
+        if (_resourceManager.UserData.Exists(actualPath)) {
             return true;
         } else {
-            if(_activeBrowseRscRequests.Contains(actualPath.Filename)) {
+            if (_activeBrowseRscRequests.Contains(actualPath.Filename)) {
                 //block until the file arrives for like 5 seconds, then give up
                 DateTime thresholdTime = DateTime.Now.AddSeconds(timeoutSeconds);
-                while(!_resourceManager.UserData.Exists(actualPath) && DateTime.Now < thresholdTime) {
+                while (!_resourceManager.UserData.Exists(actualPath) && DateTime.Now < thresholdTime) {
                     _netManager.ProcessPackets(); //todo this should be sleep
                 }
 
                 return _resourceManager.UserData.Exists(actualPath);
             } else {
-                _sawmill.Error("Cache was ensured for a file that does not exist in cache and is not requested. Probably somebody called browse() without browse_rsc() first.");
+                _sawmill.Error($"Cache was ensured for a file ({filename}) that does not exist in cache and is not requested. Probably somebody called browse() without browse_rsc() first.");
                 return false;
             }
         }
@@ -239,8 +272,49 @@ internal sealed class DreamResourceManager : IDreamResourceManager {
         return cached;
     }
 
+    /// <summary>
+    /// Used for lookup of resource IDs from paths and ref strings.
+    /// Note that this will fail for any resource that has not already been loaded by the server.
+    /// </summary>
+    /// <param name="resourcePathOrRef"></param>Either a path 'path/to/resource.dmi' or a ref '\ref[0xDEADBEEF]'
+    /// <param name="onSuccess"></param>Action to invoke on successful lookup
+    /// <param name="onFailure"></param>Action to invoke on failed lookup (ie, the server does not have a loaded resource that matches this string)
+    public void LookupResourceAsync(string resourcePathOrRef, Action<int> onSuccess, Action onFailure) {
+        if (_resourcePathToIdCache.TryGetValue(resourcePathOrRef, out var resourceId)) {
+            onSuccess.Invoke(resourceId);
+            return;
+        }
+
+        if (!_pendingResourceLookups.ContainsKey(resourcePathOrRef)) {
+            _pendingResourceLookups[resourcePathOrRef] = new PendingResourceLookup();
+            _pendingResourceLookups[resourcePathOrRef].SuccessCallbacks.Add(onSuccess);
+            _pendingResourceLookups[resourcePathOrRef].FailureCallbacks.Add(onFailure);
+
+            var msg = new MsgLookupResource() { ResourcePathOrRef = resourcePathOrRef };
+            _netManager.ClientSendMessage(msg);
+
+            var timeout = _cfg.GetCVar(OpenDreamCVars.DownloadTimeout);
+            Robust.Shared.Timing.Timer.Spawn(TimeSpan.FromSeconds(timeout), () => {
+                if (_pendingResourceLookups.TryGetValue(resourcePathOrRef, out var pendingLookup)) {
+                    _sawmill.Warning(
+                        $"Resource id {resourcePathOrRef} lookup was requested, but is still not received {timeout} seconds later.");
+                    foreach (var failureCallback in pendingLookup.FailureCallbacks)
+                        failureCallback.Invoke();
+                }
+            });
+        } else {
+            _pendingResourceLookups[resourcePathOrRef].SuccessCallbacks.Add(onSuccess);
+            _pendingResourceLookups[resourcePathOrRef].FailureCallbacks.Add(onFailure);
+        }
+    }
+
     private struct LoadingResourceEntry(Type resourceType) {
         public readonly Type ResourceType = resourceType;
         public readonly List<Action<DreamResource>> LoadCallbacks = new();
+    }
+
+    private struct PendingResourceLookup() {
+        public readonly List<Action<int>> SuccessCallbacks = new();
+        public readonly List<Action> FailureCallbacks = new();
     }
 }

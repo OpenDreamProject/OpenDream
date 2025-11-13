@@ -1,11 +1,11 @@
-// BEGIN_INTERNALS
-// END_INTERNALS
-// BEGIN_FILE_DIR
 #define FILE_DIR .
-// END_FILE_DIR
-// BEGIN_PREFERENCES
-// END_PREFERENCES
-// BEGIN_INCLUDE
+#define DEBUG 
+
 #include "interface.dmf"
-#include "map.dmm"
-// END_INCLUDE
+
+/world/New()
+	spawn(300)
+		Del() // just in case
+	world.log = file("errors.log")
+	RunTest()
+	Del()

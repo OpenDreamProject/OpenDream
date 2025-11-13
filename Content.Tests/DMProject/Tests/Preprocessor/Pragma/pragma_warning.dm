@@ -1,4 +1,5 @@
 //COMPILE ERROR OD1201
+// NOBYOND
 
 #pragma WarningDirective error
 

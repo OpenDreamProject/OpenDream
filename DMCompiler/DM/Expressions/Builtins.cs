@@ -62,7 +62,17 @@ internal sealed class Arglist(Location location, DMExpression expr) : DMExpressi
 internal sealed class New(DMCompiler compiler, Location location, DMExpression expr, ArgumentList arguments) : DMExpression(location) {
     public override DreamPath? Path => expr.Path;
     public override bool PathIsFuzzy => Path == null;
-    public override DMComplexValueType ValType => !expr.ValType.IsAnything ? expr.ValType : (Path?.GetAtomType(compiler) ?? DMValueType.Anything);
+
+    public override DMComplexValueType ValType {
+        get {
+            var exprType = expr.ValType;
+            if (exprType.IsAnything)
+                return Path is not null ? new DMComplexValueType(DMValueType.Instance, Path) : DMValueType.Anything;
+            if (exprType.HasPath && exprType.Type.HasFlag(DMValueType.Path))
+                return exprType.TypePath is not null ? new DMComplexValueType(DMValueType.Instance, exprType.TypePath) : DMValueType.Anything;
+            return exprType;
+        }
+    }
 
     public override void EmitPushValue(ExpressionContext ctx) {
         var argumentInfo = arguments.EmitArguments(ctx, null);
@@ -73,9 +83,9 @@ internal sealed class New(DMCompiler compiler, Location location, DMExpression e
 }
 
 // new /x/y/z (...)
-internal sealed class NewPath(DMCompiler compiler, Location location, IConstantPath create, ArgumentList arguments) : DMExpression(location) {
+internal sealed class NewPath(Location location, IConstantPath create, ArgumentList arguments) : DMExpression(location) {
     public override DreamPath? Path => (create is ConstantTypeReference typeReference) ? typeReference.Path : null;
-    public override DMComplexValueType ValType => Path?.GetAtomType(compiler) ?? DMValueType.Anything;
+    public override DMComplexValueType ValType => Path is not null ? new DMComplexValueType(DMValueType.Instance | DMValueType.Null, Path) : DMValueType.Anything;
 
     public override void EmitPushValue(ExpressionContext ctx) {
         DMCallArgumentsType argumentsType;
@@ -104,8 +114,8 @@ internal sealed class NewPath(DMCompiler compiler, Location location, IConstantP
 }
 
 // locate()
-internal sealed class LocateInferred(Location location, DreamPath path, DMExpression? container) : DMExpression(location) {
-    public override DMComplexValueType ValType => path;
+internal sealed class LocateInferred(DMCompiler compiler, Location location, DreamPath path, DMExpression? container) : DMExpression(location) {
+    public override DMComplexValueType ValType => path.GetAtomType(compiler);
 
     public override void EmitPushValue(ExpressionContext ctx) {
         if (!ctx.ObjectTree.TryGetTypeId(path, out var typeId)) {
@@ -136,6 +146,7 @@ internal sealed class LocateInferred(Location location, DreamPath path, DMExpres
 // locate(x)
 internal sealed class Locate(Location location, DMExpression path, DMExpression? container) : DMExpression(location) {
     public override bool PathIsFuzzy => true;
+    public override DMComplexValueType ValType => path.Path is not null ? new DMComplexValueType(DMValueType.Instance | DMValueType.Null, path.Path) : DMValueType.Anything;
 
     public override void EmitPushValue(ExpressionContext ctx) {
         path.EmitPushValue(ctx);
@@ -184,6 +195,8 @@ internal sealed class Gradient(Location location, ArgumentList arguments) : DMEx
 /// rgb(x, y, z, space)
 /// rgb(x, y, z, a, space)
 internal sealed class Rgb(Location location, ArgumentList arguments) : DMExpression(location) {
+    public override DMComplexValueType ValType => DMValueType.Color;
+
     public override void EmitPushValue(ExpressionContext ctx) {
         ctx.ObjectTree.TryGetGlobalProc("rgb", out var dmProc);
         var argInfo = arguments.EmitArguments(ctx, dmProc);
@@ -242,10 +255,28 @@ internal sealed class Rgb(Location location, ArgumentList arguments) : DMExpress
 // pick(prob(50);x, prob(200);y)
 // pick(50;x, 200;y)
 // pick(x, y)
-internal sealed class Pick(Location location, Pick.PickValue[] values) : DMExpression(location) {
+internal sealed class Pick(DMCompiler compiler, Location location, Pick.PickValue[] values) : DMExpression(location) {
     public struct PickValue(DMExpression? weight, DMExpression value) {
         public readonly DMExpression? Weight = weight;
         public readonly DMExpression Value = value;
+    }
+
+    public override DMComplexValueType ValType {
+        get {
+            if (values.Length == 1) {
+                var firstValType = values[0].Value.ValType;
+                if (firstValType.IsList) {
+                    return firstValType.ListValueTypes?.NestedListKeyType ?? DMValueType.Anything;
+                }
+            }
+
+            DMComplexValueType accumValues = DMValueType.Anything;
+            foreach(PickValue pickVal in values) {
+                accumValues = DMComplexValueType.MergeComplexValueTypes(compiler, accumValues, pickVal.Value.ValType);
+            }
+
+            return accumValues;
+        }
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
@@ -343,6 +374,7 @@ internal sealed class IsSaved(Location location, DMExpression expr) : DMExpressi
 // astype(x, y)
 internal sealed class AsType(Location location, DMExpression expr, DMExpression path) : DMExpression(location) {
     public override DreamPath? Path => path.Path;
+    public override DMComplexValueType ValType => new(DMValueType.Instance | DMValueType.Null, Path);
     public override bool PathIsFuzzy => path is not ConstantTypeReference;
 
     public override void EmitPushValue(ExpressionContext ctx) {
@@ -355,6 +387,7 @@ internal sealed class AsType(Location location, DMExpression expr, DMExpression 
 // astype(x)
 internal sealed class AsTypeInferred(Location location, DMExpression expr, DreamPath path) : DMExpression(location) {
     public override DreamPath? Path => path;
+    public override DMComplexValueType ValType => new(DMValueType.Instance | DMValueType.Null, Path);
 
     public override void EmitPushValue(ExpressionContext ctx) {
         if (!ctx.ObjectTree.TryGetTypeId(path, out var typeId)) {
@@ -422,6 +455,7 @@ internal sealed class Length(Location location, DMExpression value) : DMExpressi
 // get_step(ref, dir)
 internal sealed class GetStep(Location location, DMExpression refValue, DMExpression dir) : DMExpression(location) {
     public override bool PathIsFuzzy => true;
+    public override DMComplexValueType ValType => DMValueType.Turf | DMValueType.Null;
 
     public override void EmitPushValue(ExpressionContext ctx) {
         refValue.EmitPushValue(ctx);
@@ -433,6 +467,7 @@ internal sealed class GetStep(Location location, DMExpression refValue, DMExpres
 // get_dir(loc1, loc2)
 internal sealed class GetDir(Location location, DMExpression loc1, DMExpression loc2) : DMExpression(location) {
     public override bool PathIsFuzzy => true;
+    public override DMComplexValueType ValType => DMValueType.Num; // invalid/no dir is 0, not null
 
     public override void EmitPushValue(ExpressionContext ctx) {
         loc1.EmitPushValue(ctx);
@@ -447,9 +482,10 @@ internal sealed class List : DMExpression {
     private readonly bool _isAssociative;
 
     public override bool PathIsFuzzy => true;
-    public override DMComplexValueType ValType => DreamPath.List;
+    private DMComplexValueType? _valType;
+    public override DMComplexValueType ValType => _valType ?? DMValueType.Anything;
 
-    public List(Location location, (DMExpression? Key, DMExpression Value)[] values) : base(location) {
+    public List(DMCompiler compiler, Location location, (DMExpression? Key, DMExpression Value)[] values) : base(location) {
         _values = values;
 
         _isAssociative = false;
@@ -459,6 +495,16 @@ internal sealed class List : DMExpression {
                 break;
             }
         }
+
+        DMComplexValueType keyTypes = DMValueType.Anything;
+        DMComplexValueType valTypes = DMValueType.Anything;
+        foreach((DMExpression? key, DMExpression val) in _values) {
+            valTypes = DMComplexValueType.MergeComplexValueTypes(compiler, valTypes, val.ValType);
+            if(key is not null)
+                keyTypes = DMComplexValueType.MergeComplexValueTypes(compiler, keyTypes, key.ValType);
+        }
+
+        _valType = new DMComplexValueType(DMValueType.Instance, DreamPath.List, !(keyTypes.IsAnything && valTypes.IsAnything) ? (_isAssociative ? new DMListValueTypes(keyTypes, valTypes) : new DMListValueTypes(valTypes, null)) : null);
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
@@ -561,6 +607,8 @@ internal sealed class AList(Location location, (DMExpression Key, DMExpression V
 
 // Value of var/list/L[1][2][3]
 internal sealed class DimensionalList(Location location, DMExpression[] sizes) : DMExpression(location) {
+    public override DMComplexValueType ValType => DreamPath.List;
+
     public override void EmitPushValue(ExpressionContext ctx) {
         foreach (var size in sizes) {
             size.EmitPushValue(ctx);
@@ -619,6 +667,16 @@ internal sealed class Input(Location location, DMExpression[] arguments, DMValue
 
 // initial(x)
 internal class Initial(Location location, DMExpression expr) : DMExpression(location) {
+    public override DMComplexValueType ValType {
+        get {
+            if (Expression is LValue lValue) {
+                return lValue.ValType;
+            }
+
+            return DMValueType.Anything;
+        }
+    }
+
     protected DMExpression Expression { get; } = expr;
 
     public override void EmitPushValue(ExpressionContext ctx) {

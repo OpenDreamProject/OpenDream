@@ -100,6 +100,7 @@ internal sealed class Resource : Constant {
 
     private readonly string _filePath;
     private bool _isAmbiguous;
+    public override DMComplexValueType ValType { get; }
 
     public Resource(DMCompiler compiler, Location location, string filePath) : base(location) {
         // Treat backslashes as forward slashes on Linux
@@ -154,6 +155,16 @@ internal sealed class Resource : Constant {
         _filePath = _filePath.Replace('\\', '/');
 
         compiler.DMObjectTree.Resources.Add(_filePath);
+        ValType = System.IO.Path.GetExtension(fileName) switch {
+            ".dmi" => DMValueType.Icon,
+            ".png" => DMValueType.Icon,
+            ".bmp" => DMValueType.Icon,
+            ".gif" => DMValueType.Icon,
+            ".ogg" => DMValueType.Sound,
+            ".wav" => DMValueType.Sound,
+            ".mid" => DMValueType.Sound,
+            _ => DMValueType.File
+        };
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
@@ -230,7 +241,7 @@ internal class ConstantTypeReference(Location location, DMObject dmObject) : Con
     public DMObject Value { get; } = dmObject;
 
     public override DreamPath? Path => Value.Path;
-    public override DMComplexValueType ValType => Value.Path;
+    public override DMComplexValueType ValType => new DMComplexValueType(DMValueType.Path, Path);
 
     public override void EmitPushValue(ExpressionContext ctx) {
         ctx.Proc.PushType(Value.Id);

@@ -124,6 +124,10 @@ public sealed class ServerVerbSystem : VerbSystem {
         RaiseNetworkEvent(new UpdateClientVerbsEvent(verbIds), client.Connection.Session!);
     }
 
+    public void HotReloadAllVerbs(DreamObjectClient client) {
+        RaiseNetworkEvent(new AllVerbsEvent(_verbs), client.Connection.Session!);
+    }
+
     private void OnPlayerStatusChanged(object? sender, SessionStatusEventArgs e) {
         if (e.NewStatus != SessionStatus.InGame)
             return;
@@ -255,5 +259,14 @@ public sealed class ServerVerbSystem : VerbSystem {
                 // TODO: All the other kinds
                 return true;
         }
+    }
+
+    /// <summary>
+    /// Clear all registered verbs. Does not update clients. Really don't use this unless you are immediately
+    /// repopulating the verb list.
+    /// </summary>
+    public void ClearAllVerbs() {
+        _verbs.Clear();
+        _verbIdToProc.Clear();
     }
 }

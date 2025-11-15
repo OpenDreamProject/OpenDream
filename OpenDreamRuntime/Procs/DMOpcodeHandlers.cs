@@ -1143,7 +1143,7 @@ namespace OpenDreamRuntime.Procs {
                     state.Push(new DreamValue(0));
                     break;
                 case DreamValue.DreamValueType.Float when second.IsNull:
-                    throw new Exception("Division by null");
+                    throw new Exception($"Attempted to divide {first} by null");
                 case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
                     var secondFloat = second.MustGetValueAsFloat();
                     if (secondFloat == 0) {

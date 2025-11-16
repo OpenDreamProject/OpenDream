@@ -442,7 +442,7 @@ internal sealed class DMPreprocessorLexer {
                 }
 
                 TokenTextBuilder.Clear();
-                while (char.IsAsciiLetter(GetCurrent()) || GetCurrent() == '_') {
+                while (char.IsAsciiLetterOrDigit(GetCurrent()) || GetCurrent() == '_') {
                     TokenTextBuilder.Append(GetCurrent());
                     Advance();
                 }

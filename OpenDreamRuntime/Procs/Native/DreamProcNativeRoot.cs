@@ -792,6 +792,7 @@ internal static class DreamProcNativeRoot {
 
     [DreamProc("filter")]
     [DreamProcParameter("type", Type = DreamValueTypeFlag.String)] // Must be from a valid list
+    [DreamProcParameter("name", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("size", Type = DreamValueTypeFlag.Float)]
     [DreamProcParameter("color", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("x", Type = DreamValueTypeFlag.Float)]

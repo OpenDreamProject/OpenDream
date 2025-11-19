@@ -1324,6 +1324,8 @@ namespace DMCompiler.Compiler.DM {
             return new DMASTProcStatementFor(loc, expr1, expr2, expr3, dmTypes, GetForBody());
 
             DMASTProcBlockInner GetForBody() {
+                Whitespace();
+
                 DMASTProcBlockInner? body = ProcBlock();
                 if (body != null)
                     return body;

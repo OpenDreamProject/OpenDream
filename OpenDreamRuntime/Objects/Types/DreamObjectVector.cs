@@ -30,6 +30,9 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
         }
     }
 
+    public Vector2 AsVector2 => new((float)X, (float)Y);
+    public Vector3 AsVector3 => new((float)X, (float)Y, Is3D ? (float)Z : 0f);
+
     private double _z;
 
     public override void Initialize(DreamProcArguments args) {
@@ -285,6 +288,38 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
                 // Hide the base vars
                 throw new Exception($"Invalid vector variable \"{varName}\"");
         }
+    }
+
+    public static DreamObjectVector CreateFromValue(DreamValue value, DreamObjectTree tree) {
+        if (value.TryGetValueAsDreamObject<DreamObjectVector>(out var vector))
+            return vector;
+
+        vector = tree.CreateObject<DreamObjectVector>(tree.Vector);
+
+        if (value.TryGetValueAsDreamList(out var list)) {
+            var length = list.GetLength();
+
+            if (length >= 3) {
+                var x = list.GetValue(new(1));
+                var y = list.GetValue(new(2));
+                var z = list.GetValue(new(3));
+
+                vector.Initialize(new(x, y, z));
+            } else if (length == 2) {
+                var x = list.GetValue(new(1));
+                var y = list.GetValue(new(2));
+
+                vector.Initialize(new(x, y));
+            } else {
+                // Fall back to a Vector2.Zero
+                vector.Initialize(new(new(0f), new(0f)));
+            }
+        } else {
+            // Fall back to a Vector2.Zero
+            vector.Initialize(new(new(0f), new(0f)));
+        }
+
+        return vector;
     }
 
     // TODO: Operators, supports indexing and "most math"

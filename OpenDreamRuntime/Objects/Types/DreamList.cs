@@ -991,11 +991,9 @@ public sealed class DreamFilterList(DreamObjectDefinition listDef, DreamObject o
 
     public int GetIndexOfFilter(DreamFilter filter) {
         ImmutableAppearance appearance = GetAppearance();
-        int i = 0;
-        while (i < appearance.Filters.Length) {
-            if(appearance.Filters[i] == filter)
+        for (int i = 0; i < appearance.Filters.Length; i++) {
+            if (appearance.Filters[i] == filter)
                 return i;
-            i++;
         }
 
         return -1;
@@ -1003,11 +1001,9 @@ public sealed class DreamFilterList(DreamObjectDefinition listDef, DreamObject o
 
     public int GetIndexOfFilter(string filterName) {
         ImmutableAppearance appearance = GetAppearance();
-        int i = 0;
-        while (i < appearance.Filters.Length) {
-            if(appearance.Filters[i].FilterName == filterName)
+        for (int i = 0; i < appearance.Filters.Length; i++) {
+            if (appearance.Filters[i].FilterName == filterName)
                 return i;
-            i++;
         }
 
         return -1;

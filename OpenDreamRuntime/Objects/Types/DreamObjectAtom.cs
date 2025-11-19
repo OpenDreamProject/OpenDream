@@ -1,6 +1,4 @@
-﻿using OpenDreamRuntime.Procs;
-
-namespace OpenDreamRuntime.Objects.Types;
+﻿namespace OpenDreamRuntime.Objects.Types;
 
 [Virtual]
 public class DreamObjectAtom : DreamObject {
@@ -149,12 +147,26 @@ public class DreamObjectAtom : DreamObject {
             case "filters": {
                 Filters.Cut();
 
-                if (value.TryGetValueAsDreamList(out var valueList)) { // filters = list("type"=...)
-                    var filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, valueList);
-                    if (filterObject == null) // list() with invalid "type" is ignored
-                        break;
+                // filters = list("type"=...) or list(filter(...), filter(...))
+                if (value.TryGetValueAsDreamList(out var valueList)) {
+                    if (valueList.GetValue(new("type")) != DreamValue.Null) { // It's a single filter
+                        var filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, valueList);
+                        if (filterObject == null) // list() with invalid "type" is ignored
+                            break;
 
-                    Filters.AddValue(new(filterObject));
+                        Filters.AddValue(new(filterObject));
+                    } else { // It's a list of filters
+                        foreach (var filter in valueList.EnumerateValues()) {
+                            if (!filter.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject)) {
+                                if (!filter.TryGetValueAsDreamList(out var filterValues))
+                                    continue;
+
+                                filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, filterValues);
+                            }
+
+                            Filters.AddValue(new(filterObject));
+                        }
+                    }
                 } else if (!value.IsNull) {
                     Filters.AddValue(value);
                 }

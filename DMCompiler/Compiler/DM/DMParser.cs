@@ -274,82 +274,65 @@ namespace DMCompiler.Compiler.DM {
             }
 
             //Var definition(s)
-            if (CurrentPath.FindElement("var") != -1) {
-                bool isIndented = false;
-                DreamPath varPath = CurrentPath;
+            if (CurrentPath.FindElement("var") != -1) { //ZONENOTE WORK HERE
+                //DreamPath varPath = CurrentPath;
+                List<Tuple<DreamPath, int>>? pathDefinitions = GetVariables();
                 List<DMASTObjectVarDefinition> varDefinitions = new();
-
-                var possibleNewline = Current();
-                if (Newline()) {
-                    if (Check(TokenType.DM_Indent)) {
-                        isIndented = true;
-                        DMASTPath? newVarPath = Path();
-                        if (newVarPath == null) {
-                            Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
-                            return new DMASTInvalidStatement(CurrentLoc);
-                        }
-
-                        varPath = CurrentPath.AddToPath(newVarPath.Path.PathString);
-                    } else {
-                        ReuseToken(possibleNewline);
-                    }
-                } else if (Current().Type == TokenType.DM_Identifier) { // "var foo" instead of "var/foo"
-                    DMASTPath? newVarPath = Path();
-                    if (newVarPath == null) {
-                        Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
-                        return new DMASTInvalidStatement(CurrentLoc);
-                    }
-
-                    varPath = CurrentPath.AddToPath(newVarPath.Path.PathString);
+                if (pathDefinitions == null) {
+                    return new DMASTInvalidStatement(CurrentLoc);
                 }
 
-                while (true) {
-                    Whitespace();
-
-                    DMASTExpression? value = PathArray(ref varPath);
-
-                    if (Check(TokenType.DM_Equals)) {
-                        if (value != null) Warning("List doubly initialized");
-
+                for(int i = 0; i < pathDefinitions.Count; i++) {
+                    var varPath = pathDefinitions[i].Item1;
+                    int indentCount = pathDefinitions[i].Item2;
+                    while (true) {
                         Whitespace();
-                        value = Expression();
-                        RequireExpression(ref value);
-                    } else if (Check(TokenType.DM_DoubleSquareBracketEquals)) {
-                        if (value != null) Warning("List doubly initialized");
 
-                        Whitespace();
-                        value = Expression();
-                        RequireExpression(ref value);
-                    } else if (value == null) {
-                        value = new DMASTConstantNull(loc);
-                    }
+                        DMASTExpression? value = PathArray(ref varPath);
 
-                    var valType = AsComplexTypes() ?? DMValueType.Anything;
-                    var varDef = new DMASTObjectVarDefinition(loc, varPath, value, valType);
+                        if (Check(TokenType.DM_Equals)) {
+                            if (value != null) Warning("List doubly initialized");
 
-                    if (varDef.IsStatic && varDef.Name is "usr" or "src" or "args" or "world" or "global" or "callee" or "caller")
-                        Compiler.Emit(WarningCode.SoftReservedKeyword, loc, $"Global variable named {varDef.Name} DOES NOT override the built-in {varDef.Name}. This is a terrible idea, don't do that.");
+                            Whitespace();
+                            value = Expression();
+                            RequireExpression(ref value);
+                        } else if (Check(TokenType.DM_DoubleSquareBracketEquals)) {
+                            if (value != null) Warning("List doubly initialized");
 
-                    varDefinitions.Add(varDef);
-                    if (Check(TokenType.DM_Comma) || (isIndented && Delimiter())) {
-                        Whitespace();
-                        DMASTPath? newVarPath = Path();
+                            Whitespace();
+                            value = Expression();
+                            RequireExpression(ref value);
+                        } else if (value == null) {
+                            value = new DMASTConstantNull(loc);
+                        }
 
-                        if (newVarPath == null) {
-                            Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
+                        var valType = AsComplexTypes() ?? DMValueType.Anything;
+                        var varDef = new DMASTObjectVarDefinition(loc, varPath, value, valType);
+
+                        if (varDef.IsStatic && varDef.Name is "usr" or "src" or "args" or "world" or "global" or "callee" or "caller")
+                            Compiler.Emit(WarningCode.SoftReservedKeyword, loc, $"Global variable named {varDef.Name} DOES NOT override the built-in {varDef.Name}. This is a terrible idea, don't do that.");
+
+                        varDefinitions.Add(varDef);
+                        if (Check(TokenType.DM_Comma) || (indentCount != 0 && Delimiter())) {
+                            Whitespace();
+                            DMASTPath? newVarPath = Path();
+
+                            if (newVarPath == null) {
+                                Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
+                                break;
+                            }
+
+                            varPath = CurrentPath.AddToPath(
+                                indentCount != 0 ? newVarPath.Path.PathString
+                                        : "../" + newVarPath.Path.PathString);
+                        } else {
                             break;
                         }
-
-                        varPath = CurrentPath.AddToPath(
-                            isIndented ? newVarPath.Path.PathString
-                                       : "../" + newVarPath.Path.PathString);
-                    } else {
-                        break;
                     }
                 }
 
-                if (isIndented)
-                    Consume(TokenType.DM_Dedent, "Expected end of var block");
+                //if (isIndented != 0)
+                //    Consume(TokenType.DM_Dedent, "Expected end of var block");
 
                 return (varDefinitions.Count == 1)
                     ? varDefinitions[0]
@@ -374,6 +357,50 @@ namespace DMCompiler.Compiler.DM {
             //Empty object definition
             Compiler.VerbosePrint($"Parsed object {CurrentPath} - empty");
             return new DMASTObjectDefinition(loc, CurrentPath, null);
+        }
+
+        private List<Tuple<DreamPath, int>>? GetVariables(int layersDeep = 1) {
+            var returnValue = new List<Tuple<DreamPath, int>>();
+           // var possibleNewline = Current();
+            var pathHere = CurrentPath.ToString();
+            if(pathHere.Contains("var/")) {
+                returnValue.Add(new Tuple<DreamPath, int>(CurrentPath, 0));
+                return returnValue;
+            }
+
+            while (true) {
+                if (Newline()) {
+                    var startingPoint = Current();
+                    for (int i = 0; i < layersDeep; i++) {
+                        if(!Check(TokenType.DM_Indent)) {
+                            ReuseToken(startingPoint);
+                            CurrentPath.SetFromString(pathHere);
+                            return returnValue;
+                        }
+                    }
+                    DMASTPath? newVarPath = Path();
+                    if (newVarPath == null) {
+                        var recursiveReturn = GetVariables(layersDeep + 1);
+                        if(recursiveReturn != null) {
+                            returnValue.AddRange(recursiveReturn);
+                        }
+                    } else {
+                        CurrentPath.AddToPath(newVarPath.Path.ToString());
+                        returnValue.Add(new Tuple<DreamPath, int>(new DreamPath(CurrentPath.ToString()), layersDeep));
+                    }
+                } else if (Current().Type == TokenType.DM_Identifier) { // "var foo" instead of "var/foo"
+                    DMASTPath? newVarPath = Path();
+                    if (newVarPath == null) {
+                        CurrentPath.SetFromString(pathHere);
+                        return returnValue;
+                    }
+                    returnValue.Add(new Tuple<DreamPath, int>(new DreamPath($"{CurrentPath.ToString()}/{newVarPath.Path.ToString()}"), 0));
+                    CurrentPath.SetFromString(pathHere);
+                    return returnValue;
+                } else {
+                    return returnValue;
+                }
+            }
         }
 
         /// <summary>

@@ -423,7 +423,7 @@ public struct DreamValue : IEquatable<DreamValue> {
 
             case DreamValueType.DreamResource:
                 var rsc = MustGetValueAsDreamResource();
-                return rsc.ResourcePath ?? rsc.Id.ToString();
+                return rsc.ResourcePath ?? string.Empty;
             case DreamValueType.DreamType:
                 return MustGetValueAsType().Path;
             case DreamValueType.DreamProc:

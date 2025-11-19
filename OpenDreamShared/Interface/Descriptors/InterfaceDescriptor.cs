@@ -42,7 +42,10 @@ public partial class ElementDescriptor {
         init => _id = value;
     }
 
-    public DMFPropertyString Name => new(_name.Value);
+    public DMFPropertyString Name {
+        get => new(_name.Value);
+        init => _name = value;
+    }
 
     public DMFPropertyString Type {
         get => _type;

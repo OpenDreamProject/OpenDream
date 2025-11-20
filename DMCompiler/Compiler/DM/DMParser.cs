@@ -276,36 +276,18 @@ namespace DMCompiler.Compiler.DM {
             //Var definition(s)
             if (CurrentPath.FindElement("var") != -1) { //ZONENOTE WORK HERE
                 //DreamPath varPath = CurrentPath;
-                List<Tuple<DreamPath, int>>? pathDefinitions = GetVariables();
+                List<VariableData>? pathDefinitions = GetVariables2(loc);
                 List<DMASTObjectVarDefinition> varDefinitions = new();
                 if (pathDefinitions == null) {
                     return new DMASTInvalidStatement(CurrentLoc);
                 }
 
                 for(int i = 0; i < pathDefinitions.Count; i++) {
-                    var varPath = pathDefinitions[i].Item1;
-                    int indentCount = pathDefinitions[i].Item2;
+                    var varPath = pathDefinitions[i].variablePath;
+                    var indentCount = pathDefinitions[i].indentCount;
+                    var value = pathDefinitions[i].value;
                     while (true) {
-                        Whitespace();
-
-                        DMASTExpression? value = PathArray(ref varPath);
-
-                        if (Check(TokenType.DM_Equals)) {
-                            if (value != null) Warning("List doubly initialized");
-
-                            Whitespace();
-                            value = Expression();
-                            RequireExpression(ref value);
-                        } else if (Check(TokenType.DM_DoubleSquareBracketEquals)) {
-                            if (value != null) Warning("List doubly initialized");
-
-                            Whitespace();
-                            value = Expression();
-                            RequireExpression(ref value);
-                        } else if (value == null) {
-                            value = new DMASTConstantNull(loc);
-                        }
-
+                        value ??= new DMASTConstantNull(loc);
                         var valType = AsComplexTypes() ?? DMValueType.Anything;
                         var varDef = new DMASTObjectVarDefinition(loc, varPath, value, valType);
 
@@ -359,23 +341,201 @@ namespace DMCompiler.Compiler.DM {
             return new DMASTObjectDefinition(loc, CurrentPath, null);
         }
 
+        private List<VariableData>? GetVariables2(Location loc) {
+            int indentCount = 0;
+            var returnValue = new List<VariableData>();
+            var startingPoint = Current();
+            var intrimPoint = Current();
+            var current = new DreamPath(CurrentPath.ToString());
+
+            // edge case
+            //if(CurrentPath.Type == DreamPath.PathType.Absolute && CurrentPath.ToString().Contains("/var/")) {
+           //     returnValue.Add(new Tuple<DreamPath, int>(CurrentPath, indentCount));
+           // }
+
+            while(true) {
+                if(Newline()) {
+                    var currentType = Current().Type;
+                    if(currentType == TokenType.DM_Var || currentType == TokenType.DM_Proc) {
+                        if(CurrentPath.Elements[CurrentPath.Elements.Count() - 1] != "var") {
+                            returnValue.Add(new VariableData(CurrentPath, indentCount, new DMASTConstantNull(loc)));
+                        }
+                        ReuseToken(intrimPoint);
+                        return returnValue;
+                    }
+                    var hasEqualsOnLine = false;
+                    while(Current().Type != TokenType.Newline) {
+                        switch(Current().Type) {
+                            case TokenType.DM_Identifier:
+                                var currentLocation = Current();
+                                // Lookahead to see if this is a proc() or list() or similar
+                                Advance();
+                                if(Current().Type == TokenType.DM_LeftParenthesis) {
+                                    // We can have a `= list()` in a variable, or have a New() a line down, so we need
+                                    // unique handling for both cases
+                                    if(hasEqualsOnLine) {
+                                        continue;
+                                    } else {
+                                        returnValue.Add(new VariableData(CurrentPath, indentCount, new DMASTConstantNull(loc)));
+                                        ReuseToken(currentLocation);
+                                        ReuseToken(intrimPoint);
+                                        return returnValue;
+                                    }
+                                }
+                                current = current.AddToPath(currentLocation.Text);
+                                // Lookahead to see if this is a variable or not
+                                var isVariable = false;
+                                var outerBreak = false;
+                                DMASTExpression? value = null;
+                                while(!outerBreak) {
+                                    switch(Current().Type) {
+                                        case TokenType.DM_Indent:
+                                            outerBreak = true;
+                                            break;
+
+                                        case TokenType.DM_Dedent:
+                                            // look 1 token ahead to check if another dedent is present
+                                            var currentLocation2 = Current();
+                                            Advance();
+                                            if(Current().Type == TokenType.DM_Dedent) {
+                                                if(current.PathString.EndsWith("/var")) {
+                                                    return returnValue;
+                                                }
+                                                current = new DreamPath(current.ToString().Substring(0, current.ToString().LastIndexOf('/') + 1));
+                                            } else {
+                                                isVariable = true;
+                                            }
+                                            ReuseToken(currentLocation2);
+                                            outerBreak = true;
+                                            break;
+
+                                        case TokenType.EndOfFile:
+                                        case TokenType.DM_Identifier:
+                                        case TokenType.DM_As:
+                                        case TokenType.DM_Var:
+                                            isVariable = true;
+                                            outerBreak = true;
+                                            break;
+
+                                        case TokenType.DM_DoubleSquareBracketEquals:
+                                        case TokenType.DM_Equals:
+                                            Advance();
+                                            value = PathArray(ref CurrentPath);
+
+                                            if (value != null) {
+                                                Warning("List doubly initialized");
+                                            }
+                                            Whitespace();
+                                            value = Expression();
+                                            RequireExpression(ref value);
+
+                                            hasEqualsOnLine = true;
+                                            isVariable = true;
+                                            outerBreak = true;
+                                            break;
+
+                                        default:
+                                            Advance();
+                                            break;
+                                    }
+                                }
+                                ReuseToken(currentLocation);
+                                if(isVariable) {
+                                    //returnValue.Add(new Tuple<DreamPath, int>(current, indentCount)); // despair.
+                                    returnValue.Add(new VariableData(current, indentCount, value));
+                                    current = new DreamPath(current.ToString().Substring(0, current.ToString().LastIndexOf('/') + 1));
+                                }
+
+                                break;
+                            case TokenType.DM_Indent:
+                                indentCount++;
+                                break;
+                            case TokenType.DM_Dedent:
+                                indentCount--;
+                                current = new DreamPath(current.ToString().Substring(0, current.ToString().LastIndexOf('/') + 1));
+                                if(indentCount < 0) {
+                                    return returnValue;
+                                }
+                                break;
+                            case TokenType.EndOfFile:
+                                return returnValue;
+                        }
+                        Advance();
+                    }
+                } else if (Current().Type == TokenType.DM_Identifier) { // "var foo" instead of "var/foo"
+                    Advance();
+                    DMASTPath? newVarPath = Path();
+                    if (newVarPath == null) {
+                        return returnValue;
+                    }
+                    Whitespace();
+                    DMASTExpression? value = PathArray(ref CurrentPath);
+                    if (Check(TokenType.DM_Equals)) {
+                        if (value != null) Warning("List doubly initialized");
+
+                        Whitespace();
+                        value = Expression();
+                        RequireExpression(ref value);
+                    } else if (Check(TokenType.DM_DoubleSquareBracketEquals)) {
+                        if (value != null) Warning("List doubly initialized");
+
+                        Whitespace();
+                        value = Expression();
+                        RequireExpression(ref value);
+                    } else if (value == null) {
+                        value = new DMASTConstantNull(loc);
+                    }
+
+                    //returnValue.Add(new Tuple<DreamPath, int>(new DreamPath($"{CurrentPath.ToString()}/{newVarPath.Path.ToString()}"), 0));
+                    returnValue.Add(new VariableData(new DreamPath($"{CurrentPath.ToString()}/{newVarPath.Path.ToString()}"), 0, value));
+                    return returnValue;
+                } else if (CurrentPath.Type == DreamPath.PathType.Absolute) {
+                    Whitespace();
+                    DMASTExpression? value = PathArray(ref CurrentPath);
+                    if (Check(TokenType.DM_Equals)) {
+                        if (value != null) Warning("List doubly initialized");
+
+                        Whitespace();
+                        value = Expression();
+                        RequireExpression(ref value);
+                    } else if (Check(TokenType.DM_DoubleSquareBracketEquals)) {
+                        if (value != null) Warning("List doubly initialized");
+
+                        Whitespace();
+                        value = Expression();
+                        RequireExpression(ref value);
+                    } else if (value == null) {
+                        value = new DMASTConstantNull(loc);
+                    }
+                    //returnValue.Add(new Tuple<DreamPath, int>(new DreamPath($"{CurrentPath.ToString()}"), 0));
+                    returnValue.Add(new VariableData(new DreamPath($"{CurrentPath.ToString()}"), 0, value));
+                    return returnValue;
+                } else {
+                    return returnValue;
+                }
+                intrimPoint = Current();
+            }
+        }
+
         private List<Tuple<DreamPath, int>>? GetVariables(int layersDeep = 1) {
             var returnValue = new List<Tuple<DreamPath, int>>();
            // var possibleNewline = Current();
             var pathHere = CurrentPath.ToString();
-            if(pathHere.Contains("var/")) {
+            /*if(pathHere.Contains("var/")) {
                 returnValue.Add(new Tuple<DreamPath, int>(CurrentPath, 0));
                 return returnValue;
-            }
+            }*/
 
             while (true) {
                 if (Newline()) {
                     var startingPoint = Current();
-                    for (int i = 0; i < layersDeep; i++) {
-                        if(!Check(TokenType.DM_Indent)) {
-                            ReuseToken(startingPoint);
-                            CurrentPath.SetFromString(pathHere);
-                            return returnValue;
+                    if(Current().Type != TokenType.DM_Identifier) {
+                        for (int i = 0; i < layersDeep; i++) {
+                            if(!Check(TokenType.DM_Indent)) {
+                                ReuseToken(startingPoint);
+                                CurrentPath.SetFromString(pathHere);
+                                return returnValue;
+                            }
                         }
                     }
                     DMASTPath? newVarPath = Path();
@@ -385,8 +545,34 @@ namespace DMCompiler.Compiler.DM {
                             returnValue.AddRange(recursiveReturn);
                         }
                     } else {
-                        CurrentPath.AddToPath(newVarPath.Path.ToString());
-                        returnValue.Add(new Tuple<DreamPath, int>(new DreamPath(CurrentPath.ToString()), layersDeep));
+                        var lookAheadStartingPoint = Current();
+                        while(Current().Type != TokenType.Newline && Current().Type != TokenType.EndOfFile) {
+                            Advance();
+                        }
+                        if(Current().Type == TokenType.EndOfFile) {
+                            CurrentPath = CurrentPath.AddToPath(newVarPath.Path.ToString());
+                            returnValue.Add(new Tuple<DreamPath, int>(new DreamPath(CurrentPath.ToString()), layersDeep));
+                            return returnValue;
+                        }
+                        Newline();
+
+                        var stopped = false;
+                        for(int i = 0; i < (layersDeep + 0); i++) {
+                            if(!Check(TokenType.DM_Indent)) {
+                                CurrentPath = CurrentPath.AddToPath(newVarPath.Path.ToString());
+                                returnValue.Add(new Tuple<DreamPath, int>(new DreamPath(CurrentPath.ToString()), layersDeep));
+                                ReuseToken(lookAheadStartingPoint);
+                                stopped = true;
+                                break;
+                            }
+                        }
+                        ReuseToken(lookAheadStartingPoint);
+                        if(!stopped) {
+                            var recursiveReturn = GetVariables(layersDeep + 1);
+                            if(recursiveReturn != null) {
+                                returnValue.AddRange(recursiveReturn);
+                            }
+                        }
                     }
                 } else if (Current().Type == TokenType.DM_Identifier) { // "var foo" instead of "var/foo"
                     DMASTPath? newVarPath = Path();

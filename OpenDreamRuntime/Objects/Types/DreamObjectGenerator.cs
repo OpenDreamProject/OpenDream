@@ -77,7 +77,7 @@ public sealed class DreamObjectGenerator(DreamObjectDefinition objectDefinition)
             1 => GeneratorDistribution.Normal,
             2 => GeneratorDistribution.Linear,
             3 => GeneratorDistribution.Square,
-            _ => GeneratorDistribution.Normal // Default to NORMAL_RAND
+            _ => GeneratorDistribution.Uniform // Default to UNIFORM_RAND
         };
     }
 }

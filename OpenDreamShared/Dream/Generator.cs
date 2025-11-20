@@ -50,6 +50,10 @@ public sealed class GeneratorNum(float low, float high, GeneratorDistribution di
     public Vector3 GenerateVector3(IRobustRandom random) {
         return new Vector3(Generate(random));
     }
+
+    public override string ToString() {
+        return $"generator(\"num\", {low}, {high}, {distribution})";
+    }
 }
 
 [Serializable, NetSerializable]
@@ -64,6 +68,10 @@ public sealed class GeneratorVector2(Vector2 low, Vector2 high, GeneratorDistrib
         var vector = GenerateVector2(random);
 
         return new Vector3(vector.X, vector.Y, 0f);
+    }
+
+    public override string ToString() {
+        return $"generator(\"vector\", {low}, {high}, {distribution})";
     }
 }
 
@@ -80,6 +88,10 @@ public sealed class GeneratorVector3(Vector3 low, Vector3 high, GeneratorDistrib
     public Vector3 GenerateVector3(IRobustRandom random) {
         return Vector3.Lerp(low, high, IGenerator.GenerateNum(random, 0f, 1f, distribution));
     }
+
+    public override string ToString() {
+        return $"generator(\"vector\", {low}, {high}, {distribution})";
+    }
 }
 
 [Serializable, NetSerializable]
@@ -95,6 +107,10 @@ public sealed class GeneratorBox2(Vector2 low, Vector2 high, GeneratorDistributi
         var vector = GenerateVector2(random);
 
         return new Vector3(vector.X, vector.Y, 0f);
+    }
+
+    public override string ToString() {
+        return $"generator(\"box\", {low}, {high}, {distribution})";
     }
 }
 
@@ -113,6 +129,10 @@ public sealed class GeneratorBox3(Vector3 low, Vector3 high, GeneratorDistributi
 
         return new Vector3(x, y, z);
     }
+
+    public override string ToString() {
+        return $"generator(\"box\", {low}, {high}, {distribution})";
+    }
 }
 
 [Serializable, NetSerializable]
@@ -128,6 +148,10 @@ public sealed class GeneratorCircle(float low, float high, GeneratorDistribution
         var vector = GenerateVector2(random);
 
         return new Vector3(vector.X, vector.Y, 0f);
+    }
+
+    public override string ToString() {
+        return $"generator(\"circle\", {low}, {high}, {distribution})";
     }
 }
 
@@ -150,6 +174,10 @@ public sealed class GeneratorSphere(float low, float high, GeneratorDistribution
             MathF.Cos(phi) * r
         );
     }
+
+    public override string ToString() {
+        return $"generator(\"sphere\", {low}, {high}, {distribution})";
+    }
 }
 
 [Serializable, NetSerializable]
@@ -170,6 +198,10 @@ public sealed class GeneratorSquare(Vector2 low, Vector2 high, GeneratorDistribu
         var vector = GenerateVector2(random);
 
         return new Vector3(vector.X, vector.Y, 0f);
+    }
+
+    public override string ToString() {
+        return $"generator(\"square\", {low}, {high}, {distribution})";
     }
 }
 
@@ -196,5 +228,9 @@ public sealed class GeneratorCube(Vector3 low, Vector3 high, GeneratorDistributi
                 : IGenerator.GenerateNum(random, low.Z, high.Z, distribution);
 
         return new(x, y, z);
+    }
+
+    public override string ToString() {
+        return $"generator(\"cube\", {low}, {high}, {distribution})";
     }
 }

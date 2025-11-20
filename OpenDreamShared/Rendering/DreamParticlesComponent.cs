@@ -20,29 +20,28 @@ public sealed partial class DreamParticlesComponent : Component {
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public Color[] Gradient = [];
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public Matrix3x2 Transform;
     [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public ImmutableAppearance[] TextureList = [];
-    [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public IGeneratorNum Lifespan;
-    [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public IGeneratorNum FadeIn;
-    [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public IGeneratorNum FadeOut;
+    [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public IGeneratorNum? Lifespan;
+    [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public IGeneratorNum? FadeIn;
+    [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public IGeneratorNum? FadeOut;
 
-    [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public IGeneratorVector SpawnPosition;
+    [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public IGeneratorVector? SpawnPosition;
 
 	//Starting velocity of the particles
-    [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public IGeneratorVector SpawnVelocity;
+    [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public IGeneratorVector? SpawnVelocity;
 
 	//Acceleration applied to the particles per second
-    [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public IGeneratorVector Acceleration;
-    [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public IGeneratorVector Friction;
+    [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public IGeneratorVector? Friction;
 
 	//Scaling applied to the particles in (x,y)
-    [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public IGeneratorVector Scale;
+    [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public IGeneratorVector Scale = new GeneratorNum(1);
 
 	//Rotation applied to the particles in degrees
-    [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public IGeneratorNum Rotation;
+    [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public IGeneratorNum? Rotation;
 
 	//Increase in scale per second
-    [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public IGeneratorVector Growth;
+    [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public IGeneratorVector? Growth;
 
 	//Change in rotation per second
-    [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public IGeneratorNum Spin;
-    [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public IGeneratorVector Drift;
+    [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public IGeneratorNum? Spin;
+    [ViewVariables(VVAccess.ReadWrite), AutoNetworkedField] public IGeneratorVector? Drift;
 }

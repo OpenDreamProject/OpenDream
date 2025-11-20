@@ -13,13 +13,13 @@ public sealed class DreamObjectParticles : DreamObject {
         ParticlesComponent = new DreamParticlesComponent();
 
         //populate component with settings from type
-        foreach (KeyValuePair<string,DreamValue> kv in objectDefinition.Variables) {
+        foreach (KeyValuePair<string,DreamValue> kv in ObjectDefinition.Variables) {
             if (kv.Key is not ("parent_type" or "type" or "vars"))
                 SetVar(kv.Key, kv.Value);
         }
     }
 
-     protected override void SetVar(string varName, DreamValue value) {
+    protected override void SetVar(string varName, DreamValue value) {
         //good news, these only update on assignment, so we don't need to track the generator, list, or matrix objects
         switch (varName) {
             case "width": //num
@@ -172,10 +172,10 @@ public sealed class DreamObjectParticles : DreamObject {
                     ParticlesComponent.SpawnPosition = new GeneratorNum(floatValue);
                 } else if (value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var generator)) {
                     ParticlesComponent.SpawnPosition = generator.RequireType<IGeneratorVector>();
+                } else if (DreamObjectVector.TryCreateFromValue(value, ObjectTree, out var vector)) {
+                    ParticlesComponent.SpawnPosition = new GeneratorVector2(vector.AsVector2);
                 } else {
-                    var spawnPosition = DreamObjectVector.CreateFromValue(value, ObjectTree);
-
-                    ParticlesComponent.SpawnPosition = new GeneratorVector3(spawnPosition.AsVector3);
+                    ParticlesComponent.SpawnPosition = new GeneratorVector2(Vector2.Zero);
                 }
 
                 break;
@@ -184,10 +184,10 @@ public sealed class DreamObjectParticles : DreamObject {
                     ParticlesComponent.SpawnVelocity = new GeneratorNum(floatValue);
                 } else if (value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var generator)) {
                     ParticlesComponent.SpawnVelocity = generator.RequireType<IGeneratorVector>();
+                } else if (DreamObjectVector.TryCreateFromValue(value, ObjectTree, out var vector)) {
+                    ParticlesComponent.SpawnVelocity = new GeneratorVector2(vector.AsVector2);
                 } else {
-                    var spawnVelocity = DreamObjectVector.CreateFromValue(value, ObjectTree);
-
-                    ParticlesComponent.SpawnVelocity = new GeneratorVector3(spawnVelocity.AsVector3);
+                    ParticlesComponent.SpawnVelocity = new GeneratorVector2(Vector2.Zero);
                 }
 
                 break;
@@ -196,10 +196,10 @@ public sealed class DreamObjectParticles : DreamObject {
                     ParticlesComponent.Scale = new GeneratorNum(floatValue);
                 } else if (value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var generator)) {
                     ParticlesComponent.Scale = generator.RequireType<IGeneratorVector>();
+                } else if (DreamObjectVector.TryCreateFromValue(value, ObjectTree, out var vector)) {
+                    ParticlesComponent.Scale = new GeneratorVector2(vector.AsVector2);
                 } else {
-                    var scale = DreamObjectVector.CreateFromValue(value, ObjectTree);
-
-                    ParticlesComponent.Scale = new GeneratorVector2(scale.AsVector2);
+                    ParticlesComponent.Scale = new GeneratorVector2(Vector2.One);
                 }
 
                 break;
@@ -208,10 +208,10 @@ public sealed class DreamObjectParticles : DreamObject {
                     ParticlesComponent.Growth = new GeneratorNum(floatValue);
                 } else if (value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var generator)) {
                     ParticlesComponent.Growth = generator.RequireType<IGeneratorVector>();
+                } else if (DreamObjectVector.TryCreateFromValue(value, ObjectTree, out var vector)) {
+                    ParticlesComponent.Growth = new GeneratorVector2(vector.AsVector2);
                 } else {
-                    var growth = DreamObjectVector.CreateFromValue(value, ObjectTree);
-
-                    ParticlesComponent.Growth = new GeneratorVector2(growth.AsVector2);
+                    ParticlesComponent.Growth = new GeneratorVector2(Vector2.Zero);
                 }
 
                 break;
@@ -236,10 +236,10 @@ public sealed class DreamObjectParticles : DreamObject {
                     ParticlesComponent.Friction = new GeneratorNum(floatValue);
                 } else if (value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var generator)) {
                     ParticlesComponent.Friction = generator.RequireType<IGeneratorVector>();
+                } else if (DreamObjectVector.TryCreateFromValue(value, ObjectTree, out var vector)) {
+                    ParticlesComponent.Friction = new GeneratorVector2(vector.AsVector2);
                 } else {
-                    var friction = DreamObjectVector.CreateFromValue(value, ObjectTree);
-
-                    ParticlesComponent.Friction = new GeneratorVector3(friction.AsVector3);
+                    ParticlesComponent.Friction = new GeneratorVector2(Vector2.Zero);
                 }
 
                 break;
@@ -248,10 +248,10 @@ public sealed class DreamObjectParticles : DreamObject {
                     ParticlesComponent.Drift = new GeneratorNum(floatValue);
                 } else if (value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var generator)) {
                     ParticlesComponent.Drift = generator.RequireType<IGeneratorVector>();
+                } else if (DreamObjectVector.TryCreateFromValue(value, ObjectTree, out var vector)) {
+                    ParticlesComponent.Drift = new GeneratorVector2(vector.AsVector2);
                 } else {
-                    var drift = DreamObjectVector.CreateFromValue(value, ObjectTree);
-
-                    ParticlesComponent.Drift = new GeneratorVector3(drift.AsVector3);
+                    ParticlesComponent.Drift = new GeneratorVector2(Vector2.Zero);
                 }
 
                 break;

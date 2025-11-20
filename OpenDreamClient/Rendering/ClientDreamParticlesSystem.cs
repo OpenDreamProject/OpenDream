@@ -56,10 +56,11 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem {
             textureFunc = () => _random.Pick(icons).GetTexture(null!, null!, _defaultRenderMetaData, null, null);
         }
 
-        var result = new ParticleSystemArgs(textureFunc, new Vector2i(component.Width, component.Height), (uint)component.Count, component.Spawning) {
-            Lifespan = () => component.Lifespan.Generate(_random),
-            Fadein = () => component.FadeIn.Generate(_random),
-            Fadeout = () => component.FadeOut.Generate(_random),
+        var perTick = (1f / 10f); // "Tick" refers to a BYOND standard tick of 0.1s. --DM Reference
+        var result = new ParticleSystemArgs(textureFunc, new Vector2i(component.Width, component.Height), (uint)component.Count, component.Spawning / perTick) {
+            Lifespan = () => (component.Lifespan?.Generate(_random) ?? 1f) * perTick,
+            Fadein = () => (component.FadeIn?.Generate(_random) ?? 0f) * perTick,
+            Fadeout = () => (component.FadeOut?.Generate(_random) ?? 0f) * perTick,
             Color = component.Gradient.Length > 0
                 ? lifetime => {
                     var colorIndex = (int)(lifetime * component.Gradient.Length);
@@ -67,14 +68,19 @@ public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem {
                     return component.Gradient[colorIndex];
                 }
                 : _ => Color.White,
-            Acceleration = (_ , velocity) => component.Acceleration.GenerateVector3(_random) + component.Drift.GenerateVector3(_random) - velocity*component.Friction.GenerateVector3(_random),
-            SpawnPosition = () => component.SpawnPosition.GenerateVector3(_random),
-            SpawnVelocity = () => component.SpawnVelocity.GenerateVector3(_random),
-            Transform = _ => {
+            Acceleration = (_, velocity) => { // TODO: Acceleration needs to only update every tick
+                var drift = (component.Drift?.GenerateVector3(_random) ?? Vector3.Zero);
+                var friction = (component.Friction?.GenerateVector3(_random) ?? Vector3.Zero); // TODO: Only calculated once per particle
+
+                return drift - (velocity * friction);
+            },
+            SpawnPosition = () => component.SpawnPosition?.GenerateVector3(_random) ?? Vector3.Zero,
+            SpawnVelocity = () => component.SpawnVelocity?.GenerateVector3(_random) ?? Vector3.Zero,
+            Transform = _ => { // TODO: Needs to only be performed every tick
                 var scale = component.Scale.GenerateVector2(_random);
-                var rotation = component.Rotation.Generate(_random);
-                var growth = component.Growth.GenerateVector2(_random);
-                var spin = component.Spin.Generate(_random);
+                var rotation = component.Rotation?.Generate(_random) ?? 0f;
+                var growth = component.Growth?.GenerateVector2(_random) ?? Vector2.Zero;
+                var spin = component.Spin?.Generate(_random) ?? 0f;
                 return Matrix3x2.CreateScale(scale.X + growth.X, scale.Y + growth.Y) *
                        Matrix3x2.CreateRotation(rotation + spin);
             },

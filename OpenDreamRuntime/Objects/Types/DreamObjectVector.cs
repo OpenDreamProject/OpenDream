@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using OpenDreamRuntime.Procs;
 
@@ -290,11 +291,13 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
         }
     }
 
-    public static DreamObjectVector CreateFromValue(DreamValue value, DreamObjectTree tree) {
-        if (value.TryGetValueAsDreamObject<DreamObjectVector>(out var vector))
-            return vector;
-
-        vector = tree.CreateObject<DreamObjectVector>(tree.Vector);
+    /// <summary>
+    /// Attempt to create a <see cref="DreamObjectVector"/> from a DreamValue<br/>
+    /// A vector can be created from a list containing 2 or 3 numbers
+    /// </summary>
+    public static bool TryCreateFromValue(DreamValue value, DreamObjectTree tree, [NotNullWhen(true)] out DreamObjectVector? vector) {
+        if (value.TryGetValueAsDreamObject(out vector))
+            return true;
 
         if (value.TryGetValueAsDreamList(out var list)) {
             var length = list.GetLength();
@@ -304,21 +307,34 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
                 var y = list.GetValue(new(2));
                 var z = list.GetValue(new(3));
 
+                vector = tree.CreateObject<DreamObjectVector>(tree.Vector);
                 vector.Initialize(new(x, y, z));
-            } else if (length == 2) {
+                return true;
+            }
+
+            if (length == 2) {
                 var x = list.GetValue(new(1));
                 var y = list.GetValue(new(2));
 
+                vector = tree.CreateObject<DreamObjectVector>(tree.Vector);
                 vector.Initialize(new(x, y));
-            } else {
-                // Fall back to a Vector2.Zero
-                vector.Initialize(new(new(0f), new(0f)));
+                return true;
             }
-        } else {
-            // Fall back to a Vector2.Zero
-            vector.Initialize(new(new(0f), new(0f)));
         }
 
+        return false;
+    }
+
+    /// <summary>
+    /// <see cref="TryCreateFromValue"/> but falls back to a zero vector if it fails
+    /// </summary>
+    public static DreamObjectVector CreateFromValue(DreamValue value, DreamObjectTree tree) {
+        if (TryCreateFromValue(value, tree, out var vector))
+            return vector;
+
+        // Fallback to Vector2.Zero
+        vector = tree.CreateObject<DreamObjectVector>(tree.Vector);
+        vector.Initialize(new(new(0f), new(0f)));
         return vector;
     }
 

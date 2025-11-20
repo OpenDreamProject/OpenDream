@@ -286,30 +286,19 @@ namespace DMCompiler.Compiler.DM {
                     var varPath = pathDefinitions[i].variablePath;
                     var indentCount = pathDefinitions[i].indentCount;
                     var value = pathDefinitions[i].value;
-                    while (true) {
-                        value ??= new DMASTConstantNull(loc);
-                        var valType = AsComplexTypes() ?? DMValueType.Anything;
-                        var varDef = new DMASTObjectVarDefinition(loc, varPath, value, valType);
+                    var secondaryVarPath = pathDefinitions[i].secondaryVarPath;
+                    value ??= new DMASTConstantNull(loc);
+                    var valType = AsComplexTypes() ?? DMValueType.Anything;
+                    var varDef = new DMASTObjectVarDefinition(loc, varPath, value, valType);
 
-                        if (varDef.IsStatic && varDef.Name is "usr" or "src" or "args" or "world" or "global" or "callee" or "caller")
-                            Compiler.Emit(WarningCode.SoftReservedKeyword, loc, $"Global variable named {varDef.Name} DOES NOT override the built-in {varDef.Name}. This is a terrible idea, don't do that.");
+                    if (varDef.IsStatic && varDef.Name is "usr" or "src" or "args" or "world" or "global" or "callee" or "caller")
+                        Compiler.Emit(WarningCode.SoftReservedKeyword, loc, $"Global variable named {varDef.Name} DOES NOT override the built-in {varDef.Name}. This is a terrible idea, don't do that.");
 
-                        varDefinitions.Add(varDef);
-                        if (Check(TokenType.DM_Comma) || (indentCount != 0 && Delimiter())) {
-                            Whitespace();
-                            DMASTPath? newVarPath = Path();
-
-                            if (newVarPath == null) {
-                                Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
-                                break;
-                            }
-
-                            varPath = CurrentPath.AddToPath(
-                                indentCount != 0 ? newVarPath.Path.PathString
-                                        : "../" + newVarPath.Path.PathString);
-                        } else {
-                            break;
-                        }
+                    varDefinitions.Add(varDef);
+                    if (secondaryVarPath != null) {
+                        varPath = CurrentPath.AddToPath(
+                            indentCount != 0 ? secondaryVarPath.Path.PathString
+                                    : "../" + secondaryVarPath.Path.PathString);
                     }
                 }
 
@@ -364,6 +353,7 @@ namespace DMCompiler.Compiler.DM {
                         return returnValue;
                     }
                     var hasEqualsOnLine = false;
+                    DMASTPath? secondaryVarPath = null;
                     while(Current().Type != TokenType.Newline) {
                         switch(Current().Type) {
                             case TokenType.DM_Identifier:
@@ -429,6 +419,20 @@ namespace DMCompiler.Compiler.DM {
                                             value = Expression();
                                             RequireExpression(ref value);
 
+                                            var tempToken1 = Current();
+                                            if (Check(TokenType.DM_Comma) || (indentCount != 0 && Delimiter())) {
+                                                Whitespace();
+                                                var tempToken2 = Current();
+                                                secondaryVarPath = Path();
+
+                                                if (secondaryVarPath == null) {
+                                                    Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
+                                                    break;
+                                                }
+                                                ReuseToken(tempToken2);
+                                                ReuseToken(tempToken1);
+                                            }
+
                                             hasEqualsOnLine = true;
                                             isVariable = true;
                                             outerBreak = true;
@@ -442,7 +446,7 @@ namespace DMCompiler.Compiler.DM {
                                 ReuseToken(currentLocation);
                                 if(isVariable) {
                                     //returnValue.Add(new Tuple<DreamPath, int>(current, indentCount)); // despair.
-                                    returnValue.Add(new VariableData(current, indentCount, value));
+                                    returnValue.Add(new VariableData(current, indentCount, value, secondaryVarPath));
                                     current = new DreamPath(current.ToString().Substring(0, current.ToString().LastIndexOf('/') + 1));
                                 }
 
@@ -463,52 +467,90 @@ namespace DMCompiler.Compiler.DM {
                         Advance();
                     }
                 } else if (Current().Type == TokenType.DM_Identifier) { // "var foo" instead of "var/foo"
-                    Advance();
+                    //Advance();
                     DMASTPath? newVarPath = Path();
                     if (newVarPath == null) {
                         return returnValue;
                     }
                     Whitespace();
                     DMASTExpression? value = PathArray(ref CurrentPath);
+                    DMASTPath? secondaryVarPath = null;
                     if (Check(TokenType.DM_Equals)) {
                         if (value != null) Warning("List doubly initialized");
 
                         Whitespace();
                         value = Expression();
                         RequireExpression(ref value);
+                        if (Check(TokenType.DM_Comma) || (indentCount != 0 && Delimiter())) {
+                            Whitespace();
+                            secondaryVarPath = Path();
+
+                            if (secondaryVarPath == null) {
+                                Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
+                                return returnValue;
+                            }
+                        }
                     } else if (Check(TokenType.DM_DoubleSquareBracketEquals)) {
                         if (value != null) Warning("List doubly initialized");
 
                         Whitespace();
                         value = Expression();
                         RequireExpression(ref value);
+                        if (Check(TokenType.DM_Comma) || (indentCount != 0 && Delimiter())) {
+                            Whitespace();
+                            secondaryVarPath = Path();
+
+                            if (secondaryVarPath == null) {
+                                Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
+                                return returnValue;
+                            }
+                        }
                     } else if (value == null) {
                         value = new DMASTConstantNull(loc);
                     }
 
                     //returnValue.Add(new Tuple<DreamPath, int>(new DreamPath($"{CurrentPath.ToString()}/{newVarPath.Path.ToString()}"), 0));
-                    returnValue.Add(new VariableData(new DreamPath($"{CurrentPath.ToString()}/{newVarPath.Path.ToString()}"), 0, value));
+                    returnValue.Add(new VariableData(new DreamPath($"{CurrentPath.ToString()}/{newVarPath.Path.ToString()}"), 0, value, secondaryVarPath));
                     return returnValue;
                 } else if (CurrentPath.Type == DreamPath.PathType.Absolute) {
                     Whitespace();
                     DMASTExpression? value = PathArray(ref CurrentPath);
+                    DMASTPath? secondaryVarPath = null;
                     if (Check(TokenType.DM_Equals)) {
                         if (value != null) Warning("List doubly initialized");
 
                         Whitespace();
                         value = Expression();
                         RequireExpression(ref value);
+                        if (Check(TokenType.DM_Comma) || (indentCount != 0 && Delimiter())) {
+                            Whitespace();
+                            secondaryVarPath = Path();
+
+                            if (secondaryVarPath == null) {
+                                Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
+                                return returnValue;
+                            }
+                        }
                     } else if (Check(TokenType.DM_DoubleSquareBracketEquals)) {
                         if (value != null) Warning("List doubly initialized");
 
                         Whitespace();
                         value = Expression();
                         RequireExpression(ref value);
+                        if (Check(TokenType.DM_Comma) || (indentCount != 0 && Delimiter())) {
+                            Whitespace();
+                            secondaryVarPath = Path();
+
+                            if (secondaryVarPath == null) {
+                                Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
+                                return returnValue;
+                            }
+                        }
                     } else if (value == null) {
                         value = new DMASTConstantNull(loc);
                     }
                     //returnValue.Add(new Tuple<DreamPath, int>(new DreamPath($"{CurrentPath.ToString()}"), 0));
-                    returnValue.Add(new VariableData(new DreamPath($"{CurrentPath.ToString()}"), 0, value));
+                    returnValue.Add(new VariableData(new DreamPath($"{CurrentPath.ToString()}"), 0, value, secondaryVarPath));
                     return returnValue;
                 } else {
                     return returnValue;

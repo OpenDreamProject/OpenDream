@@ -391,21 +391,11 @@ public partial class DMParser {
 
     public struct VariableData {
         public DreamPath variablePath;
-        public int indentCount;
         public DMASTExpression? value;
-        public DMASTPath? secondaryVarPath;
 
         public VariableData() {}
-        public VariableData(DreamPath variablePath, int indentCount, DMASTExpression? value, DMASTPath? secondaryVarPath) {
+        public VariableData(DreamPath variablePath, DMASTExpression? value) {
             this.variablePath = variablePath;
-            this.indentCount = indentCount;
-            this.value = value;
-            this.secondaryVarPath = secondaryVarPath;
-        }
-
-        public VariableData(DreamPath variablePath, int indentCount, DMASTExpression? value) {
-            this.variablePath = variablePath;
-            this.indentCount = indentCount;
             this.value = value;
         }
 

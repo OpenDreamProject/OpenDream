@@ -180,8 +180,6 @@ public sealed class DreamObjectTree {
             return new DreamObjectArea(type.ObjectDefinition);
         if (type.ObjectDefinition.IsSubtypeOf(Atom))
             return new DreamObjectAtom(type.ObjectDefinition);
-        if (type.ObjectDefinition.IsSubtypeOf(Generator))
-            throw new Exception("Cannot create objects of type /generator without the generator() proc");
         if (type.ObjectDefinition.IsSubtypeOf(Particles))
             return new DreamObjectParticles(type.ObjectDefinition);
         if (type.ObjectDefinition.IsSubtypeOf(Client))
@@ -194,6 +192,8 @@ public sealed class DreamObjectTree {
             return new DreamObjectCallee(type.ObjectDefinition);
         if (type.ObjectDefinition.IsSubtypeOf(Vector))
             return new DreamObjectVector(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Generator))
+            return new DreamObjectGenerator(type.ObjectDefinition);
 
         return new DreamObject(type.ObjectDefinition);
     }

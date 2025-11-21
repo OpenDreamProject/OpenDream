@@ -388,4 +388,16 @@ public partial class DMParser {
             }
         }
     }
+
+    public struct VariableData {
+        public DreamPath variablePath;
+        public DMASTExpression? value;
+
+        public VariableData() {}
+        public VariableData(DreamPath variablePath, DMASTExpression? value) {
+            this.variablePath = variablePath;
+            this.value = value;
+        }
+
+    }
 }

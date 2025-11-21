@@ -7,6 +7,7 @@ namespace DMCompiler.Compiler.DM {
     public partial class DMParser(DMCompiler compiler, DMLexer lexer) : Parser<Token>(compiler, lexer) {
         protected Location CurrentLoc => Current().Location;
         protected DreamPath CurrentPath = DreamPath.Root;
+        protected Dictionary<string, List<Token>> rollbackListeners = new Dictionary<string, List<Token>>();
 
         private bool _allowVarDeclExpression;
 
@@ -202,7 +203,6 @@ namespace DMCompiler.Compiler.DM {
 
         protected DMASTStatement? Statement() {
             var loc = CurrentLoc;
-
             if (Current().Type == TokenType.DM_Semicolon) { // A lone semicolon creates a "null statement" (like C)
                 // Note that we do not consume the semicolon here
                 return new DMASTNullStatement(loc);
@@ -275,55 +275,16 @@ namespace DMCompiler.Compiler.DM {
 
             //Var definition(s)
             if (CurrentPath.FindElement("var") != -1) {
-                bool isIndented = false;
-                DreamPath varPath = CurrentPath;
+                List<VariableData>? pathDefinitions = GetVariables3(loc);
                 List<DMASTObjectVarDefinition> varDefinitions = new();
-
-                var possibleNewline = Current();
-                if (Newline()) {
-                    if (Check(TokenType.DM_Indent)) {
-                        isIndented = true;
-                        DMASTPath? newVarPath = Path();
-                        if (newVarPath == null) {
-                            Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
-                            return new DMASTInvalidStatement(CurrentLoc);
-                        }
-
-                        varPath = CurrentPath.AddToPath(newVarPath.Path.PathString);
-                    } else {
-                        ReuseToken(possibleNewline);
-                    }
-                } else if (Current().Type == TokenType.DM_Identifier) { // "var foo" instead of "var/foo"
-                    DMASTPath? newVarPath = Path();
-                    if (newVarPath == null) {
-                        Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
-                        return new DMASTInvalidStatement(CurrentLoc);
-                    }
-
-                    varPath = CurrentPath.AddToPath(newVarPath.Path.PathString);
+                if (pathDefinitions == null) {
+                    return new DMASTInvalidStatement(CurrentLoc);
                 }
 
-                while (true) {
-                    Whitespace();
-
-                    DMASTExpression? value = PathArray(ref varPath);
-
-                    if (Check(TokenType.DM_Equals)) {
-                        if (value != null) Warning("List doubly initialized");
-
-                        Whitespace();
-                        value = Expression();
-                        RequireExpression(ref value);
-                    } else if (Check(TokenType.DM_DoubleSquareBracketEquals)) {
-                        if (value != null) Warning("List doubly initialized");
-
-                        Whitespace();
-                        value = Expression();
-                        RequireExpression(ref value);
-                    } else if (value == null) {
-                        value = new DMASTConstantNull(loc);
-                    }
-
+                for(int i = 0; i < pathDefinitions.Count; i++) {
+                    var varPath = pathDefinitions[i].variablePath;
+                    var value = pathDefinitions[i].value;
+                    value ??= new DMASTConstantNull(loc);
                     var valType = AsComplexTypes() ?? DMValueType.Anything;
                     var varDef = new DMASTObjectVarDefinition(loc, varPath, value, valType);
 
@@ -331,25 +292,7 @@ namespace DMCompiler.Compiler.DM {
                         Compiler.Emit(WarningCode.SoftReservedKeyword, loc, $"Global variable named {varDef.Name} DOES NOT override the built-in {varDef.Name}. This is a terrible idea, don't do that.");
 
                     varDefinitions.Add(varDef);
-                    if (Check(TokenType.DM_Comma) || (isIndented && Delimiter())) {
-                        Whitespace();
-                        DMASTPath? newVarPath = Path();
-
-                        if (newVarPath == null) {
-                            Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
-                            break;
-                        }
-
-                        varPath = CurrentPath.AddToPath(
-                            isIndented ? newVarPath.Path.PathString
-                                       : "../" + newVarPath.Path.PathString);
-                    } else {
-                        break;
-                    }
                 }
-
-                if (isIndented)
-                    Consume(TokenType.DM_Dedent, "Expected end of var block");
 
                 return (varDefinitions.Count == 1)
                     ? varDefinitions[0]
@@ -374,6 +317,616 @@ namespace DMCompiler.Compiler.DM {
             //Empty object definition
             Compiler.VerbosePrint($"Parsed object {CurrentPath} - empty");
             return new DMASTObjectDefinition(loc, CurrentPath, null);
+        }
+
+        private List<VariableData>? GetVariables3(Location loc) {
+            var returnValue = new List<VariableData>();
+            var indentCount = 0;
+            var firstSearchOnLine = true;
+            var firstSearch = true;
+
+            while(true) {
+                switch(Current().Type) {
+                    case TokenType.DM_Indent:
+                        indentCount++;
+                        break;
+
+                    case TokenType.DM_Dedent:
+                        indentCount--;
+                        if(CurrentPath.Elements[CurrentPath.Elements.Length - 1] != "var" && CurrentPath.Elements.Length > 1) {
+                            CurrentPath = new DreamPath(CurrentPath.PathString[..^(CurrentPath.Elements[CurrentPath.Elements.Length - 1].Length + 1)]); // remove the last element in the path
+                        }
+                        if(indentCount <= 0) {
+                            Advance();
+                            return returnValue;
+                        }
+                        break;
+
+                    case TokenType.DM_Identifier:
+                        if(IsIdentifierProc(Current())) {
+                            break;
+                        }
+
+                        if(IsIdentifierVariable(Current())) {
+                            DreamPath variablePath = GetIdentifierPath(Current());
+                            returnValue.Add(new VariableData(new DreamPath($"{CurrentPath}{variablePath}"), GetIdentifierValue(Current(), loc, indentCount)));
+                        } else { // we're a path part instead
+                            CurrentPath = CurrentPath.AddToPath(Current().Text);
+                        }
+                        break;
+
+                    case TokenType.DM_Proc:
+                    case TokenType.EndOfFile:
+                        return returnValue;
+
+                    case TokenType.DM_Var:
+                        if(firstSearchOnLine) { // "var foo" (and var/foo for every line after the first)
+                            Advance();
+                            Whitespace();
+                            if(!firstSearch) {
+                                if(Current().Type == TokenType.DM_Slash) {
+                                    Advance();
+                                }
+                            }
+                            if(Current().Type == TokenType.DM_Identifier) {
+                                returnValue.Add(new VariableData(new DreamPath($"{CurrentPath}/{Current().Text}"), GetIdentifierValue(Current(), loc, indentCount)));
+                                while(Current().Type != TokenType.Newline && Current().Type != TokenType.EndOfFile) {
+                                    Advance();
+                                }
+                                return returnValue;
+                            }
+                        }
+                        break;
+
+                    case TokenType.DM_Equals:
+                        if(firstSearch && firstSearchOnLine) {
+                            returnValue.Add(new VariableData(new DreamPath($"{CurrentPath}"), GetValueAsSaneExpression(loc, indentCount)));
+                            while(Current().Type != TokenType.Newline && Current().Type != TokenType.EndOfFile && Current().Type != TokenType.DM_Dedent) {
+                                Advance();
+                            }
+                            CutPathElementsAfterVar();
+                            return returnValue;
+                        }
+
+                        if(firstSearchOnLine) { // "var/foo = ..." (only first line)
+                            Advance();
+                            Whitespace();
+                            if(!firstSearch) {
+                                if(Current().Type == TokenType.DM_Slash) {
+                                    Advance();
+                                }
+                            }
+                           // var value = GetValueAsSaneExpression(loc, indentCount);
+                            returnValue.Add(new VariableData(new DreamPath($"{CurrentPath}"), GetValueAsSaneExpression(loc, indentCount)));
+                            while(Current().Type != TokenType.Newline && Current().Type != TokenType.EndOfFile) {
+                                Advance();
+                            }
+                            if(firstSearch) {
+                                CutPathElementsAfterVar();
+                            }
+                            return returnValue;
+                        }
+                        break;
+
+                    case TokenType.Newline:
+                        firstSearchOnLine = true;
+                        if(firstSearch) { // "var/foo", first line only
+                            StartRollbackListener("GetVariables|FirstLineNullVar");
+                            Advance();
+                            if(Current().Type == TokenType.DM_Var || Current().Type == TokenType.DM_Proc) {
+                                returnValue.Add(new VariableData(new DreamPath($"{CurrentPath}"), new DMASTConstantNull(loc)));
+                                TriggerRollbackListener("GetVariables|FirstLineNullVar");
+                                return returnValue;
+                            } else if(Current().Type == TokenType.DM_Identifier) {
+                                if(IsIdentifierProc(Current())) {
+                                    returnValue.Add(new VariableData(new DreamPath($"{CurrentPath}"), new DMASTConstantNull(loc)));
+                                    TriggerRollbackListener("GetVariables|FirstLineNullVar");
+                                    return returnValue;
+                                }
+                            }
+                            TriggerRollbackListener("GetVariables|FirstLineNullVar");
+                        }
+                        break;
+
+                    case TokenType.DM_As: //maybe a possible issue w/ relatively pathed vars and "as"
+                        returnValue.Add(new VariableData(new DreamPath($"{CurrentPath}"), new DMASTConstantNull(loc)));
+                        return returnValue;
+                }
+                if(Current().Type != TokenType.Newline) {
+                    firstSearchOnLine = false;
+                }
+                firstSearch = false;
+                Advance();
+
+                /*} else if (Current().Type == TokenType.DM_Identifier) { // dumb handling for "var foo" instead of "var/foo"
+                    DMASTPath? newVarPath = Path();
+                    if (newVarPath == null) {
+                        return returnValue;
+                    }
+                    Whitespace();
+                    DMASTExpression? value = PathArray(ref CurrentPath);
+                    DMASTPath? secondaryVarPath;
+                    if (Check(TokenType.DM_Equals)) {
+                        if (value != null) Warning("List doubly initialized");
+
+                        Whitespace();
+                        value = Expression();
+                        RequireExpression(ref value);
+                        if (Check(TokenType.DM_Comma) || (indentCount != 0 && Delimiter())) {
+                            Whitespace();
+                            secondaryVarPath = Path();
+
+                            if (secondaryVarPath == null) {
+                                Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
+                                return returnValue;
+                            }
+                        }
+                    } else if (Check(TokenType.DM_DoubleSquareBracketEquals)) {
+                        if (value != null) Warning("List doubly initialized");
+
+                        Whitespace();
+                        value = Expression();
+                        RequireExpression(ref value);
+                        if (Check(TokenType.DM_Comma) || (indentCount != 0 && Delimiter())) {
+                            Whitespace();
+                            secondaryVarPath = Path();
+
+                            if (secondaryVarPath == null) {
+                                Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
+                                return returnValue;
+                            }
+                        }
+                    } else if (value == null) {
+                        value = new DMASTConstantNull(loc);
+                    }
+
+                    returnValue.Add(new VariableData(new DreamPath($"{CurrentPath.ToString()}/{newVarPath.Path.ToString()}"), value));
+                    return returnValue;
+
+                } else if (CurrentPath.Type == DreamPath.PathType.Absolute) { // absolute pathing handling
+                    Whitespace();
+                    DMASTExpression? value = PathArray(ref CurrentPath);
+                    DMASTPath? secondaryVarPath;
+                    if (Check(TokenType.DM_Equals)) {
+                        if (value != null) Warning("List doubly initialized");
+
+                        Whitespace();
+                        value = Expression();
+                        RequireExpression(ref value);
+                        if (Check(TokenType.DM_Comma) || (indentCount != 0 && Delimiter())) {
+                            Whitespace();
+                            secondaryVarPath = Path();
+
+                            if (secondaryVarPath == null) {
+                                Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
+                                return returnValue;
+                            }
+                        }
+                    } else if (Check(TokenType.DM_DoubleSquareBracketEquals)) {
+                        if (value != null) Warning("List doubly initialized");
+
+                        Whitespace();
+                        value = Expression();
+                        RequireExpression(ref value);
+                        if (Check(TokenType.DM_Comma) || (indentCount != 0 && Delimiter())) {
+                            Whitespace();
+                            secondaryVarPath = Path();
+
+                            if (secondaryVarPath == null) {
+                                Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
+                                return returnValue;
+                            }
+                        }
+                    } else if (value == null) {
+                        value = new DMASTConstantNull(loc);
+                    }
+                    returnValue.Add(new VariableData(new DreamPath($"{CurrentPath.ToString()}"), value));
+                    return returnValue;
+                }*/
+            }
+        }
+
+        private bool IsIdentifierProc(Token identifier) {
+            string rollbackID = $"IsIdentProc|{identifier}";
+            StartRollbackListener(rollbackID);
+            // We should be on the identifier, so we go forward
+            Advance();
+            // Anything on the current line
+            Whitespace();
+            switch(Current().Type) {
+                case TokenType.DM_LeftParenthesis:
+                case TokenType.DM_LeftBracket:
+                case TokenType.DM_LeftCurlyBracket:
+                    TriggerRollbackListener(rollbackID);
+                    return true;
+            }
+            TriggerRollbackListener(rollbackID);
+            return false;
+        }
+
+        private bool IsIdentifierVariable(Token identifier) {
+            string rollbackID = $"IsIdentVariable|{identifier}";
+            StartRollbackListener(rollbackID);
+
+            // We should be on the identifier, so we go forward
+            Advance();
+            // Anything on the current line
+            Whitespace();
+            switch(Current().Type) {
+                case TokenType.DM_Equals:
+                    TriggerRollbackListener(rollbackID);
+                    return true;
+                case TokenType.DM_LeftParenthesis:
+                case TokenType.DM_LeftBracket:
+                case TokenType.DM_LeftCurlyBracket:
+                    TriggerRollbackListener(rollbackID);
+                    return false;
+            }
+
+            // Now we check the next line
+            Newline();
+            switch(Current().Type) {
+                case TokenType.DM_Dedent:
+                    TriggerRollbackListener(rollbackID);
+                    return true;
+                case TokenType.DM_Indent:
+                    TriggerRollbackListener(rollbackID);
+                    return false;
+            }
+            // If we're on the next line and dealing with something of equal indentation, then this is a variable
+            TriggerRollbackListener(rollbackID);
+            return true;
+        }
+
+        private DMASTExpression? GetIdentifierValue(Token identifier, Location loc, int indentCount) {
+            string rollbackID = $"GetIdentValue|{identifier}";
+            StartRollbackListener(rollbackID);
+
+            Whitespace();
+            if(Current().Type != TokenType.DM_Equals) {
+                TriggerRollbackListener(rollbackID);
+                return null;
+            }
+            Whitespace();
+
+            var returnExpr = GetIdentifierAsValue(Current(), loc, indentCount);
+            TriggerRollbackListener(rollbackID);
+            return returnExpr;
+        }
+
+        /// <summary>
+        /// Given a Token of type DM_Identifier, returns a DMASTExpression of it as a value.
+        /// </summary>
+        /// <param name="identifier"></param>
+        /// <returns></returns>
+        private DMASTExpression? GetIdentifierAsValue(Token identifier, Location loc, int indentCount) {
+            if(identifier.Type != TokenType.DM_Identifier) {
+                return null;
+            }
+            return GetValueAsSaneExpression(loc, indentCount);
+        }
+
+        private DMASTExpression? GetValueAsSaneExpression(Location loc, int indentCount) {
+            DMASTExpression? value = PathArray(ref CurrentPath);
+            if (Check(TokenType.DM_Equals)) {
+                if (value != null) Warning("List doubly initialized");
+
+                Whitespace();
+                value = Expression();
+                RequireExpression(ref value);
+                if (Check(TokenType.DM_Comma) || (indentCount != 0 && Delimiter())) {
+                    Whitespace();
+
+                    if (Path() == null) {
+                        Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
+                        return value;
+                    }
+                }
+                return value;
+            } else if (Check(TokenType.DM_DoubleSquareBracketEquals)) {
+                if (value != null) Warning("List doubly initialized");
+
+                Whitespace();
+                value = Expression();
+                RequireExpression(ref value);
+                if (Check(TokenType.DM_Comma) || (indentCount != 0 && Delimiter())) {
+                    Whitespace();
+
+                    if (Path() == null) {
+                        Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
+                        return value;
+                    }
+                }
+                return value;
+            }
+            return new DMASTConstantNull(loc);
+        }
+
+        private void CutPathElementsAfterVar() {
+            var finalString = "/";
+            var varPosition = Array.IndexOf(CurrentPath.Elements, "var");
+            if(varPosition == -1) {
+                return;
+            }
+            for(int i = 0; i <= varPosition; i++) {
+                finalString += CurrentPath.Elements[i];
+                if(i != (varPosition)) {
+                    finalString += "/";
+                }
+            }
+            CurrentPath = new DreamPath(finalString);
+        }
+
+        private DreamPath GetIdentifierPath(Token identifier) {
+            string pathString = "";
+            while(true) {
+                switch(Current().Type) {
+                    case TokenType.DM_Slash:
+                        Advance();
+                        break;
+
+                    case TokenType.DM_Identifier:
+                        pathString += $"/{Current().Text}";
+                        StartRollbackListener($"GetIdentPath|{identifier}");
+                        Advance();
+                        if(Current().Type == TokenType.DM_Slash) { // We do this to avoid the Advance()d token being skipped in the variable parser
+                            StopRollbackListener($"GetIdentPath|{identifier}");
+                        } else {
+                            TriggerRollbackListener($"GetIdentPath|{identifier}");
+                            return new DreamPath(pathString);
+                        }
+                        break;
+
+                    default:
+                        return new DreamPath(pathString);
+                }
+            }
+        }
+
+        private List<VariableData>? GetVariables2(Location loc, DMASTPath path) {
+            int indentCount = 0;
+            var returnValue = new List<VariableData>();
+            var intrimPoint = Current();
+            var current = new DreamPath(CurrentPath.ToString());
+
+            while(true) {
+                if(Newline()) {
+                    var currentType = Current().Type;
+                    if(currentType == TokenType.DM_Var || currentType == TokenType.DM_Proc) {
+                        if(CurrentPath.Elements[CurrentPath.Elements.Count() - 1] != "var") {
+                            returnValue.Add(new VariableData(CurrentPath, new DMASTConstantNull(loc)));
+                        }
+                        ReuseToken(intrimPoint);
+                        return returnValue;
+                    }
+
+                    if(currentType != TokenType.DM_Indent && CurrentPath.PathString.Contains("/var/")) {
+                        returnValue.Add(new VariableData(CurrentPath, new DMASTConstantNull(loc)));
+                        ReuseToken(intrimPoint);
+                        return returnValue;
+                    }
+
+                    var hasEqualsOnLine = false;
+                    while(Current().Type != TokenType.Newline) {
+                        switch(Current().Type) {
+                            case TokenType.DM_Identifier:
+                                var currentLocation = Current();
+                                // Lookahead to see if this is a proc() or list() or similar
+                                Advance();
+                                if(Current().Type == TokenType.DM_LeftParenthesis) {
+                                    // We can have a `= list()` in a variable, or have a New() a line down, so we need
+                                    // unique handling for both cases
+                                    if(hasEqualsOnLine) {
+                                        continue;
+                                    } else {
+                                        returnValue.Add(new VariableData(CurrentPath, new DMASTConstantNull(loc)));
+                                        ReuseToken(currentLocation);
+                                        ReuseToken(intrimPoint);
+                                        return returnValue;
+                                    }
+                                }
+                                current = current.AddToPath(currentLocation.Text);
+                                // Lookahead to see if this is a variable or not
+                                var isVariable = false;
+                                var outerBreak = false;
+                                DMASTExpression? value = null;
+                                while(!outerBreak) {
+                                    switch(Current().Type) {
+                                        case TokenType.DM_Indent:
+                                            outerBreak = true;
+                                            break;
+
+                                        case TokenType.DM_Dedent:
+                                            // look 1 token ahead to check if another dedent is present
+                                            var currentLocation2 = Current();
+                                            Advance();
+                                            if(Current().Type == TokenType.DM_Dedent) {
+                                                if(current.PathString.EndsWith("/var")) {
+                                                    return returnValue;
+                                                }
+                                                current = new DreamPath(current.ToString().Substring(0, current.ToString().LastIndexOf('/') + 1));
+                                            } else {
+                                                isVariable = true;
+                                            }
+                                            ReuseToken(currentLocation2);
+                                            outerBreak = true;
+                                            break;
+
+                                        case TokenType.EndOfFile:
+                                        case TokenType.DM_As:
+                                        case TokenType.DM_Var:
+                                            isVariable = true;
+                                            outerBreak = true;
+                                            break;
+
+                                        case TokenType.DM_Identifier:
+                                            isVariable = true;
+                                            outerBreak = true;
+                                           /* if(path.Path.Type == DreamPath.PathType.Absolute && !path.Path.PathString.StartsWith("var")) {
+                                                var currentToken = Current();
+                                                Advance();
+                                                if(Current().Type != TokenType.DM_Slash && Current().Type != TokenType.DM_Whitespace) {
+                                                    current = current.AddToPath(Current().Text);
+                                                }
+                                                ReuseToken(currentToken);
+                                            }*/
+                                            break;
+
+                                        case TokenType.DM_DoubleSquareBracketEquals:
+                                        case TokenType.DM_Equals:
+                                            Advance();
+                                            value = PathArray(ref CurrentPath);
+
+                                            if (value != null) {
+                                                Warning("List doubly initialized");
+                                            }
+                                            Whitespace();
+                                            value = Expression();
+                                            RequireExpression(ref value);
+
+                                            var tempToken1 = Current();
+                                            if (Check(TokenType.DM_Comma) || (indentCount != 0 && Delimiter())) {
+                                                Whitespace();
+                                                var tempToken2 = Current();
+                                                DMASTPath? secondaryVarPath = Path();
+
+                                                if (secondaryVarPath == null) {
+                                                    Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
+                                                    break;
+                                                }
+                                                ReuseToken(tempToken2);
+                                                ReuseToken(tempToken1);
+                                            }
+
+                                            hasEqualsOnLine = true;
+                                            isVariable = true;
+                                            outerBreak = true;
+                                            break;
+
+                                        default:
+                                            Advance();
+                                            break;
+                                    }
+                                }
+                                ReuseToken(currentLocation);
+                                if(isVariable) {
+                                    returnValue.Add(new VariableData(current, value));
+                                    current = new DreamPath(current.ToString().Substring(0, current.ToString().LastIndexOf('/') + 1));
+                                }
+                                break;
+
+                            case TokenType.DM_Indent:
+                                indentCount++;
+                                break;
+
+                            case TokenType.DM_Dedent:
+                                indentCount--;
+                                current = new DreamPath(current.ToString().Substring(0, current.ToString().LastIndexOf('/') + 1));
+                                if(indentCount < 0) {
+                                    return returnValue;
+                                }
+                                break;
+
+                            case TokenType.DM_Proc:
+                                if(CurrentPath.Elements[CurrentPath.Elements.Count() - 1] != "var") {
+                                    returnValue.Add(new VariableData(current, new DMASTConstantNull(loc)));
+                                }
+                                ReuseToken(intrimPoint);
+                                return returnValue;
+
+                            case TokenType.EndOfFile:
+                                return returnValue;
+                        }
+                        Advance();
+                    }
+                } else if (Current().Type == TokenType.DM_Identifier) { // "var foo" instead of "var/foo"
+                    DMASTPath? newVarPath = Path();
+                    if (newVarPath == null) {
+                        return returnValue;
+                    }
+                    Whitespace();
+                    DMASTExpression? value = PathArray(ref CurrentPath);
+                    DMASTPath? secondaryVarPath = null;
+                    if (Check(TokenType.DM_Equals)) {
+                        if (value != null) Warning("List doubly initialized");
+
+                        Whitespace();
+                        value = Expression();
+                        RequireExpression(ref value);
+                        if (Check(TokenType.DM_Comma) || (indentCount != 0 && Delimiter())) {
+                            Whitespace();
+                            secondaryVarPath = Path();
+
+                            if (secondaryVarPath == null) {
+                                Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
+                                return returnValue;
+                            }
+                        }
+                    } else if (Check(TokenType.DM_DoubleSquareBracketEquals)) {
+                        if (value != null) Warning("List doubly initialized");
+
+                        Whitespace();
+                        value = Expression();
+                        RequireExpression(ref value);
+                        if (Check(TokenType.DM_Comma) || (indentCount != 0 && Delimiter())) {
+                            Whitespace();
+                            secondaryVarPath = Path();
+
+                            if (secondaryVarPath == null) {
+                                Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
+                                return returnValue;
+                            }
+                        }
+                    } else if (value == null) {
+                        value = new DMASTConstantNull(loc);
+                    }
+
+                    returnValue.Add(new VariableData(new DreamPath($"{CurrentPath.ToString()}/{newVarPath.Path.ToString()}"), value));
+                    return returnValue;
+                } else if (CurrentPath.Type == DreamPath.PathType.Absolute) {
+                    Whitespace();
+                    DMASTExpression? value = PathArray(ref CurrentPath);
+                    DMASTPath? secondaryVarPath = null;
+                    if (Check(TokenType.DM_Equals)) {
+                        if (value != null) Warning("List doubly initialized");
+
+                        Whitespace();
+                        value = Expression();
+                        RequireExpression(ref value);
+                        if (Check(TokenType.DM_Comma) || (indentCount != 0 && Delimiter())) {
+                            Whitespace();
+                            secondaryVarPath = Path();
+
+                            if (secondaryVarPath == null) {
+                                Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
+                                return returnValue;
+                            }
+                        }
+                    } else if (Check(TokenType.DM_DoubleSquareBracketEquals)) {
+                        if (value != null) Warning("List doubly initialized");
+
+                        Whitespace();
+                        value = Expression();
+                        RequireExpression(ref value);
+                        if (Check(TokenType.DM_Comma) || (indentCount != 0 && Delimiter())) {
+                            Whitespace();
+                            secondaryVarPath = Path();
+
+                            if (secondaryVarPath == null) {
+                                Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
+                                return returnValue;
+                            }
+                        }
+                    } else if (value == null) {
+                        value = new DMASTConstantNull(loc);
+                    }
+                    returnValue.Add(new VariableData(new DreamPath($"{CurrentPath.ToString()}"), value));
+                    return returnValue;
+                } else {
+                    return returnValue;
+                }
+                intrimPoint = Current();
+            }
         }
 
         /// <summary>
@@ -2890,6 +3443,54 @@ namespace DMCompiler.Compiler.DM {
             }
 
             return hasDelimiter;
+        }
+
+        private bool StartRollbackListener(string ID) {
+            if(rollbackListeners.ContainsKey(ID)) {
+                return false;
+            }
+            rollbackListeners.Add(ID, new List<Token>());
+            return true;
+        }
+
+        private bool StopRollbackListener(string ID) {
+            if(!rollbackListeners.ContainsKey(ID)) {
+                return false;
+            }
+            rollbackListeners.Remove(ID);
+            return true;
+        }
+
+        private bool TriggerRollbackListener(string ID) {
+            if(!rollbackListeners.TryGetValue(ID, out var value)) {
+                return false;
+            }
+
+            for(int i = value.Count - 1; i >= 0; i--) {
+                var token = value[i];
+                ReuseToken(token);
+                foreach(var rollbackList in rollbackListeners.Values) {
+                    if(rollbackList == value) {
+                        continue;
+                    }
+                    rollbackList.Remove(token);
+                }
+            }
+            foreach(var listenerID in rollbackListeners.Keys) {
+                if(rollbackListeners[listenerID].Count == 0) {
+                    StopRollbackListener(listenerID);
+                }
+            }
+
+            StopRollbackListener(ID);
+            return true;
+        }
+
+        protected override Token Advance() {
+            foreach(var list in rollbackListeners.Values) {
+                list.Add(Current());
+            }
+            return base.Advance();
         }
     }
 }

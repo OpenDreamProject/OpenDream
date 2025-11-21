@@ -142,6 +142,7 @@ public sealed partial class DreamManager {
         Profiler.EmitFrameMark();
     }
 
+
     public void ProcessDelQueue() {
         while (DelQueue.TryTake(out var obj)) {
             obj.Delete();
@@ -150,6 +151,41 @@ public sealed partial class DreamManager {
 
     public bool TryGetGlobalProc(string name, [NotNullWhen(true)] out DreamProc? proc) {
         return _objectTree.TryGetGlobalProc(name, out proc);
+    }
+
+    public void HotReloadJson(string? jsonPath) {
+        if (string.IsNullOrEmpty(jsonPath) || !File.Exists(jsonPath))
+            throw new FileNotFoundException("Could not find the specified json file");
+
+        string jsonSource = File.ReadAllText(jsonPath);
+        DreamCompiledJson? json = JsonSerializer.Deserialize<DreamCompiledJson>(jsonSource);
+        if (json == null)
+            throw new Exception("Failed to deserialize the json file");
+
+        if (!json.Metadata.Version.Equals(OpcodeVerifier.GetOpcodesHash()))
+            throw new Exception("Compiler opcode version does not match the runtime version!");
+
+        var rootPath = Path.GetFullPath(Path.GetDirectoryName(jsonPath)!);
+        var resources = json.Resources ?? Array.Empty<string>();
+        _dreamResourceManager.Initialize(rootPath, resources, json.Interface);
+        if (_entitySystemManager.TryGetEntitySystem(out ServerVerbSystem? _verbSystem))
+            _verbSystem.ClearAllVerbs();
+
+        _objectTree.LoadJson(json);
+        DreamProcNative.SetupNativeProcs(_objectTree);
+
+        foreach (DreamObject dreamObject in IterateDatums()) {
+            dreamObject.ObjectDefinition = _objectTree.GetObjectDefinition(_objectTree.GetTreeEntry(dreamObject.ObjectDefinition.Type).Id);
+        }
+
+        foreach (var client in Connections) {
+            if (client.Client is not null) {
+                client.Client.ClientVerbs.HotReloadAll(_objectTree);
+                _verbSystem!.UpdateClientVerbs(client.Client);
+            }
+        }
+
+
     }
 
     public bool LoadJson(string? jsonPath) {

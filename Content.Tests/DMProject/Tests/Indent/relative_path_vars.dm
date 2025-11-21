@@ -1,4 +1,6 @@
 /datum/foo
+	var/thing = 2
+
 	var
 		tmp
 			active = 0
@@ -13,12 +15,16 @@
 	proc/thing()
 
 	var
-		baz = list()
+		baz = list() //doesn't find the list()
 
-	var foo = 2
+	var foo = 2 //collects both of these at once, doesn't find the 2
 	var bar
 
 	Del()
+
+/datum/foo/var
+	datum/a
+	datum/b
 
 /proc/RunTest()
 	var/datum/foo/F = new

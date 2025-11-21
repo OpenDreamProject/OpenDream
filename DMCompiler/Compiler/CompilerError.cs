@@ -27,6 +27,7 @@ public enum WarningCode {
     IAmATeaPot = 418, // TODO: Implement the HTCPC protocol for OD
     HardConstContext = 500,
     WriteToConstant = 501,
+    DivideByNull = 502,
     InvalidInclusion = 900,
 
     // 1000 - 1999 are reserved for preprocessor configuration.
@@ -126,6 +127,7 @@ public struct CompilerEmission {
         {WarningCode.IAmATeaPot, ErrorLevel.Error},
         {WarningCode.HardConstContext, ErrorLevel.Error},
         {WarningCode.WriteToConstant, ErrorLevel.Error},
+        {WarningCode.DivideByNull, ErrorLevel.Error},
         {WarningCode.InvalidInclusion, ErrorLevel.Error},
 
         //1000-1999

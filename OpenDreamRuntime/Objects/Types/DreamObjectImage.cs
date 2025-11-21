@@ -212,6 +212,8 @@ public sealed class DreamObjectImage : DreamObject {
                                     continue;
 
                                 filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, filterValues);
+                                if (filterObject == null)
+                                    continue;
                             }
 
                             _filters.AddValue(new(filterObject));

@@ -162,6 +162,8 @@ public class DreamObjectAtom : DreamObject {
                                     continue;
 
                                 filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, filterValues);
+                                if (filterObject == null)
+                                    continue;
                             }
 
                             Filters.AddValue(new(filterObject));

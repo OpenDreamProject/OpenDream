@@ -103,7 +103,7 @@ internal sealed class Args(Location location) : LValue(location, DreamPath.List)
     }
 
     public override void EmitPushInitial(ExpressionContext ctx) {
-        ctx.Compiler.Emit(WarningCode.PointlessBuiltinCall, Location, $"calling initial() on `args` returns the current value");
+        ctx.Compiler.Emit(WarningCode.PointlessBuiltinCall, Location, "calling initial() on `args` returns the current value");
         EmitPushValue(ctx);
     }
 

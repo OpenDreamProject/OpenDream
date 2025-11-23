@@ -70,7 +70,7 @@ internal sealed class Src(Location location, DreamPath? path) : LValue(location,
     }
 
     public override void EmitPushInitial(ExpressionContext ctx) {
-        ctx.Compiler.Emit(WarningCode.PointlessBuiltinCall, Location, $"calling initial() on `src` returns the current value");
+        ctx.Compiler.Emit(WarningCode.PointlessBuiltinCall, Location, "calling initial() on `src` returns the current value");
         EmitPushValue(ctx);
     }
 

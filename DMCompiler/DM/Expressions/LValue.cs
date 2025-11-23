@@ -151,7 +151,7 @@ internal sealed class World(Location location) : LValue(location, DreamPath.Worl
 
     public override void EmitPushInitial(ExpressionContext ctx) {
         // This happens silently in BYOND
-        ctx.Compiler.Emit(WarningCode.PointlessBuiltinCall, Location, $"calling initial() on constant var `world` is pointless");
+        ctx.Compiler.Emit(WarningCode.PointlessBuiltinCall, Location, "calling initial() on constant var `world` is pointless");
         EmitPushValue(ctx);
     }
 

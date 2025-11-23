@@ -55,7 +55,7 @@ internal class Global(Location location) : LValue(location, null) {
     }
 
     public override void EmitPushInitial(ExpressionContext ctx) {
-        ctx.Compiler.Emit(WarningCode.BadExpression, Location, $"Can't get initial value of `global`");
+        ctx.Compiler.Emit(WarningCode.BadExpression, Location, "Can't get initial value of `global`");
         ctx.Proc.PushNullAndError();
     }
 }

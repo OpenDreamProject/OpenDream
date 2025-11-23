@@ -41,7 +41,7 @@ internal sealed class BadLValue(Location location) : LValue(location, null) {
     }
 
     public override void EmitPushInitial(ExpressionContext ctx) {
-        ctx.Compiler.Emit(WarningCode.BadExpression, Location, $"Can't get initial value of a bad LValue (compiler bug!)");
+        ctx.Compiler.Emit(WarningCode.BadExpression, Location, "Can't get initial value of a bad LValue (compiler bug!)");
         ctx.Proc.Throw();
     }
 }

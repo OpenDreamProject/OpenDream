@@ -25,10 +25,7 @@ internal abstract class LValue(Location location, DreamPath? path) : DMExpressio
         ctx.Proc.AddLabel(endLabel);
     }
 
-    public virtual void EmitPushInitial(ExpressionContext ctx) {
-        ctx.Compiler.Emit(WarningCode.BadExpression, Location, $"Can't get initial value of {this}");
-        ctx.Proc.PushNullAndError();
-    }
+    public abstract void EmitPushInitial(ExpressionContext ctx);
 }
 
 /// <summary>
@@ -42,6 +39,11 @@ internal sealed class BadLValue(Location location) : LValue(location, null) {
         ctx.Proc.PushString("Encountered a bad LValue (compiler bug!)");
         ctx.Proc.Throw();
     }
+
+    public override void EmitPushInitial(ExpressionContext ctx) {
+        ctx.Compiler.Emit(WarningCode.BadExpression, Location, $"Can't get initial value of a bad LValue (compiler bug!)");
+        ctx.Proc.Throw();
+    }
 }
 
 // global
@@ -50,6 +52,11 @@ internal class Global(Location location) : LValue(location, null) {
         ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
         ctx.Compiler.Emit(WarningCode.BadExpression, Location, "attempt to use `global` as a reference");
         return DMReference.Invalid;
+    }
+
+    public override void EmitPushInitial(ExpressionContext ctx) {
+        ctx.Compiler.Emit(WarningCode.BadExpression, Location, $"Can't get initial value of `global`");
+        ctx.Proc.PushNullAndError();
     }
 }
 
@@ -60,6 +67,11 @@ internal sealed class Src(Location location, DreamPath? path) : LValue(location,
     public override DMReference EmitReference(ExpressionContext ctx, string endLabel,
         ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
         return DMReference.Src;
+    }
+
+    public override void EmitPushInitial(ExpressionContext ctx) {
+        ctx.Compiler.Emit(WarningCode.PointlessBuiltinCall, Location, $"calling initial() on `src` returns the current value");
+        EmitPushValue(ctx);
     }
 
     public override string GetNameof(ExpressionContext ctx) => "src";
@@ -75,6 +87,11 @@ internal sealed class Usr(Location location) : LValue(location, DreamPath.Mob) {
         return DMReference.Usr;
     }
 
+    public override void EmitPushInitial(ExpressionContext ctx) {
+        ctx.Compiler.Emit(WarningCode.PointlessBuiltinCall, Location, $"calling initial() on `usr` returns the current value");
+        EmitPushValue(ctx);
+    }
+
     public override string GetNameof(ExpressionContext ctx) => "usr";
 }
 
@@ -83,6 +100,11 @@ internal sealed class Args(Location location) : LValue(location, DreamPath.List)
     public override DMReference EmitReference(ExpressionContext ctx, string endLabel,
         ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
         return DMReference.Args;
+    }
+
+    public override void EmitPushInitial(ExpressionContext ctx) {
+        ctx.Compiler.Emit(WarningCode.PointlessBuiltinCall, Location, $"calling initial() on `args` returns the current value");
+        EmitPushValue(ctx);
     }
 
     public override string GetNameof(ExpressionContext ctx) => "args";
@@ -95,6 +117,12 @@ internal sealed class Callee(Location location) : LValue(location, DreamPath.Cal
         return DMReference.Callee;
     }
 
+    public override void EmitPushInitial(ExpressionContext ctx) {
+        // This happens silently in BYOND
+        ctx.Compiler.Emit(WarningCode.PointlessBuiltinCall, Location, $"calling initial() on constant var `callee` is pointless");
+        EmitPushValue(ctx);
+    }
+
     public override string GetNameof(ExpressionContext ctx) => "callee";
 }
 
@@ -105,6 +133,12 @@ internal sealed class Caller(Location location) : LValue(location, DreamPath.Cal
         return DMReference.Caller;
     }
 
+    public override void EmitPushInitial(ExpressionContext ctx) {
+        // This happens silently in BYOND
+        ctx.Compiler.Emit(WarningCode.PointlessBuiltinCall, Location, $"calling initial() on constant var `caller` is pointless");
+        EmitPushValue(ctx);
+    }
+
     public override string GetNameof(ExpressionContext ctx) => "caller";
 }
 
@@ -113,6 +147,12 @@ internal sealed class World(Location location) : LValue(location, DreamPath.Worl
     public override DMReference EmitReference(ExpressionContext ctx, string endLabel,
         ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
         return DMReference.World;
+    }
+
+    public override void EmitPushInitial(ExpressionContext ctx) {
+        // This happens silently in BYOND
+        ctx.Compiler.Emit(WarningCode.PointlessBuiltinCall, Location, $"calling initial() on constant var `world` is pointless");
+        EmitPushValue(ctx);
     }
 
     public override string GetNameof(ExpressionContext ctx) => "world";
@@ -162,6 +202,11 @@ internal sealed class Field(Location location, DMVariable variable, DMComplexVal
         ctx.Proc.PushReferenceValue(DMReference.Src);
         ctx.Proc.PushString(variable.Name);
         ctx.Proc.Initial();
+
+        if (variable.IsConst) {
+            // This happens silently in BYOND
+            ctx.Compiler.Emit(WarningCode.PointlessBuiltinCall, Location, $"calling initial() on a constant variable is pointless");
+        }
     }
 
     public void EmitPushIsSaved(DMProc proc) {
@@ -218,6 +263,12 @@ internal sealed class GlobalField(Location location, DreamPath? path, int id,  D
 internal sealed class GlobalVars(Location location) : LValue(location, null) {
     public override void EmitPushValue(ExpressionContext ctx) {
         ctx.Proc.PushGlobalVars();
+    }
+
+    public override void EmitPushInitial(ExpressionContext ctx) {
+        // This happens silently in BYOND
+        ctx.Compiler.Emit(WarningCode.PointlessBuiltinCall, Location, "calling initial() on `global.vars` returns the current value");
+        EmitPushValue(ctx);
     }
 
     public override string GetNameof(ExpressionContext ctx) => "vars";

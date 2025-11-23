@@ -64,6 +64,11 @@ internal sealed class ProcSelf(Location location, DMComplexValueType valType) : 
         ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
         return DMReference.Self;
     }
+
+    public override void EmitPushInitial(ExpressionContext ctx) {
+        ctx.Compiler.Emit(WarningCode.PointlessBuiltinCall, Location, $"calling initial() on `.` returns the current value");
+        EmitPushValue(ctx);
+    }
 }
 
 // ..

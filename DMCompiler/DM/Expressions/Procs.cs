@@ -66,7 +66,7 @@ internal sealed class ProcSelf(Location location, DMComplexValueType valType) : 
     }
 
     public override void EmitPushInitial(ExpressionContext ctx) {
-        ctx.Compiler.Emit(WarningCode.PointlessBuiltinCall, Location, $"calling initial() on `.` returns the current value");
+        ctx.Compiler.Emit(WarningCode.PointlessBuiltinCall, Location, "calling initial() on `.` returns the current value");
         EmitPushValue(ctx);
     }
 }

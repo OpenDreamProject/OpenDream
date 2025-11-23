@@ -119,7 +119,7 @@ internal sealed class Callee(Location location) : LValue(location, DreamPath.Cal
 
     public override void EmitPushInitial(ExpressionContext ctx) {
         // This happens silently in BYOND
-        ctx.Compiler.Emit(WarningCode.PointlessBuiltinCall, Location, $"calling initial() on constant var `callee` is pointless");
+        ctx.Compiler.Emit(WarningCode.PointlessBuiltinCall, Location, "calling initial() on constant var `callee` is pointless");
         EmitPushValue(ctx);
     }
 

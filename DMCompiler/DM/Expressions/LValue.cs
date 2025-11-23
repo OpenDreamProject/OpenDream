@@ -205,7 +205,7 @@ internal sealed class Field(Location location, DMVariable variable, DMComplexVal
 
         if (variable.IsConst) {
             // This happens silently in BYOND
-            ctx.Compiler.Emit(WarningCode.PointlessBuiltinCall, Location, $"calling initial() on a constant variable is pointless");
+            ctx.Compiler.Emit(WarningCode.PointlessBuiltinCall, Location, "calling initial() on a constant variable is pointless");
         }
     }
 

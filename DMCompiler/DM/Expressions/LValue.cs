@@ -88,7 +88,7 @@ internal sealed class Usr(Location location) : LValue(location, DreamPath.Mob) {
     }
 
     public override void EmitPushInitial(ExpressionContext ctx) {
-        ctx.Compiler.Emit(WarningCode.PointlessBuiltinCall, Location, $"calling initial() on `usr` returns the current value");
+        ctx.Compiler.Emit(WarningCode.PointlessBuiltinCall, Location, "calling initial() on `usr` returns the current value");
         EmitPushValue(ctx);
     }
 

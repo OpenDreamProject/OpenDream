@@ -10,10 +10,8 @@ internal static class DreamProcNativeGenerator {
     public static DreamValue NativeProc_Rand(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
         DreamObjectGenerator genObj = (DreamObjectGenerator)src!;
 
-        switch (genObj.Generator)
-        {
-            case GeneratorNum numGen:
-            {
+        switch (genObj.Generator) {
+            case GeneratorNum numGen: {
                 var result = numGen.Generate(IoCManager.Resolve<IRobustRandom>());
                 return new DreamValue(result);
             }

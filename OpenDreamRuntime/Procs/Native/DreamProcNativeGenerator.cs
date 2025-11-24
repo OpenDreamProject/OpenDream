@@ -18,8 +18,7 @@ internal static class DreamProcNativeGenerator {
             case GeneratorBox2:
             case GeneratorVector2:
             case GeneratorCircle:
-            case GeneratorSquare:
-            {
+            case GeneratorSquare: {
                 var vecGen = (IGeneratorVector)genObj.Generator;
                 var resultVector = vecGen.GenerateVector2(IoCManager.Resolve<IRobustRandom>());
                 var resultObj = DreamObjectVector.CreateFromValue(resultVector, bundle.ObjectTree);

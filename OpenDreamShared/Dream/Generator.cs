@@ -31,12 +31,14 @@ public interface IGeneratorNum : IGenerator {
 }
 
 public interface IGeneratorVector : IGenerator {
+    bool PrefersVector3 { get; set; }
     public Vector2 GenerateVector2(IRobustRandom random);
     public Vector3 GenerateVector3(IRobustRandom random);
 }
 
 [Serializable, NetSerializable]
 public sealed class GeneratorNum(float low, float high, GeneratorDistribution distribution) : IGeneratorNum, IGeneratorVector {
+    public bool PrefersVector3 { get; set; } = false;
     public GeneratorNum(float value) : this(value, value, GeneratorDistribution.Constant) { }
 
     public float Generate(IRobustRandom random) {
@@ -58,6 +60,7 @@ public sealed class GeneratorNum(float low, float high, GeneratorDistribution di
 
 [Serializable, NetSerializable]
 public sealed class GeneratorVector2(Vector2 low, Vector2 high, GeneratorDistribution distribution) : IGeneratorVector {
+    public bool PrefersVector3 { get; set; } = false;
     public GeneratorVector2(Vector2 value) : this(value, value, GeneratorDistribution.Constant) { }
 
     public Vector2 GenerateVector2(IRobustRandom random) {
@@ -77,6 +80,7 @@ public sealed class GeneratorVector2(Vector2 low, Vector2 high, GeneratorDistrib
 
 [Serializable, NetSerializable]
 public sealed class GeneratorVector3(Vector3 low, Vector3 high, GeneratorDistribution distribution) : IGeneratorVector {
+    public bool PrefersVector3 { get; set; } = true;
     public GeneratorVector3(Vector3 value) : this(value, value, GeneratorDistribution.Constant) { }
 
     public Vector2 GenerateVector2(IRobustRandom random) {
@@ -96,6 +100,8 @@ public sealed class GeneratorVector3(Vector3 low, Vector3 high, GeneratorDistrib
 
 [Serializable, NetSerializable]
 public sealed class GeneratorBox2(Vector2 low, Vector2 high, GeneratorDistribution distribution) : IGeneratorVector {
+    public bool PrefersVector3 { get; set; } = false;
+
     public Vector2 GenerateVector2(IRobustRandom random) {
         var x = IGenerator.GenerateNum(random, low.X, high.X, distribution);
         var y = IGenerator.GenerateNum(random, low.Y, high.Y, distribution);
@@ -116,6 +122,8 @@ public sealed class GeneratorBox2(Vector2 low, Vector2 high, GeneratorDistributi
 
 [Serializable, NetSerializable]
 public sealed class GeneratorBox3(Vector3 low, Vector3 high, GeneratorDistribution distribution) : IGeneratorVector {
+    public bool PrefersVector3 { get; set; } = true;
+
     public Vector2 GenerateVector2(IRobustRandom random) {
         var vector = GenerateVector3(random);
 
@@ -137,6 +145,8 @@ public sealed class GeneratorBox3(Vector3 low, Vector3 high, GeneratorDistributi
 
 [Serializable, NetSerializable]
 public sealed class GeneratorCircle(float low, float high, GeneratorDistribution distribution) : IGeneratorVector {
+    public bool PrefersVector3 { get; set; } = false;
+
     public Vector2 GenerateVector2(IRobustRandom random) {
         var theta = random.NextFloat(0f, 360f);
         var r = IGenerator.GenerateNum(random, low, high, distribution);
@@ -157,6 +167,8 @@ public sealed class GeneratorCircle(float low, float high, GeneratorDistribution
 
 [Serializable, NetSerializable]
 public sealed class GeneratorSphere(float low, float high, GeneratorDistribution distribution) : IGeneratorVector {
+    public bool PrefersVector3 { get; set; } = true;
+
     public Vector2 GenerateVector2(IRobustRandom random) {
         var vector = GenerateVector3(random);
 
@@ -182,6 +194,8 @@ public sealed class GeneratorSphere(float low, float high, GeneratorDistribution
 
 [Serializable, NetSerializable]
 public sealed class GeneratorSquare(Vector2 low, Vector2 high, GeneratorDistribution distribution) : IGeneratorVector {
+    public bool PrefersVector3 { get; set; } = false;
+
     public Vector2 GenerateVector2(IRobustRandom random) {
         var x = IGenerator.GenerateNum(random, -high.X, high.X, distribution);
         var y = IGenerator.GenerateNum(random, -high.Y, high.Y, distribution);
@@ -207,6 +221,8 @@ public sealed class GeneratorSquare(Vector2 low, Vector2 high, GeneratorDistribu
 
 [Serializable, NetSerializable]
 public sealed class GeneratorCube(Vector3 low, Vector3 high, GeneratorDistribution distribution) : IGeneratorVector {
+    public bool PrefersVector3 { get; set; } = true;
+
     public Vector2 GenerateVector2(IRobustRandom random) {
         var vector = GenerateVector3(random);
 

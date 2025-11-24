@@ -8,29 +8,19 @@ namespace OpenDreamRuntime.Procs.Native;
 internal static class DreamProcNativeGenerator {
     [DreamProc("Rand")]
     public static DreamValue NativeProc_Rand(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-        DreamObjectGenerator genObj = (DreamObjectGenerator)src!;
+        var genObj = (DreamObjectGenerator)src!;
 
         switch (genObj.Generator) {
-            case GeneratorNum numGen: {
+            case IGeneratorNum numGen: {
                 var result = numGen.Generate(IoCManager.Resolve<IRobustRandom>());
                 return new DreamValue(result);
             }
-            case GeneratorBox2:
-            case GeneratorVector2:
-            case GeneratorCircle:
-            case GeneratorSquare: {
-                var vecGen = (IGeneratorVector)genObj.Generator;
-                var resultVector = vecGen.GenerateVector2(IoCManager.Resolve<IRobustRandom>());
-                var resultObj = DreamObjectVector.CreateFromValue(resultVector, bundle.ObjectTree);
-                return new DreamValue(resultObj);
-            }
-            case GeneratorBox3:
-            case GeneratorVector3:
-            case GeneratorSphere:
-            case GeneratorCube: {
-                var vecGen = (IGeneratorVector)genObj.Generator;
-                var resultVector = vecGen.GenerateVector3(IoCManager.Resolve<IRobustRandom>());
-                var resultObj = DreamObjectVector.CreateFromValue(resultVector, bundle.ObjectTree);
+            case IGeneratorVector vecGen: {
+                var rand = IoCManager.Resolve<IRobustRandom>();
+                var resultObj = vecGen.PrefersVector3
+                    ? DreamObjectVector.CreateFromValue(vecGen.GenerateVector3(rand), bundle.ObjectTree)
+                    : DreamObjectVector.CreateFromValue(vecGen.GenerateVector2(rand), bundle.ObjectTree);
+
                 return new DreamValue(resultObj);
             }
             default:

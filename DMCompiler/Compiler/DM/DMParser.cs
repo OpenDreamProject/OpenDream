@@ -214,6 +214,12 @@ namespace DMCompiler.Compiler.DM {
             Whitespace();
             CurrentPath = CurrentPath.Combine(path.Path);
 
+            //Object definition
+            if (Block() is { } block) {
+                Compiler.VerbosePrint($"Parsed object {CurrentPath}");
+                return new DMASTObjectDefinition(loc, CurrentPath, block);
+            }
+
             //Proc definition
             if (Check(TokenType.DM_LeftParenthesis)) {
                 Compiler.VerbosePrint($"Parsing proc {CurrentPath}()");
@@ -363,12 +369,6 @@ namespace DMCompiler.Compiler.DM {
                 RequireExpression(ref value);
 
                 return new DMASTObjectVarOverride(loc, CurrentPath, value);
-            }
-
-            //Object definition
-            if (Block() is { } block) {
-                Compiler.VerbosePrint($"Parsed object {CurrentPath}");
-                return new DMASTObjectDefinition(loc, CurrentPath, block);
             }
 
             //Empty object definition

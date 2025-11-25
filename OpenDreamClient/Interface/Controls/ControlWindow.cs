@@ -20,7 +20,7 @@ public sealed class ControlWindow : InterfaceControl {
     public readonly List<InterfaceControl> ChildControls = new();
 
     public string Title => WindowDescriptor.Title.Value;
-    public InterfaceMacroSet Macro => _interfaceManager.MacroSets[WindowDescriptor.Macro.AsRaw()];
+    public InterfaceMacroSet? Macro => _interfaceManager.MacroSets.GetValueOrDefault(WindowDescriptor.Macro.AsRaw());
 
     private WindowDescriptor WindowDescriptor => (WindowDescriptor)ElementDescriptor;
 
@@ -54,7 +54,7 @@ public sealed class ControlWindow : InterfaceControl {
             UpdateWindowAttributes(_myWindow);
 
         if (WindowDescriptor.IsDefault.Value) {
-            Macro.SetActive();
+            Macro?.SetActive();
         }
     }
 

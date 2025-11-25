@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Compiler.DMPreprocessor;
 using System.Linq;
 using DMCompiler.Compiler.DM.AST;
@@ -506,6 +507,7 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
+        [return: NotNullIfNotNull(nameof(expression))]
         private DMASTExpression? ParseScopeIdentifier(DMASTExpression? expression) {
             do {
                 var identifier = Identifier();
@@ -1265,6 +1267,7 @@ namespace DMCompiler.Compiler.DM {
             if (Check(TokenType.DM_In)) {
                 Whitespace();
                 DMASTExpression? listExpr = Expression();
+                RequireExpression(ref listExpr);
                 Whitespace();
                 Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 2");
                 ExtraColonPeriod();

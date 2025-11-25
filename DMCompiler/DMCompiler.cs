@@ -127,11 +127,12 @@ public class DMCompiler {
                     return null;
                 }
 
-                string includeDir = Path.GetDirectoryName(files[i]);
+                string? includeDir = Path.GetDirectoryName(files[i]);
                 string fileName = Path.GetFileName(files[i]);
 
                 preproc.IncludeFile(includeDir, fileName, false);
-                compiler.AddResourceDirectory(includeDir, Location.Internal);
+                if (includeDir is not null)
+                    compiler.AddResourceDirectory(includeDir, Location.Internal);
             }
 
             // Adds the root of the DM project to FILE_DIR
@@ -160,8 +161,8 @@ public class DMCompiler {
                     result.Append(t.Text);
                 }
 
-                string outputDir = Path.GetDirectoryName(Settings.Files[0]);
-                string outputPath = Path.Combine(outputDir, "preprocessor_dump.dm");
+                string? outputDir = Path.GetDirectoryName(Settings.Files[0]);
+                string outputPath = Path.Combine(outputDir ?? string.Empty, "preprocessor_dump.dm");
 
                 File.WriteAllText(outputPath, result.ToString());
                 Console.WriteLine($"Preprocessor output dumped to {outputPath}");

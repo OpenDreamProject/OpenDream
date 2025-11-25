@@ -19,7 +19,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
 
             if (parameter.Value != null) { //Parameter has a default value
                 string afterDefaultValueCheck = proc.NewLabelName();
-                DMReference parameterRef = proc.GetLocalVariableReference(parameterName);
+                DMReference parameterRef = proc.GetLocalVariableReference(parameterName, parameter.Location);
 
                 //Don't set parameter to default if not null
                 proc.PushReferenceValue(parameterRef);
@@ -197,7 +197,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
         }
 
         value.EmitPushValue(ExprContext);
-        proc.Assign(proc.GetLocalVariableReference(varDeclaration.Name));
+        proc.Assign(proc.GetLocalVariableReference(varDeclaration.Name, varDeclaration.Location));
         proc.Pop();
     }
 
@@ -396,10 +396,11 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
         }
         proc.EndScope();
 
-        IEnumerable<DMASTVarDeclExpression> FindVarDecls(DMASTExpression expr) {
-            if (expr is DMASTVarDeclExpression p) {
+        IEnumerable<DMASTVarDeclExpression> FindVarDecls(DMASTExpression? expr) {
+            if (expr is null)
+                yield break;
+            if (expr is DMASTVarDeclExpression p)
                 yield return p;
-            }
 
             foreach (var leaf in expr.Leaves()) {
                 foreach(var decl in FindVarDecls(leaf)) {
@@ -863,7 +864,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                 compiler.Emit(WarningCode.DuplicateVariable, param.Location, $"Duplicate var {param.Name}");
             }
 
-            proc.StartTry(catchLabel, proc.GetLocalVariableReference(param.Name));
+            proc.StartTry(catchLabel, proc.GetLocalVariableReference(param.Name, param.Location));
         } else {
             if (tryCatch.CatchParameter != null)
                 compiler.Emit(WarningCode.InvalidVarDefinition, tryCatch.CatchParameter.Location,

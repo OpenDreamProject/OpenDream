@@ -1,3 +1,4 @@
+// NOBYOND
 #pragma InvalidVarType error
 /datum/do/re/mi/fa/so
 	meep = null

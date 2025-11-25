@@ -1,4 +1,5 @@
 //RUNTIME ERROR, RETURN TRUE
+// NOBYOND -- this test won't work in the byond testing framework because it writes out runtimes
 var/error_loop_count = 0
 
 /world/Error()

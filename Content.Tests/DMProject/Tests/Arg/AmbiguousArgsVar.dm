@@ -1,3 +1,4 @@
+// NOBYOND
 #pragma SoftReservedKeyword warning
 
 //global src def

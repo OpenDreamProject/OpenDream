@@ -77,20 +77,23 @@ internal sealed class DreamResourceManager : IDreamResourceManager {
     }
 
     private void RxBrowseResource(MsgBrowseResource message) {
-        _sawmill.Debug($"Received cache check for {message.Filename} hash: {BitConverter.ToString(message.DataHash)}");
+        _sawmill.Verbose($"Received cache check for {message.Filename} hash: {BitConverter.ToString(message.DataHash)}");
         EnsureCacheDirectory();
         if(_resourceManager.UserData.Exists(GetCacheFilePath(message.Filename)) && GetFileHash(GetCacheFilePath(message.Filename)).SequenceEqual(message.DataHash)){
-            _sawmill.Debug($"Cache hit for {message.Filename}");
+            _sawmill.Verbose($"Cache hit for {message.Filename}");
         } else {
             if (_activeBrowseRscRequests.Contains(message.Filename)) //we've already requested it, don't need to do it again
                 return;
+
             if (_resourceManager.UserData.Exists(GetCacheFilePath(message.Filename))) {
                 _sawmill.Debug($"Cache hit for {message.Filename} but hashes did not match (hash: {BitConverter.ToString(GetFileHash(GetCacheFilePath(message.Filename)))}). Re-requesting!");
                 _resourceManager.UserData.Delete(GetCacheFilePath(message.Filename));
-            } else
+            } else {
                 _sawmill.Debug($"Cache miss for {message.Filename}, requesting from server.");
+            }
+
             _activeBrowseRscRequests.Add(message.Filename);
-            _netManager.ServerChannel?.SendMessage(new MsgBrowseResourceRequest() { Filename = message.Filename });
+            _netManager.ServerChannel?.SendMessage(new MsgBrowseResourceRequest { Filename = message.Filename });
         }
     }
 
@@ -145,7 +148,7 @@ internal sealed class DreamResourceManager : IDreamResourceManager {
         if (!_loadingResources.ContainsKey(message.ResourceId) && _resourceCache.TryGetValue(message.ResourceId, out var cached)) { //either we're already requesting it, or we don't have it so don't need to update
             _sawmill.Debug($"Resource id {message.ResourceId} was updated, reloading");
             _loadingResources[message.ResourceId] = new LoadingResourceEntry(cached.GetType());
-            var msg = new MsgRequestResource() { ResourceId = message.ResourceId };
+            var msg = new MsgRequestResource { ResourceId = message.ResourceId };
             _netManager.ClientSendMessage(msg);
         }
     }
@@ -191,7 +194,7 @@ internal sealed class DreamResourceManager : IDreamResourceManager {
         if (!_loadingResources.ContainsKey(resourceId)) {
             _loadingResources[resourceId] = new LoadingResourceEntry(typeof(T));
 
-            var msg = new MsgRequestResource() { ResourceId = resourceId };
+            var msg = new MsgRequestResource { ResourceId = resourceId };
             _netManager.ClientSendMessage(msg);
 
             var timeout = _cfg.GetCVar(OpenDreamCVars.DownloadTimeout);
@@ -290,7 +293,7 @@ internal sealed class DreamResourceManager : IDreamResourceManager {
             _pendingResourceLookups[resourcePathOrRef].SuccessCallbacks.Add(onSuccess);
             _pendingResourceLookups[resourcePathOrRef].FailureCallbacks.Add(onFailure);
 
-            var msg = new MsgLookupResource() { ResourcePathOrRef = resourcePathOrRef };
+            var msg = new MsgLookupResource { ResourcePathOrRef = resourcePathOrRef };
             _netManager.ClientSendMessage(msg);
 
             var timeout = _cfg.GetCVar(OpenDreamCVars.DownloadTimeout);

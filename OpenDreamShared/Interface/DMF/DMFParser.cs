@@ -284,7 +284,7 @@ public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializatio
             if (winset.Value == "none")
                 continue;
 
-            attributes.Add(winset.Attribute, winset.Value);
+            attributes[winset.Attribute] = winset.Value;
         }
 
         return attributes;

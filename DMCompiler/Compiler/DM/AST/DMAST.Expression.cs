@@ -146,6 +146,12 @@ public sealed class DMASTNewPath(Location location, DMASTConstantPath path, DMAS
     public readonly DMASTCallParameter[]? Parameters = parameters;
 }
 
+public sealed class DMASTNewModifiedType(Location location, DMASTModifiedType type, DMASTCallParameter[]? parameters)
+    : DMASTExpression(location) {
+    public readonly DMASTModifiedType Type = type;
+    public readonly DMASTCallParameter[]? Parameters = parameters;
+}
+
 public sealed class DMASTNewExpr(Location location, DMASTExpression expression, DMASTCallParameter[]? parameters)
     : DMASTExpression(location) {
     public readonly DMASTExpression Expression = expression;

@@ -24,4 +24,5 @@
 	ASSERT(!issaved(F.delay))
 	ASSERT(islist(F.connected))
 	ASSERT(!length(F.connected))
+	ASSERT(issaved(F.connected))
 	ASSERT(isnull(F.height))

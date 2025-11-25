@@ -16,6 +16,7 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
     public ScalingViewport Viewport { get; private set; }
 
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+    [Dependency] private readonly IDreamInterfaceManager _dreamInterfaceManager = default!;
     private MouseInputSystem? _mouseInput;
     private ClientAppearanceSystem? _appearanceSystem;
 
@@ -138,19 +139,31 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
     }
 
     private void UpdateAtomUnderMouse(ClientObjectReference? atom, Vector2 relativePos, Vector2i iconPos) {
+        //if dragging and atom drop pointer: set drop pointer
+        //if atom over pointer: set over pointer
+        //else set pointer to default state
         if (!_atomUnderMouse.Equals(atom)) {
             _entitySystemManager.Resolve(ref _appearanceSystem);
-
             var name = (atom != null) ? _appearanceSystem.GetName(atom.Value) : string.Empty;
             Window?.SetStatus(name);
 
             if (_atomUnderMouse != null)
                 _mouseInput?.HandleAtomMouseExited(Viewport, _atomUnderMouse.Value);
-            if (atom != null)
+            if (atom != null) {
                 _mouseInput?.HandleAtomMouseEntered(Viewport, relativePos, atom.Value, iconPos);
+                if ( _appearanceSystem.TryGetAppearance(atom.Value, out var atomAppearance)) {
+                    if(_mouseInput?.IsDragging ?? false)
+                        if(atomAppearance.MouseDropZone)
+                            _mouseInput?.SetCursorFromDefine(atomAppearance.MouseDropPointer, _dreamInterfaceManager.Cursors.DropCursor, Viewport);
+                        else
+                            _mouseInput?.SetCursorFromDefine(atomAppearance.MouseOverPointer, _dreamInterfaceManager.Cursors.DragCursor, Viewport);
+                } //else
+                   // _mouseInput?.SetCursorFromDefine(0, _dreamInterfaceManager.Cursors.BaseCursor);
+
+            }
         } else if (atom.HasValue) {
-            _mouseInput?.HandleAtomMouseMove(Viewport, relativePos, atom.Value, iconPos);
-        }
+                _mouseInput?.HandleAtomMouseMove(Viewport, relativePos, atom.Value, iconPos);
+            }
 
         _atomUnderMouse = atom;
     }

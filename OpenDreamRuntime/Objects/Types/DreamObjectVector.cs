@@ -338,6 +338,24 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
         return vector;
     }
 
+    /// <summary>
+    /// Creates a <see cref="DreamObjectVector"/> from a <see cref="Vector3"/>
+    /// </summary>
+    public static DreamObjectVector CreateFromValue(Vector3 value, DreamObjectTree tree) {
+        var vector = tree.CreateObject<DreamObjectVector>(tree.Vector);
+        vector.Initialize(new(new(value.X), new(value.Y), new(value.Z)));
+        return vector;
+    }
+
+    /// <summary>
+    /// Creates a <see cref="DreamObjectVector"/> from a <see cref="Vector2"/>
+    /// </summary>
+    public static DreamObjectVector CreateFromValue(Vector2 value, DreamObjectTree tree) {
+        var vector = tree.CreateObject<DreamObjectVector>(tree.Vector);
+        vector.Initialize(new(new(value.X), new(value.Y)));
+        return vector;
+    }
+
     // TODO: Operators, supports indexing and "most math"
     // TODO: For loop support
 }

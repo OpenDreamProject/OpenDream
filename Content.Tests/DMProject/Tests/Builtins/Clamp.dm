@@ -1,4 +1,4 @@
-﻿/proc/RunTest()
+/proc/RunTest()
 	var/out1 = clamp(10, 1, 5)
 	ASSERT(out1 == 5)
 	var/out2 = clamp(-10, 1, 5)

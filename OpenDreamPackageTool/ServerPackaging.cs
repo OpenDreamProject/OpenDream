@@ -58,6 +58,12 @@ public static class ServerPackaging {
         "Microsoft.CodeAnalysis"
     };
 
+    private static readonly string[] ServerNatives = {
+        "byondcore", // Windows name for the BYONDAPI trampoline
+        "libbyond", // Linux name for the BYONDAPI trampoline
+        "TracyClient"
+    };
+
     private static readonly string[] BinSkipFolders = {
         // Roslyn localization files, screw em.
         "cs",
@@ -215,18 +221,15 @@ public static class ServerPackaging {
     private static void CopyNatives(PlatformReg platform, string releaseDir) {
         string sourceDir = Path.Combine("bin", "Content.Server");
         string runtimesDir = $"runtimes/{platform.RId}/";
-        string dllSrc, dllDst;
 
-        if (platform.TargetOs == "Windows") {
-            dllSrc = Path.Combine(sourceDir, runtimesDir, "native/byondcore.dll");
-            dllDst = Path.Combine(releaseDir, "byondcore.dll");
-        } else if (platform.TargetOs == "Linux") {
-            dllSrc = Path.Combine(sourceDir, runtimesDir, "native/libbyond.so");
-            dllDst = Path.Combine(releaseDir, "libbyond.so");
-        } else {
-            throw new Exception($"Unsupported target OS {platform.TargetOs}");
+        foreach (var native in ServerNatives) {
+            var name = (platform.TargetOs == "Windows") ? $"{native}.dll" : $"{native}.so";
+            var src = Path.Combine(sourceDir, runtimesDir, $"native/{name}");
+            var dst = Path.Combine(releaseDir, name);
+            if (!File.Exists(src))
+                continue;
+
+            File.Copy(src, dst);
         }
-
-        File.Copy(dllSrc, dllDst);
     }
 }

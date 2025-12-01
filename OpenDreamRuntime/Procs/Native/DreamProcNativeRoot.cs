@@ -627,14 +627,14 @@ internal static class DreamProcNativeRoot {
         bundle.GetArgument(2, "End").TryGetValueAsInteger(out var end); //1-indexed
 
         if (!bundle.GetArgument(0, "T").TryGetValueAsString(out string? text))
-            return (end == 0) ? DreamValue.Null : new DreamValue("");
+            return (end == 0) ? DreamValue.Null : DreamValue.EmptyString;
         if (!bundle.GetArgument(1, "Start").TryGetValueAsInteger(out int start)) //1-indexed
-            return new DreamValue("");
+            return DreamValue.EmptyString;
 
         if (end <= 0) end += text.Length + 1;
         else if (end > text.Length + 1) end = text.Length + 1;
 
-        if (start == 0) return new DreamValue("");
+        if (start == 0) return DreamValue.EmptyString;
         else if (start < 0) start += text.Length + 1;
 
         return new DreamValue(text.Substring(start - 1, end - start));
@@ -648,16 +648,16 @@ internal static class DreamProcNativeRoot {
         bundle.GetArgument(2, "End").TryGetValueAsInteger(out var end); //1-indexed
 
         if (!bundle.GetArgument(0, "T").TryGetValueAsString(out string? text))
-            return (end == 0) ? DreamValue.Null : new DreamValue("");
+            return (end == 0) ? DreamValue.Null : DreamValue.EmptyString;
         if (!bundle.GetArgument(1, "Start").TryGetValueAsInteger(out int start)) //1-indexed
-            return new DreamValue("");
+            return DreamValue.EmptyString;
 
         StringInfo textElements = new StringInfo(text);
 
         if (end <= 0) end += textElements.LengthInTextElements + 1;
         else if (end > textElements.LengthInTextElements + 1) end = textElements.LengthInTextElements + 1;
 
-        if (start == 0) return new DreamValue("");
+        if (start == 0) return DreamValue.EmptyString;
         else if (start < 0) start += textElements.LengthInTextElements + 1;
 
         if (start > textElements.LengthInTextElements)
@@ -792,6 +792,7 @@ internal static class DreamProcNativeRoot {
 
     [DreamProc("filter")]
     [DreamProcParameter("type", Type = DreamValueTypeFlag.String)] // Must be from a valid list
+    [DreamProcParameter("name", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("size", Type = DreamValueTypeFlag.Float)]
     [DreamProcParameter("color", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("x", Type = DreamValueTypeFlag.Float)]
@@ -1157,62 +1158,9 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("B", Type = DreamValueTypeFlag.DreamObject)]
     [DreamProcParameter("rand", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
     public static DreamValue NativeProc_generator(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-        // TODO: Invalid value gives an invalid /generator instance
-        var outputTypeString = bundle.GetArgument(0, "type").MustGetValueAsString();
-
-        var a = bundle.GetArgument(1, "A");
-        var b = bundle.GetArgument(2, "B");
-        var distNum = bundle.GetArgument(3, "rand").MustGetValueAsInteger();
-
-        GeneratorOutputType outputType;
-        GeneratorDistribution distribution;
-        switch(outputTypeString) {
-            case "num":
-                outputType = GeneratorOutputType.Num;
-                break;
-            case "vector":
-                outputType = GeneratorOutputType.Vector;
-                break;
-            case "box":
-                outputType = GeneratorOutputType.Box;
-                break;
-            case "color":
-                outputType = GeneratorOutputType.Color;
-                break;
-            case "circle":
-                outputType = GeneratorOutputType.Circle;
-                break;
-            case "sphere":
-                outputType = GeneratorOutputType.Sphere;
-                break;
-            case "square":
-                outputType = GeneratorOutputType.Square;
-                break;
-            case "cube":
-                outputType = GeneratorOutputType.Cube;
-                break;
-            default:
-                throw new InvalidEnumArgumentException("Invalid output type specified in generator()");
-        }
-
-        switch(distNum) {
-            case 0:
-                distribution = GeneratorDistribution.Uniform;
-                break;
-            case 1:
-                distribution = GeneratorDistribution.Normal;
-                break;
-            case 2:
-                distribution = GeneratorDistribution.Linear;
-                break;
-            case 3:
-                distribution = GeneratorDistribution.Square;
-                break;
-            default:
-                throw new InvalidEnumArgumentException("Invalid distribution type specified in generator()");
-        }
-
-        return new(new DreamObjectGenerator(bundle.ObjectTree.Generator.ObjectDefinition, a, b, outputType, distribution));
+        DreamObject generator = bundle.ObjectTree.CreateObject(bundle.ObjectTree.Generator);
+        generator.InitSpawn(new DreamProcArguments(bundle.Arguments));
+        return new DreamValue(generator);
     }
 
     [DreamProc("hascall")]
@@ -3296,7 +3244,7 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("UrlText", Type = DreamValueTypeFlag.String)]
     public static DreamValue NativeProc_url_decode(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
         if (!bundle.GetArgument(0, "UrlText").TryGetValueAsString(out var urlText)) {
-            return new DreamValue("");
+            return DreamValue.EmptyString;
         }
 
         return new DreamValue(HttpUtility.UrlDecode(urlText));
@@ -3619,7 +3567,7 @@ internal static class DreamProcNativeRoot {
     public static async Task<DreamValue> NativeProc_winexists(AsyncNativeProc.State state) {
         DreamValue player = state.GetArgument(0, "player");
         if (!state.GetArgument(1, "control_id").TryGetValueAsString(out var controlId)) {
-            return new DreamValue("");
+            return DreamValue.EmptyString;
         }
 
         DreamConnection? connection = null;

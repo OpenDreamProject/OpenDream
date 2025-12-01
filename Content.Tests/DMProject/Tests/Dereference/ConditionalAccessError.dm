@@ -1,4 +1,4 @@
-﻿// RUNTIME ERROR
+// RUNTIME ERROR
 #include "Shared/Recursive.dm"
 
 /proc/RunTest()

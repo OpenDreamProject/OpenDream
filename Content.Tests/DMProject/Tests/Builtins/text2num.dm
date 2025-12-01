@@ -35,5 +35,5 @@
 	ASSERT(text2num("0xA", 15) == 0)
 	ASSERT(text2num("0xA", 36) == 1198)
 
-	ASSERT(isnan(text2num("nan")))
-	ASSERT(isnan(text2num(" -nansomething")))
+	ASSERT(text2num("nan") == null)
+	ASSERT(text2num(" -nansomething") == null)

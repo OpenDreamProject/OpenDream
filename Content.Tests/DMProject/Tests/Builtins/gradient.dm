@@ -1,4 +1,4 @@
-﻿// We do HSV gradients our own way
+// We do HSV gradients our own way
 
 /proc/RunTest()
 	var/list/gradlist = list(0, "#ff0000", 1, "#00ff00")

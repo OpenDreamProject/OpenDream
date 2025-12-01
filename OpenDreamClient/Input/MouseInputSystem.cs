@@ -1,7 +1,7 @@
 ﻿using OpenDreamClient.Input.ContextMenu;
 using OpenDreamClient.Interface;
 using OpenDreamClient.Interface.Controls.UI;
-using OpenDreamClient.Interface.Descriptors;
+using OpenDreamShared.Interface.Descriptors;
 using OpenDreamClient.Rendering;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Input;
@@ -22,7 +22,6 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
     [Dependency] private readonly IUserInterfaceManager _userInterfaceManager = default!;
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly IOverlayManager _overlayManager = default!;
-    [Dependency] private readonly EntityLookupSystem _lookupSystem = default!;
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly MapSystem _mapSystem = default!;
     [Dependency] private readonly IConfigurationManager _configurationManager = default!;
@@ -106,12 +105,12 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
         RaiseNetworkEvent(new MouseMoveEvent(atomRef, CreateClickParams(viewport, relativePos, iconPos)));
     }
 
-    public (ClientObjectReference Atom, Vector2i IconPosition)? GetAtomUnderMouse(ScalingViewport viewport, Vector2 relativePos, ScreenCoordinates globalPos) {
+    public (ClientObjectReference Atom, Vector2i IconPosition, bool IsScreen)? GetAtomUnderMouse(ScalingViewport viewport, Vector2 relativePos, ScreenCoordinates globalPos) {
         _dreamViewOverlay ??= _overlayManager.GetOverlay<DreamViewOverlay>();
         if(_dreamViewOverlay.MouseMap == null)
             return null;
 
-        UIBox2i viewportBox = viewport.GetDrawBox();
+        var viewportBox = viewport.GetDrawBox();
         if (!viewportBox.Contains((int)relativePos.X, (int)relativePos.Y))
             return null; // Was outside of the viewport
 
@@ -128,15 +127,20 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
             return null;
 
         if (underMouse.ClickUid == EntityUid.Invalid) { // A turf
-            return GetTurfUnderMouse(mapCoords, out _);
-        } else {
-            Vector2i iconPosition = (Vector2i) ((mapCoords.Position - underMouse.Position) * _dreamInterfaceManager.IconSize);
+            var turf = GetTurfUnderMouse(mapCoords, out _);
+            if (turf == null)
+                return null;
 
-            return (new(_entityManager.GetNetEntity(underMouse.ClickUid)), iconPosition);
+            return (turf.Value.Atom, turf.Value.IconPosition, false);
+        } else {
+            var iconPosition = (Vector2i) ((mapCoords.Position - underMouse.Position) * _dreamInterfaceManager.IconSize);
+            var reference = new ClientObjectReference(_entityManager.GetNetEntity(underMouse.ClickUid));
+
+            return (reference, iconPosition, underMouse.IsScreen);
         }
     }
 
-    private (ClientObjectReference Atom, Vector2i IconPosition)? GetTurfUnderMouse(MapCoordinates mapCoords, out uint? turfId) {
+    public (ClientObjectReference Atom, Vector2i IconPosition)? GetTurfUnderMouse(MapCoordinates mapCoords, out uint? turfId) {
         // Grid coordinates are half a meter off from entity coordinates
         mapCoords = new MapCoordinates(mapCoords.Position + new Vector2(0.5f), mapCoords.MapId);
 
@@ -157,36 +161,13 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
     private bool OnPress(ScalingViewport viewport, GUIBoundKeyEventArgs args, ControlDescriptor descriptor) {
         //either turf or atom was clicked, and it was a right-click, and the popup menu is enabled, and the right-click parameter is disabled
         if (args.Function == EngineKeyFunctions.UIRightClick && _dreamInterfaceManager.ShowPopupMenus && !descriptor.RightClick.Value) {
-            var mapCoords = viewport.ScreenToMap(args.PointerLocation.Position);
-            var entities = _lookupSystem.GetEntitiesInRange(mapCoords, 0.01f, LookupFlags.Uncontained | LookupFlags.Approximate);
+            _contextMenu.RepopulateEntities(viewport, args.RelativePosition, args.PointerLocation);
+            if (_contextMenu.EntityCount != 0) { //don't open a 1x1 empty context menu
+                var contextMenuLocation = args.PointerLocation.Position / _userInterfaceManager.ModalRoot.UIScale; // Take scaling into account
 
-            ClientObjectReference[] objects = new ClientObjectReference[entities.Count + 1];
-
-            // We can't index a HashSet so we have to use a foreach loop
-            int index = 0;
-            foreach (var uid in entities) {
-                objects[index] = new ClientObjectReference(_entityManager.GetNetEntity(uid));
-                index += 1;
+                _contextMenu.Measure(_userInterfaceManager.ModalRoot.Size);
+                _contextMenu.Open(UIBox2.FromDimensions(contextMenuLocation, _contextMenu.DesiredSize));
             }
-
-            // Append the turf to the end of the context menu
-            var turfUnderMouse = GetTurfUnderMouse(mapCoords, out var turfId)?.Atom;
-            if (turfUnderMouse is not null)
-                objects[index] = turfUnderMouse.Value;
-
-            //TODO filter entities by the valid verbs that exist on them
-            //they should only show up if there is a verb attached to usr which matches the filter in world syntax
-            //ie, obj|turf in world
-            //note that popup_menu = 0 overrides this behaviour, as does verb invisibility (urgh), and also hidden
-            //because BYOND sure loves redundancy
-
-            _contextMenu.RepopulateEntities(objects, turfId);
-            if(_contextMenu.EntityCount == 0)
-                return true; //don't open a 1x1 empty context menu
-
-            _contextMenu.Measure(_userInterfaceManager.ModalRoot.Size);
-            Vector2 contextMenuLocation = args.PointerLocation.Position / _userInterfaceManager.ModalRoot.UIScale; // Take scaling into account
-            _contextMenu.Open(UIBox2.FromDimensions(contextMenuLocation, _contextMenu.DesiredSize));
 
             return true;
         }

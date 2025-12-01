@@ -1,4 +1,4 @@
-﻿/proc/RunTest()
+/proc/RunTest()
 	// Note byond goes counterclockwise (why) (unlike every other turn proc also)
 
 	// Handle the testable invalid case

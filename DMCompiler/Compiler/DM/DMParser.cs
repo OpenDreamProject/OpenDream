@@ -331,7 +331,7 @@ namespace DMCompiler.Compiler.DM {
                         value = new DMASTConstantNull(loc);
                     }
 
-                    var valType = AsComplexTypes() ?? DMValueType.Anything;
+                    var valType = AsComplexTypes();
                     var varDef = new DMASTObjectVarDefinition(loc, varPath, value, valType);
 
                     if (varDef.IsStatic && varDef.Name is "usr" or "src" or "args" or "world" or "global" or "callee" or "caller")
@@ -938,7 +938,11 @@ namespace DMCompiler.Compiler.DM {
                     RequireExpression(ref value);
                 }
 
-                var valType = AsComplexTypes() ?? DMValueType.Anything;
+                var valType = AsComplexTypes();
+                // the != DMValueType.Null check is a hacky workaround for Anything|Null being equal to just Null
+                if (valType is null && value?.GetUnwrapped() is DMASTInput input && input.Types != DMValueType.Null) {
+                    valType = input.Types;
+                }
 
                 varDeclarations.Add(new DMASTProcStatementVarDeclaration(loc, varPath, value, valType));
                 if (allowMultiple && Check(TokenType.DM_Comma)) {
@@ -2774,7 +2778,7 @@ namespace DMCompiler.Compiler.DM {
 
             do {
                 Whitespace();
-                type |= SingleAsType(out _);
+                type |= SingleAsType(out _, out _);
                 Whitespace();
             } while (Check(TokenType.DM_Bar));
 
@@ -2794,29 +2798,49 @@ namespace DMCompiler.Compiler.DM {
             if (parenthetical && Check(TokenType.DM_RightParenthesis)) // as ()
                 return DMValueType.Anything; // TODO: BYOND doesn't allow this for proc return types
 
-            DMValueType type = DMValueType.Anything;
-            DreamPath? path = null;
-
-            do {
-                Whitespace();
-                type |= SingleAsType(out var pathType, allowPath: true);
-                Whitespace();
-
-                if (pathType != null) {
-                    if (path == null)
-                        path = pathType;
-                    else
-                        Compiler.Emit(WarningCode.BadToken, CurrentLoc,
-                            $"Only one type path can be used, ignoring {pathType}");
-                }
-
-            } while (Check(TokenType.DM_Bar));
+            var outType = UnionComplexTypes();
 
             if (parenthetical) {
                 ConsumeRightParenthesis();
             }
 
-            return new(type, path);
+            return outType;
+        }
+
+        private DMComplexValueType? UnionComplexTypes() {
+
+            DMValueType type = DMValueType.Anything;
+            DreamPath? path = null;
+            DMListValueTypes? outListTypes = null;
+
+            do {
+                Whitespace();
+                type |= SingleAsType(out var pathType, out var listTypes, allowPath: true);
+                Whitespace();
+
+                if (pathType is not null) {
+                    if (path is null)
+                        path = pathType;
+                    else {
+                        var newPath = path.Value.GetLastCommonAncestor(compiler, pathType.Value);
+                        if (newPath != path) {
+                            Compiler.Emit(WarningCode.LostTypeInfo, CurrentLoc,
+                                $"Only one type path can be used, using last common ancestor {newPath}");
+                            path = newPath;
+                        }
+                    }
+                }
+
+                if (listTypes is not null) {
+                    if (outListTypes is null)
+                        outListTypes = listTypes;
+                    else {
+                        outListTypes = DMListValueTypes.MergeListValueTypes(compiler, outListTypes, listTypes);
+                    }
+                }
+            } while (Check(TokenType.DM_Bar));
+
+            return new(type, path, outListTypes);
         }
 
         private bool AsTypesStart(out bool parenthetical) {
@@ -2830,10 +2854,21 @@ namespace DMCompiler.Compiler.DM {
             return false;
         }
 
-        private DMValueType SingleAsType(out DreamPath? path, bool allowPath = false) {
+        private DMValueType SingleAsType(out DreamPath? path, out DMListValueTypes? listTypes, bool allowPath = false) {
             Token typeToken = Current();
 
-            if (!Check(new[] { TokenType.DM_Identifier, TokenType.DM_Null })) {
+            listTypes = null;
+
+            var inPath = false;
+            if (typeToken.Type is TokenType.DM_Identifier && typeToken.Text == "path") {
+                Advance();
+                if(Check(TokenType.DM_LeftParenthesis)) {
+                    inPath = true;
+                    Whitespace();
+                }
+            }
+
+            if (inPath || !Check(new[] { TokenType.DM_Identifier, TokenType.DM_Null })) {
                 // Proc return types
                 path = Path()?.Path;
                 if (allowPath) {
@@ -2841,11 +2876,31 @@ namespace DMCompiler.Compiler.DM {
                         Compiler.Emit(WarningCode.BadToken, typeToken.Location, "Expected value type or path");
                     }
 
-                    return DMValueType.Path;
+                    if (inPath) {
+                        Whitespace();
+                        ConsumeRightParenthesis();
+                    } else if (path == DreamPath.List) {
+                        // check for list types
+                        if (Check(TokenType.DM_LeftParenthesis)) {
+                            DMComplexValueType? nestedKeyType = UnionComplexTypes();
+                            if (nestedKeyType is null)
+                                Compiler.Emit(WarningCode.BadToken, CurrentLoc, "Expected value type or path");
+                            DMComplexValueType? nestedValType = null;
+                            if (Check(TokenType.DM_Comma)) { // Value
+                                nestedValType = UnionComplexTypes();
+                            }
+
+                            ConsumeRightParenthesis();
+                            listTypes = new(nestedKeyType!.Value, nestedValType);
+                            return DMValueType.Instance;
+                        }
+                    }
+
+                    return inPath ? DMValueType.Path : DMValueType.Instance;
                 }
 
                 Compiler.Emit(WarningCode.BadToken, typeToken.Location, "Expected value type");
-                return 0;
+                return DMValueType.Anything;
             }
 
             path = null;
@@ -2864,7 +2919,6 @@ namespace DMCompiler.Compiler.DM {
                 case "command_text": return DMValueType.CommandText;
                 case "sound": return DMValueType.Sound;
                 case "icon": return DMValueType.Icon;
-                case "path": return DMValueType.Path;
                 case "opendream_unimplemented": return DMValueType.Unimplemented;
                 case "opendream_unsupported": return DMValueType.Unsupported;
                 case "opendream_compiletimereadonly": return DMValueType.CompiletimeReadonly;

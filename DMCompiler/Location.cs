@@ -1,3 +1,4 @@
+using System.IO;
 using System.Text;
 
 namespace DMCompiler;
@@ -19,7 +20,7 @@ public readonly struct Location(string filePath, int? line, int? column, bool in
     public bool InDMStandard { get; } = inDMStandard;
 
     public override string ToString() {
-        var builder = new StringBuilder(SourceFile ?? "<unknown>");
+        var builder = new StringBuilder((SourceFile is null) ? "<unknown>" : Path.GetRelativePath(".", SourceFile));
 
         if (Line is not null) {
             builder.Append(":" + Line);

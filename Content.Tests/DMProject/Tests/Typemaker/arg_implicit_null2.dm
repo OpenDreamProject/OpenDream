@@ -4,3 +4,4 @@
 
 /proc/RunTest()
 	return
+#pragma ImplicitNullType notice

@@ -168,10 +168,13 @@ internal sealed class DMProc {
     }
 
     public void ValidateReturnType(DMExpression expr) {
-        var type = expr.ValType;
-        var returnTypes = _dmObject.GetProcReturnTypes(Name)!.Value;
+        ValidateReturnType(expr.ValType, expr, expr.Location);
+    }
+
+    public void ValidateReturnType(DMComplexValueType type, DMExpression? expr, Location location) {
+        var returnTypes = _dmObject.GetProcReturnTypes(Name) ?? DMValueType.Anything;
         if ((returnTypes.Type & (DMValueType.Color | DMValueType.File | DMValueType.Message)) != 0) {
-            _compiler.Emit(WarningCode.UnsupportedTypeCheck, expr.Location, "color, message, and file return types are currently unsupported.");
+            _compiler.Emit(WarningCode.UnsupportedTypeCheck, Location, "color, message, and file return types are currently unsupported.");
             return;
         }
 
@@ -183,17 +186,19 @@ internal sealed class DMProc {
 
             switch (expr) {
                 case ProcCall:
-                    _compiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject.Path.ToString()}.{Name}(): Called proc does not have a return type set, expected {ReturnTypes}.");
+                    _compiler.Emit(WarningCode.InvalidReturnType, location, $"{_dmObject.Path.ToString()}.{Name}(): Called proc does not have a return type set, expected {ReturnTypes}.");
                     break;
                 case Local:
-                    _compiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject.Path.ToString()}.{Name}(): Cannot determine return type of non-constant expression, expected {ReturnTypes}. Consider making this variable constant or adding an explicit \"as {ReturnTypes}\"");
+                    _compiler.Emit(WarningCode.InvalidReturnType, location, $"{_dmObject.Path.ToString()}.{Name}(): Cannot determine return type of non-constant expression, expected {ReturnTypes}. Consider making this variable constant or adding an explicit \"as {ReturnTypes}\"");
+                    break;
+                case null:
                     break;
                 default:
-                    _compiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject.Path.ToString()}.{Name}(): Cannot determine return type of expression \"{expr}\", expected {ReturnTypes}. Consider reporting this as a bug on OpenDream's GitHub.");
+                    _compiler.Emit(WarningCode.InvalidReturnType, location, $"{_dmObject.Path.ToString()}.{Name}(): Cannot determine return type of expression \"{expr}\", expected {ReturnTypes}. Consider reporting this as a bug on OpenDream's GitHub.");
                     break;
             }
         } else if (!ReturnTypes.MatchesType(_compiler, type)) { // We could determine the return types but they don't match
-            _compiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject.Path.ToString()}{splitter}{Name}(): Invalid return type {type}, expected {ReturnTypes}");
+            _compiler.Emit(WarningCode.InvalidReturnType, location, $"{_dmObject.Path.ToString()}{splitter}{Name}(): Invalid return type {type}, expected {ReturnTypes}");
         }
     }
 
@@ -213,13 +218,13 @@ internal sealed class DMProc {
                         argumentType = DMValueType.Anything;
                     } else {
                         _compiler.DMObjectTree.TryGetDMObject(typePath, out var type);
-                        argumentType = type?.GetDMValueType() ?? DMValueType.Anything;
+                        argumentType = type?.Path.GetAtomType(_compiler) ?? DMValueType.Anything;
                     }
                 }
 
                 arguments.Add(new ProcArgumentJson {
                     Name = parameter.Name,
-                    Type = argumentType.Type
+                    Type = argumentType.Type & ~(DMValueType.Instance|DMValueType.Path)
                 });
             }
         }
@@ -500,7 +505,7 @@ internal sealed class DMProc {
         return label;
     }
 
-    public bool TryAddLocalVariable(string name, DreamPath? type, DMComplexValueType valType) {
+    public bool TryAddLocalVariable(string name, DreamPath? type, DMComplexValueType? valType) {
         if (_parameters.ContainsKey(name)) //Parameters and local vars cannot share a name
             return false;
 
@@ -541,6 +546,20 @@ internal sealed class DMProc {
         }
 
         return local.IsParameter ? DMReference.CreateArgument(local.Id) : DMReference.CreateLocal(local.Id);
+    }
+
+    public DMProc GetBaseProc(DMObject? dmObject = null) {
+            if (dmObject == null) dmObject = _dmObject;
+            if (dmObject == _compiler.DMObjectTree.Root && _compiler.DMObjectTree.TryGetGlobalProc(Name, out var globalProc))
+                return globalProc;
+            if (dmObject.GetProcs(Name) is not { } procs)
+                return dmObject.Parent is not null ? GetBaseProc(dmObject.Parent) : this;
+
+            var proc = _compiler.DMObjectTree.AllProcs[procs[0]];
+            if ((proc.Attributes & ProcAttributes.IsOverride) != 0)
+                return dmObject.Parent is not null ? GetBaseProc(dmObject.Parent) : this;
+
+            return proc;
     }
 
     public void Error() {

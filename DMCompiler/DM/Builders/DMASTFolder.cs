@@ -162,6 +162,14 @@ public class DMASTFolder {
                 }
 
                 break;
+            case DMASTNewModifiedType newModifiedType:
+                if (newModifiedType.Parameters != null) {
+                    foreach (DMASTCallParameter parameter in newModifiedType.Parameters) {
+                        parameter.Value = FoldExpression(parameter.Value);
+                    }
+                }
+
+                break;
             case DMASTNewExpr newExpr:
                 if (newExpr.Parameters != null) {
                     foreach (DMASTCallParameter parameter in newExpr.Parameters) {

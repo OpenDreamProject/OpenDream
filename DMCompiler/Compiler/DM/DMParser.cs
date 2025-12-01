@@ -2223,6 +2223,7 @@ namespace DMCompiler.Compiler.DM {
 
                 DMASTExpression? newExpression = type switch {
                     DMASTConstantPath path => new DMASTNewPath(loc, path, parameters),
+                    DMASTModifiedType modifiedType => new DMASTNewModifiedType(loc, modifiedType, parameters),
                     not null => new DMASTNewExpr(loc, type, parameters),
                     null => new DMASTNewInferred(loc, parameters),
                 };
@@ -2271,34 +2272,34 @@ namespace DMCompiler.Compiler.DM {
 
                 Whitespace(); // whitespace between path and modified type
 
-                //TODO actual modified type support
                 if (Check(TokenType.DM_LeftCurlyBracket)) {
-                    Compiler.UnimplementedWarning(path.Location, "Modified types are currently not supported and modified values will be ignored.");
-
                     BracketWhitespace();
-                    Check(TokenType.DM_Indent); // The body could be indented. We ignore that. TODO: Better braced block parsing
+                    Whitespace(true);
+                    Dictionary<string, DMASTExpression> overrides = new();
                     DMASTIdentifier? overriding = Identifier();
-
                     while (overriding != null) {
                         BracketWhitespace();
                         Consume(TokenType.DM_Equals, "Expected '='");
                         BracketWhitespace();
-
-                        Expression(); // TODO: Use this (one day...)
-
+                        DMASTExpression? value = Expression();
+                        RequireExpression(ref value);
+                        overrides[overriding.Identifier] = value;
                         if (Check(TokenType.DM_Semicolon)) {
                             BracketWhitespace();
+                            Whitespace(true);
                             overriding = Identifier();
                         } else {
                             overriding = null;
                         }
                     }
 
-                    Check(TokenType.DM_Dedent); // We ignore indents/dedents in the body
+                    pathConstant = new DMASTModifiedType(loc, path, overrides);
+                    Check(TokenType.DM_Dedent);
                     BracketWhitespace();
+                    Whitespace(true);
                     Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
-                    //The lexer tosses in a newline after '}', but we avoid Newline() because we only want to remove the extra newline, not all of them
                     Check(TokenType.Newline);
+                    //The lexer tosses in a newline after '}', but we avoid Newline() because we only want to remove the extra newline, not all of them
                 }
 
                 return pathConstant;

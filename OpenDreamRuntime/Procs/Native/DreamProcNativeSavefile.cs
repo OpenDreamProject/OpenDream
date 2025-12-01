@@ -3,6 +3,7 @@ using OpenDreamRuntime.Objects.Types;
 using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace OpenDreamRuntime.Procs.Native;
 
@@ -20,24 +21,24 @@ internal static class DreamProcNativeSavefile {
             savefile.CurrentPath = pathStr;
         }
 
-        string result = ExportTextInternal(savefile);
+        var result = new StringBuilder();
+        ExportTextInternal(savefile, result);
 
         savefile.CurrentPath = oldPath; //restore current directory after a query
         if (!file.IsNull) {
             if (file.TryGetValueAsString(out var fileStr)) {
-                File.WriteAllText(fileStr, result);
+                File.WriteAllText(fileStr, result.ToString());
             } else if (file.TryGetValueAsDreamResource(out var fileResource)) {
-                fileResource.Output(new DreamValue(result));
+                fileResource.Output(new DreamValue(result.ToString()));
             } else {
                 throw new ArgumentException($"Invalid file value {file}");
             }
         }
 
-        return new DreamValue(result);
+        return new DreamValue(result.ToString());
     }
 
-    private static string ExportTextInternal(DreamObjectSavefile savefile, int indent = int.MinValue) {
-        var result = "";
+    private static void ExportTextInternal(DreamObjectSavefile savefile, StringBuilder result, int indent = int.MinValue) {
         var value = savefile.CurrentDir;
         var key = savefile.CurrentPath.Split('/').Last();
         if (indent == int.MinValue) {
@@ -48,55 +49,53 @@ internal static class DreamProcNativeSavefile {
         switch (value) {
             case DreamObjectSavefile.SfDreamPrimitive primitiveValue:
                 if (primitiveValue.Value.IsNull) {
-                    result += $"{new string('\t', indent)}{key} = null\n";
+                    result.Append($"{new string('\t', indent)}{key} = null\n");
                 } else switch (primitiveValue.Value.Type) {
                     case DreamValue.DreamValueType.String:
-                        result += $"{new string('\t', indent)}{key} = \"{primitiveValue.Value.MustGetValueAsString()}\"\n";
+                        result.Append($"{new string('\t', indent)}{key} = \"{primitiveValue.Value.MustGetValueAsString()}\"\n");
                         break;
                     case DreamValue.DreamValueType.Float:
-                        result += $"{new string('\t', indent)}{key} = {primitiveValue.Value.MustGetValueAsFloat()}\n";
+                        result.Append($"{new string('\t', indent)}{key} = {primitiveValue.Value.MustGetValueAsFloat()}\n");
                         break;
                 }
 
                 break;
             case DreamObjectSavefile.SfDreamFileValue fileValue:
-                result += $"{new string('\t', indent)}{key} = \nfiledata(\"";
-                result += $"name={fileValue.Name};";
-                result += $"ext={fileValue.Ext};";
-                result += $"length={fileValue.Length};";
-                result += $"crc32=0x{fileValue.Crc32:x8};";
-                result += $"encoding=base64\",{{\"\n{fileValue.Data}\n\"}}";
-                result += ")\n";
+                result.Append($"{new string('\t', indent)}{key} = \nfiledata(\"");
+                result.Append($"name={fileValue.Name};");
+                result.Append($"ext={fileValue.Ext};");
+                result.Append($"length={fileValue.Length};");
+                result.Append($"crc32=0x{fileValue.Crc32:x8};");
+                result.Append($"encoding=base64\",{{\"\n{fileValue.Data}\n\"}}");
+                result.Append(")\n");
                 break;
             case DreamObjectSavefile.SfDreamObjectPathValue objectValue:
-                result += $"{new string('\t', indent)}{key} = object(\"{objectValue.Path}\")\n";
+                result.Append($"{new string('\t', indent)}{key} = object(\"{objectValue.Path}\")\n");
                 break;
             case DreamObjectSavefile.SfDreamType typeValue:
-                result += $"{new string('\t', indent)}{key} = {typeValue.TypePath}\n";
+                result.Append($"{new string('\t', indent)}{key} = {typeValue.TypePath}\n");
                 break;
             case DreamObjectSavefile.SfDreamListValue listValue:
-                result += $"{new string('\t', indent)}{key} = {ExportTextInternalListFormat(listValue)}\n";
+                result.Append($"{new string('\t', indent)}{key} = {ExportTextInternalListFormat(listValue)}\n");
                 break;
             case DreamObjectSavefile.SfDreamDir:
-                if (key==".")
-                    result += "\n";
+                if (key == ".")
+                    result.Append("\n");
                 else
-                    result += $"{new string('\t', indent)}{key}\n";
+                    result.Append($"{new string('\t', indent)}{key}\n");
                 break;
             default:
                 throw new NotImplementedException($"Unhandled type {key} = {value} in ExportText()");
         }
 
-        if (string.IsNullOrEmpty(key) || key==".")
+        if (string.IsNullOrEmpty(key) || key == ".")
             indent = -1; //don't indent the subdirs of directly accessed keys or root dir
 
         foreach (string subKey in savefile.CurrentDir.Keys) {
             savefile.CurrentPath = subKey;
-            result += ExportTextInternal(savefile, indent + 1);
+            ExportTextInternal(savefile, result, indent + 1);
             savefile.CurrentPath = "../";
         }
-
-        return result;
     }
 
     private static string ExportTextInternalListFormat(DreamObjectSavefile.SfDreamJsonValue listEntry) {

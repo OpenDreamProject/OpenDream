@@ -376,7 +376,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if(float.IsNaN(value)) {
-                formattedString.Append('�'); //fancy-ish way to represent
+                formattedString.Append('-'); //BYOND prints - for this
                 return;
             }
 
@@ -386,7 +386,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (float.IsInfinity(value)) {
-                formattedString.Append('∞');
+                formattedString.Append("inf");
                 return;
             }
 
@@ -698,7 +698,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue value = state.Pop();
 
             if (listValue.TryGetValueAsDreamObject(out var listObject) && listObject != null) {
-                DreamList? list = listObject as DreamList;
+                IDreamList? list = listObject as IDreamList;
 
                 if (list == null) {
                     if (listObject is DreamObjectAtom or DreamObjectWorld) {

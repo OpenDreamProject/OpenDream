@@ -1,0 +1,11 @@
+/proc/RunTest()
+	var/alist/AL = alist("a" = 1, "b" = 2, "c" = -4)
+	AL.Add("c", "d")
+	ASSERT(AL["c"] == -4)
+	ASSERT(AL["d"] == null)
+	ASSERT(length(AL) == 4)
+
+	AL.Add(list("c", "d"))
+	ASSERT(AL["c"] == -4)
+	ASSERT(AL["d"] == null)
+	ASSERT(length(AL) == 4)

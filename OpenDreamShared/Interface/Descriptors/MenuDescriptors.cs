@@ -1,9 +1,11 @@
-﻿using JetBrains.Annotations;
-using OpenDreamClient.Interface.DMF;
+﻿using System.Collections.Generic;
+using JetBrains.Annotations;
+using OpenDreamShared.Interface.DMF;
 using Robust.Shared.Serialization.Manager;
+using Robust.Shared.Serialization.Manager.Attributes;
 using Robust.Shared.Serialization.Markdown.Mapping;
 
-namespace OpenDreamClient.Interface.Descriptors;
+namespace OpenDreamShared.Interface.Descriptors;
 
 public sealed partial class MenuDescriptor : ElementDescriptor {
     private readonly List<MenuElementDescriptor> _elements = new();

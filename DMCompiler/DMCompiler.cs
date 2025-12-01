@@ -20,6 +20,7 @@ namespace DMCompiler;
 
 public class DMCompiler {
     public readonly HashSet<WarningCode> UniqueEmissions = new();
+    public readonly List<string> CompilerMessages = new();
     public DMCompilerSettings Settings;
     public IReadOnlyCollection<string> ResourceDirectories => _resourceDirectories;
 
@@ -126,11 +127,12 @@ public class DMCompiler {
                     return null;
                 }
 
-                string includeDir = Path.GetDirectoryName(files[i]);
+                string? includeDir = Path.GetDirectoryName(files[i]);
                 string fileName = Path.GetFileName(files[i]);
 
                 preproc.IncludeFile(includeDir, fileName, false);
-                compiler.AddResourceDirectory(includeDir, Location.Internal);
+                if (includeDir is not null)
+                    compiler.AddResourceDirectory(includeDir, Location.Internal);
             }
 
             // Adds the root of the DM project to FILE_DIR
@@ -159,8 +161,8 @@ public class DMCompiler {
                     result.Append(t.Text);
                 }
 
-                string outputDir = Path.GetDirectoryName(Settings.Files[0]);
-                string outputPath = Path.Combine(outputDir, "preprocessor_dump.dm");
+                string? outputDir = Path.GetDirectoryName(Settings.Files[0]);
+                string outputPath = Path.Combine(outputDir ?? string.Empty, "preprocessor_dump.dm");
 
                 File.WriteAllText(outputPath, result.ToString());
                 Console.WriteLine($"Preprocessor output dumped to {outputPath}");
@@ -211,6 +213,13 @@ public class DMCompiler {
                 break;
         }
 
+        if (Settings.StoreMessages)
+            if (CompilerMessages.Count < 1000)
+                CompilerMessages.Add(emission.ToString());
+            else {
+                Settings.StoreMessages = false;
+                CompilerMessages.Add(new CompilerEmission(ErrorLevel.Warning, null, "No longer storing error messages due to excessive error counts.").ToString());
+            }
         UniqueEmissions.Add(emission.Code);
         Console.WriteLine(emission);
         return level == ErrorLevel.Error;
@@ -375,6 +384,7 @@ public struct DMCompilerSettings {
     public bool NoStandard = false;
     public bool Verbose = false;
     public bool PrintCodeTree = false;
+    public bool StoreMessages = false;
     public Dictionary<string, string>? MacroDefines = null;
 
     /// <summary> The value of the DM_VERSION macro </summary>

@@ -1,4 +1,4 @@
-﻿#pragma EmptyBlock error
+#pragma EmptyBlock error
 
 /proc/RunTest()
 	if (TRUE)

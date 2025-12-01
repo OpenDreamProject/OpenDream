@@ -3,8 +3,8 @@ using System.Text;
 using System.Globalization;
 using OpenDreamShared.Network.Messages;
 using OpenDreamClient.Interface.Controls;
-using OpenDreamClient.Interface.Descriptors;
-using OpenDreamClient.Interface.DMF;
+using OpenDreamShared.Interface.Descriptors;
+using OpenDreamShared.Interface.DMF;
 using OpenDreamClient.Interface.Prompts;
 using OpenDreamClient.Resources;
 using OpenDreamClient.Resources.ResourceTypes;
@@ -972,17 +972,17 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     }
 
     private void OnWindowFocused(WindowFocusedEventArgs args) {
-        if(ClydeWindowIdToControl.TryGetValue(args.Window.Id, out var controlWindow)){
-            _sawmill.Debug($"window id {controlWindow.Id} was {(args.Focused ? "focused" : "defocused")}");
-            WindowDescriptor descriptor = (WindowDescriptor) controlWindow.ElementDescriptor;
+        if (ClydeWindowIdToControl.TryGetValue(args.Window.Id, out var controlWindow)) {
+            _sawmill.Verbose($"window id {controlWindow.Id} was {(args.Focused ? "focused" : "defocused")}");
+            WindowDescriptor descriptor = (WindowDescriptor)controlWindow.ElementDescriptor;
             descriptor.Focus = new DMFPropertyBool(args.Focused);
-            if(args.Focused && MacroSets.TryGetValue(descriptor.Macro.AsRaw(), out var windowMacroSet)){
-                _sawmill.Debug($"Activating macroset {descriptor.Macro}");
+            if (args.Focused && MacroSets.TryGetValue(descriptor.Macro.AsRaw(), out var windowMacroSet)) {
+                _sawmill.Verbose($"Activating macroset {descriptor.Macro}");
                 windowMacroSet.SetActive();
             }
+        } else {
+            _sawmill.Verbose($"window id was not found (probably a modal) but was {(args.Focused ? "focused" : "defocused")}");
         }
-        else
-            _sawmill.Debug($"window id was not found (probably a modal) but was {(args.Focused ? "focused" : "defocused")}");
     }
 
     private void LoadDescriptor(ElementDescriptor descriptor) {

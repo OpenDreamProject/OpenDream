@@ -1,0 +1,8 @@
+/proc/RunTest()
+	ASSERT(nameof(src) == "src")
+	ASSERT(nameof(usr) == "usr")
+	ASSERT(nameof(args) == "args")
+	ASSERT(nameof(callee) == "callee")
+	ASSERT(nameof(caller) == "caller")
+	ASSERT(nameof(world) == "world")
+	ASSERT(nameof(global.vars) == "vars")

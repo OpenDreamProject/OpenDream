@@ -1,4 +1,4 @@
-﻿/proc/RunTest()
+/proc/RunTest()
 	var/matrix/M = matrix(1,2,3,4,5,6)
 	var/matrix/N = matrix()
 	var/matrix/B = matrix(M)

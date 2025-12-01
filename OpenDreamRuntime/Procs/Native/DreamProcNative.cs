@@ -139,6 +139,17 @@ internal static class DreamProcNative {
         objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Splice);
         objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Swap);
 
+        objectTree.SetNativeProc(objectTree.AssocList, DreamProcNativeList.NativeProc_Add);
+        objectTree.SetNativeProc(objectTree.AssocList, DreamProcNativeList.NativeProc_Copy);
+        objectTree.SetNativeProc(objectTree.AssocList, DreamProcNativeList.NativeProc_Cut);
+        objectTree.SetNativeProc(objectTree.AssocList, DreamProcNativeList.NativeProc_Find);
+        objectTree.SetNativeProc(objectTree.AssocList, DreamProcNativeList.NativeProc_Insert);
+        objectTree.SetNativeProc(objectTree.AssocList, DreamProcNativeList.NativeProc_Join);
+        objectTree.SetNativeProc(objectTree.AssocList, DreamProcNativeList.NativeProc_Remove);
+        objectTree.SetNativeProc(objectTree.AssocList, DreamProcNativeList.NativeProc_RemoveAll);
+        objectTree.SetNativeProc(objectTree.AssocList, DreamProcNativeList.NativeProc_Splice);
+        objectTree.SetNativeProc(objectTree.AssocList, DreamProcNativeList.NativeProc_Swap);
+
         objectTree.SetNativeProc(objectTree.Matrix, DreamProcNativeMatrix.NativeProc_Add);
         objectTree.SetNativeProc(objectTree.Matrix, DreamProcNativeMatrix.NativeProc_Invert);
         objectTree.SetNativeProc(objectTree.Matrix, DreamProcNativeMatrix.NativeProc_Multiply);
@@ -183,6 +194,8 @@ internal static class DreamProcNative {
         objectTree.SetNativeProc(objectTree.DatabaseQuery, DreamProcNativeDatabaseQuery.NativeProc_GetRowData);
         objectTree.SetNativeProc(objectTree.DatabaseQuery, DreamProcNativeDatabaseQuery.NativeProc_NextRow);
         objectTree.SetNativeProc(objectTree.DatabaseQuery, DreamProcNativeDatabaseQuery.NativeProc_RowsAffected);
+
+        objectTree.SetNativeProc(objectTree.Generator, DreamProcNativeGenerator.NativeProc_Rand);
 
         SetOverridableNativeProc(objectTree, objectTree.World, DreamProcNativeWorld.NativeProc_Error);
         SetOverridableNativeProc(objectTree, objectTree.World, DreamProcNativeWorld.NativeProc_Reboot);

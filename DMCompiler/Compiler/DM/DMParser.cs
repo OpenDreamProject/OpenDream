@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Compiler.DMPreprocessor;
 using System.Linq;
 using DMCompiler.Compiler.DM.AST;
@@ -214,6 +215,12 @@ namespace DMCompiler.Compiler.DM {
             Whitespace();
             CurrentPath = CurrentPath.Combine(path.Path);
 
+            //Object definition
+            if (Block() is { } block) {
+                Compiler.VerbosePrint($"Parsed object {CurrentPath}");
+                return new DMASTObjectDefinition(loc, CurrentPath, block);
+            }
+
             //Proc definition
             if (Check(TokenType.DM_LeftParenthesis)) {
                 Compiler.VerbosePrint($"Parsing proc {CurrentPath}()");
@@ -365,12 +372,6 @@ namespace DMCompiler.Compiler.DM {
                 return new DMASTObjectVarOverride(loc, CurrentPath, value);
             }
 
-            //Object definition
-            if (Block() is { } block) {
-                Compiler.VerbosePrint($"Parsed object {CurrentPath}");
-                return new DMASTObjectDefinition(loc, CurrentPath, block);
-            }
-
             //Empty object definition
             Compiler.VerbosePrint($"Parsed object {CurrentPath} - empty");
             return new DMASTObjectDefinition(loc, CurrentPath, null);
@@ -506,6 +507,7 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
+        [return: NotNullIfNotNull(nameof(expression))]
         private DMASTExpression? ParseScopeIdentifier(DMASTExpression? expression) {
             do {
                 var identifier = Identifier();
@@ -1233,7 +1235,7 @@ namespace DMCompiler.Compiler.DM {
             if (Check(TokenType.DM_RightParenthesis)) {
                 ExtraColonPeriod();
 
-                return new DMASTProcStatementInfLoop(loc, GetForBody(loc));
+                return new DMASTProcStatementInfLoop(loc, GetForBody());
             }
 
             _allowVarDeclExpression = true;
@@ -1255,7 +1257,7 @@ namespace DMCompiler.Compiler.DM {
                     Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after to expression");
                     ExtraColonPeriod();
 
-                    return new DMASTProcStatementFor(loc, new DMASTExpressionInRange(loc, assign.LHS, assign.RHS, endRange, step), null, null, dmTypes, GetForBody(loc));
+                    return new DMASTProcStatementFor(loc, new DMASTExpressionInRange(loc, assign.LHS, assign.RHS, endRange, step), null, null, dmTypes, GetForBody());
                 } else {
                     Emit(WarningCode.BadExpression, "Expected = before to in for");
                     return new DMASTInvalidProcStatement(loc);
@@ -1265,24 +1267,25 @@ namespace DMCompiler.Compiler.DM {
             if (Check(TokenType.DM_In)) {
                 Whitespace();
                 DMASTExpression? listExpr = Expression();
+                RequireExpression(ref listExpr);
                 Whitespace();
                 Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 2");
                 ExtraColonPeriod();
 
-                return new DMASTProcStatementFor(loc, new DMASTExpressionIn(loc, expr1, listExpr), null, null, dmTypes, GetForBody(loc));
+                return new DMASTProcStatementFor(loc, new DMASTExpressionIn(loc, expr1, listExpr), null, null, dmTypes, GetForBody());
             }
 
             if (!Check(ForSeparatorTypes)) {
                 Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 1");
                 ExtraColonPeriod();
 
-                return new DMASTProcStatementFor(loc, expr1, null, null, dmTypes, GetForBody(loc));
+                return new DMASTProcStatementFor(loc, expr1, null, null, dmTypes, GetForBody());
             }
 
             if (Check(TokenType.DM_RightParenthesis)) {
                 ExtraColonPeriod();
 
-                return new DMASTProcStatementFor(loc, expr1, null, null, dmTypes, GetForBody(loc));
+                return new DMASTProcStatementFor(loc, expr1, null, null, dmTypes, GetForBody());
             }
 
             Whitespace();
@@ -1299,13 +1302,13 @@ namespace DMCompiler.Compiler.DM {
                 Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 2");
                 ExtraColonPeriod();
 
-                return new DMASTProcStatementFor(loc, expr1, expr2, null, dmTypes, GetForBody(loc));
+                return new DMASTProcStatementFor(loc, expr1, expr2, null, dmTypes, GetForBody());
             }
 
             if (Check(TokenType.DM_RightParenthesis)) {
                 ExtraColonPeriod();
 
-                return new DMASTProcStatementFor(loc, expr1, expr2, null, dmTypes, GetForBody(loc));
+                return new DMASTProcStatementFor(loc, expr1, expr2, null, dmTypes, GetForBody());
             }
 
             Whitespace();
@@ -1321,30 +1324,19 @@ namespace DMCompiler.Compiler.DM {
             Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 3");
             ExtraColonPeriod();
 
-            return new DMASTProcStatementFor(loc, expr1, expr2, expr3, dmTypes, GetForBody(loc));
+            return new DMASTProcStatementFor(loc, expr1, expr2, expr3, dmTypes, GetForBody());
 
-            DMASTProcBlockInner GetForBody(Location forLocation) {
+            DMASTProcBlockInner GetForBody() {
                 Whitespace();
-                Newline();
 
                 DMASTProcBlockInner? body = ProcBlock();
-                if (body == null) {
-                    var loc = Current().Location;
-                    DMASTProcStatement? statement;
-                    if (Check(TokenType.DM_Semicolon)) {
-                        statement = new DMASTProcStatementExpression(loc, new DMASTConstantNull(loc));
-                    } else {
-                        statement = ProcStatement();
-                        if (statement == null) {
-                            Compiler.Emit(WarningCode.MissingBody, forLocation, "Expected body or statement");
-                            statement = new DMASTInvalidProcStatement(loc);
-                        }
-                    }
+                if (body != null)
+                    return body;
 
-                    body = new DMASTProcBlockInner(loc, statement);
-                }
-
-                return body;
+                var statement = ProcStatement();
+                return statement != null
+                    ? new DMASTProcBlockInner(loc, statement)
+                    : new DMASTProcBlockInner(CurrentLoc);
             }
         }
 

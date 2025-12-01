@@ -10,6 +10,15 @@ internal abstract class BinaryOp(Location location, DMExpression lhs, DMExpressi
 
     public override DMComplexValueType ValType => LHS.ValType;
     public override bool PathIsFuzzy => true;
+
+    public override bool TryAsJsonRepresentation(DMCompiler compiler, out object? json) {
+        // If this can be const-folded, then we can represent this as JSON
+        if (TryAsConstant(compiler, out var constant))
+            return constant.TryAsJsonRepresentation(compiler, out json);
+
+        json = null;
+        return false;
+    }
 }
 
 #region Simple

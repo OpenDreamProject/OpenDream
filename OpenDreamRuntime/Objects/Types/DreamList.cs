@@ -827,7 +827,7 @@ public sealed class DreamOverlaysList : DreamList {
         var immutableOverlay = _appearanceSystem.AddAppearance(overlayAppearance ?? MutableAppearance.Default);
         overlayAppearance?.Dispose();
 
-        //after UpdateApparance is done, the atom is set with a new immutable appearance containing a hard ref to the overlay
+        //after UpdateAppearance is done, the atom is set with a new immutable appearance containing a hard ref to the overlay
         //only /mutable_appearance handles it differently, and that's done in DreamObjectImage
         _atomManager.UpdateAppearance(_owner, appearance => {
             GetOverlaysList(appearance).Add(immutableOverlay);
@@ -1567,14 +1567,18 @@ internal sealed class ProcArgsList(DreamObjectDefinition listDef, DMProcState st
     }
 }
 
-// Savefile Dir List - always sync'd with Savefiles currentDir. Only stores keys.
-internal sealed class SavefileDirList(DreamObjectDefinition listDef, DreamObjectSavefile backedSaveFile) : DreamList(listDef, 0) {
+// Savefile Dir List - always synced with Savefiles currentDir. Only stores keys.
+public sealed class SavefileDirList(DreamObjectDefinition listDef, DreamObjectSavefile backedSaveFile) : DreamList(listDef, 0) {
     public override DreamValue GetValue(DreamValue key) {
         if (!key.TryGetValueAsInteger(out var index))
             throw new Exception($"Invalid index on savefile dir list: {key}");
         if (index < 1 || index > backedSaveFile.CurrentDir.Count)
             throw new Exception($"Out of bounds index on savefile dir list: {index}");
         return new DreamValue(backedSaveFile.CurrentDir.Keys.ElementAt(index - 1));
+    }
+
+    public override bool ContainsValue(DreamValue value) {
+        return value.TryGetValueAsString(out var str) && backedSaveFile.CurrentDir.ContainsKey(str);
     }
 
     public override List<DreamValue> GetValues() {

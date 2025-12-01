@@ -352,7 +352,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                     break;
                 }
 
-                result = new NewPath(Compiler, newInferred.Location, inferredType, new Dictionary<string, object?>(),
+                result = new NewPath(Compiler, newInferred.Location, inferredType, null,
                     BuildArgumentList(newInferred.Location, newInferred.Parameters, inferredPath));
                 break;
             case DMASTPreIncrement preIncrement:

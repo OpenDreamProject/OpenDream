@@ -102,7 +102,7 @@ internal sealed class NewPath(DMCompiler compiler, Location location, IConstantP
                 (argumentsType, stackSize) = arguments.EmitArguments(ctx, ctx.ObjectTree.AllProcs[procReference.Value.Id]);
                 if(variableOverrides is not null && variableOverrides.Count > 0) {
                     ctx.Compiler.Emit(WarningCode.BadExpression, Location, "Cannot add a Var Override to a proc");
-                    ctx.Proc.PushNull();
+                    ctx.Proc.Error();
                     return;
                 }
 

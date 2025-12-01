@@ -31,8 +31,6 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
     [Dependency] private readonly ILogManager _logManager = default!;
     private ISawmill _sawmill = default!;
 
-    public bool IsDragging { get => _selectedEntity?.IsDrag ?? false; }
-
     private DreamViewOverlay? _dreamViewOverlay;
     private ContextMenuPopup _contextMenu = default!;
     private EntityClickInformation? _selectedEntity;
@@ -60,8 +58,11 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
             var currentMousePos = _inputManager.MouseScreenPosition.Position;
             var distance = (currentMousePos - _selectedEntity.InitialMousePos.Position).Length();
 
-            if (distance > 3f)
+            if (distance > 3f) {
                 _selectedEntity.IsDrag = true;
+                if (_dreamInterfaceManager.DefaultMap is { } map)
+                    UpdateMouseCursor(map.Viewport, _selectedEntity.Atom);
+            }
         }
     }
 
@@ -85,6 +86,7 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
     }
 
     public void HandleAtomMouseEntered(ScalingViewport viewport, Vector2 relativePos, ClientObjectReference atomRef, Vector2i iconPos) {
+        UpdateMouseCursor(viewport, atomRef);
         if (!HasMouseEventEnabled(atomRef, AtomMouseEvents.Enter))
             return;
 
@@ -92,6 +94,7 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
     }
 
     public void HandleAtomMouseExited(ScalingViewport viewport, ClientObjectReference atomRef) {
+        UpdateMouseCursor(viewport, null);
         if (!HasMouseEventEnabled(atomRef, AtomMouseEvents.Exit))
             return;
 
@@ -180,80 +183,75 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
         var clickParams = CreateClickParams(viewport, args, underMouse.Value.IconPosition); // If client.show_popup_menu is disabled, this will handle sending right clicks
 
         _selectedEntity = new(atom, args.PointerLocation, clickParams);
-        //cursor stuff
-        if (_appearanceSystem.TryGetAppearance(atom, out var atomAppearance)) {
-            SetCursorFromDefine(atomAppearance.MouseDragPointer, _dreamInterfaceManager.Cursors.DragCursor, viewport);
-        }
         return true;
     }
 
     private bool OnRelease(ScalingViewport viewport, GUIBoundKeyEventArgs args) {
         if (_selectedEntity == null) {
-            SetCursorFromDefine(0, _dreamInterfaceManager.Cursors.BaseCursor, viewport); //default
+            UpdateMouseCursor(viewport, null);
             return false;
         }
 
         var overAtom = GetAtomUnderMouse(viewport, args.RelativePixelPosition, args.PointerLocation);
-        if (overAtom is not null && _appearanceSystem.TryGetAppearance(overAtom.Value.Atom, out var atomAppearance)) {
-            SetCursorFromDefine(atomAppearance.MouseOverPointer, _dreamInterfaceManager.Cursors.OverCursor, viewport);
-        } else
-            SetCursorFromDefine(0, _dreamInterfaceManager.Cursors.BaseCursor, viewport);
-
         if (!_selectedEntity.IsDrag) {
             RaiseNetworkEvent(new AtomClickedEvent(_selectedEntity.Atom, _selectedEntity.ClickParams));
         } else {
-
             RaiseNetworkEvent(new AtomDraggedEvent(_selectedEntity.Atom, overAtom?.Atom, _selectedEntity.ClickParams));
         }
 
-
         _selectedEntity = null;
+        UpdateMouseCursor(viewport, overAtom?.Atom);
         return true;
     }
 
-    public void SetCursorFromDefine(int define, ICursor? activeCursor, ScalingViewport viewport) {
-        _sawmill.Debug($"SetCursor {define}");
-        if (_dreamInterfaceManager.Cursors.AllStateSet) {
-            viewport.CustomCursorShape = (_dreamInterfaceManager.Cursors.BaseCursor);
-            _clyde.SetCursor(viewport.CustomCursorShape);
+    private void UpdateMouseCursor(ScalingViewport viewport, ClientObjectReference? mouseOver) {
+        var isDragging = _selectedEntity?.IsDrag ?? false;
+        if (!mouseOver.HasValue || !_appearanceSystem.TryGetAppearance(mouseOver.Value, out var mouseOverAppearance)) {
+            if (!isDragging)
+                SetCursorFromDefine(1, _dreamInterfaceManager.Cursors.BaseCursor, viewport);
             return;
         }
-        switch (define) {
-                case 0: //MOUSE_INACTIVE_POINTER
-                    viewport.CustomCursorShape = _dreamInterfaceManager.Cursors.BaseCursor;
-                    _clyde.SetCursor(viewport.CustomCursorShape);
-                    break;
-                case 1: //MOUSE_ACTIVE_POINTER
-                    viewport.CustomCursorShape = (activeCursor);
-                    _clyde.SetCursor(viewport.CustomCursorShape);
-                    break;
-                //skipping 2 is intentional, it's what byond does
-                case 3: //MOUSE_DRAG_POINTER
-                    viewport.CustomCursorShape = (_clyde.GetStandardCursor(StandardCursorShape.Move));
-                    _clyde.SetCursor(viewport.CustomCursorShape);
-                    break;
-                case 4: //MOUSE_DROP_POINTER
-                    viewport.CustomCursorShape = (_clyde.GetStandardCursor(StandardCursorShape.NotAllowed));
-                    _clyde.SetCursor(viewport.CustomCursorShape);
-                    break;
-                case 5: //MOUSE_ARROW_POINTER
-                    viewport.CustomCursorShape = (_clyde.GetStandardCursor(StandardCursorShape.Arrow));
-                    _clyde.SetCursor(viewport.CustomCursorShape);
-                    break;
-                case 6: //MOUSE_CROSSHAIRS_POINTER
-                    viewport.CustomCursorShape = (_clyde.GetStandardCursor(StandardCursorShape.Crosshair));
-                    _clyde.SetCursor(viewport.CustomCursorShape);
-                    break;
-                case 7: //MOUSE_HAND_POINTER
-                    viewport.CustomCursorShape = (_clyde.GetStandardCursor(StandardCursorShape.Hand));
-                    _clyde.SetCursor(viewport.CustomCursorShape);
-                    break;
-                default: //invalid
-                    viewport.CustomCursorShape = (null); //default cursor
-                    _clyde.SetCursor(viewport.CustomCursorShape);
-                    break;
+
+        if (isDragging) {
+            if (!_appearanceSystem.TryGetAppearance(_selectedEntity!.Atom, out var draggingAppearance)) {
+                SetCursorFromDefine(1, _dreamInterfaceManager.Cursors.DragCursor, viewport);
+                return;
             }
+
+            var define = mouseOverAppearance.MouseDropZone
+                ? mouseOverAppearance.MouseDropPointer
+                : draggingAppearance.MouseDragPointer;
+            var cursor = mouseOverAppearance.MouseDropZone
+                ? _dreamInterfaceManager.Cursors.DropCursor
+                : _dreamInterfaceManager.Cursors.DragCursor;
+            SetCursorFromDefine(define, cursor, viewport);
+        } else {
+            SetCursorFromDefine(mouseOverAppearance.MouseOverPointer, _dreamInterfaceManager.Cursors.OverCursor, viewport);
+        }
     }
+
+    private void SetCursorFromDefine(int define, ICursor? activeCursor, ScalingViewport viewport) {
+        _sawmill.Verbose($"SetCursor {define} {activeCursor}");
+
+        if (_dreamInterfaceManager.Cursors.AllStateSet) {
+            viewport.CustomCursorShape = _dreamInterfaceManager.Cursors.BaseCursor;
+        } else {
+            viewport.CustomCursorShape = define switch {
+                0 => _dreamInterfaceManager.Cursors.BaseCursor, //MOUSE_INACTIVE_POINTER
+                1 => activeCursor, //MOUSE_ACTIVE_POINTER
+                //skipping 2 is intentional, it's what byond does
+                3 => _clyde.GetStandardCursor(StandardCursorShape.Move), //MOUSE_DRAG_POINTER
+                4 => _clyde.GetStandardCursor(StandardCursorShape.Hand), //MOUSE_DROP_POINTER
+                5 => _clyde.GetStandardCursor(StandardCursorShape.Arrow), //MOUSE_ARROW_POINTER
+                6 => _clyde.GetStandardCursor(StandardCursorShape.Crosshair), //MOUSE_CROSSHAIRS_POINTER
+                7 => _clyde.GetStandardCursor(StandardCursorShape.Hand), //MOUSE_HAND_POINTER
+                _ => null
+            };
+        }
+
+        _clyde.SetCursor(viewport.CustomCursorShape);
+    }
+
     private ClickParams CreateClickParams(ScalingViewport viewport, GUIBoundKeyEventArgs args, Vector2i iconPos) {
         bool right = args.Function == EngineKeyFunctions.UIRightClick;
         bool middle = args.Function == OpenDreamKeyFunctions.MouseMiddle;

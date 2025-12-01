@@ -14,7 +14,7 @@ public sealed class DreamObjectClient : DreamObject {
     public readonly ClientVerbsList ClientVerbs;
     public ViewRange View { get; private set; }
     public bool ShowPopupMenus { get; private set; } = true;
-    public IconResource? CursorIcon = null;
+    public IconResource? CursorIcon;
 
     public DreamObjectClient(DreamObjectDefinition objectDefinition, DreamConnection connection, ServerScreenOverlaySystem? screenOverlaySystem, ServerClientImagesSystem? clientImagesSystem) : base(objectDefinition) {
         Connection = connection;
@@ -201,10 +201,11 @@ public sealed class DreamObjectClient : DreamObject {
                 break;
             case "mouse_pointer_icon":
                 //resolve the value to an icon file
-                if (value.TryGetValueAsDreamResource(out var iconResource) && iconResource is IconResource)
-                    CursorIcon = (IconResource)iconResource;
+                if (value.TryGetValueAsDreamResource(out var iconResource) && iconResource is IconResource resource)
+                    CursorIcon = resource;
                 else
                     CursorIcon = null;
+
                 Connection.SendClientInfoUpdate();
                 break;
             default:

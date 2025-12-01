@@ -739,16 +739,19 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
             buffer.Write((byte)IconAppearanceProperty.MouseDragPointer);
             buffer.WriteVariableInt32(MouseDragPointer);
         }
+
         if (MouseDropZone) {
             buffer.Write((byte)IconAppearanceProperty.MouseDropZone);
         }
+
         if (MouseOverPointer != MutableAppearance.Default.MouseOverPointer) {
             buffer.Write((byte)IconAppearanceProperty.MouseOverPointer);
             buffer.WriteVariableInt32(MouseOverPointer);
         }
+
         if (MouseDropPointer != MutableAppearance.Default.MouseDropPointer) {
-            buffer.Write((byte)IconAppearanceProperty.MouseOverPointer);
-            buffer.WriteVariableInt32(MouseOverPointer);
+            buffer.Write((byte)IconAppearanceProperty.MouseDropPointer);
+            buffer.WriteVariableInt32(MouseDropPointer);
         }
 
         buffer.Write((byte)IconAppearanceProperty.End);

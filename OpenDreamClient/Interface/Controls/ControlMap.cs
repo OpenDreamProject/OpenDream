@@ -151,19 +151,10 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
                 _mouseInput?.HandleAtomMouseExited(Viewport, _atomUnderMouse.Value);
             if (atom != null) {
                 _mouseInput?.HandleAtomMouseEntered(Viewport, relativePos, atom.Value, iconPos);
-                if ( _appearanceSystem.TryGetAppearance(atom.Value, out var atomAppearance)) {
-                    if(_mouseInput?.IsDragging ?? false)
-                        if(atomAppearance.MouseDropZone)
-                            _mouseInput?.SetCursorFromDefine(atomAppearance.MouseDropPointer, _dreamInterfaceManager.Cursors.DropCursor, Viewport);
-                        else
-                            _mouseInput?.SetCursorFromDefine(atomAppearance.MouseOverPointer, _dreamInterfaceManager.Cursors.DragCursor, Viewport);
-                } //else
-                   // _mouseInput?.SetCursorFromDefine(0, _dreamInterfaceManager.Cursors.BaseCursor);
-
             }
         } else if (atom.HasValue) {
-                _mouseInput?.HandleAtomMouseMove(Viewport, relativePos, atom.Value, iconPos);
-            }
+            _mouseInput?.HandleAtomMouseMove(Viewport, relativePos, atom.Value, iconPos);
+        }
 
         _atomUnderMouse = atom;
     }

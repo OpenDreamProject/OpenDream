@@ -57,8 +57,9 @@
 	var/step_y as opendream_unimplemented
 	var/render_source
 	var/tmp/mouse_drag_pointer 
-	var/tmp/mouse_drop_pointer 
-	var/tmp/mouse_over_pointer 
+	var/tmp/mouse_drop_pointer = MOUSE_ACTIVE_POINTER
+	var/tmp/mouse_over_pointer
+	var/mouse_drop_zone = FALSE
 	var/render_target
 	var/vis_flags as opendream_unimplemented
 

@@ -1,4 +1,5 @@
 //COMPILE ERROR OD3201
+// NOBYOND
 //test to make sure SuspiciousSwitchCase is working
 
 #pragma SuspiciousSwitchCase error

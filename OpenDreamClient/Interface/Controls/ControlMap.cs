@@ -16,7 +16,6 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
     public ScalingViewport Viewport { get; private set; }
 
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-    [Dependency] private readonly IDreamInterfaceManager _dreamInterfaceManager = default!;
     private MouseInputSystem? _mouseInput;
     private ClientAppearanceSystem? _appearanceSystem;
 

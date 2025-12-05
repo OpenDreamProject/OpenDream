@@ -240,7 +240,7 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
                 0 => _dreamInterfaceManager.Cursors.BaseCursor, //MOUSE_INACTIVE_POINTER
                 1 => activeCursor, //MOUSE_ACTIVE_POINTER
                 //skipping 2 is intentional, it's what byond does
-                3 => _clyde.GetStandardCursor(StandardCursorShape.Move), //MOUSE_DRAG_POINTER
+                3 => _clyde.GetStandardCursor(StandardCursorShape.Crosshair), //MOUSE_DRAG_POINTER
                 4 => _clyde.GetStandardCursor(StandardCursorShape.Hand), //MOUSE_DROP_POINTER
                 5 => _clyde.GetStandardCursor(StandardCursorShape.Arrow), //MOUSE_ARROW_POINTER
                 6 => _clyde.GetStandardCursor(StandardCursorShape.Crosshair), //MOUSE_CROSSHAIRS_POINTER

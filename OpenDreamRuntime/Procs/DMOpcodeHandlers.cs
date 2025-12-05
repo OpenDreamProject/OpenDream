@@ -698,18 +698,19 @@ namespace OpenDreamRuntime.Procs {
             DreamValue value = state.Pop();
 
             if (listValue.TryGetValueAsDreamObject(out var listObject) && listObject != null) {
-                IDreamList? list = listObject as IDreamList;
+                var list = listObject switch {
+                    DreamObjectAtom or DreamObjectWorld => listObject.GetVariable("contents").MustGetValueAsDreamList(),
+                    DreamObjectSavefile savefile => new SavefileDirList(state.Proc.ObjectTree.List.ObjectDefinition, savefile),
+                    IDreamList dreamList => dreamList,
+                    _ => null
+                };
 
-                if (list == null) {
-                    if (listObject is DreamObjectAtom or DreamObjectWorld) {
-                        list = listObject.GetVariable("contents").MustGetValueAsDreamList();
-                    } else {
-                        // BYOND ignores all floats, strings, types, etc. here and just returns 0.
-                        state.Push(DreamValue.False);
-                    }
+                if (list != null) {
+                    state.Push(new DreamValue(list.ContainsValue(value) ? 1 : 0));
+                } else {
+                    // BYOND ignores all floats, strings, types, etc. here and just returns 0.
+                    state.Push(DreamValue.False);
                 }
-
-                state.Push(new DreamValue(list.ContainsValue(value) ? 1 : 0));
             } else {
                 state.Push(DreamValue.False);
             }

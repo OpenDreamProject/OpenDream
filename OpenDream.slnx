@@ -56,6 +56,7 @@
     <File Path="TestGame/icons/mob.dmi" />
     <File Path="TestGame/icons/turf.dmi" />
     <File Path="TestGame/icons/bee.dmi" />
+    <File Path="TestGame/icons/objects.dmi" />
   </Folder>
   <Folder Name="/TestGame/icons/effects/">
     <File Path="TestGame/icons/effects/effects.dmi" />

@@ -22,10 +22,10 @@
 	var/maptext_height = 32
 	var/maptext_x = 0
 	var/maptext_y = 0
-	var/mouse_over_pointer = 0 as opendream_unimplemented
-	var/mouse_drag_pointer = 0 as opendream_unimplemented
-	var/mouse_drop_pointer = 1 as opendream_unimplemented
-	var/mouse_drop_zone = 0 as opendream_unimplemented
+	var/mouse_over_pointer = 0 
+	var/mouse_drag_pointer = 0 
+	var/mouse_drop_pointer = 1 
+	var/mouse_drop_zone = 0 
 	var/mouse_opacity = 1
 	var/name = "image"
 	var/opacity = 0 as opendream_unimplemented

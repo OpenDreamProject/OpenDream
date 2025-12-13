@@ -209,9 +209,7 @@ public class DreamList : DreamObject, IDreamList {
 
             }
         } else {
-            if (!_reverseLookup.TryAdd(key, 1)) {
-                _reverseLookup[key] += 1;
-            } else {
+            if (_reverseLookup.TryAdd(key, 1)) {
                 _values.Add(key);
             }
 

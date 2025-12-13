@@ -459,7 +459,7 @@ public struct DreamValue : IEquatable<DreamValue> {
                     _refValue = null;
                 if (other._refValue != null && Unsafe.As<DreamObject>(other._refValue).Deleted)
                     other._refValue = null;
-                break;
+                return _refValue == other._refValue;
             }
         }
 

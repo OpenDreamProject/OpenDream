@@ -122,7 +122,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     public override DreamValue OperatorAppend(DreamValue b) {
         if (b.TryGetValueAsDreamList(out var bList)) {
             foreach (var value in bList.EnumerateValues()) {
-                AddValue(value); // Always add the value
+                AddValue(value);
             }
         } else {
             AddValue(b);

@@ -1057,7 +1057,7 @@ public sealed class DMProcState : ProcState {
                 var isImageConstructor = proc == Proc.DreamManager.ImageConstructor ||
                                          proc == Proc.DreamManager.ImageFactoryProc;
 
-                Array.Fill(arguments, DreamValue.Null);
+                Array.Fill(arguments, DreamValue.DefaultNull);
                 for (int i = 0; i < argumentCount; i++) {
                     var key = values[i*2];
                     var value = values[i*2+1];

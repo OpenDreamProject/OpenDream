@@ -191,7 +191,12 @@ internal static class DreamProcNativeRoot {
         var maptextY = bundle.GetArgument(14, "maptext_y");
         var dir = bundle.GetArgument(15, "dir");
         var alpha = bundle.GetArgument(16, "alpha");
-        var transform = bundle.GetArgument(17, "transform");
+        var isTransformDefined = bundle.IsArgumentDefined(17, "transform", out var transform);
+        if (isTransformDefined && transform.IsNull) {
+            // when transform is null because it was provided as null, treat as identity matrix
+            DreamObjectMatrix identityTransform = DreamObjectMatrix.MakeMatrix(bundle.ObjectTree, 1f,0f,0f,0f,1f,0f);
+            transform = new(identityTransform);
+        }
         var color = bundle.GetArgument(18, "color");
         var luminosity = bundle.GetArgument(19, "luminosity");
         var infraLuminosity = bundle.GetArgument(20, "infra_luminosity");

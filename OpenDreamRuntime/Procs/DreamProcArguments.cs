@@ -1,5 +1,4 @@
-﻿using Robust.Shared.Serialization.Manager;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using System.Text;
 

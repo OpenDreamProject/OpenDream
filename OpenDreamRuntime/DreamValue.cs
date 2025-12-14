@@ -54,7 +54,7 @@ public struct DreamValue : IEquatable<DreamValue> {
     /* Used for procs whose variables are not specified */
     public static DreamValue DefaultNull {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => new DreamValue((DreamObject?)null) { _defaultNull = true };
+        get => new ((DreamObject?)null) { _defaultNull = true };
     }
 
     public static DreamValue True {

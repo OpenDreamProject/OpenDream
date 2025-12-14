@@ -83,13 +83,11 @@ public sealed unsafe class NativeProc : DreamProc {
 
         // Used for arguments which behave differently when their value is null vs. when not provided
         [Pure]
-        public bool IsArgumentDefined(int argumentPosition, string argumentName, out DreamValue val) {
+        public (DreamValue argValue, bool isArgDefined) IsArgumentDefined(int argumentPosition, string argumentName) {
             if (Arguments.Length > argumentPosition && !Arguments[argumentPosition].IsDefaultNull) {
-                val = Arguments[argumentPosition];
-                return true;
+                return (Arguments[argumentPosition], true);
             }
-            val = GetArgumentFallback(argumentName);
-            return false;
+            return (GetArgumentFallback(argumentName), false);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]

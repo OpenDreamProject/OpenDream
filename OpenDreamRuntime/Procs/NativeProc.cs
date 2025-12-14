@@ -87,6 +87,7 @@ public sealed unsafe class NativeProc : DreamProc {
             if (Arguments.Length > argumentPosition && !Arguments[argumentPosition].IsDefaultNull) {
                 return (Arguments[argumentPosition], true);
             }
+
             return (GetArgumentFallback(argumentName), false);
         }
 

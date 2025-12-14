@@ -1,4 +1,6 @@
-﻿using System.Runtime.CompilerServices;
+﻿using Robust.Shared.Serialization.Manager;
+using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace OpenDreamRuntime.Procs;
@@ -6,18 +8,32 @@ namespace OpenDreamRuntime.Procs;
 public readonly ref struct DreamProcArguments {
     public int Count => Values.Length;
 
-    public readonly ReadOnlySpan<DreamValue> Values;
+    public ReadOnlySpan<DreamValue> Values { get; init; }
+
+    // indices of arguments which were provided as null (null but not null by default)
+    public IReadOnlySet<int> ProvidedNulls { get; init; }
 
     public DreamProcArguments() {
         Values = Array.Empty<DreamValue>();
+        ProvidedNulls = ImmutableHashSet<int>.Empty;
     }
 
     public DreamProcArguments(ReadOnlySpan<DreamValue> values) {
         Values = values;
+        ProvidedNulls = ImmutableHashSet<int>.Empty;
     }
 
     public DreamProcArguments(params DreamValue[] values) {
         Values = values;
+        ProvidedNulls = ImmutableHashSet<int>.Empty;
+    }
+
+    // Use static builder to avoid constructor ambiguity with convenient params method above
+    public static DreamProcArguments BuildWithProvidedNulls(IReadOnlySet<int> providedNulls, params DreamValue[] values) {
+        return new DreamProcArguments {
+            Values = values,
+            ProvidedNulls = providedNulls
+        };
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

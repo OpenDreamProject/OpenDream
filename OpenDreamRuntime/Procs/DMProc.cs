@@ -1057,7 +1057,8 @@ public sealed class DMProcState : ProcState {
                 var isImageConstructor = proc == Proc.DreamManager.ImageConstructor ||
                                          proc == Proc.DreamManager.ImageFactoryProc;
 
-                Array.Fill(arguments, DreamValue.DefaultNull);
+                Array.Fill(arguments, DreamValue.Null);
+                HashSet<int> providedNulls = new();
                 for (int i = 0; i < argumentCount; i++) {
                     var key = values[i*2];
                     var value = values[i*2+1];
@@ -1079,10 +1080,13 @@ public sealed class DMProcState : ProcState {
                             throw new Exception($"{proc} has no argument named \"{argumentName}\"");
 
                         arguments[argumentIndex] = value;
+                        if (value.IsNull) {
+                            providedNulls.Add(argumentIndex);
+                        }
                     }
                 }
 
-                return new DreamProcArguments(arguments);
+                return DreamProcArguments.BuildWithProvidedNulls(providedNulls, arguments);
             }
             case DMCallArgumentsType.FromArgumentList: {
                 if (proc == null)

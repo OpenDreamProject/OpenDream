@@ -51,12 +51,6 @@ public struct DreamValue : IEquatable<DreamValue> {
         get => new DreamValue((DreamObject?) null);
     }
 
-    /* Used for procs whose variables are not specified */
-    public static DreamValue DefaultNull {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => new ((DreamObject?)null) { _defaultNull = true };
-    }
-
     public static DreamValue True {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => new DreamValue(1f);
@@ -76,7 +70,6 @@ public struct DreamValue : IEquatable<DreamValue> {
 
     private object? _refValue;
     private readonly float _floatValue;
-    private bool _defaultNull = false;
 
     #if TOOLS
     //ReSharper disable once NotAccessedField.Local
@@ -130,11 +123,6 @@ public struct DreamValue : IEquatable<DreamValue> {
     public bool IsNull {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => Type == DreamValueType.DreamObject && (_refValue == null || Unsafe.As<DreamObject>(_refValue).Deleted);
-    }
-
-    public bool IsDefaultNull {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _defaultNull;
     }
 
     public readonly override string ToString() {

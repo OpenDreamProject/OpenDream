@@ -7,7 +7,7 @@
 	R.Turn(180)
 
 	animate(testObj, transform=R, time=1)
-	// transform is 180 Rotated 
+	// transform is 180 Rotated
 	ASSERT(approx(testObj.transform.a, -1))
 	ASSERT(approx(testObj.transform.b, 0))
 	ASSERT(approx(testObj.transform.c, 0))

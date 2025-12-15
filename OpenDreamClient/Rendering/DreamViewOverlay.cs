@@ -124,6 +124,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
         if (!eye.IsValid()) {
             return;
         }
+
         EntityUid mob = _interfaceManager.MobUid;
         if (!mob.IsValid()) {
             return;

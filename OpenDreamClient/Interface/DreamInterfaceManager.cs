@@ -66,6 +66,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
     // Current Entity of player's mob, or Invalid if could not be determined.
     private EntityUid _mobUid = EntityUid.Invalid;
+
     public EntityUid MobUid {
         get {
             if (_mobUid.IsValid()) {
@@ -74,13 +75,12 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 return _playerManager.LocalSession?.AttachedEntity.GetValueOrDefault(EntityUid.Invalid) ?? EntityUid.Invalid;
             }
         }
-        private set {
-            _mobUid = value;
-        }
+        private set => _mobUid = value;
     }
 
     // Current Entity of player's eye, or Invalid if could not be determined.
     private EntityUid _eyeUid = EntityUid.Invalid;
+
     public EntityUid EyeUid {
         get {
             if (_eyeUid.IsValid()) {
@@ -89,9 +89,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 return _playerManager.LocalSession?.AttachedEntity.GetValueOrDefault(EntityUid.Invalid) ?? EntityUid.Invalid;
             }
         }
-        private set {
-            _eyeUid = value;
-        }
+        private set => _eyeUid = value;
     }
 
     public ViewRange View {
@@ -382,7 +380,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             MobUid = _playerManager.LocalSession?.AttachedEntity.GetValueOrDefault(EntityUid.Invalid) ?? EntityUid.Invalid;
         }
 
-        var eye = _entityManager.GetEntity(msg.MobNetEntity);
+        var eye = _entityManager.GetEntity(msg.EyeNetEntity);
         if (eye.IsValid()) {
             EyeUid = eye;
         } else {

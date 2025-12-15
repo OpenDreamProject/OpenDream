@@ -509,6 +509,7 @@ public sealed class DreamConnection {
         converted = default;
         return false;
     }
+
     private void UpdateMobEye() {
         var mobUid = Mob?.Entity.Id ?? EntityUid.Invalid.Id;
         var eyeUid = Eye?.Entity.Id ?? EntityUid.Invalid.Id;

@@ -83,8 +83,10 @@ public sealed class ClientVerbSystem : VerbSystem {
     /// <returns>The ID, src, and information of every executable verb</returns>
     public IEnumerable<(int Id, ClientObjectReference Src, VerbInfo VerbInfo)> GetExecutableVerbs(bool ignoreHiddenAttr = false) {
         sbyte? seeInvisibility = null;
-        if (_playerManager.LocalEntity != null) {
-            _sightQuery.TryGetComponent(_playerManager.LocalEntity.Value, out var mobSight);
+
+        EntityUid mob = _interfaceManager.MobUid;
+        if (mob.IsValid()) {
+            _sightQuery.TryGetComponent(mob, out var mobSight);
 
             seeInvisibility = mobSight?.SeeInvisibility;
         }
@@ -120,12 +122,12 @@ public sealed class ClientVerbSystem : VerbSystem {
                 // Check the verb's "set src" allows us to execute this
                 switch (verb.Accessibility) {
                     case VerbAccessibility.Usr:
-                        if (entity != _playerManager.LocalEntity)
+                        if (entity != mob)
                             continue;
 
                         break;
                     case VerbAccessibility.InUsr:
-                        if (_transformSystem.GetParentUid(entity) != _playerManager.LocalEntity)
+                        if (_transformSystem.GetParentUid(entity) != mob)
                             continue;
 
                         break;

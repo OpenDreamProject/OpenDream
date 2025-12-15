@@ -120,15 +120,20 @@ internal sealed partial class DreamViewOverlay : Overlay {
     protected override void Draw(in OverlayDrawArgs args) {
         using var _ = _prof.Group("Dream View Overlay");
 
-        EntityUid? eye = _playerManager.LocalSession?.AttachedEntity;
-        if (eye == null)
+        EntityUid eye = _interfaceManager.EyeUid;
+        if (!eye.IsValid()) {
             return;
+        }
+        EntityUid mob = _interfaceManager.MobUid;
+        if (!mob.IsValid()) {
+            return;
+        }
 
         //Main drawing of sprites happens here
         try {
             var viewportSize = (Vector2i)(args.Viewport.Size / args.Viewport.RenderScale);
 
-            DrawAll(args, eye.Value, viewportSize);
+            DrawAll(args, mob, eye, viewportSize);
         } catch (Exception e) {
             _sawmill.Error($"Error occurred while rendering frame. Error details:\n{e.Message}\n{e.StackTrace}");
         }
@@ -145,7 +150,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
             _rendererMetaDataRental.Push(_rendererMetaDataToReturn.Pop());
     }
 
-    private void DrawAll(OverlayDrawArgs args, EntityUid eye, Vector2i viewportSize) {
+    private void DrawAll(OverlayDrawArgs args, EntityUid mob, EntityUid eye, Vector2i viewportSize) {
         if (!_xformQuery.TryGetComponent(eye, out var eyeTransform))
             return;
 
@@ -153,9 +158,10 @@ internal sealed partial class DreamViewOverlay : Overlay {
         if (!_mapManager.TryFindGridAt(eyeCoords, out var gridUid, out var grid))
             return;
 
-        _mobSightQuery.TryGetComponent(eye, out var mobSight);
+        _mobSightQuery.TryGetComponent(mob, out var mobSight);
+        _mobSightQuery.TryGetComponent(eye, out var eyeSight);
         var seeVis = mobSight?.SeeInvisibility ?? 127;
-        var sight = mobSight?.Sight ?? 0;
+        var sight = eyeSight?.Sight ?? 0;
 
         var worldHandle = args.WorldHandle;
         var worldAABB = args.WorldAABB;

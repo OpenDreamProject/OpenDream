@@ -1,5 +1,3 @@
-using System.Threading.Tasks;
-using System.Web;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.Native;
@@ -10,6 +8,8 @@ using OpenDreamShared.Network.Messages;
 using Robust.Shared.Enums;
 using Robust.Shared.Player;
 using SpaceWizards.Sodium;
+using System.Threading.Tasks;
+using System.Web;
 
 namespace OpenDreamRuntime;
 
@@ -18,6 +18,7 @@ public sealed class DreamConnection {
     [Dependency] private readonly DreamObjectTree _objectTree = default!;
     [Dependency] private readonly DreamResourceManager _resourceManager = default!;
     [Dependency] private readonly WalkManager _walkManager = default!;
+    [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
     [Dependency] private readonly ISharedPlayerManager _playerManager = default!;
 
@@ -51,6 +52,8 @@ public sealed class DreamConnection {
                     Eye = value;
                 }
 
+                UpdateMobEye();
+
                 if (_mob != null) {
                     // If the mob is already owned by another player, kick them out
                     if (_mob.Connection != null)
@@ -69,6 +72,8 @@ public sealed class DreamConnection {
         set {
             _eye = value;
             _playerManager.SetAttachedEntity(Session!, _eye?.Entity);
+
+            UpdateMobEye();
         }
     }
 
@@ -503,5 +508,14 @@ public sealed class DreamConnection {
 
         converted = default;
         return false;
+    }
+    private void UpdateMobEye() {
+        var mobUid = Mob?.Entity.Id ?? EntityUid.Invalid.Id;
+        var eyeUid = Eye?.Entity.Id ?? EntityUid.Invalid.Id;
+        var msg = new MsgNotifyMobEyeUpdate() {
+            MobNetEntity = _entityManager.GetNetEntity(new(mobUid)),
+            EyeNetEntity = _entityManager.GetNetEntity(new(eyeUid))
+        };
+        Session?.Channel.SendMessage(msg);
     }
 }

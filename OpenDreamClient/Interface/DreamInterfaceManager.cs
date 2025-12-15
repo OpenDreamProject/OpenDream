@@ -1,28 +1,29 @@
-﻿using System.IO;
-using System.Text;
-using System.Globalization;
-using OpenDreamShared.Network.Messages;
-using OpenDreamClient.Interface.Controls;
-using OpenDreamShared.Interface.Descriptors;
-using OpenDreamShared.Interface.DMF;
+﻿using OpenDreamClient.Interface.Controls;
 using OpenDreamClient.Interface.Prompts;
 using OpenDreamClient.Resources;
 using OpenDreamClient.Resources.ResourceTypes;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Interface.Descriptors;
+using OpenDreamShared.Interface.DMF;
+using OpenDreamShared.Network.Messages;
 using Robust.Client;
 using Robust.Client.Graphics;
 using Robust.Client.Input;
+using Robust.Client.Player;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.ContentPack;
+using Robust.Shared.Map;
 using Robust.Shared.Network;
 using Robust.Shared.Random;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 using SixLabors.ImageSharp;
+using System.Globalization;
+using System.IO;
 using System.Linq;
-using Robust.Shared.Map;
+using System.Text;
 
 namespace OpenDreamClient.Interface;
 
@@ -41,9 +42,12 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     [Dependency] private readonly IInputManager _inputManager = default!;
     [Dependency] private readonly IUserInterfaceManager _uiManager = default!;
     [Dependency] private readonly IRobustRandom _random = default!;
+    [Dependency] private readonly IPlayerManager _playerManager = default!;
+
     [Dependency] private readonly ITimerManager _timerManager = default!;
     [Dependency] private readonly IUriOpener _uriOpener = default!;
     [Dependency] private readonly IGameController _gameController = default!;
+    [Dependency] private readonly IEntityManager _entityManager = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.interface");
 
@@ -59,6 +63,36 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     public Dictionary<string, InterfaceMacroSet> MacroSets { get; } = new();
     private Dictionary<WindowId, ControlWindow> ClydeWindowIdToControl { get; } = new();
     public CursorHolder Cursors { get; private set; } = default!;
+
+    // Current Entity of player's mob, or Invalid if could not be determined.
+    private EntityUid _mobUid = EntityUid.Invalid;
+    public EntityUid MobUid {
+        get {
+            if (_mobUid.IsValid()) {
+                return _mobUid;
+            } else {
+                return _playerManager.LocalSession?.AttachedEntity.GetValueOrDefault(EntityUid.Invalid) ?? EntityUid.Invalid;
+            }
+        }
+        private set {
+            _mobUid = value;
+        }
+    }
+
+    // Current Entity of player's eye, or Invalid if could not be determined.
+    private EntityUid _eyeUid = EntityUid.Invalid;
+    public EntityUid EyeUid {
+        get {
+            if (_eyeUid.IsValid()) {
+                return _eyeUid;
+            } else {
+                return _playerManager.LocalSession?.AttachedEntity.GetValueOrDefault(EntityUid.Invalid) ?? EntityUid.Invalid;
+            }
+        }
+        private set {
+            _eyeUid = value;
+        }
+    }
 
     public ViewRange View {
         get => _view;
@@ -131,6 +165,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         _netManager.RegisterNetMessage<MsgLoadInterface>(RxLoadInterface);
         _netManager.RegisterNetMessage<MsgAckLoadInterface>();
         _netManager.RegisterNetMessage<MsgUpdateClientInfo>(RxUpdateClientInfo);
+        _netManager.RegisterNetMessage<MsgNotifyMobEyeUpdate>(RxNotifyMobEyeUpdate);
         _clyde.OnWindowFocused += OnWindowFocused;
     }
 
@@ -336,6 +371,22 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             });
         else {
             Cursors = new(_clyde); //reset to default
+        }
+    }
+
+    private void RxNotifyMobEyeUpdate(MsgNotifyMobEyeUpdate msg) {
+        var mob = _entityManager.GetEntity(msg.MobNetEntity);
+        if (mob.IsValid()) {
+            MobUid = mob;
+        } else {
+            MobUid = _playerManager.LocalSession?.AttachedEntity.GetValueOrDefault(EntityUid.Invalid) ?? EntityUid.Invalid;
+        }
+
+        var eye = _entityManager.GetEntity(msg.MobNetEntity);
+        if (eye.IsValid()) {
+            EyeUid = eye;
+        } else {
+            EyeUid = _playerManager.LocalSession?.AttachedEntity.GetValueOrDefault(EntityUid.Invalid) ?? EntityUid.Invalid;
         }
     }
 
@@ -1081,6 +1132,8 @@ public interface IDreamInterfaceManager {
     public bool ShowPopupMenus { get; }
     public int IconSize { get; }
     public CursorHolder Cursors { get; }
+    public EntityUid MobUid { get; }
+    public EntityUid EyeUid { get; }
 
     void Initialize();
     void FrameUpdate(FrameEventArgs frameEventArgs);

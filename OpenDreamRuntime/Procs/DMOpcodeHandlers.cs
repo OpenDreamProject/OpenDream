@@ -2137,7 +2137,7 @@ suffix
 
             if (!GetArgument(arguments.Item1, arguments.Item2, 1, "Object", DreamValue.Null).TryGetValueAsDreamObject<DreamObject>(out var obj)) {
                 if (state.Thread.LastAnimatedObject is null || state.Thread.LastAnimatedObject.Value.IsNull)
-                    throw new Exception($"animate() called without an object and no previous object to animate");
+                    throw new Exception("animate() called without an object and no previous object to animate");
                 else if (!state.Thread.LastAnimatedObject.Value.TryGetValueAsDreamObject<DreamObject>(out obj)){
                     state.Push(DreamValue.Null);
                     return ProcStatus.Continue;
@@ -2187,6 +2187,7 @@ suffix
                 DreamObjectMatrix identityTransform = DreamObjectMatrix.MakeMatrix(state.Proc.ObjectTree, 1f, 0f, 0f, 0f, 1f, 0f);
                 transform = new(identityTransform);
             }
+
             var color = GetArgument(arguments.Item1, arguments.Item2, 19, "color", DreamValue.Null);
             var luminosity = GetArgument(arguments.Item1, arguments.Item2, 20, "luminosity", DreamValue.Null);
             var infraLuminosity = GetArgument(arguments.Item1, arguments.Item2, 21, "infra_luminosity", DreamValue.Null);
@@ -2204,6 +2205,7 @@ suffix
                     state.Push(DreamValue.Null);
                     return ProcStatus.Continue;
                 }
+
                 if (!pixelX.IsNull)
                     pixelX = new(pixelX.UnsafeGetValueAsFloat() + appearance.PixelOffset.X);
                 if (!pixelY.IsNull)
@@ -3302,7 +3304,7 @@ suffix
                 return true;
             }
 
-            val = DreamValue.Null;
+            val = argumentFallback;
             return false;
         }
 

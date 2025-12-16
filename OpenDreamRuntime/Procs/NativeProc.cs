@@ -53,8 +53,6 @@ public sealed unsafe class NativeProc : DreamProc {
         // NOTE: Deliberately not using DreamProcArguments here, tis slow.
         public readonly ReadOnlySpan<DreamValue> Arguments;
 
-        public readonly IReadOnlySet<int> ProvidedNulls;
-
         public DreamManager DreamManager => Proc._dreamManager;
         public AtomManager AtomManager => Proc._atomManager;
         public IDreamMapManager MapManager => Proc._mapManager;
@@ -71,7 +69,6 @@ public sealed unsafe class NativeProc : DreamProc {
         public Bundle(NativeProc proc, DreamThread thread, DreamProcArguments arguments) {
             Proc = proc;
             Arguments = arguments.Values;
-            ProvidedNulls = arguments.ProvidedNulls;
             _thread = thread;
         }
 
@@ -82,19 +79,6 @@ public sealed unsafe class NativeProc : DreamProc {
             }
 
             return GetArgumentFallback(argumentName);
-        }
-
-        // Used for arguments which behave differently when their value is null vs. when not provided
-        [Pure]
-        public (DreamValue argValue, bool isArgDefined) IsArgumentDefined(int argumentPosition, string argumentName) {
-            if (Arguments.Length > argumentPosition) {
-                var val = Arguments[argumentPosition];
-                if (!val.IsNull || ProvidedNulls.Contains(argumentPosition)) {
-                    return (Arguments[argumentPosition], true);
-                }
-            }
-
-            return (GetArgumentFallback(argumentName), false);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]

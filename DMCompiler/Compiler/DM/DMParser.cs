@@ -2757,6 +2757,9 @@ namespace DMCompiler.Compiler.DM {
 
                         return new DMASTRgb(identifier.Location, callParameters);
                     }
+                    case "animate": {
+                        return new DMASTAnimate(identifier.Location, callParameters);
+                    }
                     default:
                         return new DMASTProcCall(callLoc, new DMASTCallableProcIdentifier(callLoc, identifier.Identifier), callParameters);
                 }

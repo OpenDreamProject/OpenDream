@@ -2104,6 +2104,285 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
+/* vars:
+
+animate smoothly:
+
+alpha
+color
+glide_size
+infra_luminosity
+layer
+maptext_width, maptext_height, maptext_x, maptext_y
+luminosity
+pixel_x, pixel_y, pixel_w, pixel_z
+transform
+
+do not animate smoothly:
+
+dir
+icon
+icon_state
+invisibility
+maptext
+suffix
+
+*/
+        public static ProcStatus Animate(DMProcState state) {
+            var argumentInfo = state.ReadProcArguments();
+            var argumentValues = state.PopCount(argumentInfo.StackSize);
+            var arguments = state.CollectProcArguments(argumentValues, argumentInfo.Type, argumentInfo.StackSize);
+
+            bool chainAnim = false;
+
+            if (!GetArgument(arguments.Item1, arguments.Item2, 1, "Object", DreamValue.Null).TryGetValueAsDreamObject<DreamObject>(out var obj)) {
+                if (state.Thread.LastAnimatedObject is null || state.Thread.LastAnimatedObject.Value.IsNull)
+                    throw new Exception($"animate() called without an object and no previous object to animate");
+                else if (!state.Thread.LastAnimatedObject.Value.TryGetValueAsDreamObject<DreamObject>(out obj)){
+                    state.Push(DreamValue.Null);
+                    return ProcStatus.Continue;
+                }
+
+                chainAnim = true;
+            }
+
+            state.Thread.LastAnimatedObject = new DreamValue(obj);
+            if (obj.IsSubtypeOf(state.Proc.ObjectTree.Filter)) {//TODO animate filters
+                state.Push(DreamValue.Null);
+                return ProcStatus.Continue;
+            }
+
+            // TODO: Is this the correct behavior for invalid time?
+            if (!GetArgument(arguments.Item1, arguments.Item2, 2, "time", DreamValue.Null).TryGetValueAsFloat(out float time)) {
+                state.Push(DreamValue.Null);
+                return ProcStatus.Continue;
+            }
+
+            GetArgument(arguments.Item1, arguments.Item2, 3, "loop", DreamValue.Null).TryGetValueAsInteger(out int loop);
+            GetArgument(arguments.Item1, arguments.Item2, 4, "easing", DreamValue.Null).TryGetValueAsInteger(out int easing);
+            if (!Enum.IsDefined(typeof(AnimationEasing), easing & ~((int)AnimationEasing.EaseIn | (int)AnimationEasing.EaseOut)))
+                throw new ArgumentOutOfRangeException("easing", easing, $"Invalid easing value in animate(): {easing}");
+            GetArgument(arguments.Item1, arguments.Item2, 5, "flags", DreamValue.Null).TryGetValueAsInteger(out int flagsInt);
+            var flags = (AnimationFlags)flagsInt;
+            if ((flags & (AnimationFlags.AnimationParallel | AnimationFlags.AnimationContinue)) != 0)
+                chainAnim = true;
+            if ((flags & AnimationFlags.AnimationEndNow) != 0)
+                chainAnim = false;
+            GetArgument(arguments.Item1, arguments.Item2, 6, "delay", DreamValue.Null).TryGetValueAsInteger(out int delay);
+
+            var pixelX = GetArgument(arguments.Item1, arguments.Item2, 7, "pixel_x", DreamValue.Null);
+            var pixelY = GetArgument(arguments.Item1, arguments.Item2, 8, "pixel_y", DreamValue.Null);
+            var pixelZ = GetArgument(arguments.Item1, arguments.Item2, 9, "pixel_z", DreamValue.Null);
+            var pixelW = GetArgument(arguments.Item1, arguments.Item2, 10, "pixel_w", DreamValue.Null);
+            var maptext = GetArgument(arguments.Item1, arguments.Item2, 11, "maptext", DreamValue.Null);
+            var maptextWidth = GetArgument(arguments.Item1, arguments.Item2, 12, "maptext_width", DreamValue.Null);
+            var maptextHeight = GetArgument(arguments.Item1, arguments.Item2, 13, "maptext_height", DreamValue.Null);
+            var maptextX = GetArgument(arguments.Item1, arguments.Item2, 14, "maptext_x", DreamValue.Null);
+            var maptextY = GetArgument(arguments.Item1, arguments.Item2, 15, "maptext_y", DreamValue.Null);
+            var dir = GetArgument(arguments.Item1, arguments.Item2, 16, "dir", DreamValue.Null);
+            var alpha = GetArgument(arguments.Item1, arguments.Item2, 17, "alpha", DreamValue.Null);
+            var isTransformDefined = IsArgumentDefined(arguments.Item1, arguments.Item2, 18, "transform", DreamValue.Null, out var transform);
+            if (isTransformDefined && transform.IsNull) {
+                // when transform is null because it was provided as null, treat as identity matrix
+                DreamObjectMatrix identityTransform = DreamObjectMatrix.MakeMatrix(state.Proc.ObjectTree, 1f, 0f, 0f, 0f, 1f, 0f);
+                transform = new(identityTransform);
+            }
+            var color = GetArgument(arguments.Item1, arguments.Item2, 19, "color", DreamValue.Null);
+            var luminosity = GetArgument(arguments.Item1, arguments.Item2, 20, "luminosity", DreamValue.Null);
+            var infraLuminosity = GetArgument(arguments.Item1, arguments.Item2, 21, "infra_luminosity", DreamValue.Null);
+            var layer = GetArgument(arguments.Item1, arguments.Item2, 22, "layer", DreamValue.Null);
+            var glideSize = GetArgument(arguments.Item1, arguments.Item2, 23, "glide_size", DreamValue.Null);
+            var icon = GetArgument(arguments.Item1, arguments.Item2, 24, "icon", DreamValue.Null);
+            var iconState = GetArgument(arguments.Item1, arguments.Item2, 25, "icon_state", DreamValue.Null);
+            var invisibility = GetArgument(arguments.Item1, arguments.Item2, 26, "invisibility", DreamValue.Null);
+            var suffix = GetArgument(arguments.Item1, arguments.Item2, 27, "suffix", DreamValue.Null);
+
+            if ((flags & AnimationFlags.AnimationRelative) != 0) {
+                if (!state.Proc.AtomManager.TryGetAppearance(obj, out var appearance)) {
+                    //can't do anything animating an object with no appearance
+                    // This works for maptext_x/y/width/height, pixel_x/y/w/z, luminosity, layer, alpha, transform, and color. For transform and color, the current value is multiplied by the new one. Vars not in this list are simply changed as if this flag is not present.
+                    state.Push(DreamValue.Null);
+                    return ProcStatus.Continue;
+                }
+                if (!pixelX.IsNull)
+                    pixelX = new(pixelX.UnsafeGetValueAsFloat() + appearance.PixelOffset.X);
+                if (!pixelY.IsNull)
+                    pixelY = new(pixelY.UnsafeGetValueAsFloat() + appearance.PixelOffset.Y);
+                /* TODO these are not yet implemented
+                if(!pixelZ.IsNull)
+                    pixelZ = new(pixelZ.UnsafeGetValueAsFloat() + obj.GetVariable("pixel_z").UnsafeGetValueAsFloat()); //TODO change to appearance when pixel_z is implemented
+                */
+                if (!maptextWidth.IsNull)
+                    maptextWidth = new(maptextWidth.UnsafeGetValueAsFloat() + appearance.MaptextSize.X);
+                if (!maptextHeight.IsNull)
+                    maptextHeight = new(maptextHeight.UnsafeGetValueAsFloat() + appearance.MaptextSize.Y);
+                if (!maptextX.IsNull)
+                    maptextX = new(maptextX.UnsafeGetValueAsFloat() + appearance.MaptextOffset.X);
+                if (!maptextY.IsNull)
+                    maptextY = new(maptextY.UnsafeGetValueAsFloat() + appearance.MaptextOffset.Y);
+                /*
+                if(!luminosity.IsNull)
+                    luminosity = new(luminosity.UnsafeGetValueAsFloat() + obj.GetVariable("luminosity").UnsafeGetValueAsFloat()); //TODO change to appearance when luminosity is implemented
+                */
+                if (!layer.IsNull)
+                    layer = new(layer.UnsafeGetValueAsFloat() + appearance.Layer);
+                if (!alpha.IsNull)
+                    alpha = new(alpha.UnsafeGetValueAsFloat() + appearance.Alpha);
+                if (!transform.IsNull) {
+                    if (transform.TryGetValueAsDreamObject<DreamObjectMatrix>(out var multTransform)) {
+                        DreamObjectMatrix objTransformClone = DreamObjectMatrix.MakeMatrix(state.Proc.ObjectTree, appearance.Transform);
+                        DreamObjectMatrix.MultiplyMatrix(objTransformClone, multTransform);
+                        transform = new(objTransformClone);
+                    }
+                }
+
+                if (!color.IsNull) {
+                    ColorMatrix cMatrix;
+                    if (color.TryGetValueAsString(out var colorStr) && Color.TryParse(colorStr, out var colorObj)) {
+                        cMatrix = new ColorMatrix(colorObj);
+                    } else if (!color.TryGetValueAsDreamList(out var colorList) || !DreamProcNativeHelpers.TryParseColorMatrix(colorList, out cMatrix)) {
+                        cMatrix = ColorMatrix.Identity; //fallback to identity if invalid
+                    }
+
+                    ColorMatrix objCMatrix;
+                    DreamValue objColor = obj.GetVariable("color");
+                    if (objColor.TryGetValueAsString(out var objColorStr) && Color.TryParse(objColorStr, out var objColorObj)) {
+                        objCMatrix = new ColorMatrix(objColorObj);
+                    } else if (!objColor.TryGetValueAsDreamList(out var objColorList) || !DreamProcNativeHelpers.TryParseColorMatrix(objColorList, out objCMatrix)) {
+                        objCMatrix = ColorMatrix.Identity; //fallback to identity if invalid
+                    }
+
+                    ColorMatrix.Multiply(ref objCMatrix, ref cMatrix, out var resultMatrix);
+                    color = new DreamValue(new DreamList(state.Proc.ObjectTree.List.ObjectDefinition, resultMatrix.GetValues().Select(x => new DreamValue(x)).ToList(), null));
+                }
+            }
+
+            var resourceManager = state.Proc.DreamResourceManager;
+            state.Proc.AtomManager.AnimateAppearance(obj, TimeSpan.FromMilliseconds(time * 100), (AnimationEasing)easing, loop, flags, delay, chainAnim,
+            appearance => {
+                if (!pixelX.IsNull) {
+                    obj.SetVariableValue("pixel_x", pixelX);
+                    pixelX.TryGetValueAsInteger(out appearance.PixelOffset.X);
+                }
+
+                if (!pixelY.IsNull) {
+                    obj.SetVariableValue("pixel_y", pixelY);
+                    pixelY.TryGetValueAsInteger(out appearance.PixelOffset.Y);
+                }
+
+                /* TODO world.map_format
+                if (!pixelZ.IsNull) {
+                    obj.SetVariableValue("pixel_z", pixelZ);
+                    pixelZ.TryGetValueAsInteger(out appearance.PixelOffset.Z);
+                }
+                */
+
+                if (!maptextX.IsNull) {
+                    obj.SetVariableValue("maptext_x", maptextX);
+                    maptextX.TryGetValueAsInteger(out appearance.MaptextOffset.X);
+                }
+
+                if (!maptextY.IsNull) {
+                    obj.SetVariableValue("maptext_y", maptextY);
+                    maptextY.TryGetValueAsInteger(out appearance.MaptextOffset.Y);
+                }
+
+                if (!maptextWidth.IsNull) {
+                    obj.SetVariableValue("maptext_width", maptextWidth);
+                    maptextX.TryGetValueAsInteger(out appearance.MaptextSize.X);
+                }
+
+                if (!maptextHeight.IsNull) {
+                    obj.SetVariableValue("maptext_y", maptextHeight);
+                    maptextY.TryGetValueAsInteger(out appearance.MaptextSize.Y);
+                }
+
+                if (!maptext.IsNull) {
+                    obj.SetVariableValue("maptext", maptext);
+                    maptext.TryGetValueAsString(out appearance.Maptext);
+                }
+
+                if (!dir.IsNull) {
+                    obj.SetVariableValue("dir", dir);
+                    if (dir.TryGetValueAsInteger(out int dirValue))
+                        appearance.Direction = (AtomDirection)dirValue;
+                }
+
+                if (!alpha.IsNull) {
+                    obj.SetVariableValue("alpha", alpha);
+                    if (alpha.TryGetValueAsInteger(out var alphaInt))
+                        appearance.Alpha = (byte)Math.Clamp(alphaInt, 0, 255);
+                }
+
+                if (!transform.IsNull) {
+                    obj.SetVariableValue("transform", transform);
+                    if (transform.TryGetValueAsDreamObject<DreamObjectMatrix>(out var transformObj))
+                        appearance.Transform = DreamObjectMatrix.MatrixToTransformFloatArray(transformObj);
+                }
+
+                if (!color.IsNull) {
+                    obj.SetVariableValue("color", color);
+                    if (color.TryGetValueAsString(out var colorStr))
+                        Color.TryParse(colorStr, out appearance.Color);
+                    else if (color.TryGetValueAsDreamList(out var colorList)) {
+                        if (DreamProcNativeHelpers.TryParseColorMatrix(colorList, out var colorMatrix))
+                            appearance.ColorMatrix = colorMatrix;
+                    }
+                }
+
+                /* TODO luminosity
+                if (!luminosity.IsNull) {
+                    obj.SetVariableValue("luminosity", luminosity);
+                    luminosity.TryGetValueAsInteger(out appearance.Luminosity);
+                }
+                */
+
+                /* TODO infra_luminosity
+                if (!infraLuminosity.IsNull) {
+                    obj.SetVariableValue("infra_luminosity", infraLuminosity);
+                    infraLuminosity.TryGetValueAsInteger(out appearance.InfraLuminosity);
+                }
+                */
+
+                if (!layer.IsNull) {
+                    obj.SetVariableValue("layer", layer);
+                    layer.TryGetValueAsFloat(out appearance.Layer);
+                }
+
+                if (!glideSize.IsNull) {
+                    obj.SetVariableValue("glide_size", glideSize);
+                    glideSize.TryGetValueAsFloat(out appearance.GlideSize);
+                }
+
+                if (!icon.IsNull) {
+                    obj.SetVariableValue("icon", icon);
+                    if (resourceManager.TryLoadIcon(icon, out var iconResource))
+                        appearance.Icon = iconResource.Id;
+                }
+
+                if (!iconState.IsNull) {
+                    obj.SetVariableValue("icon_state", iconState);
+                    iconState.TryGetValueAsString(out appearance.IconState);
+                }
+
+                if (!invisibility.IsNull) {
+                    obj.SetVariableValue("invisibility", invisibility);
+                    invisibility.TryGetValueAsInteger(out var invisibilityValue);
+                    appearance.Invisibility = (sbyte)Math.Clamp(invisibilityValue, -127, 127);
+                }
+
+                /* TODO suffix
+                if (!suffix.IsNull) {
+                    obj.SetVariableValue("suffix", suffix);
+                    suffix.TryGetValueAsString(out appearance.Suffix);
+                }
+                */
+            });
+
+            state.Push(DreamValue.Null);
+            return ProcStatus.Continue;
+        }
+
         public static ProcStatus LocateCoord(DMProcState state) {
             var z = (int)state.Pop().UnsafeGetValueAsFloat();
             var y = (int)state.Pop().UnsafeGetValueAsFloat();
@@ -2993,6 +3272,38 @@ namespace OpenDreamRuntime.Procs {
             iconObj.Icon.InsertStates(from, DreamValue.Null, DreamValue.Null, DreamValue.Null);
             DreamProcNativeIcon.Blend(iconObj.Icon, blend, DreamIconOperationBlend.BlendType.Add, 0, 0);
             return new DreamValue(iconObj);
+        }
+
+        private static DreamValue GetArgument(IReadOnlyList<DreamValue>? argumentsArray, IReadOnlyDictionary<DreamValue, DreamValue>? argumentsDictionary, int argumentPosition, string argumentName,
+                DreamValue argumentFallback) {
+            if (argumentsArray != null && argumentsArray.Count > argumentPosition) {
+                return argumentsArray[argumentPosition];
+            }
+
+            if (argumentsDictionary != null && (
+                    argumentsDictionary.TryGetValue(new(argumentName), out var val) ||
+                    argumentsDictionary.TryGetValue(new(argumentPosition), out val))) {
+                return val;
+            }
+
+            return argumentFallback;
+        }
+
+        private static bool IsArgumentDefined(IReadOnlyList<DreamValue>? argumentsArray, IReadOnlyDictionary<DreamValue, DreamValue>? argumentsDictionary, int argumentPosition, string argumentName,
+                DreamValue argumentFallback, out DreamValue val) {
+            if (argumentsArray != null && argumentsArray.Count > argumentPosition) {
+                val = argumentsArray[argumentPosition];
+                return true;
+            }
+
+            if (argumentsDictionary != null && (
+                    argumentsDictionary.TryGetValue(new(argumentName), out val) ||
+                    argumentsDictionary.TryGetValue(new(argumentPosition), out val))) {
+                return true;
+            }
+
+            val = DreamValue.Null;
+            return false;
         }
 
         #endregion Helpers

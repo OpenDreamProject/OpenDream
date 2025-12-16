@@ -5,7 +5,6 @@ namespace OpenDreamRuntime.Procs.Native;
 internal static class DreamProcNative {
     public static void SetupNativeProcs(DreamObjectTree objectTree) {
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_alert);
-        objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_animate);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_ascii2text);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_block);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_bounds_dist);

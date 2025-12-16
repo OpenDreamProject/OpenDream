@@ -321,6 +321,7 @@ public sealed class DMProcState : ProcState {
         {DreamProcOpcode.GetDir, DMOpcodeHandlers.GetDir},
         {DreamProcOpcode.DebuggerBreakpoint, DMOpcodeHandlers.DebuggerBreakpoint},
         {DreamProcOpcode.Rgb, DMOpcodeHandlers.Rgb},
+        {DreamProcOpcode.Animate, DMOpcodeHandlers.Animate},
         // Peephole optimizer opcode handlers
         {DreamProcOpcode.NullRef, DMOpcodeHandlers.NullRef},
         {DreamProcOpcode.AssignNoPush, DMOpcodeHandlers.AssignNoPush},
@@ -1058,7 +1059,6 @@ public sealed class DMProcState : ProcState {
                                          proc == Proc.DreamManager.ImageFactoryProc;
 
                 Array.Fill(arguments, DreamValue.Null);
-                HashSet<int> providedNulls = new();
                 for (int i = 0; i < argumentCount; i++) {
                     var key = values[i*2];
                     var value = values[i*2+1];
@@ -1080,13 +1080,10 @@ public sealed class DMProcState : ProcState {
                             throw new Exception($"{proc} has no argument named \"{argumentName}\"");
 
                         arguments[argumentIndex] = value;
-                        if (value.IsNull) {
-                            providedNulls.Add(argumentIndex);
-                        }
                     }
                 }
 
-                return DreamProcArguments.BuildWithProvidedNulls(providedNulls, arguments);
+                return new(arguments);
             }
             case DMCallArgumentsType.FromArgumentList: {
                 if (proc == null)

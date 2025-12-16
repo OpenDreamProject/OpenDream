@@ -1083,7 +1083,7 @@ public sealed class DMProcState : ProcState {
                     }
                 }
 
-                return new(arguments);
+                return new DreamProcArguments(arguments);
             }
             case DMCallArgumentsType.FromArgumentList: {
                 if (proc == null)

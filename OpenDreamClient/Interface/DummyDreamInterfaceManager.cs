@@ -20,11 +20,12 @@ public sealed class DummyDreamInterfaceManager : IDreamInterfaceManager {
     public ViewRange View => new(5);
     public bool ShowPopupMenus => true;
     public int IconSize => 32;
+    public CursorHolder Cursors => null!;
 
     [Dependency] private readonly IClientNetManager _netManager = default!;
 
     public void Initialize() {
-        _netManager.RegisterNetMessage<MsgLoadInterface>((_) => _netManager.ClientSendMessage(new MsgAckLoadInterface()));
+        _netManager.RegisterNetMessage<MsgLoadInterface>(_ => _netManager.ClientSendMessage(new MsgAckLoadInterface()));
     }
 
     public void FrameUpdate(FrameEventArgs frameEventArgs) {

@@ -284,8 +284,45 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                     break;
                 }
 
-                result = new NewPath(Compiler, newPath.Location, path,
+                result = new NewPath(Compiler, newPath.Location, path, null,
                     BuildArgumentList(newPath.Location, newPath.Parameters, inferredPath));
+                break;
+            case DMASTNewModifiedType newModifiedType:
+                if (!ObjectTree.TryGetDMObject(newModifiedType.Type.Value.Path, out var owner)) {
+                    return UnknownReference(newModifiedType.Type.Location, $"Type {newModifiedType.Type.Value.Path} does not exist");
+                }
+
+                var typePath = new ConstantTypeReference(newModifiedType.Type.Location, owner);
+
+                if (newModifiedType.Type.VarOverrides is null) {
+                    result = new NewPath(Compiler, newModifiedType.Location, typePath, null,
+                        BuildArgumentList(newModifiedType.Location, newModifiedType.Parameters, inferredPath));
+                    break;
+                }
+
+                var failed = false;
+                var overrides = new Dictionary<string, object?>();
+                foreach (var varOverride in newModifiedType.Type.VarOverrides) {
+                    if (!owner.HasLocalVariable(varOverride.Key)) {
+                        return UnknownIdentifier(newModifiedType.Type.Location, varOverride.Key);
+                    }
+
+                    var jsonExpression = BuildExpression(varOverride.Value, inferredPath);
+                    if (!jsonExpression.TryAsJsonRepresentation(Compiler, out var jsonValue)) {
+                        failed = true;
+                        break;
+                    }
+
+                    overrides[varOverride.Key] = jsonValue;
+                }
+
+                if (failed) {
+                    result = BadExpression(WarningCode.BadExpression, newModifiedType.Type.Location, "Expected a constant expression");
+                    break;
+                }
+
+                result = new NewPath(Compiler, newModifiedType.Location, typePath, overrides,
+                    BuildArgumentList(newModifiedType.Location, newModifiedType.Parameters, inferredPath));
                 break;
             case DMASTNewExpr newExpr:
                 result = new New(Compiler, newExpr.Location,
@@ -305,7 +342,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                     break;
                 }
 
-                result = new NewPath(Compiler, newInferred.Location, inferredType,
+                result = new NewPath(Compiler, newInferred.Location, inferredType, null,
                     BuildArgumentList(newInferred.Location, newInferred.Parameters, inferredPath));
                 break;
             case DMASTPreIncrement preIncrement:
@@ -456,6 +493,11 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
             case DMASTConstantString constString: return new String(constant.Location, constString.Value);
             case DMASTConstantResource constResource: return new Resource(Compiler, constant.Location, constResource.Path);
             case DMASTConstantPath constPath: return BuildPath(constant.Location, constPath.Value.Path);
+            case DMASTModifiedType constModifiedPath:
+                Compiler.UnimplementedWarning(constant.Location,
+                    "Using modified types in this way is unimplemented, and will just point to the original type");
+
+                return BuildPath(constant.Location, constModifiedPath.Value.Path);
             case DMASTUpwardPathSearch upwardSearch:
                 BuildExpression(upwardSearch.Path).TryAsConstant(Compiler, out var pathExpr);
                 if (pathExpr is not IConstantPath expr)

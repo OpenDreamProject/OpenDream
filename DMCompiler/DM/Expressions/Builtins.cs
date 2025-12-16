@@ -1,5 +1,6 @@
 using DMCompiler.Bytecode;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using DMCompiler.Compiler;
 using DMCompiler.Json;
 
@@ -67,13 +68,15 @@ internal sealed class New(DMCompiler compiler, Location location, DMExpression e
     public override void EmitPushValue(ExpressionContext ctx) {
         var argumentInfo = arguments.EmitArguments(ctx, null);
 
+        ctx.Proc.PushNull();
         expr.EmitPushValue(ctx);
         ctx.Proc.CreateObject(argumentInfo.Type, argumentInfo.StackSize);
     }
 }
 
 // new /x/y/z (...)
-internal sealed class NewPath(DMCompiler compiler, Location location, IConstantPath create, ArgumentList arguments) : DMExpression(location) {
+internal sealed class NewPath(DMCompiler compiler, Location location, IConstantPath create,
+    Dictionary<string, object?>? variableOverrides, ArgumentList arguments) : DMExpression(location) {
     public override DreamPath? Path => (create is ConstantTypeReference typeReference) ? typeReference.Path : null;
     public override DMComplexValueType ValType => Path?.GetAtomType(compiler) ?? DMValueType.Anything;
 
@@ -87,10 +90,23 @@ internal sealed class NewPath(DMCompiler compiler, Location location, IConstantP
                 var newProc = ctx.ObjectTree.GetNewProc(typeReference.Value.Id);
 
                 (argumentsType, stackSize) = arguments.EmitArguments(ctx, newProc);
+                if (variableOverrides is null || variableOverrides.Count == 0) {
+                    ctx.Proc.PushNull();
+                } else {
+                    ctx.Proc.PushString(JsonSerializer.Serialize(variableOverrides));
+                }
+
                 ctx.Proc.PushType(typeReference.Value.Id);
                 break;
             case ConstantProcReference procReference: // "new /proc/new_verb(Destination)" is a thing
                 (argumentsType, stackSize) = arguments.EmitArguments(ctx, ctx.ObjectTree.AllProcs[procReference.Value.Id]);
+                if(variableOverrides is not null && variableOverrides.Count > 0) {
+                    ctx.Compiler.Emit(WarningCode.BadExpression, Location, "Cannot add a Var Override to a proc");
+                    ctx.Proc.Error();
+                    return;
+                }
+
+                ctx.Proc.PushNull();
                 ctx.Proc.PushProc(procReference.Value.Id);
                 break;
             default:
@@ -577,6 +593,7 @@ internal sealed class NewList(Location location, DMExpression[] parameters) : DM
 
     public override void EmitPushValue(ExpressionContext ctx) {
         foreach (DMExpression parameter in parameters) {
+            ctx.Proc.PushNull();
             parameter.EmitPushValue(ctx);
             ctx.Proc.CreateObject(DMCallArgumentsType.None, 0);
         }

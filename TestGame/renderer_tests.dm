@@ -578,3 +578,18 @@
 		six.overlays += seven
 		
 		src.overlays += six
+
+// mouse pointer tests
+/obj/bin
+	name = "bin"
+	icon = 'icons/objects.dmi'
+	icon_state = "bin"
+	mouse_drop_pointer = MOUSE_DROP_POINTER
+	mouse_drop_zone = 1
+
+/obj/rubbish
+	name = "rubbish"
+	icon = 'icons/objects.dmi'
+	icon_state = "rubbish"
+	mouse_over_pointer = MOUSE_HAND_POINTER
+	mouse_drag_pointer = MOUSE_DRAG_POINTER

@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using DMCompiler;
 using DMCompiler.Bytecode;
@@ -198,12 +199,18 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus CreateObject(DMProcState state) {
             var argumentInfo = state.ReadProcArguments();
             var val = state.Pop();
+            Dictionary<string, object?>? overrides = null;
+            if (state.Pop().TryGetValueAsString(out var jsonDict)) {
+                overrides = JsonSerializer.Deserialize<Dictionary<string, object?>>(jsonDict);
+            }
+
             if (!val.TryGetValueAsType(out var objectType)) {
                 if (val.TryGetValueAsString(out var pathString)) {
                     if (!state.Proc.ObjectTree.TryGetTreeEntry(pathString, out objectType)) {
                         ThrowCannotCreateUnknownObject(val);
                     }
-                } else if (val.TryGetValueAsProc(out var proc)) { // new /proc/proc_name(Destination,Name,Desc)
+                } else if (val.TryGetValueAsProc(out var proc)) {
+                    // new /proc/proc_name(Destination,Name,Desc)
                     var arguments = state.PopProcArguments(null, argumentInfo.Type, argumentInfo.StackSize);
                     var destination = arguments.GetArgument(0);
 
@@ -237,12 +244,24 @@ namespace OpenDreamRuntime.Procs {
                     ThrowInvalidTurfLoc(loc);
 
                 state.Proc.DreamMapManager.SetTurf(turf, objectDef, newArguments);
+                if (overrides is not null) {
+                    foreach (KeyValuePair<string, object?> varOverride in overrides) {
+                        turf.SetVariable(varOverride.Key,
+                            state.Proc.ObjectTree.GetDreamValueFromJsonElement(varOverride.Value));
+                    }
+                }
 
                 state.Push(loc);
                 return ProcStatus.Continue;
             }
 
             var newObject = state.Proc.ObjectTree.CreateObject(objectType);
+            if (overrides is not null) {
+                foreach (KeyValuePair<string, object?> varOverride in overrides) {
+                    newObject.SetVariable(varOverride.Key, state.Proc.ObjectTree.GetDreamValueFromJsonElement(varOverride.Value));
+                }
+            }
+
             var s = newObject.InitProc(state.Thread, state.Usr, newArguments);
 
             state.Thread.PushProcState(s);
@@ -679,18 +698,19 @@ namespace OpenDreamRuntime.Procs {
             DreamValue value = state.Pop();
 
             if (listValue.TryGetValueAsDreamObject(out var listObject) && listObject != null) {
-                IDreamList? list = listObject as IDreamList;
+                var list = listObject switch {
+                    DreamObjectAtom or DreamObjectWorld => listObject.GetVariable("contents").MustGetValueAsDreamList(),
+                    DreamObjectSavefile savefile => new SavefileDirList(state.Proc.ObjectTree.List.ObjectDefinition, savefile),
+                    IDreamList dreamList => dreamList,
+                    _ => null
+                };
 
-                if (list == null) {
-                    if (listObject is DreamObjectAtom or DreamObjectWorld) {
-                        list = listObject.GetVariable("contents").MustGetValueAsDreamList();
-                    } else {
-                        // BYOND ignores all floats, strings, types, etc. here and just returns 0.
-                        state.Push(DreamValue.False);
-                    }
+                if (list != null) {
+                    state.Push(new DreamValue(list.ContainsValue(value) ? 1 : 0));
+                } else {
+                    // BYOND ignores all floats, strings, types, etc. here and just returns 0.
+                    state.Push(DreamValue.False);
                 }
-
-                state.Push(new DreamValue(list.ContainsValue(value) ? 1 : 0));
             } else {
                 state.Push(DreamValue.False);
             }
@@ -1143,8 +1163,7 @@ namespace OpenDreamRuntime.Procs {
                     state.Push(new DreamValue(0));
                     break;
                 case DreamValue.DreamValueType.Float when second.IsNull:
-                    state.Push(new DreamValue(first.MustGetValueAsFloat()));
-                    break;
+                    throw new Exception($"Attempted to divide {first} by null");
                 case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
                     var secondFloat = second.MustGetValueAsFloat();
                     if (secondFloat == 0) {

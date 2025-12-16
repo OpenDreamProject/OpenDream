@@ -6,7 +6,7 @@ namespace OpenDreamRuntime.Procs;
 public readonly ref struct DreamProcArguments {
     public int Count => Values.Length;
 
-    public ReadOnlySpan<DreamValue> Values { get; init; }
+    public readonly ReadOnlySpan<DreamValue> Values;
 
     public DreamProcArguments() {
         Values = Array.Empty<DreamValue>();

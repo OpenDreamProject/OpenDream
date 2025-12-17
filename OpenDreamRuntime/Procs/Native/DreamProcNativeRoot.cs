@@ -885,6 +885,16 @@ internal static class DreamProcNativeRoot {
         return new DreamValue(needleIndex + 1); //1-indexed
     }
 
+    [DreamProc("findtext_char")]
+    [DreamProcParameter("Haystack", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Needle", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
+    [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    public static DreamValue NativeProc_findtext_char(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        //Wrapper function, Opendream defaults to counting by chars instead of bytes.
+        return NativeProc_findtext(bundle, src, usr);
+    }
+
     [DreamProc("findtextEx")]
     [DreamProcParameter("Haystack", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("Needle", Type = DreamValueTypeFlag.String)]
@@ -930,6 +940,16 @@ internal static class DreamProcNativeRoot {
         }
     }
 
+    [DreamProc("findtextEx_char")]
+    [DreamProcParameter("Haystack", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Needle", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
+    [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    public static DreamValue NativeProc_findtextEx_char(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        //Wrapper function, Opendream defaults to counting by chars instead of bytes.
+        return NativeProc_findtextEx(bundle, src, usr);
+    }
+
     [DreamProc("findlasttext")]
     [DreamProcParameter("Haystack", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("Needle", Type = DreamValueTypeFlag.String)]
@@ -966,6 +986,15 @@ internal static class DreamProcNativeRoot {
         actualcount = Math.Max(Math.Min(actualstart+1, actualcount),0);
         int needleIndex = text.LastIndexOf(needle, actualstart, actualcount, StringComparison.OrdinalIgnoreCase);
         return new DreamValue(needleIndex + 1); //1-indexed, or 0 if not found (LastIndexOf returns -1 if not found)
+    }
+
+    [DreamProc("findlasttext_char")]
+    [DreamProcParameter("Haystack", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Needle", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
+    public static DreamValue NativeProc_findlasttext_char(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        return NativeProc_findlasttext(bundle, src, usr);
     }
 
     [DreamProc("findlasttextEx")]
@@ -1005,6 +1034,16 @@ internal static class DreamProcNativeRoot {
         actualcount = Math.Max(Math.Min(actualstart+1, actualcount),0);
         int needleIndex = text.LastIndexOf(needle, actualstart, actualcount, StringComparison.InvariantCulture);
         return new DreamValue(needleIndex + 1); //1-indexed, or 0 if not found (LastIndexOf returns -1 if not found)
+    }
+
+    [DreamProc("findlasttextEx_char")]
+    [DreamProcParameter("Haystack", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Needle", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
+    public static DreamValue NativeProc_findlasttextEx_char(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        //Wrapper function, Opendream defaults to counting by chars instead of bytes.
+        return NativeProc_findlasttextEx(bundle, src, usr);
     }
 
     [DreamProc("flick")]
@@ -2002,6 +2041,15 @@ internal static class DreamProcNativeRoot {
         return new DreamValue(index);
     }
 
+    [DreamProc("nonspantext_char")]
+    [DreamProcParameter("Haystack", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Needles", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
+    public static DreamValue NativeProc_nonspantext_char(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        //Wrapper function, Opendream defaults to counting by chars instead of bytes.
+        return NativeProc_nonspantext(bundle, src, usr);
+    }
+
     [DreamProc("num2text")]
     [DreamProcParameter("N")]
     [DreamProcParameter("A", Type = DreamValueTypeFlag.Float)]
@@ -2334,6 +2382,17 @@ internal static class DreamProcNativeRoot {
         throw new Exception($"Invalid needle {needle}");
     }
 
+    [DreamProc("replacetext_char")]
+    [DreamProcParameter("Haystack", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Needle", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Replacement", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
+    [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    public static DreamValue NativeProc_replacetext_char(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        //Wrapper function, Opendream defaults to counting by chars instead of bytes.
+        return NativeProc_replacetext(bundle, src, usr);
+    }
+
     [DreamProc("replacetextEx")]
     [DreamProcParameter("Haystack", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("Needle", Type = DreamValueTypeFlag.String)]
@@ -2379,6 +2438,17 @@ internal static class DreamProcNativeRoot {
         }
 
         return new DreamValue(text.Substring(start - 1, end - start).Replace(needle, replacement, StringComparison.Ordinal));
+    }
+
+    [DreamProc("replacetextEx_char")]
+    [DreamProcParameter("Haystack", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Needle", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Replacement", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
+    [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    public static DreamValue NativeProc_replacetextEx_char(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        //Wrapper function, Opendream defaults to counting by chars instead of bytes.
+        return NativeProc_replacetextEx(bundle, src, usr);
     }
 
     [DreamProc("rgb2num")]
@@ -2850,6 +2920,17 @@ internal static class DreamProcNativeRoot {
         } else {
             return new DreamValue(bundle.ObjectTree.CreateList());
         }
+    }
+
+    [DreamProc("splittext_char")]
+    [DreamProcParameter("Text", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Delimiter", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
+    [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    [DreamProcParameter("include_delimiters", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    public static DreamValue NativeProc_splittext_char(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        //Wrapper function, Opendream defaults to counting by chars instead of bytes.
+        return NativeProc_splittext(bundle, src, usr);
     }
 
     private static void OutputToStatPanel(DreamManager dreamManager, DreamConnection connection, DreamValue name, DreamValue value) {

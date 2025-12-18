@@ -370,6 +370,9 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
             case DMASTRgb rgb:
                 result = new Rgb(rgb.Location, BuildArgumentList(rgb.Location, rgb.Parameters, inferredPath));
                 break;
+            case DMASTAnimate animate:
+                result = new Animate(animate.Location, BuildArgumentList(animate.Location, animate.Parameters, inferredPath));
+                break;
             case DMASTLocateCoordinates locateCoordinates:
                 result = new LocateCoordinates(locateCoordinates.Location,
                     BuildExpression(locateCoordinates.X, inferredPath),

@@ -141,6 +141,7 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
             case DreamProcOpcode.CreateObject:
             case DreamProcOpcode.Gradient:
             case DreamProcOpcode.Rgb:
+            case DreamProcOpcode.Animate:
                 return (opcode, (DMCallArgumentsType)ReadByte(), ReadInt());
 
             case DreamProcOpcode.Call:

@@ -2776,6 +2776,13 @@ namespace DMCompiler.Compiler.DM {
 
                         return new DMASTRgb(identifier.Location, callParameters);
                     }
+                    case "animate": {
+                        if (callParameters.Length is < 1)
+                            Emit(WarningCode.InvalidArgumentCount, callLoc,
+                                "Expected at least 1 argument for animate()");
+                        
+                        return new DMASTAnimate(identifier.Location, callParameters);
+                    }
                     default:
                         return new DMASTProcCall(callLoc, new DMASTCallableProcIdentifier(callLoc, identifier.Identifier), callParameters);
                 }

@@ -21,9 +21,13 @@ proc/file(Path)
 proc/file2text(File) as text|null
 proc/filter(type, ...)
 proc/findtext(Haystack, Needle, Start = 1, End = 0) as num
+proc/findtext_char(Haystack, Needle, Start = 1, End = 0) as num
 proc/findtextEx(Haystack, Needle, Start = 1, End = 0) as num
+proc/findtextEx_char(Haystack, Needle, Start = 1, End = 0) as num
 proc/findlasttext(Haystack, Needle, Start = 0, End = 1) as num
+proc/findlasttext_char(Haystack, Needle, Start = 0, End = 1) as num
 proc/findlasttextEx(Haystack, Needle, Start = 0, End = 1) as num
+proc/findlasttextEx_char(Haystack, Needle, Start = 1, End = 0) as num
 proc/flick(Icon, Object)
 proc/flist(Path) as /list
 proc/floor(A) as num
@@ -67,6 +71,7 @@ proc/noise_hash(...) as num
 	set opendream_unimplemented = 1
 	return 0.5
 proc/nonspantext(Haystack, Needles, Start = 1) as num
+proc/nonspantext_char(Haystack, Needles, Start = 1) as num
 proc/num2text(N, A, B) as text
 proc/orange(Dist = 5, Center = usr) as /list|null // NOTE: Not sure if return types have BYOND parity
 proc/oview(Dist = 5, Center = usr) as /list
@@ -78,7 +83,9 @@ proc/rand_seed(Seed) as null
 proc/range(Dist, Center) as /list|null // NOTE: Not sure if return types have BYOND parity
 proc/ref(Object) as text
 proc/replacetext(Haystack, Needle, Replacement, Start = 1, End = 0) as text|null
+proc/replacetext_char(Haystack, Needle, Replacement, Start = 1, End = 0) as text|null
 proc/replacetextEx(Haystack, Needle, Replacement, Start = 1, End = 0) as text|null
+proc/replacetextEx_char(Haystack, Needle, Replacement, Start = 1, End = 0) as text|null
 proc/rgb(R, G, B, A, space) as text|null
 proc/rgb2num(color, space = COLORSPACE_RGB) as /list
 proc/roll(ndice = 1, sides) as num
@@ -93,7 +100,8 @@ proc/spantext(Haystack,Needles,Start=1) as num
 proc/spantext_char(Haystack,Needles,Start=1) as num
 proc/splicetext(Text, Start = 1, End = 0, Insert = "") as text|null
 proc/splicetext_char(Text, Start = 1, End = 0, Insert = "") as text|null
-proc/splittext(Text, Delimiter) as /list
+proc/splittext(Text, Delimiter, Start = 1, End = 0, include_delimiters = 0) as /list
+proc/splittext_char(Text, Delimiter, Start = 1, End = 0, include_delimiters = 0) as /list
 proc/stat(Name, Value)
 proc/statpanel(Panel, Name, Value)
 proc/text2ascii(T, pos = 1) as text
@@ -154,10 +162,6 @@ proc/winset(player, control_id, params)
 #include "Types\Atoms\Obj.dm"
 #include "Types\Atoms\Turf.dm"
 #include "UnsortedAdditions.dm"
-
-proc/replacetextEx_char(Haystack as text, Needle, Replacement, Start = 1, End = 0) as text
-	set opendream_unimplemented = TRUE
-	return Haystack
 
 /proc/step(atom/movable/Ref as /atom/movable, var/Dir, var/Speed=0) as num
 	//TODO: Speed = step_size if Speed is 0

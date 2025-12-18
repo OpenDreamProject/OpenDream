@@ -56,6 +56,7 @@ public sealed class DMLexer : TokenLexer {
         { "call", TokenType.DM_Call },
         { "call_ext", TokenType.DM_Call},
         { "spawn", TokenType.DM_Spawn },
+        { "sleep", TokenType.DM_Sleep },
         { "goto", TokenType.DM_Goto },
         { "step", TokenType.DM_Step },
         { "try", TokenType.DM_Try },

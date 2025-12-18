@@ -6,13 +6,14 @@ namespace OpenDreamRuntime.Procs;
 // Handles delay processing for sleep() and spawn().
 
 public sealed partial class ProcScheduler {
-    [Dependency] private readonly IGameTiming _gameTiming = default!;
+    [Dependency] private readonly IOpenDreamGameTiming _gameTiming = default!;
 
     private PriorityQueue<DelayTicker, uint> _tickers = new();
 
     // This is for deferred tasks that need to fire in the current tick.
     private readonly Queue<TaskCompletionSource> _deferredTasks = new();
 
+    public bool HasProcsSleeping => _tickers.Count > 0;
     /// <summary>
     /// Create a task that will delay by an amount of time, following the rules for <c>sleep</c> and <c>spawn</c>.
     /// </summary>
@@ -39,13 +40,17 @@ public sealed partial class ProcScheduler {
     /// The amount of ticks to sleep.
     /// </param>
     public Task CreateDelayTicks(int ticks) {
-        if (ticks <= 0) {
-            // When the delay is <= zero, we should run again in the current tick.
-            // Now, BYOND apparently does have a difference between 0 and -1, but we're not quite sure what it is yet.
-            // This is "good enough" for now.
-            // They both delay execution and allow other sleeping procs in the current tick to run immediately.
-            // We achieve this by putting the proc on the _deferredTasks lists, so it can be immediately executed again.
+        // When the delay is <= zero, we should run again in the current tick.
+        // Now, BYOND apparently does have a difference between 0 and -1. See https://github.com/OpenDreamProject/OpenDream/issues/1262#issuecomment-1563663041
+        // They both delay execution and allow other sleeping procs in the current tick to run immediately.
+        // We achieve this by putting the proc on the _deferredTasks lists, so it can be immediately executed again.
+        //if (ticks < 0 && !HasProcsQueued) {
+        if (ticks < 0) {
+        // special case, only yields when there is more work to do
+            return Task.CompletedTask;
+        }
 
+        if (ticks <= 0) {
             var defTcs = new TaskCompletionSource();
             _deferredTasks.Enqueue(defTcs);
             return defTcs.Task;

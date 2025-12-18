@@ -269,6 +269,8 @@ public sealed class DMProcState : ProcState {
         {DreamProcOpcode.LocateCoord, DMOpcodeHandlers.LocateCoord},
         {DreamProcOpcode.Locate, DMOpcodeHandlers.Locate},
         {DreamProcOpcode.IsNull, DMOpcodeHandlers.IsNull},
+        {DreamProcOpcode.Sleep, DMOpcodeHandlers.Sleep},
+        {DreamProcOpcode.BackgroundSleep, DMOpcodeHandlers.BackgroundSleep},
         {DreamProcOpcode.Spawn, DMOpcodeHandlers.Spawn},
         {DreamProcOpcode.OutputReference, DMOpcodeHandlers.OutputReference},
         {DreamProcOpcode.Output, DMOpcodeHandlers.Output},

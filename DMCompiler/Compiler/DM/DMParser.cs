@@ -90,6 +90,7 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_Throw,
             TokenType.DM_Null,
             TokenType.DM_Switch,
+            TokenType.DM_Sleep,
             TokenType.DM_Spawn,
             TokenType.DM_Do,
             TokenType.DM_While,
@@ -802,6 +803,7 @@ namespace DMCompiler.Compiler.DM {
                     TokenType.DM_Switch => Switch(),
                     TokenType.DM_Continue => Continue(),
                     TokenType.DM_Break => Break(),
+                    TokenType.DM_Sleep => Sleep(),
                     TokenType.DM_Spawn => Spawn(),
                     TokenType.DM_While => While(),
                     TokenType.DM_Do => DoWhile(),
@@ -1122,6 +1124,23 @@ namespace DMCompiler.Compiler.DM {
             if (sets.Length > 1)
                 return new DMASTAggregate<DMASTProcStatementSet>(loc, sets);
             return sets[0];
+        }
+
+        public DMASTProcStatementSleep? Sleep() {
+            var loc = Current().Location;
+
+            if (Check(TokenType.DM_Sleep)) {
+                Whitespace();
+                bool hasParenthesis = Check(TokenType.DM_LeftParenthesis);
+                Whitespace();
+                DMASTExpression? delay = Expression();
+                RequireExpression(ref delay, "Expected delay to sleep for");
+                if (hasParenthesis) ConsumeRightParenthesis();
+
+                return new DMASTProcStatementSleep(loc, delay ?? new DMASTConstantInteger(loc, 0));
+            } else {
+                return null;
+            }
         }
 
         private DMASTProcStatementSpawn Spawn() {

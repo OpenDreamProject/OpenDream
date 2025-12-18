@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DMCompiler.Compiler;
 using NUnit.Framework;
 using OpenDreamRuntime;
 using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Procs;
 using Robust.Shared.Asynchronous;
 using Robust.Shared.IoC;
 using Robust.Shared.Log;
@@ -21,9 +23,13 @@ public sealed partial class DMTests : ContentUnitTest {
     private const string InitializeEnvironment = "./environment.dme";
     private const string TestsDirectory = "Tests";
 
+    [Dependency] IOpenDreamGameTiming _gameTiming = default!;
     [Dependency] private readonly DreamManager _dreamMan = default!;
     [Dependency] private readonly DreamObjectTree _objectTree = default!;
+    [Dependency] private readonly ProcScheduler _procScheduler = default!;
     [Dependency] private readonly ITaskManager _taskManager = default!;
+
+    DummyOpenDreamGameTiming GameTiming => (DummyOpenDreamGameTiming)_gameTiming;
 
     [Flags]
     public enum DMTestFlags {
@@ -81,6 +87,9 @@ public sealed partial class DMTests : ContentUnitTest {
                 return;
             }
 
+            _procScheduler.ClearState();
+            GameTiming.CurTick = GameTick.Zero;
+
             Assert.That(compiledFile is not null && File.Exists(compiledFile), "Failed to compile DM source file");
             Assert.That(_dreamMan.LoadJson(compiledFile), $"Failed to load {compiledFile}");
             _dreamMan.LastDMException = null; // Nuke any exception from a prior test
@@ -88,10 +97,13 @@ public sealed partial class DMTests : ContentUnitTest {
 
             (bool successfulRun, DreamValue? returned, Exception? exception) = RunTest();
 
+            int expectedThreads;
             if (testFlags.HasFlag(DMTestFlags.NoReturn)) {
                 Assert.That(returned.HasValue, Is.False, "proc returned unexpectedly");
+                expectedThreads = 1;
             } else {
                 Assert.That(returned.HasValue, "proc did not return (did it hit an exception?)");
+                expectedThreads = 0;
             }
 
             if (testFlags.HasFlag(DMTestFlags.RuntimeError)) {
@@ -106,6 +118,9 @@ public sealed partial class DMTests : ContentUnitTest {
             if (testFlags.HasFlag(DMTestFlags.ReturnTrue)) {
                 Assert.That(returned?.IsTruthy(), Is.True, "Test was expected to return TRUE");
             }
+
+            var threads = _procScheduler.InspectThreads().ToList();
+            Assert.That(threads.Count == expectedThreads && !_procScheduler.HasProcsSleeping && !_procScheduler.HasProcsQueued, $"One or more threads did not finish!");
 
             // Due to how softdels work we need to make sure we clean up /now/.
             GC.Collect();
@@ -137,11 +152,12 @@ public sealed partial class DMTests : ContentUnitTest {
         watch.Start();
 
         // Tick until our inner call has finished
-        while (!callTask.IsCompleted) {
+        while (!callTask.IsCompleted || _procScheduler.HasProcsQueued || _procScheduler.HasProcsSleeping) {
             _dreamMan.Update();
             _taskManager.ProcessPendingTasks();
+            GameTiming.CurTick = new GameTick(_gameTiming.CurTick.Value + 1);
 
-            if (watch.Elapsed.TotalMilliseconds > 500) {
+            if (GameTiming.CurTick.Value > 50000) {
                 Assert.Fail("Test timed out");
             }
         }

@@ -3,6 +3,7 @@ using DMCompiler.Compiler;
 using DMCompiler.Compiler.DM;
 using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM.Expressions;
+using System.Runtime.InteropServices.Marshalling;
 
 namespace DMCompiler.DM.Builders;
 
@@ -74,6 +75,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
             case DMASTProcStatementLabel statementLabel: ProcessStatementLabel(statementLabel); break;
             case DMASTProcStatementBreak statementBreak: ProcessStatementBreak(statementBreak); break;
             case DMASTProcStatementDel statementDel: ProcessStatementDel(statementDel); break;
+            case DMASTProcStatementSleep statementSleep: ProcessStatementSleep(statementSleep); break;
             case DMASTProcStatementSpawn statementSpawn: ProcessStatementSpawn(statementSpawn); break;
             case DMASTProcStatementReturn statementReturn: ProcessStatementReturn(statementReturn); break;
             case DMASTProcStatementIf statementIf: ProcessStatementIf(statementIf); break;
@@ -140,6 +142,22 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
     private void ProcessStatementDel(DMASTProcStatementDel statementDel) {
         _exprBuilder.Emit(statementDel.Value);
         proc.DeleteObject();
+    }
+
+    private void ProcessStatementSleep(DMASTProcStatementSleep statementSleep) {
+
+        var expr = _exprBuilder.Create(statementSleep.Delay);
+        if (expr.TryAsConstant(compiler, out var constant)) {
+            if (constant is Number constantNumber) {
+                proc.Sleep(constantNumber.Value);
+                return;
+            }
+
+            constant.EmitPushValue(ExprContext);
+        } else
+            expr.EmitPushValue(ExprContext);
+
+        proc.SleepDelayPushed();
     }
 
     private void ProcessStatementSpawn(DMASTProcStatementSpawn statementSpawn) {

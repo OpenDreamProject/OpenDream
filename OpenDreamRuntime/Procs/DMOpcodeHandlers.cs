@@ -1866,7 +1866,7 @@ namespace OpenDreamRuntime.Procs {
             DreamThread newContext = state.Spawn();
 
             async void Wait() {
-                await state.ProcScheduler.CreateDelay(delay, state.Thread.Id);
+                await state.ProcScheduler.CreateDelay(delay, state.Proc.Id, state.Thread.Id);
                 newContext.Resume();
             }
 
@@ -1879,12 +1879,12 @@ namespace OpenDreamRuntime.Procs {
             state.Pop().TryGetValueAsFloat(out var delay);
             return SleepCore(
                 state,
-                state.ProcScheduler.CreateDelay(delay, state.Thread.Id));
+                state.ProcScheduler.CreateDelay(delay, state.Proc.Id, state.Thread.Id));
         }
 
         public static ProcStatus BackgroundSleep(DMProcState state) => SleepCore(
             state,
-            state.ProcScheduler.CreateDelayTicks(-1, state.Thread.Id));
+            state.ProcScheduler.CreateDelayTicks(-1, state.Proc.Id, state.Thread.Id));
 
         static ProcStatus SleepCore(DMProcState state, Task delay) {
             if (delay.IsCompleted)

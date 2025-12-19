@@ -43,7 +43,7 @@ public sealed class WalkManager {
             var moveProc = movable.GetProc("Move");
 
             while (true) {
-                await _scheduler.CreateDelayTicks(lag, state.Thread.Id);
+                await _scheduler.CreateDelayTicks(lag, state.Proc.Id, state.Thread.Id);
                 if (cancelSource.IsCancellationRequested)
                     break;
 
@@ -70,7 +70,7 @@ public sealed class WalkManager {
             var moveProc = movable.GetProc("Move");
 
             while (true) {
-                await _scheduler.CreateDelayTicks(lag, state.Thread.Id);
+                await _scheduler.CreateDelayTicks(lag, state.Proc.Id, state.Thread.Id);
                 if (cancelSource.IsCancellationRequested)
                     break;
                 var dir = DreamProcNativeHelpers.GetRandomDirection(_dreamManager);
@@ -97,7 +97,7 @@ public sealed class WalkManager {
             var moveProc = movable.GetProc("Move");
 
             while (true) {
-                await _scheduler.CreateDelayTicks(lag, state.Thread.Id);
+                await _scheduler.CreateDelayTicks(lag, state.Proc.Id, state.Thread.Id);
                 if (cancelSource.IsCancellationRequested)
                     break;
 
@@ -128,7 +128,7 @@ public sealed class WalkManager {
             var moveProc = movable.GetProc("Move");
 
             while (true) {
-                await _scheduler.CreateDelayTicks(lag, state.Thread.Id);
+                await _scheduler.CreateDelayTicks(lag, state.Proc.Id, state.Thread.Id);
                 if (cancelSource.IsCancellationRequested)
                     break;
 

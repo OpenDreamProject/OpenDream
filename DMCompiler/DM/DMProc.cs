@@ -683,7 +683,11 @@ internal sealed class DMProc {
         }
     }
 
-    public void BackgroundSleep() => WriteOpcode(DreamProcOpcode.BackgroundSleep);
+    public void BackgroundSleep() {
+        if ((Attributes & ProcAttributes.Background) == ProcAttributes.Background) {
+            WriteOpcode(DreamProcOpcode.BackgroundSleep);
+        }
+    }
 
     public void LoopJumpToStart(string loopLabel) {
         BackgroundSleep();

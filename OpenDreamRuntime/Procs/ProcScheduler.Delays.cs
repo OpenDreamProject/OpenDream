@@ -53,8 +53,8 @@ public sealed partial class ProcScheduler {
         // Now, BYOND apparently does have a difference between 0 and -1. See https://github.com/OpenDreamProject/OpenDream/issues/1262#issuecomment-1563663041
         // 0 delays until all other sleeping procs have had a chance to resume if their sleep time has elapsed.
         // We achieve this by putting the proc on the _deferredTasks lists, so it can be immediately executed again.
-        // -1 yields "only if other pending events have become backlogged" according to the BYOND docs. This does NOT include other procs, but
-        // seems to apply to pending i/o events. In testing, this tends to amount to the same as one thread sleeping with -1 twenty times in one tick or a single proc ten times.
+        // -1 yields "only if other pending events have become backlogged" according to the BYOND docs.
+        // In simple testing, this tends to amount to the same as one thread sleeping with -1 twenty times in one tick or a single proc ten times.
 
         if (ticks < 0) {
             var yieldTracker = YieldTrackersByThread.GetValueOrDefault(threadId, new());

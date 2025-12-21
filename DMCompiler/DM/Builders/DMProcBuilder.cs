@@ -277,7 +277,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                 ProcessStatementVarDeclaration(new DMASTProcStatementVarDeclaration(statementFor.Location, decl.DeclPath, null, DMValueType.Anything));
             }
 
-            if (statementFor is { Expression2: DMASTExpressionIn dmastIn, Expression3: null }) { // for(var/i,j in expr) or for(i,j in expr)
+            if (statementFor is { Expression2: DMASTExpressionIn dmastIn, Expression3: null, Statement3: null }) { // for(var/i,j in expr) or for(i,j in expr)
                 var valueVar = statementFor.Expression2 != null ? _exprBuilder.CreateIgnoreUnknownReference(statementFor.Expression2) : null;
                 var list = _exprBuilder.Create(dmastIn.RHS);
 
@@ -326,12 +326,31 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                 }
 
                 ProcessStatementForList(list, keyVar, valueVar, statementFor.DMTypes, statementFor.Body);
-            } else if (statementFor.Expression2 != null || statementFor.Expression3 != null) {
+            } else if (statementFor.Expression2 != null || statementFor.Expression3 != null && statementFor.Statement3 == null) {
                 var initializer = statementFor.Expression1 != null ? _exprBuilder.Create(statementFor.Expression1) : null;
                 var comparator = statementFor.Expression2 != null ? _exprBuilder.Create(statementFor.Expression2) : null;
                 var incrementor = statementFor.Expression3 != null ? _exprBuilder.Create(statementFor.Expression3) : null;
 
                 ProcessStatementForStandard(initializer, comparator, incrementor, statementFor.Body);
+            } else if (statementFor.Expression2 != null || statementFor.Expression3 == null && statementFor.Statement3 != null) {
+                var initializer = statementFor.Expression1 != null ? _exprBuilder.Create(statementFor.Expression1) : null;
+                var comparator = statementFor.Expression2 != null ? _exprBuilder.Create(statementFor.Expression2) : null;
+
+                Action statementHandler = null;
+                switch (statementFor.Statement3) {
+                    case DMASTProcStatementSleep sleepStatement: {
+                        statementHandler = () => {
+                            ProcessStatementSleep(sleepStatement);
+                        };
+                        break;
+                    }
+
+                    default:
+                        compiler.Emit(WarningCode.BadArgument, statementFor.Statement3!.Location, "Cannot change constant value");
+                        break;
+                }
+
+                ProcessStatementForWithStatementInc(initializer, comparator, statementHandler, statementFor.Body);
             } else {
                 switch (statementFor.Expression1) {
                     case DMASTAssign {LHS: DMASTVarDeclExpression decl, RHS: DMASTExpressionInRange range}: {
@@ -452,6 +471,34 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                     proc.Pop();
                 }
 
+                proc.LoopJumpToStart(loopLabel);
+            }
+            proc.LoopEnd();
+        }
+        proc.EndScope();
+    }
+
+    private void ProcessStatementForWithStatementInc(DMExpression? initializer, DMExpression? comparator, Action? incrementor, DMASTProcBlockInner body) {
+        proc.StartScope();
+        {
+            if (initializer != null) {
+                initializer.EmitPushValue(ExprContext);
+                proc.Pop();
+            }
+
+            string loopLabel = proc.NewLabelName();
+            proc.LoopStart(loopLabel);
+            {
+                if (comparator != null) {
+                    comparator.EmitPushValue(ExprContext);
+                    proc.BreakIfFalse();
+                }
+
+                ProcessBlockInner(body);
+
+                proc.MarkLoopContinue(loopLabel);
+                if (incrementor != null)
+                    incrementor();
                 proc.LoopJumpToStart(loopLabel);
             }
             proc.LoopEnd();

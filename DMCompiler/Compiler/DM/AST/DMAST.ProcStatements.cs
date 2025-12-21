@@ -118,9 +118,11 @@ public sealed class DMASTProcStatementFor(
     DMASTExpression? expr1,
     DMASTExpression? expr2,
     DMASTExpression? expr3,
+    DMASTProcStatement? statement3,
     DMComplexValueType? dmTypes,
     DMASTProcBlockInner body) : DMASTProcStatement(location) {
     public DMASTExpression? Expression1 = expr1, Expression2 = expr2, Expression3 = expr3;
+    public DMASTProcStatement? Statement3 = statement3;
     public DMComplexValueType? DMTypes = dmTypes;
     public readonly DMASTProcBlockInner Body = body;
 }

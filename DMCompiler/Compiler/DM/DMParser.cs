@@ -1276,7 +1276,7 @@ namespace DMCompiler.Compiler.DM {
                     Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after to expression");
                     ExtraColonPeriod();
 
-                    return new DMASTProcStatementFor(loc, new DMASTExpressionInRange(loc, assign.LHS, assign.RHS, endRange, step), null, null, dmTypes, GetForBody());
+                    return new DMASTProcStatementFor(loc, new DMASTExpressionInRange(loc, assign.LHS, assign.RHS, endRange, step), null, null, null, dmTypes, GetForBody());
                 } else {
                     Emit(WarningCode.BadExpression, "Expected = before to in for");
                     return new DMASTInvalidProcStatement(loc);
@@ -1291,20 +1291,20 @@ namespace DMCompiler.Compiler.DM {
                 Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 2");
                 ExtraColonPeriod();
 
-                return new DMASTProcStatementFor(loc, new DMASTExpressionIn(loc, expr1, listExpr), null, null, dmTypes, GetForBody());
+                return new DMASTProcStatementFor(loc, new DMASTExpressionIn(loc, expr1, listExpr), null, null, null, dmTypes, GetForBody());
             }
 
             if (!Check(ForSeparatorTypes)) {
                 Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 1");
                 ExtraColonPeriod();
 
-                return new DMASTProcStatementFor(loc, expr1, null, null, dmTypes, GetForBody());
+                return new DMASTProcStatementFor(loc, expr1, null, null, null, dmTypes, GetForBody());
             }
 
             if (Check(TokenType.DM_RightParenthesis)) {
                 ExtraColonPeriod();
 
-                return new DMASTProcStatementFor(loc, expr1, null, null, dmTypes, GetForBody());
+                return new DMASTProcStatementFor(loc, expr1, null, null, null, dmTypes, GetForBody());
             }
 
             Whitespace();
@@ -1321,29 +1321,44 @@ namespace DMCompiler.Compiler.DM {
                 Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 2");
                 ExtraColonPeriod();
 
-                return new DMASTProcStatementFor(loc, expr1, expr2, null, dmTypes, GetForBody());
+                return new DMASTProcStatementFor(loc, expr1, expr2, null, null, dmTypes, GetForBody());
             }
 
             if (Check(TokenType.DM_RightParenthesis)) {
                 ExtraColonPeriod();
 
-                return new DMASTProcStatementFor(loc, expr1, expr2, null, dmTypes, GetForBody());
+                return new DMASTProcStatementFor(loc, expr1, expr2, null, null, dmTypes, GetForBody());
             }
 
             Whitespace();
             DMASTExpression? expr3 = Expression();
+            DMASTProcStatement? statement3 = null;
             if (expr3 == null) {
+                CheckForStatementIncrementor(ref expr3, ref statement3);
+
                 if (Current().Type != TokenType.DM_RightParenthesis) {
                     Emit(WarningCode.BadExpression, "Expected 3nd expression in for");
                 }
-
-                expr3 = new DMASTConstantNull(loc);
             }
 
             Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 3");
             ExtraColonPeriod();
 
-            return new DMASTProcStatementFor(loc, expr1, expr2, expr3, dmTypes, GetForBody());
+            return new DMASTProcStatementFor(loc, expr1, expr2, expr3, statement3, dmTypes, GetForBody());
+
+            void CheckForStatementIncrementor(ref DMASTExpression? expr3, ref DMASTProcStatement? statement3) {
+                DMASTProcStatementSleep? sleep = Sleep();
+                if (sleep == null) {
+                    expr3 = new DMASTConstantNull(loc);
+                    statement3 = sleep;
+                    return;
+                }
+
+                // TODO: additional tests, e.g., animate(...)
+
+                // if no matches, null
+                expr3 = new DMASTConstantNull(loc);
+            }
 
             DMASTProcBlockInner GetForBody() {
                 Whitespace();

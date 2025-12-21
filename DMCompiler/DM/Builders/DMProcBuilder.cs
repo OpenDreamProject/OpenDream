@@ -3,7 +3,6 @@ using DMCompiler.Compiler;
 using DMCompiler.Compiler.DM;
 using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM.Expressions;
-using System.Runtime.InteropServices.Marshalling;
 
 namespace DMCompiler.DM.Builders;
 

@@ -1333,7 +1333,7 @@ namespace DMCompiler.Compiler.DM {
             DMASTExpression? expr3 = Expression();
             DMASTProcStatement? statement3 = null;
             if (expr3 == null) {
-                CheckForStatementIncrementor(ref expr3, ref statement3);
+                CheckForStatementIncrementor();
 
                 if (Current().Type != TokenType.DM_RightParenthesis) {
                     Emit(WarningCode.BadExpression, "Expected 3nd expression in for");
@@ -1345,7 +1345,7 @@ namespace DMCompiler.Compiler.DM {
 
             return new DMASTProcStatementFor(loc, expr1, expr2, expr3, statement3, dmTypes, GetForBody());
 
-            void CheckForStatementIncrementor(ref DMASTExpression? expr3, ref DMASTProcStatement? statement3) {
+            void CheckForStatementIncrementor() {
                 DMASTProcStatementSleep? sleep = Sleep();
                 if (sleep == null) {
                     expr3 = new DMASTConstantNull(loc);

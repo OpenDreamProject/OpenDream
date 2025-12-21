@@ -1865,12 +1865,12 @@ namespace OpenDreamRuntime.Procs {
             // and have state.Spawn return a ProcState instead
             DreamThread newContext = state.Spawn();
 
-            async void Wait() {
+            async Task Wait() {
                 await state.ProcScheduler.CreateDelay(delay, state.Proc.Id, state.Thread.Id);
                 newContext.Resume();
             }
 
-            Wait();
+            _ = Wait();
             state.Jump(jumpTo);
             return ProcStatus.Continue;
         }
@@ -1901,11 +1901,10 @@ namespace OpenDreamRuntime.Procs {
         sealed class SleepState : AsyncProcState {
             public static readonly Stack<SleepState> Pool = new();
 
-            [Dependency] public readonly ProcScheduler ProcScheduler = null!;
+            [Dependency] private readonly ProcScheduler ProcScheduler = null!;
 
             DreamProc? _proc;
             Task? _task;
-            bool inResume;
 
             public SleepState() {
                 IoCManager.InjectDependencies(this);

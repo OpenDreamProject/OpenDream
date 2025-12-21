@@ -7,17 +7,18 @@ namespace OpenDreamRuntime.Procs;
 
 public sealed partial class ProcScheduler {
     private sealed class ThreadYieldTracker {
-        public uint threadYieldCounter = 1;
-        public Dictionary<int, uint> procYieldCounter = new();
+        public uint ThreadYieldCounter = 1;
+        public readonly Dictionary<int, uint> ProcYieldCounter = new();
     }
+
     [Dependency] private readonly IOpenDreamGameTiming _gameTiming = default!;
 
     private PriorityQueue<DelayTicker, uint> _tickers = new();
 
-    private Dictionary<int, ThreadYieldTracker> YieldTrackersByThread = new();
+    private readonly Dictionary<int, ThreadYieldTracker> _yieldTrackersByThread = new();
 
-    private readonly ushort YieldProcThreshold = 10;
-    private readonly ushort YieldThreadThreshold = 20;
+    private readonly ushort _yieldProcThreshold = 10;
+    private readonly ushort _yieldThreadThreshold = 20;
 
     // This is for deferred tasks that need to fire in the current tick.
     private readonly Queue<TaskCompletionSource> _deferredTasks = new();
@@ -28,6 +29,12 @@ public sealed partial class ProcScheduler {
     /// </summary>
     /// <param name="deciseconds">
     /// The amount of time, in deciseconds, to sleep. Gets rounded down to a number of ticks.
+    /// </param>
+    /// <param name="procId">
+    /// ID of active process to track sharing
+    /// </param>
+    /// <param name="threadId">
+    /// ID of active thread to track sharing
     /// </param>
     public Task CreateDelay(float deciseconds, int procId, int threadId) {
         // BYOND stores sleep/spawn delays with an exact amount of ticks.
@@ -48,6 +55,12 @@ public sealed partial class ProcScheduler {
     /// <param name="ticks">
     /// The amount of ticks to sleep.
     /// </param>
+    /// <param name="procId">
+    /// ID of active process to track sharing
+    /// </param>
+    /// <param name="threadId">
+    /// ID of active thread to track sharing
+    /// </param>
     public Task CreateDelayTicks(int ticks, int procId, int threadId) {
         // When the delay is <= zero, we should run again in the current tick.
         // Now, BYOND apparently does have a difference between 0 and -1. See https://github.com/OpenDreamProject/OpenDream/issues/1262#issuecomment-1563663041
@@ -57,27 +70,27 @@ public sealed partial class ProcScheduler {
         // In simple testing, this tends to amount to the same as one thread sleeping with -1 twenty times in one tick or a single proc ten times.
 
         if (ticks < 0) {
-            var yieldTracker = YieldTrackersByThread.GetValueOrDefault(threadId, new());
-            uint sleepCountByThread = yieldTracker.threadYieldCounter;
-            uint sleepCountByProc = yieldTracker.procYieldCounter.GetValueOrDefault(procId, 1u);
+            var yieldTracker = _yieldTrackersByThread.GetValueOrDefault(threadId, new());
+            uint sleepCountByThread = yieldTracker.ThreadYieldCounter;
+            uint sleepCountByProc = yieldTracker.ProcYieldCounter.GetValueOrDefault(procId, 1u);
 
             bool exceeded = false;
-            if (sleepCountByThread < YieldThreadThreshold) {
-                yieldTracker.threadYieldCounter = sleepCountByThread + 1u;
+            if (sleepCountByThread < _yieldThreadThreshold) {
+                yieldTracker.ThreadYieldCounter = sleepCountByThread + 1u;
             } else {
                 exceeded = true;
             }
 
-            if (sleepCountByProc < YieldProcThreshold) {
-                yieldTracker.procYieldCounter[procId] = sleepCountByProc + 1u;
+            if (sleepCountByProc < _yieldProcThreshold) {
+                yieldTracker.ProcYieldCounter[procId] = sleepCountByProc + 1u;
             } else {
                 exceeded = true;
             }
 
             if (exceeded) {
-                YieldTrackersByThread.Remove(threadId);
+                _yieldTrackersByThread.Remove(threadId);
             } else {
-                YieldTrackersByThread[threadId] = yieldTracker;
+                _yieldTrackersByThread[threadId] = yieldTracker;
                 return Task.CompletedTask;
             }
         }
@@ -104,7 +117,7 @@ public sealed partial class ProcScheduler {
     }
 
     private void UpdateDelays() {
-        YieldTrackersByThread.Clear();
+        _yieldTrackersByThread.Clear();
 
         while (_tickers.Count > 0) {
             var ticker = _tickers.Peek();

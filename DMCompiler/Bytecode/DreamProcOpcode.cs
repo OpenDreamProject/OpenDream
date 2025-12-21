@@ -309,7 +309,7 @@ public enum DreamProcOpcode : byte {
     Animate = 0x9C,
     [OpcodeMetadata(-1)]
     Sleep = 0x9D,
-    [OpcodeMetadata(0)]
+    [OpcodeMetadata]
     BackgroundSleep = 0x9E,
 }
 // ReSharper restore MissingBlankLines

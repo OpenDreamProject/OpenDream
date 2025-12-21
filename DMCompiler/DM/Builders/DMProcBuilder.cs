@@ -146,6 +146,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
     private void ProcessStatementSleep(DMASTProcStatementSleep statementSleep) {
 
         var expr = _exprBuilder.Create(statementSleep.Delay);
+
         if (expr.TryAsConstant(compiler, out var constant)) {
             if (constant is Number constantNumber) {
                 proc.Sleep(constantNumber.Value);
@@ -325,17 +326,11 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                 }
 
                 ProcessStatementForList(list, keyVar, valueVar, statementFor.DMTypes, statementFor.Body);
-            } else if (statementFor.Expression2 != null || statementFor.Expression3 != null && statementFor.Statement3 == null) {
-                var initializer = statementFor.Expression1 != null ? _exprBuilder.Create(statementFor.Expression1) : null;
-                var comparator = statementFor.Expression2 != null ? _exprBuilder.Create(statementFor.Expression2) : null;
-                var incrementor = statementFor.Expression3 != null ? _exprBuilder.Create(statementFor.Expression3) : null;
-
-                ProcessStatementForStandard(initializer, comparator, incrementor, statementFor.Body);
-            } else if (statementFor.Expression2 != null || statementFor.Expression3 == null && statementFor.Statement3 != null) {
+            } else if (statementFor.Statement3 != null) {
                 var initializer = statementFor.Expression1 != null ? _exprBuilder.Create(statementFor.Expression1) : null;
                 var comparator = statementFor.Expression2 != null ? _exprBuilder.Create(statementFor.Expression2) : null;
 
-                Action statementHandler = null;
+                Action? statementHandler = null;
                 switch (statementFor.Statement3) {
                     case DMASTProcStatementSleep sleepStatement: {
                         statementHandler = () => {
@@ -350,6 +345,12 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                 }
 
                 ProcessStatementForWithStatementInc(initializer, comparator, statementHandler, statementFor.Body);
+            } else if (statementFor.Expression2 != null || statementFor.Expression3 != null) {
+                var initializer = statementFor.Expression1 != null ? _exprBuilder.Create(statementFor.Expression1) : null;
+                var comparator = statementFor.Expression2 != null ? _exprBuilder.Create(statementFor.Expression2) : null;
+                var incrementor = statementFor.Expression3 != null ? _exprBuilder.Create(statementFor.Expression3) : null;
+
+                ProcessStatementForStandard(initializer, comparator, incrementor, statementFor.Body);
             } else {
                 switch (statementFor.Expression1) {
                     case DMASTAssign {LHS: DMASTVarDeclExpression decl, RHS: DMASTExpressionInRange range}: {

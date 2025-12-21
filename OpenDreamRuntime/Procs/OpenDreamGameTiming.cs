@@ -1,20 +1,19 @@
 ﻿using Robust.Shared.Timing;
 
-namespace OpenDreamRuntime.Procs {
-    sealed class OpenDreamGameTiming : IOpenDreamGameTiming {
-        [Dependency] private readonly IGameTiming _gameTiming = default!;
+namespace OpenDreamRuntime.Procs;
+sealed internal class OpenDreamGameTiming : IOpenDreamGameTiming {
+    [Dependency] private readonly IGameTiming _gameTiming = default!;
 
-        public GameTick CurTick => _gameTiming.CurTick;
+    public GameTick CurTick => _gameTiming.CurTick;
 
-        public TimeSpan LastTick => _gameTiming.LastTick;
+    public TimeSpan LastTick => _gameTiming.LastTick;
 
-        public TimeSpan RealTime => _gameTiming.RealTime;
+    public TimeSpan RealTime => _gameTiming.RealTime;
 
-        public TimeSpan TickPeriod => _gameTiming.TickPeriod;
+    public TimeSpan TickPeriod => _gameTiming.TickPeriod;
 
-        public ushort TickRate {
-            get => _gameTiming.TickRate;
-            set => _gameTiming.TickRate = value;
-        }
+    public ushort TickRate {
+        get => _gameTiming.TickRate;
+        set => _gameTiming.TickRate = value;
     }
 }

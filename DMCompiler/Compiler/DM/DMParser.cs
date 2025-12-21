@@ -1134,7 +1134,6 @@ namespace DMCompiler.Compiler.DM {
                 bool hasParenthesis = Check(TokenType.DM_LeftParenthesis);
                 Whitespace();
                 DMASTExpression? delay = Expression();
-                RequireExpression(ref delay, "Expected delay to sleep for");
                 if (hasParenthesis) ConsumeRightParenthesis();
 
                 return new DMASTProcStatementSleep(loc, delay ?? new DMASTConstantInteger(loc, 0));

@@ -144,7 +144,6 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
     }
 
     private void ProcessStatementSleep(DMASTProcStatementSleep statementSleep) {
-
         var expr = _exprBuilder.Create(statementSleep.Delay);
 
         if (expr.TryAsConstant(compiler, out var constant)) {

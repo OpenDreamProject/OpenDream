@@ -1,6 +1,7 @@
 ﻿using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime.Procs;
+
 public interface IOpenDreamGameTiming {
     public GameTick CurTick { get; }
 

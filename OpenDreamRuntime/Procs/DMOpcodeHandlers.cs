@@ -1901,7 +1901,7 @@ namespace OpenDreamRuntime.Procs {
         sealed class SleepState : AsyncProcState {
             public static readonly Stack<SleepState> Pool = new();
 
-            [Dependency] private readonly ProcScheduler ProcScheduler = null!;
+            [Dependency] private readonly ProcScheduler _procScheduler = null!;
 
             DreamProc? _proc;
             Task? _task;
@@ -1914,7 +1914,7 @@ namespace OpenDreamRuntime.Procs {
                 Thread = thread;
                 _proc = proc;
                 Result = pendingResult;
-                _task = ProcScheduler.Schedule(this, delay);
+                _task = _procScheduler.Schedule(this, delay);
                 thread.PushProcState(this);
                 return thread.HandleDefer();
             }

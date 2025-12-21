@@ -1,7 +1,8 @@
 ﻿using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime.Procs;
-sealed internal class OpenDreamGameTiming : IOpenDreamGameTiming {
+
+internal sealed class OpenDreamGameTiming : IOpenDreamGameTiming {
     [Dependency] private readonly IGameTiming _gameTiming = default!;
 
     public GameTick CurTick => _gameTiming.CurTick;

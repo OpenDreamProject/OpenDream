@@ -18,6 +18,10 @@ public class DreamList : DreamObject, IDreamList {
 
     public virtual bool IsAssociative => _associativeValues is { Count: > 0 };
 
+    /// <summary>
+    /// Looks up the key to find the index
+    /// </summary>
+    private readonly Dictionary<DreamValue, int> _reverseLookup = [];
     private readonly List<DreamValue> _values;
     private Dictionary<DreamValue, DreamValue>? _associativeValues;
 
@@ -29,6 +33,12 @@ public class DreamList : DreamObject, IDreamList {
         if (size >= DreamManager.ListPoolThreshold && ListPool.TryPop(out var poppedValues)) {
             _values = poppedValues;
             _values.EnsureCapacity(size);
+            foreach (var value in poppedValues) {
+                if (!_reverseLookup.TryAdd(value, 1)) {
+                    _reverseLookup[value] += 1;
+                }
+            }
+
         } else {
             _values = new List<DreamValue>(size);
         }
@@ -39,6 +49,11 @@ public class DreamList : DreamObject, IDreamList {
     /// </summary>
     public DreamList(DreamObjectDefinition listDef, List<DreamValue> values, Dictionary<DreamValue, DreamValue>? associativeValues) : base(listDef) {
         _values = values;
+        foreach (var value in values) {
+            if (!_reverseLookup.TryAdd(value, 1)) {
+                _reverseLookup[value] += 1;
+            }
+        }
         _associativeValues = associativeValues;
 
         #if TOOLS
@@ -172,13 +187,31 @@ public class DreamList : DreamObject, IDreamList {
 
     public virtual void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
         if (key.TryGetValueAsInteger(out int keyInteger)) {
-            if (allowGrowth && keyInteger == _values.Count + 1) {
+            var index = _values.Count + 1;
+            if (allowGrowth && keyInteger == index) {
                 _values.Add(value);
+
+                if (!_reverseLookup.TryAdd(value, 1)) {
+                    _reverseLookup[value] += 1;
+                }
             } else {
+                var oldValue = _values[keyInteger - 1];
+                var rLCount = _reverseLookup[oldValue] -= 1;
+                if(rLCount <= 0) {
+                    _reverseLookup.Remove(oldValue);
+                }
+
                 _values[keyInteger - 1] = value;
+
+                if (!_reverseLookup.TryAdd(value, 1)) {
+                    _reverseLookup[value] += 1;
+                }
+
             }
         } else {
-            if (!ContainsValue(key)) _values.Add(key);
+            if (_reverseLookup.TryAdd(key, 1)) {
+                _values.Add(key);
+            }
 
             _associativeValues ??= new Dictionary<DreamValue, DreamValue>(1);
             _associativeValues[key] = value;
@@ -191,6 +224,13 @@ public class DreamList : DreamObject, IDreamList {
         int valueIndex = _values.LastIndexOf(value);
 
         if (valueIndex != -1) {
+            if (_reverseLookup.ContainsKey(value)) {
+                var rLCount = _reverseLookup[value] -= 1;
+                if (rLCount <= 0) {
+                    _reverseLookup.Remove(value);
+                }
+            }
+
             _associativeValues?.Remove(value);
             _values.RemoveAt(valueIndex);
         }
@@ -199,18 +239,17 @@ public class DreamList : DreamObject, IDreamList {
     }
 
     public virtual void AddValue(DreamValue value) {
-        _values.Add(value);
+        _values.Add(value); 
+        if (!_reverseLookup.TryAdd(value, 1)) {
+            _reverseLookup[value] += 1;
+        }
+
         UpdateTracyContentsMemory();
     }
 
     //Does not include associations
     public virtual bool ContainsValue(DreamValue value) {
-        for (int i = 0; i < _values.Count; i++) {
-            if (_values[i].Equals(value))
-                return true;
-        }
-
-        return false;
+        return _reverseLookup.ContainsKey(value);
     }
 
     public virtual bool ContainsKey(DreamValue value) {
@@ -220,6 +259,8 @@ public class DreamList : DreamObject, IDreamList {
     public virtual int FindValue(DreamValue value, int start = 1, int end = 0) {
         if (end == 0 || end > _values.Count) end = _values.Count + 1;
 
+        if(!ContainsValue(value)) return 0;
+        
         for (int i = start; i < end; i++) {
             if (_values[i - 1].Equals(value)) return i;
         }
@@ -235,14 +276,30 @@ public class DreamList : DreamObject, IDreamList {
                 _associativeValues.Remove(_values[i - 1]);
         }
 
-        if (end > start)
-            _values.RemoveRange(start - 1, end - start);
+        if (end > start) {
+            var index = start - 1;
+            var len = end - start;
+            var elements = _values.GetRange(index, len);
+
+            foreach (var element in elements) {
+                var rlCache = _reverseLookup[element] -= 1;
+
+                if (rlCache <= 0) {
+                    _reverseLookup.Remove(element);
+                }
+            }
+
+            _values.RemoveRange(index, len);
+        }
 
         UpdateTracyContentsMemory();
     }
 
     public void Insert(int index, DreamValue value) {
         _values.Insert(index - 1, value);
+        if (!_reverseLookup.TryAdd(value, 1)) {
+            _reverseLookup[value] += 1;
+        }
         UpdateTracyContentsMemory();
     }
 
@@ -652,6 +709,16 @@ public sealed class ClientVerbsList : DreamList {
             yield return new(verb);
     }
 
+    public override bool ContainsValue(DreamValue value) {
+        foreach (var containedVal in EnumerateValues()) {
+            if (value.Equals(containedVal)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
         throw new Exception("Cannot set the values of a verbs list");
     }
@@ -714,6 +781,16 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
 
             yield return new(verb);
         }
+    }
+
+    public override bool ContainsValue(DreamValue value) {
+        foreach (var containedVal in EnumerateValues()) {
+            if (value.Equals(containedVal)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
@@ -788,6 +865,16 @@ public sealed class DreamOverlaysList : DreamList {
         foreach (var overlay in GetOverlaysArray(appearance)) {
             yield return new(overlay.ToMutable());
         }
+    }
+
+    public override bool ContainsValue(DreamValue value) {
+        foreach (var containedVal in EnumerateValues()) {
+            if (value.Equals(containedVal)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public override void Cut(int start = 1, int end = 0) {
@@ -905,6 +992,16 @@ public sealed class DreamVisContentsList : DreamList {
     public override IEnumerable<DreamValue> EnumerateValues() {
         foreach (var visContent in _visContents)
             yield return new(visContent);
+    }
+
+    public override bool ContainsValue(DreamValue value) {
+        foreach (var containedVal in EnumerateValues()) {
+            if (value.Equals(containedVal)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public override void Cut(int start = 1, int end = 0) {
@@ -1064,6 +1161,16 @@ public sealed class DreamFilterList(DreamObjectDefinition listDef, DreamObject o
         }
     }
 
+    public override bool ContainsValue(DreamValue value) {
+        foreach (var containedVal in EnumerateValues()) {
+            if (value.Equals(containedVal)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
         if (!value.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject) && !value.IsNull)
             throw new Exception($"Cannot set value of filter list to {value}");
@@ -1212,6 +1319,16 @@ public sealed class ClientImagesList(
         return _imageObjects;
     }
 
+    public override bool ContainsValue(DreamValue value) {
+        foreach (var containedVal in EnumerateValues()) {
+            if (value.Equals(containedVal)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
         throw new Exception("Cannot write to an index of a client images list");
     }
@@ -1275,6 +1392,16 @@ public sealed class WorldContentsList(DreamObjectDefinition listDef, AtomManager
         return AtomManager.EnumerateAtoms().Select(atom => new DreamValue(atom));
     }
 
+    public override bool ContainsValue(DreamValue value) {
+        foreach (var containedVal in EnumerateValues()) {
+            if (value.Equals(containedVal)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
         throw new Exception("Cannot set the value of world contents list");
     }
@@ -1316,6 +1443,16 @@ public sealed class TurfContentsList(DreamObjectDefinition listDef, DreamObjectT
     public override IEnumerable<DreamValue> EnumerateValues() {
         foreach (var movable in Cell.Movables)
             yield return new(movable);
+    }
+
+    public override bool ContainsValue(DreamValue value) {
+        foreach (var containedVal in EnumerateValues()) {
+            if (value.Equals(containedVal)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
@@ -1384,6 +1521,16 @@ public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectA
             foreach (var content in turf.Contents.EnumerateValues())
                 yield return content;
         }
+    }
+
+    public override bool ContainsValue(DreamValue value) {
+        foreach (var containedVal in EnumerateValues()) {
+            if (value.Equals(containedVal)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
@@ -1535,6 +1682,16 @@ internal sealed class ProcArgsList(DreamObjectDefinition listDef, DMProcState st
     public override IEnumerable<DreamValue> EnumerateValues() {
         for (int i = 0; i < state.ArgumentCount; i++)
             yield return state.GetArguments()[i];
+    }
+
+    public override bool ContainsValue(DreamValue value) {
+        foreach (var containedVal in EnumerateValues()) {
+            if (value.Equals(containedVal)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {

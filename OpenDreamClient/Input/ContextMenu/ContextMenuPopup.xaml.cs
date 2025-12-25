@@ -1,3 +1,4 @@
+using OpenDreamClient.Interface;
 using OpenDreamClient.Interface.Controls.UI;
 using OpenDreamClient.Rendering;
 using OpenDreamShared.Dream;
@@ -18,6 +19,7 @@ internal sealed partial class ContextMenuPopup : Popup {
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
     [Dependency] private readonly IUserInterfaceManager _uiManager = default!;
+    [Dependency] private readonly IDreamInterfaceManager _dreamInterfaceManager = default!;
     private readonly ClientAppearanceSystem _appearanceSystem;
     private readonly ClientVerbSystem _verbSystem;
     private readonly DMISpriteSystem _spriteSystem;
@@ -115,7 +117,7 @@ internal sealed partial class ContextMenuPopup : Popup {
     private sbyte GetSeeInvisible() {
         if (_playerManager.LocalSession == null)
             return 127;
-        if (!_mobSightQuery.TryGetComponent(_playerManager.LocalSession.AttachedEntity, out DreamMobSightComponent? sight))
+        if (!_mobSightQuery.TryGetComponent(_dreamInterfaceManager.MobUid, out DreamMobSightComponent? sight))
             return 127;
 
         return sight.SeeInvisibility;

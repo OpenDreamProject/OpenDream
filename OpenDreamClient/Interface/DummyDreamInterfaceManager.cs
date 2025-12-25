@@ -21,6 +21,8 @@ public sealed class DummyDreamInterfaceManager : IDreamInterfaceManager {
     public bool ShowPopupMenus => true;
     public int IconSize => 32;
     public CursorHolder Cursors => null!;
+    public EntityUid MobUid => EntityUid.Invalid;
+    public EntityUid EyeUid => EntityUid.Invalid;
 
     [Dependency] private readonly IClientNetManager _netManager = default!;
 

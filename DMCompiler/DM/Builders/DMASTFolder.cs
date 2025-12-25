@@ -92,6 +92,10 @@ public class DMASTFolder {
                 }
 
                 break;
+            case DMASTProcStatementSleep statementSleep:
+                statementSleep.Delay = FoldExpression(statementSleep.Delay);
+
+                break;
             case DMASTProcStatementSpawn statementSpawn:
                 statementSpawn.Delay = FoldExpression(statementSpawn.Delay);
                 FoldAst(statementSpawn.Body);

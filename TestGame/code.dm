@@ -37,6 +37,15 @@
 /turf/blue
 	icon_state = "turf_blue"
 
+/proc/foo()
+	var/red = 1
+	if(red)
+		world.log << "yay"
+	else
+		world.log << "nay"
+	return red * 2
+	world.log << "dead code"
+
 /area/withicon
 	icon = 'icons/objects.dmi'
 	icon_state = "overlay"
@@ -51,6 +60,7 @@
 			icon = 'icons/objects.dmi'
 		spawn(20)
 			toggleBlink()
+		world.log << "I like trains"
 
 /particles/swarm/bees
 	icon = 'icons/bee.dmi'

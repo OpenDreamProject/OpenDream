@@ -13,6 +13,8 @@ internal class ControlFlowGraph(DMCompiler compiler, DMProc proc) {
     private DMProc Proc = proc;
 
     public void Build(List<IAnnotatedBytecode> bytecode) {
+        if(compiler.Settings.NoOpts) // Optimizations are disabled
+            return;
         BuildBlocks(bytecode);
         if (Blocks.Count == 0) return; // empty proc declaration
 
@@ -153,7 +155,6 @@ internal class ControlFlowGraph(DMCompiler compiler, DMProc proc) {
         _ => false
     };
 
-
     /// <summary>
     /// Build successor/predecessor edges for all blocks
     /// Assumes:
@@ -163,37 +164,87 @@ internal class ControlFlowGraph(DMCompiler compiler, DMProc proc) {
     ///   - non-branching last instruction -> implicit fallthrough only
     /// </summary>
     private void WireEdges(List<IAnnotatedBytecode> bytecode) {
-        if(Proc.Name == "push" && Proc.Location.Line == 102)
-            Console.WriteLine("p");
+        for (int bi = 0; bi < Blocks.Count; bi++) {
+            var block = Blocks[bi];
 
-        foreach (var block in Blocks) {
-            // Fetch the last real instruction (usually == block.Terminator)
-            var lastInstr = block.Terminator;
-
-            // are we in a block that is only a single non-instruction?
-            if (lastInstr is null && block.Instructions is not [AnnotatedBytecodeInstruction])
+            var lastInstr = block.Terminator ?? GetLastInstruction(block);
+            if (lastInstr == null)
                 continue;
 
-            lastInstr ??= GetLastInstruction(block);
+            var op = lastInstr.Opcode;
 
-            var op = lastInstr!.Opcode;
+            // Track whether we've added a "thread continuation" edge that should
+            // replace normal fallthrough for the parent thread
+            bool suppressNormalFallthrough = false;
 
-            // Conditionals but also unconditional Jump can have successors
+            // 1. Conditional branches and Jump
             if (IsConditionalBranch(op) || op == DreamProcOpcode.Jump) {
                 var labelObj = lastInstr.GetArg<AnnotatedBytecodeLabel>(0);
-                var targetBlock = StartBytecodeToBlock[labelObj];
-                if (!StartBytecodeToBlock.TryGetValue(labelObj, out targetBlock)) {
-                    Console.WriteLine($"[CFG] Missing label resolution for {Proc.Name}: " +
-                                      $"{lastInstr.Opcode} -> {labelObj.LabelName}");
+
+                if (StartBytecodeToBlock.TryGetValue(labelObj, out var targetBlock)) {
+                    block.AddEdge(targetBlock, Proc);
+                } else {
+                    Console.WriteLine(
+                        $"[CFG] Missing label resolution in {Proc.Name}: {op} -> {labelObj.LabelName}"
+                    );
                 }
-                block.AddEdge(targetBlock, Proc);
             }
 
-            if (!IsTerminator(op)) {
+            // 2. Enumerator-setup (CreateFilteredListEnumerator / etc)
+            //    After setup, control transfers into the loop header block (next block)
+            if (IsEnumeratorSetup(op)) {
+                if (bi + 1 < Blocks.Count) {
+                    var headerBlock = Blocks[bi + 1];
+                    block.AddEdge(headerBlock, Proc);
+                    // Enumerator setup does NOT kill normal fallthrough; we still
+                    // run AddFallthroughEdge below
+                }
+            }
+
+            // 3. Spawn handling
+            // walk all instructions in this block looking for Spawn
+            // Semantics:
+            //   Spawn <label L>
+            //     - code after Spawn (still in this block) runs in the new thread,
+            //       returns on its own
+            //     - the original thread resumes at label L
+            // So CFG-wise for reachability:
+            //   - this block has an edge to block(label L)
+            //   - and we should NOT treat normal sequential fallthrough from this block
+            //     as the parent's continuation, because parent doesn't run the
+            //     "spawn body" inline
+            // Note: we *don't* need an edge to the "spawn body" because that body
+            // is physically in the same BasicBlock already, so it's inherently marked
+            // reachable as part of this block
+            foreach (var instr in block.Instructions) {
+                if (instr is AnnotatedBytecodeInstruction abi &&
+                    abi.Opcode == DreamProcOpcode.Spawn)
+                {
+                    var contLabel = abi.GetArg<AnnotatedBytecodeLabel>(0);
+
+                    if (StartBytecodeToBlock.TryGetValue(contLabel, out var contBlock)) {
+                        block.AddEdge(contBlock, Proc);
+                        suppressNormalFallthrough = true;
+                    } else {
+                        Console.WriteLine(
+                            $"[CFG] Missing spawn continuation target in {Proc.Name}: {contLabel.LabelName}"
+                        );
+                    }
+                }
+            }
+
+            // 4. Normal fallthrough
+            // add fallthrough only if:
+            //   - the last opcode is not a hard terminator
+            //   - and Spawn did NOT tell us "parent resumes via label instead"
+            // the suppressNormalFallthrough flag protects us in any case where Spawn is seen in a non-terminating block
+            if (!IsTerminator(op) && !suppressNormalFallthrough) {
                 AddFallthroughEdge(block, bytecode);
             }
         }
     }
+
+
 
     private AnnotatedBytecodeInstruction? GetLastInstruction(BasicBlock block)
     {
@@ -206,7 +257,7 @@ internal class ControlFlowGraph(DMCompiler compiler, DMProc proc) {
         return null;
     }
 
-    // Add the fallthrough edge: from this block to the block that starts exactly at EndIndexExclusive (the next instruction after this block).
+    // Add the fallthrough edge: from this block to the block that starts exactly at EndIndexExclusive (the next instruction after this block)
     private void AddFallthroughEdge(
         BasicBlock from,
         List<IAnnotatedBytecode> bytecode)
@@ -243,7 +294,8 @@ internal class ControlFlowGraph(DMCompiler compiler, DMProc proc) {
         // Drop unreachable blocks from Blocks
         var deadBlocks = Blocks.Where(b => !seen.Contains(b)).ToList();
         foreach (var deadBlock in deadBlocks) {
-           compiler.ForcedWarning(deadBlock.Instructions[0].GetLocation(), "Dead code lol");
+            if(deadBlock.Instructions.Count > 2)
+                compiler.ForcedWarning(deadBlock.Instructions[0].GetLocation(), "Dead code lol");
             Blocks.Remove(deadBlock);
         }
 

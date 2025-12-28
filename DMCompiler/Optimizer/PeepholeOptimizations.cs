@@ -232,6 +232,42 @@ internal sealed class RemoveJumpAfterReturn : IOptimization {
     }
 }
 
+// ReturnFloat
+// Jump [label]
+// -> ReturnFloat
+internal sealed class RemoveJumpAfterReturnFloat : IOptimization {
+    public OptPass OptimizationPass => OptPass.ListCompactor;
+
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.ReturnFloat,
+            DreamProcOpcode.Jump
+        ];
+    }
+
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
+        input.RemoveRange(index + 1, 1);
+    }
+}
+
+// ReturnReferenceValue
+// Jump [label]
+// -> ReturnReferenceValue
+internal sealed class RemoveJumpAfterReturnRefValue : IOptimization {
+    public OptPass OptimizationPass => OptPass.ListCompactor;
+
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.ReturnReferenceValue,
+            DreamProcOpcode.Jump
+        ];
+    }
+
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
+        input.RemoveRange(index + 1, 1);
+    }
+}
+
 // PushFloat [float]
 // SwitchCase [label]
 // -> SwitchOnFloat [float] [label]

@@ -471,7 +471,11 @@ internal sealed partial class DreamViewOverlay : Overlay {
         handle.UseShader(GetBlendAndColorShader(iconMetaData, ignoreColor: true));
 
         handle.SetTransform(CalculateDrawingMatrix(iconMetaData.TransformToApply, pixelPosition, frame.Size, renderTargetSize));
-        handle.DrawTextureRect(frame, Box2.FromDimensions(Vector2.Zero, frame.Size), iconMetaData.ColorToApply);
+
+        Color colorToApply = iconMetaData.ColorToApply;
+        colorToApply.A *= iconMetaData.AlphaToApply;
+
+        handle.DrawTextureRect(frame, Box2.FromDimensions(Vector2.Zero, frame.Size), colorToApply);
 
         if (iconMetaData.Particles is not null) {
             handle.UseShader(GetBlendAndColorShader(iconMetaData, ignoreColor: true));

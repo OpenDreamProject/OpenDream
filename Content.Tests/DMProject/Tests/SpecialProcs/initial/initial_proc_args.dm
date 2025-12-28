@@ -9,6 +9,7 @@
 
 	ASSERT(initial(b) == 5)
 	ASSERT(initial(c) == "e")
+	ASSERT(initial(args[2]) == 5)
 
 /proc/RunTest()
 	someargs("3", 5, c = "cc") 

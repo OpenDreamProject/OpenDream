@@ -169,4 +169,13 @@ public static partial class ByondApi {
 
         return tcs.Task.Result;
     }
+
+    private static void RunOnMainThreadNonBlocking(Action task) {
+        if (Environment.CurrentManagedThreadId == _mainThreadId) {
+            task();
+            return;
+        }
+
+        ThreadSyncQueue.Enqueue(task);
+    }
 }

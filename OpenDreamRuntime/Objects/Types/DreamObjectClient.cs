@@ -2,6 +2,7 @@
 using System.Text;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
+using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.Types;
@@ -13,6 +14,7 @@ public sealed class DreamObjectClient : DreamObject {
     public readonly ClientVerbsList ClientVerbs;
     public ViewRange View { get; private set; }
     public bool ShowPopupMenus { get; private set; } = true;
+    public IconResource? CursorIcon;
 
     public DreamObjectClient(DreamObjectDefinition objectDefinition, DreamConnection connection, ServerScreenOverlaySystem? screenOverlaySystem, ServerClientImagesSystem? clientImagesSystem) : base(objectDefinition) {
         Connection = connection;
@@ -100,6 +102,9 @@ public sealed class DreamObjectClient : DreamObject {
                 return true;
             case "images":
                 value = new(Images);
+                return true;
+            case "mouse_pointer_icon":
+                value = CursorIcon is null ? DreamValue.Null : new(CursorIcon);
                 return true;
             default:
                 return base.TryGetVar(varName, out value);
@@ -193,6 +198,15 @@ public sealed class DreamObjectClient : DreamObject {
                     return;
 
                 Connection.SelectedStatPanel = statPanel;
+                break;
+            case "mouse_pointer_icon":
+                //resolve the value to an icon file
+                if (value.TryGetValueAsDreamResource(out var iconResource) && iconResource is IconResource resource)
+                    CursorIcon = resource;
+                else
+                    CursorIcon = null;
+
+                Connection.SendClientInfoUpdate();
                 break;
             default:
                 base.SetVar(varName, value);

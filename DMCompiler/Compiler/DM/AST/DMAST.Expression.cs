@@ -114,6 +114,10 @@ public sealed class DMASTRgb(Location location, DMASTCallParameter[] parameters)
     public readonly DMASTCallParameter[] Parameters = parameters;
 }
 
+public sealed class DMASTAnimate(Location location, DMASTCallParameter[] parameters) : DMASTExpression(location) {
+    public readonly DMASTCallParameter[] Parameters = parameters;
+}
+
 public sealed class DMASTPick(Location location, DMASTPick.PickValue[] values) : DMASTExpression(location) {
     public struct PickValue(DMASTExpression? weight, DMASTExpression value) {
         public readonly DMASTExpression? Weight = weight;
@@ -143,6 +147,12 @@ public class DMASTVarDeclExpression(Location location, DMASTPath path) : DMASTEx
 public sealed class DMASTNewPath(Location location, DMASTConstantPath path, DMASTCallParameter[]? parameters)
     : DMASTExpression(location) {
     public readonly DMASTConstantPath Path = path;
+    public readonly DMASTCallParameter[]? Parameters = parameters;
+}
+
+public sealed class DMASTNewModifiedType(Location location, DMASTModifiedType type, DMASTCallParameter[]? parameters)
+    : DMASTExpression(location) {
+    public readonly DMASTModifiedType Type = type;
     public readonly DMASTCallParameter[]? Parameters = parameters;
 }
 

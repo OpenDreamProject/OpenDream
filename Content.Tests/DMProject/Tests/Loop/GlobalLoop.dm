@@ -1,4 +1,4 @@
-﻿/datum/a
+/datum/a
 /datum/b
 
 /proc/RunTest()

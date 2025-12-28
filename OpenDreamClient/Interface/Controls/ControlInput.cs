@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using OpenDreamClient.Interface.Descriptors;
-using OpenDreamClient.Interface.DMF;
+using OpenDreamShared.Interface.Descriptors;
+using OpenDreamShared.Interface.DMF;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 

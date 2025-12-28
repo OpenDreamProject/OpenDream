@@ -448,10 +448,6 @@ internal static partial class DreamProcNativeHelpers {
         if (negative || value[0] == '+')
             value = value.Slice(1);
 
-        if (value.StartsWith("nan", StringComparison.CurrentCultureIgnoreCase)) {
-            return negative ? -double.NaN : double.NaN;
-        }
-
         if (value.StartsWith("0x")) {
             if (radix == 10 || radix == 16) {
                 radix = 16;

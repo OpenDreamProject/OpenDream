@@ -1,4 +1,4 @@
-﻿/proc/RunTest()
+/proc/RunTest()
 	ASSERT(length("😀") == 2)
 	ASSERT(length_char("😀") == 1)
 

@@ -182,24 +182,22 @@ public sealed class DreamIcon(DreamManager dreamManager, DreamResourceManager re
             foreach (var copyStateName in icon.DMI.States.Keys) {
                 InsertState(icon, copyStateName, copyStateName,
                     copyingAllDirs ? null : copyingDirection, copyingAllFrames ? null : copyingFrame,
-                    isConstructor: isConstructor);
+                    forceSouth: false);
             }
         } else {
             InsertState(icon, isConstructor ? string.Empty : copyingState!, copyingState!,
                 copyingAllDirs ? null : copyingDirection, copyingAllFrames ? null : copyingFrame,
-                isConstructor: isConstructor);
+                forceSouth: isConstructor);
         }
     }
 
     private void InsertState(IconResource icon, string stateName, string copyingState, AtomDirection? dir = null,
-        int? frame = null, bool isConstructor = false) {
+        int? frame = null, bool forceSouth = false) {
         ParsedDMIState? inserting = icon.DMI.GetStateOrDefault(copyingState);
         if (inserting == null)
             return;
 
-        // TODO: Passing "asSouth: isConstructor" here would be the correct behavior
-        // But that currently breaks /icon.Insert(other_icon, dir=...) in some important cases
-        var insertingDirections = inserting.GetFrames(dir, frame - 1, asSouth: false);
+        var insertingDirections = inserting.GetFrames(dir, frame - 1, asSouth: forceSouth);
 
         if (!States.TryGetValue(stateName, out var iconState)) {
             iconState = new IconState();

@@ -8,6 +8,7 @@ using OpenDreamShared.Network.Messages;
 using OpenDreamShared.Resources;
 using Robust.Server.ServerStatus;
 using Robust.Shared.Network;
+using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Utility;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -18,14 +19,16 @@ public sealed class DreamResourceManager {
     [Dependency] private readonly IServerNetManager _netManager = default!;
     [Dependency] private readonly IStatusHost _statusHost = default!;
     [Dependency] private readonly IDependencyCollection _dependencyCollection = default!;
-
+    [Dependency] private readonly ISerializationManager _serializationManager = default!;
+    
     public string RootPath { get; private set; } = default!;
-    public DreamResource? InterfaceFile { get; private set; }
+    public DMFResource? InterfaceFile { get; private set; }
 
     private DreamAczProvider _aczProvider = default!;
     private readonly List<DreamResource> _resourceCache = new();
     private readonly Dictionary<string, int> _resourcePathToId = new();
     private readonly Dictionary<string, IconResource> _md5ToGeneratedIcon = new();
+    private readonly List<string> _queuedResourceLoads = new();
 
     private ISawmill _sawmill = default!;
 
@@ -66,7 +69,7 @@ public sealed class DreamResourceManager {
 
         if (!string.IsNullOrWhiteSpace(interfaceFile)) {
             if (DoesFileExist(interfaceFile))
-                InterfaceFile = LoadResource(interfaceFile);
+                InterfaceFile = (DMFResource)LoadResource(interfaceFile);
             else
                 throw new FileNotFoundException("Interface DMF not found at " + Path.Join(rootPath, interfaceFile));
         }
@@ -83,6 +86,9 @@ public sealed class DreamResourceManager {
         DreamResource GetResource() {
             // Create a new type of resource based on its extension
             switch (Path.GetExtension(resourcePath)) {
+                case ".dmf":
+                    resource = new DMFResource(resourceId, resourcePath, resourcePath, _serializationManager);
+                    break;
                 case ".dmi":
                 case ".png":
                 case ".bmp":
@@ -111,7 +117,18 @@ public sealed class DreamResourceManager {
             _resourcePathToId.Add(resourcePath, resourceId);
         }
 
+        ProcessQueuedResourceLoads();
         return resource;
+    }
+
+    public void QueueResourceLoad(string resourcePath) {
+        _queuedResourceLoads.Add(resourcePath);
+    }
+
+    public void ProcessQueuedResourceLoads() {
+        while(_queuedResourceLoads.Any()) {
+            LoadResource(_queuedResourceLoads.Pop());
+        }
     }
 
     public bool TryLoadResource(int resourceId, [NotNullWhen(true)] out DreamResource? resource) {
@@ -122,6 +139,12 @@ public sealed class DreamResourceManager {
 
         resource = null;
         return false;
+    }
+
+    public bool TryLoadResource(string resourcePathOrRef, [NotNullWhen(true)] out DreamResource? resource) {
+        resource = null;
+        //TODO lookup by \ref[] string
+        return _resourcePathToId.TryGetValue(resourcePathOrRef, out var resourceId) && TryLoadResource(resourceId, out resource);
     }
 
     public bool TryLoadIcon(DreamValue value, [NotNullWhen(true)] out IconResource? icon) {
@@ -202,6 +225,9 @@ public sealed class DreamResourceManager {
 
     public void RxRequestResource(MsgRequestResource pRequestResource) {
         if (TryLoadResource(pRequestResource.ResourceId, out var resource)) {
+            if(resource.ResourceData is null) {
+                throw new Exception($"Attempted to send a bad resource {resource.ResourcePath} with ID {resource.Id}");
+            }
             var msg = new MsgResource {
                 ResourceId = resource.Id, ResourceData = resource.ResourceData
             };

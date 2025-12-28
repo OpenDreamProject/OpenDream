@@ -18,6 +18,10 @@ internal abstract class DMExpression(Location location) {
 
     // Attempt to create a json-serializable version of this expression
     public virtual bool TryAsJsonRepresentation(DMCompiler compiler, out object? json) {
+        // If this can be const-folded, then we can represent this as JSON
+        if (TryAsConstant(compiler, out var constant))
+            return constant.TryAsJsonRepresentation(compiler, out json);
+
         json = null;
         return false;
     }

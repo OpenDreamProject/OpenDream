@@ -69,7 +69,12 @@ public static unsafe partial class ByondApi {
             return new CByondValue { type = ByondValueType.Null, data = { @ref = 0 } };
         }
 
-        throw new NotImplementedException();
+        if (block > 0) {
+            return RunOnMainThread(() => callback(data));
+        }
+
+        RunOnMainThreadNonBlocking(() => callback(data));
+        return ValueToByondApi(DreamValue.Null);
     }
 
     /** byondapi.h comment:

@@ -1,6 +1,7 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 
-namespace OpenDreamClient.Interface.DMF;
+namespace OpenDreamShared.Interface.DMF;
 
 public sealed class DMFLexer(string source) {
     public enum TokenType {

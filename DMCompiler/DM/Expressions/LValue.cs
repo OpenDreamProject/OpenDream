@@ -26,12 +26,6 @@ internal abstract class LValue(Location location, DreamPath? path) : DMExpressio
     }
 
     public abstract void EmitPushInitial(ExpressionContext ctx);
-
-    public virtual void EmitPushIsSaved(ExpressionContext ctx) {
-        ctx.Compiler.Emit(WarningCode.BadArgument, Location, $"can't get saved value of {this}");
-        ctx.Proc.PushNullAndError();
-        return;
-    }
 }
 
 /// <summary>

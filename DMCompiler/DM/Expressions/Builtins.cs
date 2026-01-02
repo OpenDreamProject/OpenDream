@@ -348,12 +348,7 @@ internal sealed class IsSaved(Location location, DMExpression expr) : DMExpressi
     public override DMComplexValueType ValType => DMValueType.Num;
 
     public override void EmitPushValue(ExpressionContext ctx) {
-        if (expr is LValue lValue) {
-            lValue.EmitPushIsSaved(ctx);
-        } else {
-            ctx.Compiler.Emit(WarningCode.BadArgument, expr.Location, $"can't get saved value of {expr}");
-            ctx.Proc.PushNullAndError();
-        }
+        expr.EmitPushIsSaved(ctx);
     }
 }
 

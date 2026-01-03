@@ -102,7 +102,11 @@ public static class HtmlParser {
                             tags.Push(tagType);
                         }
 
-                        appendTo.PushTag(new MarkupNode(tagType, null, ParseAttributes(attributes)), selfClosing: isSelfClosing);
+                        if (tagType.Equals("br")) {
+                            appendTo.PushNewline();
+                        } else {
+                            appendTo.PushTag(new MarkupNode(tagType, null, ParseAttributes(attributes)), selfClosing: isSelfClosing);
+                        }
                     }
 
                     break;

@@ -49,7 +49,7 @@ internal abstract class DMExpression(Location location) {
     }
 
     public virtual void EmitPushIsSaved(ExpressionContext ctx) {
-        ctx.Compiler.Emit(WarningCode.BadArgument, Location, $"can't get saved value of {this}");
+        ctx.Compiler.Emit(WarningCode.BadArgument, Location, $"can't get issaved() value of {this}");
         ctx.Proc.PushNullAndError();
     }
 

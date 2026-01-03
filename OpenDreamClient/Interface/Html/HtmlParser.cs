@@ -71,7 +71,17 @@ public static class HtmlParser {
                     string tagType = attributes[0].ToLowerInvariant();
 
                     currentText.Clear();
+
                     bool isSelfClosing = IsSelfClosing(tagType, attributes);
+
+                    // remove self-closing slash if attached to tagType
+                    tagType = tagType.TrimEnd('/');
+
+                    // remove self-closing slash at end of attributes, if present
+                    if (attributes.Length > 0) {
+                        attributes[attributes.Length - 1] = attributes[attributes.Length - 1].TrimEnd('/');
+                    }
+
                     if (closingTag) {
                         if (isSelfClosing) {
                             // ignore closing tags of void elements since they don't
@@ -166,7 +176,7 @@ public static class HtmlParser {
      * </summary>
      */
     private static bool IsSelfClosing(string tagType, string[] attributes) {
-        if (attributes[^1] == "/") {
+        if (tagType.EndsWith("/") || attributes[^1].EndsWith("/")) {
             return true;
         }
 
@@ -197,7 +207,8 @@ public static class HtmlParser {
 
         for (int i = 1; i < attributes.Length; i++) { // First one should be the tag type, skip it
             string attribute = attributes[i];
-            if (attribute == "/")
+
+            if (attribute == "") // tag ended with a detached self-closing slash
                 continue;
 
             int equalsIndex = attribute.IndexOf('=');

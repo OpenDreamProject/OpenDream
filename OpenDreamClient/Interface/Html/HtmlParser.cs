@@ -79,7 +79,7 @@ public static class HtmlParser {
 
                     // remove self-closing slash at end of attributes, if present
                     if (attributes.Length > 0) {
-                        attributes[attributes.Length - 1] = attributes[attributes.Length - 1].TrimEnd('/');
+                        attributes[^1] = attributes[^1].TrimEnd('/');
                     }
 
                     if (closingTag) {
@@ -102,7 +102,7 @@ public static class HtmlParser {
                             tags.Push(tagType);
                         }
 
-                        if (tagType.Equals("br")) {
+                        if (tagType == "br") {
                             appendTo.PushNewline();
                         } else {
                             appendTo.PushTag(new MarkupNode(tagType, null, ParseAttributes(attributes)), selfClosing: isSelfClosing);

@@ -452,7 +452,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     public void RunCommand(string fullCommand, bool repeating = false) {
         switch (fullCommand) {
             case not null when fullCommand.StartsWith(".quit"):
-                IoCManager.Resolve<IClientNetManager>().ClientDisconnect(".quit used");
+                _gameController.Shutdown(".quit used");
                 break;
 
             case not null when fullCommand.StartsWith(".screenshot"):

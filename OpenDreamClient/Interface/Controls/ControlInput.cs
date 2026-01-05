@@ -9,6 +9,11 @@ namespace OpenDreamClient.Interface.Controls;
 internal sealed class ControlInput(ControlDescriptor controlDescriptor, ControlWindow window) : InterfaceControl(controlDescriptor, window) {
     private LineEdit _textBox = default!;
 
+    // flag for if we are processing a submission and if any writes to the text attribute should override the textbox reset
+    private bool pendingSubmit = false;
+    // in the event of processing a submission, if a write to the text attribute did happen and we should indeeed not reset
+    private bool stringWasSetDuringSubmit = false;
+
     private ControlDescriptorInput InputDescriptor => (ControlDescriptorInput)ControlDescriptor;
 
     protected override Control CreateUIElement() {
@@ -22,6 +27,8 @@ internal sealed class ControlInput(ControlDescriptor controlDescriptor, ControlW
         if (InputDescriptor.NoCommand.Value)
             return;
 
+        pendingSubmit = true;
+
         var command = InputDescriptor.Command.Value;
         if (command.StartsWith('!')) {
             _interfaceManager.RunCommand(lineEditEventArgs.Text);
@@ -29,7 +36,13 @@ internal sealed class ControlInput(ControlDescriptor controlDescriptor, ControlW
             _interfaceManager.RunCommand(command + lineEditEventArgs.Text);
         }
 
-        ResetText();
+        if (stringWasSetDuringSubmit) {
+            stringWasSetDuringSubmit = false;
+        } else {
+            ResetText();
+        }
+
+        pendingSubmit = false;
     }
 
     protected override void UpdateElementDescriptor() {
@@ -54,6 +67,12 @@ internal sealed class ControlInput(ControlDescriptor controlDescriptor, ControlW
                 var focusValue = new DMFPropertyBool(value);
                 if (focusValue.Value)
                     _textBox.GrabKeyboardFocus();
+                break;
+            case "text":
+                if (pendingSubmit) {
+                    stringWasSetDuringSubmit = true;
+                }
+                _textBox.Text = value;
                 break;
             default:
                 base.SetProperty(property, value, manualWinset);

@@ -11,7 +11,7 @@ internal sealed class ControlInput(ControlDescriptor controlDescriptor, ControlW
 
     // flag for if we are processing a submission and if any writes to the text attribute should override the textbox reset
     private bool pendingSubmit = false;
-    // in the event of processing a submission, if a write to the text attribute did happen and we should indeeed not reset
+    // in the event of processing a submission, if a write to the text attribute did happen and we should indeed not reset
     private bool stringWasSetDuringSubmit = false;
 
     private ControlDescriptorInput InputDescriptor => (ControlDescriptorInput)ControlDescriptor;

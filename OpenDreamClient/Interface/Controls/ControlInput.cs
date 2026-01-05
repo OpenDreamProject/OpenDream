@@ -9,11 +9,6 @@ namespace OpenDreamClient.Interface.Controls;
 internal sealed class ControlInput(ControlDescriptor controlDescriptor, ControlWindow window) : InterfaceControl(controlDescriptor, window) {
     private LineEdit _textBox = default!;
 
-    // flag for if we are processing a submission and if any writes to the text attribute should override the textbox reset
-    private bool pendingSubmit = false;
-    // in the event of processing a submission, if a write to the text attribute did happen and we should indeed not reset
-    private bool textWasSetDuringSubmit = false;
-
     private ControlDescriptorInput InputDescriptor => (ControlDescriptorInput)ControlDescriptor;
 
     protected override Control CreateUIElement() {
@@ -27,7 +22,7 @@ internal sealed class ControlInput(ControlDescriptor controlDescriptor, ControlW
         if (InputDescriptor.NoCommand.Value)
             return;
 
-        pendingSubmit = true;
+        ResetText();
 
         var command = InputDescriptor.Command.Value;
         if (command.StartsWith('!')) {
@@ -35,14 +30,6 @@ internal sealed class ControlInput(ControlDescriptor controlDescriptor, ControlW
         } else {
             _interfaceManager.RunCommand(command + lineEditEventArgs.Text);
         }
-
-        if (textWasSetDuringSubmit) {
-            textWasSetDuringSubmit = false;
-        } else {
-            ResetText();
-        }
-
-        pendingSubmit = false;
     }
 
     protected override void UpdateElementDescriptor() {
@@ -69,9 +56,6 @@ internal sealed class ControlInput(ControlDescriptor controlDescriptor, ControlW
                     _textBox.GrabKeyboardFocus();
                 break;
             case "text":
-                if (pendingSubmit) {
-                    textWasSetDuringSubmit = true;
-                }
                 _textBox.Text = value;
                 break;
             default:

@@ -12,7 +12,7 @@ internal sealed class ControlInput(ControlDescriptor controlDescriptor, ControlW
     // flag for if we are processing a submission and if any writes to the text attribute should override the textbox reset
     private bool pendingSubmit = false;
     // in the event of processing a submission, if a write to the text attribute did happen and we should indeed not reset
-    private bool stringWasSetDuringSubmit = false;
+    private bool textWasSetDuringSubmit = false;
 
     private ControlDescriptorInput InputDescriptor => (ControlDescriptorInput)ControlDescriptor;
 
@@ -36,8 +36,8 @@ internal sealed class ControlInput(ControlDescriptor controlDescriptor, ControlW
             _interfaceManager.RunCommand(command + lineEditEventArgs.Text);
         }
 
-        if (stringWasSetDuringSubmit) {
-            stringWasSetDuringSubmit = false;
+        if (textWasSetDuringSubmit) {
+            textWasSetDuringSubmit = false;
         } else {
             ResetText();
         }
@@ -70,7 +70,7 @@ internal sealed class ControlInput(ControlDescriptor controlDescriptor, ControlW
                 break;
             case "text":
                 if (pendingSubmit) {
-                    stringWasSetDuringSubmit = true;
+                    textWasSetDuringSubmit = true;
                 }
                 _textBox.Text = value;
                 break;

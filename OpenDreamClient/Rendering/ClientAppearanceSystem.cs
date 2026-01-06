@@ -12,6 +12,7 @@ using Robust.Client.Player;
 using Robust.Shared.Map;
 using Robust.Shared.Timing;
 using Robust.Shared.Asynchronous;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace OpenDreamClient.Rendering;
@@ -58,7 +59,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     private readonly Dictionary<(int X, int Y, int Z), Flick> _turfFlicks = new();
     private readonly Dictionary<EntityUid, Flick> _movableFlicks = new();
     private bool _receivedAllAppearancesMsg;
-    private readonly float timeToRefreshVerbs = 3f;
+    private readonly float _timeToRefreshVerbs = 3f;
 
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IDreamResourceManager _dreamResourceManager = default!;
@@ -83,7 +84,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         SubscribeNetworkEvent<FlickEvent>(OnFlick);
         SubscribeLocalEvent<DMISpriteComponent, WorldAABBEvent>(OnWorldAABB);
 
-        _ = StartVerbRefresher();
+        _ = StartVerbRefresher(new());
     }
 
     public override void Shutdown() {
@@ -371,9 +372,12 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         return _movableFlicks.GetValueOrDefault(entity);
     }
 
-    private async Task StartVerbRefresher() {
+    private async Task StartVerbRefresher(CancellationTokenSource cancelSource) {
         while (true) {
-            await Task.Delay(TimeSpan.FromSeconds(timeToRefreshVerbs));
+            await Task.Delay(TimeSpan.FromSeconds(_timeToRefreshVerbs));
+            if (cancelSource.IsCancellationRequested)
+                break;
+
             _taskManager.RunOnMainThread(_verbSystem.RefreshVerbs);
         }
     }

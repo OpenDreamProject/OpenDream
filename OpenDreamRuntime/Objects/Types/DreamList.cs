@@ -686,8 +686,12 @@ public sealed class ClientVerbsList : DreamList {
         if (!value.TryGetValueAsProc(out var verb))
             return;
 
-        if (Verbs.Remove(verb))
+        var valueIndex = Verbs.LastIndexOf(verb);
+
+        if (valueIndex != -1) {
+            Verbs.RemoveAt(valueIndex);
             _verbSystem?.UpdateClientVerbs(_client);
+        }
     }
 
     public override void Cut(int start = 1, int end = 0) {
@@ -750,7 +754,7 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
     public override bool ContainsValue(DreamValue value) {
         if (!value.TryGetValueAsProc(out var verb))
             return false;
-        if (verb?.VerbId == null)
+        if (verb.VerbId == null)
             return false;
 
         return GetVerbs().Contains(verb.VerbId.Value);
@@ -777,12 +781,15 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
     public override void RemoveValue(DreamValue value) {
         if (!value.TryGetValueAsProc(out var verb))
             return;
-        if (verb?.VerbId == null) {
+        if (verb.VerbId == null) {
             return;
         }
 
         atomManager.UpdateAppearance(atom, appearance => {
-            appearance.Verbs.Remove(verb.VerbId.Value);
+            var valueIndex = appearance.Verbs.LastIndexOf(verb.VerbId.Value);
+
+            if (valueIndex != -1)
+                appearance.Verbs.RemoveAt(valueIndex);
         });
     }
 

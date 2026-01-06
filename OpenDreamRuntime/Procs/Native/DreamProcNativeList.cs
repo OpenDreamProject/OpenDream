@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Linq;
+using System.Text;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
@@ -150,7 +151,11 @@ namespace OpenDreamRuntime.Procs.Native {
             var itemRemoved = 0;
             foreach (var argument in args) {
                 if (argument.TryGetValueAsDreamList(out var argumentList)) {
-                    foreach (DreamValue value in argumentList.EnumerateValues()) {
+                    // In case this is a "listx.Remove(listx)" situation, copy the contents here to avoid modification while enumerating
+                    // TODO: check for that case first to avoid unnecessary copy?
+                    var subtraction = argumentList.EnumerateValues().ToList();
+
+                    foreach (DreamValue value in subtraction) {
                         if (list.ContainsValue(value)) {
                             list.RemoveValue(value);
 

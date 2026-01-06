@@ -30,9 +30,11 @@ public sealed class DreamSoundEngine : IDreamSoundEngine {
         _netManager.Disconnect += DisconnectedFromServer;
     }
 
-    public void PlaySound(int channel, MsgSound.FormatType format, ResourceSound sound, float volume, float offset) {
+    public void PlaySound(SoundData soundData, MsgSound.FormatType format, ResourceSound sound) {
         if (_audioSystem == null)
             _entitySystemManager.Resolve(ref _audioSystem);
+
+        var channel = (int)soundData.Channel;
 
         if (channel == 0) {
             //First available channel
@@ -58,14 +60,14 @@ public sealed class DreamSoundEngine : IDreamSoundEngine {
             return;
         }
 
-        var db = 20 * MathF.Log10(volume); // convert from DM volume (0-100) to OpenAL volume (db)
-        var source = _audioSystem.PlayGlobal(stream, null, AudioParams.Default.WithVolume(db).WithPlayOffset(offset)); // TODO: Positional audio.
+        var db = 20 * MathF.Log10(soundData.Volume / 100.0f); // convert from DM volume (0-100) to OpenAL volume (db)
+        var source = _audioSystem.PlayGlobal(stream, null, AudioParams.Default.WithVolume(db).WithPlayOffset(soundData.Offset)); // TODO: Positional audio.
         if (source == null) {
             _sawmill.Error($"Failed to play audio ${sound}");
             return;
         }
 
-        _channels[channel - 1] = new DreamSoundChannel(_audioSystem, source.Value);
+        _channels[channel - 1] = new DreamSoundChannel(_audioSystem, source.Value, soundData);
     }
 
     public void StopChannel(int channel) {
@@ -85,10 +87,20 @@ public sealed class DreamSoundEngine : IDreamSoundEngine {
     private void RxSound(MsgSound msg) {
         if (msg.ResourceId.HasValue) {
             _resourceManager.LoadResourceAsync<ResourceSound>(msg.ResourceId.Value,
-                sound => PlaySound(msg.Channel, msg.Format!.Value, sound, msg.Volume / 100.0f, msg.Offset));
+                sound => PlaySound(msg.SoundData, msg.Format!.Value, sound));
         } else {
-            StopChannel(msg.Channel);
+            StopChannel(msg.SoundData.Channel);
         }
+    }
+
+    public List<SoundData>? GetSoundQuery() {
+        List<SoundData> result = new List<SoundData>();
+        foreach (var channel in _channels) {
+            if(channel is null) continue;
+            result.Add(channel.SoundData);
+        }
+
+        return result.Count > 0 ? result : null;
     }
 
     private void DisconnectedFromServer(object? sender, NetDisconnectedArgs e) {

@@ -12,17 +12,13 @@ namespace OpenDreamShared.Network.Messages {
 
         public override MsgGroups MsgGroup => MsgGroups.EntityEvent;
 
-        public ushort Channel;
-        public ushort Volume;
-        public float Offset;
+        public SoundData SoundData;
         public int? ResourceId;
         public FormatType? Format; // TODO: This should probably be sent along with the sound resource instead somehow
         //TODO: Frequency and friends
 
         public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {
-            Channel = buffer.ReadUInt16();
-            Volume = buffer.ReadUInt16();
-            Offset = buffer.ReadFloat();
+            SoundData = new SoundData(buffer);
 
             if (buffer.ReadBoolean()) {
                 ResourceId = buffer.ReadInt32();
@@ -31,9 +27,7 @@ namespace OpenDreamShared.Network.Messages {
         }
 
         public override void WriteToBuffer(NetOutgoingMessage buffer, IRobustSerializer serializer) {
-            buffer.Write(Channel);
-            buffer.Write(Volume);
-            buffer.Write(Offset);
+            SoundData.WriteToBuffer(buffer);
 
             buffer.Write(ResourceId != null);
             if (ResourceId != null) {
@@ -43,6 +37,28 @@ namespace OpenDreamShared.Network.Messages {
                     throw new InvalidOperationException("Format cannot be null if there is a resource");
                 buffer.Write((byte)Format);
             }
+        }
+    }
+
+    public struct SoundData {
+        public ushort Channel;
+        public ushort Volume;
+        public float Offset;
+
+        public SoundData(NetIncomingMessage buffer) {
+            ReadFromBuffer(buffer);
+        }
+
+        public void ReadFromBuffer(NetIncomingMessage buffer) {
+            Channel = buffer.ReadUInt16();
+            Volume = buffer.ReadUInt16();
+            Offset = buffer.ReadFloat();
+        }
+
+        public void WriteToBuffer(NetOutgoingMessage buffer) {
+            buffer.Write(Channel);
+            buffer.Write(Volume);
+            buffer.Write(Offset);
         }
     }
 }

@@ -135,6 +135,8 @@ internal static class DreamProcNative {
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_winget);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_winset);
 
+        objectTree.SetNativeProc(objectTree.Client, DreamProcNativeClient.NativeProc_SoundQuery);
+
         objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Add);
         objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Copy);
         objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Cut);

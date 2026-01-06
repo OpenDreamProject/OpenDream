@@ -22,6 +22,7 @@ using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 using SixLabors.ImageSharp;
 using System.Linq;
+using OpenDreamClient.Audio;
 using Robust.Shared.Map;
 
 namespace OpenDreamClient.Interface;
@@ -44,6 +45,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     [Dependency] private readonly ITimerManager _timerManager = default!;
     [Dependency] private readonly IUriOpener _uriOpener = default!;
     [Dependency] private readonly IGameController _gameController = default!;
+    [Dependency] private readonly IDreamSoundEngine _dreamSoundEngine = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.interface");
 
@@ -120,6 +122,8 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         _netManager.RegisterNetMessage<MsgPrompt>(RxPrompt);
         _netManager.RegisterNetMessage<MsgPromptList>(RxPromptList);
         _netManager.RegisterNetMessage<MsgPromptResponse>();
+        _netManager.RegisterNetMessage<MsgSoundQuery>(RxSoundQuery);
+        _netManager.RegisterNetMessage<MsgSoundQueryResponse>();
         _netManager.RegisterNetMessage<MsgBrowse>(RxBrowse);
         _netManager.RegisterNetMessage<MsgTopic>();
         _netManager.RegisterNetMessage<MsgWinSet>(RxWinSet);
@@ -184,6 +188,17 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         );
 
         ShowPrompt(prompt);
+    }
+
+    private void RxSoundQuery(MsgSoundQuery soundQuery) {
+        var allSounds = _dreamSoundEngine.GetSoundQuery();
+        var soundCount = allSounds?.Count ?? 0;
+        var response = new MsgSoundQueryResponse {
+            PromptId = soundQuery.PromptId,
+            Sounds = allSounds,
+            SoundCount = (ushort)soundCount
+        };
+        _netManager.ClientSendMessage(response);
     }
 
     private void RxBrowse(MsgBrowse pBrowse) {

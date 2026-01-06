@@ -202,6 +202,28 @@ public sealed class DreamConnection {
         _promptEvents.Remove(message.PromptId);
     }
 
+    public void HandleMsgSoundQueryResponse(MsgSoundQueryResponse message) {
+        if (!_promptEvents.TryGetValue(message.PromptId, out var promptEvent)) {
+            _sawmill.Warning($"{message.MsgChannel}: Received MsgSoundQueryResponse for prompt {message.PromptId} which does not exist.");
+            return;
+        }
+
+        DreamList allSounds = new DreamList(_objectTree.List.ObjectDefinition, message.SoundCount);
+        if (message.Sounds is not null) {
+            foreach (var soundData in message.Sounds) {
+                var sound = new DreamObjectSound(_objectTree.GetObjectDefinition(_objectTree.Sound.Id));
+                sound.SetVariableValue("channel", new DreamValue(soundData.Channel));
+                sound.SetVariableValue("offset", new DreamValue(soundData.Offset));
+                sound.SetVariableValue("volume", new DreamValue(soundData.Volume));
+
+                allSounds.AddValue(new DreamValue(sound));
+            }
+        }
+
+        promptEvent.Invoke(new DreamValue(allSounds));
+        _promptEvents.Remove(message.PromptId);
+    }
+
     public void HandleMsgTopic(MsgTopic pTopic) {
         DreamList hrefList = DreamProcNativeRoot.Params2List(_objectTree, HttpUtility.UrlDecode(pTopic.Query));
         DreamValue srcRefValue = hrefList.GetValue(new DreamValue("src"));
@@ -221,10 +243,12 @@ public sealed class DreamConnection {
             float offset = outputObject.GetVariable("offset").UnsafeGetValueAsFloat();
             DreamValue file = outputObject.GetVariable("file");
 
-            var msg = new MsgSound() {
-                Channel = channel,
-                Volume = volume,
-                Offset = offset
+            var msg = new MsgSound {
+                SoundData = new SoundData {
+                    Channel = channel,
+                    Volume = volume,
+                    Offset = offset
+                }
             };
 
             if (!file.TryGetValueAsDreamResource(out var soundResource)) {
@@ -269,6 +293,16 @@ public sealed class DreamConnection {
             Message = message,
             Types = types,
             DefaultValue = defaultValue
+        };
+
+        Session?.Channel.SendMessage(msg);
+        return task;
+    }
+
+    public Task<DreamValue> SoundQuery() {
+        var task = MakePromptTask(out var promptId);
+        var msg = new MsgSoundQuery {
+            PromptId = promptId,
         };
 
         Session?.Channel.SendMessage(msg);

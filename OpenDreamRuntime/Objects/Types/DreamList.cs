@@ -777,7 +777,6 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
     public override void RemoveValue(DreamValue value) {
         if (!value.TryGetValueAsProc(out var verb))
             return;
-
         if (verb?.VerbId == null) {
             return;
         }

@@ -68,6 +68,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly MapSystem _mapSystem = default!;
     [Dependency] private readonly IPrototypeManager _protoManager = default!;
+    [Dependency] private readonly ClientVerbSystem _verbSystem = default!;
 
     public override void Initialize() {
         UpdatesOutsidePrediction = true;
@@ -362,5 +363,9 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
 
     public Flick? GetMovableFlick(EntityUid entity) {
         return _movableFlicks.GetValueOrDefault(entity);
+    }
+
+    public void RefreshVerbs() {
+        _verbSystem.RefreshVerbs();
     }
 }

@@ -652,6 +652,21 @@ public sealed class ClientVerbsList : DreamList {
             yield return new(verb);
     }
 
+    public override bool ContainsKey(DreamValue value) {
+        if (!value.TryGetValueAsInteger(out var index)) {
+            return false;
+        }
+
+        return 1 <= index && index <= Verbs.Count;
+    }
+
+    public override bool ContainsValue(DreamValue value) {
+        if (!value.TryGetValueAsProc(out var verb))
+            return false;
+
+        return Verbs.Contains(verb);
+    }
+
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
         throw new Exception("Cannot set the values of a verbs list");
     }
@@ -665,6 +680,14 @@ public sealed class ClientVerbsList : DreamList {
         Verbs.Add(verb);
         _verbSystem?.RegisterVerb(verb);
         _verbSystem?.UpdateClientVerbs(_client);
+    }
+
+    public override void RemoveValue(DreamValue value) {
+        if (!value.TryGetValueAsProc(out var verb))
+            return;
+
+        if (Verbs.Remove(verb))
+            _verbSystem?.UpdateClientVerbs(_client);
     }
 
     public override void Cut(int start = 1, int end = 0) {
@@ -716,6 +739,23 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
         }
     }
 
+    public override bool ContainsKey(DreamValue value) {
+        if (!value.TryGetValueAsInteger(out var index)) {
+            return false;
+        }
+
+        return 1 <= index && index <= GetVerbs().Length;
+    }
+
+    public override bool ContainsValue(DreamValue value) {
+        if (!value.TryGetValueAsProc(out var verb))
+            return false;
+        if (verb?.VerbId == null)
+            return false;
+
+        return GetVerbs().Contains(verb.VerbId.Value);
+    }
+
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
         throw new Exception("Cannot set the values of a verbs list");
     }
@@ -731,6 +771,19 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
                 return; // Even += won't add the verb if it's already in this list
 
             appearance.Verbs.Add(verb.VerbId.Value);
+        });
+    }
+
+    public override void RemoveValue(DreamValue value) {
+        if (!value.TryGetValueAsProc(out var verb))
+            return;
+
+        if (verb?.VerbId == null) {
+            return;
+        }
+
+        atomManager.UpdateAppearance(atom, appearance => {
+            appearance.Verbs.Remove(verb.VerbId.Value);
         });
     }
 

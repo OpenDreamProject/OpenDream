@@ -147,7 +147,6 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
             }
 
             Appearance = appearance;
-            appearanceSystem.RefreshVerbs();
         });
     }
 

@@ -259,8 +259,6 @@ public sealed class DreamConnection {
                 }
             };
 
-            //var resourcePath = string.Empty;
-
             if (!file.TryGetValueAsDreamResource(out var soundResource)) {
                 if (file.TryGetValueAsString(out var soundPath)) {
                     soundResource = _resourceManager.LoadResource(soundPath);

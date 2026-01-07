@@ -203,12 +203,15 @@ public sealed class DreamConnection {
     }
 
     public void HandleMsgSoundQueryResponse(MsgSoundQueryResponse message) {
+        // PARITY NOTE: BYOND excludes certain sound datum vars like "volume" for no better reason than "it isn't tracked"
+        // Well we track it so we send those vars too under the assumption that more info won't break anything
+
         if (!_promptEvents.TryGetValue(message.PromptId, out var promptEvent)) {
             _sawmill.Warning($"{message.MsgChannel}: Received MsgSoundQueryResponse for prompt {message.PromptId} which does not exist.");
             return;
         }
 
-        DreamList allSounds = new DreamList(_objectTree.List.ObjectDefinition, message.SoundCount);
+        DreamList allSounds = new DreamList(_objectTree.List.ObjectDefinition, message.Sounds?.Count ?? 0);
         if (message.Sounds is not null) {
             foreach (var soundData in message.Sounds) {
                 var sound = new DreamObjectSound(_objectTree.GetObjectDefinition(_objectTree.Sound.Id));

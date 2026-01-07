@@ -192,11 +192,9 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
     private void RxSoundQuery(MsgSoundQuery soundQuery) {
         var allSounds = _dreamSoundEngine.GetSoundQuery();
-        var soundCount = allSounds?.Count ?? 0;
         var response = new MsgSoundQueryResponse {
             PromptId = soundQuery.PromptId,
             Sounds = allSounds,
-            SoundCount = (ushort)soundCount
         };
         _netManager.ClientSendMessage(response);
     }

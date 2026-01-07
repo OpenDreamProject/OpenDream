@@ -9,33 +9,29 @@ public sealed class MsgSoundQueryResponse : NetMessage {
     public override MsgGroups MsgGroup => MsgGroups.EntityEvent;
 
     public int PromptId;
-    public ushort SoundCount;
     public List<SoundData>? Sounds;
 
     public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {
         PromptId = buffer.ReadVariableInt32();
-        SoundCount = buffer.ReadUInt16();
+        var soundCount = buffer.ReadUInt16();
 
-        if(SoundCount == 0) return;
+        if(soundCount == 0) return;
 
-        Sounds ??= new List<SoundData>(SoundCount);
+        Sounds ??= new List<SoundData>(soundCount);
 
-        for (var i = 0; i < SoundCount; i++) {
+        for (var i = 0; i < soundCount; i++) {
             Sounds.Add(new SoundData(buffer));
         }
     }
 
     public override void WriteToBuffer(NetOutgoingMessage buffer, IRobustSerializer serializer) {
         buffer.WriteVariableInt32(PromptId);
-        if (SoundCount <= 0 || Sounds is null) {
-            buffer.Write(0); // SoundCount = 0
-            return;
-        }
 
-        buffer.Write(SoundCount);
+        var soundCount = Sounds?.Count ?? 0;
+        buffer.Write((ushort)soundCount);
 
-        for (var i = 0; i < SoundCount; i++) {
-            Sounds[i].WriteToBuffer(buffer);
+        for (var i = 0; i < soundCount; i++) {
+            Sounds![i].WriteToBuffer(buffer);
         }
     }
 }

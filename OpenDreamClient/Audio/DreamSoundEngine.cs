@@ -93,14 +93,14 @@ public sealed class DreamSoundEngine : IDreamSoundEngine {
         }
     }
 
-    public List<SoundData>? GetSoundQuery() {
+    public List<SoundData> GetSoundQuery() {
         List<SoundData> result = new List<SoundData>();
         foreach (var channel in _channels) {
             if(channel is null) continue;
             result.Add(channel.SoundData);
         }
 
-        return result.Count > 0 ? result : null;
+        return result;
     }
 
     private void DisconnectedFromServer(object? sender, NetDisconnectedArgs e) {

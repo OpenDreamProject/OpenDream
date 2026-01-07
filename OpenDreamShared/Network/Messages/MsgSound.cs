@@ -41,24 +41,58 @@ namespace OpenDreamShared.Network.Messages {
     }
 
     public struct SoundData {
+        /// <summary>
+        /// The DreamSoundChannel channel (out of 1024) that the sound is set to play on
+        /// </summary>
         public ushort Channel;
+
+        /// <summary>
+        /// Volume as a percentage
+        /// </summary>
         public ushort Volume;
+
+        /// <summary>
+        /// Current playback position in seconds
+        /// </summary>
         public float Offset;
+
+        /// <summary>
+        /// Total playtime of the song in seconds, adjusted for frequency
+        /// TODO: adjust for freq
+        /// </summary>
+        public float Length;
+
+        /// <summary>
+        /// Set to 0 to not repeat, 1 to repeat indefinitely, or 2 to repeat forwards and backwards
+        /// TODO: Implement repeat=2
+        /// </summary>
+        public byte Repeat;
+
+        /// <summary>
+        /// Filepath to the resource, if present
+        /// </summary>
+        public string File = string.Empty;
 
         public SoundData(NetIncomingMessage buffer) {
             ReadFromBuffer(buffer);
         }
 
-        public void ReadFromBuffer(NetIncomingMessage buffer) {
+        private void ReadFromBuffer(NetIncomingMessage buffer) {
             Channel = buffer.ReadUInt16();
             Volume = buffer.ReadUInt16();
             Offset = buffer.ReadFloat();
+            Length = buffer.ReadFloat();
+            Repeat = buffer.ReadByte();
+            File = buffer.ReadString();
         }
 
         public void WriteToBuffer(NetOutgoingMessage buffer) {
             buffer.Write(Channel);
             buffer.Write(Volume);
             buffer.Write(Offset);
+            buffer.Write(Length);
+            buffer.Write(Repeat);
+            buffer.Write(File);
         }
     }
 }

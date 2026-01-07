@@ -61,7 +61,7 @@ public sealed class DreamSoundEngine : IDreamSoundEngine {
         }
 
         var db = 20 * MathF.Log10(soundData.Volume / 100.0f); // convert from DM volume (0-100) to OpenAL volume (db)
-        var source = _audioSystem.PlayGlobal(stream, null, AudioParams.Default.WithVolume(db).WithPlayOffset(soundData.Offset)); // TODO: Positional audio.
+        var source = _audioSystem.PlayGlobal(stream, null, AudioParams.Default.WithVolume(db).WithPlayOffset(soundData.Offset).WithLoop(soundData.Repeat != 0)); // TODO: Positional audio.
         if (source == null) {
             _sawmill.Error($"Failed to play audio ${sound}");
             return;

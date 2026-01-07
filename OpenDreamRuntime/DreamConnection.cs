@@ -218,6 +218,9 @@ public sealed class DreamConnection {
                 sound.SetVariableValue("channel", new DreamValue(soundData.Channel));
                 sound.SetVariableValue("offset", new DreamValue(soundData.Offset));
                 sound.SetVariableValue("volume", new DreamValue(soundData.Volume));
+                sound.SetVariableValue("len", new DreamValue(soundData.Length));
+                sound.SetVariableValue("repeat", new DreamValue(soundData.Repeat));
+                sound.SetVariableValue("file", string.IsNullOrEmpty(soundData.File) ? DreamValue.Null : new DreamValue(soundData.File));
 
                 allSounds.AddValue(new DreamValue(sound));
             }
@@ -244,15 +247,19 @@ public sealed class DreamConnection {
             ushort channel = (ushort)outputObject.GetVariable("channel").GetValueAsInteger();
             ushort volume = (ushort)outputObject.GetVariable("volume").GetValueAsInteger();
             float offset = outputObject.GetVariable("offset").UnsafeGetValueAsFloat();
+            byte repeat = (byte)Math.Clamp(outputObject.GetVariable("repeat").UnsafeGetValueAsFloat(), 0, 2);
             DreamValue file = outputObject.GetVariable("file");
 
             var msg = new MsgSound {
                 SoundData = new SoundData {
                     Channel = channel,
                     Volume = volume,
-                    Offset = offset
+                    Offset = offset,
+                    Repeat = repeat
                 }
             };
+
+            //var resourcePath = string.Empty;
 
             if (!file.TryGetValueAsDreamResource(out var soundResource)) {
                 if (file.TryGetValueAsString(out var soundPath)) {
@@ -263,7 +270,8 @@ public sealed class DreamConnection {
             }
 
             msg.ResourceId = soundResource?.Id;
-            if (soundResource?.ResourcePath is { } resourcePath) {
+            var resourcePath = soundResource?.ResourcePath;
+            if (resourcePath != null) {
                 if (resourcePath.EndsWith(".ogg"))
                     msg.Format = MsgSound.FormatType.Ogg;
                 else if (resourcePath.EndsWith(".wav"))
@@ -271,6 +279,8 @@ public sealed class DreamConnection {
                 else
                     throw new Exception($"Sound {resourcePath} is not a supported file type");
             }
+
+            msg.SoundData.File = resourcePath ?? string.Empty;
 
             Session?.Channel.SendMessage(msg);
             return;

@@ -43,7 +43,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     }
 
     public void Cut(int start = 1, int end = 0) {
-        if (start != 1) {
+        if (start != 1 && start != 0) {
             throw new Exception($"Cut() was called with non-default start value of {start}.");
         }
 

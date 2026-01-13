@@ -211,19 +211,17 @@ public sealed class DreamConnection {
             return;
         }
 
-        DreamList allSounds = new DreamList(_objectTree.List.ObjectDefinition, message.Sounds?.Count ?? 0);
-        if (message.Sounds is not null) {
-            foreach (var soundData in message.Sounds) {
-                var sound = new DreamObjectSound(_objectTree.GetObjectDefinition(_objectTree.Sound.Id));
-                sound.SetVariableValue("channel", new DreamValue(soundData.Channel));
-                sound.SetVariableValue("offset", new DreamValue(soundData.Offset));
-                sound.SetVariableValue("volume", new DreamValue(soundData.Volume));
-                sound.SetVariableValue("len", new DreamValue(soundData.Length));
-                sound.SetVariableValue("repeat", new DreamValue(soundData.Repeat));
-                sound.SetVariableValue("file", string.IsNullOrEmpty(soundData.File) ? DreamValue.Null : new DreamValue(soundData.File));
+        DreamList allSounds = _objectTree.CreateList(message.Sounds.Count);
+        foreach (var soundData in message.Sounds) {
+            var sound = _objectTree.CreateObject(_objectTree.Sound);
+            sound.SetVariableValue("channel", new DreamValue(soundData.Channel));
+            sound.SetVariableValue("offset", new DreamValue(soundData.Offset));
+            sound.SetVariableValue("volume", new DreamValue(soundData.Volume));
+            sound.SetVariableValue("len", new DreamValue(soundData.Length));
+            sound.SetVariableValue("repeat", new DreamValue(soundData.Repeat));
+            sound.SetVariableValue("file", string.IsNullOrEmpty(soundData.File) ? DreamValue.Null : new DreamValue(soundData.File));
 
-                allSounds.AddValue(new DreamValue(sound));
-            }
+            allSounds.AddValue(new DreamValue(sound));
         }
 
         promptEvent.Invoke(new DreamValue(allSounds));

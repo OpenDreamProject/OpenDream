@@ -122,8 +122,6 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         _netManager.RegisterNetMessage<MsgPrompt>(RxPrompt);
         _netManager.RegisterNetMessage<MsgPromptList>(RxPromptList);
         _netManager.RegisterNetMessage<MsgPromptResponse>();
-        _netManager.RegisterNetMessage<MsgSoundQuery>(RxSoundQuery);
-        _netManager.RegisterNetMessage<MsgSoundQueryResponse>();
         _netManager.RegisterNetMessage<MsgBrowse>(RxBrowse);
         _netManager.RegisterNetMessage<MsgTopic>();
         _netManager.RegisterNetMessage<MsgWinSet>(RxWinSet);
@@ -188,15 +186,6 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         );
 
         ShowPrompt(prompt);
-    }
-
-    private void RxSoundQuery(MsgSoundQuery soundQuery) {
-        var allSounds = _dreamSoundEngine.GetSoundQuery();
-        var response = new MsgSoundQueryResponse {
-            PromptId = soundQuery.PromptId,
-            Sounds = allSounds,
-        };
-        _netManager.ClientSendMessage(response);
     }
 
     private void RxBrowse(MsgBrowse pBrowse) {

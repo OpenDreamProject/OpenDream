@@ -26,6 +26,8 @@ public sealed class DreamSoundEngine : IDreamSoundEngine {
         _sawmill = _logManager.GetSawmill("opendream.audio");
 
         _netManager.RegisterNetMessage<MsgSound>(RxSound);
+        _netManager.RegisterNetMessage<MsgSoundQuery>(RxSoundQuery);
+        _netManager.RegisterNetMessage<MsgSoundQueryResponse>();
 
         _netManager.Disconnect += DisconnectedFromServer;
     }
@@ -91,6 +93,14 @@ public sealed class DreamSoundEngine : IDreamSoundEngine {
         } else {
             StopChannel(msg.SoundData.Channel);
         }
+    }
+
+    private void RxSoundQuery(MsgSoundQuery soundQuery) {
+        var response = new MsgSoundQueryResponse {
+            PromptId = soundQuery.PromptId,
+            Sounds = GetSoundQuery()
+        };
+        _netManager.ClientSendMessage(response);
     }
 
     public List<SoundData> GetSoundQuery() {

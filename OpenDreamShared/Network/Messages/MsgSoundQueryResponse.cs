@@ -9,7 +9,7 @@ public sealed class MsgSoundQueryResponse : NetMessage {
     public override MsgGroups MsgGroup => MsgGroups.EntityEvent;
 
     public int PromptId;
-    public required List<SoundData> Sounds;
+    public List<SoundData> Sounds = default!;
 
     public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {
         PromptId = buffer.ReadVariableInt32();

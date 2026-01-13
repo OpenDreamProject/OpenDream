@@ -22,7 +22,6 @@ using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 using SixLabors.ImageSharp;
 using System.Linq;
-using OpenDreamClient.Audio;
 using Robust.Shared.Map;
 
 namespace OpenDreamClient.Interface;

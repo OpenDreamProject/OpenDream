@@ -45,7 +45,6 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     [Dependency] private readonly ITimerManager _timerManager = default!;
     [Dependency] private readonly IUriOpener _uriOpener = default!;
     [Dependency] private readonly IGameController _gameController = default!;
-    [Dependency] private readonly IDreamSoundEngine _dreamSoundEngine = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.interface");
 

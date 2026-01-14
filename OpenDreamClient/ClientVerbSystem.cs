@@ -242,6 +242,10 @@ public sealed class ClientVerbSystem : VerbSystem {
         _interfaceManager.DefaultInfo?.RefreshVerbs(this);
     }
 
+    public void RefreshVerbs() {
+        _interfaceManager.DefaultInfo?.RefreshVerbs(this);
+    }
+
     private void OnLocalPlayerAttached(EntityUid obj) {
         // Our mob changed, update our verb panels
         // A little hacky, but also wait half a second for verb information about our mob to arrive

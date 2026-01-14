@@ -384,7 +384,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         if (eye.IsValid()) {
             EyeUid = eye;
         } else {
-            EyeUid = _playerManager.LocalSession?.AttachedEntity.GetValueOrDefault(EntityUid.Invalid) ?? EntityUid.Invalid;
+            EyeUid = MobUid;
         }
     }
 

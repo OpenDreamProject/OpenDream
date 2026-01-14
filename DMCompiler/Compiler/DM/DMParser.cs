@@ -90,6 +90,7 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_Throw,
             TokenType.DM_Null,
             TokenType.DM_Switch,
+            TokenType.DM_Sleep,
             TokenType.DM_Spawn,
             TokenType.DM_Do,
             TokenType.DM_While,
@@ -802,6 +803,7 @@ namespace DMCompiler.Compiler.DM {
                     TokenType.DM_Switch => Switch(),
                     TokenType.DM_Continue => Continue(),
                     TokenType.DM_Break => Break(),
+                    TokenType.DM_Sleep => Sleep(),
                     TokenType.DM_Spawn => Spawn(),
                     TokenType.DM_While => While(),
                     TokenType.DM_Do => DoWhile(),
@@ -1124,6 +1126,22 @@ namespace DMCompiler.Compiler.DM {
             return sets[0];
         }
 
+        public DMASTProcStatementSleep? Sleep() {
+            var loc = Current().Location;
+
+            if (Check(TokenType.DM_Sleep)) {
+                Whitespace();
+                bool hasParenthesis = Check(TokenType.DM_LeftParenthesis);
+                Whitespace();
+                DMASTExpression? delay = Expression();
+                if (hasParenthesis) ConsumeRightParenthesis();
+
+                return new DMASTProcStatementSleep(loc, delay ?? new DMASTConstantInteger(loc, 0));
+            } else {
+                return null;
+            }
+        }
+
         private DMASTProcStatementSpawn Spawn() {
             var loc = Current().Location;
             Advance();
@@ -1257,7 +1275,7 @@ namespace DMCompiler.Compiler.DM {
                     Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after to expression");
                     ExtraColonPeriod();
 
-                    return new DMASTProcStatementFor(loc, new DMASTExpressionInRange(loc, assign.LHS, assign.RHS, endRange, step), null, null, dmTypes, GetForBody());
+                    return new DMASTProcStatementFor(loc, new DMASTExpressionInRange(loc, assign.LHS, assign.RHS, endRange, step), null, null, null, dmTypes, GetForBody());
                 } else {
                     Emit(WarningCode.BadExpression, "Expected = before to in for");
                     return new DMASTInvalidProcStatement(loc);
@@ -1272,20 +1290,20 @@ namespace DMCompiler.Compiler.DM {
                 Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 2");
                 ExtraColonPeriod();
 
-                return new DMASTProcStatementFor(loc, new DMASTExpressionIn(loc, expr1, listExpr), null, null, dmTypes, GetForBody());
+                return new DMASTProcStatementFor(loc, new DMASTExpressionIn(loc, expr1, listExpr), null, null, null, dmTypes, GetForBody());
             }
 
             if (!Check(ForSeparatorTypes)) {
                 Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 1");
                 ExtraColonPeriod();
 
-                return new DMASTProcStatementFor(loc, expr1, null, null, dmTypes, GetForBody());
+                return new DMASTProcStatementFor(loc, expr1, null, null, null, dmTypes, GetForBody());
             }
 
             if (Check(TokenType.DM_RightParenthesis)) {
                 ExtraColonPeriod();
 
-                return new DMASTProcStatementFor(loc, expr1, null, null, dmTypes, GetForBody());
+                return new DMASTProcStatementFor(loc, expr1, null, null, null, dmTypes, GetForBody());
             }
 
             Whitespace();
@@ -1302,29 +1320,44 @@ namespace DMCompiler.Compiler.DM {
                 Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 2");
                 ExtraColonPeriod();
 
-                return new DMASTProcStatementFor(loc, expr1, expr2, null, dmTypes, GetForBody());
+                return new DMASTProcStatementFor(loc, expr1, expr2, null, null, dmTypes, GetForBody());
             }
 
             if (Check(TokenType.DM_RightParenthesis)) {
                 ExtraColonPeriod();
 
-                return new DMASTProcStatementFor(loc, expr1, expr2, null, dmTypes, GetForBody());
+                return new DMASTProcStatementFor(loc, expr1, expr2, null, null, dmTypes, GetForBody());
             }
 
             Whitespace();
             DMASTExpression? expr3 = Expression();
+            DMASTProcStatement? statement3 = null;
             if (expr3 == null) {
+                CheckForStatementIncrementor();
+
                 if (Current().Type != TokenType.DM_RightParenthesis) {
                     Emit(WarningCode.BadExpression, "Expected 3nd expression in for");
                 }
-
-                expr3 = new DMASTConstantNull(loc);
             }
 
             Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 3");
             ExtraColonPeriod();
 
-            return new DMASTProcStatementFor(loc, expr1, expr2, expr3, dmTypes, GetForBody());
+            return new DMASTProcStatementFor(loc, expr1, expr2, expr3, statement3, dmTypes, GetForBody());
+
+            void CheckForStatementIncrementor() {
+                DMASTProcStatementSleep? sleep = Sleep();
+                if (sleep == null) {
+                    expr3 = new DMASTConstantNull(loc);
+                    statement3 = sleep;
+                    return;
+                }
+
+                // TODO: additional tests, e.g., animate(...)
+
+                // if no matches, null
+                expr3 = new DMASTConstantNull(loc);
+            }
 
             DMASTProcBlockInner GetForBody() {
                 Whitespace();

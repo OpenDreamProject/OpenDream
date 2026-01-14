@@ -2330,16 +2330,6 @@ internal static class DreamProcNativeRoot {
         };
     }
 
-    [DreamProc("sleep")]
-    [DreamProcParameter("Delay", Type = DreamValueTypeFlag.Float)]
-    public static async Task<DreamValue> NativeProc_sleep(AsyncNativeProc.State state) {
-        state.GetArgument(0, "Delay").TryGetValueAsFloat(out float delay);
-
-        await state.ProcScheduler.CreateDelay(delay);
-
-        return DreamValue.Null;
-    }
-
     [DreamProc("sorttext")]
     [DreamProcParameter("T1", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("T2", Type = DreamValueTypeFlag.String)]

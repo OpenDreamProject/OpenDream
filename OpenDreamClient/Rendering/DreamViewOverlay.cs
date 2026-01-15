@@ -156,8 +156,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
     private void DrawAll(OverlayDrawArgs args, EntityUid mob, ClientObjectReference eyeRef, Vector2i viewportSize) {
         MapCoordinates eyeCoords;
         DreamMobSightComponent? eyeSight;
-        Box2 worldAABB;
-        MapId mapId;
+        Box2 worldAABB = args.WorldAABB;
 
         EntitiesInView.Clear();
         
@@ -167,21 +166,17 @@ internal sealed partial class DreamViewOverlay : Overlay {
             case ClientObjectReference.RefType.Turf:
                 eyeCoords = new(new(eyeRef.TurfX, eyeRef.TurfY), new(eyeRef.TurfZ));
                 _mobSightQuery.TryGetComponent(mob, out eyeSight);
-                worldAABB = args.WorldAABB;
-                mapId = new(eyeRef.TurfZ);
-                //worldAABB = worldAABB.Translated(eyeCoords.Position - worldAABB.Center);
                 break;
             case ClientObjectReference.RefType.Entity:
                 var eyeUid = _entityManager.GetEntity(eyeRef.Entity);
                 if (!_xformQuery.TryGetComponent(eyeUid, out var eyeTransform))
                     return;
                 eyeCoords = _transformSystem.GetMapCoordinates(eyeUid, eyeTransform);
-
                 _mobSightQuery.TryGetComponent(eyeUid, out eyeSight);
-                mapId = args.MapId;
-                worldAABB = args.WorldAABB;
                 break;
         }
+
+        MapId mapId = eyeCoords.MapId;
 
         if (!_mapManager.TryFindGridAt(eyeCoords, out var gridUid, out var grid))
             return;

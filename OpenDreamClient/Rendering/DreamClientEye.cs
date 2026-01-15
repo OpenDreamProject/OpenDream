@@ -72,7 +72,6 @@ public sealed class DreamClientEye: IEye {
     }
 
     private Vector2 _scale = Vector2.One / 2f;
-    private Angle _rotation = Angle.Zero;
 
     [ViewVariables(VVAccess.ReadWrite)]
     public bool DrawFov { get; set; }
@@ -84,10 +83,7 @@ public sealed class DreamClientEye: IEye {
     public Vector2 Offset { get; set; }
 
     [ViewVariables(VVAccess.ReadWrite)]
-    public Angle Rotation {
-        get => _rotation;
-        set => _rotation = value;
-    }
+    public Angle Rotation { get; set; }
 
     [ViewVariables(VVAccess.ReadWrite)]
     public Vector2 Zoom {

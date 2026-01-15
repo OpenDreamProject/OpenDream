@@ -78,7 +78,7 @@ public sealed class DreamConnection {
     }
 
     [ViewVariables] public ClientObjectReference? Eye {
-        get => field;
+        get;
         set {
             field = value;
             if (field?.Type == ClientObjectReference.RefType.Entity) {

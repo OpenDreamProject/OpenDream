@@ -1,19 +1,13 @@
 ﻿using OpenDreamClient.Interface;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Network.Messages;
-using Robust.Client.Player;
-using Robust.Shared.Network;
 using Robust.Shared.Player;
-using YamlDotNet.Core.Tokens;
 
 namespace OpenDreamClient;
 
 internal sealed class DreamClientSystem : EntitySystem {
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
-    [Dependency] private readonly IClientNetManager _netManager = default!;
-    [Dependency] private readonly IPlayerManager _playerManager = default!;
-
 
     // Current NetEntityof player's mob, or Invalid if could not be determined.
     private NetEntity _mobNet = NetEntity.Invalid;
@@ -47,7 +41,6 @@ internal sealed class DreamClientSystem : EntitySystem {
         private set => _eyeRef = value;
     }
 
-
     public override void Initialize() {
         SubscribeLocalEvent<LocalPlayerAttachedEvent>(OnPlayerAttached);
     }
@@ -66,7 +59,6 @@ internal sealed class DreamClientSystem : EntitySystem {
             // mark mob cache as dirty/invalid
             _mobUid = EntityUid.Invalid;
         }
-        
 
         var incomingEyeRef = msg.EyeRef;
 

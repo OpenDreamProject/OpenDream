@@ -9,7 +9,6 @@ using Robust.Client.ResourceManagement;
 using Robust.Client.UserInterface.RichText;
 using Robust.Shared.Console;
 using Robust.Shared.Enums;
-using Robust.Shared.Graphics;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Profiling;
@@ -94,7 +93,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
         _spriteSystem = _entitySystemManager.GetEntitySystem<DMISpriteSystem>();
         _dreamClientSystem = _entitySystemManager.GetEntitySystem<DreamClientSystem>();
 
-    _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
+        _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
         _xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
         _mobSightQuery = _entityManager.GetEntityQuery<DreamMobSightComponent>();
 

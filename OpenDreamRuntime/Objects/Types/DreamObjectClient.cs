@@ -1,9 +1,7 @@
-﻿using OpenDreamRuntime.Procs.DebugAdapter.Protocol;
-using OpenDreamRuntime.Procs.Native;
+﻿using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
-using Robust.Shared.Graphics;
 using System.Security.Cryptography;
 using System.Text;
 

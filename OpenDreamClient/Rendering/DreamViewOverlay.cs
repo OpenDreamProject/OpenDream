@@ -1,20 +1,21 @@
-﻿using System.Linq;
-using OpenDreamClient.Interface;
+﻿using OpenDreamClient.Interface;
+using OpenDreamClient.Rendering.Particles;
+using OpenDreamShared.Dream;
+using OpenDreamShared.Rendering;
+using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Client.Player;
-using Robust.Shared.Map;
-using OpenDreamShared.Dream;
-using Robust.Shared.Console;
-using Robust.Shared.Prototypes;
-using OpenDreamShared.Rendering;
-using OpenDreamClient.Rendering.Particles;
-using Robust.Client.GameObjects;
-using Robust.Shared.Map.Components;
-using Robust.Shared.Profiling;
-using Matrix3x2 = System.Numerics.Matrix3x2;
 using Robust.Client.ResourceManagement;
 using Robust.Client.UserInterface.RichText;
+using Robust.Shared.Console;
 using Robust.Shared.Enums;
+using Robust.Shared.Graphics;
+using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
+using Robust.Shared.Profiling;
+using Robust.Shared.Prototypes;
+using System.Linq;
+using Matrix3x2 = System.Numerics.Matrix3x2;
 
 namespace OpenDreamClient.Rendering;
 
@@ -60,6 +61,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
     private readonly ClientScreenOverlaySystem _screenOverlaySystem;
     private readonly ClientImagesSystem _imagesSystem;
     private readonly DMISpriteSystem _spriteSystem;
+    private readonly DreamClientSystem _dreamClientSystem;
 
     private readonly EntityQuery<DMISpriteComponent> _spriteQuery;
     private readonly EntityQuery<TransformComponent> _xformQuery;
@@ -90,8 +92,9 @@ internal sealed partial class DreamViewOverlay : Overlay {
         _screenOverlaySystem = _entitySystemManager.GetEntitySystem<ClientScreenOverlaySystem>();
         _imagesSystem = _entitySystemManager.GetEntitySystem<ClientImagesSystem>();
         _spriteSystem = _entitySystemManager.GetEntitySystem<DMISpriteSystem>();
+        _dreamClientSystem = _entitySystemManager.GetEntitySystem<DreamClientSystem>();
 
-        _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
+    _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
         _xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
         _mobSightQuery = _entityManager.GetEntityQuery<DreamMobSightComponent>();
 
@@ -120,12 +123,12 @@ internal sealed partial class DreamViewOverlay : Overlay {
     protected override void Draw(in OverlayDrawArgs args) {
         using var _ = _prof.Group("Dream View Overlay");
 
-        EntityUid eye = _interfaceManager.EyeUid;
-        if (!eye.IsValid()) {
+        var eyeRef = _dreamClientSystem.EyeRef;
+        if (eyeRef.Type == ClientObjectReference.RefType.Entity && !eyeRef.Entity.IsValid()) {
             return;
         }
 
-        EntityUid mob = _interfaceManager.MobUid;
+        EntityUid mob = _dreamClientSystem.MobUid;
         if (!mob.IsValid()) {
             return;
         }
@@ -134,7 +137,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
         try {
             var viewportSize = (Vector2i)(args.Viewport.Size / args.Viewport.RenderScale);
 
-            DrawAll(args, mob, eye, viewportSize);
+            DrawAll(args, mob, eyeRef, viewportSize);
         } catch (Exception e) {
             _sawmill.Error($"Error occurred while rendering frame. Error details:\n{e.Message}\n{e.StackTrace}");
         }
@@ -151,21 +154,39 @@ internal sealed partial class DreamViewOverlay : Overlay {
             _rendererMetaDataRental.Push(_rendererMetaDataToReturn.Pop());
     }
 
-    private void DrawAll(OverlayDrawArgs args, EntityUid mob, EntityUid eye, Vector2i viewportSize) {
-        if (!_xformQuery.TryGetComponent(eye, out var eyeTransform))
-            return;
+    private void DrawAll(OverlayDrawArgs args, EntityUid mob, ClientObjectReference eyeRef, Vector2i viewportSize) {
+        MapCoordinates eyeCoords;
+        DreamMobSightComponent? eyeSight;
+        Box2 worldAABB;
 
-        var eyeCoords = _transformSystem.GetMapCoordinates(eye, eyeTransform);
+        switch (eyeRef.Type) {
+            default:
+                return;
+            case ClientObjectReference.RefType.Turf:
+                eyeCoords = new MapCoordinates(new(eyeRef.TurfX, eyeRef.TurfY), new(eyeRef.TurfZ));
+                _mobSightQuery.TryGetComponent(mob, out eyeSight);
+                worldAABB = args.WorldAABB;
+                worldAABB = worldAABB.Translated(eyeCoords.Position - worldAABB.Center);
+                break;
+            case ClientObjectReference.RefType.Entity:
+                var eyeUid = _entityManager.GetEntity(new(eyeRef.Entity.Id));
+                if (!_xformQuery.TryGetComponent(eyeUid, out var eyeTransform))
+                    return;
+                eyeCoords = _transformSystem.GetMapCoordinates(eyeUid, eyeTransform);
+
+                _mobSightQuery.TryGetComponent(eyeUid, out eyeSight);
+                worldAABB = args.WorldAABB;
+                break;
+        }
+
         if (!_mapManager.TryFindGridAt(eyeCoords, out var gridUid, out var grid))
             return;
 
         _mobSightQuery.TryGetComponent(mob, out var mobSight);
-        _mobSightQuery.TryGetComponent(eye, out var eyeSight);
         var seeVis = mobSight?.SeeInvisibility ?? 127;
         var sight = eyeSight?.Sight ?? 0;
 
         var worldHandle = args.WorldHandle;
-        var worldAABB = args.WorldAABB;
 
         using (_prof.Group("lookup")) {
             //TODO use a sprite tree.

@@ -18,6 +18,7 @@ public sealed class ClientVerbSystem : VerbSystem {
     [Dependency] private readonly ITaskManager _taskManager = default!;
     [Dependency] private readonly ITimerManager _timerManager = default!;
     [Dependency] private readonly IOverlayManager _overlayManager = default!;
+    [Dependency] private readonly DreamClientSystem _dreamClientSystem = default!;
     [Dependency] private readonly TransformSystem _transformSystem = default!;
 
     private EntityQuery<DMISpriteComponent> _spriteQuery;
@@ -84,7 +85,7 @@ public sealed class ClientVerbSystem : VerbSystem {
     public IEnumerable<(int Id, ClientObjectReference Src, VerbInfo VerbInfo)> GetExecutableVerbs(bool ignoreHiddenAttr = false) {
         sbyte? seeInvisibility = null;
 
-        EntityUid mob = _interfaceManager.MobUid;
+        EntityUid mob = _dreamClientSystem.MobUid;
         if (mob.IsValid()) {
             _sightQuery.TryGetComponent(mob, out var mobSight);
 

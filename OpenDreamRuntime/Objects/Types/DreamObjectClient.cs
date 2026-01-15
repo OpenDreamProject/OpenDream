@@ -1,9 +1,11 @@
-﻿using System.Security.Cryptography;
-using System.Text;
+﻿using OpenDreamRuntime.Procs.DebugAdapter.Protocol;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
+using Robust.Shared.Graphics;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -55,7 +57,12 @@ public sealed class DreamObjectClient : DreamObject {
                 value = Connection.StatObj;
                 return true;
             case "eye":
-                value = new(Connection.Eye);
+                if (Connection.Eye == null) {
+                    value = DreamValue.Null;
+                    return true;
+                }
+
+                value = new(DreamManager.GetFromClientReference(Connection, Connection.Eye.Value));
                 return true;
             case "view":
                 // Number if square & centerable, string representation otherwise
@@ -124,11 +131,19 @@ public sealed class DreamObjectClient : DreamObject {
                 break;
             case "eye": {
                 value.TryGetValueAsDreamObject<DreamObjectAtom>(out var newEye);
-                if (newEye is not (DreamObjectMovable or null)) {
-                    throw new Exception($"Cannot set eye to non-movable {value}"); // TODO: You can set it to a turf
+                switch (newEye) {
+                    case DreamObjectMovable movable:
+                        Connection.Eye = new(EntityManager.GetNetEntity(movable.Entity));
+                        break;
+                    case DreamObjectTurf turf:
+                        Connection.Eye = new(new(turf.X, turf.Y), turf.Z);
+                        break;
+                    case null:
+                        Connection.Eye = null;
+                        break;
+                    default:
+                        throw new Exception($"Cannot set eye to non-movable, non-turf {value}");
                 }
-
-                Connection.Eye = newEye as DreamObjectMovable;
                 break;
             }
             case "view": {

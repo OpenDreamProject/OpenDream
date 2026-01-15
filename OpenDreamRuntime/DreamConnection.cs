@@ -1,15 +1,18 @@
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
+using OpenDreamRuntime.Procs.DebugAdapter.Protocol;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Network.Messages;
 using Robust.Shared.Enums;
+using Robust.Shared.Graphics;
 using Robust.Shared.Player;
 using SpaceWizards.Sodium;
 using System.Threading.Tasks;
 using System.Web;
+using YamlDotNet.Core.Tokens;
 
 namespace OpenDreamRuntime;
 
@@ -48,8 +51,18 @@ public sealed class DreamConnection {
                 }
 
                 StatObj = new(value);
-                if (Eye != null && Eye == oldMob) {
-                    Eye = value;
+
+                // If eye is equivalent to old mob, and the new mob is different from old mob, set eye to new mob.
+                if (oldMob != null) {
+                    var oldMobNetEntity = _entityManager.GetNetEntity(oldMob.Entity);
+                    if (Eye != null && Eye.Value.Entity == oldMobNetEntity) {
+                        if (_mob == null) {
+                            Eye = null;
+                        } else {
+                            var newMobNetEntity = _entityManager.GetNetEntity(_mob.Entity);
+                            Eye = new(newMobNetEntity);
+                        }
+                    }
                 }
 
                 UpdateMobEye();
@@ -67,12 +80,17 @@ public sealed class DreamConnection {
         }
     }
 
-    [ViewVariables] public DreamObjectMovable? Eye {
+    [ViewVariables] public ClientObjectReference? Eye {
         get => _eye;
         set {
             _eye = value;
-            _playerManager.SetAttachedEntity(Session!, _eye?.Entity);
-
+            if (_eye?.Type == ClientObjectReference.RefType.Entity) {
+                var ent = _entityManager.GetEntity(_eye?.Entity);
+                _playerManager.SetAttachedEntity(Session!, ent);
+            } else {
+                _playerManager.SetAttachedEntity(Session!, EntityUid.Invalid);
+            }
+                
             UpdateMobEye();
         }
     }
@@ -86,7 +104,7 @@ public sealed class DreamConnection {
     [ViewVariables] private int _nextPromptEvent = 1;
     private readonly Dictionary<string, DreamResource> _permittedBrowseRscFiles = new();
     private DreamObjectMob? _mob;
-    private DreamObjectMovable? _eye;
+    private ClientObjectReference? _eye;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.connection");
 
@@ -554,11 +572,23 @@ public sealed class DreamConnection {
     }
 
     private void UpdateMobEye() {
-        var mobUid = Mob?.Entity.Id ?? EntityUid.Invalid.Id;
-        var eyeUid = Eye?.Entity.Id ?? EntityUid.Invalid.Id;
+        var mobUid = Mob?.Entity ?? EntityUid.Invalid;
+        ClientObjectReference eyeRef;
+        switch (Eye?.Type) {
+            default:
+                eyeRef = new(_entityManager.GetNetEntity(mobUid));
+                break;
+            case ClientObjectReference.RefType.Entity when Eye.HasValue:
+                eyeRef = new(_entityManager.GetNetEntity(new(Eye.Value.Entity.Id)));
+                break;
+            case ClientObjectReference.RefType.Turf:
+                eyeRef = new(new(Eye.Value.TurfX, Eye.Value.TurfY), Eye.Value.TurfZ);
+                break;
+        }
+
         var msg = new MsgNotifyMobEyeUpdate() {
-            MobNetEntity = _entityManager.GetNetEntity(new(mobUid)),
-            EyeNetEntity = _entityManager.GetNetEntity(new(eyeUid))
+            MobNetEntity = _entityManager.GetNetEntity(mobUid),
+            EyeRef = eyeRef
         };
         Session?.Channel.SendMessage(msg);
     }

@@ -6,9 +6,9 @@ using Robust.Shared.Map;
 namespace OpenDreamClient.Rendering;
 
 public sealed class DreamClientEye: IEye {
-    private ClientObjectReference _eyeRef;
-    private IEntityManager _entityManager;
-    private TransformSystem _transformSystem;
+    private readonly ClientObjectReference _eyeRef;
+    private readonly IEntityManager _entityManager;
+    private readonly TransformSystem _transformSystem;
 
     public DreamClientEye(IEye baseEye, ClientObjectReference eyeRef, IEntityManager entityManager, TransformSystem transformSystem) {
         Rotation = baseEye.Rotation;
@@ -21,6 +21,7 @@ public sealed class DreamClientEye: IEye {
         _transformSystem = transformSystem;
     }
 
+    [ViewVariables(VVAccess.ReadOnly)]
     public MapCoordinates Position {
         get {
             switch (_eyeRef.Type) {
@@ -29,6 +30,7 @@ public sealed class DreamClientEye: IEye {
                     if (_entityManager.TryGetComponent<TransformComponent>(ent, out var pos)) {
                         return _transformSystem.GetMapCoordinates(pos);
                     }
+
                     break;
 
                 case ClientObjectReference.RefType.Turf:
@@ -73,10 +75,10 @@ public sealed class DreamClientEye: IEye {
     private Angle _rotation = Angle.Zero;
 
     [ViewVariables(VVAccess.ReadWrite)]
-    public bool DrawFov { get; set; } = true;
+    public bool DrawFov { get; set; }
 
     [ViewVariables]
-    public bool DrawLight { get; set; } = true;
+    public bool DrawLight { get; set; }
 
     [ViewVariables(VVAccess.ReadWrite)]
     public Vector2 Offset { get; set; }

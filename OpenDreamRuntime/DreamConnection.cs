@@ -79,8 +79,8 @@ public sealed class DreamConnection {
         }
     }
 
-
     private ClientObjectReference? _eye;
+
     [ViewVariables] public ClientObjectReference? Eye {
         get => _eye;
         set {

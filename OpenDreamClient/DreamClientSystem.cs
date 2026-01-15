@@ -72,6 +72,7 @@ internal sealed class DreamClientSystem : EntitySystem {
                 } else {
                     EyeRef = new(msg.MobNetEntity);
                 }
+
                 break;
             case ClientObjectReference.RefType.Turf:
                 EyeRef = incomingEyeRef;

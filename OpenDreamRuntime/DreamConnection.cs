@@ -78,11 +78,11 @@ public sealed class DreamConnection {
     }
 
     [ViewVariables] public ClientObjectReference? Eye {
-        get => _eye;
+        get => field;
         set {
-            _eye = value;
-            if (_eye?.Type == ClientObjectReference.RefType.Entity) {
-                var ent = _entityManager.GetEntity(_eye?.Entity);
+            field = value;
+            if (field?.Type == ClientObjectReference.RefType.Entity) {
+                var ent = _entityManager.GetEntity(field?.Entity);
                 _playerManager.SetAttachedEntity(Session!, ent);
             } else {
                 _playerManager.SetAttachedEntity(Session!, EntityUid.Invalid);
@@ -101,7 +101,6 @@ public sealed class DreamConnection {
     [ViewVariables] private int _nextPromptEvent = 1;
     private readonly Dictionary<string, DreamResource> _permittedBrowseRscFiles = new();
     private DreamObjectMob? _mob;
-    private ClientObjectReference? _eye;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.connection");
 

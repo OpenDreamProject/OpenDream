@@ -47,8 +47,6 @@ public sealed class MsgNotifyMobEyeUpdate : NetMessage {
                 buffer.Write(EyeRef.TurfY);
                 buffer.Write(EyeRef.TurfZ);
                 break;
-            default:
-                break;
         }
     }
 }

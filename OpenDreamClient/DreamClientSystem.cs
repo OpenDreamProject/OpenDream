@@ -1,6 +1,9 @@
 ﻿using OpenDreamClient.Interface;
+using OpenDreamClient.Rendering;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Network.Messages;
+using Robust.Client.GameObjects;
+using Robust.Client.Graphics;
 using Robust.Shared.Player;
 
 namespace OpenDreamClient;
@@ -8,6 +11,8 @@ namespace OpenDreamClient;
 internal sealed class DreamClientSystem : EntitySystem {
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
+    [Dependency] private readonly IEyeManager _eyeManager = default!;
+    [Dependency] private readonly TransformSystem _transformSystem = default!;
 
     // Current NetEntityof player's mob, or Invalid if could not be determined.
     private NetEntity _mobNet = NetEntity.Invalid;
@@ -38,7 +43,10 @@ internal sealed class DreamClientSystem : EntitySystem {
                 return _eyeRef;
             }
         }
-        private set => _eyeRef = value;
+        private set {
+            _eyeManager.CurrentEye = new DreamClientEye(_eyeManager.CurrentEye, value, _entityManager, _transformSystem);
+            _eyeRef = value;
+        }
     }
 
     public override void Initialize() {
@@ -72,7 +80,6 @@ internal sealed class DreamClientSystem : EntitySystem {
                 } else {
                     EyeRef = new(msg.MobNetEntity);
                 }
-
                 break;
             case ClientObjectReference.RefType.Turf:
                 EyeRef = incomingEyeRef;

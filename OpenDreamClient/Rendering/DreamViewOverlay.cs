@@ -157,23 +157,28 @@ internal sealed partial class DreamViewOverlay : Overlay {
         MapCoordinates eyeCoords;
         DreamMobSightComponent? eyeSight;
         Box2 worldAABB;
+        MapId mapId;
 
+        EntitiesInView.Clear();
+        
         switch (eyeRef.Type) {
             default:
                 return;
             case ClientObjectReference.RefType.Turf:
-                eyeCoords = new MapCoordinates(new(eyeRef.TurfX, eyeRef.TurfY), new(eyeRef.TurfZ));
+                eyeCoords = new(new(eyeRef.TurfX, eyeRef.TurfY), new(eyeRef.TurfZ));
                 _mobSightQuery.TryGetComponent(mob, out eyeSight);
                 worldAABB = args.WorldAABB;
-                worldAABB = worldAABB.Translated(eyeCoords.Position - worldAABB.Center);
+                mapId = new(eyeRef.TurfZ);
+                //worldAABB = worldAABB.Translated(eyeCoords.Position - worldAABB.Center);
                 break;
             case ClientObjectReference.RefType.Entity:
-                var eyeUid = _entityManager.GetEntity(new(eyeRef.Entity.Id));
+                var eyeUid = _entityManager.GetEntity(eyeRef.Entity);
                 if (!_xformQuery.TryGetComponent(eyeUid, out var eyeTransform))
                     return;
                 eyeCoords = _transformSystem.GetMapCoordinates(eyeUid, eyeTransform);
 
                 _mobSightQuery.TryGetComponent(eyeUid, out eyeSight);
+                mapId = args.MapId;
                 worldAABB = args.WorldAABB;
                 break;
         }
@@ -190,7 +195,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
         using (_prof.Group("lookup")) {
             //TODO use a sprite tree.
             //the scaling is to attempt to prevent pop-in, by getting sprites that are *just* offscreen
-            _lookupSystem.GetEntitiesIntersecting(args.MapId, worldAABB.Scale(1.2f), EntitiesInView, MapLookupFlags);
+            _lookupSystem.GetEntitiesIntersecting(mapId, worldAABB.Scale(1.2f), EntitiesInView, MapLookupFlags);
         }
 
         var eyeTile = _mapSystem.GetTileRef(gridUid, grid, eyeCoords);

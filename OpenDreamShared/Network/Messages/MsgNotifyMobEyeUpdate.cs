@@ -12,6 +12,7 @@ public sealed class MsgNotifyMobEyeUpdate : NetMessage {
     public override MsgGroups MsgGroup => MsgGroups.EntityEvent;
 
     public NetEntity MobNetEntity;
+
     // Type = Client -> null
     public ClientObjectReference EyeRef;
 

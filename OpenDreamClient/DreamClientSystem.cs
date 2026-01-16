@@ -70,20 +70,10 @@ internal sealed class DreamClientSystem : EntitySystem {
 
         var incomingEyeRef = msg.EyeRef;
 
-        switch (incomingEyeRef.Type) {
-            default:
-                EyeRef = new(msg.MobNetEntity);
-                break;
-            case ClientObjectReference.RefType.Entity:
-                if (incomingEyeRef.Entity.IsValid()) {
-                    EyeRef = incomingEyeRef;
-                } else {
-                    EyeRef = new(msg.MobNetEntity);
-                }
-                break;
-            case ClientObjectReference.RefType.Turf:
-                EyeRef = incomingEyeRef;
-                break;
+        if (incomingEyeRef.Type == ClientObjectReference.RefType.Entity && !incomingEyeRef.Entity.IsValid()) {
+            EyeRef = new(msg.MobNetEntity);
+        } else {
+            EyeRef = incomingEyeRef;
         }
     }
 }

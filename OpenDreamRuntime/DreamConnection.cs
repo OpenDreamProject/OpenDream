@@ -571,6 +571,9 @@ public sealed class DreamConnection {
             default:
                 eyeRef = new(_entityManager.GetNetEntity(mobUid));
                 break;
+            case null:
+                eyeRef = new();
+                break;
             case ClientObjectReference.RefType.Entity when Eye.HasValue:
                 eyeRef = new(_entityManager.GetNetEntity(new(Eye.Value.Entity.Id)));
                 break;

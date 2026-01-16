@@ -12,6 +12,7 @@ public sealed class MsgNotifyMobEyeUpdate : NetMessage {
     public override MsgGroups MsgGroup => MsgGroups.EntityEvent;
 
     public NetEntity MobNetEntity;
+    // Type = Client -> null
     public ClientObjectReference EyeRef;
 
     public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {
@@ -29,6 +30,7 @@ public sealed class MsgNotifyMobEyeUpdate : NetMessage {
                 EyeRef = new(new(x, y), z);
                 break;
             default:
+                // null eye
                 EyeRef = new();
                 break;
         }

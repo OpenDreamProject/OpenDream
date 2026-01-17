@@ -155,10 +155,8 @@ internal sealed partial class DreamViewOverlay : Overlay {
 
     private void DrawAll(OverlayDrawArgs args, EntityUid mob, ClientObjectReference eyeRef, Vector2i viewportSize) {
         MapCoordinates eyeCoords;
-        DreamMobSightComponent? eyeSight;
+        DreamMobSightComponent? eyeSight, mobSight;
         Box2 worldAABB = args.WorldAABB;
-        DreamMobSightComponent? mobSight;
-        SightFlags sight;
         sbyte seeVis;
 
         EntitiesInView.Clear();
@@ -189,7 +187,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
 
         _mobSightQuery.TryGetComponent(mob, out mobSight);
         seeVis = mobSight?.SeeInvisibility ?? 127;
-        sight = eyeSight?.Sight ?? 0;
+        var sight = eyeSight?.Sight ?? 0;
 
         var worldHandle = args.WorldHandle;
 

@@ -167,7 +167,6 @@ internal sealed partial class DreamViewOverlay : Overlay {
             default:
                 _mobSightQuery.TryGetComponent(mob, out mobSight);
                 seeVis = mobSight?.SeeInvisibility ?? 127;
-                sight = mobSight?.Sight ?? 0;
                 DrawNullEyeSprites(args, viewportSize, seeVis);
                 return;
             case ClientObjectReference.RefType.Turf:

@@ -168,7 +168,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
                 _mobSightQuery.TryGetComponent(mob, out mobSight);
                 seeVis = mobSight?.SeeInvisibility ?? 127;
                 sight = mobSight?.Sight ?? 0;
-                DrawNullEyeSprites(args, viewportSize, seeVis, sight);
+                DrawNullEyeSprites(args, viewportSize, seeVis);
                 return;
             case ClientObjectReference.RefType.Turf:
                 eyeCoords = new(new(eyeRef.TurfX, eyeRef.TurfY), new(eyeRef.TurfZ));
@@ -207,7 +207,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
 
         CollectVisibleSprites(tiles, gridUid, grid, eyeTile, seeVis, sight, worldAABB);
         ClearPlanes();
-        ProcessSprites(worldHandle, viewportSize, worldAABB);
+        ProcessSprites(worldHandle, viewportSize);
 
         //Final draw
         DrawPlanes(worldHandle, worldAABB);
@@ -219,14 +219,15 @@ internal sealed partial class DreamViewOverlay : Overlay {
     }
 
     // Only draw sprites in screen space and also on non-negative planes
-    private void DrawNullEyeSprites(OverlayDrawArgs args, Vector2i viewportSize, sbyte seeVis, SightFlags sight) {
+    private void DrawNullEyeSprites(OverlayDrawArgs args, Vector2i viewportSize, sbyte seeVis) {
         RefreshRenderTargets(args.WorldHandle, viewportSize);
 
         if (ScreenOverlayEnabled) {
             CollectScreenSpaceSprites(seeVis, args.WorldAABB);
         }
+
         ClearPlanes();
-        ProcessSprites(args.WorldHandle, viewportSize, args.WorldAABB, true);
+        ProcessSprites(args.WorldHandle, viewportSize, true);
 
         //Final draw
         DrawPlanes(args.WorldHandle, args.WorldAABB);
@@ -583,7 +584,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
         return plane;
     }
 
-    private void ProcessSprites(DrawingHandleWorld handle, Vector2i viewportSize, Box2 worldAABB, bool skipNegativePlanes = false) {
+    private void ProcessSprites(DrawingHandleWorld handle, Vector2i viewportSize, bool skipNegativePlanes = false) {
         using var _ = _prof.Group("process sprites / draw render targets");
 
         //all sprites with render targets get handled first - these are ordered by sprites.Sort(), so we can just iterate normally
@@ -738,7 +739,6 @@ internal sealed partial class DreamViewOverlay : Overlay {
 
     private void CollectScreenSpaceSprites(sbyte seeVis, Box2 worldAABB) {
         using var _ = _prof.Group("screen objects");
-        int tValue;
         foreach (EntityUid uid in _screenOverlaySystem.ScreenObjects) {
             if (!_entityManager.TryGetComponent(uid, out DMISpriteComponent? sprite) || sprite.ScreenLocation == null)
                 continue;
@@ -752,7 +752,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
             Vector2 iconSize = sprite.Icon.DMI == null ? Vector2.Zero : sprite.Icon.DMI.IconSize / (float)IconSize;
             for (int x = 0; x < sprite.ScreenLocation.RepeatX; x++) {
                 for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {
-                    tValue = 0;
+                    int tValue = 0;
                     ProcessIconComponents(sprite.Icon, position + iconSize * new Vector2(x, y), uid, true, ref tValue, _spriteContainer, seeVis);
                 }
             }

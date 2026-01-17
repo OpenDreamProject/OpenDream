@@ -6,7 +6,6 @@ using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
 using Robust.Server.GameStates;
-using Robust.Shared.Serialization.Manager;
 using Dependency = Robust.Shared.IoC.DependencyAttribute;
 
 namespace OpenDreamRuntime.Objects.Types;
@@ -219,9 +218,9 @@ public class DreamList : DreamObject, IDreamList {
     }
 
     public virtual int FindValue(DreamValue value, int start = 1, int end = 0) {
-        if (end == 0 || end > _values.Count) end = _values.Count;
+        if (end == 0 || end > _values.Count) end = _values.Count + 1;
 
-        for (int i = start; i <= end; i++) {
+        for (int i = start; i < end; i++) {
             if (_values[i - 1].Equals(value)) return i;
         }
 
@@ -229,6 +228,11 @@ public class DreamList : DreamObject, IDreamList {
     }
 
     public virtual void Cut(int start = 1, int end = 0) {
+        start = start switch {
+            < 0 => throw new ArgumentOutOfRangeException(nameof(start), start, "Parameter start is less than zero."),
+            0 => 1,
+            _ => start
+        };
         if (end == 0 || end > (_values.Count + 1)) end = _values.Count + 1;
 
         if (_associativeValues != null) {
@@ -264,6 +268,7 @@ public class DreamList : DreamObject, IDreamList {
         } else {
             if (size < 0) {
                 DreamManager.OptionalException<InvalidOperationException>(DMCompiler.Compiler.WarningCode.ListNegativeSizeException, "Setting a list size to a negative value is invalid");
+                size = 0;
             }
 
             Cut(size + 1);
@@ -828,7 +833,7 @@ public sealed class DreamOverlaysList : DreamList {
         var immutableOverlay = _appearanceSystem.AddAppearance(overlayAppearance ?? MutableAppearance.Default);
         overlayAppearance?.Dispose();
 
-        //after UpdateApparance is done, the atom is set with a new immutable appearance containing a hard ref to the overlay
+        //after UpdateAppearance is done, the atom is set with a new immutable appearance containing a hard ref to the overlay
         //only /mutable_appearance handles it differently, and that's done in DreamObjectImage
         _atomManager.UpdateAppearance(_owner, appearance => {
             GetOverlaysList(appearance).Add(immutableOverlay);
@@ -980,19 +985,9 @@ public sealed class DreamVisContentsList : DreamList {
 
 // atom.filters list
 // Operates on an object's appearance
-public sealed class DreamFilterList : DreamList {
-    [Dependency] private readonly AtomManager _atomManager = default!;
-    [Dependency] private readonly ISerializationManager _serializationManager = default!;
-
-    private readonly DreamObject _owner;
-
-    public DreamFilterList(DreamObjectDefinition listDef, DreamObject owner) : base(listDef, 0) {
-        IoCManager.InjectDependencies(this);
-        _owner = owner;
-    }
-
+public sealed class DreamFilterList(DreamObjectDefinition listDef, DreamObject owner) : DreamList(listDef, 0) {
     public override void Cut(int start = 1, int end = 0) {
-        _atomManager.UpdateAppearance(_owner, appearance => {
+        AtomManager.UpdateAppearance(owner, appearance => {
             int filterCount = appearance.Filters.Count + 1;
             if (end == 0 || end > filterCount) end = filterCount;
 
@@ -1002,18 +997,26 @@ public sealed class DreamFilterList : DreamList {
 
     public int GetIndexOfFilter(DreamFilter filter) {
         ImmutableAppearance appearance = GetAppearance();
-        int i = 0;
-        while(i < appearance.Filters.Length) {
-            if(appearance.Filters[i] == filter)
+        for (int i = 0; i < appearance.Filters.Length; i++) {
+            if (appearance.Filters[i] == filter)
                 return i;
-            i++;
+        }
+
+        return -1;
+    }
+
+    public int GetIndexOfFilter(string filterName) {
+        ImmutableAppearance appearance = GetAppearance();
+        for (int i = 0; i < appearance.Filters.Length; i++) {
+            if (appearance.Filters[i].FilterName == filterName)
+                return i;
         }
 
         return -1;
     }
 
     public void SetFilter(int index, DreamFilter? filter) {
-        _atomManager.UpdateAppearance(_owner, appearance => {
+        AtomManager.UpdateAppearance(owner, appearance => {
             if (index < 1 || index > appearance.Filters.Count)
                 throw new Exception($"Cannot index {index} on filter list");
 
@@ -1031,8 +1034,16 @@ public sealed class DreamFilterList : DreamList {
     }
 
     public override DreamValue GetValue(DreamValue key) {
-        if (!key.TryGetValueAsInteger(out var filterIndex) || filterIndex < 1)
+        int filterIndex;
+        if (key.TryGetValueAsString(out var filterName)) {
+            filterIndex = GetIndexOfFilter(filterName) + 1; // We're 1-indexed while GetIndexOfFilter() is not
+        } else {
+            key.TryGetValueAsInteger(out filterIndex);
+        }
+
+        if (filterIndex < 1) { // The key failed to resolve to a valid index
             throw new Exception($"Invalid index into filter list: {key}");
+        }
 
         ImmutableAppearance appearance = GetAppearance();
         if (filterIndex > appearance.Filters.Length)
@@ -1077,23 +1088,28 @@ public sealed class DreamFilterList : DreamList {
         //This is dynamic to prevent the compiler from optimising the SerializationManager.CreateCopy() call to the DreamFilter type
         //so we can preserve the subclass information. Setting it to DreamFilter instead will cause filter parameters to stop working.
         dynamic filter = filterObject.Filter;
-        DreamFilter copy = _serializationManager.CreateCopy(filter, notNullableOverride: true); // Adding a filter creates a copy
+        DreamFilter copy = SerializationManager.CreateCopy(filter, notNullableOverride: true); // Adding a filter creates a copy
 
         DreamObjectFilter.FilterAttachedTo[copy] = this;
-        _atomManager.UpdateAppearance(_owner, appearance => {
+        AtomManager.UpdateAppearance(owner, appearance => {
             appearance.Filters.Add(copy);
         });
     }
 
     public override void RemoveValue(DreamValue value) {
-        if (!value.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject))
+        int filterIndex = -1;
+        if (value.TryGetValueAsString(out var filterName)) { // You can also do atom.filters -= "name"
+            filterIndex = GetIndexOfFilter(filterName);
+        } else if (value.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject)) {
+            filterIndex = GetIndexOfFilter(filterObject.Filter);
+        }
+
+        if (filterIndex < 0) // Failed to find the filter in the list
             return;
 
-        var filter = filterObject.Filter;
-
-        DreamObjectFilter.FilterAttachedTo.Remove(filter);
-        _atomManager.UpdateAppearance(_owner, appearance => {
-            appearance.Filters.Remove(filter);
+        AtomManager.UpdateAppearance(owner, appearance => {
+            DreamObjectFilter.FilterAttachedTo.Remove(appearance.Filters[filterIndex]);
+            appearance.Filters.RemoveAt(filterIndex);
         });
     }
 
@@ -1106,7 +1122,7 @@ public sealed class DreamFilterList : DreamList {
     }
 
     private ImmutableAppearance GetAppearance() {
-        ImmutableAppearance? appearance = _atomManager.MustGetAppearance(_owner);
+        ImmutableAppearance? appearance = AtomManager.MustGetAppearance(owner);
         if (appearance == null)
             throw new Exception("Atom has no appearance");
 
@@ -1557,14 +1573,18 @@ internal sealed class ProcArgsList(DreamObjectDefinition listDef, DMProcState st
     }
 }
 
-// Savefile Dir List - always sync'd with Savefiles currentDir. Only stores keys.
-internal sealed class SavefileDirList(DreamObjectDefinition listDef, DreamObjectSavefile backedSaveFile) : DreamList(listDef, 0) {
+// Savefile Dir List - always synced with Savefiles currentDir. Only stores keys.
+public sealed class SavefileDirList(DreamObjectDefinition listDef, DreamObjectSavefile backedSaveFile) : DreamList(listDef, 0) {
     public override DreamValue GetValue(DreamValue key) {
         if (!key.TryGetValueAsInteger(out var index))
             throw new Exception($"Invalid index on savefile dir list: {key}");
         if (index < 1 || index > backedSaveFile.CurrentDir.Count)
             throw new Exception($"Out of bounds index on savefile dir list: {index}");
         return new DreamValue(backedSaveFile.CurrentDir.Keys.ElementAt(index - 1));
+    }
+
+    public override bool ContainsValue(DreamValue value) {
+        return value.TryGetValueAsString(out var str) && backedSaveFile.CurrentDir.ContainsKey(str);
     }
 
     public override List<DreamValue> GetValues() {

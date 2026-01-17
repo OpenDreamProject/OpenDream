@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Compiler.DM.AST;
 
 namespace DMCompiler.DM.Builders;
@@ -122,7 +123,8 @@ public class DMASTFolder {
         }
     }
 
-    private DMASTExpression FoldExpression(DMASTExpression? expression) {
+    [return: NotNullIfNotNull(nameof(expression))]
+    private DMASTExpression? FoldExpression(DMASTExpression? expression) {
         if (expression is DMASTUnary unary) {
             unary.Value = FoldExpression(unary.Value);
         } else if (expression is DMASTBinary binary) {
@@ -155,6 +157,14 @@ public class DMASTFolder {
             case DMASTNewPath newPath:
                 if (newPath.Parameters != null) {
                     foreach (DMASTCallParameter parameter in newPath.Parameters) {
+                        parameter.Value = FoldExpression(parameter.Value);
+                    }
+                }
+
+                break;
+            case DMASTNewModifiedType newModifiedType:
+                if (newModifiedType.Parameters != null) {
+                    foreach (DMASTCallParameter parameter in newModifiedType.Parameters) {
                         parameter.Value = FoldExpression(parameter.Value);
                     }
                 }

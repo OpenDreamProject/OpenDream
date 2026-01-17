@@ -18,6 +18,10 @@ internal abstract class DMExpression(Location location) {
 
     // Attempt to create a json-serializable version of this expression
     public virtual bool TryAsJsonRepresentation(DMCompiler compiler, out object? json) {
+        // If this can be const-folded, then we can represent this as JSON
+        if (TryAsConstant(compiler, out var constant))
+            return constant.TryAsJsonRepresentation(compiler, out json);
+
         json = null;
         return false;
     }
@@ -42,6 +46,11 @@ internal abstract class DMExpression(Location location) {
     public virtual DMReference EmitReference(ExpressionContext ctx, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
         ctx.Compiler.Emit(WarningCode.BadExpression, Location, "attempt to reference r-value");
         return DMReference.Invalid;
+    }
+
+    public virtual void EmitPushIsSaved(ExpressionContext ctx) {
+        ctx.Compiler.Emit(WarningCode.BadArgument, Location, $"can't get issaved() value of {this}");
+        ctx.Proc.PushNullAndError();
     }
 
     /// <summary>

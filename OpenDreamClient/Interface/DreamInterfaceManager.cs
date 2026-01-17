@@ -3,8 +3,8 @@ using System.Text;
 using System.Globalization;
 using OpenDreamShared.Network.Messages;
 using OpenDreamClient.Interface.Controls;
-using OpenDreamClient.Interface.Descriptors;
-using OpenDreamClient.Interface.DMF;
+using OpenDreamShared.Interface.Descriptors;
+using OpenDreamShared.Interface.DMF;
 using OpenDreamClient.Interface.Prompts;
 using OpenDreamClient.Resources;
 using OpenDreamClient.Resources.ResourceTypes;
@@ -58,6 +58,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     public Dictionary<string, InterfaceMenu> Menus { get; } = new();
     public Dictionary<string, InterfaceMacroSet> MacroSets { get; } = new();
     private Dictionary<WindowId, ControlWindow> ClydeWindowIdToControl { get; } = new();
+    public CursorHolder Cursors { get; private set; } = default!;
 
     public ViewRange View {
         get => _view;
@@ -109,6 +110,8 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             Function = OpenDreamKeyFunctions.MouseMiddle,
             BaseKey = Keyboard.Key.MouseMiddle
         });
+
+        Cursors = new(_clyde);
 
         _netManager.RegisterNetMessage<MsgUpdateStatPanels>(RxUpdateStatPanels);
         _netManager.RegisterNetMessage<MsgSelectStatPanel>(RxSelectStatPanel);
@@ -326,6 +329,14 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         IconSize = msg.IconSize;
         View = msg.View;
         ShowPopupMenus = msg.ShowPopupMenus;
+        if (msg.CursorResource != 0)
+            _dreamResource.LoadResourceAsync<DMIResource>(msg.CursorResource, resource => {
+                //TODO should trigger a cursor update immediately
+                Cursors = new(_clyde, resource);
+            });
+        else {
+            Cursors = new(_clyde); //reset to default
+        }
     }
 
     private void ShowPrompt(PromptWindow prompt) {
@@ -441,7 +452,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     public void RunCommand(string fullCommand, bool repeating = false) {
         switch (fullCommand) {
             case not null when fullCommand.StartsWith(".quit"):
-                IoCManager.Resolve<IClientNetManager>().ClientDisconnect(".quit used");
+                _gameController.Shutdown(".quit used");
                 break;
 
             case not null when fullCommand.StartsWith(".screenshot"):
@@ -972,17 +983,17 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     }
 
     private void OnWindowFocused(WindowFocusedEventArgs args) {
-        if(ClydeWindowIdToControl.TryGetValue(args.Window.Id, out var controlWindow)){
-            _sawmill.Debug($"window id {controlWindow.Id} was {(args.Focused ? "focused" : "defocused")}");
-            WindowDescriptor descriptor = (WindowDescriptor) controlWindow.ElementDescriptor;
+        if (ClydeWindowIdToControl.TryGetValue(args.Window.Id, out var controlWindow)) {
+            _sawmill.Verbose($"window id {controlWindow.Id} was {(args.Focused ? "focused" : "defocused")}");
+            WindowDescriptor descriptor = (WindowDescriptor)controlWindow.ElementDescriptor;
             descriptor.Focus = new DMFPropertyBool(args.Focused);
-            if(args.Focused && MacroSets.TryGetValue(descriptor.Macro.AsRaw(), out var windowMacroSet)){
-                _sawmill.Debug($"Activating macroset {descriptor.Macro}");
+            if (args.Focused && MacroSets.TryGetValue(descriptor.Macro.AsRaw(), out var windowMacroSet)) {
+                _sawmill.Verbose($"Activating macroset {descriptor.Macro}");
                 windowMacroSet.SetActive();
             }
+        } else {
+            _sawmill.Verbose($"window id was not found (probably a modal) but was {(args.Focused ? "focused" : "defocused")}");
         }
-        else
-            _sawmill.Debug($"window id was not found (probably a modal) but was {(args.Focused ? "focused" : "defocused")}");
     }
 
     private void LoadDescriptor(ElementDescriptor descriptor) {
@@ -1024,6 +1035,40 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     }
 }
 
+public sealed class CursorHolder(IClyde clyde) {
+    public readonly ICursor? BaseCursor;
+    public readonly ICursor? DragCursor = clyde.GetStandardCursor(StandardCursorShape.Crosshair);
+    public readonly ICursor? OverCursor;
+    public readonly ICursor? DropCursor = clyde.GetStandardCursor(StandardCursorShape.Hand);
+    public readonly bool AllStateSet;
+
+    public CursorHolder(IClyde clyde, DMIResource resource) : this(clyde) {
+        var allState = resource.GetStateAsImage("all", AtomDirection.South);
+
+        if (allState is not null) { //all overrides all possible states
+            BaseCursor = clyde.CreateCursor(allState, new(32, 32));
+            DragCursor = BaseCursor;
+            DropCursor = BaseCursor;
+            OverCursor = BaseCursor;
+            AllStateSet = true;
+        } else {
+            var baseState = resource.GetStateAsImage("", AtomDirection.South);
+            var overState = resource.GetStateAsImage("over", AtomDirection.South);
+            var dragState = resource.GetStateAsImage("drag", AtomDirection.South);
+            var dropState = resource.GetStateAsImage("drop", AtomDirection.South);
+
+            if (baseState is not null)
+                BaseCursor = clyde.CreateCursor(baseState, new(32, 32));
+            if (overState is not null)
+                OverCursor = clyde.CreateCursor(overState, new(32, 32));
+            if (dragState is not null)
+                DragCursor = clyde.CreateCursor(dragState, new(32, 32));
+            if (dropState is not null)
+                DropCursor = clyde.CreateCursor(dropState, new(32, 32));
+        }
+    }
+}
+
 public interface IDreamInterfaceManager {
     Dictionary<string, ControlWindow> Windows { get; }
     Dictionary<string, InterfaceMenu> Menus { get; }
@@ -1035,6 +1080,7 @@ public interface IDreamInterfaceManager {
     public ViewRange View { get; }
     public bool ShowPopupMenus { get; }
     public int IconSize { get; }
+    public CursorHolder Cursors { get; }
 
     void Initialize();
     void FrameUpdate(FrameEventArgs frameEventArgs);

@@ -5,7 +5,6 @@
 	var/_binobj as opendream_unimplemented
 
 /generator/proc/Rand()
-	set opendream_unimplemented = TRUE
 
 /*
 Generator Theory

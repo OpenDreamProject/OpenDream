@@ -532,8 +532,13 @@ internal sealed class DMProc {
         return null;
     }
 
-    public DMReference GetLocalVariableReference(string name) {
+    public DMReference GetLocalVariableReference(string name, Location loc) {
         LocalVariable? local = GetLocalVariable(name);
+
+        if (local is null) {
+            _compiler.Emit(WarningCode.InvalidReference, loc, $"Attempted to reference invalid local var \"{name}\"");
+            return DMReference.Invalid;
+        }
 
         return local.IsParameter ? DMReference.CreateArgument(local.Id) : DMReference.CreateLocal(local.Id);
     }
@@ -1250,6 +1255,13 @@ internal sealed class DMProc {
     public void Rgb(DMCallArgumentsType argumentsType, int argumentStackSize) {
         ResizeStack(-(argumentStackSize - 1)); // Pops arguments, pushes rgb result
         WriteOpcode(DreamProcOpcode.Rgb);
+        WriteArgumentType(argumentsType);
+        WriteStackDelta(argumentStackSize);
+    }
+
+    public void Animate(DMCallArgumentsType argumentsType, int argumentStackSize) {
+        ResizeStack(-(argumentStackSize - 1)); // Pops arguments, pushes animate result
+        WriteOpcode(DreamProcOpcode.Animate);
         WriteArgumentType(argumentsType);
         WriteStackDelta(argumentStackSize);
     }

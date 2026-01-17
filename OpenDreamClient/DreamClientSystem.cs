@@ -49,6 +49,10 @@ internal sealed class DreamClientSystem : EntitySystem {
         }
     }
 
+    public bool IsEyeMissing() {
+        return EyeRef.Type == ClientObjectReference.RefType.Client;
+    }
+
     public override void Initialize() {
         SubscribeLocalEvent<LocalPlayerAttachedEvent>(OnPlayerAttached);
     }

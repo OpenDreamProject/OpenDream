@@ -37,7 +37,9 @@ public sealed class DreamClientEye: IEye {
                     return new(new(_eyeRef.TurfX, _eyeRef.TurfY), new(_eyeRef.TurfZ));
             }
 
-            return MapCoordinates.Nullspace;
+            // Nullspace position stops all rendering but we still want to render certain screen space objects...
+            //return MapCoordinates.Nullspace;
+            return new(0, 0, new(1));
         }
     }
 

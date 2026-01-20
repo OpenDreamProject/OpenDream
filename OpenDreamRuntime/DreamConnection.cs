@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using System.Web;
+using DMCompiler.Bytecode;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.Native;
@@ -282,7 +283,11 @@ public sealed class DreamConnection {
             return;
         }
 
-        OutputControl(value.Stringify(), null);
+        // Prune any remaining formatting
+        var message = value.Stringify();
+        message = StringFormatEncoder.RemoveFormatting(message);
+
+        OutputControl(message, null);
     }
 
     public void OutputControl(string message, string? control) {

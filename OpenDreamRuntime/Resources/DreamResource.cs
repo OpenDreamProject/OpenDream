@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using DMCompiler.Bytecode;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -77,6 +78,9 @@ public class DreamResource(int id, string? filePath, string? resourcePath) {
         } else if (!value.TryGetValueAsString(out text)) {
             throw new Exception($"Invalid output operation '{ResourcePath}' << {value}");
         }
+
+        // Prune any remaining formatting
+        text = StringFormatEncoder.RemoveFormatting(text);
 
         CreateDirectory();
         File.AppendAllText(ResourcePath, text + "\r\n");

@@ -103,7 +103,7 @@ internal sealed partial class ContextMenuPopup : Popup {
 
     // Determines if the given point falls inside the transformed bounding box of the given sprite's icon and its entity transform
     private bool IconTransformedBoundingBoxContainsPoint(TransformComponent transform, DMISpriteComponent sprite, MapCoordinates mapCoords) {
-        var worldPos = _transformSystem.GetWorldPosition(transform!);
+        var worldPos = _transformSystem.GetWorldPosition(transform);
 
         // Find center of icon in case it's not the same size as a tile
         if (!sprite.Icon.TryGetSizeInTiles(out var size))

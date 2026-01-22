@@ -7,7 +7,6 @@ using Robust.Client.Graphics;
 using Robust.Shared.Timing;
 using System.Linq;
 using OpenDreamClient.Interface;
-using System.Diagnostics.Contracts;
 
 namespace OpenDreamClient.Rendering;
 

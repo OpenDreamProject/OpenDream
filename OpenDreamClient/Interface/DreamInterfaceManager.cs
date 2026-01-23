@@ -23,6 +23,7 @@ using Robust.Shared.Utility;
 using SixLabors.ImageSharp;
 using System.Linq;
 using Robust.Shared.Map;
+using Robust.Shared.Input;
 
 namespace OpenDreamClient.Interface;
 
@@ -103,13 +104,30 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         LoadInterface(interfaceDescriptor);
     }
 
-    public void Initialize() {
+    private void SetupBaseDreamBinds() {
         // Set up the middle-mouse button keybind
         _inputManager.Contexts.GetContext("common").AddFunction(OpenDreamKeyFunctions.MouseMiddle);
         _inputManager.RegisterBinding(new KeyBindingRegistration() {
             Function = OpenDreamKeyFunctions.MouseMiddle,
             BaseKey = Keyboard.Key.MouseMiddle
         });
+
+        // Ensure macros can't prevent backspace from deleting text on repeat
+        // Remove the default backspace binding
+        _inputManager.RemoveBinding(_inputManager.GetKeyBinding(EngineKeyFunctions.TextBackspace));
+
+        // IKeyBinding is read-only....so we can't just set priority=1 on it. Just make a new one I guess.
+        // Shiny new binding with Priority = 1 ensures it hooks before a macro binding can interfere
+        _inputManager.RegisterBinding(new KeyBindingRegistration() {
+            Function = EngineKeyFunctions.TextBackspace,
+            BaseKey = Keyboard.Key.BackSpace,
+            CanRepeat = true,
+            Priority = 1,
+        });
+    }
+
+    public void Initialize() {
+        SetupBaseDreamBinds();
 
         Cursors = new(_clyde);
 
@@ -936,6 +954,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         MacroSets.Clear();
 
         _inputManager.ResetAllBindings();
+        SetupBaseDreamBinds();
     }
 
     private void LoadInterface(InterfaceDescriptor descriptor) {

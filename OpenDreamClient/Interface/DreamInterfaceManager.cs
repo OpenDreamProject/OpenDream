@@ -111,19 +111,6 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             Function = OpenDreamKeyFunctions.MouseMiddle,
             BaseKey = Keyboard.Key.MouseMiddle
         });
-
-        // Ensure macros can't prevent backspace from deleting text on repeat
-        // Remove the default backspace binding
-        _inputManager.RemoveBinding(_inputManager.GetKeyBinding(EngineKeyFunctions.TextBackspace));
-
-        // IKeyBinding is read-only....so we can't just set priority=1 on it. Just make a new one I guess.
-        // Shiny new binding with Priority = 1 ensures it hooks before a macro binding can interfere
-        _inputManager.RegisterBinding(new KeyBindingRegistration() {
-            Function = EngineKeyFunctions.TextBackspace,
-            BaseKey = Keyboard.Key.BackSpace,
-            CanRepeat = true,
-            Priority = 1,
-        });
     }
 
     public void Initialize() {

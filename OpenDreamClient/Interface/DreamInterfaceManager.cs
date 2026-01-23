@@ -23,7 +23,6 @@ using Robust.Shared.Utility;
 using SixLabors.ImageSharp;
 using System.Linq;
 using Robust.Shared.Map;
-using Robust.Shared.Input;
 
 namespace OpenDreamClient.Interface;
 

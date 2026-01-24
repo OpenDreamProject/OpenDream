@@ -658,14 +658,6 @@ public sealed class ClientVerbsList : DreamList {
             yield return new(verb);
     }
 
-    public override bool ContainsKey(DreamValue value) {
-        if (!value.TryGetValueAsInteger(out var index)) {
-            return false;
-        }
-
-        return 1 <= index && index <= Verbs.Count;
-    }
-
     public override bool ContainsValue(DreamValue value) {
         if (!value.TryGetValueAsProc(out var verb))
             return false;
@@ -747,14 +739,6 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
 
             yield return new(verb);
         }
-    }
-
-    public override bool ContainsKey(DreamValue value) {
-        if (!value.TryGetValueAsInteger(out var index)) {
-            return false;
-        }
-
-        return 1 <= index && index <= GetVerbs().Length;
     }
 
     public override bool ContainsValue(DreamValue value) {

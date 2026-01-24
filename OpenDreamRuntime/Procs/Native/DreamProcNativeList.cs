@@ -151,11 +151,12 @@ namespace OpenDreamRuntime.Procs.Native {
             var itemRemoved = 0;
             foreach (var argument in args) {
                 if (argument.TryGetValueAsDreamList(out var argumentList)) {
-                    // In case this is a "listx.Remove(listx)" situation, copy the contents here to avoid modification while enumerating
-                    // TODO: check for that case first to avoid unnecessary copy?
-                    var subtraction = argumentList.EnumerateValues().ToList();
+                    if (argumentList ==  list) {
+                        list.Cut();
+                        continue;
+                    }
 
-                    foreach (DreamValue value in subtraction) {
+                    foreach (DreamValue value in argumentList.EnumerateValues()) {
                         if (list.ContainsValue(value)) {
                             list.RemoveValue(value);
 

@@ -30,8 +30,6 @@ public sealed class ClientVerbSystem : VerbSystem {
         _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
         _sightQuery = _entityManager.GetEntityQuery<DreamMobSightComponent>();
 
-        _playerManager.LocalPlayerAttached += OnLocalPlayerAttached;
-
         SubscribeNetworkEvent<AllVerbsEvent>(OnAllVerbsEvent);
         SubscribeNetworkEvent<RegisterVerbEvent>(OnRegisterVerbEvent);
         SubscribeNetworkEvent<UpdateClientVerbsEvent>(OnUpdateClientVerbsEvent);
@@ -244,12 +242,5 @@ public sealed class ClientVerbSystem : VerbSystem {
 
     public void RefreshVerbs() {
         _interfaceManager.DefaultInfo?.RefreshVerbs(this);
-    }
-
-    private void OnLocalPlayerAttached(EntityUid obj) {
-        // Our mob changed, update our verb panels
-        // A little hacky, but also wait half a second for verb information about our mob to arrive
-        // TODO: Remove this timer
-        _timerManager.AddTimer(new Timer(500, false, () => _interfaceManager.DefaultInfo?.RefreshVerbs(this)));
     }
 }

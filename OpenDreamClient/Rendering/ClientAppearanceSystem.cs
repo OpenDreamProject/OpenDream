@@ -11,9 +11,6 @@ using OpenDreamShared.Resources;
 using Robust.Client.Player;
 using Robust.Shared.Map;
 using Robust.Shared.Timing;
-using Robust.Shared.Asynchronous;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace OpenDreamClient.Rendering;
 
@@ -59,7 +56,8 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     private readonly Dictionary<(int X, int Y, int Z), Flick> _turfFlicks = new();
     private readonly Dictionary<EntityUid, Flick> _movableFlicks = new();
     private bool _receivedAllAppearancesMsg;
-    private readonly float _timeToRefreshVerbs = 3f;
+    private static readonly float _refreshVerbPeriod = 1f;
+    private float _refreshVerbRemainingTime = 0.5f;
 
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IDreamResourceManager _dreamResourceManager = default!;
@@ -73,7 +71,6 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     [Dependency] private readonly MapSystem _mapSystem = default!;
     [Dependency] private readonly IPrototypeManager _protoManager = default!;
     [Dependency] private readonly ClientVerbSystem _verbSystem = default!;
-    [Dependency] private readonly ITaskManager _taskManager = default!;
 
     public override void Initialize() {
         UpdatesOutsidePrediction = true;
@@ -83,8 +80,6 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         SubscribeNetworkEvent<AnimationEvent>(OnAnimation);
         SubscribeNetworkEvent<FlickEvent>(OnFlick);
         SubscribeLocalEvent<DMISpriteComponent, WorldAABBEvent>(OnWorldAABB);
-
-        _ = StartVerbRefresher(new());
     }
 
     public override void Shutdown() {
@@ -106,6 +101,12 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         foreach (var (flickKey, flick) in _movableFlicks) {
             if (flick.GetAnimationFrame(_gameTiming) == -1)
                 _movableFlicks.Remove(flickKey);
+        }
+
+        _refreshVerbRemainingTime -= frameTime;
+        if (_refreshVerbRemainingTime < 0) {
+            _refreshVerbRemainingTime = _refreshVerbPeriod;
+            _verbSystem.RefreshVerbs();
         }
     }
 
@@ -370,15 +371,5 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
 
     public Flick? GetMovableFlick(EntityUid entity) {
         return _movableFlicks.GetValueOrDefault(entity);
-    }
-
-    private async Task StartVerbRefresher(CancellationTokenSource cancelSource) {
-        while (true) {
-            await Task.Delay(TimeSpan.FromSeconds(_timeToRefreshVerbs));
-            if (cancelSource.IsCancellationRequested)
-                break;
-
-            _taskManager.RunOnMainThread(_verbSystem.RefreshVerbs);
-        }
     }
 }

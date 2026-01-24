@@ -39,7 +39,6 @@
 "M" = (/mob,/turf,/area)
 "N" = (/obj/plaque/animation_turf_test,/turf,/area)
 "O" = (/obj/plaque/animation_test,/turf,/area)
-"P" = (/obj/coolthing,/turf,/area)
 "Q" = (/obj/bin,/turf,/area)
 "R" = (/turf/blue,/area/withicon)
 "S" = (/obj/button/animation_turf_test,/turf,/area)
@@ -67,7 +66,7 @@ baaaaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab
 bXaaaaaaaaaaaaaaaaaaab
-RaPaaaMaaaaaaaaaaaaaab
+RaaaaaMaaaaaaaaaaaaaab
 bCJKLaaaaaaaaaaaaaaaab
 bbbbbbbbbbbbbbbbbbbbbb
 "}

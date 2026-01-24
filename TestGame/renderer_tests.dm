@@ -15,18 +15,17 @@
 	var/data = "Empty plaque"
 	icon = 'icons/objects.dmi'
 	icon_state = "plaque"
-	layer = OBJ_LAYER
+	layer = OBJ_LAYER	
 
 	Click()
 		usr << browse(data, "window=plaquepopup")
-
+	
 
 /obj/button
 	name = "Button"
 	desc = "Push me!"
 	icon = 'icons/objects.dmi'
 	icon_state = "button"
-	mouse_opacity = 2
 	var/pushed = 0
 
 	Click()
@@ -41,14 +40,14 @@
 
 	proc/push()
 		usr << "You pushed the button"
-
+		
 
 //--------------------------------------------------------------------------
 // Test objects begin here
 //---------------------------------------------------------------------------
 
 // Simple plane
-/obj/plaque/simple_plane_test
+/obj/plaque/simple_plane_test 
 	data = "<h3>Simple Plane Test</h3><p>Move under the table to hide under it's higher plane value</p>"
 /obj/table
 	name = "table"
@@ -61,7 +60,7 @@
 
 
 // Simple overlay
-/obj/plaque/simple_overlay_test
+/obj/plaque/simple_overlay_test 
 	data = "<h3>Simple Overlay Test</h3><p>Pick up the gun to apply it as an overlay to your mob</p>"
 /obj/gun
 	name = "gun"
@@ -74,10 +73,10 @@
 	Crossed(var/atom/movable/AM)
 		src.loc = AM
 		AM << "You picked up [src]"
-		AM.overlays += image(src.icon, AM.loc, src.icon_state)
+		AM.overlays += image(src.icon, AM.loc, src.icon_state)	
 
 //simple underlay
-/obj/plaque/simple_underlay_test
+/obj/plaque/simple_underlay_test 
 	data = "<h3>Simple Underlay Test</h3><p>Pick up the bandoleer to apply it as an underlay to your mob</p>"
 /obj/bandoleer
 	name = "bandoleer"
@@ -90,10 +89,10 @@
 	Crossed(var/atom/movable/AM)
 		src.loc = AM
 		AM << "You picked up [src]"
-		AM.underlays += image(src.icon, AM.loc, src.icon_state)
+		AM.underlays += image(src.icon, AM.loc, src.icon_state)	
 
 // Blend modes
-/obj/plaque/blend_mode_test
+/obj/plaque/blend_mode_test 
 	data = "<h3>Blend Mode Test</h3><p>Click the button to switch your mob's blend mode</p>"
 
 /obj/button/blend_mode_test
@@ -110,7 +109,7 @@
 				usr << "BLEND_ADD"
 			if(BLEND_ADD)
 				usr.blend_mode = BLEND_SUBTRACT
-				usr << "BLEND_SUBTRACT"
+				usr << "BLEND_SUBTRACT"	
 			if(BLEND_SUBTRACT)
 				usr.blend_mode = BLEND_MULTIPLY
 				usr << "BLEND_MULTIPLY"
@@ -122,7 +121,7 @@
 				usr << "BLEND_DEFAULT"
 
 // transforms
-/obj/plaque/transform_rotate_test
+/obj/plaque/transform_rotate_test 
 	data = "<h3>Transform Rotate Test</h3><p>Click the button to R O T A T E</p>"
 
 /obj/button/transform_rotate_test
@@ -132,7 +131,7 @@
 	push()
 		usr.transform = turn(usr.transform, 45)
 
-/obj/plaque/transform_scale_test
+/obj/plaque/transform_scale_test 
 	data = "<h3>Transform Scale Test</h3><p>Click the button to LARGE</p>"
 
 /obj/button/transform_scale_test
@@ -140,9 +139,9 @@
 	desc = "Click me to enlarge!"
 
 	push()
-		usr.transform *= 2
+		usr.transform *= 2		
 
-/obj/plaque/transform_scale_small_test
+/obj/plaque/transform_scale_small_test 
 	data = "<h3>Transform Scale Test</h3><p>Click the button to small</p>"
 
 /obj/button/transform_scale_small_test
@@ -150,9 +149,9 @@
 	desc = "Click me to ensmall!"
 
 	push()
-		usr.transform *= 0.5
+		usr.transform *= 0.5	
 
-/obj/plaque/transform_translate_test
+/obj/plaque/transform_translate_test 
 	data = "<h3>Transform Translate Test</h3><p>Click the button to shift or shift back</p>"
 
 /obj/button/transform_translate_test
@@ -160,10 +159,10 @@
 	desc = "Click me to be translated"
 
 	push()
-		usr.transform = matrix(32, 6, MATRIX_TRANSLATE)
-
+		usr.transform = matrix(32, 6, MATRIX_TRANSLATE)			
+	
 //keep together groups
-/obj/plaque/keep_together_test
+/obj/plaque/keep_together_test 
 	data = "<h3>KEEP_TOGETHER Test</h3><p>Click the button to toggle KEEP_TOGETHER as an appearance flag on your mob</p>"
 
 /obj/button/keep_together_test
@@ -174,7 +173,7 @@
 		usr.appearance_flags ^= KEEP_TOGETHER
 		usr << "KEEP_TOGETHER IS [usr.appearance_flags & KEEP_TOGETHER ? "TRUE" : "FALSE"]"
 
-/obj/plaque/keep_apart_test
+/obj/plaque/keep_apart_test 
 	data = "<h3>KEEP_APART Test</h3><p>Click the button to add an overlay with KEEP_APART to your mob</p>"
 
 /obj/keep_apart_obj
@@ -190,7 +189,7 @@
 	push()
 		usr.overlays += new /obj/keep_apart_obj()
 //render sources
-/obj/plaque/render_source_test
+/obj/plaque/render_source_test 
 	data = "<h3>Render source Test</h3><p>Click the button to toggle set the render_source to the render_target of your mob</p>"
 
 /obj/button/render_source_test
@@ -201,7 +200,7 @@
 		usr.render_target = "\ref[usr]"
 		src.render_source = usr.render_target
 
-		usr << "Render target set to your mob's render source"
+		usr << "Render target set to your mob's render source"	
 
 //screen objects
 /obj/background_image
@@ -210,7 +209,7 @@
 	plane = -90
 	screen_loc = "CENTER-7:7,CENTER-7:7"
 
-/obj/plaque/screen_background_test
+/obj/plaque/screen_background_test 
 	data = "<h3>Screen Background Test</h3><p>Click the button to activate the background image</p>"
 
 /obj/button/screen_background_test
@@ -226,8 +225,8 @@
 	plane = PLANE_LIGHTING
 	blend_mode = BLEND_MULTIPLY
 	appearance_flags = PLANE_MASTER | NO_CLIENT_COLOR
-	color = list(null, null, null, "#0000", "#333f")
-	mouse_opacity = 0
+	color = list(null, null, null, "#0000", "#333f") 
+	mouse_opacity = 0 
 
 /image/spotlight
 	plane = PLANE_LIGHTING
@@ -236,9 +235,9 @@
 	icon = 'icons/spotlight.dmi'  // a 96x96 white circle
 	icon_state = "spotlight"
 	pixel_x = -32
-	pixel_y = -32
+	pixel_y = -32		
 
-/obj/plaque/plane_master_test
+/obj/plaque/plane_master_test 
 	data = "<h3>Plane Master Test</h3><p>Click the button to activate the lighting plane master</p>"
 
 /obj/button/plane_master_test
@@ -246,11 +245,11 @@
 	desc = "Click me to activate the lighting plane master"
 
 	push()
-		usr.client.screen |= new /obj/lighting_plane()
+		usr.client.screen |= new /obj/lighting_plane()	
 		usr.overlays += new /image/spotlight()
 
 //render sources for filters
-/obj/plaque/alpha_rendersource_test
+/obj/plaque/alpha_rendersource_test 
 	data = "<h3>Alpha Filter RenderSource Test</h3><p>Click the button to add an alpha filter with this button as the render source</p>"
 
 /obj/button/alpha_rendersource_test
@@ -352,7 +351,7 @@
 		if(i>8)
 			i = 0
 
-/obj/plaque/animation_test
+/obj/plaque/animation_test 
 	data = "<h3>Animation Test</h3><p>Click the button to apply a series of animations to your mob</p>"
 
 
@@ -435,7 +434,7 @@
 		if(i>8)
 			i = 0
 
-/obj/plaque/animation_turf_test
+/obj/plaque/animation_turf_test 
 	data = "<h3>Animation Turf Test</h3><p>Click the button to apply a series of animations to the turfs your mob</p>"
 
 //render order sanity checks
@@ -469,14 +468,14 @@
 
 /obj/order_test_item
 	icon = 'icons/hanoi.dmi'
-
+	
 /obj/order_test_item/one //make sure planes apply properly
 	icon_state = "1"
 	plane = PLANE_hanoi_1
 
 /obj/order_test_item/two //test FLOAT_PLANE
 	icon_state = "2"
-	plane = FLOAT_PLANE+2
+	plane = FLOAT_PLANE+2	
 
 /obj/order_test_item/plane_master //plane master test
 	screen_loc = "1,1"
@@ -494,17 +493,17 @@
 
 /obj/order_test_item/five //layer test
 	icon_state = "5"
-	plane = PLANE_hanoi_4
+	plane = PLANE_hanoi_4	
 	layer = 1
 
 /obj/order_test_item/six //layer test
 	icon_state = "6"
-	plane = PLANE_hanoi_4
+	plane = PLANE_hanoi_4	
 	layer = EFFECTS_LAYER
 
 /obj/order_test_item/seven //render source/target test
 	render_source = "hanoi7"
-	plane = PLANE_hanoi_7
+	plane = PLANE_hanoi_7	
 
 /obj/order_test_item/render_seven //render source/target test
 	render_target = "hanoi7"
@@ -521,7 +520,7 @@
 /obj/order_test_item/nine //image test
 	icon_state = "9"
 	plane = PLANE_hanoi_9
-	invisibility = 99
+	invisibility = 99		
 
 
 /obj/complex_overlay_test
@@ -577,7 +576,7 @@
 		eight.overlays += nine
 		seven.overlays += eight
 		six.overlays += seven
-
+		
 		src.overlays += six
 
 // mouse pointer tests

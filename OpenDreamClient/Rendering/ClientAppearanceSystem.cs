@@ -56,7 +56,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     private readonly Dictionary<(int X, int Y, int Z), Flick> _turfFlicks = new();
     private readonly Dictionary<EntityUid, Flick> _movableFlicks = new();
     private bool _receivedAllAppearancesMsg;
-    private readonly float _refreshVerbPeriod = 1f;
+    private static readonly float _refreshVerbPeriod = 1f;
     private float _refreshVerbRemainingTime = 0.5f;
 
     [Dependency] private readonly IEntityManager _entityManager = default!;

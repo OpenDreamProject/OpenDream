@@ -1,13 +1,22 @@
 macro "macro"
 	elem 
-		name = "Center+REP"
-		command = ".center"
+		name = "North+REP"
+		command = ".north"
 	elem 
-		name = "Return"
-		command = "say hi"
+		name = "South+REP"
+		command = ".south"
+	elem 
+		name = "East+REP"
+		command = ".east"
+	elem 
+		name = "West+REP"
+		command = ".west"
 	elem 
 		name = "Northeast+REP"
 		command = ".northeast"
+	elem 
+		name = "Northwest+REP"
+		command = ".northwest"
 	elem 
 		name = "Southeast+REP"
 		command = ".southeast"
@@ -15,57 +24,37 @@ macro "macro"
 		name = "Southwest+REP"
 		command = ".southwest"
 	elem 
-		name = "Northwest+REP"
-		command = ".northwest"
-	elem 
-		name = "West+REP"
-		command = ".west"
-	elem 
-		name = "North+REP"
-		command = ".north"
-	elem 
-		name = "East+REP"
-		command = ".east"
-	elem 
-		name = "South+REP"
-		command = ".south"
-
+		name = "Center+REP"
+		command = ".center"
 
 menu "menu"
 	elem 
 		name = "Menu"
 		command = ""
-		saved-params = "is-checked"
-	elem 
+	elem
 		name = "Screenshot"
 		command = ".screenshot"
 		category = "Menu"
-		saved-params = "is-checked"
-	elem 
+	elem
 		name = "Quit"
 		command = ".quit"
 		category = "Menu"
-		saved-params = "is-checked"
-	elem 
+	elem
 		name = "Show Popup"
 		command = ".winset \"testwindow.is-visible=true\""
 		category = "Menu"
-		saved-params = "is-checked"
-	elem 
+	elem
 		name = "Hide Popup"
 		command = ".winset \"testwindow.is-visible=false\""
 		category = "Menu"
-		saved-params = "is-checked"
-	elem 
+	elem
 		name = "Toggle Popup"
-		command = ".winset \"testwindow.is-visible=false?testwindow.is-visible=true:testwindow.is-visible=false\""
+		command = ".winset \"testwindow.is-visible=false?testwindow.is-visible=true:testwindow.is-visible=false\""	
 		category = "Menu"
-		saved-params = "is-checked"
-	elem 
+	elem
 		name = "Toggle WingetTest"
-		command = ".winset \"wingetwindow.is-visible=false?wingetwindow.is-visible=true:wingetwindow.is-visible=false\""
+		command = ".winset \"wingetwindow.is-visible=false?wingetwindow.is-visible=true:wingetwindow.is-visible=false\""	
 		category = "Menu"
-		saved-params = "is-checked"
 
 
 window "mapwindow"
@@ -73,9 +62,6 @@ window "mapwindow"
 		type = MAIN
 		pos = 0,0
 		size = 640x480
-		anchor1 = -1,-1
-		anchor2 = -1,-1
-		saved-params = "pos;size;is-minimized;is-maximized"
 		is-pane = true
 	elem "map"
 		type = MAP
@@ -84,16 +70,12 @@ window "mapwindow"
 		anchor1 = 0,0
 		anchor2 = 100,100
 		is-default = true
-		saved-params = "zoom;letterbox;zoom-mode"
 
 window "infowindow"
 	elem "infowindow"
 		type = MAIN
 		pos = 0,0
 		size = 640x480
-		anchor1 = -1,-1
-		anchor2 = -1,-1
-		saved-params = "pos;size;is-minimized;is-maximized"
 		is-pane = true
 	elem "info"
 		type = CHILD
@@ -101,7 +83,6 @@ window "infowindow"
 		size = 640x480
 		anchor1 = 0,0
 		anchor2 = 100,100
-		saved-params = "splitter"
 		left = "statwindow"
 		right = "outputwindow"
 		is-vert = false
@@ -111,9 +92,6 @@ window "outputwindow"
 		type = MAIN
 		pos = 0,0
 		size = 640x480
-		anchor1 = -1,-1
-		anchor2 = -1,-1
-		saved-params = "pos;size;is-minimized;is-maximized"
 		is-pane = true
 	elem "output"
 		type = OUTPUT
@@ -121,8 +99,8 @@ window "outputwindow"
 		size = 0x0
 		anchor1 = 0,0
 		anchor2 = 100,100
-		is-default = true
-		saved-params = "max-lines"
+		is-default = true	
+
 	elem "input"
 		type = INPUT
 		pos = 0,460
@@ -131,16 +109,12 @@ window "outputwindow"
 		anchor2 = 100,100
 		background-color = #d3b5b5
 		is-default = true
-		saved-params = ""
 
 window "statwindow"
 	elem "statwindow"
 		type = MAIN
 		pos = 0,0
 		size = 640x480
-		anchor1 = -1,-1
-		anchor2 = -1,-1
-		saved-params = "pos;size;is-minimized;is-maximized"
 		is-pane = true
 	elem "stat"
 		type = INFO
@@ -149,27 +123,21 @@ window "statwindow"
 		anchor1 = 0,0
 		anchor2 = 100,100
 		is-default = true
-		saved-params = ""
 
 window "mainwindow"
 	elem "mainwindow"
 		type = MAIN
-		pos = 0,0
 		size = 800x400
-		anchor1 = -1,-1
-		anchor2 = -1,-1
 		is-default = true
-		saved-params = "pos;size;is-minimized;is-maximized"
-		icon = "icons/mob.dmi"
-		macro = "macro"
 		menu = "menu"
+		macro = "macro"
+		icon = "icons/mob.dmi"
 	elem "split"
 		type = CHILD
 		pos = 0,0
 		size = 0x0
 		anchor1 = 0,0
 		anchor2 = 100,100
-		saved-params = "splitter"
 		left = "mapwindow"
 		right = "infowindow"
 		is-vert = true
@@ -177,114 +145,76 @@ window "mainwindow"
 window "testwindow"
 	elem "testwindow"
 		type = MAIN
-		pos = 0,0
 		size = 200x100
-		anchor1 = -1,-1
-		anchor2 = -1,-1
-		is-visible = false
-		saved-params = "pos;size;is-minimized;is-maximized"
 		title = "popup"
+		is-visible = false
 	elem "testwindowimagebutton"
 		type = BUTTON
+		image = 'icons\\ui\\cancel.png'
 		pos = 18,10
 		size = 160x40
-		anchor1 = -1,-1
-		anchor2 = -1,-1
+		anchor1 = none
+		anchor2 = none
 		font-family = "Verdana"
 		font-size = 10
 		font-style = "bold"
-		saved-params = "is-checked"
-		text = ""
-		image = 'icons\\ui\\cancel.png'
-		command = ""
+		text = ""		
 	elem "testwindowlabel"
 		type = LABEL
 		pos = 0,60
-		size = 60x20
-		anchor1 = -1,-1
-		anchor2 = -1,-1
-		font-size = 6
-		saved-params = ""
 		text = "I am a test"
+		font-size = 6pt	
 
 window "wingetwindow"
 	elem "wingetwindow"
 		type = MAIN
-		pos = 0,0
 		size = 200x180
-		anchor1 = -1,-1
-		anchor2 = -1,-1
-		is-visible = false
-		saved-params = "pos;size;is-minimized;is-maximized"
 		title = "winget test"
+		is-visible = false
 	elem "wingetinput"
 		type = INPUT
 		pos = 5,0
 		size = 190,19
-		anchor1 = -1,-1
-		anchor2 = -1,-1
-		saved-params = ""
+		text = "this is some test text"
 	elem "wingetbuttonarg"
 		type = BUTTON
 		pos = 0,40
 		size = 0,20
-		anchor1 = -1,-1
-		anchor2 = -1,-1
-		saved-params = "is-checked"
 		text = "as arg"
 		command = "wingettextverb \"arg: [[wingetinput.text as arg]]\""
 	elem "wingetbuttonesc"
 		type = BUTTON
 		pos = 0,60
 		size = 0,20
-		anchor1 = -1,-1
-		anchor2 = -1,-1
-		saved-params = "is-checked"
 		text = "as escaped"
 		command = "wingettextverb \"escaped: [[wingetinput.text as escaped]]\""
 	elem "wingetbuttonstr"
 		type = BUTTON
 		pos = 0,80
 		size = 0,20
-		anchor1 = -1,-1
-		anchor2 = -1,-1
-		saved-params = "is-checked"
 		text = "as string"
-		command = "wingettextverb \"string: [[wingetinput.text as string]]\""
+		command = "wingettextverb \"string: [[wingetinput.text as string]]\""		
 	elem "wingetbuttonpar"
 		type = BUTTON
 		pos = 0,100
 		size = 0,20
-		anchor1 = -1,-1
-		anchor2 = -1,-1
-		saved-params = "is-checked"
 		text = "as params"
-		command = "wingettextverb \"params: [[wingetinput.text as params]]\""
+		command = "wingettextverb \"params: [[wingetinput.text as params]]\""	
 	elem "wingetbuttonjson"
 		type = BUTTON
 		pos = 0,120
 		size = 0,20
-		anchor1 = -1,-1
-		anchor2 = -1,-1
-		saved-params = "is-checked"
 		text = "as json"
 		command = "wingettextverb \"json: [[wingetinput.text as json]]\""
 	elem "wingetbuttonjsondm"
 		type = BUTTON
 		pos = 0,140
 		size = 0,20
-		anchor1 = -1,-1
-		anchor2 = -1,-1
-		saved-params = "is-checked"
 		text = "as json-dm"
-		command = "wingettextverb \"json-dm: [[wingetinput.text as json-dm]]\""
+		command = "wingettextverb \"json-dm: [[wingetinput.text as json-dm]]\""		
 	elem "wingetbuttonraw"
 		type = BUTTON
 		pos = 0,160
 		size = 0,20
-		anchor1 = -1,-1
-		anchor2 = -1,-1
-		saved-params = "is-checked"
 		text = "as raw"
 		command = "wingettextverb \"raw: [[wingetinput.text as raw]]\""
-

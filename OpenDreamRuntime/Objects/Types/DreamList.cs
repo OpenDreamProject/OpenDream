@@ -228,6 +228,11 @@ public class DreamList : DreamObject, IDreamList {
     }
 
     public virtual void Cut(int start = 1, int end = 0) {
+        start = start switch {
+            < 0 => throw new ArgumentOutOfRangeException(nameof(start), start, "Parameter start is less than zero."),
+            0 => 1,
+            _ => start
+        };
         if (end == 0 || end > (_values.Count + 1)) end = _values.Count + 1;
 
         if (_associativeValues != null) {
@@ -263,6 +268,7 @@ public class DreamList : DreamObject, IDreamList {
         } else {
             if (size < 0) {
                 DreamManager.OptionalException<InvalidOperationException>(DMCompiler.Compiler.WarningCode.ListNegativeSizeException, "Setting a list size to a negative value is invalid");
+                size = 0;
             }
 
             Cut(size + 1);

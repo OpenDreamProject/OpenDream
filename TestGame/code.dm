@@ -10,6 +10,17 @@
 
 #define TURF_PLANE -10
 
+/obj/coolthing
+	icon = 'icons/background.dmi'
+	icon_state = "coolthing"
+	mouse_opacity = 1
+	New()
+		transform = turn (src.transform,45)
+		transform = src.transform.Scale(1,0.5)
+
+	Click()
+		world.log << "clicked!"
+
 /obj/plane_master
 	appearance_flags = PLANE_MASTER
 
@@ -101,6 +112,20 @@
 	grow = list(0.01, 0)
 	fadein = 0
 
+
+/mob/testmob
+	icon = 'icons/mob.dmi'
+	icon_state = "mob"
+	layer = MOB_LAYER
+	plane = 5
+	blend_mode = BLEND_OVERLAY
+	name = "Square Man2"
+	desc = "Such a beautiful smile2."
+	gender = MALE
+	see_invisible = 101
+
+	New()
+
 /mob
 	icon = 'icons/mob.dmi'
 	icon_state = "mob"
@@ -111,7 +136,7 @@
 	desc = "Such a beautiful smile."
 	gender = MALE
 	see_invisible = 101
-	
+
 	New()
 		..()
 		loc = locate(5, 5, 1)
@@ -356,58 +381,159 @@
 		client.show_popup_menus = !client.show_popup_menus
 		src << "Popups are now [client.show_popup_menus ? "enabled" : "disabled"]"
 
-	// input() test		
+	// input() test
 	verb/text_test()
 		set category = "Input Test"
 		src << input("Input test: text") as text|null
-	
+
 	// todo: implement
 	// verb/password_test()
 	// 	set category = "Input Test"
 	// 	src << input("Input test: password") as password|null
-		
+
 	verb/multiline_test()
 		set category = "Input Test"
 		src << input("Input test: message") as message|null
-		
+
 	verb/command_test()
 		set category = "Input Test"
 		src << input("Input test: command_text") as command_text|null
-		
+
 	verb/num_test()
 		set category = "Input Test"
 		src << input("Input test: num") as num|null
-		
+
 	verb/icon_test()
 		set category = "Input Test"
 		src << input("Input test: icon") as icon|null
-		
+
 	verb/sound_test()
 		set category = "Input Test"
 		src << input("Input test: sound") as sound|null
-		
+
 	verb/file_test()
 		set category = "Input Test"
 		src << input("Input test: file") as file|null
-		
+
 	// todo: implement
 	// verb/key_test()
 	// 	set category = "Input Test"
 	// 	src << input("Input test: key") as key|null
-		
+
 	verb/color_test()
 		set category = "Input Test"
 		src << input("Input test: color") as color|null
-		
+
 	verb/list_test()
 		set category = "Input Test"
 		src << input("Input test: list") as null|anything in list("option 1", "option 2", "option 3", "option 4", "option 5")
-		
+
+	verb/test_eye_to_bandoleer()
+		src.client.eye = locate(/obj/bandoleer)
+
+	verb/test_eye_to_testmob()
+		src.client.eye = locate(/mob/testmob)
+
+	verb/test_eye_to_null()
+		src.client.eye = null
+	verb/test_eye_to_turf()
+		src.client.eye = locate(10,10,2)
+
+
+	verb/test_mob_to_null()
+		src.client.mob = null
+
+	verb/test_eye_to_mob()
+		src.client.eye = locate(/mob)
+
+	verb/test_mob_to_testmob()
+		src.client.mob = locate(/mob/testmob)
+
+	verb/test_mob_to_mob()
+		src.client.mob = locate(/mob)
+
+	verb/toggle_see_invis()
+		src.see_invisible = 100 - src.see_invisible
+
+	verb/toggle_bandoleer_invisible()
+		var/obj/x = locate(/obj/bandoleer)
+		x.invisibility = 100 - x.invisibility
+
+	verb/test_list_speed()
+		var/list/L1 = list()
+		for (var/i in 1 to 100000)
+			L1 += new /datum
+
+		var/start = world.timeofday
+		var/list/L2 = list()
+		for (var/i in 1 to 100000)
+			var/key = L1[i]
+			L2[key] = 1
+		world.log << world.timeofday - start
+
+
+	verb/test_equality_speed_2()
+		var/start = world.timeofday
+		var/list/L1 = list()
+		for (var/i in 1 to 100000)
+			var/x = new /datum
+			L1 += x
+			L1 += x
+
+		world.log << world.timeofday - start
+		start = world.timeofday
+
+		for (var/i in 200000 to 1 step -2)
+			L1.Cut(i,i+1)
+
+		world.log << world.timeofday - start
+		start = world.timeofday
+
+
+		L1 = list()
+		for (var/i in 1 to 100000)
+			var/x = new /datum
+			L1 += x
+			L1 += x
+
+
+		world.log << world.timeofday - start
+		start = world.timeofday
+
+		for (var/i in 200000 to 1 step -2)
+			L1.Remove(L1[i])
+
+		world.log << world.timeofday - start
+		start = world.timeofday
+
+		var/q = 1
+		for (var/i in 1 to 100000)
+			var/x = L1.Find(L1[i])
+			if (x > 200000)
+				q = 0
+
+		world.log << world.timeofday - start
+		world.log << q
+
+	verb/test_improper()
+		var/x1 = "\proper something (proper)"
+		var/x2 = "\improper something (improper)"
+		world.log << "\a [x1]"
+		world.log << "\a [x2]"
+		world.log << x1
+		world.log << x2
+
+	verb/clear_verbs()
+		src.verbs.Remove(src.verbs)
+
 
 /mob/Stat()
 	if (statpanel("Status"))
 		stat("tick_usage", world.tick_usage)
 		stat("time", world.time)
+
+/world
+	loop_checks = 0
 
 /world/New()
 	..()

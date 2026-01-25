@@ -52,6 +52,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
     //acts as a cache for the mutable appearance, so we don't have to ToMutable() every frame
     private MutableAppearance? _animatedAppearance;
     private AtomDirection _direction;
+    private string? _iconState;
 
     // TODO: We could cache these per-appearance instead of per-atom
     public IRenderTexture? CachedTexture {
@@ -75,8 +76,8 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
     private IRenderTexture? _cachedTexture;
 
     public DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfaceManager interfaceManager, IGameTiming gameTiming, IClyde clyde, ClientAppearanceSystem appearanceSystem, uint appearanceId,
-        AtomDirection? parentDir = null) : this(renderTargetPool, interfaceManager, gameTiming, clyde, appearanceSystem) {
-        SetAppearance(appearanceId, parentDir);
+        AtomDirection? parentDir = null, string? parentIconState = null) : this(renderTargetPool, interfaceManager, gameTiming, clyde, appearanceSystem) {
+        SetAppearance(appearanceId, parentDir, parentIconState);
     }
 
     public void Dispose() {
@@ -93,7 +94,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
                 return null;
 
             var dmi = flick?.Icon ?? DMI;
-            var iconState = flick?.IconState ?? Appearance.IconState;
+            var iconState = flick?.IconState ?? _iconState;
             var animationFrame = flick?.GetAnimationFrame(gameTiming) ?? AnimationFrame;
             if (animationFrame == -1) // A flick returns -1 for a finished animation
                 animationFrame = AnimationFrame;
@@ -129,7 +130,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
         return CachedTexture?.Texture;
     }
 
-    public void SetAppearance(uint? appearanceId, AtomDirection? parentDir = null) {
+    public void SetAppearance(uint? appearanceId, AtomDirection? parentDir = null, string? parentIconState = null) {
         // End any animations that are currently happening
         // Note that this isn't faithful to the original behavior
         EndAppearanceAnimation(null);
@@ -144,6 +145,11 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
                 _direction = parentDir.Value;
             } else {
                 _direction = appearance.Direction;
+            }
+            if (parentIconState != null && appearance.IconState == null) {
+                _iconState = parentIconState;
+            } else {
+                _iconState = appearance.IconState;
             }
 
             Appearance = appearance;
@@ -223,7 +229,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
         if(DMI == null || Appearance == null || _animationComplete)
             return;
 
-        DMIParser.ParsedDMIState? dmiState = DMI.Description.GetStateOrDefault(Appearance.IconState);
+        DMIParser.ParsedDMIState? dmiState = DMI.Description.GetStateOrDefault(_iconState);
         if(dmiState == null)
             return;
         DMIParser.ParsedDMIFrame[] frames = dmiState.GetFrames(_direction);
@@ -487,7 +493,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
 
         Overlays.Clear();
         foreach (var overlayAppearance in Appearance.Overlays) {
-            DreamIcon overlay = new DreamIcon(renderTargetPool, interfaceManager, gameTiming, clyde, appearanceSystem, overlayAppearance.MustGetId(), _direction);
+            DreamIcon overlay = new DreamIcon(renderTargetPool, interfaceManager, gameTiming, clyde, appearanceSystem, overlayAppearance.MustGetId(), _direction, _iconState);
             overlay.SizeChanged += CheckSizeChange;
 
             Overlays.Add(overlay);
@@ -495,7 +501,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
 
         Underlays.Clear();
         foreach (var underlayAppearance in Appearance.Underlays) {
-            DreamIcon underlay = new DreamIcon(renderTargetPool, interfaceManager, gameTiming, clyde, appearanceSystem, underlayAppearance.MustGetId(), _direction);
+            DreamIcon underlay = new DreamIcon(renderTargetPool, interfaceManager, gameTiming, clyde, appearanceSystem, underlayAppearance.MustGetId(), _direction, _iconState);
             underlay.SizeChanged += CheckSizeChange;
 
             Underlays.Add(underlay);

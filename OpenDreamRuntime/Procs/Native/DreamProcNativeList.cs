@@ -151,8 +151,8 @@ namespace OpenDreamRuntime.Procs.Native {
             foreach (var argument in args) {
                 if (argument.TryGetValueAsDreamList(out var argumentList)) {
                     if (argumentList ==  list) {
-                        list.Cut();
                         itemRemoved += list.GetLength();
+                        list.Cut();
                         break;
                     }
 

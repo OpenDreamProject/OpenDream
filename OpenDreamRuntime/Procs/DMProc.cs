@@ -321,6 +321,7 @@ public sealed class DMProcState : ProcState {
         {DreamProcOpcode.GetDir, DMOpcodeHandlers.GetDir},
         {DreamProcOpcode.DebuggerBreakpoint, DMOpcodeHandlers.DebuggerBreakpoint},
         {DreamProcOpcode.Rgb, DMOpcodeHandlers.Rgb},
+        {DreamProcOpcode.Animate, DMOpcodeHandlers.Animate},
         // Peephole optimizer opcode handlers
         {DreamProcOpcode.NullRef, DMOpcodeHandlers.NullRef},
         {DreamProcOpcode.AssignNoPush, DMOpcodeHandlers.AssignNoPush},

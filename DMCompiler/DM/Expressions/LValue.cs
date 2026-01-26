@@ -191,6 +191,10 @@ internal sealed class Local(Location location, DMProc.LocalVariable localVar) : 
     }
 
     public override string GetNameof(ExpressionContext ctx) => LocalVar.Name;
+
+    public override void EmitPushIsSaved(ExpressionContext ctx) {
+        ctx.Proc.PushFloat(0);
+    }
 }
 
 // Identifier of field
@@ -209,10 +213,10 @@ internal sealed class Field(Location location, DMVariable variable, DMComplexVal
         }
     }
 
-    public void EmitPushIsSaved(DMProc proc) {
-        proc.PushReferenceValue(DMReference.Src);
-        proc.PushString(variable.Name);
-        proc.IsSaved();
+    public override void EmitPushIsSaved(ExpressionContext ctx) {
+        ctx.Proc.PushReferenceValue(DMReference.Src);
+        ctx.Proc.PushString(variable.Name);
+        ctx.Proc.IsSaved();
     }
 
     public override DMReference EmitReference(ExpressionContext ctx, string endLabel,

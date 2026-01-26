@@ -68,6 +68,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly MapSystem _mapSystem = default!;
     [Dependency] private readonly IPrototypeManager _protoManager = default!;
+    [Dependency] private readonly ClientVerbSystem _verbSystem = default!;
 
     public override void Initialize() {
         UpdatesOutsidePrediction = true;
@@ -99,6 +100,8 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
             if (flick.GetAnimationFrame(_gameTiming) == -1)
                 _movableFlicks.Remove(flickKey);
         }
+
+        _verbSystem.RefreshVerbs();
     }
 
     public void SetAllAppearances(Dictionary<uint, ImmutableAppearance> appearances) {

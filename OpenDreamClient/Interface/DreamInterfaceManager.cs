@@ -103,13 +103,17 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         LoadInterface(interfaceDescriptor);
     }
 
-    public void Initialize() {
+    private void SetupBaseDreamBinds() {
         // Set up the middle-mouse button keybind
         _inputManager.Contexts.GetContext("common").AddFunction(OpenDreamKeyFunctions.MouseMiddle);
         _inputManager.RegisterBinding(new KeyBindingRegistration() {
             Function = OpenDreamKeyFunctions.MouseMiddle,
             BaseKey = Keyboard.Key.MouseMiddle
         });
+    }
+
+    public void Initialize() {
+        SetupBaseDreamBinds();
 
         Cursors = new(_clyde);
 
@@ -452,7 +456,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     public void RunCommand(string fullCommand, bool repeating = false) {
         switch (fullCommand) {
             case not null when fullCommand.StartsWith(".quit"):
-                IoCManager.Resolve<IClientNetManager>().ClientDisconnect(".quit used");
+                _gameController.Shutdown(".quit used");
                 break;
 
             case not null when fullCommand.StartsWith(".screenshot"):
@@ -936,6 +940,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         MacroSets.Clear();
 
         _inputManager.ResetAllBindings();
+        SetupBaseDreamBinds();
     }
 
     private void LoadInterface(InterfaceDescriptor descriptor) {

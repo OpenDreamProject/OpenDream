@@ -269,6 +269,11 @@ public class DreamList : DreamObject, IDreamList {
     }
 
     public virtual void Cut(int start = 1, int end = 0) {
+        start = start switch {
+            < 0 => throw new ArgumentOutOfRangeException(nameof(start), start, "Parameter start is less than zero."),
+            0 => 1,
+            _ => start
+        };
         if (end == 0 || end > (_values.Count + 1)) end = _values.Count + 1;
 
         if (_associativeValues != null) {
@@ -320,6 +325,7 @@ public class DreamList : DreamObject, IDreamList {
         } else {
             if (size < 0) {
                 DreamManager.OptionalException<InvalidOperationException>(DMCompiler.Compiler.WarningCode.ListNegativeSizeException, "Setting a list size to a negative value is invalid");
+                size = 0;
             }
 
             Cut(size + 1);
@@ -710,13 +716,10 @@ public sealed class ClientVerbsList : DreamList {
     }
 
     public override bool ContainsValue(DreamValue value) {
-        foreach (var containedVal in EnumerateValues()) {
-            if (value.Equals(containedVal)) {
-                return true;
-            }
-        }
+        if (!value.TryGetValueAsProc(out var verb))
+            return false;
 
-        return false;
+        return Verbs.Contains(verb);
     }
 
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
@@ -732,6 +735,18 @@ public sealed class ClientVerbsList : DreamList {
         Verbs.Add(verb);
         _verbSystem?.RegisterVerb(verb);
         _verbSystem?.UpdateClientVerbs(_client);
+    }
+
+    public override void RemoveValue(DreamValue value) {
+        if (!value.TryGetValueAsProc(out var verb))
+            return;
+
+        var valueIndex = Verbs.LastIndexOf(verb);
+
+        if (valueIndex != -1) {
+            Verbs.RemoveAt(valueIndex);
+            _verbSystem?.UpdateClientVerbs(_client);
+        }
     }
 
     public override void Cut(int start = 1, int end = 0) {
@@ -784,13 +799,12 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
     }
 
     public override bool ContainsValue(DreamValue value) {
-        foreach (var containedVal in EnumerateValues()) {
-            if (value.Equals(containedVal)) {
-                return true;
-            }
-        }
+        if (!value.TryGetValueAsProc(out var verb))
+            return false;
+        if (verb.VerbId == null)
+            return false;
 
-        return false;
+        return GetVerbs().Contains(verb.VerbId.Value);
     }
 
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
@@ -808,6 +822,21 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
                 return; // Even += won't add the verb if it's already in this list
 
             appearance.Verbs.Add(verb.VerbId.Value);
+        });
+    }
+
+    public override void RemoveValue(DreamValue value) {
+        if (!value.TryGetValueAsProc(out var verb))
+            return;
+        if (verb.VerbId == null) {
+            return;
+        }
+
+        atomManager.UpdateAppearance(atom, appearance => {
+            var valueIndex = appearance.Verbs.LastIndexOf(verb.VerbId.Value);
+
+            if (valueIndex != -1)
+                appearance.Verbs.RemoveAt(valueIndex);
         });
     }
 

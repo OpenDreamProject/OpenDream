@@ -152,7 +152,8 @@ namespace OpenDreamRuntime.Procs.Native {
                 if (argument.TryGetValueAsDreamList(out var argumentList)) {
                     if (argumentList ==  list) {
                         list.Cut();
-                        continue;
+                        itemRemoved += list.GetLength();
+                        break;
                     }
 
                     foreach (DreamValue value in argumentList.EnumerateValues()) {

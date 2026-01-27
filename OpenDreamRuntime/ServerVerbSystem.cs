@@ -112,6 +112,9 @@ public sealed class ServerVerbSystem : VerbSystem {
     /// </summary>
     /// <param name="client">The client to update</param>
     public void UpdateClientVerbs(DreamObjectClient client) {
+        if (client.Connection.Session == null)
+            return;
+
         var verbs = client.ClientVerbs.Verbs;
         var verbIds = new List<int>(verbs.Count);
 
@@ -121,7 +124,7 @@ public sealed class ServerVerbSystem : VerbSystem {
             verbIds.Add(verb.VerbId!.Value);
         }
 
-        RaiseNetworkEvent(new UpdateClientVerbsEvent(verbIds), client.Connection.Session!);
+        RaiseNetworkEvent(new UpdateClientVerbsEvent(verbIds), client.Connection.Session);
     }
 
     private void OnPlayerStatusChanged(object? sender, SessionStatusEventArgs e) {
@@ -178,7 +181,7 @@ public sealed class ServerVerbSystem : VerbSystem {
 
     private void RunVerb(DreamProc verb, string name, DreamObject? src, DreamConnection usr, params DreamValue[] arguments) {
         using var _ = Profiler.BeginZone("DM Execution", color: (uint)Color.LightPink.ToArgb());
-        
+
         DreamThread.Run($"Execute {name} by {usr.Session!.Name}", async state => {
             await state.Call(verb, src, usr.Mob, arguments);
             return DreamValue.Null;

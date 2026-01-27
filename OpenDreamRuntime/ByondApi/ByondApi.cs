@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects;
@@ -8,6 +9,8 @@ using Robust.Shared.Utility;
 namespace OpenDreamRuntime.ByondApi;
 
 public static partial class ByondApi {
+    private const int LastErrorMaxLength = 128;
+
     private static DreamManager? _dreamManager;
     private static AtomManager? _atomManager;
     private static IDreamMapManager? _dreamMapManager;
@@ -15,6 +18,12 @@ public static partial class ByondApi {
 
     private static readonly ConcurrentQueue<Action> ThreadSyncQueue = new();
     private static int _mainThreadId;
+
+    /// <summary>
+    /// A failed ByondApi call will set this string. It can be retrieved with <see cref="Byond_LastError"/>.
+    /// </summary>
+    private static string _lastError = string.Empty;
+    private static IntPtr _lastErrorPtr = IntPtr.Zero;
 
     public static void Initialize(DreamManager dreamManager, AtomManager atomManager, IDreamMapManager dreamMapManager, DreamObjectTree objectTree) {
         DebugTools.Assert(_dreamManager is null or { IsShutDown: true });
@@ -27,7 +36,13 @@ public static partial class ByondApi {
         _mainThreadId = Environment.CurrentManagedThreadId;
         ThreadSyncQueue.Clear();
 
+        _lastErrorPtr = Marshal.AllocHGlobal(LastErrorMaxLength);
+
         InitTrampoline();
+    }
+
+    public static void Shutdown() {
+        Marshal.FreeHGlobal(_lastErrorPtr);
     }
 
     public static void ExecuteThreadSyncs() {
@@ -154,6 +169,14 @@ public static partial class ByondApi {
             default:
                 throw new ArgumentOutOfRangeException();
         }
+    }
+
+    /// <summary>
+    /// Helper method that sets <see cref="_lastError"/> and returns an error code (false)
+    /// </summary>
+    private static byte SetLastError(string lastError) {
+        _lastError = lastError;
+        return 0;
     }
 
     [SuppressMessage("Usage", "RA0004:Risk of deadlock from accessing Task<T>.Result")]

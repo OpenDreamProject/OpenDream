@@ -9,8 +9,7 @@ public sealed class ServerClientImagesSystem : SharedClientImagesSystem {
     [Dependency] private readonly PvsOverrideSystem _pvsOverrideSystem = default!;
 
     public void AddImageObject(DreamConnection connection, DreamObjectImage imageObject) {
-        DreamObject? loc = imageObject.GetAttachedLoc();
-        if(loc == null)
+        if (connection.Session == null || imageObject.GetAttachedLoc() is not { } loc)
             return;
 
         EntityUid locEntity = EntityUid.Invalid;
@@ -25,13 +24,12 @@ public sealed class ServerClientImagesSystem : SharedClientImagesSystem {
         EntityUid imageObjectEntity = imageObject.Entity;
         NetEntity imageObjectNetEntity = GetNetEntity(imageObjectEntity);
         if (imageObjectEntity != EntityUid.Invalid)
-            _pvsOverrideSystem.AddSessionOverride(imageObjectEntity, connection.Session!);
-        RaiseNetworkEvent(new AddClientImageEvent(ent, turfCoords, imageObjectNetEntity), connection.Session!.Channel);
+            _pvsOverrideSystem.AddSessionOverride(imageObjectEntity, connection.Session);
+        RaiseNetworkEvent(new AddClientImageEvent(ent, turfCoords, imageObjectNetEntity), connection.Session.Channel);
     }
 
     public void RemoveImageObject(DreamConnection connection, DreamObjectImage imageObject) {
-        DreamObject? loc = imageObject.GetAttachedLoc();
-        if (loc == null)
+        if (connection.Session == null || imageObject.GetAttachedLoc() is not { } loc)
             return;
 
         EntityUid locEntity = EntityUid.Invalid;
@@ -45,8 +43,8 @@ public sealed class ServerClientImagesSystem : SharedClientImagesSystem {
         NetEntity ent = GetNetEntity(locEntity);
         EntityUid imageObjectEntity = imageObject.Entity;
         if (imageObjectEntity != EntityUid.Invalid)
-            _pvsOverrideSystem.RemoveSessionOverride(imageObjectEntity, connection.Session!);
+            _pvsOverrideSystem.RemoveSessionOverride(imageObjectEntity, connection.Session);
         NetEntity imageObjectNetEntity = GetNetEntity(imageObject.Entity);
-        RaiseNetworkEvent(new RemoveClientImageEvent(ent, turfCoords, imageObjectNetEntity), connection.Session!.Channel);
+        RaiseNetworkEvent(new RemoveClientImageEvent(ent, turfCoords, imageObjectNetEntity), connection.Session.Channel);
     }
 }

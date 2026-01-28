@@ -33,7 +33,8 @@
 	ASSERT(S["pie2"] ~= assoc)
 
 	// Shouldn't evaluate CRASH
-	S2?["ABC"] << CRASH("rhs should not evaluate due to null-conditional")
+	//NB: using = rather than << here because << *does* evaluate the RHS regardless of the nullness of the LHS
+	S2?["ABC"] = CRASH("rhs should not evaluate due to null-conditional")
 
 	// Test EOF
 	S.cd = "DEF"

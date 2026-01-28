@@ -77,6 +77,8 @@ public sealed class DreamObjectClient : DreamObject {
                 value = new(long.Parse(hashStr, System.Globalization.NumberStyles.HexNumber).ToString()); // Converts from hex to decimal. Output is in analogous format to BYOND's.
                 return true;
             case "address":
+                // TODO: Session could be null if this is gotten from /mob/Logout() or /client/Del()
+                // BYOND's behavior there needs tested
                 value = new(Connection.Session!.Channel.RemoteEndPoint.Address.ToString());
                 return true;
             case "inactivity":

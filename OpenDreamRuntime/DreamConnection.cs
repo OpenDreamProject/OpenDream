@@ -18,7 +18,6 @@ public sealed class DreamConnection {
     [Dependency] private readonly DreamManager _dreamManager = default!;
     [Dependency] private readonly DreamObjectTree _objectTree = default!;
     [Dependency] private readonly DreamResourceManager _resourceManager = default!;
-    [Dependency] private readonly WalkManager _walkManager = default!;
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
     [Dependency] private readonly ISharedPlayerManager _playerManager = default!;
 
@@ -66,10 +65,11 @@ public sealed class DreamConnection {
     }
 
     [ViewVariables] public DreamObjectMovable? Eye {
-        get => _eye;
+        get;
         set {
-            _eye = value;
-            _playerManager.SetAttachedEntity(Session!, _eye?.Entity);
+            field = value;
+            if (Session != null)
+                _playerManager.SetAttachedEntity(Session, field?.Entity);
         }
     }
 
@@ -82,7 +82,6 @@ public sealed class DreamConnection {
     [ViewVariables] private int _nextPromptEvent = 1;
     private readonly Dictionary<string, DreamResource> _permittedBrowseRscFiles = new();
     private DreamObjectMob? _mob;
-    private DreamObjectMovable? _eye;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.connection");
 
@@ -119,6 +118,9 @@ public sealed class DreamConnection {
         if (Session == null || Client == null) // Already disconnected?
             return;
 
+        _verbSystem?.RemoveConnectionFromRepeatingVerbs(this);
+        Session = null;
+
         if (_mob != null) {
             // Don't null out the ckey here
             _mob.SpawnProc("Logout");
@@ -129,12 +131,8 @@ public sealed class DreamConnection {
             }
         }
 
-        _verbSystem?.RemoveConnectionFromRepeatingVerbs(this);
-
         Client.Delete();
         Client = null;
-
-        Session = null;
     }
 
     public void UpdateStat() {
@@ -391,7 +389,7 @@ public sealed class DreamConnection {
         return task;
     }
 
-    public Task<DreamValue> Alert(String title, String message, String button1, String button2, String button3) {
+    public Task<DreamValue> Alert(string title, string message, string button1, string button2, string button3) {
         var task = MakePromptTask(out var promptId);
         var msg = new MsgAlert() {
             PromptId = promptId,
@@ -441,7 +439,6 @@ public sealed class DreamConnection {
         } else {
             _sawmill.Error($"Client({Session}) requested a browse_rsc file they had not been permitted to request ({filename}).");
         }
-
     }
 
     public void Browse(string? body, string? options) {

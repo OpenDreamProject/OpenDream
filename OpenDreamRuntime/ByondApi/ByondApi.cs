@@ -23,6 +23,7 @@ public static partial class ByondApi {
     /// A failed ByondApi call will set this string. It can be retrieved with <see cref="Byond_LastError"/>.
     /// </summary>
     private static string _lastError = string.Empty;
+    
     private static IntPtr _lastErrorPtr = IntPtr.Zero;
 
     public static void Initialize(DreamManager dreamManager, AtomManager atomManager, IDreamMapManager dreamMapManager, DreamObjectTree objectTree) {

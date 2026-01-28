@@ -383,3 +383,27 @@ public sealed class HotReloadResourceCommand : IConsoleCommand {
         dreamManager.HotReloadResource(args[0]);
     }
 }
+
+public sealed class HotReloadCodeCommand : IConsoleCommand {
+    // ReSharper disable once StringLiteralTypo
+    public string Command => "hotreloadcode";
+    public string Description => "Reload a specified compiled json and hot reload the bytecode";
+    public string Help => "";
+    public bool RequireServerOrSingleplayer => true;
+
+    public void Execute(IConsoleShell shell, string argStr, string[] args) {
+        if(!shell.IsLocal) {
+            shell.WriteError("You cannot use this command as a client. Execute it on the server console.");
+            return;
+        }
+
+        if (args.Length != 1) {
+            shell.WriteError("This command requires a file path to reload as an argument! Example: hotreloadcode ./path/to/compiled.json");
+            return;
+        }
+
+        DreamManager dreamManager = IoCManager.Resolve<DreamManager>();
+        shell.WriteLine($"Reloading {args[0]}");
+        dreamManager.HotReloadJson(args[0]);
+    }
+}

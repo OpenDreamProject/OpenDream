@@ -27,6 +27,7 @@ public abstract class ContentIntegrationTest : RobustIntegrationTest {
 
         options.ContentStart = true;
 
+        options.LoadTestAssembly = false;
         options.ContentAssemblies = new[] {
             typeof(OpenDreamShared.EntryPoint).Assembly,
             typeof(OpenDreamClient.EntryPoint).Assembly,
@@ -62,6 +63,7 @@ public abstract class ContentIntegrationTest : RobustIntegrationTest {
 
         options.ContentStart = true;
 
+        options.LoadTestAssembly = false;
         options.ContentAssemblies = new[] {
             typeof(OpenDreamShared.EntryPoint).Assembly,
             typeof(OpenDreamRuntime.EntryPoint).Assembly,

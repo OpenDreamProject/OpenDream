@@ -1,13 +1,19 @@
+using System;
 using System.Globalization;
+using System.Numerics;
 using JetBrains.Annotations;
+using Robust.Shared.IoC;
+using Robust.Shared.Log;
+using Robust.Shared.Maths;
 using Robust.Shared.Serialization;
 using Robust.Shared.Serialization.Manager;
+using Robust.Shared.Serialization.Manager.Attributes;
 using Robust.Shared.Serialization.Markdown;
 using Robust.Shared.Serialization.Markdown.Validation;
 using Robust.Shared.Serialization.Markdown.Value;
 using Robust.Shared.Serialization.TypeSerializers.Interfaces;
 
-namespace OpenDreamClient.Interface.DMF;
+namespace OpenDreamShared.Interface.DMF;
 
 public interface IDMFProperty {
     public bool Equals(string comparison);

@@ -5,6 +5,8 @@ namespace OpenDreamClient.Interface.Prompts;
 
 [Virtual]
 internal class InputWindow : PromptWindow {
+    private Control? _focusControl;
+
     protected InputWindow(string title, string message, bool canCancel,
         Action<DreamValueType, object?>? onClose) : base(title, message, onClose) {
         CreateButton("Ok", true);
@@ -14,7 +16,13 @@ internal class InputWindow : PromptWindow {
     protected void SetPromptControl(Control promptControl, bool grabKeyboard = true) {
         InputControl.RemoveAllChildren();
         InputControl.AddChild(promptControl);
-        if (grabKeyboard) promptControl.GrabKeyboardFocus();
+        if (grabKeyboard) _focusControl = promptControl;
+    }
+
+    protected override void Shown() {
+        base.Shown();
+
+        _focusControl?.GrabKeyboardFocus();
     }
 
     protected override void ButtonClicked(string button) {

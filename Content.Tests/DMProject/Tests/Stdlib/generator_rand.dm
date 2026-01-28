@@ -1,0 +1,5 @@
+/proc/RunTest()
+	var/generator/gen = generator("num", -1, 1)
+	var/result = gen.Rand()
+	ASSERT(isnum(result))
+	ASSERT((result >= -1 && result <= 1))

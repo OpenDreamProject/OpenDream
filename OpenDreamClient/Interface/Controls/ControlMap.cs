@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using OpenDreamClient.Input;
 using OpenDreamClient.Interface.Controls.UI;
-using OpenDreamClient.Interface.Descriptors;
-using OpenDreamClient.Interface.DMF;
+using OpenDreamShared.Interface.Descriptors;
+using OpenDreamShared.Interface.DMF;
 using OpenDreamClient.Rendering;
 using OpenDreamShared.Dream;
 using Robust.Client.Graphics;
@@ -140,14 +140,14 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
     private void UpdateAtomUnderMouse(ClientObjectReference? atom, Vector2 relativePos, Vector2i iconPos) {
         if (!_atomUnderMouse.Equals(atom)) {
             _entitySystemManager.Resolve(ref _appearanceSystem);
-
             var name = (atom != null) ? _appearanceSystem.GetName(atom.Value) : string.Empty;
             Window?.SetStatus(name);
 
             if (_atomUnderMouse != null)
                 _mouseInput?.HandleAtomMouseExited(Viewport, _atomUnderMouse.Value);
-            if (atom != null)
+            if (atom != null) {
                 _mouseInput?.HandleAtomMouseEntered(Viewport, relativePos, atom.Value, iconPos);
+            }
         } else if (atom.HasValue) {
             _mouseInput?.HandleAtomMouseMove(Viewport, relativePos, atom.Value, iconPos);
         }

@@ -179,7 +179,7 @@ public sealed class ParticleSystem {
                 _particles[i].Lifetime += args.DeltaSeconds;
                 _particles[i].Transform = _baseTransform * _transform(_particles[i].Lifetime);
                 _particles[i].Color = _color(_particles[i].Lifetime);
-                _particles[i].Velocity += _acceleration(_particles[i].Lifetime, _particles[i].Velocity) * args.DeltaSeconds;
+                _particles[i].Velocity += _acceleration(_particles[i].Lifetime, _particles[i].Velocity);
                 _particles[i].Position += _particles[i].Velocity*args.DeltaSeconds;
                 if(_particles[i].Fadein > _particles[i].Lifetime)
                     _particles[i].Color.A = Math.Clamp(_particles[i].Lifetime/_particles[i].Fadein, 0, 1);

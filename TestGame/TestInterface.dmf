@@ -148,13 +148,22 @@ window "testwindow"
 		size = 200x100
 		title = "popup"
 		is-visible = false
+	elem "testwindowimagebutton"
+		type = BUTTON
+		image = 'icons\\ui\\cancel.png'
+		pos = 18,10
+		size = 160x40
+		anchor1 = none
+		anchor2 = none
+		font-family = "Verdana"
+		font-size = 10
+		font-style = "bold"
+		text = ""		
 	elem "testwindowlabel"
 		type = LABEL
+		pos = 0,60
 		text = "I am a test"
-		font-size = 6pt
-	elem "testwindowlabel"
-		type = LABEL
-		text = "I am a test"
+		font-size = 6pt	
 
 window "wingetwindow"
 	elem "wingetwindow"

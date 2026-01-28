@@ -38,13 +38,15 @@ The first step to building OpenDream is initializing the submodule for the game 
 
 To do this, simply run `git submodule update --init --recursive` in git bash and let it finish.
 
-**OpenDream requires .NET 9.** You can check your version by running `dotnet --version`. It should be at least `9.0.0`.
+**OpenDream requires .NET 10.** You can check your version by running `dotnet --version`. It should be at least `10.0.0`.
 
 To build, one can use a C# compiler (such as MSBuild) to compile the various projects described in the solution. To use the .NET build system, simply run `dotnet build -c Release` in the OpenDream directory. This will build all of the solutions in release mode and put the resultant binaries in `bin`
 
-## Testing
+## Automated Testing & Code Coverage
 
-OpenDream makes use of a unit testing framework. You can run these unit tests by running `dotnet test` in the OpenDream directory. This will run all of the RobustToolbox tests, as well as the DM language tests which can be found under `Content.Tests/DMProject/Tests/`. To add to the unit tests, simply create a `.dm` file under the Tests directory with `/proc/RunTest()` as the entry point. Optionally you can also add flags to the test, such as `// COMPILE ERROR` to mark that this test should cause a compile error.
+OpenDream makes use of an automated testing framework. You can run all tests for both OpenDream and its engine Robust Toolbox by running `dotnet test` in the OpenDream directory. Note that Robust Toolbox's tests may take quite a while and are typically not pertinent to OpenDream development. For more information about running and creating unit tests, refer to the dedicated wiki page [here](https://github.com/OpenDreamProject/OpenDream/wiki/Automated-Testing-&-Code-Coverage).
+
+OpenDream's current code coverage data can be found [here](https://app.codecov.io/gh/OpenDreamProject/OpenDream). More info about code coverage is available on the aforementioned [wiki page](https://github.com/OpenDreamProject/OpenDream/wiki/Automated-Testing-&-Code-Coverage).
 
 ## Requests for Comment
 

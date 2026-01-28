@@ -1,15 +1,15 @@
 ﻿using System.Diagnostics.Contracts;
 using System.IO;
 using Lidgren.Network;
-using Robust.Shared.Network;
 using Robust.Shared.Serialization;
 using System.Linq;
 using Robust.Shared.ViewVariables;
 using Robust.Shared.Maths;
 using System;
-using OpenDreamShared.Rendering;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using Robust.Shared.GameObjects;
+using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
 
 namespace OpenDreamShared.Dream;
 
@@ -58,6 +58,10 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
     [ViewVariables] public Vector2i MaptextOffset = MutableAppearance.Default.MaptextOffset;
     [ViewVariables] public string? Maptext = MutableAppearance.Default.Maptext;
     [ViewVariables] public AtomMouseEvents EnabledMouseEvents;
+    [ViewVariables] public int MouseDragPointer = MutableAppearance.Default.MouseDragPointer;
+    [ViewVariables] public bool MouseDropZone = MutableAppearance.Default.MouseDropZone;
+    [ViewVariables] public int MouseOverPointer = MutableAppearance.Default.MouseOverPointer;
+    [ViewVariables] public int MouseDropPointer = MutableAppearance.Default.MouseDropPointer;
 
     /// <summary> The Transform property of this appearance, in [a,d,b,e,c,f] order</summary>
     [ViewVariables] public readonly float[] Transform = [
@@ -103,6 +107,10 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         MaptextSize = appearance.MaptextSize;
         MaptextOffset = appearance.MaptextOffset;
         EnabledMouseEvents = appearance.EnabledMouseEvents;
+        MouseDragPointer = appearance.MouseDragPointer;
+        MouseDropZone = appearance.MouseDropZone;
+        MouseOverPointer = appearance.MouseOverPointer;
+        MouseDropPointer = appearance.MouseDropPointer;
 
         Overlays = appearance.Overlays.ToArray();
         Underlays = appearance.Underlays.ToArray();
@@ -176,6 +184,10 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         if (immutableAppearance.Maptext != Maptext) return false;
         if (immutableAppearance.MaptextSize != MaptextSize) return false;
         if (immutableAppearance.MaptextOffset != MaptextOffset) return false;
+        if (immutableAppearance.MouseDragPointer != MouseDragPointer) return false;
+        if (immutableAppearance.MouseDropZone != MouseDropZone) return false;
+        if (immutableAppearance.MouseOverPointer != MouseOverPointer) return false;
+        if (immutableAppearance.MouseDropPointer != MouseDropPointer) return false;
 
         for (int i = 0; i < Filters.Length; i++) {
             if (immutableAppearance.Filters[i] != Filters[i]) return false;
@@ -247,6 +259,10 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         hashCode.Add(Maptext);
         hashCode.Add(MaptextOffset);
         hashCode.Add(MaptextSize);
+        hashCode.Add(MouseDragPointer);
+        hashCode.Add(MouseDropZone);
+        hashCode.Add(MouseOverPointer);
+        hashCode.Add(MouseDropPointer);
 
         foreach (ImmutableAppearance overlay in Overlays) {
             hashCode.Add(overlay.GetHashCode());
@@ -276,7 +292,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         return (int)_storedHashCode;
     }
 
-    public ImmutableAppearance(NetIncomingMessage buffer, IRobustSerializer serializer) {
+    public ImmutableAppearance(NetBuffer buffer, IRobustSerializer serializer) {
         Overlays = [];
         Underlays = [];
         VisContents = [];
@@ -314,7 +330,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
                     PixelOffset2 = (buffer.ReadVariableInt32(), buffer.ReadVariableInt32());
                     break;
                 case IconAppearanceProperty.Color:
-                    Color = buffer.ReadColor();
+                    Color = new Color(buffer.ReadByte(), buffer.ReadByte(), buffer.ReadByte(), buffer.ReadByte());
                     break;
                 case IconAppearanceProperty.Alpha:
                     Alpha = buffer.ReadByte();
@@ -387,9 +403,9 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
                 case IconAppearanceProperty.VisContents: {
                     var visContentsCount = buffer.ReadVariableInt32();
 
-                    VisContents = new Robust.Shared.GameObjects.NetEntity[visContentsCount];
+                    VisContents = new NetEntity[visContentsCount];
                     for (int visContentsI = 0; visContentsI < visContentsCount; visContentsI++) {
-                        VisContents[visContentsI] = buffer.ReadNetEntity();
+                        VisContents[visContentsI] = new NetEntity(buffer.ReadInt32());
                     }
 
                     break;
@@ -444,6 +460,22 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
                     EnabledMouseEvents = (AtomMouseEvents)buffer.ReadByte();
                     break;
                 }
+                case IconAppearanceProperty.MouseDragPointer: {
+                    MouseDragPointer = buffer.ReadVariableInt32();
+                    break;
+                }
+                case IconAppearanceProperty.MouseDropZone: {
+                    MouseDropZone = true;
+                    break;
+                }
+                case IconAppearanceProperty.MouseOverPointer: {
+                    MouseOverPointer = buffer.ReadVariableInt32();
+                    break;
+                }
+                case IconAppearanceProperty.MouseDropPointer: {
+                    MouseDropPointer = buffer.ReadVariableInt32();
+                    break;
+                }
                 default:
                     throw new Exception($"Invalid property {property}");
             }
@@ -486,6 +518,10 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         result.MaptextOffset = MaptextOffset;
         result.MaptextSize = MaptextSize;
         result.EnabledMouseEvents = EnabledMouseEvents;
+        result.MouseDragPointer = MouseDragPointer;
+        result.MouseDropZone = MouseDropZone;
+        result.MouseOverPointer = MouseOverPointer;
+        result.MouseDropPointer = MouseDropPointer;
 
         result.Overlays.EnsureCapacity(Overlays.Length);
         result.Underlays.EnsureCapacity(Underlays.Length);
@@ -502,7 +538,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         return result;
     }
 
-    public void WriteToBuffer(NetOutgoingMessage buffer, IRobustSerializer serializer) {
+    public void WriteToBuffer(NetBuffer buffer, IRobustSerializer serializer) {
         buffer.Write((byte)IconAppearanceProperty.Id);
         buffer.WriteVariableUInt32(MustGetId());
 
@@ -549,7 +585,10 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
 
         if (Color != MutableAppearance.Default.Color) {
             buffer.Write((byte)IconAppearanceProperty.Color);
-            buffer.Write(Color);
+            buffer.Write(Color.RByte);
+            buffer.Write(Color.GByte);
+            buffer.Write(Color.BByte);
+            buffer.Write(Color.AByte);
         }
 
         if (Alpha != MutableAppearance.Default.Alpha) {
@@ -642,7 +681,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
 
             buffer.WriteVariableInt32(VisContents.Length);
             foreach (var item in VisContents) {
-                buffer.Write(item);
+                buffer.Write((int)item);
             }
         }
 
@@ -699,10 +738,29 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
             buffer.Write((byte)EnabledMouseEvents);
         }
 
+        if (MouseDragPointer != MutableAppearance.Default.MouseDragPointer) {
+            buffer.Write((byte)IconAppearanceProperty.MouseDragPointer);
+            buffer.WriteVariableInt32(MouseDragPointer);
+        }
+
+        if (MouseDropZone) {
+            buffer.Write((byte)IconAppearanceProperty.MouseDropZone);
+        }
+
+        if (MouseOverPointer != MutableAppearance.Default.MouseOverPointer) {
+            buffer.Write((byte)IconAppearanceProperty.MouseOverPointer);
+            buffer.WriteVariableInt32(MouseOverPointer);
+        }
+
+        if (MouseDropPointer != MutableAppearance.Default.MouseDropPointer) {
+            buffer.Write((byte)IconAppearanceProperty.MouseDropPointer);
+            buffer.WriteVariableInt32(MouseDropPointer);
+        }
+
         buffer.Write((byte)IconAppearanceProperty.End);
     }
 
-    public int ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {
+    public int ReadFromBuffer(NetBuffer buffer, IRobustSerializer serializer) {
         throw new NotImplementedException();
     }
 }

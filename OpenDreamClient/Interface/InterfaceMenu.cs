@@ -1,5 +1,5 @@
-﻿using OpenDreamClient.Interface.Descriptors;
-using OpenDreamClient.Interface.DMF;
+﻿using OpenDreamShared.Interface.Descriptors;
+using OpenDreamShared.Interface.DMF;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Serialization.Manager;
 
@@ -49,7 +49,8 @@ public sealed class InterfaceMenu : InterfaceElement {
                 !MenuElementsByName.TryGetValue(elementDescriptor.Category.Value, out parentMenu)) {
                 //if category is set but the parent element doesn't exist, create it
                 var parentMenuDescriptor = new MenuElementDescriptor {
-                    Id = elementDescriptor.Category
+                    Id = elementDescriptor.Category,
+                    Name = elementDescriptor.Category
                 };
 
                 parentMenu = new(parentMenuDescriptor, this);

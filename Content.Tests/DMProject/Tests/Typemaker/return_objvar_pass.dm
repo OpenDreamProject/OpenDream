@@ -1,3 +1,4 @@
+// NOBYOND
 #pragma InvalidReturnType error
 /datum/var/bar = "foobar" as text
 

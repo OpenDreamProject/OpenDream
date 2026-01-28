@@ -55,6 +55,12 @@ internal sealed class DreamClientSystem : EntitySystem {
 
     public override void Initialize() {
         SubscribeLocalEvent<LocalPlayerAttachedEvent>(OnPlayerAttached);
+        SubscribeLocalEvent<EyeComponent, EyeAttachedEvent>(OnEyeAttachedEvent);
+    }
+
+    // override basic RT eye changes
+    private void OnEyeAttachedEvent(EntityUid uid, EyeComponent comp, ref EyeAttachedEvent e) {
+        _eyeManager.CurrentEye = new DreamClientEye(_eyeManager.CurrentEye, _eyeRef, _entityManager, _transformSystem);
     }
 
     private void OnPlayerAttached(LocalPlayerAttachedEvent e) {

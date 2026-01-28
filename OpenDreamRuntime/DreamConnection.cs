@@ -55,10 +55,10 @@ public sealed class DreamConnection {
                     var oldMobNetEntity = _entityManager.GetNetEntity(oldMob.Entity);
                     if (Eye != null && Eye.Value.Entity == oldMobNetEntity) {
                         if (_mob == null) {
-                            Eye = null;
+                            _eye = null;
                         } else {
                             var newMobNetEntity = _entityManager.GetNetEntity(_mob.Entity);
-                            Eye = new(newMobNetEntity);
+                            _eye = new(newMobNetEntity);
                         }
                     }
                 }
@@ -79,11 +79,14 @@ public sealed class DreamConnection {
             }
         }
     }
-  
+
+    private ClientObjectReference? _eye;
+
     [ViewVariables] public ClientObjectReference? Eye {
-        get;
+        get => _eye;
         set {
-            field = value;
+            _eye = value;
+            UpdateMobEye();
         }
     }
 

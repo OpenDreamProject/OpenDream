@@ -84,6 +84,7 @@ namespace OpenDreamRuntime {
 
             _dreamManager.Shutdown();
             _debugManager.Shutdown();
+            ByondApi.ByondApi.Shutdown();
         }
 
         public override void Update(ModUpdateLevel level, FrameEventArgs frameEventArgs) {

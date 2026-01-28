@@ -44,6 +44,12 @@
     <DMStandard Include="..\DMCompiler\DMStandard\**" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="DMProject\Tests\Sleeping\Basic.cs" />
+    <Content Include="DMProject\Tests\Sleeping\Basic.dm" />
+    <Content Include="dmproject\tests\sleeping\YieldOrder.dm" />
+  </ItemGroup>
+
   <Target Name="CopyDMStandard" AfterTargets="AfterBuild">
     <Copy SourceFiles="@(DMStandard)" DestinationFiles="@(DMStandard->'$(OutDir)\DMStandard\%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>

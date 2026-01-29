@@ -235,10 +235,14 @@ public sealed partial class DreamManager {
     }
 
     public string CreateRef(DreamValue value) {
-        return $"[0x{CreateRefInt(value, out _):x}]";
+        var refId = GetRefId(value, out var refType);
+
+        // refType combines with the highest byte. This could produce an invalid ref, but that's BYOND behavior too.
+        var combined = (uint)refType | refId;
+        return $"[0x{combined:x}]";
     }
 
-    public uint CreateRefInt(DreamValue value, out RefType refType) {
+    public uint GetRefId(DreamValue value, out RefType refType) {
         int idx;
 
         if (value.TryGetValueAsDreamObject(out var refObject)) {
@@ -309,8 +313,7 @@ public sealed partial class DreamManager {
             throw new NotImplementedException($"Ref for {value} is unimplemented");
         }
 
-        // The highest byte is the type
-        return (uint)refType | (uint)idx;
+        return (uint)idx;
     }
 
     /// <summary>
@@ -333,12 +336,16 @@ public sealed partial class DreamManager {
         }
     }
 
-    public DreamValue RefIdToValue(int rawRefId) {
+    public DreamValue RefToValue(int rawRef) {
         // The first one/two digits give the type, the last 6 give the index
-        var typeId = (RefType)(rawRefId & 0xFF000000);
-        var refId = (rawRefId & 0x00FFFFFF); // The ref minus its ref type prefix
+        var refType = (RefType)(rawRef & 0xFF000000);
+        var refId = (rawRef & 0x00FFFFFF); // The ref minus its ref type prefix
 
-        switch (typeId) {
+        return RefToValue(refType, refId);
+    }
+
+    public DreamValue RefToValue(RefType refType, int refId) {
+        switch (refType) {
             case RefType.Null:
                 return DreamValue.Null;
             case RefType.DreamObjectArea:
@@ -380,7 +387,7 @@ public sealed partial class DreamManager {
             case RefType.Number: // For the oh so few numbers this works with (most numbers clobber the ref type)
                 return new(BitConverter.Int32BitsToSingle(refId));
             default:
-                throw new Exception($"Invalid reference type for ref [0x{rawRefId:x}]");
+                throw new Exception($"Invalid reference type for ref [0x{refId:x}]");
         }
     }
 
@@ -396,7 +403,7 @@ public sealed partial class DreamManager {
         }
 
         if (canBePointer && int.TryParse(refString.Substring(2), System.Globalization.NumberStyles.HexNumber, null, out var refId)) {
-            return RefIdToValue(refId);
+            return RefToValue(refId);
         }
 
         // Search for an object with this ref as its tag
@@ -475,7 +482,6 @@ public enum RefType : uint {
     DreamObjectMob = 0x3000000,
     DreamObjectArea = 0x4000000,
     DreamObjectClient = 0x5000000,
-    DreamObjectFilter = 0x5300000,
     DreamResourceIcon = 0xC000000,
     DreamObjectImage = 0xD000000,
     DreamObjectList = 0xF000000,
@@ -485,5 +491,6 @@ public enum RefType : uint {
     DreamResource = 0x27000000, //Equivalent to file
     DreamAppearance = 0x3A000000,
     Proc = 0x26000000,
-    Number = 0x2A000000
+    Number = 0x2A000000,
+    DreamObjectFilter = 0x53000000
 }

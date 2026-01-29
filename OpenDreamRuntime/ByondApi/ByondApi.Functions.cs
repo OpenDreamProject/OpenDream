@@ -112,10 +112,10 @@ public static unsafe partial class ByondApi {
         return RunOnMainThread(() => {
             var strId = _dreamManager!.FindString(str);
             if (strId != null) {
-                return (uint)RefType.String | strId.Value;
-            } else {
-                return NONE;
+                return strId.Value;
             }
+
+            return NONE;
         });
     }
 
@@ -138,7 +138,7 @@ public static unsafe partial class ByondApi {
 
         return RunOnMainThread(() => {
             var strIdx = _dreamManager!.FindOrAddString(str);
-            return (uint)RefType.String | strIdx;
+            return strIdx;
         });
     }
 
@@ -195,9 +195,9 @@ public static unsafe partial class ByondApi {
 
         return RunOnMainThread<byte>(() => {
             try {
-                DreamValue varNameVal = _dreamManager!.RefIdToValue((int)varname);
+                DreamValue varNameVal = _dreamManager!.RefToValue(RefType.String, (int)varname);
                 if (!varNameVal.TryGetValueAsString(out var varName))
-                    return SetLastError("varname argument was not a reference to a string");
+                    return SetLastError("varname argument was an invalid string ID");
 
                 DreamValue srcValue = ValueFromDreamApi(*loc);
                 if (!srcValue.TryGetValueAsDreamObject(out var srcObj))
@@ -264,9 +264,9 @@ public static unsafe partial class ByondApi {
     private static byte Byond_WriteVarByStrId(CByondValue* loc, uint varname, CByondValue* val) {
         return RunOnMainThread<byte>(() => {
             try {
-                DreamValue varNameVal = _dreamManager!.RefIdToValue((int)varname);
+                DreamValue varNameVal = _dreamManager!.RefToValue(RefType.String, (int)varname);
                 if (!varNameVal.TryGetValueAsString(out var varName))
-                    return SetLastError("varname argument was not a ref to a string");
+                    return SetLastError("varname argument was an invalid string ID");
 
                 DreamValue srcValue = ValueFromDreamApi(*val);
                 DreamValue dstValue = ValueFromDreamApi(*loc);
@@ -590,9 +590,9 @@ public static unsafe partial class ByondApi {
 
         return RunOnMainThread(() => {
             try {
-                DreamValue procNameVal = _dreamManager!.RefIdToValue((int)name);
+                DreamValue procNameVal = _dreamManager!.RefToValue(RefType.String, (int)name);
                 if (!procNameVal.TryGetValueAsString(out var procName))
-                    return SetLastError("name argument was not a ref to a string");
+                    return SetLastError("name argument was an invalid string ID");
 
                 DreamValue src = ValueFromDreamApi(*cSrc);
                 if (!src.TryGetValueAsDreamObject(out var srcObj))
@@ -659,9 +659,9 @@ public static unsafe partial class ByondApi {
 
         return RunOnMainThread<byte>(() => {
             try {
-                DreamValue procNameVal = _dreamManager!.RefIdToValue((int)name);
+                DreamValue procNameVal = _dreamManager!.RefToValue(RefType.String, (int)name);
                 if (!procNameVal.TryGetValueAsString(out var procName))
-                    return SetLastError("name argument was not a ref to a string");
+                    return SetLastError("name argument was an invalid string ID");
                 if (!_dreamManager.TryGetGlobalProc(procName, out var proc))
                     return SetLastError($"no global proc named \"{procName}\"");
 
@@ -1068,13 +1068,13 @@ public static unsafe partial class ByondApi {
     // This only applies to ref types, not null/num/string which are always valid.
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_TestRef(CByondValue* src) {
-        if (src == null) return SetLastError("src argument was a null pointer");
-        if (src->type == ByondValueType.Null) {
+        if (src == null)
+            return SetLastError("src argument was a null pointer");
+        if (src->type == ByondValueType.Null)
             return 1;
-        }
 
         return RunOnMainThread<byte>(() => {
-            var srcValue = _dreamManager!.RefIdToValue((int)src->data.@ref);
+            var srcValue = ValueFromDreamApi(*src);
 
             if (srcValue == DreamValue.Null) {
                 src->type = 0;

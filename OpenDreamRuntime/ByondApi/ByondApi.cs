@@ -23,7 +23,7 @@ public static partial class ByondApi {
     /// A failed ByondApi call will set this string. It can be retrieved with <see cref="Byond_LastError"/>.
     /// </summary>
     private static string _lastError = string.Empty;
-    
+
     private static IntPtr _lastErrorPtr = IntPtr.Zero;
 
     public static void Initialize(DreamManager dreamManager, AtomManager atomManager, IDreamMapManager dreamMapManager, DreamObjectTree objectTree) {
@@ -90,8 +90,32 @@ public static partial class ByondApi {
             case ByondValueType.Appearance:
             case ByondValueType.World:
             case ByondValueType.Proc:
+                var refType = ctype switch {
+                    ByondValueType.Turf => RefType.DreamObjectTurf,
+                    ByondValueType.Obj => RefType.DreamObject,
+                    ByondValueType.Mob => RefType.DreamObjectMob,
+                    ByondValueType.Area => RefType.DreamObjectArea,
+                    ByondValueType.Client => RefType.DreamObjectClient,
+                    ByondValueType.Image => RefType.DreamObjectImage,
+                    ByondValueType.List => RefType.DreamObjectList,
+                    ByondValueType.Datum => RefType.DreamObjectDatum,
+                    ByondValueType.World => RefType.DreamObjectDatum,
+                    ByondValueType.String => RefType.String,
+                    ByondValueType.Resource => RefType.DreamResource,
+                    ByondValueType.Appearance => RefType.DreamAppearance,
+                    ByondValueType.Proc => RefType.Proc,
+
+                    ByondValueType.ObjTypePath or
+                    ByondValueType.MobTypePath or
+                    ByondValueType.TurfTypePath or
+                    ByondValueType.DatumTypePath or
+                    ByondValueType.AreaTypePath => RefType.DreamType,
+
+                    _ => throw new Exception($"Invalid reference type for type {ctype.ToString()}")
+                };
+
                 int refId = (int)cdata.@ref;
-                return _dreamManager!.RefIdToValue(refId);
+                return _dreamManager!.RefToValue(refType, refId);
         }
     }
 
@@ -111,9 +135,9 @@ public static partial class ByondApi {
             case DreamValue.DreamValueType.DreamType:
             case DreamValue.DreamValueType.Appearance:
             case DreamValue.DreamValueType.DreamProc:
-                var refid = _dreamManager!.CreateRefInt(value, out RefType refType);
+                var refId = _dreamManager!.GetRefId(value, out var refType);
                 ByondValueType type;
-                ByondValueData data = new ByondValueData { @ref = refid };
+                ByondValueData data = new ByondValueData { @ref = refId };
 
                 switch (refType) {
                     default:

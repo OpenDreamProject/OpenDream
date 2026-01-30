@@ -3,11 +3,17 @@ using OpenDreamRuntime.Procs;
 
 namespace OpenDreamRuntime.Objects.Types;
 
-public sealed class DreamObjectCallee(DreamObjectDefinition objectDefinition) : DreamObject(objectDefinition) {
+public sealed class DreamObjectCallee : DreamObject {
     public DMProcState? ProcState;
     public long ProcStateId; // Used to ensure the proc state hasn't been reused for another proc
+    private DreamObjectCallee? _caller; // Caching caller prevents issues with returning incorrect info when the proc ends or calls another proc
+
+    public DreamObjectCallee(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
+        SetCaller(); // we need to cache _caller recursively
+    }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
+        // TODO: This ProcState check doesn't match byond behavior?
         if (ProcState == null || ProcState.Id != ProcStateId)
             throw new Exception("This callee has expired");
 
@@ -19,8 +25,8 @@ public sealed class DreamObjectCallee(DreamObjectDefinition objectDefinition) : 
                 value = new(new ProcArgsList(ObjectTree.List.ObjectDefinition, ProcState));
                 return true;
             case "caller":
-                // TODO
-                value = DreamValue.Null;
+                SetCaller(); // sometimes ProcState is null in the constructor?
+                value = new DreamValue(_caller);
                 return true;
             case "name":
                 value = new(ProcState.Proc.VerbName);
@@ -52,6 +58,19 @@ public sealed class DreamObjectCallee(DreamObjectDefinition objectDefinition) : 
                 value = DreamValue.Null;
                 return false;
         }
+    }
+
+    /// <summary>
+    /// Sets <see cref="_caller"/> if it hasn't been already and <see cref="ProcState"/> is not null
+    /// </summary>
+    private void SetCaller() {
+        if (ProcState is null || _caller is not null) return;
+
+        var caller = ObjectTree.CreateObject<DreamObjectCallee>(ObjectTree.Callee);
+        var peekStack = ProcState.Thread.PeekStack(1);
+        caller.ProcState = (DMProcState)peekStack;
+        caller.ProcStateId = peekStack.Id;
+        _caller = caller;
     }
 
     protected override void SetVar(string varName, DreamValue value) {

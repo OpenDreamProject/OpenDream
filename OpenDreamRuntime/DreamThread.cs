@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using DMCompiler.DM;
 using JetBrains.Annotations;
 using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamShared.Dream;
@@ -156,6 +157,9 @@ namespace OpenDreamRuntime {
         public int ArgumentCount;
         public abstract DreamProc? Proc { get; }
 
+        protected DreamObjectCallee? Callee { get; set; }
+        protected DreamObjectCallee? Caller { get; set; }
+
         protected void Initialize(DreamThread thread, bool waitFor) {
             Thread = thread;
             WaitFor = waitFor;
@@ -246,6 +250,10 @@ namespace OpenDreamRuntime {
         [MustDisposeResource]
         public DreamValue Resume() {
             return ReentrantResume(null, out _);
+        }
+
+        public ProcState PeekStack(int index = 0) {
+            return index == 0 ? _stack.Peek() : _stack.ElementAt(index);
         }
 
         /// <summary>

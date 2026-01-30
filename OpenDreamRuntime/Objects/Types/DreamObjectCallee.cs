@@ -65,11 +65,11 @@ public sealed class DreamObjectCallee : DreamObject {
     /// </summary>
     private void SetCaller() {
         if (ProcState is null || _caller is not null) return;
+        if (ProcState.Thread.PeekStack(1) is not DMProcState dmProcState) return;
 
         var caller = ObjectTree.CreateObject<DreamObjectCallee>(ObjectTree.Callee);
-        var peekStack = ProcState.Thread.PeekStack(1);
-        caller.ProcState = (DMProcState)peekStack;
-        caller.ProcStateId = peekStack.Id;
+        caller.ProcState = dmProcState;
+        caller.ProcStateId = dmProcState.Id;
         _caller = caller;
     }
 

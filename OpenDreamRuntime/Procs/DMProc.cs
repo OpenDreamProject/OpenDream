@@ -846,11 +846,11 @@ public sealed class DMProcState : ProcState {
             case DMReference.Type.Caller: {
                 // Note that the ref says that caller still returns a "/callee" object, just with the caller's info
                 if (Caller is not null) return new DreamValue(Caller);
-                var caller = Proc.ObjectTree.CreateObject<DreamObjectCallee>(Proc.ObjectTree.Callee);
+                if (Thread.PeekStack() is not DMProcState dmProcState) return DreamValue.Null;
 
-                var threadPeek = Thread.PeekStack();
-                caller.ProcState = (DMProcState)threadPeek;
-                caller.ProcStateId = threadPeek.Id;
+                var caller = Proc.ObjectTree.CreateObject<DreamObjectCallee>(Proc.ObjectTree.Callee);
+                caller.ProcState = dmProcState;
+                caller.ProcStateId = dmProcState.Id;
                 Caller = caller;
                 return new(caller);
             }

@@ -8,8 +8,8 @@ using Dependency = Robust.Shared.IoC.DependencyAttribute;
 
 namespace OpenDreamRuntime.Procs {
     public sealed class AsyncNativeProc : DreamProc {
-        public sealed class State : ProcState {
-            public static readonly Stack<State> Pool = new();
+        public sealed class AsyncDMProcState : ProcState {
+            public static readonly Stack<AsyncDMProcState> Pool = new();
 
             #if TOOLS
             public override (string SourceFile, int Line) TracyLocationId => ("Async Native Proc", 0);
@@ -21,16 +21,12 @@ namespace OpenDreamRuntime.Procs {
             [Dependency] public readonly DreamObjectTree ObjectTree = default!;
             [Dependency] public readonly ProcScheduler ProcScheduler = default!;
 
-            public DreamObject? Src;
-            public DreamObject? Usr;
-
             private readonly DreamValue[] _arguments = new DreamValue[128];
-            private int _argumentCount;
 
             public override DreamProc? Proc => _proc;
             private AsyncNativeProc? _proc;
 
-            private Func<State, Task<DreamValue>> _taskFunc;
+            private Func<AsyncDMProcState, Task<DreamValue>> _taskFunc;
             private Task? _task;
 
             private ProcState? _callProcNotify;
@@ -39,19 +35,19 @@ namespace OpenDreamRuntime.Procs {
 
             private bool _inResume;
 
-            public State() {
+            public AsyncDMProcState() {
                 IoCManager.InjectDependencies(this);
             }
 
-            public void Initialize(AsyncNativeProc? proc, Func<State, Task<DreamValue>> taskFunc, DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
+            public void Initialize(AsyncNativeProc? proc, Func<AsyncDMProcState, Task<DreamValue>> taskFunc, DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
                 base.Initialize(thread, true);
 
                 _proc = proc;
                 _taskFunc = taskFunc;
-                Src = src;
+                Instance = src;
                 Usr = usr;
                 arguments.Values.CopyTo(_arguments);
-                _argumentCount = arguments.Count;
+                ArgumentCount = arguments.Count;
             }
 
             // Used to avoid reentrant resumptions in our proc
@@ -96,9 +92,9 @@ namespace OpenDreamRuntime.Procs {
             public override void Dispose() {
                 base.Dispose();
 
-                Src = null!;
+                Instance = null!;
                 Usr = null!;
-                _argumentCount = 0;
+                ArgumentCount = 0;
                 _proc = null!;
                 _taskFunc = null!;
                 _task = null;
@@ -162,34 +158,45 @@ namespace OpenDreamRuntime.Procs {
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public DreamValue GetArgument(int argumentPosition, string argumentName) {
-                if (argumentPosition < _argumentCount && _arguments[argumentPosition] != DreamValue.Null)
+                if (argumentPosition < ArgumentCount && _arguments[argumentPosition] != DreamValue.Null)
                     return _arguments[argumentPosition];
 
                 return _proc?._defaultArgumentValues?.TryGetValue(argumentName, out var argValue) == true ? argValue : DreamValue.Null;
             }
+
+            public override ReadOnlySpan<DreamValue> GetArguments() {
+                return _arguments.AsSpan(0, ArgumentCount);
+            }
+
+            public override void SetArgument(int id, DreamValue value) {
+                if (id < 0 || id >= ArgumentCount)
+                    throw new IndexOutOfRangeException($"Given argument id ({id}) was out of range");
+
+                _arguments[id] = value;
+            }
         }
 
         private readonly Dictionary<string, DreamValue>? _defaultArgumentValues;
-        private readonly Func<State, Task<DreamValue>> _taskFunc;
+        private readonly Func<AsyncDMProcState, Task<DreamValue>> _taskFunc;
 
-        public AsyncNativeProc(int id, TreeEntry owningType, string name, List<string> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, Func<State, Task<DreamValue>> taskFunc)
+        public AsyncNativeProc(int id, TreeEntry owningType, string name, List<string> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, Func<AsyncDMProcState, Task<DreamValue>> taskFunc)
             : base(id, owningType, name, null, ProcAttributes.None, argumentNames, null, null, null, null, null, 0) {
             _defaultArgumentValues = defaultArgumentValues;
             _taskFunc = taskFunc;
         }
 
         public override ProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
-            if (!State.Pool.TryPop(out var state)) {
-                state = new State();
+            if (!AsyncDMProcState.Pool.TryPop(out var state)) {
+                state = new AsyncDMProcState();
             }
 
             state.Initialize(this, _taskFunc, thread, src, usr, arguments);
             return state;
         }
 
-        public static ProcState CreateAnonymousState(DreamThread thread, Func<State, Task<DreamValue>> taskFunc) {
-            if (!State.Pool.TryPop(out var state)) {
-                state = new State();
+        public static ProcState CreateAnonymousState(DreamThread thread, Func<AsyncDMProcState, Task<DreamValue>> taskFunc) {
+            if (!AsyncDMProcState.Pool.TryPop(out var state)) {
+                state = new AsyncDMProcState();
             }
 
             state.Initialize(null, taskFunc, thread, null, null, new DreamProcArguments());

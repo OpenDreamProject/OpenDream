@@ -1567,7 +1567,7 @@ public sealed class MovableContentsList(DreamObjectDefinition listDef, DreamObje
 }
 
 // proc args list
-internal sealed class ProcArgsList(DreamObjectDefinition listDef, DMProcState state) : DreamList(listDef, 0) {
+internal sealed class ProcArgsList(DreamObjectDefinition listDef, ProcState state) : DreamList(listDef, 0) {
     public override DreamValue GetValue(DreamValue key) {
         if (!key.TryGetValueAsInteger(out var index))
             throw new Exception($"Invalid index into args list: {key}");

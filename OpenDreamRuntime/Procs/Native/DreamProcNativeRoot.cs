@@ -2554,25 +2554,24 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
     [DreamProcParameter("include_delimiters", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
     public static DreamValue NativeProc_splittext(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-        if (!bundle.GetArgument(0, "Text").TryGetValueAsString(out var text)) {
+        if (!bundle.GetArgument(0, "Text").TryGetValueAsString(out var rawtext)) {
             return new DreamValue(bundle.ObjectTree.CreateList());
         }
 
-        int start = 0;
-        int end = 0;
-        if(bundle.GetArgument(2, "Start").TryGetValueAsInteger(out start))
+        if (bundle.GetArgument(2, "Start").TryGetValueAsInteger(out int start))
             start -= 1; //1-indexed
-        if(bundle.GetArgument(3, "End").TryGetValueAsInteger(out end))
+        if (bundle.GetArgument(3, "End").TryGetValueAsInteger(out int end))
             if(end == 0)
-                end = text.Length;
+                end = rawtext.Length;
             else
                 end -= 1; //1-indexed
         bool includeDelimiters = false;
         if(bundle.GetArgument(4, "include_delimiters").TryGetValueAsInteger(out var includeDelimitersInt))
             includeDelimiters = includeDelimitersInt != 0; //idk why BYOND doesn't just use truthiness, but it doesn't, so...
 
-        if(start > 0 || end < text.Length)
-            text = text[Math.Max(start,0)..Math.Min(end, text.Length)];
+        string text = rawtext;
+        if (start > 0 || end < rawtext.Length)
+            text = rawtext[Math.Max(start, 0)..Math.Min(end, text.Length)];
 
         var delim = bundle.GetArgument(1, "Delimiter"); //can either be a regex or string
 
@@ -2587,9 +2586,18 @@ internal static class DreamProcNativeRoot {
                 }
 
                 values.Add(text.Substring(pos));
+                if (start > 0)
+                    values[0] = rawtext.Substring(0, start) + values[0];
+                if (end < rawtext.Length)
+                    values[^1] += rawtext.Substring(end, rawtext.Length - end);
                 return new DreamValue(bundle.ObjectTree.CreateList(values.ToArray()));
             } else {
-                return new DreamValue(bundle.ObjectTree.CreateList(regexObject.Regex.Split(text)));
+                var values = regexObject.Regex.Split(text);
+                if (start > 0)
+                    values[0] = rawtext.Substring(0, start) + values[0];
+                if (end < rawtext.Length)
+                    values[^1] += rawtext.Substring(end, rawtext.Length - end);
+                return new DreamValue(bundle.ObjectTree.CreateList(values));
             }
         } else if (delim.TryGetValueAsString(out var delimiter)) {
             string[] splitText;
@@ -2608,6 +2616,10 @@ internal static class DreamProcNativeRoot {
                 splitText = text.Split(delimiter);
             }
 
+            if (start > 0)
+                splitText[0] = rawtext.Substring(0, start) + splitText[0];
+            if (end < rawtext.Length)
+                splitText[^1] += rawtext.Substring(end, rawtext.Length - end);
             return new DreamValue(bundle.ObjectTree.CreateList(splitText));
         } else {
             return new DreamValue(bundle.ObjectTree.CreateList());

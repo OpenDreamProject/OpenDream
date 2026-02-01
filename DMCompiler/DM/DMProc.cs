@@ -672,18 +672,20 @@ internal sealed class DMProc {
         AddLabel($"{loopLabel}_continue");
     }
 
+    public void SleepDelayPushed() => WriteOpcode(DreamProcOpcode.Sleep);
+
+    public void Sleep(float delay) {
+        if (delay < 0) // yielding
+            WriteOpcode(DreamProcOpcode.BackgroundSleep);
+        else {
+            PushFloat(delay);
+            WriteOpcode(DreamProcOpcode.Sleep);
+        }
+    }
+
     public void BackgroundSleep() {
-        // TODO This seems like a bad way to handle background, doesn't it?
-
         if ((Attributes & ProcAttributes.Background) == ProcAttributes.Background) {
-            if (!_compiler.DMObjectTree.TryGetGlobalProc("sleep", out var sleepProc)) {
-                _compiler.Emit(WarningCode.ItemDoesntExist, Location, "Cannot do a background sleep without a sleep proc");
-                return;
-            }
-
-            PushFloat(-1); // argument given to sleep()
-            Call(DMReference.CreateGlobalProc(sleepProc.Id), DMCallArgumentsType.FromStack, 1);
-            Pop(); // Pop the result of the sleep call
+            WriteOpcode(DreamProcOpcode.BackgroundSleep);
         }
     }
 

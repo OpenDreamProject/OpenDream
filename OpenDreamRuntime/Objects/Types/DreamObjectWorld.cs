@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Net.Sockets;
+using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared;
@@ -26,7 +27,7 @@ public sealed class DreamObjectWorld : DreamObject {
     public readonly int IconSize;
 
     [Dependency] private readonly IBaseServer _server = default!;
-    [Dependency] private readonly IGameTiming _gameTiming = default!;
+    [Dependency] private readonly IOpenDreamGameTiming _gameTiming = default!;
     [Dependency] private readonly INetManager _netManager = default!;
     [Dependency] private readonly IConfigurationManager _cfg = default!;
 

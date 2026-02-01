@@ -307,6 +307,10 @@ public enum DreamProcOpcode : byte {
     NPushFloatAssign = 0x9B,
     [OpcodeMetadata(0, OpcodeArgType.ArgType, OpcodeArgType.StackDelta)]
     Animate = 0x9C,
+    [OpcodeMetadata(-1)]
+    Sleep = 0x9D,
+    [OpcodeMetadata]
+    BackgroundSleep = 0x9E,
 }
 // ReSharper restore MissingBlankLines
 

@@ -24,6 +24,7 @@ public static class ServerContentIoC {
         if (!unitTests) {
             // Unit tests use their own version
             IoCManager.Register<IDreamMapManager, DreamMapManager>();
+            IoCManager.Register<IOpenDreamGameTiming, OpenDreamGameTiming>();
         }
     }
 }

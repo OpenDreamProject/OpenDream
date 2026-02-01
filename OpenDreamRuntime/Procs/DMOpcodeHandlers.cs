@@ -14,6 +14,7 @@ using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Shared.Random;
+using DependencyAttribute = Robust.Shared.IoC.DependencyAttribute;
 using FormatSuffix = DMCompiler.Bytecode.StringFormatEncoder.FormatSuffix;
 
 namespace OpenDreamRuntime.Procs {
@@ -1864,22 +1865,91 @@ namespace OpenDreamRuntime.Procs {
             // and have state.Spawn return a ProcState instead
             DreamThread newContext = state.Spawn();
 
-            //Negative delays mean the spawned code runs immediately
-            if (delay < 0) {
+            async Task Wait() {
+                await state.ProcScheduler.CreateDelay(delay, state.Proc.Id, state.Thread.Id);
                 newContext.Resume();
-                // TODO: Does the rest of the proc get scheduled?
-                // Does the value of the delay mean anything?
-            } else {
-                async void Wait() {
-                    await state.ProcScheduler.CreateDelay(delay);
-                    newContext.Resume();
-                }
-
-                Wait();
             }
 
+            _ = Wait();
             state.Jump(jumpTo);
             return ProcStatus.Continue;
+        }
+
+        public static ProcStatus Sleep(DMProcState state) {
+            state.Pop().TryGetValueAsFloat(out var delay);
+            return SleepCore(
+                state,
+                state.ProcScheduler.CreateDelay(delay, state.Proc.Id, state.Thread.Id));
+        }
+
+        public static ProcStatus BackgroundSleep(DMProcState state) => SleepCore(
+            state,
+            state.ProcScheduler.CreateDelayTicks(-1, state.Proc.Id, state.Thread.Id));
+
+        static ProcStatus SleepCore(DMProcState state, Task delay) {
+            if (delay.IsCompleted)
+                return ProcStatus.Continue; // fast path, skip state creation
+
+            if (!SleepState.Pool.TryPop(out var sleepState)) {
+                sleepState = new SleepState();
+            }
+
+            return sleepState.Initialize(state.Thread, state.Proc, delay, state.Result);
+        }
+
+        // "proc state" we just need something to hold the delay task
+        sealed class SleepState : AsyncProcState {
+            public static readonly Stack<SleepState> Pool = new();
+
+            [Dependency] private readonly ProcScheduler _procScheduler = null!;
+
+            DreamProc? _proc;
+            Task? _task;
+
+            public SleepState() {
+                IoCManager.InjectDependencies(this);
+            }
+
+            public ProcStatus Initialize(DreamThread thread, DMProc proc, Task delay, DreamValue pendingResult) {
+                Thread = thread;
+                _proc = proc;
+                Result = pendingResult;
+                _task = _procScheduler.Schedule(this, delay);
+                thread.PushProcState(this);
+                return thread.HandleDefer();
+            }
+
+            public override void Dispose() {
+                base.Dispose();
+                Thread = null!;
+                _proc = null;
+                _task = null;
+                Pool.Push(this);
+            }
+
+            public override DreamProc? Proc => _proc;
+
+            public override void AppendStackFrame(StringBuilder builder) {
+                builder.Append("/proc/sleep");
+            }
+
+            // a sleep is always the top of a thread so it's always safe to resume
+            public override void SafeResume() => Thread.Resume();
+
+            public override ProcStatus Resume() {
+                if (_task!.IsCompleted) {
+                    // read before we get disposed when popped off
+                    var exception = _task.Exception;
+                    Thread.PopProcState();
+                    if (exception != null) {
+                        throw exception;
+                    }
+
+                    return ProcStatus.Continue;
+                }
+
+                return Thread.HandleDefer();
+            }
         }
 
         public static ProcStatus DebuggerBreakpoint(DMProcState state) {

@@ -91,6 +91,12 @@ public sealed class DMASTProcStatementSet(
     public readonly bool WasInKeyword = wasInKeyword; // Marks whether this was a "set x in y" expression, or a "set x = y" one
 }
 
+public sealed class DMASTProcStatementSleep(
+    Location location,
+    DMASTExpression delay) : DMASTProcStatement(location) {
+    public DMASTExpression Delay = delay;
+}
+
 public sealed class DMASTProcStatementSpawn(Location location, DMASTExpression delay, DMASTProcBlockInner body)
     : DMASTProcStatement(location) {
     public DMASTExpression Delay = delay;
@@ -112,9 +118,11 @@ public sealed class DMASTProcStatementFor(
     DMASTExpression? expr1,
     DMASTExpression? expr2,
     DMASTExpression? expr3,
+    DMASTProcStatement? statement3,
     DMComplexValueType? dmTypes,
     DMASTProcBlockInner body) : DMASTProcStatement(location) {
     public DMASTExpression? Expression1 = expr1, Expression2 = expr2, Expression3 = expr3;
+    public DMASTProcStatement? Statement3 = statement3;
     public DMComplexValueType? DMTypes = dmTypes;
     public readonly DMASTProcBlockInner Body = body;
 }

@@ -50,6 +50,17 @@ namespace OpenDreamRuntime.Procs {
             builder.AppendLine($"new {_dreamObject.ObjectDefinition.Type}");
         }
 
+        public override ReadOnlySpan<DreamValue> GetArguments() {
+            return _arguments.AsSpan(0, ArgumentCount);
+        }
+
+        public override void SetArgument(int id, DreamValue value) {
+            if (id < 0 || id >= ArgumentCount)
+                throw new IndexOutOfRangeException($"Given argument id ({id}) was out of range");
+
+            _arguments[id] = value;
+        }
+
         public override void Dispose() {
             base.Dispose();
 

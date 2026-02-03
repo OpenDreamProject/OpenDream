@@ -41,7 +41,7 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("Button1", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("Button2", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("Button3", Type = DreamValueTypeFlag.String)]
-    public static async Task<DreamValue> NativeProc_alert(AsyncNativeProc.State state) {
+    public static async Task<DreamValue> NativeProc_alert(AsyncNativeProc.AsyncNativeProcState state) {
         string message, title, button1, button2, button3;
 
         DreamValue usrArgument = state.GetArgument(0, "Usr");
@@ -2332,7 +2332,7 @@ internal static class DreamProcNativeRoot {
 
     [DreamProc("sleep")]
     [DreamProcParameter("Delay", Type = DreamValueTypeFlag.Float)]
-    public static async Task<DreamValue> NativeProc_sleep(AsyncNativeProc.State state) {
+    public static async Task<DreamValue> NativeProc_sleep(AsyncNativeProc.AsyncNativeProcState state) {
         state.GetArgument(0, "Delay").TryGetValueAsFloat(out float delay);
 
         await state.ProcScheduler.CreateDelay(delay);
@@ -2554,25 +2554,24 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
     [DreamProcParameter("include_delimiters", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
     public static DreamValue NativeProc_splittext(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-        if (!bundle.GetArgument(0, "Text").TryGetValueAsString(out var text)) {
+        if (!bundle.GetArgument(0, "Text").TryGetValueAsString(out var rawtext)) {
             return new DreamValue(bundle.ObjectTree.CreateList());
         }
 
-        int start = 0;
-        int end = 0;
-        if(bundle.GetArgument(2, "Start").TryGetValueAsInteger(out start))
+        if (bundle.GetArgument(2, "Start").TryGetValueAsInteger(out int start))
             start -= 1; //1-indexed
-        if(bundle.GetArgument(3, "End").TryGetValueAsInteger(out end))
+        if (bundle.GetArgument(3, "End").TryGetValueAsInteger(out int end))
             if(end == 0)
-                end = text.Length;
+                end = rawtext.Length;
             else
                 end -= 1; //1-indexed
         bool includeDelimiters = false;
         if(bundle.GetArgument(4, "include_delimiters").TryGetValueAsInteger(out var includeDelimitersInt))
             includeDelimiters = includeDelimitersInt != 0; //idk why BYOND doesn't just use truthiness, but it doesn't, so...
 
-        if(start > 0 || end < text.Length)
-            text = text[Math.Max(start,0)..Math.Min(end, text.Length)];
+        string text = rawtext;
+        if (start > 0 || end < rawtext.Length)
+            text = rawtext[Math.Max(start, 0)..Math.Min(end, text.Length)];
 
         var delim = bundle.GetArgument(1, "Delimiter"); //can either be a regex or string
 
@@ -2587,9 +2586,18 @@ internal static class DreamProcNativeRoot {
                 }
 
                 values.Add(text.Substring(pos));
+                if (start > 0)
+                    values[0] = rawtext.Substring(0, start) + values[0];
+                if (end < rawtext.Length)
+                    values[^1] += rawtext.Substring(end, rawtext.Length - end);
                 return new DreamValue(bundle.ObjectTree.CreateList(values.ToArray()));
             } else {
-                return new DreamValue(bundle.ObjectTree.CreateList(regexObject.Regex.Split(text)));
+                var values = regexObject.Regex.Split(text);
+                if (start > 0)
+                    values[0] = rawtext.Substring(0, start) + values[0];
+                if (end < rawtext.Length)
+                    values[^1] += rawtext.Substring(end, rawtext.Length - end);
+                return new DreamValue(bundle.ObjectTree.CreateList(values));
             }
         } else if (delim.TryGetValueAsString(out var delimiter)) {
             string[] splitText;
@@ -2608,6 +2616,10 @@ internal static class DreamProcNativeRoot {
                 splitText = text.Split(delimiter);
             }
 
+            if (start > 0)
+                splitText[0] = rawtext.Substring(0, start) + splitText[0];
+            if (end < rawtext.Length)
+                splitText[^1] += rawtext.Substring(end, rawtext.Length - end);
             return new DreamValue(bundle.ObjectTree.CreateList(splitText));
         } else {
             return new DreamValue(bundle.ObjectTree.CreateList());
@@ -3337,7 +3349,7 @@ internal static class DreamProcNativeRoot {
     [DreamProc("winexists")]
     [DreamProcParameter("player", Type = DreamValueTypeFlag.DreamObject)]
     [DreamProcParameter("control_id", Type = DreamValueTypeFlag.String)]
-    public static async Task<DreamValue> NativeProc_winexists(AsyncNativeProc.State state) {
+    public static async Task<DreamValue> NativeProc_winexists(AsyncNativeProc.AsyncNativeProcState state) {
         DreamValue player = state.GetArgument(0, "player");
         if (!state.GetArgument(1, "control_id").TryGetValueAsString(out var controlId)) {
             return DreamValue.EmptyString;
@@ -3361,7 +3373,7 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("player", Type = DreamValueTypeFlag.DreamObject)]
     [DreamProcParameter("control_id", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("params", Type = DreamValueTypeFlag.String)]
-    public static async Task<DreamValue> NativeProc_winget(AsyncNativeProc.State state) {
+    public static async Task<DreamValue> NativeProc_winget(AsyncNativeProc.AsyncNativeProcState state) {
         DreamValue player = state.GetArgument(0, "player");
         state.GetArgument(1, "control_id").TryGetValueAsString(out var controlId);
         if (!state.GetArgument(2, "params").TryGetValueAsString(out var paramsValue))

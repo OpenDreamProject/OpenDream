@@ -141,6 +141,11 @@ namespace OpenDreamRuntime {
 
         public bool WaitFor { get; set; } = true;
 
+        /// <summary> This stores our 'src' value. May be null!</summary>
+        public DreamObject? Instance;
+
+        public DreamObject? Usr;
+        public int ArgumentCount;
         public abstract DreamProc? Proc { get; }
 
         protected DreamObjectCallee? Callee { get; set; }
@@ -177,6 +182,10 @@ namespace OpenDreamRuntime {
             WaitFor = true;
             Id = -1;
         }
+
+        public abstract ReadOnlySpan<DreamValue> GetArguments();
+
+        public abstract void SetArgument(int id, DreamValue value);
     }
 
     public sealed class DreamThread(string name) {
@@ -218,7 +227,7 @@ namespace OpenDreamRuntime {
             return context.Resume();
         }
 
-        public static DreamValue Run(string name, Func<AsyncNativeProc.State, Task<DreamValue>> anonymousFunc) {
+        public static DreamValue Run(string name, Func<AsyncNativeProc.AsyncNativeProcState, Task<DreamValue>> anonymousFunc) {
             var context = new DreamThread(name);
             var state = AsyncNativeProc.CreateAnonymousState(context, anonymousFunc);
             context.PushProcState(state);

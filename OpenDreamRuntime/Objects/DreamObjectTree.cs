@@ -502,7 +502,7 @@ public sealed class DreamObjectTree {
         return proc;
     }
 
-    private AsyncNativeProc CreateAsyncNativeProc(TreeEntry owningType, Func<AsyncNativeProc.State, Task<DreamValue>> func) {
+    private AsyncNativeProc CreateAsyncNativeProc(TreeEntry owningType, Func<AsyncNativeProc.AsyncNativeProcState, Task<DreamValue>> func) {
         var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
         var proc = new AsyncNativeProc(Procs.Count, owningType, name, argumentNames, defaultArgumentValues, func);
 
@@ -517,7 +517,7 @@ public sealed class DreamObjectTree {
         Procs[proc.Id] = proc;
     }
 
-    public void SetGlobalNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func) {
+    public void SetGlobalNativeProc(Func<AsyncNativeProc.AsyncNativeProcState, Task<DreamValue>> func) {
         var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
         var proc = new AsyncNativeProc(_globalProcIds[name], Root, name, argumentNames, defaultArgumentValues, func);
 
@@ -530,7 +530,7 @@ public sealed class DreamObjectTree {
         type.ObjectDefinition.SetProcDefinition(proc.Name, proc.Id);
     }
 
-    public void SetNativeProc(TreeEntry type, Func<AsyncNativeProc.State, Task<DreamValue>> func) {
+    public void SetNativeProc(TreeEntry type, Func<AsyncNativeProc.AsyncNativeProcState, Task<DreamValue>> func) {
         var proc = CreateAsyncNativeProc(type, func);
 
         type.ObjectDefinition.SetProcDefinition(proc.Name, proc.Id);

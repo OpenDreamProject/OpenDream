@@ -41,7 +41,7 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("Button1", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("Button2", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("Button3", Type = DreamValueTypeFlag.String)]
-    public static async Task<DreamValue> NativeProc_alert(AsyncNativeProcState state) {
+    public static async Task<DreamValue> NativeProc_alert(AsyncNativeProc.AsyncNativeProcState state) {
         string message, title, button1, button2, button3;
 
         DreamValue usrArgument = state.GetArgument(0, "Usr");
@@ -2332,7 +2332,7 @@ internal static class DreamProcNativeRoot {
 
     [DreamProc("sleep")]
     [DreamProcParameter("Delay", Type = DreamValueTypeFlag.Float)]
-    public static async Task<DreamValue> NativeProc_sleep(AsyncNativeProcState state) {
+    public static async Task<DreamValue> NativeProc_sleep(AsyncNativeProc.AsyncNativeProcState state) {
         state.GetArgument(0, "Delay").TryGetValueAsFloat(out float delay);
 
         await state.ProcScheduler.CreateDelay(delay);
@@ -3337,7 +3337,7 @@ internal static class DreamProcNativeRoot {
     [DreamProc("winexists")]
     [DreamProcParameter("player", Type = DreamValueTypeFlag.DreamObject)]
     [DreamProcParameter("control_id", Type = DreamValueTypeFlag.String)]
-    public static async Task<DreamValue> NativeProc_winexists(AsyncNativeProcState state) {
+    public static async Task<DreamValue> NativeProc_winexists(AsyncNativeProc.AsyncNativeProcState state) {
         DreamValue player = state.GetArgument(0, "player");
         if (!state.GetArgument(1, "control_id").TryGetValueAsString(out var controlId)) {
             return DreamValue.EmptyString;
@@ -3361,7 +3361,7 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("player", Type = DreamValueTypeFlag.DreamObject)]
     [DreamProcParameter("control_id", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("params", Type = DreamValueTypeFlag.String)]
-    public static async Task<DreamValue> NativeProc_winget(AsyncNativeProcState state) {
+    public static async Task<DreamValue> NativeProc_winget(AsyncNativeProc.AsyncNativeProcState state) {
         DreamValue player = state.GetArgument(0, "player");
         state.GetArgument(1, "control_id").TryGetValueAsString(out var controlId);
         if (!state.GetArgument(2, "params").TryGetValueAsString(out var paramsValue))

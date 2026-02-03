@@ -15,7 +15,7 @@ internal static class DreamProcNativeWorld {
     [DreamProcParameter("File", Type = DreamValue.DreamValueTypeFlag.DreamObject)]
     [DreamProcParameter("Persist", Type = DreamValue.DreamValueTypeFlag.Float, DefaultValue = 0)]
     [DreamProcParameter("Clients", Type = DreamValue.DreamValueTypeFlag.DreamObject)]
-    public static async Task<DreamValue> NativeProc_Export(AsyncNativeProcState state) {
+    public static async Task<DreamValue> NativeProc_Export(AsyncNativeProc.AsyncNativeProcState state) {
         var addr = state.GetArgument(0, "Addr").Stringify();
 
         if (!Uri.TryCreate(addr, UriKind.RelativeOrAbsolute, out var uri))

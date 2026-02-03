@@ -22,11 +22,11 @@
 namespace OpenDreamRuntime.Procs;
 
 public sealed partial class ProcScheduler {
-    private readonly HashSet<AsyncNativeProc.AsyncDMProcState> _sleeping = new();
-    private readonly Queue<AsyncNativeProc.AsyncDMProcState> _scheduled = new();
-    private AsyncNativeProc.AsyncDMProcState? _current;
+    private readonly HashSet<AsyncNativeProcState> _sleeping = new();
+    private readonly Queue<AsyncNativeProcState> _scheduled = new();
+    private AsyncNativeProcState? _current;
 
-    public Task Schedule(AsyncNativeProc.AsyncDMProcState state, Func<AsyncNativeProc.AsyncDMProcState, Task<DreamValue>> taskFunc) {
+    public Task Schedule(AsyncNativeProcState state, Func<AsyncNativeProcState, Task<DreamValue>> taskFunc) {
         async Task Foo() {
             state.Result = await taskFunc(state);
             if (!_sleeping.Remove(state))

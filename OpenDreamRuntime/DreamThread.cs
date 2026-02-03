@@ -223,7 +223,7 @@ namespace OpenDreamRuntime {
             return context.Resume();
         }
 
-        public static DreamValue Run(string name, Func<AsyncNativeProc.AsyncDMProcState, Task<DreamValue>> anonymousFunc) {
+        public static DreamValue Run(string name, Func<AsyncNativeProc.AsyncNativeProcState, Task<DreamValue>> anonymousFunc) {
             var context = new DreamThread(name);
             var state = AsyncNativeProc.CreateAnonymousState(context, anonymousFunc);
             context.PushProcState(state);

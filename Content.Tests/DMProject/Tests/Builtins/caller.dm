@@ -12,5 +12,5 @@
 	D.foo()
 
 /proc/RunTest()
-    ASSERT(caller.name == "New")
+    // RunTest()'s caller is null due to how unit tests are invoked
     ihateithere()

@@ -4,7 +4,7 @@ using OpenDreamRuntime.Procs;
 namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectCallee : DreamObject {
-    public DMProcState? ProcState;
+    public ProcState? ProcState;
     public long ProcStateId; // Used to ensure the proc state hasn't been reused for another proc
     private DreamObjectCallee? _caller; // Caching caller prevents issues with returning incorrect info when the proc ends or calls another proc
 
@@ -19,7 +19,7 @@ public sealed class DreamObjectCallee : DreamObject {
 
         switch (varName) {
             case "proc":
-                value = new(ProcState.Proc);
+                value = ProcState.Proc != null ? new(ProcState.Proc) : DreamValue.Null;
                 return true;
             case "args":
                 value = new(new ProcArgsList(ObjectTree.List.ObjectDefinition, ProcState));
@@ -29,19 +29,23 @@ public sealed class DreamObjectCallee : DreamObject {
                 value = new DreamValue(_caller);
                 return true;
             case "name":
-                value = new(ProcState.Proc.VerbName);
+                value = ProcState.Proc?.VerbName != null ? new(ProcState.Proc.VerbName) : DreamValue.Null;
                 return true;
             case "desc":
-                value = ProcState.Proc.VerbDesc != null ? new(ProcState.Proc.VerbDesc) : DreamValue.Null;
+                value = ProcState.Proc?.VerbDesc != null ? new(ProcState.Proc.VerbDesc) : DreamValue.Null;
                 return true;
             case "category":
-                value = ProcState.Proc.VerbCategory != null ? new(ProcState.Proc.VerbCategory) : DreamValue.Null;
+                value = ProcState.Proc?.VerbCategory != null ? new(ProcState.Proc.VerbCategory) : DreamValue.Null;
                 return true;
             case "file":
-                value = new(ProcState.Proc.GetSourceAtOffset(0).Source);
+                value = ProcState.Proc is DMProc procFile
+                    ? new DreamValue(procFile.GetSourceAtOffset(0).Source)
+                    : DreamValue.Null;
                 return true;
             case "line":
-                value = new(ProcState.Proc.GetSourceAtOffset(0).Line);
+                value = ProcState.Proc is DMProc procLine
+                    ? new DreamValue(procLine.GetSourceAtOffset(0).Line)
+                    : DreamValue.Null;
                 return true;
             case "src":
                 value = new(ProcState.Instance);

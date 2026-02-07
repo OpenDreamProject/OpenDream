@@ -238,7 +238,8 @@ namespace OpenDreamRuntime {
             return ReentrantResume(null, out _);
         }
 
-        public ProcState PeekStack(int index = 0) {
+        public ProcState? PeekStack(int index = 0) {
+            if (_stack.Count == 0) return null;
             return index == 0 ? _stack.Peek() : _stack.ElementAt(index);
         }
 

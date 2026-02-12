@@ -147,12 +147,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
                 _direction = appearance.Direction;
             }
 
-            if (parentIconState != null && appearance.IconState == null) {
-                _iconState = parentIconState;
-            } else {
-                _iconState = appearance.IconState;
-            }
-
+            _iconState = appearance.IconState ?? parentIconState;
             Appearance = appearance;
         });
     }

@@ -437,8 +437,9 @@ internal sealed partial class DreamViewOverlay : Overlay {
 
         //KEEP_TOGETHER groups
         if (iconMetaData.KeepTogetherGroup?.Count > 0) {
-            // TODO: Use something better than a hardcoded 64x64 fallback
-            Vector2i ktSize = iconMetaData.MainIcon?.DMI?.IconSize ?? (64,64);
+            // TODO: Calculate an appropriate size based on overlays/underlays, offsets and transforms.
+            // For now, just generate a buffer of 128 pixels around the main icon...
+            Vector2i ktSize = (256, 256) + iconMetaData.MainIcon?.DMI?.IconSize ?? (0,0);
             iconMetaData.TextureOverride = ProcessKeepTogether(handle, iconMetaData, ktSize);
             positionOffset -= ((ktSize/IconSize) - Vector2.One) * new Vector2(0.5f); //correct for KT group texture offset
         }
@@ -739,7 +740,8 @@ internal sealed partial class DreamViewOverlay : Overlay {
 
         handle.RenderInRenderTarget(tempTexture, () => {
             foreach (RendererMetaData ktItem in ktItems) {
-                DrawIcon(handle, tempTexture.Size, ktItem, -ktItem.Position+((tempTexture.Size/IconSize) - Vector2.One) * new Vector2(0.5f)); //draw the icon in the centre of the KT render target
+                //draw the icon in the centre of the KT render target, based on the main icon position
+                DrawIcon(handle, tempTexture.Size, ktItem, -iconMetaData.Position+((tempTexture.Size/IconSize) - Vector2.One) * new Vector2(0.5f));
             }
         }, Color.Transparent);
 

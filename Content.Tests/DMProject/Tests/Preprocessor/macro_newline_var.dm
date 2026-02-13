@@ -1,4 +1,5 @@
 /datum/var/name
+/datum/var/icon_state
 
 #define DEFINE_FLOORS(_PATH, _VARS) \
 	/datum/simulated/floor/_PATH{_VARS};\

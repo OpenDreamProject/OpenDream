@@ -3,39 +3,49 @@ using OpenDreamRuntime.Procs;
 
 namespace OpenDreamRuntime.Objects.Types;
 
-public sealed class DreamObjectCallee(DreamObjectDefinition objectDefinition) : DreamObject(objectDefinition) {
-    public DMProcState? ProcState;
+public sealed class DreamObjectCallee : DreamObject {
+    public ProcState? ProcState;
     public long ProcStateId; // Used to ensure the proc state hasn't been reused for another proc
+    private DreamObjectCallee? _caller; // Caching caller prevents issues with returning incorrect info when the proc ends or calls another proc
+
+    public DreamObjectCallee(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
+        SetCaller(); // we need to cache _caller recursively
+    }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
+        // TODO: This ProcState check doesn't match byond behavior?
         if (ProcState == null || ProcState.Id != ProcStateId)
             throw new Exception("This callee has expired");
 
         switch (varName) {
             case "proc":
-                value = new(ProcState.Proc);
+                value = ProcState.Proc != null ? new(ProcState.Proc) : DreamValue.Null;
                 return true;
             case "args":
                 value = new(new ProcArgsList(ObjectTree.List.ObjectDefinition, ProcState));
                 return true;
             case "caller":
-                // TODO
-                value = DreamValue.Null;
+                SetCaller(); // sometimes ProcState is null in the constructor?
+                value = new DreamValue(_caller);
                 return true;
             case "name":
-                value = new(ProcState.Proc.VerbName);
+                value = ProcState.Proc?.VerbName != null ? new(ProcState.Proc.VerbName) : DreamValue.Null;
                 return true;
             case "desc":
-                value = ProcState.Proc.VerbDesc != null ? new(ProcState.Proc.VerbDesc) : DreamValue.Null;
+                value = ProcState.Proc?.VerbDesc != null ? new(ProcState.Proc.VerbDesc) : DreamValue.Null;
                 return true;
             case "category":
-                value = ProcState.Proc.VerbCategory != null ? new(ProcState.Proc.VerbCategory) : DreamValue.Null;
+                value = ProcState.Proc?.VerbCategory != null ? new(ProcState.Proc.VerbCategory) : DreamValue.Null;
                 return true;
             case "file":
-                value = new(ProcState.Proc.GetSourceAtOffset(0).Source);
+                value = ProcState.Proc is DMProc procFile
+                    ? new DreamValue(procFile.GetSourceAtOffset(0).Source)
+                    : DreamValue.Null;
                 return true;
             case "line":
-                value = new(ProcState.Proc.GetSourceAtOffset(0).Line);
+                value = ProcState.Proc is DMProc procLine
+                    ? new DreamValue(procLine.GetSourceAtOffset(0).Line)
+                    : DreamValue.Null;
                 return true;
             case "src":
                 value = new(ProcState.Instance);
@@ -52,6 +62,19 @@ public sealed class DreamObjectCallee(DreamObjectDefinition objectDefinition) : 
                 value = DreamValue.Null;
                 return false;
         }
+    }
+
+    /// <summary>
+    /// Sets <see cref="_caller"/> if it hasn't been already and <see cref="ProcState"/> is not null
+    /// </summary>
+    private void SetCaller() {
+        if (ProcState is null || _caller is not null) return;
+        if (ProcState.Thread.PeekStack(1) is not DMProcState dmProcState) return;
+
+        var caller = ObjectTree.CreateObject<DreamObjectCallee>(ObjectTree.Callee);
+        caller.ProcState = dmProcState;
+        caller.ProcStateId = dmProcState.Id;
+        _caller = caller;
     }
 
     protected override void SetVar(string varName, DreamValue value) {

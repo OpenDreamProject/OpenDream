@@ -412,5 +412,3 @@
 /world/New()
 	..()
 	world.log << "World loaded!"
-	var/particles/A = new()
-	A.width = null

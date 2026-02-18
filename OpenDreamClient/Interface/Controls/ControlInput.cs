@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using OpenDreamClient.Interface.Descriptors;
-using OpenDreamClient.Interface.DMF;
+using OpenDreamShared.Interface.Descriptors;
+using OpenDreamShared.Interface.DMF;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 
@@ -22,14 +22,14 @@ internal sealed class ControlInput(ControlDescriptor controlDescriptor, ControlW
         if (InputDescriptor.NoCommand.Value)
             return;
 
+        ResetText();
+
         var command = InputDescriptor.Command.Value;
         if (command.StartsWith('!')) {
             _interfaceManager.RunCommand(lineEditEventArgs.Text);
         } else {
             _interfaceManager.RunCommand(command + lineEditEventArgs.Text);
         }
-
-        ResetText();
     }
 
     protected override void UpdateElementDescriptor() {
@@ -54,6 +54,9 @@ internal sealed class ControlInput(ControlDescriptor controlDescriptor, ControlW
                 var focusValue = new DMFPropertyBool(value);
                 if (focusValue.Value)
                     _textBox.GrabKeyboardFocus();
+                break;
+            case "text":
+                _textBox.Text = value;
                 break;
             default:
                 base.SetProperty(property, value, manualWinset);

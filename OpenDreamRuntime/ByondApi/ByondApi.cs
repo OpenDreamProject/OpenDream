@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects;
@@ -8,6 +9,8 @@ using Robust.Shared.Utility;
 namespace OpenDreamRuntime.ByondApi;
 
 public static partial class ByondApi {
+    private const int LastErrorMaxLength = 128;
+
     private static DreamManager? _dreamManager;
     private static AtomManager? _atomManager;
     private static IDreamMapManager? _dreamMapManager;
@@ -15,6 +18,13 @@ public static partial class ByondApi {
 
     private static readonly ConcurrentQueue<Action> ThreadSyncQueue = new();
     private static int _mainThreadId;
+
+    /// <summary>
+    /// A failed ByondApi call will set this string. It can be retrieved with <see cref="Byond_LastError"/>.
+    /// </summary>
+    private static string _lastError = string.Empty;
+
+    private static IntPtr _lastErrorPtr = IntPtr.Zero;
 
     public static void Initialize(DreamManager dreamManager, AtomManager atomManager, IDreamMapManager dreamMapManager, DreamObjectTree objectTree) {
         DebugTools.Assert(_dreamManager is null or { IsShutDown: true });
@@ -27,7 +37,13 @@ public static partial class ByondApi {
         _mainThreadId = Environment.CurrentManagedThreadId;
         ThreadSyncQueue.Clear();
 
+        _lastErrorPtr = Marshal.AllocHGlobal(LastErrorMaxLength);
+
         InitTrampoline();
+    }
+
+    public static void Shutdown() {
+        Marshal.FreeHGlobal(_lastErrorPtr);
     }
 
     public static void ExecuteThreadSyncs() {
@@ -74,8 +90,32 @@ public static partial class ByondApi {
             case ByondValueType.Appearance:
             case ByondValueType.World:
             case ByondValueType.Proc:
+                var refType = ctype switch {
+                    ByondValueType.Turf => RefType.DreamObjectTurf,
+                    ByondValueType.Obj => RefType.DreamObject,
+                    ByondValueType.Mob => RefType.DreamObjectMob,
+                    ByondValueType.Area => RefType.DreamObjectArea,
+                    ByondValueType.Client => RefType.DreamObjectClient,
+                    ByondValueType.Image => RefType.DreamObjectImage,
+                    ByondValueType.List => RefType.DreamObjectList,
+                    ByondValueType.Datum => RefType.DreamObjectDatum,
+                    ByondValueType.World => RefType.DreamObjectDatum,
+                    ByondValueType.String => RefType.String,
+                    ByondValueType.Resource => RefType.DreamResource,
+                    ByondValueType.Appearance => RefType.DreamAppearance,
+                    ByondValueType.Proc => RefType.Proc,
+
+                    ByondValueType.ObjTypePath or
+                    ByondValueType.MobTypePath or
+                    ByondValueType.TurfTypePath or
+                    ByondValueType.DatumTypePath or
+                    ByondValueType.AreaTypePath => RefType.DreamType,
+
+                    _ => throw new Exception($"Invalid reference type for type {ctype.ToString()}")
+                };
+
                 int refId = (int)cdata.@ref;
-                return _dreamManager!.RefIdToValue(refId);
+                return _dreamManager!.RefToValue(refType, refId);
         }
     }
 
@@ -95,9 +135,9 @@ public static partial class ByondApi {
             case DreamValue.DreamValueType.DreamType:
             case DreamValue.DreamValueType.Appearance:
             case DreamValue.DreamValueType.DreamProc:
-                var refid = _dreamManager!.CreateRefInt(value, out RefType refType);
+                var refId = _dreamManager!.GetRefId(value, out var refType);
                 ByondValueType type;
-                ByondValueData data = new ByondValueData { @ref = refid };
+                ByondValueData data = new ByondValueData { @ref = refId };
 
                 switch (refType) {
                     default:
@@ -156,6 +196,14 @@ public static partial class ByondApi {
         }
     }
 
+    /// <summary>
+    /// Helper method that sets <see cref="_lastError"/> and returns an error code (false)
+    /// </summary>
+    private static byte SetLastError(string lastError) {
+        _lastError = lastError;
+        return 0;
+    }
+
     [SuppressMessage("Usage", "RA0004:Risk of deadlock from accessing Task<T>.Result")]
     private static T RunOnMainThread<T>(Func<T> task) {
         if (Environment.CurrentManagedThreadId == _mainThreadId)
@@ -168,5 +216,14 @@ public static partial class ByondApi {
         });
 
         return tcs.Task.Result;
+    }
+
+    private static void RunOnMainThreadNonBlocking(Action task) {
+        if (Environment.CurrentManagedThreadId == _mainThreadId) {
+            task();
+            return;
+        }
+
+        ThreadSyncQueue.Enqueue(task);
     }
 }

@@ -17,8 +17,11 @@ public partial record DreamFilter {
     /// </summary>
     public bool Used = false;
 
-    [ViewVariables, DataField("type")]
+    [ViewVariables(VVAccess.ReadOnly), DataField("type")]
     public string FilterType;
+
+    [ViewVariables(VVAccess.ReadOnly), DataField("name")]
+    public string? FilterName;
 
     public static Type? GetType(string filterType) {
         return filterType switch {

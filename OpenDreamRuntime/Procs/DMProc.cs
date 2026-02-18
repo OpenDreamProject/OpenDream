@@ -178,6 +178,14 @@ public sealed class NullProcState : ProcState {
         _proc = null;
         Pool.Push(this);
     }
+
+    public override ReadOnlySpan<DreamValue> GetArguments() {
+        throw new InvalidOperationException();
+    }
+
+    public override void SetArgument(int id, DreamValue value) {
+        throw new InvalidOperationException();
+    }
 }
 
 public sealed class DMProcState : ProcState {
@@ -321,6 +329,7 @@ public sealed class DMProcState : ProcState {
         {DreamProcOpcode.GetDir, DMOpcodeHandlers.GetDir},
         {DreamProcOpcode.DebuggerBreakpoint, DMOpcodeHandlers.DebuggerBreakpoint},
         {DreamProcOpcode.Rgb, DMOpcodeHandlers.Rgb},
+        {DreamProcOpcode.Animate, DMOpcodeHandlers.Animate},
         // Peephole optimizer opcode handlers
         {DreamProcOpcode.NullRef, DMOpcodeHandlers.NullRef},
         {DreamProcOpcode.AssignNoPush, DMOpcodeHandlers.AssignNoPush},
@@ -351,11 +360,6 @@ public sealed class DMProcState : ProcState {
     public ProcScheduler ProcScheduler => _proc.ProcScheduler;
     public IDreamDebugManager DebugManager => _proc.DreamDebugManager;
 
-    /// <summary> This stores our 'src' value. May be null!</summary>
-    public DreamObject? Instance;
-
-    public DreamObject? Usr;
-    public int ArgumentCount;
     public readonly IDreamValueEnumerator?[] Enumerators = new IDreamValueEnumerator?[16];
 
     public int ProgramCounter => _pc;
@@ -580,11 +584,11 @@ public sealed class DMProcState : ProcState {
         Pool.Push(this);
     }
 
-    public ReadOnlySpan<DreamValue> GetArguments() {
+    public override ReadOnlySpan<DreamValue> GetArguments() {
         return _localVariables.AsSpan(0, ArgumentCount);
     }
 
-    public void SetArgument(int id, DreamValue value) {
+    public override void SetArgument(int id, DreamValue value) {
         if (id < 0 || id >= ArgumentCount)
             throw new IndexOutOfRangeException($"Given argument id ({id}) was out of range");
 
@@ -1076,7 +1080,7 @@ public sealed class DMProcState : ProcState {
                         string argumentName = key.MustGetValueAsString();
                         int argumentIndex = proc.ArgumentNames.IndexOf(argumentName);
                         if (argumentIndex == -1)
-                            throw new Exception($"{proc} has no argument named {argumentName}");
+                            throw new Exception($"{proc} has no argument named \"{argumentName}\"");
 
                         arguments[argumentIndex] = value;
                     }
@@ -1110,7 +1114,7 @@ public sealed class DMProcState : ProcState {
 
                         int argumentIndex = proc.ArgumentNames.IndexOf(argumentName);
                         if (argumentIndex == -1)
-                            throw new Exception($"{proc} has no argument named {argumentName}");
+                            throw new Exception($"{proc} has no argument named \"{argumentName}\"");
 
                         arguments[argumentIndex] = argList.GetValue(value);
                     } else { //Ordered argument

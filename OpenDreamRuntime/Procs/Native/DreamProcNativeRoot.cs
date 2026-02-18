@@ -41,7 +41,7 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("Button1", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("Button2", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("Button3", Type = DreamValueTypeFlag.String)]
-    public static async Task<DreamValue> NativeProc_alert(AsyncNativeProc.State state) {
+    public static async Task<DreamValue> NativeProc_alert(AsyncNativeProc.AsyncNativeProcState state) {
         string message, title, button1, button2, button3;
 
         DreamValue usrArgument = state.GetArgument(0, "Usr");
@@ -74,314 +74,6 @@ internal static class DreamProcNativeRoot {
         if (String.IsNullOrEmpty(button1)) button1 = "Ok";
 
         return await connection.Alert(title, message, button1, button2, button3);
-    }
-
-    /* vars:
-
-    animate smoothly:
-
-    alpha
-    color
-    glide_size
-    infra_luminosity
-    layer
-    maptext_width, maptext_height, maptext_x, maptext_y
-    luminosity
-    pixel_x, pixel_y, pixel_w, pixel_z
-    transform
-
-    do not animate smoothly:
-
-    dir
-    icon
-    icon_state
-    invisibility
-    maptext
-    suffix
-
-    */
-    [DreamProc("animate")]
-    [DreamProcParameter("Object", Type = DreamValueTypeFlag.DreamObject)]
-    [DreamProcParameter("time", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("loop", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("easing", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("flags", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("delay", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("pixel_x", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("pixel_y", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("pixel_z", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("pixel_w", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("maptext", Type = DreamValueTypeFlag.String)]
-    [DreamProcParameter("maptext_width", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("maptext_height", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("maptext_x", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("maptext_y", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("dir", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("alpha", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("transform", Type = DreamValueTypeFlag.DreamObject)]
-    [DreamProcParameter("color", Type = DreamValueTypeFlag.String | DreamValueTypeFlag.DreamObject)]
-    [DreamProcParameter("luminosity", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("infra_luminosity", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("layer", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("glide_size", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("icon", Type = DreamValueTypeFlag.String | DreamValueTypeFlag.DreamObject)]
-    [DreamProcParameter("icon_state", Type = DreamValueTypeFlag.String)]
-    [DreamProcParameter("invisibility", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("suffix", Type = DreamValueTypeFlag.String)]
-    //filter args -dups commented out
-    [DreamProcParameter("size", Type = DreamValueTypeFlag.Float)]
-    //[DreamProcParameter("color", Type = DreamValueTypeFlag.String)]
-    [DreamProcParameter("x", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("y", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("offset", Type = DreamValueTypeFlag.Float)]
-    //[DreamProcParameter("flags", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("border", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("render_source", Type = DreamValueTypeFlag.String)]
-    //[DreamProcParameter("icon", Type = DreamValueTypeFlag.DreamObject)]
-    [DreamProcParameter("space", Type = DreamValueTypeFlag.Float)]
-    //[DreamProcParameter("transform", Type = DreamValueTypeFlag.DreamObject)]
-    [DreamProcParameter("blend_mode", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("density", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("threshold", Type = DreamValueTypeFlag.String)]
-    [DreamProcParameter("factor", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("repeat", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("radius", Type = DreamValueTypeFlag.Float)]
-    [DreamProcParameter("falloff", Type = DreamValueTypeFlag.Float)]
-    //[DreamProcParameter("alpha", Type = DreamValueTypeFlag.Float)]
-    public static DreamValue NativeProc_animate(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-        bool chainAnim = false;
-
-        if (!bundle.GetArgument(0, "Object").TryGetValueAsDreamObject<DreamObject>(out var obj)){
-            if(bundle.LastAnimatedObject is null || bundle.LastAnimatedObject.Value.IsNull)
-                throw new Exception($"animate() called without an object and no previous object to animate");
-            else if(!bundle.LastAnimatedObject.Value.TryGetValueAsDreamObject<DreamObject>(out obj))
-                return DreamValue.Null;
-            chainAnim = true;
-        }
-
-        bundle.LastAnimatedObject = new DreamValue(obj);
-        if(obj.IsSubtypeOf(bundle.ObjectTree.Filter)) {//TODO animate filters
-            return DreamValue.Null;
-        }
-
-        // TODO: Is this the correct behavior for invalid time?
-        if (!bundle.GetArgument(1, "time").TryGetValueAsFloat(out float time))
-            return DreamValue.Null;
-
-        bundle.GetArgument(2, "loop").TryGetValueAsInteger(out int loop);
-        bundle.GetArgument(3, "easing").TryGetValueAsInteger(out int easing);
-        if(!Enum.IsDefined(typeof(AnimationEasing), easing & ~((int)AnimationEasing.EaseIn | (int)AnimationEasing.EaseOut)))
-            throw new ArgumentOutOfRangeException("easing", easing, $"Invalid easing value in animate(): {easing}");
-        bundle.GetArgument(4, "flags").TryGetValueAsInteger(out int flagsInt);
-        var flags = (AnimationFlags)flagsInt;
-        if((flags & (AnimationFlags.AnimationParallel | AnimationFlags.AnimationContinue)) != 0)
-            chainAnim = true;
-        if((flags & AnimationFlags.AnimationEndNow) != 0)
-            chainAnim = false;
-        bundle.GetArgument(5, "delay").TryGetValueAsInteger(out int delay);
-
-        var pixelX = bundle.GetArgument(6, "pixel_x");
-        var pixelY = bundle.GetArgument(7, "pixel_y");
-        var pixelZ = bundle.GetArgument(8, "pixel_z");
-        var pixelW = bundle.GetArgument(9, "pixel_w");
-        var maptext = bundle.GetArgument(10, "maptext");
-        var maptextWidth = bundle.GetArgument(11, "maptext_width");
-        var maptextHeight = bundle.GetArgument(12, "maptext_height");
-        var maptextX = bundle.GetArgument(13, "maptext_x");
-        var maptextY = bundle.GetArgument(14, "maptext_y");
-        var dir = bundle.GetArgument(15, "dir");
-        var alpha = bundle.GetArgument(16, "alpha");
-        var transform = bundle.GetArgument(17, "transform");
-        var color = bundle.GetArgument(18, "color");
-        var luminosity = bundle.GetArgument(19, "luminosity");
-        var infraLuminosity = bundle.GetArgument(20, "infra_luminosity");
-        var layer = bundle.GetArgument(21, "layer");
-        var glideSize = bundle.GetArgument(22, "glide_size");
-        var icon = bundle.GetArgument(23, "icon");
-        var iconState = bundle.GetArgument(24, "icon_state");
-        var invisibility = bundle.GetArgument(25, "invisibility");
-        var suffix = bundle.GetArgument(26, "suffix");
-
-        if((flags & AnimationFlags.AnimationRelative) != 0){
-            if(!bundle.AtomManager.TryGetAppearance(obj, out var appearance))
-                return DreamValue.Null; //can't do anything animating an object with no appearance
-            // This works for maptext_x/y/width/height, pixel_x/y/w/z, luminosity, layer, alpha, transform, and color. For transform and color, the current value is multiplied by the new one. Vars not in this list are simply changed as if this flag is not present.
-            if(!pixelX.IsNull)
-                pixelX = new(pixelX.UnsafeGetValueAsFloat() + appearance.PixelOffset.X);
-            if(!pixelY.IsNull)
-                pixelY = new(pixelY.UnsafeGetValueAsFloat() + appearance.PixelOffset.Y);
-            /* TODO these are not yet implemented
-            if(!pixelZ.IsNull)
-                pixelZ = new(pixelZ.UnsafeGetValueAsFloat() + obj.GetVariable("pixel_z").UnsafeGetValueAsFloat()); //TODO change to appearance when pixel_z is implemented
-            */
-            if(!maptextWidth.IsNull)
-                maptextWidth = new(maptextWidth.UnsafeGetValueAsFloat() + appearance.MaptextSize.X);
-            if(!maptextHeight.IsNull)
-                maptextHeight = new(maptextHeight.UnsafeGetValueAsFloat() + appearance.MaptextSize.Y);
-            if(!maptextX.IsNull)
-                maptextX = new(maptextX.UnsafeGetValueAsFloat() + appearance.MaptextOffset.X);
-            if(!maptextY.IsNull)
-                maptextY = new(maptextY.UnsafeGetValueAsFloat() + appearance.MaptextOffset.Y);
-            /*
-            if(!luminosity.IsNull)
-                luminosity = new(luminosity.UnsafeGetValueAsFloat() + obj.GetVariable("luminosity").UnsafeGetValueAsFloat()); //TODO change to appearance when luminosity is implemented
-            */
-            if(!layer.IsNull)
-                layer = new(layer.UnsafeGetValueAsFloat() + appearance.Layer);
-            if(!alpha.IsNull)
-                alpha = new(alpha.UnsafeGetValueAsFloat() + appearance.Alpha);
-            if(!transform.IsNull) {
-                if(transform.TryGetValueAsDreamObject<DreamObjectMatrix>(out var multTransform)){
-                    DreamObjectMatrix objTransformClone = DreamObjectMatrix.MakeMatrix(bundle.ObjectTree, appearance.Transform);
-                    DreamObjectMatrix.MultiplyMatrix(objTransformClone, multTransform);
-                    transform = new(objTransformClone);
-                }
-            }
-
-            if(!color.IsNull) {
-                ColorMatrix cMatrix;
-                if(color.TryGetValueAsString(out var colorStr) && Color.TryParse(colorStr, out var colorObj)){
-                    cMatrix = new ColorMatrix(colorObj);
-                } else if (!color.TryGetValueAsDreamList(out var colorList) || !DreamProcNativeHelpers.TryParseColorMatrix(colorList, out cMatrix)){
-                    cMatrix = ColorMatrix.Identity; //fallback to identity if invalid
-                }
-
-                ColorMatrix objCMatrix;
-                DreamValue objColor = obj.GetVariable("color");
-                if(objColor.TryGetValueAsString(out var objColorStr) && Color.TryParse(objColorStr, out var objColorObj)){
-                    objCMatrix = new ColorMatrix(objColorObj);
-                } else if (!objColor.TryGetValueAsDreamList(out var objColorList) || !DreamProcNativeHelpers.TryParseColorMatrix(objColorList, out objCMatrix)){
-                    objCMatrix = ColorMatrix.Identity; //fallback to identity if invalid
-                }
-
-                ColorMatrix.Multiply(ref objCMatrix, ref cMatrix, out var resultMatrix);
-                color = new DreamValue(new DreamList(bundle.ObjectTree.List.ObjectDefinition, resultMatrix.GetValues().Select(x => new DreamValue(x)).ToList(), null));
-            }
-        }
-
-        var resourceManager = bundle.ResourceManager;
-        bundle.AtomManager.AnimateAppearance(obj, TimeSpan.FromMilliseconds(time * 100), (AnimationEasing)easing, loop, flags, delay, chainAnim,
-        appearance => {
-            if (!pixelX.IsNull) {
-                obj.SetVariableValue("pixel_x", pixelX);
-                pixelX.TryGetValueAsInteger(out appearance.PixelOffset.X);
-            }
-
-            if (!pixelY.IsNull) {
-                obj.SetVariableValue("pixel_y", pixelY);
-                pixelY.TryGetValueAsInteger(out appearance.PixelOffset.Y);
-            }
-
-            /* TODO world.map_format
-            if (!pixelZ.IsNull) {
-                obj.SetVariableValue("pixel_z", pixelZ);
-                pixelZ.TryGetValueAsInteger(out appearance.PixelOffset.Z);
-            }
-            */
-
-            if (!maptextX.IsNull) {
-                obj.SetVariableValue("maptext_x", maptextX);
-                maptextX.TryGetValueAsInteger(out appearance.MaptextOffset.X);
-            }
-
-            if (!maptextY.IsNull) {
-                obj.SetVariableValue("maptext_y", maptextY);
-                maptextY.TryGetValueAsInteger(out appearance.MaptextOffset.Y);
-            }
-
-            if (!maptextWidth.IsNull) {
-                obj.SetVariableValue("maptext_width", maptextWidth);
-                maptextX.TryGetValueAsInteger(out appearance.MaptextSize.X);
-            }
-
-            if (!maptextHeight.IsNull) {
-                obj.SetVariableValue("maptext_y", maptextHeight);
-                maptextY.TryGetValueAsInteger(out appearance.MaptextSize.Y);
-            }
-
-            if(!maptext.IsNull){
-                obj.SetVariableValue("maptext", maptext);
-                maptext.TryGetValueAsString(out appearance.Maptext);
-            }
-
-            if (!dir.IsNull) {
-                obj.SetVariableValue("dir", dir);
-                if(dir.TryGetValueAsInteger(out int dirValue))
-                    appearance.Direction = (AtomDirection)dirValue;
-            }
-
-            if (!alpha.IsNull) {
-                obj.SetVariableValue("alpha", alpha);
-                if(alpha.TryGetValueAsInteger(out var alphaInt))
-                    appearance.Alpha = (byte) Math.Clamp(alphaInt,0,255);
-            }
-
-            if (!transform.IsNull) {
-                obj.SetVariableValue("transform", transform);
-                if(transform.TryGetValueAsDreamObject<DreamObjectMatrix>(out var transformObj))
-                    appearance.Transform = DreamObjectMatrix.MatrixToTransformFloatArray(transformObj);
-            }
-
-            if (!color.IsNull) {
-                obj.SetVariableValue("color", color);
-                if(color.TryGetValueAsString(out var colorStr))
-                    Color.TryParse(colorStr, out appearance.Color);
-                else if (color.TryGetValueAsDreamList(out var colorList)) {
-                    if(DreamProcNativeHelpers.TryParseColorMatrix(colorList, out var colorMatrix))
-                        appearance.ColorMatrix = colorMatrix;
-                }
-            }
-
-            /* TODO luminosity
-            if (!luminosity.IsNull) {
-                obj.SetVariableValue("luminosity", luminosity);
-                luminosity.TryGetValueAsInteger(out appearance.Luminosity);
-            }
-            */
-
-            /* TODO infra_luminosity
-            if (!infraLuminosity.IsNull) {
-                obj.SetVariableValue("infra_luminosity", infraLuminosity);
-                infraLuminosity.TryGetValueAsInteger(out appearance.InfraLuminosity);
-            }
-            */
-
-            if (!layer.IsNull) {
-                obj.SetVariableValue("layer", layer);
-                layer.TryGetValueAsFloat(out appearance.Layer);
-            }
-
-            if (!glideSize.IsNull) {
-                obj.SetVariableValue("glide_size", glideSize);
-                glideSize.TryGetValueAsFloat(out appearance.GlideSize);
-            }
-
-            if (!icon.IsNull) {
-                obj.SetVariableValue("icon", icon);
-                if(resourceManager.TryLoadIcon(icon, out var iconResource))
-                    appearance.Icon = iconResource.Id;
-            }
-
-            if (!iconState.IsNull) {
-                obj.SetVariableValue("icon_state", iconState);
-                iconState.TryGetValueAsString(out appearance.IconState);
-            }
-
-            if (!invisibility.IsNull) {
-                obj.SetVariableValue("invisibility", invisibility);
-                invisibility.TryGetValueAsInteger(out var invisibilityValue);
-                appearance.Invisibility = (sbyte)Math.Clamp(invisibilityValue, -127, 127);
-            }
-
-            /* TODO suffix
-            if (!suffix.IsNull) {
-                obj.SetVariableValue("suffix", suffix);
-                suffix.TryGetValueAsString(out appearance.Suffix);
-            }
-            */
-        });
-
-        return DreamValue.Null;
     }
 
     [DreamProc("ascii2text")]
@@ -627,14 +319,14 @@ internal static class DreamProcNativeRoot {
         bundle.GetArgument(2, "End").TryGetValueAsInteger(out var end); //1-indexed
 
         if (!bundle.GetArgument(0, "T").TryGetValueAsString(out string? text))
-            return (end == 0) ? DreamValue.Null : new DreamValue("");
+            return (end == 0) ? DreamValue.Null : DreamValue.EmptyString;
         if (!bundle.GetArgument(1, "Start").TryGetValueAsInteger(out int start)) //1-indexed
-            return new DreamValue("");
+            return DreamValue.EmptyString;
 
         if (end <= 0) end += text.Length + 1;
         else if (end > text.Length + 1) end = text.Length + 1;
 
-        if (start == 0) return new DreamValue("");
+        if (start == 0) return DreamValue.EmptyString;
         else if (start < 0) start += text.Length + 1;
 
         return new DreamValue(text.Substring(start - 1, end - start));
@@ -648,16 +340,16 @@ internal static class DreamProcNativeRoot {
         bundle.GetArgument(2, "End").TryGetValueAsInteger(out var end); //1-indexed
 
         if (!bundle.GetArgument(0, "T").TryGetValueAsString(out string? text))
-            return (end == 0) ? DreamValue.Null : new DreamValue("");
+            return (end == 0) ? DreamValue.Null : DreamValue.EmptyString;
         if (!bundle.GetArgument(1, "Start").TryGetValueAsInteger(out int start)) //1-indexed
-            return new DreamValue("");
+            return DreamValue.EmptyString;
 
         StringInfo textElements = new StringInfo(text);
 
         if (end <= 0) end += textElements.LengthInTextElements + 1;
         else if (end > textElements.LengthInTextElements + 1) end = textElements.LengthInTextElements + 1;
 
-        if (start == 0) return new DreamValue("");
+        if (start == 0) return DreamValue.EmptyString;
         else if (start < 0) start += textElements.LengthInTextElements + 1;
 
         if (start > textElements.LengthInTextElements)
@@ -792,6 +484,7 @@ internal static class DreamProcNativeRoot {
 
     [DreamProc("filter")]
     [DreamProcParameter("type", Type = DreamValueTypeFlag.String)] // Must be from a valid list
+    [DreamProcParameter("name", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("size", Type = DreamValueTypeFlag.Float)]
     [DreamProcParameter("color", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("x", Type = DreamValueTypeFlag.Float)]
@@ -884,6 +577,16 @@ internal static class DreamProcNativeRoot {
         return new DreamValue(needleIndex + 1); //1-indexed
     }
 
+    [DreamProc("findtext_char")]
+    [DreamProcParameter("Haystack", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Needle", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
+    [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    public static DreamValue NativeProc_findtext_char(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        //Wrapper function, Opendream defaults to counting by chars instead of bytes.
+        return NativeProc_findtext(bundle, src, usr);
+    }
+
     [DreamProc("findtextEx")]
     [DreamProcParameter("Haystack", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("Needle", Type = DreamValueTypeFlag.String)]
@@ -929,6 +632,16 @@ internal static class DreamProcNativeRoot {
         }
     }
 
+    [DreamProc("findtextEx_char")]
+    [DreamProcParameter("Haystack", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Needle", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
+    [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    public static DreamValue NativeProc_findtextEx_char(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        //Wrapper function, Opendream defaults to counting by chars instead of bytes.
+        return NativeProc_findtextEx(bundle, src, usr);
+    }
+
     [DreamProc("findlasttext")]
     [DreamProcParameter("Haystack", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("Needle", Type = DreamValueTypeFlag.String)]
@@ -965,6 +678,15 @@ internal static class DreamProcNativeRoot {
         actualcount = Math.Max(Math.Min(actualstart+1, actualcount),0);
         int needleIndex = text.LastIndexOf(needle, actualstart, actualcount, StringComparison.OrdinalIgnoreCase);
         return new DreamValue(needleIndex + 1); //1-indexed, or 0 if not found (LastIndexOf returns -1 if not found)
+    }
+
+    [DreamProc("findlasttext_char")]
+    [DreamProcParameter("Haystack", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Needle", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
+    public static DreamValue NativeProc_findlasttext_char(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        return NativeProc_findlasttext(bundle, src, usr);
     }
 
     [DreamProc("findlasttextEx")]
@@ -1004,6 +726,16 @@ internal static class DreamProcNativeRoot {
         actualcount = Math.Max(Math.Min(actualstart+1, actualcount),0);
         int needleIndex = text.LastIndexOf(needle, actualstart, actualcount, StringComparison.InvariantCulture);
         return new DreamValue(needleIndex + 1); //1-indexed, or 0 if not found (LastIndexOf returns -1 if not found)
+    }
+
+    [DreamProc("findlasttextEx_char")]
+    [DreamProcParameter("Haystack", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Needle", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
+    public static DreamValue NativeProc_findlasttextEx_char(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        //Wrapper function, Opendream defaults to counting by chars instead of bytes.
+        return NativeProc_findlasttextEx(bundle, src, usr);
     }
 
     [DreamProc("flick")]
@@ -1157,62 +889,9 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("B", Type = DreamValueTypeFlag.DreamObject)]
     [DreamProcParameter("rand", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
     public static DreamValue NativeProc_generator(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-        // TODO: Invalid value gives an invalid /generator instance
-        var outputTypeString = bundle.GetArgument(0, "type").MustGetValueAsString();
-
-        var a = bundle.GetArgument(1, "A");
-        var b = bundle.GetArgument(2, "B");
-        var distNum = bundle.GetArgument(3, "rand").MustGetValueAsInteger();
-
-        GeneratorOutputType outputType;
-        GeneratorDistribution distribution;
-        switch(outputTypeString) {
-            case "num":
-                outputType = GeneratorOutputType.Num;
-                break;
-            case "vector":
-                outputType = GeneratorOutputType.Vector;
-                break;
-            case "box":
-                outputType = GeneratorOutputType.Box;
-                break;
-            case "color":
-                outputType = GeneratorOutputType.Color;
-                break;
-            case "circle":
-                outputType = GeneratorOutputType.Circle;
-                break;
-            case "sphere":
-                outputType = GeneratorOutputType.Sphere;
-                break;
-            case "square":
-                outputType = GeneratorOutputType.Square;
-                break;
-            case "cube":
-                outputType = GeneratorOutputType.Cube;
-                break;
-            default:
-                throw new InvalidEnumArgumentException("Invalid output type specified in generator()");
-        }
-
-        switch(distNum) {
-            case 0:
-                distribution = GeneratorDistribution.Uniform;
-                break;
-            case 1:
-                distribution = GeneratorDistribution.Normal;
-                break;
-            case 2:
-                distribution = GeneratorDistribution.Linear;
-                break;
-            case 3:
-                distribution = GeneratorDistribution.Square;
-                break;
-            default:
-                throw new InvalidEnumArgumentException("Invalid distribution type specified in generator()");
-        }
-
-        return new(new DreamObjectGenerator(bundle.ObjectTree.Generator.ObjectDefinition, a, b, outputType, distribution));
+        DreamObject generator = bundle.ObjectTree.CreateObject(bundle.ObjectTree.Generator);
+        generator.InitSpawn(new DreamProcArguments(bundle.Arguments));
+        return new DreamValue(generator);
     }
 
     [DreamProc("hascall")]
@@ -2054,6 +1733,15 @@ internal static class DreamProcNativeRoot {
         return new DreamValue(index);
     }
 
+    [DreamProc("nonspantext_char")]
+    [DreamProcParameter("Haystack", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Needles", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
+    public static DreamValue NativeProc_nonspantext_char(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        //Wrapper function, Opendream defaults to counting by chars instead of bytes.
+        return NativeProc_nonspantext(bundle, src, usr);
+    }
+
     [DreamProc("num2text")]
     [DreamProcParameter("N")]
     [DreamProcParameter("A", Type = DreamValueTypeFlag.Float)]
@@ -2386,6 +2074,17 @@ internal static class DreamProcNativeRoot {
         throw new Exception($"Invalid needle {needle}");
     }
 
+    [DreamProc("replacetext_char")]
+    [DreamProcParameter("Haystack", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Needle", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Replacement", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
+    [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    public static DreamValue NativeProc_replacetext_char(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        //Wrapper function, Opendream defaults to counting by chars instead of bytes.
+        return NativeProc_replacetext(bundle, src, usr);
+    }
+
     [DreamProc("replacetextEx")]
     [DreamProcParameter("Haystack", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("Needle", Type = DreamValueTypeFlag.String)]
@@ -2431,6 +2130,17 @@ internal static class DreamProcNativeRoot {
         }
 
         return new DreamValue(text.Substring(start - 1, end - start).Replace(needle, replacement, StringComparison.Ordinal));
+    }
+
+    [DreamProc("replacetextEx_char")]
+    [DreamProcParameter("Haystack", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Needle", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Replacement", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
+    [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    public static DreamValue NativeProc_replacetextEx_char(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        //Wrapper function, Opendream defaults to counting by chars instead of bytes.
+        return NativeProc_replacetextEx(bundle, src, usr);
     }
 
     [DreamProc("rgb2num")]
@@ -2622,7 +2332,7 @@ internal static class DreamProcNativeRoot {
 
     [DreamProc("sleep")]
     [DreamProcParameter("Delay", Type = DreamValueTypeFlag.Float)]
-    public static async Task<DreamValue> NativeProc_sleep(AsyncNativeProc.State state) {
+    public static async Task<DreamValue> NativeProc_sleep(AsyncNativeProc.AsyncNativeProcState state) {
         state.GetArgument(0, "Delay").TryGetValueAsFloat(out float delay);
 
         await state.ProcScheduler.CreateDelay(delay);
@@ -2844,25 +2554,24 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
     [DreamProcParameter("include_delimiters", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
     public static DreamValue NativeProc_splittext(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-        if (!bundle.GetArgument(0, "Text").TryGetValueAsString(out var text)) {
+        if (!bundle.GetArgument(0, "Text").TryGetValueAsString(out var rawtext)) {
             return new DreamValue(bundle.ObjectTree.CreateList());
         }
 
-        int start = 0;
-        int end = 0;
-        if(bundle.GetArgument(2, "Start").TryGetValueAsInteger(out start))
+        if (bundle.GetArgument(2, "Start").TryGetValueAsInteger(out int start))
             start -= 1; //1-indexed
-        if(bundle.GetArgument(3, "End").TryGetValueAsInteger(out end))
+        if (bundle.GetArgument(3, "End").TryGetValueAsInteger(out int end))
             if(end == 0)
-                end = text.Length;
+                end = rawtext.Length;
             else
                 end -= 1; //1-indexed
         bool includeDelimiters = false;
         if(bundle.GetArgument(4, "include_delimiters").TryGetValueAsInteger(out var includeDelimitersInt))
             includeDelimiters = includeDelimitersInt != 0; //idk why BYOND doesn't just use truthiness, but it doesn't, so...
 
-        if(start > 0 || end < text.Length)
-            text = text[Math.Max(start,0)..Math.Min(end, text.Length)];
+        string text = rawtext;
+        if (start > 0 || end < rawtext.Length)
+            text = rawtext[Math.Max(start, 0)..Math.Min(end, text.Length)];
 
         var delim = bundle.GetArgument(1, "Delimiter"); //can either be a regex or string
 
@@ -2877,9 +2586,18 @@ internal static class DreamProcNativeRoot {
                 }
 
                 values.Add(text.Substring(pos));
+                if (start > 0)
+                    values[0] = rawtext.Substring(0, start) + values[0];
+                if (end < rawtext.Length)
+                    values[^1] += rawtext.Substring(end, rawtext.Length - end);
                 return new DreamValue(bundle.ObjectTree.CreateList(values.ToArray()));
             } else {
-                return new DreamValue(bundle.ObjectTree.CreateList(regexObject.Regex.Split(text)));
+                var values = regexObject.Regex.Split(text);
+                if (start > 0)
+                    values[0] = rawtext.Substring(0, start) + values[0];
+                if (end < rawtext.Length)
+                    values[^1] += rawtext.Substring(end, rawtext.Length - end);
+                return new DreamValue(bundle.ObjectTree.CreateList(values));
             }
         } else if (delim.TryGetValueAsString(out var delimiter)) {
             string[] splitText;
@@ -2898,10 +2616,25 @@ internal static class DreamProcNativeRoot {
                 splitText = text.Split(delimiter);
             }
 
+            if (start > 0)
+                splitText[0] = rawtext.Substring(0, start) + splitText[0];
+            if (end < rawtext.Length)
+                splitText[^1] += rawtext.Substring(end, rawtext.Length - end);
             return new DreamValue(bundle.ObjectTree.CreateList(splitText));
         } else {
             return new DreamValue(bundle.ObjectTree.CreateList());
         }
+    }
+
+    [DreamProc("splittext_char")]
+    [DreamProcParameter("Text", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Delimiter", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
+    [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    [DreamProcParameter("include_delimiters", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+    public static DreamValue NativeProc_splittext_char(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        //Wrapper function, Opendream defaults to counting by chars instead of bytes.
+        return NativeProc_splittext(bundle, src, usr);
     }
 
     private static void OutputToStatPanel(DreamManager dreamManager, DreamConnection connection, DreamValue name, DreamValue value) {
@@ -3296,7 +3029,7 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("UrlText", Type = DreamValueTypeFlag.String)]
     public static DreamValue NativeProc_url_decode(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
         if (!bundle.GetArgument(0, "UrlText").TryGetValueAsString(out var urlText)) {
-            return new DreamValue("");
+            return DreamValue.EmptyString;
         }
 
         return new DreamValue(HttpUtility.UrlDecode(urlText));
@@ -3616,10 +3349,10 @@ internal static class DreamProcNativeRoot {
     [DreamProc("winexists")]
     [DreamProcParameter("player", Type = DreamValueTypeFlag.DreamObject)]
     [DreamProcParameter("control_id", Type = DreamValueTypeFlag.String)]
-    public static async Task<DreamValue> NativeProc_winexists(AsyncNativeProc.State state) {
+    public static async Task<DreamValue> NativeProc_winexists(AsyncNativeProc.AsyncNativeProcState state) {
         DreamValue player = state.GetArgument(0, "player");
         if (!state.GetArgument(1, "control_id").TryGetValueAsString(out var controlId)) {
-            return new DreamValue("");
+            return DreamValue.EmptyString;
         }
 
         DreamConnection? connection = null;
@@ -3640,7 +3373,7 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("player", Type = DreamValueTypeFlag.DreamObject)]
     [DreamProcParameter("control_id", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("params", Type = DreamValueTypeFlag.String)]
-    public static async Task<DreamValue> NativeProc_winget(AsyncNativeProc.State state) {
+    public static async Task<DreamValue> NativeProc_winget(AsyncNativeProc.AsyncNativeProcState state) {
         DreamValue player = state.GetArgument(0, "player");
         state.GetArgument(1, "control_id").TryGetValueAsString(out var controlId);
         if (!state.GetArgument(2, "params").TryGetValueAsString(out var paramsValue))

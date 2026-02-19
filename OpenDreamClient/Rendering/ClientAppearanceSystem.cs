@@ -56,6 +56,8 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     private readonly Dictionary<(int X, int Y, int Z), Flick> _turfFlicks = new();
     private readonly Dictionary<EntityUid, Flick> _movableFlicks = new();
     private bool _receivedAllAppearancesMsg;
+    private float _refreshVerbRemainingTime = 0.5f;
+    private readonly float _refreshVerbPeriod = 0.5f;
 
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IDreamResourceManager _dreamResourceManager = default!;
@@ -101,7 +103,11 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
                 _movableFlicks.Remove(flickKey);
         }
 
-        _verbSystem.RefreshVerbs();
+        _refreshVerbRemainingTime -= frameTime;
+        if (_refreshVerbRemainingTime < 0) {
+            _refreshVerbRemainingTime = _refreshVerbPeriod;
+            _verbSystem.RefreshVerbs();
+        }
     }
 
     public void SetAllAppearances(Dictionary<uint, ImmutableAppearance> appearances) {

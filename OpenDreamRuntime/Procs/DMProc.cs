@@ -837,16 +837,25 @@ public sealed class DMProcState : ProcState {
             case DMReference.Type.Args: return new(new ProcArgsList(Proc.ObjectTree.List.ObjectDefinition, this));
             case DMReference.Type.World: return new(DreamManager.WorldInstance);
             case DMReference.Type.Callee: {
-                // TODO: BYOND seems to reuse the same object. At least, callee == callee
+                // BYOND seems to reuse the same object. At least, callee == callee
+                if (Callee is not null) return new DreamValue(Callee);
                 var callee = Proc.ObjectTree.CreateObject<DreamObjectCallee>(Proc.ObjectTree.Callee);
 
                 callee.ProcState = this;
                 callee.ProcStateId = Id;
+                Callee = callee;
                 return new(callee);
             }
             case DMReference.Type.Caller: {
-                // TODO
-                return DreamValue.Null;
+                // Note that the ref says that caller still returns a "/callee" object, just with the caller's info
+                if (Caller is not null) return new DreamValue(Caller);
+                if (Thread.PeekStack() is not DMProcState dmProcState) return DreamValue.Null;
+
+                var caller = Proc.ObjectTree.CreateObject<DreamObjectCallee>(Proc.ObjectTree.Callee);
+                caller.ProcState = dmProcState;
+                caller.ProcStateId = dmProcState.Id;
+                Caller = caller;
+                return new(caller);
             }
             case DMReference.Type.Field: {
                 DreamValue owner = peek ? Peek() : Pop();

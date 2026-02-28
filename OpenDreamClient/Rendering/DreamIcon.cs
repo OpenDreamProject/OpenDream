@@ -201,14 +201,31 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
         }
     }
 
+    public bool TryGetSizeInTiles([NotNullWhen(true)] out Vector2? effectiveSize) {
+        if (DMI != null) {
+            effectiveSize = DMI.IconSize / (float)interfaceManager.IconSize;
+            return true;
+        }
+
+        effectiveSize = null;
+        return false;
+    }
+
+    public bool TryGetOffsetInTiles([NotNullWhen(true)] out Vector2? effectiveOffset) {
+        if (Appearance != null) {
+            effectiveOffset = Appearance!.TotalPixelOffset / (float)interfaceManager.IconSize;
+            return true;
+        }
+
+        effectiveOffset = null;
+        return false;
+    }
+
     public void GetWorldAABB(Vector2 worldPos, ref Box2? aabb) {
-        if (DMI != null && Appearance != null) {
-            Vector2 size = DMI.IconSize / (float)interfaceManager.IconSize;
-            Vector2 pixelOffset = Appearance.TotalPixelOffset / (float)interfaceManager.IconSize;
+        if (TryGetOffsetInTiles(out var effectiveOffset) && TryGetSizeInTiles(out var size)) {
+            worldPos += effectiveOffset.Value;
 
-            worldPos += pixelOffset;
-
-            Box2 thisAABB = Box2.CenteredAround(worldPos, size);
+            Box2 thisAABB = Box2.CenteredAround(worldPos, size.Value);
             aabb = aabb?.Union(thisAABB) ?? thisAABB;
         }
 

@@ -37,6 +37,7 @@ public class Request : ProtocolMessage {
             "disassemble" => json.Deserialize<RequestDisassemble>(),
             "hotreloadinterface" => json.Deserialize<RequestHotReloadInterface>(),
             "hotreloadresource" => json.Deserialize<RequestHotReloadResource>(),
+            "hotreloadbytecode" => json.Deserialize<RequestHotReloadBytecode>(),
             // Caller will fail to recognize it and can respond with `success: false`.
             _ => request,
         };

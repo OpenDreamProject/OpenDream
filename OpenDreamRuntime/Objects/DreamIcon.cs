@@ -301,12 +301,12 @@ public class DreamIconOperationBlend : IDreamIconOperation {
     }
 
     private readonly BlendType _type;
-    private readonly int _xOffset, _yOffset;
+    protected readonly int XOffset, YOffset;
 
     protected DreamIconOperationBlend(BlendType type, int xOffset, int yOffset) {
         _type = type;
-        _xOffset = xOffset;
-        _yOffset = yOffset;
+        XOffset = xOffset;
+        YOffset = yOffset;
 
         if (_type is not BlendType.Overlay and not BlendType.Underlay and not BlendType.Multiply and not BlendType.Add and not BlendType.Subtract)
             throw new NotImplementedException($"\"{_type}\" blending is not implemented");
@@ -381,6 +381,7 @@ public class DreamIconOperationBlend : IDreamIconOperation {
 public sealed class DreamIconOperationBlendImage : DreamIconOperationBlend {
     private readonly Image<Rgba32> _blending;
     private readonly ParsedDMIState? _blendingState;
+    private readonly int _width, _height;
 
     public DreamIconOperationBlendImage(BlendType type, int xOffset, int yOffset, DreamValue blending) : base(type, xOffset, yOffset) {
         //TODO: Find a way to get rid of this!
@@ -392,6 +393,7 @@ public sealed class DreamIconOperationBlendImage : DreamIconOperationBlend {
 
         _blending = blendingIcon.Texture;
         _blendingState = blendingIcon.DMI.States.Values.FirstOrDefault();
+        (_width, _height) = (blendingIcon.DMI.Width, blendingIcon.DMI.Height);
     }
 
     public override void OnApply(DreamIcon icon) {
@@ -426,20 +428,27 @@ public sealed class DreamIconOperationBlendImage : DreamIconOperationBlend {
 
         var blendingFrame = blendingDirFrames[frame];
 
-        // Use the smaller of the two sizes if they're different
-        // TODO: 1,1 should be bottom left, not top left
-        bounds = UIBox2i.FromDimensions(bounds.Left, bounds.Top, Math.Min(_blending.Width, bounds.Width),
-            Math.Min(_blending.Height, bounds.Height));
+        var x0 = XOffset - 1;
+        var y0 = (-YOffset + 1) + bounds.Height - _height;
+
+        var blendX = Math.Max(x0, 0);
+        var blendY = Math.Max(y0, 0);
+
+        var blendWidth = Math.Min(_width + x0, bounds.Width) - blendX;
+        var blendHeight = Math.Min(_height + y0, bounds.Height) - blendY;
+
+        if (blendWidth < 1 || blendHeight < 1)
+            return;
 
         _blending.ProcessPixelRows(accessor => {
             // TODO: x & y offsets
 
-            for (int y = bounds.Top; y < bounds.Bottom; y++) {
-                var row = accessor.GetRowSpan(blendingFrame.Y + y - bounds.Top);
+            for (int dy = 0; dy < blendHeight; dy++) {
+                var row = accessor.GetRowSpan((blendingFrame.Y + blendY + dy) - y0);
 
-                for (int x = bounds.Left; x < bounds.Right; x++) {
-                    int dstPixelPosition = (y * imageSpan) + x;
-                    Rgba32 src = row[blendingFrame.X + x - bounds.Left];
+                for (int dx = 0; dx < blendWidth; dx++) {
+                    var dstPixelPosition = ((blendY + dy) * imageSpan) + (blendX + dx);
+                    var src = row[(blendingFrame.X + blendX + dx) - x0];
 
                     BlendPixel(pixels, dstPixelPosition, src);
                 }

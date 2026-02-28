@@ -19,6 +19,7 @@ internal sealed partial class ContextMenuPopup : Popup {
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
     [Dependency] private readonly IUserInterfaceManager _uiManager = default!;
     private readonly ClientAppearanceSystem _appearanceSystem;
+    private readonly DreamClientSystem _dreamClientSystem;
     private readonly ClientVerbSystem _verbSystem;
     private readonly DMISpriteSystem _spriteSystem;
     private readonly EntityLookupSystem _lookupSystem;
@@ -37,6 +38,7 @@ internal sealed partial class ContextMenuPopup : Popup {
 
         _verbSystem = _entitySystemManager.GetEntitySystem<ClientVerbSystem>();
         _appearanceSystem = _entitySystemManager.GetEntitySystem<ClientAppearanceSystem>();
+        _dreamClientSystem = _entitySystemManager.GetEntitySystem<DreamClientSystem>();
         _spriteSystem = _entitySystemManager.GetEntitySystem<DMISpriteSystem>();
         _lookupSystem = _entitySystemManager.GetEntitySystem<EntityLookupSystem>();
         _mouseInputSystem = _entitySystemManager.GetEntitySystem<MouseInputSystem>();
@@ -115,7 +117,7 @@ internal sealed partial class ContextMenuPopup : Popup {
     private sbyte GetSeeInvisible() {
         if (_playerManager.LocalSession == null)
             return 127;
-        if (!_mobSightQuery.TryGetComponent(_playerManager.LocalSession.AttachedEntity, out DreamMobSightComponent? sight))
+        if (!_mobSightQuery.TryGetComponent(_dreamClientSystem.MobUid, out DreamMobSightComponent? sight))
             return 127;
 
         return sight.SeeInvisibility;

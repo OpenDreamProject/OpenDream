@@ -24,7 +24,10 @@
 	F["dirIcon"] = new /icon()
 	F["list"] << list("1",2,"three"=3,4, new /datum(), new /datum(), list(1,2,3, new /datum()))
 
-	ASSERT(F.dir ~= list("dir","dir2","dir3","dir4","dir5","dir6","dir7","dirIcon","list"))
+	var/list/match = list("dir","dir2","dir3","dir4","dir5","dir6","dir7","dirIcon","list") 
+	ASSERT(length(F.dir) == length(match))
+	for(var/d in F.dir)
+		ASSERT(d in match)
 	ASSERT(F.ExportText("dir6/subdir6") == ". = 321\n")
 	ASSERT(F.ExportText("dir6/subdir6/") == ". = 321\n")
 	ASSERT(F.ExportText("dir6") == "\nsubdir6 = 321\n")

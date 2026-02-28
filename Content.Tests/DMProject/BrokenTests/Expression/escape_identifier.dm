@@ -10,7 +10,7 @@
 	var/\justident = "justident" 
 
 /proc/RunTest()
-	var/list/expected = list("6*6", "37", "38", " ", " 3", "    ", "improper", "justident")
+	var/list/expected = list("6*6", "37", "38", " ", " 3", "	", "improper", "justident")
 	var/newtype/o = new
 	for(var/i in 1 to expected.len)
 		ASSERT(expected[i] == o.vars[i])

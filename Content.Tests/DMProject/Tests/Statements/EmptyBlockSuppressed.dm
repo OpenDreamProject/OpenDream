@@ -1,3 +1,4 @@
+// NOBYOND
 #pragma EmptyBlock error
 
 /proc/RunTest()

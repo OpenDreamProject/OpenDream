@@ -1,3 +1,4 @@
+// NOBYOND
 #pragma PointlessParentCall error
 
 // don't emit the pragma if lateral overrides exist

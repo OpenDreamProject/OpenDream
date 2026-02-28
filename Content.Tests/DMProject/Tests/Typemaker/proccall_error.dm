@@ -1,4 +1,5 @@
 //COMPILE ERROR OD2701
+// NOBYOND
 #pragma InvalidReturnType error
 /datum/proc/foo()
 	return "bar"

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Resources;
@@ -106,6 +107,61 @@ namespace OpenDreamRuntime.Procs.Native {
         /// <summary> Turns a given icon a given amount of degrees clockwise. </summary>
         public static void _NativeProc_TurnInternal(DreamObjectIcon src, float angle) {
             src.Turn(angle);
+        }
+
+        [DreamProc("GetPixel")]
+        [DreamProcParameter("x", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("y", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("icon_state", Type = DreamValueTypeFlag.String)]
+        [DreamProcParameter("dir", Type = DreamValueTypeFlag.Float, DefaultValue = 2)]
+        [DreamProcParameter("frame", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
+        [DreamProcParameter("moving", Type = DreamValueTypeFlag.Float, DefaultValue = -1)]
+        public static DreamValue NativeProc_GetPixel(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+            bundle.GetArgument(0, "x").TryGetValueAsInteger(out var xPos);
+            bundle.GetArgument(1, "y").TryGetValueAsInteger(out var yPos);
+            bundle.GetArgument(2, "icon_state").TryGetValueAsString(out var iconState);
+            bundle.GetArgument(3, "dir").TryGetValueAsInteger(out var dir);
+            bundle.GetArgument(4, "frame").TryGetValueAsInteger(out var frame);
+            //TODO: Implement moving var
+            bundle.GetArgument(5, "moving").TryGetValueAsInteger(out var moving);
+
+            DreamIcon iconObj = ((DreamObjectIcon)src!).Icon;
+            if(!iconObj.States.TryGetValue(iconState ?? string.Empty, out var state))
+                //Check does this situation actually return null?
+                return DreamValue.Null;
+            if(frame > state.Frames)
+                //Check what requesting a nonexistent frame does
+                return DreamValue.Null;
+            //Check what requesting a bad dir does, and if diagonals fallthrough
+            //Also this switch should be an extended function on AtomDirection anyway
+            AtomDirection atomDir = dir switch {
+                0 or 2 => AtomDirection.South,
+                1 => AtomDirection.North,
+                4 => AtomDirection.East,
+                5 => AtomDirection.Northeast,
+                6 => AtomDirection.Southeast,
+                8 => AtomDirection.West,
+                9 => AtomDirection.Northwest,
+                10 => AtomDirection.Southwest,
+                _ => AtomDirection.None
+            };
+
+            if (!state.Directions.TryGetValue(atomDir, out var frameList))
+                //Check what a dir fail actually does
+                return DreamValue.Null;
+            var finalFrame = frameList[frame].Image;
+            if (finalFrame is not null) {
+                var bob = finalFrame[xPos, yPos];
+                var r = bob.R.ToString("X2");
+                var g = bob.G.ToString("X2");
+                var b = bob.B.ToString("X2");
+                var a = bob.A.ToString("X2");
+                //If A is fully transparent return null
+                //if A is partially transparent return "#RRGGBBAA"
+                //if A is not transparent return "#RRGGBB"
+            }
+
+            return DreamValue.Null;
         }
     }
 }

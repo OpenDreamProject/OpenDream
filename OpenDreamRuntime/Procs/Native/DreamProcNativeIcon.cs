@@ -127,18 +127,20 @@ namespace OpenDreamRuntime.Procs.Native {
 
             DreamIcon iconObj = ((DreamObjectIcon)src!).Icon;
             if(!iconObj.States.TryGetValue(iconState ?? string.Empty, out var state))
-                //Check does this situation actually return null?
+                //Bad icon_state returns null
                 return DreamValue.Null;
 
-            if(frame > state.Frames || frame < 0)
-                //Check what requesting a nonexistent frame does
-                //Check what subzero frame actually does.
+            //Values less than 1 are out of bounds.
+            if (xPos < 1 || yPos < 1) return DreamValue.Null;
+
+            if (frame < 1) {
+                frame = 0; //BYONDISM: Frames less than 1 count as 0,
+            } else if (frame > state.Frames) {
                 return DreamValue.Null;
+            } else {
+                frame -= 1; // Convert from 1-index to 0-index
+            }
 
-            if(frame != 0) frame -= 1; //1 indexed to 0 indexed conversion.
-
-            //Check what requesting a bad dir does, and if diagonals fallthrough
-            //Also this switch should be an extended function on AtomDirection anyway
             AtomDirection atomDir = dir switch {
                 0 or 2 => AtomDirection.South,
                 1 => AtomDirection.North,
@@ -150,13 +152,21 @@ namespace OpenDreamRuntime.Procs.Native {
                 10 => AtomDirection.Southwest,
                 _ => AtomDirection.None
             };
+            //BYONDISM: Bad dir values just crash instantly :)
+            if (atomDir == AtomDirection.None) return DreamValue.Null;
 
             if (!state.Directions.TryGetValue(atomDir, out var frameList))
-                //Check what a dir fail actually does
+                //Empty dir's return null
                 return DreamValue.Null;
 
             var finalFrame = frameList[frame].Image;
             if (finalFrame is null) return DreamValue.Null;
+
+            //Out-of-bounds xy values return null.
+            if (xPos > finalFrame.Width || yPos > finalFrame.Height) return DreamValue.Null;
+            //SixLabors.Image<Rgba32> is 0-indexed from the top-left, BYOND is 1-indexed from the bottom left.
+            xPos -= 1;
+            yPos = finalFrame.Height - yPos;
 
             var pix = finalFrame[xPos, yPos];
             //If A is fully transparent return null

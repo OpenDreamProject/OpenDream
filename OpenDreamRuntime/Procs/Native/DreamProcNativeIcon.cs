@@ -113,8 +113,8 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("x", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("y", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("icon_state", Type = DreamValueTypeFlag.String)]
-        [DreamProcParameter("dir", Type = DreamValueTypeFlag.Float, DefaultValue = 2)]
-        [DreamProcParameter("frame", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
+        [DreamProcParameter("dir", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+        [DreamProcParameter("frame", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
         [DreamProcParameter("moving", Type = DreamValueTypeFlag.Float, DefaultValue = -1)]
         public static DreamValue NativeProc_GetPixel(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             bundle.GetArgument(0, "x").TryGetValueAsInteger(out var xPos);
@@ -129,9 +129,14 @@ namespace OpenDreamRuntime.Procs.Native {
             if(!iconObj.States.TryGetValue(iconState ?? string.Empty, out var state))
                 //Check does this situation actually return null?
                 return DreamValue.Null;
-            if(frame > state.Frames)
+
+            if(frame > state.Frames || frame < 0)
                 //Check what requesting a nonexistent frame does
+                //Check what subzero frame actually does.
                 return DreamValue.Null;
+
+            if(frame != 0) frame -= 1; //1 indexed to 0 indexed conversion.
+
             //Check what requesting a bad dir does, and if diagonals fallthrough
             //Also this switch should be an extended function on AtomDirection anyway
             AtomDirection atomDir = dir switch {
@@ -149,19 +154,19 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!state.Directions.TryGetValue(atomDir, out var frameList))
                 //Check what a dir fail actually does
                 return DreamValue.Null;
-            var finalFrame = frameList[frame].Image;
-            if (finalFrame is not null) {
-                var bob = finalFrame[xPos, yPos];
-                var r = bob.R.ToString("X2");
-                var g = bob.G.ToString("X2");
-                var b = bob.B.ToString("X2");
-                var a = bob.A.ToString("X2");
-                //If A is fully transparent return null
-                //if A is partially transparent return "#RRGGBBAA"
-                //if A is not transparent return "#RRGGBB"
-            }
 
-            return DreamValue.Null;
+            var finalFrame = frameList[frame].Image;
+            if (finalFrame is null) return DreamValue.Null;
+
+            var pix = finalFrame[xPos, yPos];
+            //If A is fully transparent return null
+            //if A is partially transparent return "#RRGGBBAA"
+            //if A is not transparent return "#RRGGBB"
+            return pix.A switch {
+                0 => DreamValue.Null,
+                255 => new DreamValue($"#{pix.R:X2}{pix.G:X2}{pix.B:X2}"),
+                _ => new DreamValue($"#{pix.R:X2}{pix.G:X2}{pix.B:X2}{pix.A:X2}")
+            };
         }
     }
 }

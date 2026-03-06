@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Resources;
@@ -123,7 +122,6 @@ namespace OpenDreamRuntime.Procs.Native {
             bundle.GetArgument(3, "dir").TryGetValueAsInteger(out var dir);
             bundle.GetArgument(4, "frame").TryGetValueAsInteger(out var frame);
             //TODO: Implement moving var
-            bundle.GetArgument(5, "moving").TryGetValueAsInteger(out var moving);
 
             DreamIcon iconObj = ((DreamObjectIcon)src!).Icon;
             //TODO BYONDISM: A non-existent icon_state will default to the empty string icon_state,

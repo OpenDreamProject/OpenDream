@@ -126,11 +126,13 @@ namespace OpenDreamRuntime.Procs.Native {
             bundle.GetArgument(5, "moving").TryGetValueAsInteger(out var moving);
 
             DreamIcon iconObj = ((DreamObjectIcon)src!).Icon;
+            //TODO BYONDISM: A non-existent icon_state will default to the empty string icon_state,
+            //or if one doesn't exist it will default to the first icon_state in the DMI.
             if(!iconObj.States.TryGetValue(iconState ?? string.Empty, out var state))
                 //Bad icon_state returns null
                 return DreamValue.Null;
 
-            //Values less than 1 are out of bounds.
+            //Position values less than 1 are out of bounds. Early escape.
             if (xPos < 1 || yPos < 1) return DreamValue.Null;
 
             if (frame < 1) {
@@ -174,8 +176,8 @@ namespace OpenDreamRuntime.Procs.Native {
             //if A is not transparent return "#RRGGBB"
             return pix.A switch {
                 0 => DreamValue.Null,
-                255 => new DreamValue($"#{pix.R:X2}{pix.G:X2}{pix.B:X2}"),
-                _ => new DreamValue($"#{pix.R:X2}{pix.G:X2}{pix.B:X2}{pix.A:X2}")
+                255 => new DreamValue($"#{pix.R:x2}{pix.G:x2}{pix.B:x2}"),
+                _ => new DreamValue($"#{pix.R:x2}{pix.G:x2}{pix.B:x2}{pix.A:x2}")
             };
         }
     }

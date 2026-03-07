@@ -1,3 +1,4 @@
+// NOBYOND
 #pragma InvalidReturnType error
 /datum/proc/foo() as text
 	return "bar"

@@ -1,0 +1,69 @@
+name: Run BYOND Against Modified Tests
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches:
+      - "master"
+
+jobs:
+  unit_test:
+    name: Check Parity of Changed Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+            fetch-depth: 2
+
+      - name: Check for test changes
+        id: changed-files
+        run: |
+            git diff --diff-filter=ACMR --name-only HEAD^1 HEAD Content.Tests/DMProject/ >> test_file_diffs
+            echo "changed_files_count=$(wc -l < test_file_diffs)" >> $GITHUB_OUTPUT
+
+      - name: Add Architecture
+        if: ${{ steps.changed-files.outputs.changed_files_count > 0 }}
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo sed -i'' -E 's/^(deb|deb-src) http:\/\/(azure.archive|security).ubuntu.com/\1 [arch=amd64,i386] http:\/\/\2.ubuntu.com/' /etc/apt/sources.list
+          sudo apt-get update
+
+    #   - name: Install Dependencies
+    #     if: ${{ steps.changed-files.outputs.changed_files_count > 0 }}
+    #     uses: Eeems-Org/apt-cache-action@v1
+    #     with:
+    #       packages: libssl-dev:i386 libgcc-s1:i386 libcurl4:i386
+
+      - name: Get latest version number
+        if: ${{ steps.changed-files.outputs.changed_files_count > 0 }}
+        run: |
+          set -e
+          set -o pipefail
+          curl --fail -s https://www.byond.com/download/version.txt | awk -F. '{print "BYOND_MAJOR_VERSION="$1"\nBYOND_MINOR_VERSION="$2}' > buildByond.conf          
+
+      - name: Cache BYOND
+        if: ${{ steps.changed-files.outputs.changed_files_count > 0 }}
+        uses: actions/cache@v4
+        with:
+          path: ~/BYOND
+          key: ${{ runner.os }}-byond-${{ hashFiles('buildByond.conf')}}
+          restore-keys: ${{ runner.os }}-byond
+
+      - name: Setup BYOND
+        if: ${{ steps.changed-files.outputs.changed_files_count > 0 }}
+        run: |
+          .github/assets/CIScripts/install_byond.sh
+          cd $GITHUB_WORKSPACE
+          printenv
+          echo "BYOND_SYSTEM=/home/runner/BYOND/byond" >> $GITHUB_ENV
+          echo "/home/runner/BYOND/byond/bin" >> $GITHUB_PATH
+          echo "LD_LIBRARY_PATH=/home/runner/BYOND/byond/bin:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+          echo "MANPATH=/home/runner/BYOND/byond/man:$MANPATH" >> $GITHUB_ENV
+
+      - name: Run Full Unit Tests
+        if: ${{ steps.changed-files.outputs.changed_files_count > 0 }}
+        id: run_tests
+        run: |
+          .github/assets/CIScripts/run_tests.sh

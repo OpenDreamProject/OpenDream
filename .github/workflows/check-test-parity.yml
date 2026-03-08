@@ -9,7 +9,7 @@ on:
 
 jobs:
   unit_test:
-    name: Check Parity of Changed Tests
+    name: Checking parity
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -30,11 +30,11 @@ jobs:
           sudo sed -i'' -E 's/^(deb|deb-src) http:\/\/(azure.archive|security).ubuntu.com/\1 [arch=amd64,i386] http:\/\/\2.ubuntu.com/' /etc/apt/sources.list
           sudo apt-get update
 
-    #   - name: Install Dependencies
-    #     if: ${{ steps.changed-files.outputs.changed_files_count > 0 }}
-    #     uses: Eeems-Org/apt-cache-action@v1
-    #     with:
-    #       packages: libssl-dev:i386 libgcc-s1:i386 libcurl4:i386
+      - name: Install Dependencies
+        if: ${{ steps.changed-files.outputs.changed_files_count > 0 }}
+        uses: Eeems-Org/apt-cache-action@v1
+        with:
+          packages: libssl-dev:i386 libgcc-s1:i386 libcurl4:i386
 
       - name: Get latest version number
         if: ${{ steps.changed-files.outputs.changed_files_count > 0 }}

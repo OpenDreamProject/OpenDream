@@ -89,48 +89,59 @@ public static class SharedOperations {
         float? a = null;
         ColorSpace space = ColorSpace.RGB;
 
-        if (arguments[0].Name is null) {
-            if (arguments.Length is < 3 or > 5)
-                throw new Exception("Expected 3 to 5 arguments for rgb()");
+        int orderedIdx = -1;
+        foreach (var (name, value) in arguments) {
+            orderedIdx++;
 
-            color1 = arguments[0].Value;
-            color2 = arguments[1].Value;
-            color3 = arguments[2].Value;
-            a = (arguments.Length >= 4) ? arguments[3].Value : null;
-            if (arguments.Length == 5)
-                space = arguments[4].Value is null ? ColorSpace.RGB : (ColorSpace)(int)arguments[4].Value!;
-        } else {
-            foreach (var arg in arguments) {
-                var name = arg.Name ?? string.Empty;
+            if (name == null) {
+                switch (orderedIdx) {
+                    case 0:
+                        color1 = value;
+                        break;
+                    case 1:
+                        color2 = value;
+                        break;
+                    case 2:
+                        color3 = value;
+                        break;
+                    case 3:
+                        a = value;
+                        break;
+                    case 4:
+                        space = (ColorSpace?)value ?? ColorSpace.RGB;
+                        break;
+                }
 
-                if (name.StartsWith("r", StringComparison.InvariantCultureIgnoreCase) && color1 is null) {
-                    color1 = arg.Value;
-                    space = ColorSpace.RGB;
-                } else if (name.StartsWith("g", StringComparison.InvariantCultureIgnoreCase) && color2 is null) {
-                    color2 = arg.Value;
-                    space = ColorSpace.RGB;
-                } else if (name.StartsWith("b", StringComparison.InvariantCultureIgnoreCase) && color3 is null) {
-                    color3 = arg.Value;
-                    space = ColorSpace.RGB;
-                } else if (name.StartsWith("h", StringComparison.InvariantCultureIgnoreCase) && color1 is null) {
-                    color1 = arg.Value;
-                    space = ColorSpace.HSV;
-                } else if (name.StartsWith("s", StringComparison.InvariantCultureIgnoreCase) && color2 is null) {
-                    color2 = arg.Value;
-                    space = ColorSpace.HSV;
-                } else if (name.StartsWith("v", StringComparison.InvariantCultureIgnoreCase) && color3 is null) {
-                    color3 = arg.Value;
-                    space = ColorSpace.HSV;
-                } else if (name.StartsWith("l", StringComparison.InvariantCultureIgnoreCase) && color3 is null) {
-                    color3 = arg.Value;
-                    space = ColorSpace.HSL;
-                } else if (name.StartsWith("a", StringComparison.InvariantCultureIgnoreCase) && a is null)
-                    a = arg.Value;
-                else if (name == "space" && space == default)
-                    space = (ColorSpace)(int)arg.Value!;
-                else
-                    throw new Exception($"Invalid or double arg \"{name}\"");
+                continue;
             }
+
+            if (name.StartsWith("r", StringComparison.InvariantCultureIgnoreCase) && color1 is null) {
+                color1 = value;
+                space = ColorSpace.RGB;
+            } else if (name.StartsWith("g", StringComparison.InvariantCultureIgnoreCase) && color2 is null) {
+                color2 = value;
+                space = ColorSpace.RGB;
+            } else if (name.StartsWith("b", StringComparison.InvariantCultureIgnoreCase) && color3 is null) {
+                color3 = value;
+                space = ColorSpace.RGB;
+            } else if (name.StartsWith("h", StringComparison.InvariantCultureIgnoreCase) && color1 is null) {
+                color1 = value;
+                space = ColorSpace.HSV;
+            } else if (name.StartsWith("s", StringComparison.InvariantCultureIgnoreCase) && color2 is null) {
+                color2 = value;
+                space = ColorSpace.HSV;
+            } else if (name.StartsWith("v", StringComparison.InvariantCultureIgnoreCase) && color3 is null) {
+                color3 = value;
+                space = ColorSpace.HSV;
+            } else if (name.StartsWith("l", StringComparison.InvariantCultureIgnoreCase) && color3 is null) {
+                color3 = value;
+                space = ColorSpace.HSL;
+            } else if (name.StartsWith("a", StringComparison.InvariantCultureIgnoreCase) && a is null)
+                a = value;
+            else if (name == "space" && space == default)
+                space = (ColorSpace?)value ?? ColorSpace.RGB;
+            else
+                throw new Exception($"Invalid or double arg \"{name}\"");
         }
 
         color1 ??= 0;

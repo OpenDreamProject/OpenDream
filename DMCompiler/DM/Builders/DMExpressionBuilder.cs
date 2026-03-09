@@ -370,9 +370,48 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
             case DMASTRgb rgb:
                 result = new Rgb(rgb.Location, BuildArgumentList(rgb.Location, rgb.Parameters, inferredPath));
                 break;
-            case DMASTAnimate animate:
-                result = new Animate(animate.Location, BuildArgumentList(animate.Location, animate.Parameters, inferredPath));
+            case DMASTAnimate animate: {
+                var arguments = BuildArgumentList(animate.Location, animate.Parameters, inferredPath);
+
+                int orderedIdx = 0;
+                DMExpression? animateObject = null;
+                Dictionary<string, DMExpression> animateArgs = new();
+                for (int i = 0; i < arguments.Length; i++) {
+                    var arg = arguments.Expressions[i];
+
+                    if (arg.Name == null) {
+                        if (orderedIdx > 7)
+                            return BadExpression(WarningCode.BadArgument, arg.Expr.Location, "animate() cannot take more than 7 ordered arguments");
+
+                        if (orderedIdx == 0) { // The first ordered expression is always the Object
+                            animateObject = arg.Expr;
+                            orderedIdx++;
+                            continue;
+                        }
+
+                        var argName = orderedIdx++ switch {
+                            1 => "time",
+                            2 => "loop",
+                            3 => "easing",
+                            4 => "flags",
+                            5 => "delay",
+                            6 => "tag",
+                            7 => "command",
+                            _ => throw new ArgumentOutOfRangeException()
+                        };
+
+                        animateArgs[argName] = arg.Expr;
+                    } else {
+                        if (arg.Name == "Object")
+                            return BadExpression(WarningCode.BadArgument, arg.Expr.Location, "The Object argument cannot be named");
+
+                        animateArgs[arg.Name] = arg.Expr;
+                    }
+                }
+
+                result = new Animate(animate.Location, animateObject, animateArgs);
                 break;
+            }
             case DMASTLocateCoordinates locateCoordinates:
                 result = new LocateCoordinates(locateCoordinates.Location,
                     BuildExpression(locateCoordinates.X, inferredPath),

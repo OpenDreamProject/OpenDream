@@ -5,8 +5,6 @@ using OpenDreamShared.Dream;
 namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectMatrix : DreamObject {
-    public static readonly float[] IdentityMatrixArray = {1f, 0f, 0f, 0f, 1f, 0f};
-
     // TODO: Store a/b/c/d/e/f as fields instead of as DM vars
 
     public DreamObjectMatrix(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
@@ -526,6 +524,7 @@ public sealed class DreamObjectMatrix : DreamObject {
         } catch (InvalidCastException) {
             throw new InvalidOperationException($"Invalid matrices '{lMatrix}' and '{rMatrix}' cannot be multiplied.");
         }
+
         lMatrix.SetVariableValue("a", new DreamValue(lA*rA + lD*rB));
         lMatrix.SetVariableValue("b", new DreamValue(lB*rA + lE*rB));
         lMatrix.SetVariableValue("c", new DreamValue(lC*rA + lF*rB + rC));

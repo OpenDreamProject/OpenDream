@@ -211,7 +211,7 @@ namespace OpenDreamRuntime.Procs {
                     }
                 } else if (val.TryGetValueAsProc(out var proc)) {
                     // new /proc/proc_name(Destination,Name,Desc)
-                    var arguments = state.PopProcArguments(null, argumentInfo.Type, argumentInfo.StackSize);
+                    var arguments = state.PopProcArguments(null, argumentInfo);
                     var destination = arguments.GetArgument(0);
 
                     // TODO: Name and Desc arguments
@@ -234,7 +234,7 @@ namespace OpenDreamRuntime.Procs {
 
             var objectDef = objectType.ObjectDefinition;
             var newProc = objectDef.GetProc("New");
-            var newArguments = state.PopProcArguments(newProc, argumentInfo.Type, argumentInfo.StackSize);
+            var newArguments = state.PopProcArguments(newProc, argumentInfo);
 
             if (objectDef.IsSubtypeOf(state.Proc.ObjectTree.Turf)) {
                 // Turfs are special. They're never created outside of map initialization
@@ -1567,7 +1567,7 @@ namespace OpenDreamRuntime.Procs {
                 default: throw new Exception($"Invalid proc reference type {procRef.Type}");
             }
 
-            DreamProcArguments arguments = state.PopProcArguments(proc, argumentInfo.Type, argumentInfo.StackSize);
+            DreamProcArguments arguments = state.PopProcArguments(proc, argumentInfo);
 
             return state.Call(proc, instance, arguments);
         }
@@ -1593,7 +1593,7 @@ namespace OpenDreamRuntime.Procs {
                     }
 
                     if (proc != null) {
-                        DreamProcArguments arguments = state.PopProcArguments(proc, argumentsInfo.Type, argumentsInfo.StackSize);
+                        DreamProcArguments arguments = state.PopProcArguments(proc, argumentsInfo);
 
                         return state.Call(proc, dreamObject, arguments);
                     }
@@ -1603,7 +1603,7 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.DreamProc: {
                     var proc = source.MustGetValueAsProc();
 
-                    DreamProcArguments arguments = state.PopProcArguments(proc, argumentsInfo.Type, argumentsInfo.StackSize);
+                    DreamProcArguments arguments = state.PopProcArguments(proc, argumentsInfo);
 
                     return state.Call(proc, state.Instance, arguments);
                 }
@@ -2003,7 +2003,7 @@ namespace OpenDreamRuntime.Procs {
                     gradientValues.Add(value);
                 }
             } else {
-                var arguments = state.PopProcArguments(null, argumentInfo.Type, argumentInfo.StackSize);
+                var arguments = state.PopProcArguments(null, argumentInfo);
 
                 gradientIndex = arguments.Values[^1];
                 for (int i = 0; i < arguments.Count - 1; i++) {
@@ -2020,122 +2020,70 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus Rgb(DMProcState state) {
             var argumentInfo = state.ReadProcArguments();
-            var argumentValues = state.PopCount(argumentInfo.StackSize);
-            var arguments = state.CollectProcArguments(argumentValues, argumentInfo.Type, argumentInfo.StackSize);
+            var arguments = new DMProcState.DMStackArguments(state, argumentInfo);
 
-            string result = "#000000";
-            if (arguments.Item1 is not null) {
-                if (arguments.Item1.Length is < 3 or > 5)
-                    throw new Exception("Expected 3 to 5 arguments for rgb()");
-                (string?, float?)[] values = new (string?, float?)[arguments.Item1.Length];
-                for (int i = 0; i < arguments.Item1.Length; i++) {
-                    var val = arguments.Item1[i].UnsafeGetValueAsFloat();
-                    values[i] = (null, val);
+            var argumentsArray = arguments.ToArray();
+            if (argumentsArray.Length is < 3 or > 5)
+                throw new Exception("Expected 3 to 5 arguments for rgb()");
+
+            var values = new (string?, float?)[arguments.Count];
+            for (int i = 0; i < argumentsArray.Length; i++) {
+                var arg = argumentsArray[i];
+                var argValue = arg.Value.UnsafeGetValueAsFloat();
+
+                if (arg.Key.TryGetValueAsString(out var argName)) {
+                    values[i] = (argName, argValue);
+                } else {
+                    values[i] = (null, argValue);
                 }
-
-                result = SharedOperations.ParseRgb(values);
-            } else if (arguments.Item2 != null) {
-                if (arguments.Item2.Count is < 3 or > 5)
-                    throw new Exception("Expected 3 to 5 arguments for rgb()");
-                (string?, float?)[] values = new (string?, float?)[5];
-                DreamValue color1 = default;
-                DreamValue color2 = default;
-                DreamValue color3 = default;
-                DreamValue a = DreamValue.Null;
-                SharedOperations.ColorSpace space = SharedOperations.ColorSpace.RGB;
-                foreach (var arg in arguments.Item2) {
-                    if (arg.Key.TryGetValueAsInteger(out var position)) {
-                        switch (position) {
-                            case 1: color1 = arg.Value; continue;
-                            case 2: color2 = arg.Value; continue;
-                            case 3: color3 = arg.Value; continue;
-                            case 4: a = arg.Value; continue;
-                            case 5: space = (SharedOperations.ColorSpace)(int)arg.Value.UnsafeGetValueAsFloat(); continue;
-                            default: throw new Exception($"Invalid argument key {position}");
-                        }
-                    } else {
-                        var name = arg.Key.MustGetValueAsString();
-
-                        if (name.StartsWith("r", StringComparison.InvariantCultureIgnoreCase) && color1 == default) {
-                            color1 = arg.Value;
-                            space = SharedOperations.ColorSpace.RGB;
-                        } else if (name.StartsWith("g", StringComparison.InvariantCultureIgnoreCase) && color2 == default) {
-                            color2 = arg.Value;
-                            space = SharedOperations.ColorSpace.RGB;
-                        } else if (name.StartsWith("b", StringComparison.InvariantCultureIgnoreCase) && color3 == default) {
-                            color3 = arg.Value;
-                            space = SharedOperations.ColorSpace.RGB;
-                        } else if (name.StartsWith("h", StringComparison.InvariantCultureIgnoreCase) && color1 == default) {
-                            color1 = arg.Value;
-                            space = SharedOperations.ColorSpace.HSV;
-                        } else if (name != "space" && name.StartsWith("s", StringComparison.InvariantCultureIgnoreCase) && color2 == default) {
-                            color2 = arg.Value;
-                            space = SharedOperations.ColorSpace.HSV;
-                        } else if (name.StartsWith("v", StringComparison.InvariantCultureIgnoreCase) && color3 == default) {
-                            color3 = arg.Value;
-                            space = SharedOperations.ColorSpace.HSV;
-                        } else if (name.StartsWith("l", StringComparison.InvariantCultureIgnoreCase) && color3 == default) {
-                            color3 = arg.Value;
-                            space = SharedOperations.ColorSpace.HSL;
-                        } else if (name.StartsWith("a", StringComparison.InvariantCultureIgnoreCase) && a == default)
-                            a = arg.Value;
-                        else if (name == "space" && space == default)
-                            space = (SharedOperations.ColorSpace)(int)arg.Value.UnsafeGetValueAsFloat();
-                        else
-                            throw new Exception($"Invalid or double arg \"{name}\"");
-                    }
-                }
-
-                values[0] = (null, color1.UnsafeGetValueAsFloat());
-                values[1] = (null, color2.UnsafeGetValueAsFloat());
-                values[2] = (null, color3.UnsafeGetValueAsFloat());
-                if(a.TryGetValueAsFloat(out var aVal))
-                    values[3] = (null, aVal);
-                else
-                    values[3] = (null, null);
-                values[4] = (null, (float)space);
-
-                result = SharedOperations.ParseRgb(values);
-            } else {
-                result = "#000000";
             }
 
+            var result = SharedOperations.ParseRgb(values);
             state.Push(new DreamValue(result));
             return ProcStatus.Continue;
         }
 
-/* vars:
+        /* vars:
 
-animate smoothly:
+        animate smoothly:
 
-alpha
-color
-glide_size
-infra_luminosity
-layer
-maptext_width, maptext_height, maptext_x, maptext_y
-luminosity
-pixel_x, pixel_y, pixel_w, pixel_z
-transform
+        alpha
+        color
+        glide_size
+        infra_luminosity
+        layer
+        maptext_width, maptext_height, maptext_x, maptext_y
+        luminosity
+        pixel_x, pixel_y, pixel_w, pixel_z
+        transform
 
-do not animate smoothly:
+        do not animate smoothly:
 
-dir
-icon
-icon_state
-invisibility
-maptext
-suffix
+        dir
+        icon
+        icon_state
+        invisibility
+        maptext
+        suffix
 
-*/
+        */
         public static ProcStatus Animate(DMProcState state) {
-            var argumentInfo = state.ReadProcArguments();
-            var argumentValues = state.PopCount(argumentInfo.StackSize);
-            var arguments = state.CollectProcArguments(argumentValues, argumentInfo.Type, argumentInfo.StackSize);
+            var argumentCount = state.ReadInt();
+            var arguments = new Dictionary<string, DreamValue>();
 
+            for (int i = 0; i < argumentCount; i++) {
+                var value = state.Pop();
+                var name = state.Pop();
+                if (!name.TryGetValueAsString(out var argName))
+                    continue;
+
+                arguments[argName] = value;
+            }
+
+            var objArg = state.Pop();
             bool chainAnim = false;
 
-            if (!GetArgument(arguments.Item1, arguments.Item2, 1, "Object", DreamValue.Null).TryGetValueAsDreamObject<DreamObject>(out var obj)) {
+            if (!objArg.TryGetValueAsDreamObject<DreamObject>(out var obj)) {
                 if (state.Thread.LastAnimatedObject is null || state.Thread.LastAnimatedObject.Value.IsNull)
                     throw new Exception("animate() called without an object and no previous object to animate");
                 else if (!state.Thread.LastAnimatedObject.Value.TryGetValueAsDreamObject<DreamObject>(out obj)){
@@ -2152,233 +2100,92 @@ suffix
                 return ProcStatus.Continue;
             }
 
-            // TODO: Is this the correct behavior for invalid time?
-            if (!GetArgument(arguments.Item1, arguments.Item2, 2, "time", DreamValue.Null).TryGetValueAsFloat(out float time)) {
-                state.Push(DreamValue.Null);
-                return ProcStatus.Continue;
+            arguments.TryGetValue("time", out var timeArg);
+            arguments.TryGetValue("loop", out var loopArg);
+            arguments.TryGetValue("easing", out var easingArg);
+            arguments.TryGetValue("flags", out var flagsArg);
+            arguments.TryGetValue("delay", out var delayArg);
+            loopArg.TryGetValueAsInteger(out int loop);
+            easingArg.TryGetValueAsInteger(out int easing);
+            flagsArg.TryGetValueAsInteger(out int flagsInt);
+            delayArg.TryGetValueAsInteger(out int delay);
+
+            if (!timeArg.TryGetValueAsFloat(out float time)) {
+                // A non-number time arg results in the animation happening instantly
+                time = 0f;
             }
 
-            GetArgument(arguments.Item1, arguments.Item2, 3, "loop", DreamValue.Null).TryGetValueAsInteger(out int loop);
-            GetArgument(arguments.Item1, arguments.Item2, 4, "easing", DreamValue.Null).TryGetValueAsInteger(out int easing);
             if (!Enum.IsDefined(typeof(AnimationEasing), easing & ~((int)AnimationEasing.EaseIn | (int)AnimationEasing.EaseOut)))
                 throw new ArgumentOutOfRangeException("easing", easing, $"Invalid easing value in animate(): {easing}");
-            GetArgument(arguments.Item1, arguments.Item2, 5, "flags", DreamValue.Null).TryGetValueAsInteger(out int flagsInt);
+
             var flags = (AnimationFlags)flagsInt;
             if ((flags & (AnimationFlags.AnimationParallel | AnimationFlags.AnimationContinue)) != 0)
                 chainAnim = true;
             if ((flags & AnimationFlags.AnimationEndNow) != 0)
                 chainAnim = false;
-            GetArgument(arguments.Item1, arguments.Item2, 6, "delay", DreamValue.Null).TryGetValueAsInteger(out int delay);
 
-            var pixelX = GetArgument(arguments.Item1, arguments.Item2, 7, "pixel_x", DreamValue.Null);
-            var pixelY = GetArgument(arguments.Item1, arguments.Item2, 8, "pixel_y", DreamValue.Null);
-            var pixelZ = GetArgument(arguments.Item1, arguments.Item2, 9, "pixel_z", DreamValue.Null);
-            var pixelW = GetArgument(arguments.Item1, arguments.Item2, 10, "pixel_w", DreamValue.Null);
-            var maptext = GetArgument(arguments.Item1, arguments.Item2, 11, "maptext", DreamValue.Null);
-            var maptextWidth = GetArgument(arguments.Item1, arguments.Item2, 12, "maptext_width", DreamValue.Null);
-            var maptextHeight = GetArgument(arguments.Item1, arguments.Item2, 13, "maptext_height", DreamValue.Null);
-            var maptextX = GetArgument(arguments.Item1, arguments.Item2, 14, "maptext_x", DreamValue.Null);
-            var maptextY = GetArgument(arguments.Item1, arguments.Item2, 15, "maptext_y", DreamValue.Null);
-            var dir = GetArgument(arguments.Item1, arguments.Item2, 16, "dir", DreamValue.Null);
-            var alpha = GetArgument(arguments.Item1, arguments.Item2, 17, "alpha", DreamValue.Null);
-            var isTransformDefined = IsArgumentDefined(arguments.Item1, arguments.Item2, 18, "transform", DreamValue.Null, out var transform);
-            if (isTransformDefined && transform.IsNull) {
-                // when transform is null because it was provided as null, treat as identity matrix
-                DreamObjectMatrix identityTransform = DreamObjectMatrix.MakeMatrix(state.Proc.ObjectTree, 1f, 0f, 0f, 0f, 1f, 0f);
-                transform = new(identityTransform);
-            }
+            var atomManager = state.Proc.AtomManager;
+            var duration = TimeSpan.FromMilliseconds(time * 100);
+            atomManager.AnimateAppearance(obj, duration, (AnimationEasing)easing, loop, flags, delay, chainAnim, appearance => {
+                bool isRelative = flags.HasFlag(AnimationFlags.AnimationRelative);
 
-            var color = GetArgument(arguments.Item1, arguments.Item2, 19, "color", DreamValue.Null);
-            var luminosity = GetArgument(arguments.Item1, arguments.Item2, 20, "luminosity", DreamValue.Null);
-            var infraLuminosity = GetArgument(arguments.Item1, arguments.Item2, 21, "infra_luminosity", DreamValue.Null);
-            var layer = GetArgument(arguments.Item1, arguments.Item2, 22, "layer", DreamValue.Null);
-            var glideSize = GetArgument(arguments.Item1, arguments.Item2, 23, "glide_size", DreamValue.Null);
-            var icon = GetArgument(arguments.Item1, arguments.Item2, 24, "icon", DreamValue.Null);
-            var iconState = GetArgument(arguments.Item1, arguments.Item2, 25, "icon_state", DreamValue.Null);
-            var invisibility = GetArgument(arguments.Item1, arguments.Item2, 26, "invisibility", DreamValue.Null);
-            var suffix = GetArgument(arguments.Item1, arguments.Item2, 27, "suffix", DreamValue.Null);
+                foreach (var arg in arguments) {
+                    if (!atomManager.IsValidAppearanceVar(arg.Key))
+                        continue;
 
-            if ((flags & AnimationFlags.AnimationRelative) != 0) {
-                if (!state.Proc.AtomManager.TryGetAppearance(obj, out var appearance)) {
-                    //can't do anything animating an object with no appearance
-                    // This works for maptext_x/y/width/height, pixel_x/y/w/z, luminosity, layer, alpha, transform, and color. For transform and color, the current value is multiplied by the new one. Vars not in this list are simply changed as if this flag is not present.
-                    state.Push(DreamValue.Null);
-                    return ProcStatus.Continue;
-                }
+                    var animateValue = arg.Value;
 
-                if (!pixelX.IsNull)
-                    pixelX = new(pixelX.UnsafeGetValueAsFloat() + appearance.PixelOffset.X);
-                if (!pixelY.IsNull)
-                    pixelY = new(pixelY.UnsafeGetValueAsFloat() + appearance.PixelOffset.Y);
-                /* TODO these are not yet implemented
-                if(!pixelZ.IsNull)
-                    pixelZ = new(pixelZ.UnsafeGetValueAsFloat() + obj.GetVariable("pixel_z").UnsafeGetValueAsFloat()); //TODO change to appearance when pixel_z is implemented
-                */
-                if (!maptextWidth.IsNull)
-                    maptextWidth = new(maptextWidth.UnsafeGetValueAsFloat() + appearance.MaptextSize.X);
-                if (!maptextHeight.IsNull)
-                    maptextHeight = new(maptextHeight.UnsafeGetValueAsFloat() + appearance.MaptextSize.Y);
-                if (!maptextX.IsNull)
-                    maptextX = new(maptextX.UnsafeGetValueAsFloat() + appearance.MaptextOffset.X);
-                if (!maptextY.IsNull)
-                    maptextY = new(maptextY.UnsafeGetValueAsFloat() + appearance.MaptextOffset.Y);
-                /*
-                if(!luminosity.IsNull)
-                    luminosity = new(luminosity.UnsafeGetValueAsFloat() + obj.GetVariable("luminosity").UnsafeGetValueAsFloat()); //TODO change to appearance when luminosity is implemented
-                */
-                if (!layer.IsNull)
-                    layer = new(layer.UnsafeGetValueAsFloat() + appearance.Layer);
-                if (!alpha.IsNull)
-                    alpha = new(alpha.UnsafeGetValueAsFloat() + appearance.Alpha);
-                if (!transform.IsNull) {
-                    if (transform.TryGetValueAsDreamObject<DreamObjectMatrix>(out var multTransform)) {
-                        DreamObjectMatrix objTransformClone = DreamObjectMatrix.MakeMatrix(state.Proc.ObjectTree, appearance.Transform);
-                        DreamObjectMatrix.MultiplyMatrix(objTransformClone, multTransform);
-                        transform = new(objTransformClone);
-                    }
-                }
+                    if (isRelative) {
+                        switch (arg.Key) {
+                            case "transform":
+                                if (!animateValue.TryGetValueAsDreamObject<DreamObjectMatrix>(out var multTransform))
+                                    break;
 
-                if (!color.IsNull) {
-                    ColorMatrix cMatrix;
-                    if (color.TryGetValueAsString(out var colorStr) && Color.TryParse(colorStr, out var colorObj)) {
-                        cMatrix = new ColorMatrix(colorObj);
-                    } else if (!color.TryGetValueAsDreamList(out var colorList) || !DreamProcNativeHelpers.TryParseColorMatrix(colorList, out cMatrix)) {
-                        cMatrix = ColorMatrix.Identity; //fallback to identity if invalid
+                                var objTransformClone = DreamObjectMatrix.MakeMatrix(state.Proc.ObjectTree, appearance.Transform);
+
+                                DreamObjectMatrix.MultiplyMatrix(objTransformClone, multTransform);
+                                animateValue = new(objTransformClone);
+                                break;
+                            case "color":
+                                ColorMatrix cMatrix;
+                                if (animateValue.TryGetValueAsString(out var colorStr) && Color.TryParse(colorStr, out var colorObj)) {
+                                    cMatrix = new ColorMatrix(colorObj);
+                                } else if (!animateValue.TryGetValueAsDreamList(out var colorList) || !DreamProcNativeHelpers.TryParseColorMatrix(colorList, out cMatrix)) {
+                                    cMatrix = ColorMatrix.Identity; //fallback to identity if invalid
+                                }
+
+                                ColorMatrix objCMatrix;
+                                DreamValue objColor = obj.GetVariable("color");
+                                if (objColor.TryGetValueAsString(out var objColorStr) && Color.TryParse(objColorStr, out var objColorObj)) {
+                                    objCMatrix = new ColorMatrix(objColorObj);
+                                } else if (!objColor.TryGetValueAsDreamList(out var objColorList) || !DreamProcNativeHelpers.TryParseColorMatrix(objColorList, out objCMatrix)) {
+                                    objCMatrix = ColorMatrix.Identity; //fallback to identity if invalid
+                                }
+
+                                ColorMatrix.Multiply(ref objCMatrix, ref cMatrix, out var resultMatrix);
+                                animateValue = new DreamValue(new DreamList(state.Proc.ObjectTree.List.ObjectDefinition, resultMatrix.GetValues().Select(x => new DreamValue(x)).ToList(), null));
+                                break;
+                            case "pixel_x":
+                            case "pixel_y":
+                            case "pixel_z":
+                            case "pixel_w":
+                            case "maptext_width":
+                            case "maptext_height":
+                            case "maptext_x":
+                            case "maptext_y":
+                            case "luminosity":
+                            case "layer":
+                            case "alpha" :
+                                var originalValue = atomManager.GetAppearanceVar(appearance, arg.Key).UnsafeGetValueAsFloat();
+
+                                animateValue = new(animateValue.UnsafeGetValueAsFloat() + originalValue);
+                                break;
+                        }
                     }
 
-                    ColorMatrix objCMatrix;
-                    DreamValue objColor = obj.GetVariable("color");
-                    if (objColor.TryGetValueAsString(out var objColorStr) && Color.TryParse(objColorStr, out var objColorObj)) {
-                        objCMatrix = new ColorMatrix(objColorObj);
-                    } else if (!objColor.TryGetValueAsDreamList(out var objColorList) || !DreamProcNativeHelpers.TryParseColorMatrix(objColorList, out objCMatrix)) {
-                        objCMatrix = ColorMatrix.Identity; //fallback to identity if invalid
-                    }
-
-                    ColorMatrix.Multiply(ref objCMatrix, ref cMatrix, out var resultMatrix);
-                    color = new DreamValue(new DreamList(state.Proc.ObjectTree.List.ObjectDefinition, resultMatrix.GetValues().Select(x => new DreamValue(x)).ToList(), null));
+                    obj.SetVariableValue(arg.Key, animateValue);
+                    atomManager.SetAppearanceVar(appearance, arg.Key, animateValue);
                 }
-            }
-
-            var resourceManager = state.Proc.DreamResourceManager;
-            state.Proc.AtomManager.AnimateAppearance(obj, TimeSpan.FromMilliseconds(time * 100), (AnimationEasing)easing, loop, flags, delay, chainAnim,
-            appearance => {
-                if (!pixelX.IsNull) {
-                    obj.SetVariableValue("pixel_x", pixelX);
-                    pixelX.TryGetValueAsInteger(out appearance.PixelOffset.X);
-                }
-
-                if (!pixelY.IsNull) {
-                    obj.SetVariableValue("pixel_y", pixelY);
-                    pixelY.TryGetValueAsInteger(out appearance.PixelOffset.Y);
-                }
-
-                /* TODO world.map_format
-                if (!pixelZ.IsNull) {
-                    obj.SetVariableValue("pixel_z", pixelZ);
-                    pixelZ.TryGetValueAsInteger(out appearance.PixelOffset.Z);
-                }
-                */
-
-                if (!maptextX.IsNull) {
-                    obj.SetVariableValue("maptext_x", maptextX);
-                    maptextX.TryGetValueAsInteger(out appearance.MaptextOffset.X);
-                }
-
-                if (!maptextY.IsNull) {
-                    obj.SetVariableValue("maptext_y", maptextY);
-                    maptextY.TryGetValueAsInteger(out appearance.MaptextOffset.Y);
-                }
-
-                if (!maptextWidth.IsNull) {
-                    obj.SetVariableValue("maptext_width", maptextWidth);
-                    maptextX.TryGetValueAsInteger(out appearance.MaptextSize.X);
-                }
-
-                if (!maptextHeight.IsNull) {
-                    obj.SetVariableValue("maptext_y", maptextHeight);
-                    maptextY.TryGetValueAsInteger(out appearance.MaptextSize.Y);
-                }
-
-                if (!maptext.IsNull) {
-                    obj.SetVariableValue("maptext", maptext);
-                    maptext.TryGetValueAsString(out appearance.Maptext);
-                }
-
-                if (!dir.IsNull) {
-                    obj.SetVariableValue("dir", dir);
-                    if (dir.TryGetValueAsInteger(out int dirValue))
-                        appearance.Direction = (AtomDirection)dirValue;
-                }
-
-                if (!alpha.IsNull) {
-                    obj.SetVariableValue("alpha", alpha);
-                    if (alpha.TryGetValueAsInteger(out var alphaInt))
-                        appearance.Alpha = (byte)Math.Clamp(alphaInt, 0, 255);
-                }
-
-                if (!transform.IsNull) {
-                    obj.SetVariableValue("transform", transform);
-                    if (transform.TryGetValueAsDreamObject<DreamObjectMatrix>(out var transformObj))
-                        appearance.Transform = DreamObjectMatrix.MatrixToTransformFloatArray(transformObj);
-                }
-
-                if (!color.IsNull) {
-                    obj.SetVariableValue("color", color);
-                    if (color.TryGetValueAsString(out var colorStr))
-                        Color.TryParse(colorStr, out appearance.Color);
-                    else if (color.TryGetValueAsDreamList(out var colorList)) {
-                        if (DreamProcNativeHelpers.TryParseColorMatrix(colorList, out var colorMatrix))
-                            appearance.ColorMatrix = colorMatrix;
-                    }
-                }
-
-                /* TODO luminosity
-                if (!luminosity.IsNull) {
-                    obj.SetVariableValue("luminosity", luminosity);
-                    luminosity.TryGetValueAsInteger(out appearance.Luminosity);
-                }
-                */
-
-                /* TODO infra_luminosity
-                if (!infraLuminosity.IsNull) {
-                    obj.SetVariableValue("infra_luminosity", infraLuminosity);
-                    infraLuminosity.TryGetValueAsInteger(out appearance.InfraLuminosity);
-                }
-                */
-
-                if (!layer.IsNull) {
-                    obj.SetVariableValue("layer", layer);
-                    layer.TryGetValueAsFloat(out appearance.Layer);
-                }
-
-                if (!glideSize.IsNull) {
-                    obj.SetVariableValue("glide_size", glideSize);
-                    glideSize.TryGetValueAsFloat(out appearance.GlideSize);
-                }
-
-                if (!icon.IsNull) {
-                    obj.SetVariableValue("icon", icon);
-                    if (resourceManager.TryLoadIcon(icon, out var iconResource))
-                        appearance.Icon = iconResource.Id;
-                }
-
-                if (!iconState.IsNull) {
-                    obj.SetVariableValue("icon_state", iconState);
-                    iconState.TryGetValueAsString(out appearance.IconState);
-                }
-
-                if (!invisibility.IsNull) {
-                    obj.SetVariableValue("invisibility", invisibility);
-                    invisibility.TryGetValueAsInteger(out var invisibilityValue);
-                    appearance.Invisibility = (sbyte)Math.Clamp(invisibilityValue, -127, 127);
-                }
-
-                /* TODO suffix
-                if (!suffix.IsNull) {
-                    obj.SetVariableValue("suffix", suffix);
-                    suffix.TryGetValueAsString(out appearance.Suffix);
-                }
-                */
             });
 
             state.Push(DreamValue.Null);
@@ -2916,7 +2723,7 @@ suffix
         public static ProcStatus DereferenceCall(DMProcState state) {
             string name = state.ReadString();
             var argumentInfo = state.ReadProcArguments();
-            var argumentValues = state.PopCount(argumentInfo.StackSize);
+            var arguments = new DMProcState.DMStackArguments(state, argumentInfo);
             DreamValue obj = state.Pop();
 
             if (!obj.TryGetValueAsDreamObject(out var instance) || instance == null)
@@ -2924,9 +2731,7 @@ suffix
             if (!instance.TryGetProc(name, out var proc))
                 throw new Exception($"Type {instance.ObjectDefinition.Type} has no proc called \"{name}\"");
 
-            var arguments = state.CreateProcArguments(argumentValues, proc, argumentInfo.Type, argumentInfo.StackSize);
-
-            return state.Call(proc, instance, arguments);
+            return state.Call(proc, instance, arguments.ToProcArguments(proc));
         }
 
         #endregion Others
@@ -3278,8 +3083,8 @@ suffix
 
         private static DreamValue GetArgument(IReadOnlyList<DreamValue>? argumentsArray, IReadOnlyDictionary<DreamValue, DreamValue>? argumentsDictionary, int argumentPosition, string argumentName,
                 DreamValue argumentFallback) {
-            if (argumentsArray != null && argumentsArray.Count > argumentPosition) {
-                return argumentsArray[argumentPosition];
+            if (argumentsArray != null && argumentsArray.Count >= argumentPosition) {
+                return argumentsArray[argumentPosition - 1];
             }
 
             if (argumentsDictionary != null && (

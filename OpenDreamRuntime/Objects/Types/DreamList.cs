@@ -1080,16 +1080,14 @@ public sealed class DreamFilterList(DreamObjectDefinition listDef, DreamObject o
         int filterIndex;
         if (key.TryGetValueAsString(out var filterName)) {
             filterIndex = GetIndexOfFilter(filterName) + 1; // We're 1-indexed while GetIndexOfFilter() is not
+            if (filterIndex < 1) // If a filter by the name doesn't exist, it returns null
+                return DreamValue.Null;
         } else {
             key.TryGetValueAsInteger(out filterIndex);
         }
 
-        if (filterIndex < 1) { // The key failed to resolve to a valid index
-            throw new Exception($"Invalid index into filter list: {key}");
-        }
-
         ImmutableAppearance appearance = GetAppearance();
-        if (filterIndex > appearance.Filters.Length)
+        if (filterIndex < 1 || filterIndex > appearance.Filters.Length)
             throw new Exception($"Atom only has {appearance.Filters.Length} filter(s), cannot index {filterIndex}");
 
         DreamFilter filter = appearance.Filters[filterIndex - 1];

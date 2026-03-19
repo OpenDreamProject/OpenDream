@@ -234,7 +234,7 @@ internal sealed class VerbPanel : InfoPanel {
             verbButton.Label.FontColorOverride = _textColor;
             verbButton.StyleBoxOverride = new StyleBoxEmpty();
 
-            verbButton.OnPressed += _ => {
+            verbButton.OnButtonDown += _ => {
                 _verbSystem?.ExecuteVerb(src, verbId);
             };
 

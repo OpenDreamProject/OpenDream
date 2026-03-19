@@ -1341,6 +1341,8 @@ internal static class DreamProcNativeRoot {
             return new DreamValue(countBytes ? str.Length : str.EnumerateRunes().Count());
         } else if (value.TryGetValueAsIDreamList(out var list)) {
             return new DreamValue(list.GetLength());
+        } else if (value.TryGetValueAsDreamResource(out var resource)) {
+            return new DreamValue(resource.ResourceData?.Length ?? 0);
         } else if (value.Type is DreamValueType.Float or DreamValueType.DreamObject or DreamValueType.DreamType) {
             return new DreamValue(0);
         }

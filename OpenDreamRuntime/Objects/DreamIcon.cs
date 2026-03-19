@@ -5,6 +5,7 @@ using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Formats.Png.Chunks;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -17,6 +18,7 @@ namespace OpenDreamRuntime.Objects;
 
 public sealed class DreamIcon(DreamManager dreamManager, DreamResourceManager resourceManager) {
     private static readonly ArrayPool<Rgba32> PixelArrayPool = ArrayPool<Rgba32>.Shared;
+    private static readonly PngEncoder PngEncoder = new() { TextCompressionThreshold = 0 }; // Always encode the description in a zTXt chunk
 
     public int Width, Height;
     public readonly Dictionary<string, IconState> States = new();
@@ -147,7 +149,7 @@ public sealed class DreamIcon(DreamManager dreamManager, DreamResourceManager re
         var pngMetadata = dmiImage.Metadata.GetPngMetadata();
         pngMetadata.TextData.Add(pngTextData);
 
-        dmiImage.SaveAsPng(dmiImageStream);
+        dmiImage.SaveAsPng(dmiImageStream, PngEncoder);
 
         IconResource newResource = resourceManager.CreateIconResource(dmiImageStream.GetBuffer(), dmiImage, newDescription);
         _cachedDMI = newResource;

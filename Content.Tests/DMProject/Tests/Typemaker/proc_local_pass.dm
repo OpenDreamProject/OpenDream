@@ -1,4 +1,4 @@
-
+// NOBYOND
 #pragma InvalidReturnType error
 /datum/proc/foo() as num
 	var/const/meep = 5

@@ -1643,7 +1643,7 @@ public sealed class SavefileDirList(DreamObjectDefinition listDef, DreamObjectSa
         if (index < 1 || index > backedSaveFile.CurrentDir.Count)
             throw new Exception($"Out of bounds index on savefile dir list: {index}");
 
-        backedSaveFile.RenameAndNullSavefileValue(backedSaveFile.CurrentDir.Keys.ElementAt(index - 1), valueStr);
+        backedSaveFile.RenameSavefileValue(backedSaveFile.CurrentDir.Keys.ElementAt(index - 1), valueStr);
     }
 
     public override void AddValue(DreamValue value) {

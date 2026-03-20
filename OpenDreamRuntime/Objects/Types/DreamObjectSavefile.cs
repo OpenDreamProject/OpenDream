@@ -308,15 +308,10 @@ public sealed class DreamObjectSavefile : DreamObject {
         }
     }
 
-    public void RenameAndNullSavefileValue(string index, string newIndex) {
+    public void RenameSavefileValue(string index, string newIndex) {
         if (CurrentDir.TryGetValue(index, out var value)) {
             CurrentDir.Remove(index);
-            SfDreamDir newDir = new SfDreamDir();
-            foreach (var key in value.Keys) {
-                newDir[key] = value[key];
-            }
-
-            CurrentDir[newIndex] = newDir;
+            CurrentDir[newIndex] = value;
             SavefilesToFlush.Add(this);
         }
     }

@@ -1,4 +1,4 @@
-#if DEBUG
+#if TOOLS
 using Robust.Shared.Player;
 using Robust.Server.Console;
 using System.Net;

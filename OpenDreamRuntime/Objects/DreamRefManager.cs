@@ -66,6 +66,8 @@ public sealed class DreamRefManager {
         }
 
         public void Remove(int refId) {
+            if (refId >= _values.Count)
+                return;
             if (_values[refId] != null)
                 FilledCount--;
 
@@ -89,6 +91,27 @@ public sealed class DreamRefManager {
                     _values[i] = null;
                 }
             }
+        }
+    }
+
+    public void Initialize() {
+        Tags.Clear();
+        _buckets.Clear();
+
+        ReadOnlySpan<RefType> bucketTypes = [
+            RefType.DreamObjectDatum,
+            RefType.DreamObjectTurf,
+            RefType.DreamObjectMob,
+            RefType.DreamObjectArea,
+            RefType.DreamObjectClient,
+            RefType.DreamObjectImage,
+            RefType.DreamObjectFilter,
+            RefType.DreamObjectMovable,
+            RefType.DreamObjectList
+        ];
+
+        foreach (var type in bucketTypes) {
+            _buckets[type] = new();
         }
     }
 
@@ -210,7 +233,7 @@ public sealed class DreamRefManager {
             case RefType.DreamObjectMob:
             case RefType.DreamObjectTurf:
             case RefType.DreamObjectMovable:
-                return new(GetFromRef(@ref));
+                return new(GetFromBucket(@ref));
 
             case RefType.String:
                 return _objectTree.Strings.Count > refId
@@ -282,7 +305,7 @@ public sealed class DreamRefManager {
     /// <param name="ref">The ref for the object to free</param>
     public void DeleteRef(uint @ref) {
         var refType = (RefType)(@ref & RefTypeMask);
-        var bucket = GetBucket(refType);
+        var bucket = _buckets[refType];
 
         bucket.Remove((int)(@ref & RefIdMask));
     }
@@ -290,8 +313,8 @@ public sealed class DreamRefManager {
     /// <summary>
     /// Enumerate every alive DreamObject of a certain <see cref="RefType"/>
     /// </summary>
-    public IEnumerable<DreamObject> EnumerateType(RefType type) {
-        var bucket = GetBucket(type);
+    public IEnumerable<DreamObject> EnumerateType(RefType refType) {
+        var bucket = _buckets[refType];
 
         return bucket.Enumerate();
     }
@@ -318,7 +341,7 @@ public sealed class DreamRefManager {
     /// Get the amount of alive DreamObjects of type <see cref="RefType"/>
     /// </summary>
     public int GetCountOf(RefType refType) {
-        var bucket = GetBucket(refType);
+        var bucket = _buckets[refType];
 
         return bucket.FilledCount;
     }
@@ -326,10 +349,10 @@ public sealed class DreamRefManager {
     /// <summary>
     /// Grabs a DreamObject from its bucket using its ref
     /// </summary>
-    private DreamObject? GetFromRef(uint @ref) {
+    private DreamObject? GetFromBucket(uint @ref) {
         var refType = (RefType)(@ref & RefTypeMask);
         var refId = (int)(@ref & RefIdMask);
-        var bucket = GetBucket(refType);
+        var bucket = _buckets[refType];
 
         return bucket.Get(refId);
     }
@@ -350,22 +373,13 @@ public sealed class DreamRefManager {
     /// <summary>
     /// Add a DreamObject to its relevant bucket, creating a ref for it
     /// </summary>
-    /// <param name="type">The DreamObject's RefType, deciding which bucket it goes in</param>
+    /// <param name="refType">The DreamObject's RefType, deciding which bucket it goes in</param>
     /// <param name="value">The DreamObject to create a ref for</param>
     /// <returns>The DreamObject's new ref</returns>
-    private uint CreateRef(RefType type, DreamObject value) {
-        var bucket = GetBucket(type);
+    private uint CreateRef(RefType refType, DreamObject value) {
+        var bucket = _buckets[refType];
 
-        return (uint)type | (uint)bucket.Add(value);
-    }
-
-    private Bucket GetBucket(RefType type) {
-        if (!_buckets.TryGetValue(type, out var bucket)) {
-            bucket = new Bucket();
-            _buckets[type] = bucket;
-        }
-
-        return bucket;
+        return (uint)refType | (uint)bucket.Add(value);
     }
 }
 

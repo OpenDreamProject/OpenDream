@@ -155,6 +155,9 @@ public sealed partial class DreamManager {
         var resources = json.Resources ?? Array.Empty<string>();
         _dreamResourceManager.Initialize(rootPath, resources, json.Interface);
 
+        DelQueue.Clear();
+        RefDeleteQueue.Clear();
+        _refManager.Initialize();
         _objectTree.LoadJson(json);
         DreamProcNative.SetupNativeProcs(_objectTree);
         ImageConstructor = _objectTree.Image.ObjectDefinition.GetProc("New");

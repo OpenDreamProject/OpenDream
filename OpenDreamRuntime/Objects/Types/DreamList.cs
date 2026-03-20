@@ -624,11 +624,9 @@ public sealed class ClientVerbsList : DreamList {
     public readonly List<DreamProc> Verbs = new();
 
     private readonly DreamObjectClient _client;
-    private readonly ServerVerbSystem? _verbSystem;
 
-    public ClientVerbsList(DreamObjectTree objectTree, ServerVerbSystem? verbSystem, DreamObjectClient client) : base(objectTree.List.ObjectDefinition, 0) {
+    public ClientVerbsList(DreamObjectTree objectTree, DreamObjectClient client) : base(objectTree.List.ObjectDefinition, 0) {
         _client = client;
-        _verbSystem = verbSystem;
 
         var verbs = _client.ObjectDefinition.Verbs?.Values;
         if (verbs == null)
@@ -676,8 +674,8 @@ public sealed class ClientVerbsList : DreamList {
             return; // Even += won't add the verb if it's already in this list
 
         Verbs.Add(verb);
-        _verbSystem?.RegisterVerb(verb);
-        _verbSystem?.UpdateClientVerbs(_client);
+        VerbSystem?.RegisterVerb(verb);
+        VerbSystem?.UpdateClientVerbs(_client);
     }
 
     public override void RemoveValue(DreamValue value) {
@@ -688,7 +686,7 @@ public sealed class ClientVerbsList : DreamList {
 
         if (valueIndex != -1) {
             Verbs.RemoveAt(valueIndex);
-            _verbSystem?.UpdateClientVerbs(_client);
+            VerbSystem?.UpdateClientVerbs(_client);
         }
     }
 
@@ -697,7 +695,7 @@ public sealed class ClientVerbsList : DreamList {
         if (end == 0 || end > verbCount) end = verbCount;
 
         Verbs.RemoveRange(start - 1, end - start);
-        _verbSystem?.UpdateClientVerbs(_client);
+        VerbSystem?.UpdateClientVerbs(_client);
     }
 
     public override int GetLength() {
@@ -711,9 +709,9 @@ public sealed class ClientVerbsList : DreamList {
 
 // atom's verbs list
 // Keeps track of an appearance's verbs (atom.verbs, mutable_appearance.verbs, etc)
-public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManager, ServerVerbSystem? verbSystem, DreamObjectAtom atom) : DreamList(objectTree.List.ObjectDefinition, 0) {
+public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManager, DreamObjectAtom atom) : DreamList(objectTree.List.ObjectDefinition, 0) {
     public override DreamValue GetValue(DreamValue key) {
-        if (verbSystem == null)
+        if (VerbSystem == null)
             return DreamValue.Null;
         if (!key.TryGetValueAsInteger(out var index))
             throw new Exception($"Invalid index into verbs list: {key}");
@@ -722,7 +720,7 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
         if (index < 1 || index > verbs.Length)
             throw new Exception($"Out of bounds index on verbs list: {index}");
 
-        return new DreamValue(verbSystem.GetVerb(verbs[index - 1]));
+        return new DreamValue(VerbSystem.GetVerb(verbs[index - 1]));
     }
 
     public override List<DreamValue> GetValues() {
@@ -731,11 +729,11 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
 
     public override IEnumerable<DreamValue> EnumerateValues() {
         var appearance = atomManager.MustGetAppearance(atom);
-        if (verbSystem == null)
+        if (VerbSystem == null)
             yield break;
 
         foreach (var verbId in appearance.Verbs) {
-            var verb = verbSystem.GetVerb(verbId);
+            var verb = VerbSystem.GetVerb(verbId);
 
             yield return new(verb);
         }
@@ -760,7 +758,7 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
 
         atomManager.UpdateAppearance(atom, appearance => {
             if (!verb.VerbId.HasValue)
-                verbSystem?.RegisterVerb(verb);
+                VerbSystem?.RegisterVerb(verb);
             if (!verb.VerbId.HasValue || appearance.Verbs.Contains(verb.VerbId.Value))
                 return; // Even += won't add the verb if it's already in this list
 

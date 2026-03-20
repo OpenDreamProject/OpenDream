@@ -203,7 +203,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 browser.SetFileSource(null);
             }
         } else if (pBrowse.HtmlSource != null) {
-            var htmlFileName = $"browse{_random.Next()}"; // TODO: Possible collisions and explicit file names
+            var htmlFileName = $"browse_{pBrowse.Window}_{_random.Next()}"; // TODO: Possible collisions and explicit file names
             ControlBrowser? outputBrowser = referencedElement as ControlBrowser;
 
             if (outputBrowser == null) {

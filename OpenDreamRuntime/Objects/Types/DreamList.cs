@@ -205,7 +205,9 @@ public class DreamList : DreamObject, IDreamList {
 
     //Does not include associations
     public virtual bool ContainsValue(DreamValue value) {
-        for (int i = 0; i < _values.Count; i++) {
+        var count = _values.Count;
+
+        for (int i = 0; i < count; i++) {
             if (_values[i].Equals(value))
                 return true;
         }

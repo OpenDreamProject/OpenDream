@@ -19,7 +19,7 @@ public sealed class DreamObjectClient : DreamObject {
     public DreamObjectClient(DreamObjectDefinition objectDefinition, DreamConnection connection, ServerScreenOverlaySystem? screenOverlaySystem, ServerClientImagesSystem? clientImagesSystem) : base(objectDefinition) {
         Connection = connection;
         Screen = new(ObjectTree, screenOverlaySystem, Connection);
-        ClientVerbs = new(ObjectTree, VerbSystem, this);
+        ClientVerbs = new(ObjectTree, this);
         Images = new(ObjectTree, clientImagesSystem, Connection);
 
         DreamManager.Clients.Add(this);

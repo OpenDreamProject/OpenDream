@@ -45,7 +45,7 @@ public class DreamObjectAtom : DreamObject {
                 value = new(Underlays);
                 return true;
             case "verbs":
-                value = new(new VerbsList(ObjectTree, AtomManager, VerbSystem, this));
+                value = new(new VerbsList(ObjectTree, AtomManager, this));
                 return true;
             case "filters":
                 value = new(Filters);

@@ -173,7 +173,7 @@ public sealed class DreamRefManager {
                 DreamObjectTurf turf => CreateRef(RefType.DreamObjectTurf, turf),
                 DreamObjectMob mob => CreateRef(RefType.DreamObjectMob, mob),
                 DreamObjectArea area => CreateRef(RefType.DreamObjectArea, area),
-                DreamObjectClient client => CreateRef(RefType.DreamObjectArea, client),
+                DreamObjectClient client => CreateRef(RefType.DreamObjectClient, client),
                 DreamObjectImage image => CreateRef(RefType.DreamObjectImage, image),
                 DreamObjectFilter filter => CreateRef(RefType.DreamObjectFilter, filter),
                 DreamObjectMovable => CreateRef(RefType.DreamObjectMovable, dreamObject),

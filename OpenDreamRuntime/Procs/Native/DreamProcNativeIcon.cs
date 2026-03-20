@@ -107,5 +107,76 @@ namespace OpenDreamRuntime.Procs.Native {
         public static void _NativeProc_TurnInternal(DreamObjectIcon src, float angle) {
             src.Turn(angle);
         }
+
+        [DreamProc("GetPixel")]
+        [DreamProcParameter("x", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("y", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("icon_state", Type = DreamValueTypeFlag.String)]
+        [DreamProcParameter("dir", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+        [DreamProcParameter("frame", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+        [DreamProcParameter("moving", Type = DreamValueTypeFlag.Float, DefaultValue = -1)]
+        public static DreamValue NativeProc_GetPixel(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+            bundle.GetArgument(0, "x").TryGetValueAsInteger(out var xPos);
+            bundle.GetArgument(1, "y").TryGetValueAsInteger(out var yPos);
+            bundle.GetArgument(2, "icon_state").TryGetValueAsString(out var iconState);
+            bundle.GetArgument(3, "dir").TryGetValueAsInteger(out var dir);
+            bundle.GetArgument(4, "frame").TryGetValueAsInteger(out var frame);
+            //TODO: Implement moving var
+
+            DreamIcon iconObj = ((DreamObjectIcon)src!).Icon;
+            //TODO BYONDISM: A non-existent icon_state will default to the empty string icon_state,
+            //or if one doesn't exist it will default to the first icon_state in the DMI.
+            if(!iconObj.States.TryGetValue(iconState ?? string.Empty, out var state))
+                //Bad icon_state returns null
+                return DreamValue.Null;
+
+            //Position values less than 1 are out of bounds. Early escape.
+            if (xPos < 1 || yPos < 1) return DreamValue.Null;
+
+            if (frame < 1) {
+                frame = 0; //BYONDISM: Frames less than 1 count as 0,
+            } else if (frame > state.Frames) {
+                return DreamValue.Null;
+            } else {
+                frame -= 1; // Convert from 1-index to 0-index
+            }
+
+            AtomDirection atomDir = dir switch {
+                0 or 2 => AtomDirection.South,
+                1 => AtomDirection.North,
+                4 => AtomDirection.East,
+                5 => AtomDirection.Northeast,
+                6 => AtomDirection.Southeast,
+                8 => AtomDirection.West,
+                9 => AtomDirection.Northwest,
+                10 => AtomDirection.Southwest,
+                _ => AtomDirection.None
+            };
+            //BYONDISM: Bad dir values just crash instantly :)
+            if (atomDir == AtomDirection.None) return DreamValue.Null;
+
+            if (!state.Directions.TryGetValue(atomDir, out var frameList))
+                //Empty dir's return null
+                return DreamValue.Null;
+
+            var finalFrame = frameList[frame].Image;
+            if (finalFrame is null) return DreamValue.Null;
+
+            //Out-of-bounds xy values return null.
+            if (xPos > finalFrame.Width || yPos > finalFrame.Height) return DreamValue.Null;
+            //SixLabors.Image<Rgba32> is 0-indexed from the top-left, BYOND is 1-indexed from the bottom left.
+            xPos -= 1;
+            yPos = finalFrame.Height - yPos;
+
+            var pix = finalFrame[xPos, yPos];
+            //If A is fully transparent return null
+            //if A is partially transparent return "#RRGGBBAA"
+            //if A is not transparent return "#RRGGBB"
+            return pix.A switch {
+                0 => DreamValue.Null,
+                255 => new DreamValue($"#{pix.R:x2}{pix.G:x2}{pix.B:x2}"),
+                _ => new DreamValue($"#{pix.R:x2}{pix.G:x2}{pix.B:x2}{pix.A:x2}")
+            };
+        }
     }
 }

@@ -25,6 +25,7 @@ public sealed partial class DreamMapManager : IDreamMapManager {
     // Set in Initialize
     private ServerAppearanceSystem _appearanceSystem = default!;
     private SharedMapSystem _mapSystem = default!;
+    private EntityLookupSystem _lookupSystem = default!;
 
     public Vector2i Size { get; private set; }
     public int Levels => _levels.Count;
@@ -39,10 +40,12 @@ public sealed partial class DreamMapManager : IDreamMapManager {
     private MapObjectJson _defaultTurf = default!;
 
     private List<DreamMapJson>? _jsonMaps = new();
+    private readonly HashSet<EntityUid> _entityLookupSet = new();
 
     public void Initialize() {
         _appearanceSystem = _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
         _mapSystem = _entitySystemManager.GetEntitySystem<MapSystem>();
+        _lookupSystem = _entitySystemManager.GetEntitySystem<EntityLookupSystem>();
 
         DreamObjectDefinition worldDefinition = _objectTree.World.ObjectDefinition;
 
@@ -431,6 +434,20 @@ public sealed partial class DreamMapManager : IDreamMapManager {
     public EntityUid GetZLevelEntity(int z) {
         return _levels[z - 1].Grid.Owner;
     }
+
+    public IEnumerable<DreamObjectMob> GetMobsInRange((int X, int Y, int Z) loc, int distance) {
+        _entityLookupSet.Clear();
+        _lookupSystem.GetEntitiesInRange(new(loc.Z), new(loc.X, loc.Y), distance, _entityLookupSet);
+
+        foreach (var entity in _entityLookupSet) {
+            if (!_atomManager.TryGetMovableFromEntity(entity, out var movable))
+                continue;
+            if (movable is not DreamObjectMob mob)
+                continue;
+
+            yield return mob;
+        }
+    }
 }
 
 public interface IDreamMapManager {
@@ -502,6 +519,8 @@ public interface IDreamMapManager {
     public void SetZLevels(int levels);
     public void SetWorldSize(Vector2i size);
     public EntityUid GetZLevelEntity(int z);
+
+    public IEnumerable<DreamObjectMob> GetMobsInRange((int X, int Y, int Z) loc, int distance);
 
     public IEnumerable<AtomDirection> CalculateSteps((int X, int Y, int Z) loc, (int X, int Y, int Z) dest, int distance);
 }

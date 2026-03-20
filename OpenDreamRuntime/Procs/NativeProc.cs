@@ -41,36 +41,26 @@ public sealed unsafe class NativeProc : DreamProc {
     }
 
     private readonly DreamManager _dreamManager;
+    private readonly DreamRefManager _refManager;
     private readonly AtomManager _atomManager;
     private readonly IDreamMapManager _mapManager;
     private readonly DreamResourceManager _resourceManager;
     private readonly WalkManager _walkManager;
     private readonly DreamObjectTree _objectTree;
 
-    public readonly ref struct Bundle {
-        public readonly NativeProc Proc;
+    public readonly ref struct Bundle(NativeProc proc, DreamProcArguments arguments) {
+        public readonly NativeProc Proc = proc;
 
         // NOTE: Deliberately not using DreamProcArguments here, tis slow.
-        public readonly ReadOnlySpan<DreamValue> Arguments;
+        public readonly ReadOnlySpan<DreamValue> Arguments = arguments.Values;
 
         public DreamManager DreamManager => Proc._dreamManager;
+        public DreamRefManager RefManager => Proc._refManager;
         public AtomManager AtomManager => Proc._atomManager;
         public IDreamMapManager MapManager => Proc._mapManager;
         public DreamResourceManager ResourceManager => Proc._resourceManager;
         public WalkManager WalkManager => Proc._walkManager;
         public DreamObjectTree ObjectTree => Proc._objectTree;
-        private readonly DreamThread _thread;
-
-        public DreamValue? LastAnimatedObject {
-            get => _thread.LastAnimatedObject;
-            set => _thread.LastAnimatedObject = value;
-        }
-
-        public Bundle(NativeProc proc, DreamThread thread, DreamProcArguments arguments) {
-            Proc = proc;
-            Arguments = arguments.Values;
-            _thread = thread;
-        }
 
         [Pure]
         public DreamValue GetArgument(int argumentPosition, string argumentName) {
@@ -90,12 +80,13 @@ public sealed unsafe class NativeProc : DreamProc {
     private readonly Dictionary<string, DreamValue>? _defaultArgumentValues;
     private readonly delegate*<Bundle, DreamObject?, DreamObject?, DreamValue> _handler;
 
-    public NativeProc(int id, TreeEntry owningType, string name, List<string> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, HandlerFn handler, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager mapManager, DreamResourceManager resourceManager, WalkManager walkManager, DreamObjectTree objectTree)
+    public NativeProc(int id, TreeEntry owningType, string name, List<string> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, HandlerFn handler, DreamManager dreamManager, DreamRefManager refManager, AtomManager atomManager, IDreamMapManager mapManager, DreamResourceManager resourceManager, WalkManager walkManager, DreamObjectTree objectTree)
         : base(id, owningType, name, null, ProcAttributes.None, argumentNames, null, null, null, null, null, 0) {
         _defaultArgumentValues = defaultArgumentValues;
         _handler = (delegate*<Bundle, DreamObject?, DreamObject?, DreamValue>)handler.Method.MethodHandle.GetFunctionPointer();
 
         _dreamManager = dreamManager;
+        _refManager = refManager;
         _atomManager = atomManager;
         _mapManager = mapManager;
         _resourceManager = resourceManager;
@@ -109,7 +100,7 @@ public sealed unsafe class NativeProc : DreamProc {
     }
 
     public DreamValue Call(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
-        var bundle = new Bundle(this, thread, arguments);
+        var bundle = new Bundle(this, arguments);
 
         // TODO: Include this call in the thread's stack in error traces
         return _handler(bundle, src, usr);

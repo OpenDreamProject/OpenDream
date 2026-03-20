@@ -7,10 +7,8 @@ using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
-using OpenDreamRuntime.Util;
 using Robust.Server.GameObjects;
 using Robust.Server.GameStates;
-using Robust.Server.Player;
 using Robust.Shared.Map;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Utility;
@@ -24,13 +22,13 @@ public class DreamObject {
     [Access(typeof(DreamObject))]
     public bool Deleted;
 
-    [Access(typeof(DreamManager), typeof(DreamObject))]
-    public int? RefId;
+    public readonly uint RefId;
 
     public virtual bool ShouldCallNew => true;
 
     // Shortcuts to IoC dependencies & entity systems
     protected DreamManager DreamManager => ObjectDefinition.DreamManager;
+    protected DreamRefManager DreamRefManager => ObjectDefinition.DreamRefManager;
     protected DreamObjectTree ObjectTree => ObjectDefinition.ObjectTree;
     protected AtomManager AtomManager => ObjectDefinition.AtomManager;
     protected IDreamMapManager DreamMapManager => ObjectDefinition.DreamMapManager;
@@ -38,7 +36,6 @@ public class DreamObject {
     protected DreamResourceManager DreamResourceManager => ObjectDefinition.DreamResourceManager;
     protected WalkManager WalkManager => ObjectDefinition.WalkManager;
     protected IEntityManager EntityManager => ObjectDefinition.EntityManager;
-    protected IPlayerManager PlayerManager => ObjectDefinition.PlayerManager;
     protected ISerializationManager SerializationManager => ObjectDefinition.SerializationManager;
     protected ServerAppearanceSystem? AppearanceSystem => ObjectDefinition.AppearanceSystem;
     protected TransformSystem? TransformSystem => ObjectDefinition.TransformSystem;
@@ -50,55 +47,50 @@ public class DreamObject {
     protected Dictionary<string, DreamValue>? Variables;
 
 #if TOOLS
-        protected ProfilerMemory? TracyMemoryId;
+    protected ProfilerMemory? TracyMemoryId;
 #endif
 
     //handle to the list of vars on this object so that it's only created once and refs to object.vars are consistent
     private DreamListVars? _varsList;
 
     private string? Tag {
-        get => _tag;
+        get;
         set {
             // Even if we're setting it to the same string we still need to remove it
-            if (!string.IsNullOrEmpty(_tag)) {
-                var list = ObjectDefinition.DreamManager.Tags[_tag];
+            if (!string.IsNullOrEmpty(field)) {
+                var list = DreamRefManager.Tags[field];
 
                 if (list.Count > 1) {
                     list.Remove(this);
                 } else {
-                    ObjectDefinition.DreamManager.Tags.Remove(_tag);
+                    DreamRefManager.Tags.Remove(field);
                 }
             }
 
-            _tag = value;
+            field = value;
 
             // Now we add it (if it's a string)
-            if (!string.IsNullOrEmpty(_tag)) {
-                if (ObjectDefinition.DreamManager.Tags.TryGetValue(_tag, out var list)) {
+            if (!string.IsNullOrEmpty(field)) {
+                if (DreamRefManager.Tags.TryGetValue(field, out var list)) {
                     list.Add(this);
                 } else {
                     var newList = new List<DreamObject> {
                         this
                     };
 
-                    ObjectDefinition.DreamManager.Tags.Add(_tag, newList);
+                    DreamRefManager.Tags.Add(field, newList);
                 }
             }
         }
     }
-    private string? _tag;
 
     public DreamObject(DreamObjectDefinition objectDefinition) {
         ObjectDefinition = objectDefinition;
-
-        // Atoms are in world.contents
-        if (this is not DreamObjectAtom && IsSubtypeOf(ObjectTree.Datum)) {
-            ObjectDefinition.DreamManager.Datums.AddLast(new WeakDreamRef(this));
-        }
+        RefId = DreamRefManager.GetRef(this);
 
 #if TOOLS
-             //if it's not null, subclasses have done their own allocation
-            TracyMemoryId ??= Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamObject>() + ObjectDefinition.Variables.Count * Unsafe.SizeOf<DreamValue>() ), "/datum");
+         //if it's not null, subclasses have done their own allocation
+        TracyMemoryId ??= Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamObject>() + ObjectDefinition.Variables.Count * Unsafe.SizeOf<DreamValue>() ), "/datum");
 #endif
     }
 
@@ -107,15 +99,20 @@ public class DreamObject {
     }
 
     protected virtual void HandleDeletion(bool possiblyThreaded) {
-        // Atoms are in world.contents
-        // Datum removal used to live here, but datums are now tracked weakly.
+        if (possiblyThreaded) {
+            // DeleteRef is not thread-safe, so pawn this off to the server thread
+            lock (DreamManager.RefDeleteQueue) {
+                DreamManager.RefDeleteQueue.Add(RefId);
+            }
+        } else {
+            // Remove the locate()-able reference to this object
+            // Freeing up the slot for later reuse
+            DreamRefManager.DeleteRef(RefId);
+        }
 
-        if (RefId is not null)
-            DreamManager.ReferenceIDsToDreamObject.Remove(RefId.Value, out _);
-
+        //we release all relevant information, making this a very tiny object
         Tag = null;
         Deleted = true;
-        //we release all relevant information, making this a very tiny object
         Variables = null;
         _varsList?.Delete(possiblyThreaded);
         _varsList = null;
@@ -123,7 +120,7 @@ public class DreamObject {
         ObjectDefinition = null!;
 
 #if TOOLS
-            TracyMemoryId?.ReleaseMemory();
+        TracyMemoryId?.ReleaseMemory();
 #endif
     }
 

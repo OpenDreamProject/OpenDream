@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using OpenDreamRuntime.Map;
+using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Input;
@@ -10,6 +11,7 @@ namespace OpenDreamRuntime.Input;
 internal sealed class MouseInputSystem : SharedMouseInputSystem {
     [Dependency] private readonly AtomManager _atomManager = default!;
     [Dependency] private readonly DreamManager _dreamManager = default!;
+    [Dependency] private readonly DreamRefManager _refManager = default!;
     [Dependency] private readonly IDreamMapManager _mapManager = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
 
@@ -68,7 +70,7 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
     }
 
     private void OnStatClicked(StatClickedEvent e, EntitySessionEventArgs sessionEvent) {
-        if (!_dreamManager.LocateRef(e.AtomRef).TryGetValueAsDreamObject<DreamObjectAtom>(out var dreamObject))
+        if (!_refManager.LocateRef(e.AtomRef).TryGetValueAsDreamObject<DreamObjectAtom>(out var dreamObject))
             return;
 
         HandleAtomClick(e, dreamObject, sessionEvent);

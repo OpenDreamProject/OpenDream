@@ -1,8 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.IO;
-using System.Linq;
 using System.Text.Json;
-using System.Threading;
 using DMCompiler.Bytecode;
 using DMCompiler.Json;
 using DMCompiler.Compiler;
@@ -11,9 +9,7 @@ using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.Native;
-using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
-using OpenDreamRuntime.Util;
 using OpenDreamShared;
 using OpenDreamShared.Dream;
 using Robust.Server;
@@ -33,14 +29,11 @@ public sealed partial class DreamManager {
     // Global state that may not really (really really) belong here
     public DreamValue[] Globals { get; set; } = Array.Empty<DreamValue>();
     public List<string> GlobalNames { get; private set; } = new();
-    public ConcurrentDictionary<int, WeakDreamRef> ReferenceIDsToDreamObject { get; } = new();
     public HashSet<DreamObject> Clients { get; } = new();
 
-    // I solemnly swear this benefits from being a linked list (constant remove times without relying on object hash) --kaylie
-    public LinkedList<WeakDreamRef> Datums { get; } = new();
     public readonly ConcurrentBag<DreamObject> DelQueue = new();
+    public readonly HashSet<uint> RefDeleteQueue = new();
     public Random Random { get; set; } = new();
-    public Dictionary<string, List<DreamObject>> Tags { get; } = new();
     public DreamProc ImageConstructor, ImageFactoryProc;
     public int ListPoolThreshold, ListPoolSize;
     public Dictionary<WarningCode, ErrorLevel> OptionalErrors { get; private set; } = new();
@@ -55,9 +48,9 @@ public sealed partial class DreamManager {
     public long CurrentTickStart { get; private set; }
 
     private ISawmill _sawmill = default!;
-    private int _dreamObjectRefIdCounter;
 
     [Dependency] private readonly AtomManager _atomManager = default!;
+    [Dependency] private readonly DreamRefManager _refManager = default!;
     [Dependency] private readonly IPlayerManager _playerManager = default!;
     [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
     [Dependency] private readonly ProcScheduler _procScheduler = default!;
@@ -66,16 +59,13 @@ public sealed partial class DreamManager {
     [Dependency] private readonly IGameTiming _gameTiming = default!;
     [Dependency] private readonly DreamObjectTree _objectTree = default!;
     [Dependency] private readonly IEntityManager _entityManager = default!;
-    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-
-    private ServerAppearanceSystem? _appearanceSystem;
 
     //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
     public void PreInitialize(string? jsonPath) {
         _sawmill = Logger.GetSawmill("opendream");
         ListPoolThreshold = _config.GetCVar(OpenDreamCVars.ListPoolThreshold);
         ListPoolSize = _config.GetCVar(OpenDreamCVars.ListPoolSize);
-        ByondApi.ByondApi.Initialize(this, _atomManager, _dreamMapManager, _objectTree);
+        ByondApi.ByondApi.Initialize(this, _refManager, _atomManager, _dreamMapManager, _objectTree);
 
         InitializeConnectionManager();
         _dreamResourceManager.PreInitialize();
@@ -140,12 +130,6 @@ public sealed partial class DreamManager {
         }
 
         Profiler.EmitFrameMark();
-    }
-
-    public void ProcessDelQueue() {
-        while (DelQueue.TryTake(out var obj)) {
-            obj.Delete();
-        }
     }
 
     public bool TryGetGlobalProc(string name, [NotNullWhen(true)] out DreamProc? proc) {
@@ -214,209 +198,6 @@ public sealed partial class DreamManager {
         }
     }
 
-    public uint FindOrAddString(string str) {
-        var idx = FindString(str);
-        if (idx == null) {
-            _objectTree.Strings.Add(str);
-            idx = (uint)(_objectTree.Strings.Count - 1);
-        }
-
-        return (uint)idx;
-    }
-
-    public uint? FindString(string str) {
-        int idx = _objectTree.Strings.IndexOf(str);
-
-        if (idx < 0) {
-            return null;
-        }
-
-        return (uint)idx;
-    }
-
-    public string CreateRef(DreamValue value) {
-        var refId = GetRefId(value, out var refType);
-
-        // refType combines with the highest byte. This could produce an invalid ref, but that's BYOND behavior too.
-        var combined = (uint)refType | refId;
-        return $"[0x{combined:x}]";
-    }
-
-    public uint GetRefId(DreamValue value, out RefType refType) {
-        int idx;
-
-        if (value.TryGetValueAsDreamObject(out var refObject)) {
-            if (refObject == null) {
-                refType = RefType.Null;
-                idx = 0;
-            } else {
-                if (refObject.Deleted) {
-                    // i dont believe this will **ever** be called, but just to be sure, funky errors /might/ appear in the future if someone does a fucky wucky and calls this on a deleted object.
-                    throw new Exception("Cannot create reference ID for an object that is deleted");
-                }
-
-                switch (refObject) {
-                    case DreamObjectTurf: refType = RefType.DreamObjectTurf; break;
-                    case DreamObjectMob: refType = RefType.DreamObjectMob; break;
-                    case DreamObjectArea: refType = RefType.DreamObjectArea; break;
-                    case DreamObjectClient: refType = RefType.DreamObjectArea; break;
-                    case DreamObjectImage: refType = RefType.DreamObjectImage; break;
-                    case DreamObjectFilter: refType = RefType.DreamObjectFilter; break;
-                    default: {
-                        refType = RefType.DreamObjectDatum;
-                        if (refObject.IsSubtypeOf(_objectTree.Obj))
-                            refType = RefType.DreamObject;
-                        else if (refObject.GetType() == typeof(DreamList))
-                            refType = RefType.DreamObjectList;
-                        break;
-                    }
-                }
-
-                if (refObject.RefId is not { } id) {
-                    idx = Interlocked.Increment(ref _dreamObjectRefIdCounter);
-                    refObject.RefId = idx;
-
-                    // SAFETY: Infallible! idx is always unique and add can only fail if this is not the case.
-                    ReferenceIDsToDreamObject.TryAdd(idx, new WeakDreamRef(refObject));
-                } else {
-                    idx = id;
-                }
-            }
-        } else if (value.TryGetValueAsString(out var refStr)) {
-            refType = RefType.String;
-            idx = _objectTree.Strings.IndexOf(refStr);
-
-            if (idx == -1) {
-                _objectTree.Strings.Add(refStr);
-                idx = _objectTree.Strings.Count - 1;
-            }
-        } else if (value.TryGetValueAsType(out var type)) {
-            refType = RefType.DreamType;
-            idx = type.Id;
-        } else if (value.TryGetValueAsAppearance(out var appearance)) {
-            refType = RefType.DreamAppearance;
-            _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
-            idx = (int)_appearanceSystem.AddAppearance(appearance).MustGetId();
-        } else if (value.TryGetValueAsDreamResource(out var refRsc)) {
-            refType = RefType.DreamResource;
-            idx = refRsc.Id;
-        } else if (value.TryGetValueAsProc(out var proc)) {
-            refType = RefType.Proc;
-            idx = proc.Id;
-        } else if (value.TryGetValueAsFloat(out var floatValue)) {
-            refType = RefType.Number;
-
-            // Yes, this combines with the refType and produces an invalid ref.
-            // This is BYOND behavior (as of writing at least, on 516.1661).
-            idx = BitConverter.SingleToInt32Bits(floatValue);
-        } else {
-            throw new NotImplementedException($"Ref for {value} is unimplemented");
-        }
-
-        return (uint)idx;
-    }
-
-    /// <summary>
-    /// Iterates the list of datums
-    /// </summary>
-    /// <returns>Datum enumerator</returns>
-    /// <remarks>As it's a convenient time, this will collect any dead datum refs as it finds them.</remarks>
-    public IEnumerable<DreamObject> IterateDatums() {
-        // This isn't a common operation so we'll use this time to also do some pruning.
-        var node = Datums.First;
-
-        while (node is not null) {
-            var next = node.Next;
-            var val = node.Value.Target;
-            if (val is null)
-                Datums.Remove(node);
-            else
-                yield return val;
-            node = next;
-        }
-    }
-
-    public DreamValue RefToValue(int rawRef) {
-        // The first one/two digits give the type, the last 6 give the index
-        var refType = (RefType)(rawRef & 0xFF000000);
-        var refId = (rawRef & 0x00FFFFFF); // The ref minus its ref type prefix
-
-        return RefToValue(refType, refId);
-    }
-
-    public DreamValue RefToValue(RefType refType, int refId) {
-        switch (refType) {
-            case RefType.Null:
-                return DreamValue.Null;
-            case RefType.DreamObjectArea:
-            case RefType.DreamObjectClient:
-            case RefType.DreamObjectDatum:
-            case RefType.DreamObjectImage:
-            case RefType.DreamObjectFilter:
-            case RefType.DreamObjectList:
-            case RefType.DreamObjectMob:
-            case RefType.DreamObjectTurf:
-            case RefType.DreamObject:
-                if (ReferenceIDsToDreamObject.TryGetValue(refId, out var weakRef) && weakRef.Target is { } dreamObject)
-                    return new(dreamObject);
-
-                return DreamValue.Null;
-            case RefType.String:
-                return _objectTree.Strings.Count > refId
-                    ? new DreamValue(_objectTree.Strings[refId])
-                    : DreamValue.Null;
-            case RefType.DreamType:
-                return _objectTree.Types.Length > refId
-                    ? new DreamValue(_objectTree.Types[refId])
-                    : DreamValue.Null;
-            case RefType.DreamResourceIcon: // Alias of DreamResource for now. TODO: Does this *only* contain icon resources?
-            case RefType.DreamResource:
-                if (!_dreamResourceManager.TryLoadResource(refId, out var resource))
-                    return DreamValue.Null;
-
-                return new DreamValue(resource);
-            case RefType.DreamAppearance:
-                _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
-                return _appearanceSystem.TryGetAppearanceById((uint)refId, out ImmutableAppearance? appearance)
-                    ? new DreamValue(appearance.ToMutable())
-                    : DreamValue.Null;
-            case RefType.Proc:
-                return _objectTree.Procs.Count > refId
-                    ? new DreamValue(_objectTree.Procs[refId])
-                    : DreamValue.Null;
-            case RefType.Number: // For the oh so few numbers this works with (most numbers clobber the ref type)
-                return new(BitConverter.Int32BitsToSingle(refId));
-            default:
-                throw new Exception($"Invalid reference type for ref [0x{refId:x}]");
-        }
-    }
-
-    public DreamValue LocateRef(string refString) {
-        bool canBePointer = false;
-
-        if (refString.StartsWith('[') && refString.EndsWith(']')) {
-            // Strip the surrounding []
-            refString = refString.Substring(1, refString.Length - 2);
-
-            // This ref could possibly be a "pointer" (the hex number made up of an id and an index)
-            canBePointer = refString.StartsWith("0x");
-        }
-
-        if (canBePointer && int.TryParse(refString.Substring(2), System.Globalization.NumberStyles.HexNumber, null, out var refId)) {
-            return RefToValue(refId);
-        }
-
-        // Search for an object with this ref as its tag
-        // Note that surrounding [] are stripped out at this point, this is intentional
-        // Doing locate("[abc]") is the same as locate("abc")
-        if (Tags.TryGetValue(refString, out var tagList)) {
-            return new DreamValue(tagList.First());
-        }
-
-        // Nothing found
-        return DreamValue.Null;
-    }
-
     public DreamObject? GetFromClientReference(DreamConnection connection, ClientObjectReference reference) {
         switch (reference.Type) {
             case ClientObjectReference.RefType.Client:
@@ -473,24 +254,18 @@ public sealed partial class DreamManager {
             throw exception;
         }
     }
-}
 
-public enum RefType : uint {
-    Null = 0x0,
-    DreamObjectTurf = 0x1000000,
-    DreamObject = 0x2000000,
-    DreamObjectMob = 0x3000000,
-    DreamObjectArea = 0x4000000,
-    DreamObjectClient = 0x5000000,
-    DreamResourceIcon = 0xC000000,
-    DreamObjectImage = 0xD000000,
-    DreamObjectList = 0xF000000,
-    DreamObjectDatum = 0x21000000,
-    String = 0x6000000,
-    DreamType = 0x9000000, //in byond type is from 0x8 to 0xb, but fuck that
-    DreamResource = 0x27000000, //Equivalent to file
-    DreamAppearance = 0x3A000000,
-    Proc = 0x26000000,
-    Number = 0x2A000000,
-    DreamObjectFilter = 0x53000000
+    private void ProcessDelQueue() {
+        lock (RefDeleteQueue) {
+            foreach (var refId in RefDeleteQueue) {
+                _refManager.DeleteRef(refId);
+            }
+
+            RefDeleteQueue.Clear();
+        }
+
+        while (DelQueue.TryTake(out var obj)) {
+            obj.Delete();
+        }
+    }
 }

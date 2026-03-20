@@ -108,18 +108,12 @@ public sealed class DreamObjectWorld : DreamObject {
             return;
         }
 
+        // There shouldn't be two instances of world, but to be safe
+        var isServerWorld = (this == DreamManager.WorldInstance);
+
         base.HandleDeletion(possiblyThreaded);
-
-        _server.Shutdown("world was deleted");
-    }
-
-    ~DreamObjectWorld() {
-        if (this != DreamManager.WorldInstance) {
-            Deleted = true;
-            return;
-        }
-
-        Delete(true);
+        if (isServerWorld)
+            _server.Shutdown("world was deleted");
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {

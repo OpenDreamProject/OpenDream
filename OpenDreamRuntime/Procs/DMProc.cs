@@ -24,6 +24,7 @@ public sealed class DMProc : DreamProc {
 
     public readonly AtomManager AtomManager;
     public readonly DreamManager DreamManager;
+    public readonly DreamRefManager RefManager;
     public readonly ProcScheduler ProcScheduler;
     public readonly IDreamMapManager DreamMapManager;
     public readonly IDreamDebugManager DreamDebugManager;
@@ -33,7 +34,7 @@ public sealed class DMProc : DreamProc {
 
     private readonly int _maxStackSize;
 
-    public DMProc(int id, TreeEntry owningType, ProcDefinitionJson json, string? name, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, DreamObjectTree objectTree, ProcScheduler procScheduler, ServerVerbSystem verbSystem)
+    public DMProc(int id, TreeEntry owningType, ProcDefinitionJson json, string? name, DreamManager dreamManager, DreamRefManager refManager, AtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, DreamObjectTree objectTree, ProcScheduler procScheduler, ServerVerbSystem verbSystem)
         : base(id, owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbSrc, json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility, json.IsVerb) {
         Bytecode = json.Bytecode ?? [];
         LocalNames = json.Locals ?? [];
@@ -43,6 +44,7 @@ public sealed class DMProc : DreamProc {
 
         AtomManager = atomManager;
         DreamManager = dreamManager;
+        RefManager = refManager;
         ProcScheduler = procScheduler;
         DreamMapManager = dreamMapManager;
         DreamDebugManager = dreamDebugManager;

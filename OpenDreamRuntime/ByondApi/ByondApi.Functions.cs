@@ -110,7 +110,7 @@ public static unsafe partial class ByondApi {
         }
 
         return RunOnMainThread(() => {
-            var strId = _dreamManager!.FindString(str);
+            var strId = _refManager!.FindStringId(str);
             if (strId != null) {
                 return strId.Value;
             }
@@ -137,7 +137,7 @@ public static unsafe partial class ByondApi {
         }
 
         return RunOnMainThread(() => {
-            var strIdx = _dreamManager!.FindOrAddString(str);
+            var strIdx = _refManager!.GetRef(str);
             return strIdx;
         });
     }
@@ -195,7 +195,7 @@ public static unsafe partial class ByondApi {
 
         return RunOnMainThread<byte>(() => {
             try {
-                DreamValue varNameVal = _dreamManager!.RefToValue(RefType.String, (int)varname);
+                DreamValue varNameVal = _refManager!.LocateRef((uint)RefType.String | varname);
                 if (!varNameVal.TryGetValueAsString(out var varName))
                     return SetLastError("varname argument was an invalid string ID");
 
@@ -264,7 +264,7 @@ public static unsafe partial class ByondApi {
     private static byte Byond_WriteVarByStrId(CByondValue* loc, uint varname, CByondValue* val) {
         return RunOnMainThread<byte>(() => {
             try {
-                DreamValue varNameVal = _dreamManager!.RefToValue(RefType.String, (int)varname);
+                DreamValue varNameVal = _refManager!.LocateRef((uint)RefType.String | varname);
                 if (!varNameVal.TryGetValueAsString(out var varName))
                     return SetLastError("varname argument was an invalid string ID");
 
@@ -590,7 +590,7 @@ public static unsafe partial class ByondApi {
 
         return RunOnMainThread(() => {
             try {
-                DreamValue procNameVal = _dreamManager!.RefToValue(RefType.String, (int)name);
+                DreamValue procNameVal = _refManager!.LocateRef((uint)RefType.String | name);
                 if (!procNameVal.TryGetValueAsString(out var procName))
                     return SetLastError("name argument was an invalid string ID");
 
@@ -659,10 +659,10 @@ public static unsafe partial class ByondApi {
 
         return RunOnMainThread<byte>(() => {
             try {
-                DreamValue procNameVal = _dreamManager!.RefToValue(RefType.String, (int)name);
+                DreamValue procNameVal = _refManager!.LocateRef((uint)RefType.String | name);
                 if (!procNameVal.TryGetValueAsString(out var procName))
                     return SetLastError("name argument was an invalid string ID");
-                if (!_dreamManager.TryGetGlobalProc(procName, out var proc))
+                if (!_dreamManager!.TryGetGlobalProc(procName, out var proc))
                     return SetLastError($"no global proc named \"{procName}\"");
 
                 CallProcShared(null, proc, cArgs, arg_count, cResult);

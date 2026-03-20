@@ -24,8 +24,6 @@ using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
 using Robust.Server;
 using Robust.Shared.Asynchronous;
-using OpenDreamShared.Rendering;
-using System.ComponentModel;
 
 namespace OpenDreamRuntime.Procs.Native;
 
@@ -1980,7 +1978,10 @@ internal static class DreamProcNativeRoot {
     [DreamProc("ref")]
     [DreamProcParameter("Object", Type = DreamValueTypeFlag.DreamObject)]
     public static DreamValue NativeProc_ref(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-        return new DreamValue(bundle.DreamManager.CreateRef(bundle.GetArgument(0, "Object")));
+        var value = bundle.GetArgument(0, "Object");
+        var dreamRef = bundle.RefManager.GetRefString(value);
+
+        return new DreamValue(dreamRef);
     }
 
     [DreamProc("regex")]
@@ -2639,15 +2640,15 @@ internal static class DreamProcNativeRoot {
         return NativeProc_splittext(bundle, src, usr);
     }
 
-    private static void OutputToStatPanel(DreamManager dreamManager, DreamConnection connection, DreamValue name, DreamValue value) {
+    private static void OutputToStatPanel(DreamRefManager refManager, DreamConnection connection, DreamValue name, DreamValue value) {
         if (name.IsNull && value.TryGetValueAsDreamList(out var list)) {
             foreach (var item in list.EnumerateValues())
-                OutputToStatPanel(dreamManager, connection, name, item);
+                OutputToStatPanel(refManager, connection, name, item);
         } else {
             string nameStr = name.Stringify();
             string? atomRef = null;
             if (value.TryGetValueAsDreamObject<DreamObjectAtom>(out _)) // Atoms are clickable
-                atomRef = dreamManager.CreateRef(value);
+                atomRef = refManager.GetRefString(value);
 
             connection.AddStatPanelLine(nameStr, value.Stringify(), atomRef);
         }
@@ -2661,7 +2662,7 @@ internal static class DreamProcNativeRoot {
         DreamValue value = bundle.GetArgument(1, "Value");
 
         if (usr is DreamObjectMob { Connection: {} usrConnection })
-            OutputToStatPanel(bundle.DreamManager, usrConnection, name, value);
+            OutputToStatPanel(bundle.RefManager, usrConnection, name, value);
 
         return DreamValue.Null;
     }
@@ -2678,7 +2679,7 @@ internal static class DreamProcNativeRoot {
         if (usr is DreamObjectMob { Connection: {} connection }) {
             connection.SetOutputStatPanel(panel);
             if (!name.IsNull || !value.IsNull) {
-                OutputToStatPanel(bundle.DreamManager, connection, name, value);
+                OutputToStatPanel(bundle.RefManager, connection, name, value);
             }
 
             return new DreamValue(connection.SelectedStatPanel == panel ? 1 : 0);

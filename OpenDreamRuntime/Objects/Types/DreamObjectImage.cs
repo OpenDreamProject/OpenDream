@@ -244,8 +244,8 @@ public sealed class DreamObjectImage : DreamObject {
         }
     }
 
-    public DreamObject? GetAttachedLoc(){
-        return this._loc;
+    public DreamObject? GetAttachedLoc() {
+        return _loc;
     }
 
     protected override void HandleDeletion(bool possiblyThreaded) {

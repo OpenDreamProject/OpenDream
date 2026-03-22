@@ -68,7 +68,8 @@ public sealed class DMIResource : DreamResource {
             clone.Crop(new Rectangle(frame.X, frame.Y, frame.X + description.Width, frame.Y + description.Height));
         });
 
-        var cursor = clyde.CreateCursor(stateImage, state.Hotspot);
+        var hotspot = state.Hotspot ?? (0, stateImage.Height - 1); // Default to the top-left
+        var cursor = clyde.CreateCursor(stateImage, hotspot);
         return cursor;
     }
 

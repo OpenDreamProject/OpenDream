@@ -126,7 +126,11 @@ public static class DMIParser {
         public string Name = name;
         public bool Loop = true;
         public bool Rewind;
-        public Vector2i Hotspot = (0, 31);
+
+        /// <summary>
+        /// The part of the image considered the tip when this is used as a custom cursor
+        /// </summary>
+        public Vector2i? Hotspot;
 
         // TODO: This can only contain either 1, 4, or 8 directions. Enforcing this could simplify some things.
         public readonly Dictionary<AtomDirection, ParsedDMIFrame[]> Directions = new();

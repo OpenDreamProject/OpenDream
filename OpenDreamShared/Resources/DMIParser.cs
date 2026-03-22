@@ -126,6 +126,7 @@ public static class DMIParser {
         public string Name = name;
         public bool Loop = true;
         public bool Rewind;
+        public Vector2i Hotspot = (0, 31);
 
         // TODO: This can only contain either 1, 4, or 8 directions. Enforcing this could simplify some things.
         public readonly Dictionary<AtomDirection, ParsedDMIFrame[]> Directions = new();
@@ -450,7 +451,16 @@ public static class DMIParser {
                         //TODO
                         break;
                     case "hotspot":
-                        //TODO
+                        if (currentState is null) break;
+                        var hotspotValues = value.Split(',');
+                        if (hotspotValues.Length != 3)
+                            throw new Exception($"Invalid hotspot value \"{value}\"");
+
+                        var hotspotX = int.Parse(hotspotValues[0]);
+                        var hotspotY = int.Parse(hotspotValues[1]);
+                        // TODO: 3rd value? Something to do with what frames the hotspot applies to apparently
+
+                        currentState.Hotspot = (hotspotX, hotspotY);
                         break;
                     default:
                         throw new Exception($"Invalid key \"{key}\" in DMI description");

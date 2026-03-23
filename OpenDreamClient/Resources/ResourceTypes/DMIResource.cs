@@ -51,21 +51,26 @@ public sealed class DMIResource : DreamResource {
         return _states[stateName];
     }
 
-    public Image<Rgba32>? GetStateAsImage(string? stateName, AtomDirection dir) {
-        using Stream dmiStream = new MemoryStream(Data);
-        DMIParser.ParsedDMIDescription description = DMIParser.ParseDMI(dmiStream);
+    public ICursor? GetStateAsImage(IClyde clyde, string? stateName) {
+        using var dmiStream = new MemoryStream(Data);
+        var description = DMIParser.ParseDMI(dmiStream);
 
         dmiStream.Seek(0, SeekOrigin.Begin);
 
         Image<Rgba32> image = Image.Load<Rgba32>(dmiStream);
-        if (!(description.GetStateOrDefault(stateName)?.Directions.TryGetValue(dir, out var state) ?? false))
+        var state = description.GetStateOrDefault(stateName);
+        if (!(state?.Directions.TryGetValue(AtomDirection.South, out var frames) ?? false))
             return null;
 
-        var result = image.Clone(clone => {
-            clone.Resize(new Size(description.Width, description.Height));
-            clone.Crop(new Rectangle(state[0].X, state[0].Y, state[0].X + description.Width, state[0].Y + description.Height));
+        var stateImage = image.Clone(clone => {
+            var frame = frames[0];
+
+            clone.Crop(new Rectangle(frame.X, frame.Y, frame.X + description.Width, frame.Y + description.Height));
         });
-        return result;
+
+        var hotspot = state.Hotspot ?? (0, stateImage.Height - 1); // Default to the top-left
+        var cursor = clyde.CreateCursor(stateImage, hotspot);
+        return cursor;
     }
 
     public struct State {

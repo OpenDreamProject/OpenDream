@@ -1,6 +1,8 @@
 ﻿/atom/movable
 	var/screen_loc
-
+	
+	var/loc // Re-declared as atom.loc is a const, but movable.loc isnt.
+	
 	var/animate_movement = FORWARD_STEPS as opendream_unimplemented
 	var/list/locs = null as opendream_unimplemented
 	var/glide_size = 0

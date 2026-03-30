@@ -9,9 +9,6 @@
 	ASSERT(!query.NextRow())
 	
 	ASSERT(query.GetRowData()["id"] == null)
-	
-	world.log << query.ErrorMsg()
-	
 	ASSERT(!query.Error())
 	
 	del(query)

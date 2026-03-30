@@ -6,11 +6,13 @@
 	
 	query.Add("SELECT * FROM foobar")
 	query.Execute(db)
-	query.NextRow()
+	ASSERT(!query.NextRow())
 	
-	query.GetRowData()
+	ASSERT(query.GetRowData()["id"] == null)
 	
-	ASSERT(query.Error() && query.ErrorMsg())
+	world.log << query.ErrorMsg()
+	
+	ASSERT(!query.Error())
 	
 	del(query)
 	del(db)

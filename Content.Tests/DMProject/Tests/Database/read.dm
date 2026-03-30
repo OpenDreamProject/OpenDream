@@ -34,8 +34,7 @@
 	ASSERT(query.Columns(3) == "points")
 	
 	ASSERT(!query.Columns(10))
-
-	ASSERT(query.Error() && query.ErrorMsg())
+	ASSERT(!query.Error())
 	
 	query.Close()
 	db.Close()
@@ -49,7 +48,7 @@
 	ASSERT(query.GetColumn(1) == 1)
 	
 	ASSERT(!query.GetColumn(10))
-	ASSERT(query.Error() && query.ErrorMsg())
+	ASSERT(!query.Error())
 	
 	del(query)
 	del(db)

@@ -101,14 +101,13 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
             return DreamValue.Null;
         }
 
-        id = Math.Max(--id, 1);
+        id = Math.Max(--id, 0);
 
         try {
             var name = _reader.GetName(id);
             return new DreamValue(name);
         } catch (IndexOutOfRangeException exception) {
-            _errorCode = 1;
-            _errorMessage = exception.Message;
+            // BYOND just ignores this, and doesn't report it to Error() or ErrorMsg()
         }
 
         return DreamValue.Null;
@@ -174,14 +173,13 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
             return false;
         }
 
-        column = Math.Max(--column, 1);
+        column = Math.Max(--column, 0);
 
         try {
             value = GetDreamValueFromDbObject(_reader.GetValue(column));
             return true;
         } catch (Exception exception) {
-            _errorCode = 1;
-            _errorMessage = exception.Message;
+            // DM ignores any errors here, and just returns null
         }
 
         value = DreamValue.Null;
@@ -203,8 +201,8 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
                 dict[name] = GetDreamValueFromDbObject(value);
             }
         } catch (InvalidOperationException exception) {
-            _errorCode = 1;
-            _errorMessage = exception.Message;
+            // DM does not care for "no data" errors
+            // and does not report if this happens
         }
 
         return dict;

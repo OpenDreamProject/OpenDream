@@ -66,9 +66,7 @@ public sealed partial class DreamManager {
         ListPoolThreshold = _config.GetCVar(OpenDreamCVars.ListPoolThreshold);
         ListPoolSize = _config.GetCVar(OpenDreamCVars.ListPoolSize);
 
-        try {
-            ByondApi.ByondApi.Initialize(this, _refManager, _atomManager, _dreamMapManager, _objectTree);
-        } catch (Exception) {}
+        ByondApi.ByondApi.Initialize(this, _refManager, _atomManager, _dreamMapManager, _objectTree);
 
         InitializeConnectionManager();
         _dreamResourceManager.PreInitialize();

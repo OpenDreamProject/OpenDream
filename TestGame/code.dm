@@ -206,6 +206,17 @@
 	verb/roll_dice(dice as text)
 		var/result = roll(dice)
 		usr << "The total shown on the dice is: [result]"
+		
+	verb/give_other_verb()
+		usr.verbs += /mob/proc/given_other_verb
+		usr << "other verb given"
+		
+	verb/take_other_verb()
+		usr.verbs -= /mob/proc/given_other_verb
+		usr << "other verb taken"
+	
+	proc/given_other_verb()
+		usr << "other verb working"
 
 	verb/test_alert()
 		set category = "Test"

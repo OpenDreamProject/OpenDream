@@ -8,6 +8,8 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
     private SqliteCommand? _command;
     private SqliteDataReader? _reader;
 
+    public DreamObjectDatabase? DreamObjectDatabase;
+
     private string? _errorMessage;
     private int? _errorCode;
 
@@ -29,6 +31,7 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
 
         ClearCommand();
         CloseReader();
+        DreamObjectDatabase = null;
         base.HandleDeletion(possiblyThreaded);
     }
 
@@ -98,6 +101,8 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
             return DreamValue.Null;
         }
 
+        id = Math.Max(--id, 1);
+
         try {
             var name = _reader.GetName(id);
             return new DreamValue(name);
@@ -130,11 +135,13 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
     /// <summary>
     /// Executes the currently held query against the SQLite database
     /// </summary>
-    /// <param name="database">The <see cref="DreamObjectDatabase"/> that this query is being run against.</param>
+    /// <param name="database">The <see cref="Types.DreamObjectDatabase"/> that this query is being run against.</param>
     public void ExecuteCommand(DreamObjectDatabase database) {
         if (!database.TryGetConnection(out var connection)) {
             throw new DMCrashRuntime("Bad database");
         }
+
+        DreamObjectDatabase = database;
 
         if (_command == null) {
             return;
@@ -166,6 +173,8 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
             value = DreamValue.Null;
             return false;
         }
+
+        column = Math.Max(--column, 1);
 
         try {
             value = GetDreamValueFromDbObject(_reader.GetValue(column));

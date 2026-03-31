@@ -1,4 +1,6 @@
 ﻿using System.IO;
+// ReSharper disable once RedundantUsingDirective
+using System.Runtime.CompilerServices;
 using System.Text;
 using OpenDreamShared.Dream;
 

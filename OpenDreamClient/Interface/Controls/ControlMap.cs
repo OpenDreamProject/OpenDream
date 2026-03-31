@@ -140,7 +140,7 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
     private void UpdateAtomUnderMouse(ClientObjectReference? atom, Vector2 relativePos, Vector2i iconPos) {
         if (!_atomUnderMouse.Equals(atom)) {
             _entitySystemManager.Resolve(ref _appearanceSystem);
-            var name = (atom != null) ? _appearanceSystem.GetName(atom.Value) : string.Empty;
+            var name = (atom != null) ? _appearanceSystem.GetNameUnformatted(atom.Value) : string.Empty;
             Window?.SetStatus(name);
 
             if (_atomUnderMouse != null)

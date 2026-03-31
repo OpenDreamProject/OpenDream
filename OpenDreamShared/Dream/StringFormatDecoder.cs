@@ -8,18 +8,18 @@ public static class StringFormatDecoder {
     /// </summary>
     private static readonly ushort FormatPrefix = 0xFF00;
 
-    private static readonly StringBuilder UnformattedString = new();
+    private static readonly StringBuilder UnformattedStringBuilder = new();
 
     /// <returns>A new version of the string, with all formatting characters removed.</returns>
     public static string RemoveFormatting(string input) {
-        UnformattedString.Clear();
-        UnformattedString.EnsureCapacity(input.Length); // Trying to keep it to one malloc here
+        UnformattedStringBuilder.Clear();
+        UnformattedStringBuilder.EnsureCapacity(input.Length); // Trying to keep it to one malloc here
         foreach(char c in input) {
             ushort bytes = c;
             if((bytes & FormatPrefix) != FormatPrefix)
-                UnformattedString.Append(c);
+                UnformattedStringBuilder.Append(c);
         }
 
-        return UnformattedString.ToString();
+        return UnformattedStringBuilder.ToString();
     }
 }

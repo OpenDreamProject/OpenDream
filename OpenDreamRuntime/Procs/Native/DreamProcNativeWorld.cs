@@ -100,7 +100,7 @@ internal static class DreamProcNativeWorld {
                     return DreamValue.Null;
                 }
 
-                if (param.TryGetValueAsString(out var paramString) && Environment.GetEnvironmentVariable(paramString) is string strValue) {
+                if (param.TryGetValueAsString(out var paramString) && Environment.GetEnvironmentVariable(paramString) is { } strValue) {
                     return new DreamValue(strValue);
                 }
 

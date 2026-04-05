@@ -98,11 +98,13 @@ internal static class DreamProcNativeWorld {
                     // DM ref says: "If no parameter is specified, a list of the names of all available parameters is returned."
                     // but apparently it's actually just null for "env".
                     return DreamValue.Null;
-                } else if (param.TryGetValueAsString(out var paramString) && Environment.GetEnvironmentVariable(paramString) is string strValue) {
-                    return new DreamValue(strValue);
-                } else {
-                    return DreamValue.Null;
                 }
+
+                if (param.TryGetValueAsString(out var paramString) && Environment.GetEnvironmentVariable(paramString) is string strValue) {
+                    return new DreamValue(strValue);
+                }
+
+                return DreamValue.EmptyString;
             case "ban":
             case "keyban":
             case "ipban":

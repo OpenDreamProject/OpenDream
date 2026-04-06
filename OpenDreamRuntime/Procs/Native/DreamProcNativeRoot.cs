@@ -1886,7 +1886,6 @@ internal static class DreamProcNativeRoot {
                     }
                 }
             } else {
-                // NOTE: At some point BYOND's handling of duplicate keys changed from "use the last value" to "create a list of values for that key"
                 if (queryValues.Length > 1)
                     list.SetValue(new DreamValue(queryKey), new DreamValue(objectTree.CreateList(queryValues)));
                 else

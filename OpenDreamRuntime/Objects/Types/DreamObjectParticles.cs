@@ -4,13 +4,23 @@ using OpenDreamShared.Rendering;
 namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectParticles : DreamObject {
-    public readonly DreamParticlesComponent ParticlesComponent;
+    public DreamObjectMovable? Owner {
+        set {
+            if (field != null)
+                EntityManager.RemoveComponent(field.Entity, _particlesComponent);
 
-    private readonly List<MutableAppearance> _icons = new();
-    private readonly List<string> _iconStates = new();
+            field = value;
+            if (field != null)
+                EntityManager.AddComponent(field.Entity, _particlesComponent);
+        }
+    }
+
+    private DreamParticlesComponent _particlesComponent;
+    private List<MutableAppearance> _icons = new();
+    private List<string> _iconStates = new();
 
     public DreamObjectParticles(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
-        ParticlesComponent = new DreamParticlesComponent();
+        _particlesComponent = new DreamParticlesComponent();
 
         //populate component with settings from type
         foreach (KeyValuePair<string,DreamValue> kv in ObjectDefinition.Variables) {
@@ -19,23 +29,32 @@ public sealed class DreamObjectParticles : DreamObject {
         }
     }
 
+    protected override void HandleDeletion(bool possiblyThreaded) {
+        Owner = null;
+        _icons = null!;
+        _iconStates = null!;
+        _particlesComponent = null!;
+
+        base.HandleDeletion(possiblyThreaded);
+    }
+
     protected override void SetVar(string varName, DreamValue value) {
         //good news, these only update on assignment, so we don't need to track the generator, list, or matrix objects
         switch (varName) {
             case "width": //num
-                ParticlesComponent.Width = (int)value.UnsafeGetValueAsFloat();
+                _particlesComponent.Width = (int)value.UnsafeGetValueAsFloat();
                 break;
             case "height": //num
-                ParticlesComponent.Height = (int)value.UnsafeGetValueAsFloat();
+                _particlesComponent.Height = (int)value.UnsafeGetValueAsFloat();
                 break;
             case "count": //num
                 if (!value.TryGetValueAsInteger(out var count))
                     break;
 
-                ParticlesComponent.Count = count;
+                _particlesComponent.Count = count;
                 break;
             case "spawning": //num
-                ParticlesComponent.Spawning = value.UnsafeGetValueAsFloat();
+                _particlesComponent.Spawning = value.UnsafeGetValueAsFloat();
                 break;
             case "bound1": //list or vector
                 if (value.TryGetValueAsDreamList(out var bound1List) && bound1List.GetLength() >= 3) {
@@ -43,7 +62,7 @@ public sealed class DreamObjectParticles : DreamObject {
                     var boundY = bound1List.GetValue(new(2)).UnsafeGetValueAsFloat();
                     var boundZ = bound1List.GetValue(new(3)).UnsafeGetValueAsFloat();
 
-                    ParticlesComponent.Bound1 = new Vector3(boundX, boundY, boundZ);
+                    _particlesComponent.Bound1 = new Vector3(boundX, boundY, boundZ);
                 } //else if vector
 
                 break;
@@ -53,7 +72,7 @@ public sealed class DreamObjectParticles : DreamObject {
                     var boundY = bound2List.GetValue(new(2)).UnsafeGetValueAsFloat();
                     var boundZ = bound2List.GetValue(new(3)).UnsafeGetValueAsFloat();
 
-                    ParticlesComponent.Bound2 = new Vector3(boundX, boundY, boundZ);
+                    _particlesComponent.Bound2 = new Vector3(boundX, boundY, boundZ);
                 } //else if vector
 
                 break;
@@ -63,7 +82,7 @@ public sealed class DreamObjectParticles : DreamObject {
                     var gravityY = gravityList.GetValue(new(2)).UnsafeGetValueAsFloat();
                     var gravityZ = gravityList.GetValue(new(3)).UnsafeGetValueAsFloat();
 
-                    ParticlesComponent.Gravity = new Vector3(gravityX, gravityY, gravityZ);
+                    _particlesComponent.Gravity = new Vector3(gravityX, gravityY, gravityZ);
                 } //else if vector
 
                 break;
@@ -80,14 +99,14 @@ public sealed class DreamObjectParticles : DreamObject {
                         grad[i++] = c;
                     }
 
-                    ParticlesComponent.Gradient = grad;
+                    _particlesComponent.Gradient = grad;
                 }
 
                 break;
             case "transform": //matrix
                 if (value.TryGetValueAsDreamObject<DreamObjectMatrix>(out var matrix)) {
                     float[] m = DreamObjectMatrix.MatrixToTransformFloatArray(matrix);
-                    ParticlesComponent.Transform = new(m[0], m[1], m[2], m[3], m[4], m[5]);
+                    _particlesComponent.Transform = new(m[0], m[1], m[2], m[3], m[4], m[5]);
                 }
 
                 break;
@@ -117,7 +136,7 @@ public sealed class DreamObjectParticles : DreamObject {
                     }
                 }
 
-                ParticlesComponent.TextureList = immutableAppearances.ToArray();
+                _particlesComponent.TextureList = immutableAppearances.ToArray();
                 break;
             case "icon_state": //list or string
                 _iconStates.Clear();
@@ -141,117 +160,117 @@ public sealed class DreamObjectParticles : DreamObject {
                     }
                 }
 
-                ParticlesComponent.TextureList = immutableAppearances.ToArray();
+                _particlesComponent.TextureList = immutableAppearances.ToArray();
                 break;
             case "lifespan": //num or generator
                 if (value.TryGetValueAsFloat(out float floatValue)) {
-                    ParticlesComponent.Lifespan = new GeneratorNum(floatValue);
+                    _particlesComponent.Lifespan = new GeneratorNum(floatValue);
                 } else if (value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var generator)) {
-                    ParticlesComponent.Lifespan = generator.RequireType<IGeneratorNum>();
+                    _particlesComponent.Lifespan = generator.RequireType<IGeneratorNum>();
                 }
 
                 break;
             case "fadein": //num or generator
                 if (value.TryGetValueAsInteger(out int intValue)) {
-                    ParticlesComponent.FadeIn = new GeneratorNum(intValue);
+                    _particlesComponent.FadeIn = new GeneratorNum(intValue);
                 } else if (value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var generator)) {
-                    ParticlesComponent.FadeIn = generator.RequireType<IGeneratorNum>();
+                    _particlesComponent.FadeIn = generator.RequireType<IGeneratorNum>();
                 }
 
                 break;
             case "fade": //num or generator
                 if (value.TryGetValueAsInteger(out intValue)) {
-                    ParticlesComponent.FadeOut = new GeneratorNum(intValue);
+                    _particlesComponent.FadeOut = new GeneratorNum(intValue);
                 } else if (value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var generator)) {
-                    ParticlesComponent.FadeOut = generator.RequireType<IGeneratorNum>();
+                    _particlesComponent.FadeOut = generator.RequireType<IGeneratorNum>();
                 }
 
                 break;
             case "position": //num, list, vector, or generator
                 if (value.TryGetValueAsFloat(out floatValue)) {
-                    ParticlesComponent.SpawnPosition = new GeneratorNum(floatValue);
+                    _particlesComponent.SpawnPosition = new GeneratorNum(floatValue);
                 } else if (value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var generator)) {
-                    ParticlesComponent.SpawnPosition = generator.RequireType<IGeneratorVector>();
+                    _particlesComponent.SpawnPosition = generator.RequireType<IGeneratorVector>();
                 } else if (DreamObjectVector.TryCreateFromValue(value, ObjectTree, out var vector)) {
-                    ParticlesComponent.SpawnPosition = new GeneratorVector2(vector.AsVector2);
+                    _particlesComponent.SpawnPosition = new GeneratorVector2(vector.AsVector2);
                 } else {
-                    ParticlesComponent.SpawnPosition = new GeneratorVector2(Vector2.Zero);
+                    _particlesComponent.SpawnPosition = new GeneratorVector2(Vector2.Zero);
                 }
 
                 break;
             case "velocity": //num, list, vector, or generator
                 if (value.TryGetValueAsFloat(out floatValue)) {
-                    ParticlesComponent.SpawnVelocity = new GeneratorNum(floatValue);
+                    _particlesComponent.SpawnVelocity = new GeneratorNum(floatValue);
                 } else if (value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var generator)) {
-                    ParticlesComponent.SpawnVelocity = generator.RequireType<IGeneratorVector>();
+                    _particlesComponent.SpawnVelocity = generator.RequireType<IGeneratorVector>();
                 } else if (DreamObjectVector.TryCreateFromValue(value, ObjectTree, out var vector)) {
-                    ParticlesComponent.SpawnVelocity = new GeneratorVector2(vector.AsVector2);
+                    _particlesComponent.SpawnVelocity = new GeneratorVector2(vector.AsVector2);
                 } else {
-                    ParticlesComponent.SpawnVelocity = new GeneratorVector2(Vector2.Zero);
+                    _particlesComponent.SpawnVelocity = new GeneratorVector2(Vector2.Zero);
                 }
 
                 break;
             case "scale": //num, list, vector, or generator
                 if (value.TryGetValueAsFloat(out floatValue)) {
-                    ParticlesComponent.Scale = new GeneratorNum(floatValue);
+                    _particlesComponent.Scale = new GeneratorNum(floatValue);
                 } else if (value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var generator)) {
-                    ParticlesComponent.Scale = generator.RequireType<IGeneratorVector>();
+                    _particlesComponent.Scale = generator.RequireType<IGeneratorVector>();
                 } else if (DreamObjectVector.TryCreateFromValue(value, ObjectTree, out var vector)) {
-                    ParticlesComponent.Scale = new GeneratorVector2(vector.AsVector2);
+                    _particlesComponent.Scale = new GeneratorVector2(vector.AsVector2);
                 } else {
-                    ParticlesComponent.Scale = new GeneratorVector2(Vector2.One);
+                    _particlesComponent.Scale = new GeneratorVector2(Vector2.One);
                 }
 
                 break;
             case "grow": //num, list, vector, or generator
                 if (value.TryGetValueAsFloat(out floatValue)) {
-                    ParticlesComponent.Growth = new GeneratorNum(floatValue);
+                    _particlesComponent.Growth = new GeneratorNum(floatValue);
                 } else if (value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var generator)) {
-                    ParticlesComponent.Growth = generator.RequireType<IGeneratorVector>();
+                    _particlesComponent.Growth = generator.RequireType<IGeneratorVector>();
                 } else if (DreamObjectVector.TryCreateFromValue(value, ObjectTree, out var vector)) {
-                    ParticlesComponent.Growth = new GeneratorVector2(vector.AsVector2);
+                    _particlesComponent.Growth = new GeneratorVector2(vector.AsVector2);
                 } else {
-                    ParticlesComponent.Growth = new GeneratorVector2(Vector2.Zero);
+                    _particlesComponent.Growth = new GeneratorVector2(Vector2.Zero);
                 }
 
                 break;
             case "rotation": //num or generator
                 if (value.TryGetValueAsFloat(out floatValue)) {
-                    ParticlesComponent.Rotation = new GeneratorNum(floatValue);
+                    _particlesComponent.Rotation = new GeneratorNum(floatValue);
                 } else if (value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var generator)) {
-                    ParticlesComponent.Rotation = generator.RequireType<IGeneratorNum>();
+                    _particlesComponent.Rotation = generator.RequireType<IGeneratorNum>();
                 }
 
                 break;
             case "spin": //num or generator
                 if (value.TryGetValueAsFloat(out floatValue)) {
-                    ParticlesComponent.Spin = new GeneratorNum(floatValue);
+                    _particlesComponent.Spin = new GeneratorNum(floatValue);
                 } else if (value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var generator)) {
-                    ParticlesComponent.Spin = generator.RequireType<IGeneratorNum>();
+                    _particlesComponent.Spin = generator.RequireType<IGeneratorNum>();
                 }
 
                 break;
             case "friction": //num, vector, or generator
                 if (value.TryGetValueAsFloat(out floatValue)) {
-                    ParticlesComponent.Friction = new GeneratorNum(floatValue);
+                    _particlesComponent.Friction = new GeneratorNum(floatValue);
                 } else if (value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var generator)) {
-                    ParticlesComponent.Friction = generator.RequireType<IGeneratorVector>();
+                    _particlesComponent.Friction = generator.RequireType<IGeneratorVector>();
                 } else if (DreamObjectVector.TryCreateFromValue(value, ObjectTree, out var vector)) {
-                    ParticlesComponent.Friction = new GeneratorVector2(vector.AsVector2);
+                    _particlesComponent.Friction = new GeneratorVector2(vector.AsVector2);
                 } else {
-                    ParticlesComponent.Friction = new GeneratorVector2(Vector2.Zero);
+                    _particlesComponent.Friction = new GeneratorVector2(Vector2.Zero);
                 }
 
                 break;
             case "drift": //num, vector, or generator
                 if (value.TryGetValueAsFloat(out floatValue)) {
-                    ParticlesComponent.Drift = new GeneratorNum(floatValue);
+                    _particlesComponent.Drift = new GeneratorNum(floatValue);
                 } else if (value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var generator)) {
-                    ParticlesComponent.Drift = generator.RequireType<IGeneratorVector>();
+                    _particlesComponent.Drift = generator.RequireType<IGeneratorVector>();
                 } else if (DreamObjectVector.TryCreateFromValue(value, ObjectTree, out var vector)) {
-                    ParticlesComponent.Drift = new GeneratorVector2(vector.AsVector2);
+                    _particlesComponent.Drift = new GeneratorVector2(vector.AsVector2);
                 } else {
-                    ParticlesComponent.Drift = new GeneratorVector2(Vector2.Zero);
+                    _particlesComponent.Drift = new GeneratorVector2(Vector2.Zero);
                 }
 
                 break;

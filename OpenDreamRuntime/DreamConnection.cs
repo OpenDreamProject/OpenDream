@@ -16,6 +16,7 @@ namespace OpenDreamRuntime;
 
 public sealed class DreamConnection {
     [Dependency] private readonly DreamManager _dreamManager = default!;
+    [Dependency] private readonly DreamRefManager _refManager = default!;
     [Dependency] private readonly DreamObjectTree _objectTree = default!;
     [Dependency] private readonly DreamResourceManager _resourceManager = default!;
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
@@ -233,7 +234,7 @@ public sealed class DreamConnection {
         DreamValue src = DreamValue.Null;
 
         if (srcRefValue.TryGetValueAsString(out var srcRef)) {
-            src = _dreamManager.LocateRef(srcRef);
+            src = _refManager.LocateRef(srcRef);
         }
 
         Client?.SpawnProc("Topic", usr: Mob, new(pTopic.Query), new(hrefList), src);

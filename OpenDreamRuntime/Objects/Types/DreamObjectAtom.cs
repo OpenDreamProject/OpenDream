@@ -13,20 +13,6 @@ public class DreamObjectAtom : DreamObject {
         Underlays = new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
         VisContents = new(ObjectTree.List.ObjectDefinition, PvsOverrideSystem, this);
         Filters = new(ObjectTree.List.ObjectDefinition, this);
-
-        AtomManager.AddAtom(this);
-    }
-
-    protected override void HandleDeletion(bool possiblyThreaded) {
-        // SAFETY: RemoveAtom is not threadsafe.
-        if (possiblyThreaded) {
-            EnterIntoDelQueue();
-            return;
-        }
-
-        AtomManager.RemoveAtom(this);
-
-        base.HandleDeletion(possiblyThreaded);
     }
 
     public string GetRTEntityDesc() {
@@ -59,7 +45,7 @@ public class DreamObjectAtom : DreamObject {
                 value = new(Underlays);
                 return true;
             case "verbs":
-                value = new(new VerbsList(ObjectTree, AtomManager, VerbSystem, this));
+                value = new(new VerbsList(ObjectTree, AtomManager, this));
                 return true;
             case "filters":
                 value = new(Filters);

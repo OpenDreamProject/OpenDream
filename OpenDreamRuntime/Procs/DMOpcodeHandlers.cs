@@ -172,7 +172,9 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (type.ObjectDefinition.IsSubtypeOf(state.Proc.ObjectTree.Datum)) {
-                state.Enumerators[enumeratorId] = new DreamObjectEnumerator(state.DreamManager.IterateDatums(), type);
+                var datumEnumerator = state.Proc.RefManager.EnumerateType(RefType.DreamObjectDatum);
+
+                state.Enumerators[enumeratorId] = new DreamObjectEnumerator(datumEnumerator, type);
                 return ProcStatus.Continue;
             }
 
@@ -431,7 +433,9 @@ namespace OpenDreamRuntime.Procs {
                         continue;
                     }
                     case FormatSuffix.ReferenceOfValue: {
-                        formattedString.Append(state.DreamManager.CreateRef(interps[nextInterpIndex]));
+                        var refStr = state.Proc.RefManager.GetRefString(interps[nextInterpIndex]);
+                        formattedString.Append(refStr);
+
                         //suffix macro marker is not updated because suffixes do not point to \ref[] interpolations
                         nextInterpIndex++;
                         continue;
@@ -2425,7 +2429,7 @@ suffix
             }
 
             if (value.TryGetValueAsString(out var refString)) {
-                var refValue = state.DreamManager.LocateRef(refString);
+                var refValue = state.Proc.RefManager.LocateRef(refString);
                 if(container is not DreamObjectWorld && containerList is not null) { //if it's a valid ref, it's in world, we don't need to check
                     state.Push(containerList.ContainsValue(refValue) ? refValue : DreamValue.Null);
                     return ProcStatus.Continue;

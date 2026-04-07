@@ -1886,9 +1886,10 @@ internal static class DreamProcNativeRoot {
                     }
                 }
             } else {
-                string queryValue = queryValues[^1]; //Use the last appearance of the key in the query
-
-                list.SetValue(new DreamValue(queryKey), new DreamValue(queryValue));
+                if (queryValues.Length > 1)
+                    list.SetValue(new DreamValue(queryKey), new DreamValue(objectTree.CreateList(queryValues)));
+                else
+                    list.SetValue(new DreamValue(queryKey), new DreamValue(queryValues[0]));
             }
         }
 

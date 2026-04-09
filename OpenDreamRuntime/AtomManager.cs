@@ -271,7 +271,7 @@ public sealed class AtomManager {
             case "transform":
                 float[] transformArray = value.TryGetValueAsDreamObject<DreamObjectMatrix>(out var transform)
                     ? DreamObjectMatrix.MatrixToTransformFloatArray(transform)
-                    : DreamObjectMatrix.IdentityMatrixArray;
+                    : MutableAppearance.Default.Transform;
 
                 appearance.Transform = transformArray;
                 break;

@@ -255,13 +255,20 @@ internal sealed class Rgb(Location location, ArgumentList arguments) : DMExpress
     }
 }
 
-// Animate(...)
-internal sealed class Animate(Location location, ArgumentList arguments) : DMExpression(location) {
+// animate(...)
+internal sealed class Animate(Location location, DMExpression? animateObject, Dictionary<string, DMExpression> animateArgs) : DMExpression(location) {
     public override void EmitPushValue(ExpressionContext ctx) {
-        ctx.ObjectTree.TryGetGlobalProc("animate", out var dmProc);
-        var argInfo = arguments.EmitArguments(ctx, dmProc);
+        if (animateObject != null)
+            animateObject.EmitPushValue(ctx);
+        else
+            ctx.Proc.PushNull();
 
-        ctx.Proc.Animate(argInfo.Type, argInfo.StackSize);
+        foreach (var arg in animateArgs) {
+            ctx.Proc.PushString(arg.Key);
+            arg.Value.EmitPushValue(ctx);
+        }
+
+        ctx.Proc.Animate(animateArgs.Count);
     }
 }
 

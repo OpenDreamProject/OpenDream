@@ -1,5 +1,4 @@
 using System.Runtime.InteropServices;
-using DMCompiler.Bytecode;
 using Api = OpenDreamRuntime.ByondApi.ByondApi;
 
 namespace OpenDreamRuntime.Procs;
@@ -8,7 +7,7 @@ internal static partial class DMOpcodeHandlers {
     private static ProcStatus CallExt(
         DMProcState state,
         DreamValue source,
-        (DMCallArgumentsType Type, int StackSize) argumentsInfo) {
+        DMProcState.DMStackArgumentInfo argumentsInfo) {
         if(!source.TryGetValueAsString(out var dllName))
             throw new Exception($"{source} is not a valid DLL");
 
@@ -17,7 +16,7 @@ internal static partial class DMOpcodeHandlers {
             throw new Exception($"{popProc} is not a valid proc name");
         }
 
-        DreamProcArguments arguments = state.PopProcArguments(null, argumentsInfo.Type, argumentsInfo.StackSize);
+        DreamProcArguments arguments = state.PopProcArguments(null, argumentsInfo);
 
         // If we're on linux, we use a .so instead of a .dll
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && dllName.EndsWith(".dll")) {

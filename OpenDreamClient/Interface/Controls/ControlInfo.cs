@@ -183,6 +183,7 @@ internal sealed class VerbPanel : InfoPanel {
     private readonly ClientVerbSystem? _verbSystem;
 
     private readonly VerbPanelGrid _grid;
+    private readonly Dictionary<(int VerbId, ClientObjectReference Src), Button> _verbButtons = new();
 
     private Color _highlightColor;
     private Color _textColor;
@@ -218,35 +219,53 @@ internal sealed class VerbPanel : InfoPanel {
     }
 
     public void RefreshVerbs(IEnumerable<(int, ClientObjectReference, VerbSystem.VerbInfo)> verbs) {
-        _grid.Children.Clear();
+        var panelVerbs = verbs
+            .Where(v => v.Item3.GetCategoryOrDefault(DefaultVerbPanel) == PanelName)
+            .Order(VerbNameComparer.OrdinalInstance)
+            .ToList();
 
-        foreach (var (verbId, src, verbInfo) in verbs.Order(VerbNameComparer.OrdinalInstance)) {
-            if (verbInfo.GetCategoryOrDefault(DefaultVerbPanel) != PanelName)
-                continue;
+        var seenKeys = new HashSet<(int, ClientObjectReference)>(panelVerbs.Count);
+        var gridIndex = 0;
+        foreach (var (verbId, src, verbInfo) in panelVerbs) {
+            var key = (verbId, src);
+            seenKeys.Add(key);
 
-            Button verbButton = new Button {
-                Margin = new Thickness(2),
-                Text = verbInfo.Name,
-                TextAlign = Label.AlignMode.Center
-            };
+            if (!_verbButtons.ContainsKey(key)) {
+                var verbButton = new Button {
+                    Margin = new Thickness(2),
+                    Text = verbInfo.Name,
+                    TextAlign = Label.AlignMode.Center
+                };
 
-            verbButton.Label.Margin = new Thickness(6, 0, 6, 2);
-            verbButton.Label.FontColorOverride = _textColor;
-            verbButton.StyleBoxOverride = new StyleBoxEmpty();
-
-            verbButton.OnButtonDown += _ => {
-                _verbSystem?.ExecuteVerb(src, verbId);
-            };
-
-            verbButton.OnMouseEntered += _ => {
-                verbButton.Label.FontColorOverride = _highlightColor;
-            };
-
-            verbButton.OnMouseExited += _ => {
+                verbButton.Label.Margin = new Thickness(6, 0, 6, 2);
                 verbButton.Label.FontColorOverride = _textColor;
-            };
+                verbButton.StyleBoxOverride = new StyleBoxEmpty();
 
-            _grid.Children.Add(verbButton);
+                verbButton.OnButtonDown += _ => {
+                    _verbSystem?.ExecuteVerb(src, verbId);
+                };
+
+                verbButton.OnMouseEntered += _ => {
+                    verbButton.Label.FontColorOverride = _highlightColor;
+                };
+
+                verbButton.OnMouseExited += _ => {
+                    verbButton.Label.FontColorOverride = _textColor;
+                };
+
+                _verbButtons[key] = verbButton;
+                _grid.AddChild(verbButton);
+                verbButton.SetPositionInParent(gridIndex);
+            }
+
+            gridIndex++;
+        }
+
+        foreach (var key in _verbButtons.Keys.ToList()) {
+            if (seenKeys.Contains(key)) continue;
+
+            _grid.Children.Remove(_verbButtons[key]);
+            _verbButtons.Remove(key);
         }
     }
 }

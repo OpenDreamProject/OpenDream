@@ -350,7 +350,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         return false;
     }
 
-    public string GetName(ClientObjectReference reference) {
+    public string GetNameUnformatted(ClientObjectReference reference) {
         switch (reference.Type) {
             case ClientObjectReference.RefType.Client:
                 return _playerManager.LocalSession?.Name ?? "<unknown>";
@@ -359,7 +359,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
                 if (!TryGetAppearance(reference, out var appearance))
                     break;
 
-                return appearance.Name;
+                return StringFormatDecoder.RemoveFormatting(appearance.Name);
         }
 
         return "<unknown>";

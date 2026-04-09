@@ -90,26 +90,10 @@ public static class StringFormatEncoder {
         return true;
     }
 
-    public static bool Decode(char c) {
-        ushort bytes = c;
-        return (bytes & FormatPrefix) == FormatPrefix; // Could also check that the lower byte is a valid enum but... ehhhhh
-    }
-
     /// <returns>true if argument is a marker for an interpolated value, one of them [] things. false if not.</returns>
     public static bool IsInterpolation(FormatSuffix suffix) {
         //This logic requires that all the interpolated-value enums keep separated from the others.
         //I'd write some type-engine code to catch a discrepancy in that but alas, this language is just not OOPy enough.
         return suffix <= FormatSuffix.ReferenceOfValue;
-    }
-
-    /// <returns>A new version of the string, with all formatting characters removed.</returns>
-    public static string RemoveFormatting(string input) {
-        StringBuilder ret = new StringBuilder(input.Length); // Trying to keep it to one malloc here
-        foreach(char c in input) {
-            if(!Decode(c))
-                ret.Append(c);
-        }
-
-        return ret.ToString();
     }
 }

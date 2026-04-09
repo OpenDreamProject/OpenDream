@@ -1,28 +1,28 @@
-﻿using System.IO;
-using System.Text;
-using System.Globalization;
-using OpenDreamShared.Network.Messages;
-using OpenDreamClient.Interface.Controls;
-using OpenDreamShared.Interface.Descriptors;
-using OpenDreamShared.Interface.DMF;
+﻿using OpenDreamClient.Interface.Controls;
 using OpenDreamClient.Interface.Prompts;
 using OpenDreamClient.Resources;
 using OpenDreamClient.Resources.ResourceTypes;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Interface.Descriptors;
+using OpenDreamShared.Interface.DMF;
+using OpenDreamShared.Network.Messages;
 using Robust.Client;
 using Robust.Client.Graphics;
 using Robust.Client.Input;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.ContentPack;
+using Robust.Shared.Map;
 using Robust.Shared.Network;
 using Robust.Shared.Random;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 using SixLabors.ImageSharp;
+using System.Globalization;
+using System.IO;
 using System.Linq;
-using Robust.Shared.Map;
+using System.Text;
 
 namespace OpenDreamClient.Interface;
 
@@ -135,7 +135,12 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         _netManager.RegisterNetMessage<MsgLoadInterface>(RxLoadInterface);
         _netManager.RegisterNetMessage<MsgAckLoadInterface>();
         _netManager.RegisterNetMessage<MsgUpdateClientInfo>(RxUpdateClientInfo);
+        _netManager.RegisterNetMessage<MsgNotifyMobEyeUpdate>(RxNotifyMobEyeUpdate);
         _clyde.OnWindowFocused += OnWindowFocused;
+    }
+
+    private void RxNotifyMobEyeUpdate(MsgNotifyMobEyeUpdate message) {
+        _entitySystemManager.GetEntitySystem<DreamClientSystem>().RxNotifyMobEyeUpdate(message);
     }
 
     private void RxUpdateStatPanels(MsgUpdateStatPanels message) {

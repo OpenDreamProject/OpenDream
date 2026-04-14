@@ -221,10 +221,9 @@ internal sealed class VerbPanel : InfoPanel {
     public void RefreshVerbs(IEnumerable<(int, ClientObjectReference, VerbSystem.VerbInfo)> verbs) {
         var panelVerbs = verbs
             .Where(v => v.Item3.GetCategoryOrDefault(DefaultVerbPanel) == PanelName)
-            .Order(VerbNameComparer.OrdinalInstance)
-            .ToList();
+            .Order(VerbNameComparer.OrdinalInstance);
 
-        var seenKeys = new HashSet<(int, ClientObjectReference)>(panelVerbs.Count);
+        var seenKeys = new HashSet<(int, ClientObjectReference)>();
         var gridIndex = 0;
         foreach (var (verbId, src, verbInfo) in panelVerbs) {
             var key = (verbId, src);
@@ -261,10 +260,10 @@ internal sealed class VerbPanel : InfoPanel {
             gridIndex++;
         }
 
-        foreach (var key in _verbButtons.Keys.ToList()) {
+        foreach (var key in _verbButtons.Keys) {
             if (seenKeys.Contains(key)) continue;
 
-            _grid.Children.Remove(_verbButtons[key]);
+            _grid.RemoveChild(_verbButtons[key]);
             _verbButtons.Remove(key);
         }
     }

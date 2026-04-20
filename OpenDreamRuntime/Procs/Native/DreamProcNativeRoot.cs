@@ -1233,7 +1233,7 @@ internal static class DreamProcNativeRoot {
                 writer.WriteEndObject();
             }
         } else if (value.TryGetValueAsString(out var text))
-            writer.WriteStringValue(text);
+            writer.WriteStringValue(StringFormatDecoder.RemoveFormatting(text));
         else if (value.TryGetValueAsType(out var type))
             writer.WriteStringValue(type.Path);
         else if (value.TryGetValueAsProc(out var proc))

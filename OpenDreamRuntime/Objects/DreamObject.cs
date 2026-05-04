@@ -8,6 +8,7 @@ using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
+using OpenDreamShared.Dream;
 using Robust.Server.GameObjects;
 using Robust.Server.GameStates;
 using Robust.Shared.Map;
@@ -383,7 +384,7 @@ public class DreamObject {
 
         var name = GetRawName();
         bool isProper = StringIsProper(name);
-        name = StringFormatEncoder.RemoveFormatting(name); // TODO: Care about other formatting macros for obj names beyond \proper & \improper
+        name = StringFormatDecoder.RemoveFormatting(name); // TODO: Care about other formatting macros for obj names beyond \proper & \improper
         if(!isProper) {
             return name;
         }
@@ -402,7 +403,7 @@ public class DreamObject {
     /// Similar to <see cref="GetDisplayName"/> except it just returns the name as plaintext, with formatting removed. No article or anything.
     /// </summary>
     public string GetNameUnformatted() {
-        return StringFormatEncoder.RemoveFormatting(GetRawName());
+        return StringFormatDecoder.RemoveFormatting(GetRawName());
     }
 
     /// <summary>

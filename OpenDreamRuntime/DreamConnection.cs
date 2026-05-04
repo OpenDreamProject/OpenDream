@@ -286,7 +286,7 @@ public sealed class DreamConnection {
 
         // Prune any remaining formatting
         var message = value.Stringify();
-        message = StringFormatEncoder.RemoveFormatting(message);
+        message = StringFormatDecoder.RemoveFormatting(message);
 
         OutputControl(message, null);
     }

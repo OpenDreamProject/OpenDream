@@ -55,6 +55,8 @@ public class DreamObjectMovable : DreamObjectAtom {
     protected override void HandleDeletion() {
         SetLoc(null);
         WalkManager.StopWalks(this);
+        _particles?.Delete();
+        _particles = null;
         AtomManager.DeleteMovableEntity(this);
 
         _contents.DecRef();
@@ -145,22 +147,16 @@ public class DreamObjectMovable : DreamObjectAtom {
                 break;
             case "particles":
                 if (value.TryGetValueAsDreamObject<DreamObjectParticles>(out var particles)) {
-                    if (particles == _particles) {
-                        ParticlesSystem!.MarkDirty((Entity, _particles.ParticlesComponent));
-                        return;
-                    }
+                    if (_particles == particles)
+                        break;
 
-                    if (_particles != null)
-                        EntityManager.RemoveComponent(Entity, _particles.ParticlesComponent);
-
+                    _particles?.Owner = null;
                     particles.IncRef();
                     _particles?.DecRef();
                     _particles = particles;
-
-                    EntityManager.AddComponent(Entity, _particles.ParticlesComponent);
-                    ParticlesSystem!.MarkDirty((Entity, _particles.ParticlesComponent));
-                } else if (_particles != null) {
-                    EntityManager.RemoveComponent(Entity, _particles.ParticlesComponent);
+                    _particles.Owner = this;
+                } else {
+                    _particles?.Owner = null;
                     _particles?.DecRef();
                     _particles = null;
                 }

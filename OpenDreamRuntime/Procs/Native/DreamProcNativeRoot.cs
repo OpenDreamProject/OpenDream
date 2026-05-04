@@ -1243,7 +1243,7 @@ internal static class DreamProcNativeRoot {
                 writer.WriteEndObject();
             }
         } else if (value.TryGetValueAsString(out var text))
-            writer.WriteStringValue(text);
+            writer.WriteStringValue(StringFormatDecoder.RemoveFormatting(text));
         else if (value.TryGetValueAsType(out var type))
             writer.WriteStringValue(type.Path);
         else if (value.TryGetValueAsProc(out var proc))
@@ -1909,9 +1909,10 @@ internal static class DreamProcNativeRoot {
                     }
                 }
             } else {
-                string queryValue = queryValues[^1]; //Use the last appearance of the key in the query
-
-                list.SetValue(new DreamValue(queryKey), new DreamValue(queryValue));
+                if (queryValues.Length > 1)
+                    list.SetValue(new DreamValue(queryKey), new DreamValue(objectTree.CreateList(queryValues)));
+                else
+                    list.SetValue(new DreamValue(queryKey), new DreamValue(queryValues[0]));
             }
         }
 

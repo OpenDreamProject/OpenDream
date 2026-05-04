@@ -229,7 +229,6 @@ internal sealed class DMProc {
             Name = Name,
             Attributes = Attributes,
             MaxStackSize = AnnotatedBytecode.GetMaxStackSize(),
-            LocalCount = _localVariableIdCounter,
             Bytecode = serializer.Serialize(AnnotatedBytecode.GetAnnotatedBytecode()),
             Arguments = arguments,
             SourceInfo = serializer.SourceInfo,

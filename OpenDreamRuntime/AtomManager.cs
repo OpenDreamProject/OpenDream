@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using JetBrains.Annotations;
 using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
@@ -344,10 +345,12 @@ public sealed class AtomManager {
     }
 
     //TODO THIS IS A SUPER NASTY HACK
+    [MustDisposeResource]
     public DreamValue GetAppearanceVar(MutableAppearance appearance, string varName) {
         return GetAppearanceVar(new ImmutableAppearance(appearance, null), varName);
     }
 
+    [MustDisposeResource]
     public DreamValue GetAppearanceVar(ImmutableAppearance appearance, string varName) {
         switch (varName) {
             case "name":
@@ -692,6 +695,34 @@ public sealed class AtomManager {
         }
 
         _definitionAppearanceCache.Add(def, appearance);
+        nameVar.Dispose();
+        descVar.Dispose();
+        iconVar.Dispose();
+        stateVar.Dispose();
+        colorVar.Dispose();
+        alphaVar.Dispose();
+        glideSizeVar.Dispose();
+        dirVar.Dispose();
+        invisibilityVar.Dispose();
+        opacityVar.Dispose();
+        mouseVar.Dispose();
+        xVar.Dispose();
+        yVar.Dispose();
+        layerVar.Dispose();
+        planeVar.Dispose();
+        renderSourceVar.Dispose();
+        renderTargetVar.Dispose();
+        blendModeVar.Dispose();
+        appearanceFlagsVar.Dispose();
+        maptextVar.Dispose();
+        maptextWidthVar.Dispose();
+        maptextHeightVar.Dispose();
+        maptextXVar.Dispose();
+        maptextYVar.Dispose();
+        mouseOverPointer.Dispose();
+        mouseDragPointer.Dispose();
+        mouseDropPointer.Dispose();
+        mouseDropZone.Dispose();
         return appearance;
     }
 

@@ -36,7 +36,14 @@ public sealed class DreamObjectArea : DreamObjectAtom {
         Appearance = AppearanceSystem!.DefaultAppearance;
         Turfs = new();
         _contents = new(ObjectTree.List.ObjectDefinition, this);
+        _contents.IncRef();
         AtomManager.SetAtomAppearance(this, AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
+    }
+
+    protected override void HandleDeletion() {
+        _contents.DecRef();
+        _contents.Delete();
+        base.HandleDeletion();
     }
 
     /// <summary>
@@ -58,6 +65,7 @@ public sealed class DreamObjectArea : DreamObjectAtom {
                 value = new(Z);
                 return true;
             case "contents":
+                _contents.IncRef();
                 value = new(_contents);
                 return true;
             default:

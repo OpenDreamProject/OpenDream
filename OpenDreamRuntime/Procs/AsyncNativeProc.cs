@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using DMCompiler.DM;
+using JetBrains.Annotations;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Resources;
 using Dependency = Robust.Shared.IoC.DependencyAttribute;
@@ -49,15 +50,19 @@ namespace OpenDreamRuntime.Procs {
                 IoCManager.InjectDependencies(this);
             }
 
-            public void Initialize(AsyncNativeProc? proc, Func<AsyncNativeProcState, Task<DreamValue>> taskFunc, DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
+            public void Initialize(AsyncNativeProc? proc, Func<AsyncNativeProcState, Task<DreamValue>> taskFunc, DreamThread thread, DreamObject? src, DreamObject? usr, [HandlesResourceDisposal] DreamProcArguments arguments) {
                 base.Initialize(thread, true);
+
+                arguments.Values.CopyTo(_arguments);
+                foreach (var arg in _arguments)
+                    arg.IncRef();
 
                 _proc = proc;
                 _taskFunc = taskFunc;
                 Instance = src;
                 Usr = usr;
-                arguments.Values.CopyTo(_arguments);
                 ArgumentCount = arguments.Count;
+                arguments.Dispose();
             }
 
             // Used to avoid reentrant resumptions in our proc
@@ -66,7 +71,7 @@ namespace OpenDreamRuntime.Procs {
                     return;
                 }
 
-                Thread.Resume();
+                Thread.Resume().Dispose();
             }
 
             public Task<DreamValue> Call(DreamProc proc, DreamObject? src, DreamObject? usr, params DreamValue[] arguments) {
@@ -101,6 +106,9 @@ namespace OpenDreamRuntime.Procs {
 
             public override void Dispose() {
                 base.Dispose();
+
+                for (int i = 0; i < ArgumentCount; i++)
+                    _arguments[i].Dispose();
 
                 Instance = null!;
                 Usr = null!;
@@ -188,7 +196,7 @@ namespace OpenDreamRuntime.Procs {
 
         private readonly Dictionary<string, DreamValue>? _defaultArgumentValues = defaultArgumentValues;
 
-        public override ProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
+        public override ProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, [HandlesResourceDisposal] DreamProcArguments arguments) {
             if (!AsyncNativeProcState.Pool.TryPop(out var state)) {
                 state = new AsyncNativeProcState();
             }

@@ -1,5 +1,4 @@
-﻿using OpenDreamRuntime.Input;
-using OpenDreamRuntime.Objects.Types;
+﻿using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamShared;
 using Robust.Shared;
@@ -44,7 +43,7 @@ namespace OpenDreamRuntime {
             _configManager.OverrideDefault(CVars.GameAutoPauseEmpty, false); // DreamObjectWorld sets this appropriately but we need to keep it disabled til then or it won't be reached
             _configManager.OverrideDefault(CVars.DiscordRichPresenceSecondIconId, "opendream");
             _configManager.SetCVar(CVars.GridSplitting, false); // Grid splitting should never be used
-            if(String.IsNullOrEmpty(_configManager.GetCVar<string>(OpenDreamCVars.JsonPath))) //if you haven't set the jsonpath cvar, set it to the first valid file path passed as an arg
+            if(string.IsNullOrEmpty(_configManager.GetCVar(OpenDreamCVars.JsonPath))) //if you haven't set the jsonpath cvar, set it to the first valid file path passed as an arg
                 foreach (string arg in Environment.GetCommandLineArgs().Skip(1)) //skip the first element, because it's just the server's exe path
                     if(File.Exists(arg)){
                         _configManager.SetCVar(OpenDreamCVars.JsonPath, arg);
@@ -64,7 +63,7 @@ namespace OpenDreamRuntime {
 
             int debugAdapterPort = _configManager.GetCVar(OpenDreamCVars.DebugAdapterLaunched);
             if (debugAdapterPort == 0) {
-                _dreamManager.PreInitialize(_configManager.GetCVar<string>(OpenDreamCVars.JsonPath));
+                _dreamManager.PreInitialize(_configManager.GetCVar(OpenDreamCVars.JsonPath));
                 _dreamManager.StartWorld();
             } else {
                 // The debug manager is responsible for running _dreamManager.PreInitialize() and .StartWorld()

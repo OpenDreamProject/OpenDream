@@ -8,8 +8,7 @@ public sealed class DreamObjectTurf : DreamObjectAtom {
     public readonly TurfContentsList Contents;
     public ImmutableAppearance Appearance;
     public IDreamMapManager.Cell Cell;
-
-    public bool IsDense => GetVariable("density").IsTruthy();
+    public bool IsDense;
 
     public DreamObjectTurf(DreamObjectDefinition objectDefinition, int x, int y, int z) : base(objectDefinition) {
         X = x;
@@ -19,6 +18,9 @@ public sealed class DreamObjectTurf : DreamObjectAtom {
         Cell = default!; // NEEDS to be set by DreamMapManager after creation
         Contents = new TurfContentsList(ObjectTree.List.ObjectDefinition, this);
         Appearance = AppearanceSystem!.AddAppearance(AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
+
+        ObjectDefinition.TryGetVariable("density", out var density);
+        IsDense = density.IsTruthy();
     }
 
     public void SetTurfType(DreamObjectDefinition objectDefinition) {
@@ -26,7 +28,13 @@ public sealed class DreamObjectTurf : DreamObjectAtom {
             throw new Exception($"Cannot set turf's type to {objectDefinition.Type}");
 
         ObjectDefinition = objectDefinition;
-        Variables?.Clear();
+
+        if (Variables != null) {
+            foreach (var varValue in Variables.Values)
+                varValue.DecRef();
+
+            Variables?.Clear();
+        }
 
         Initialize(new());
     }
@@ -41,6 +49,12 @@ public sealed class DreamObjectTurf : DreamObjectAtom {
         DreamMapManager.SetTurfAppearance(this, newAppearance);
     }
 
+    protected override void HandleDeletion() {
+        Contents.DecRef();
+        Contents.Delete();
+        base.HandleDeletion();
+    }
+
     protected override bool TryGetVar(string varName, out DreamValue value) {
         switch (varName) {
             case "x":
@@ -53,9 +67,14 @@ public sealed class DreamObjectTurf : DreamObjectAtom {
                 value = new(Z);
                 return true;
             case "loc":
+                Cell.Area.IncRef();
                 value = new(Cell.Area);
                 return true;
+            case "density":
+                value = IsDense ? DreamValue.True : DreamValue.False;
+                return true;
             case "contents":
+                Contents.IncRef();
                 value = new(Contents);
                 return true;
             default:
@@ -65,6 +84,9 @@ public sealed class DreamObjectTurf : DreamObjectAtom {
 
     protected override void SetVar(string varName, DreamValue value) {
         switch (varName) {
+            case "density":
+                IsDense = value.IsTruthy();
+                break;
             case "contents":
                 Contents.Cut();
 

@@ -17,6 +17,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
 using DMCompiler.DM;
+using JetBrains.Annotations;
 using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Rendering;
@@ -777,7 +778,8 @@ internal static class DreamProcNativeRoot {
 
         try {
             var listing = bundle.ResourceManager.EnumerateListing(path);
-            DreamList list = bundle.ObjectTree.CreateList(listing);
+            var list = bundle.ObjectTree.CreateList(listing);
+
             return new DreamValue(list);
         } catch (DirectoryNotFoundException) {
             return new DreamValue(bundle.ObjectTree.CreateList()); // empty list
@@ -878,7 +880,12 @@ internal static class DreamProcNativeRoot {
         }
 
         // Null if there are no steps
-        return new(result.GetLength() > 0 ? result : null);
+        if (result.GetLength() == 0) {
+            result.DecRef();
+            return DreamValue.Null;
+        } else {
+            return new(result);
+        }
     }
 
     [DreamProc("generator")]
@@ -888,6 +895,7 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("rand", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
     public static DreamValue NativeProc_generator(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
         DreamObject generator = bundle.ObjectTree.CreateObject(bundle.ObjectTree.Generator);
+
         generator.InitSpawn(new DreamProcArguments(bundle.Arguments));
         return new DreamValue(generator);
     }
@@ -961,6 +969,7 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("pixel_y", Type = DreamValueTypeFlag.Float)]
     public static DreamValue NativeProc_image(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
         DreamObject imageObject = bundle.ObjectTree.CreateObject(bundle.ObjectTree.Image);
+
         imageObject.InitSpawn(new DreamProcArguments(bundle.Arguments)); // TODO: Don't create another thread
         return new DreamValue(imageObject);
     }
@@ -1132,13 +1141,14 @@ internal static class DreamProcNativeRoot {
         return DreamValue.True;
     }
 
+    [MustDisposeResource]
     private static DreamValue CreateValueFromJsonElement(DreamObjectTree objectTree, JsonElement jsonElement) {
         switch (jsonElement.ValueKind) {
             case JsonValueKind.Array: {
                 DreamList list = objectTree.CreateList(jsonElement.GetArrayLength());
 
                 foreach (JsonElement childElement in jsonElement.EnumerateArray()) {
-                    DreamValue value = CreateValueFromJsonElement(objectTree, childElement);
+                    using var value = CreateValueFromJsonElement(objectTree, childElement);
 
                     list.AddValue(value);
                 }
@@ -1172,19 +1182,19 @@ internal static class DreamProcNativeRoot {
 
                 // It was not a single-property? Or the property was not special?
                 // FANTASTIC. STOP PRETENDING BEING A PARSER AND INSERT THEM IN A LIST
-                DreamValue v1 = CreateValueFromJsonElement(objectTree, first.Value);
+                using var v1 = CreateValueFromJsonElement(objectTree, first.Value);
                 list.SetValue(new DreamValue(first.Name), v1);
 
                 if(!hasSecond)
                     return new DreamValue(list);
 
                 var second = enumerator.Current;
-                DreamValue v2 = CreateValueFromJsonElement(objectTree, second.Value);
+                using var v2 = CreateValueFromJsonElement(objectTree, second.Value);
                 list.SetValue(new DreamValue(second.Name), v2);
 
                 // Enumerate the damn rest of the godawful fucking shitty JSON
                 foreach (JsonProperty childProperty in jsonElement.EnumerateObject()) {
-                    DreamValue value = CreateValueFromJsonElement(objectTree, childProperty.Value);
+                    using var value = CreateValueFromJsonElement(objectTree, childProperty.Value);
 
                     list.SetValue(new DreamValue(childProperty.Name), value);
                 }
@@ -1246,9 +1256,10 @@ internal static class DreamProcNativeRoot {
                     var key = listValue.Stringify();
 
                     if (list.ContainsKey(listValue)) {
-                        var subValue = list.GetValue(listValue);
-                        if(subValue.TryGetValueAsDreamList(out var subList) && subList is DreamListVars) //BYOND parity, do not print vars["vars"] - note that this is *not* a generic infinite loop protection on purpose
+                        using var subValue = list.GetValue(listValue);
+                        if (subValue.TryGetValueAsDreamList(out var subList) && subList is DreamListVars) //BYOND parity, do not print vars["vars"] - note that this is *not* a generic infinite loop protection on purpose
                             continue;
+
                         writer.WritePropertyName(key);
                         JsonEncode(writer, subValue);
                     } else {
@@ -1284,10 +1295,7 @@ internal static class DreamProcNativeRoot {
                     break;
                 }
                 case DreamObjectVector vector: { // Special behaviour for /vector values
-                    if (vector.Is3D)
-                        writer.WriteStringValue($"vector({vector.X},{vector.Y},{vector.Z})");
-                    else
-                        writer.WriteStringValue($"vector({vector.X},{vector.Y})");
+                    writer.WriteStringValue(vector.ToString());
                     break;
                 }
                 default:
@@ -1303,6 +1311,7 @@ internal static class DreamProcNativeRoot {
 
     [DreamProc("json_decode")]
     [DreamProcParameter("JSON", Type = DreamValueTypeFlag.String)]
+    [MustDisposeResource]
     public static DreamValue NativeProc_json_decode(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
         if (!bundle.GetArgument(0, "JSON").TryGetValueAsString(out var jsonString)) {
             throw new Exception("Unknown value");
@@ -1411,6 +1420,7 @@ internal static class DreamProcNativeRoot {
             case 6: // Take the arguments and construct a matrix.
             case 0: // Since arguments are empty, this just creates an identity matrix.
                 matrix = bundle.ObjectTree.CreateObject<DreamObjectMatrix>(bundle.ObjectTree.Matrix);
+
                 matrix.InitSpawn(new DreamProcArguments(bundle.Arguments));
                 return new DreamValue(matrix);
             case 1: // Clone the matrix.
@@ -1467,12 +1477,14 @@ internal static class DreamProcNativeRoot {
             case MatrixOpcode.Invert:
                 if (!firstArgument.TryGetValueAsDreamObject<DreamObjectMatrix>(out var matrixInput)) // Expecting a matrix here
                     throw new ArgumentException($"/matrix() called with invalid argument '{firstArgument}'");
+
                 //Choose whether we are inverting the original matrix or a clone of it
                 var invertableMatrix = doModify ? matrixInput : DreamObjectMatrix.MatrixClone(bundle.ObjectTree, matrixInput);
-                if (!DreamObjectMatrix.TryInvert(invertableMatrix))
-                    throw new ArgumentException("/matrix provided for MATRIX_INVERT cannot be inverted");
+                if (DreamObjectMatrix.TryInvert(invertableMatrix))
+                    return new DreamValue(invertableMatrix);
 
-                return new DreamValue(invertableMatrix);
+                invertableMatrix.DecRef();
+                throw new ArgumentException("/matrix provided for MATRIX_INVERT cannot be inverted");
             case MatrixOpcode.Rotate:
                 var angleArgument = firstArgument;
                 if (firstArgument.TryGetValueAsDreamObject<DreamObjectMatrix>(out var matrixToRotate))
@@ -1506,13 +1518,24 @@ internal static class DreamProcNativeRoot {
                 float horizontalScale;
                 float verticalScale;
                 if (firstArgument.TryGetValueAsDreamObject<DreamObjectMatrix>(out var matrixArgument)) { // scaling a matrix
-                    var scaledMatrix = doModify ? matrixArgument : DreamObjectMatrix.MatrixClone(bundle.ObjectTree, matrixArgument);
+                    var scaledMatrix = doModify
+                        ? matrixArgument
+                        : DreamObjectMatrix.MatrixClone(bundle.ObjectTree, matrixArgument);
 
-                    if (!secondArgument.TryGetValueAsFloat(out horizontalScale))
+                    if (!secondArgument.TryGetValueAsFloat(out horizontalScale)) {
+                        if (!doModify)
+                            scaledMatrix.DecRef();
+
                         throw new ArgumentException($"/matrix() called with invalid scaling factor '{secondArgument}'");
+                    }
+
                     if (bundle.Arguments.Length == 4) {
-                        if (!bundle.GetArgument(2, "c").TryGetValueAsFloat(out verticalScale))
+                        if (!bundle.GetArgument(2, "c").TryGetValueAsFloat(out verticalScale)) {
+                            if (!doModify)
+                                scaledMatrix.DecRef();
+
                             throw new ArgumentException($"/matrix() called with invalid scaling factor '{bundle.GetArgument(2, "c")}'");
+                        }
                     } else {
                         verticalScale = horizontalScale;
                     }
@@ -1548,18 +1571,15 @@ internal static class DreamProcNativeRoot {
                         translateMatrix = DreamObjectMatrix.MatrixClone(bundle.ObjectTree, targetMatrix);
 
                     bundle.GetArgument(1,"b").TryGetValueAsFloat(out float horizontalOffset);
-                    translateMatrix.GetVariable("c").TryGetValueAsFloat(out float oldXOffset);
-                    translateMatrix.SetVariableValue("c", new(horizontalOffset + oldXOffset));
+                    translateMatrix.C += horizontalOffset;
 
                     bundle.GetArgument(2, "c").TryGetValueAsFloat(out float verticalOffset);
-                    translateMatrix.GetVariable("f").TryGetValueAsFloat(out float oldYOffset);
-                    translateMatrix.SetVariableValue("f", new(verticalOffset + oldYOffset));
+                    translateMatrix.F += verticalOffset;
                     return new DreamValue(translateMatrix);
                 }
 
-                float horizontalShift;
                 float verticalShift;
-                if (!firstArgument.TryGetValueAsFloat(out horizontalShift))
+                if (!firstArgument.TryGetValueAsFloat(out var horizontalShift))
                     throw new ArgumentException($"/matrix() called with invalid translation factor '{firstArgument}'");
                 if (bundle.Arguments.Length == 3) {
                     var secondArg = bundle.GetArgument(1, "b");
@@ -1845,8 +1865,10 @@ internal static class DreamProcNativeRoot {
 
         foreach (DreamValue entry in list.EnumerateValues()) {
             if (list.ContainsKey(entry)) {
+                using var entryValue = list.GetValue(entry);
+
                 paramBuilder.Append(
-                    $"{HttpUtility.UrlEncode(entry.Stringify())}={HttpUtility.UrlEncode(list.GetValue(entry).Stringify())}");
+                    $"{HttpUtility.UrlEncode(entry.Stringify())}={HttpUtility.UrlEncode(entryValue.Stringify())}");
             } else {
                 paramBuilder.Append(HttpUtility.UrlEncode(entry.Stringify()));
             }
@@ -1881,6 +1903,7 @@ internal static class DreamProcNativeRoot {
                             valueList.AddValue(new(string.Empty));
 
                         list.SetValue(new(value), new(valueList));
+                        valueList.DecRef();
                     } else {
                         list.SetValue(new(value), new(string.Empty));
                     }
@@ -1944,24 +1967,34 @@ internal static class DreamProcNativeRoot {
         (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, usr as DreamObjectAtom, bundle.Arguments);
         if (center is null)
             return new DreamValue(bundle.ObjectTree.CreateList());
+
         DreamList rangeList = bundle.ObjectTree.CreateList(range.Height * range.Width);
+
         //Have to include centre
         rangeList.AddValue(new DreamValue(center));
+
         if(center.TryGetVariable("contents", out var centerContents) && centerContents.TryGetValueAsDreamList(out var centerContentsList)) {
             foreach(DreamValue content in centerContentsList.EnumerateValues()) {
                 rangeList.AddValue(content);
             }
         }
 
-        if (center is not DreamObjectTurf) { // If it's not a /turf, we have to include its loc and the loc's contents
-            if(center.TryGetVariable("loc",out DreamValue centerLoc) && centerLoc.TryGetValueAsDreamObject<DreamObjectAtom>(out var centerLocObject)) {
+        centerContents.Dispose();
+
+        // If it's not a /turf, we have to include its loc and the loc's contents
+        if (center is not DreamObjectTurf && center.TryGetVariable("loc",out DreamValue centerLoc)) {
+            if (centerLoc.TryGetValueAsDreamObject<DreamObjectAtom>(out var centerLocObject)) {
                 rangeList.AddValue(centerLoc);
-                if(centerLocObject.GetVariable("contents").TryGetValueAsDreamList(out var locContentsList)) {
+
+                using var contents = centerLocObject.GetVariable("contents");
+                if (contents.TryGetValueAsDreamList(out var locContentsList)) {
                     foreach (DreamValue content in locContentsList.EnumerateValues()) {
                         rangeList.AddValue(content);
                     }
                 }
             }
+
+            centerLoc.Dispose();
         }
 
         //And then everything else
@@ -1984,6 +2017,16 @@ internal static class DreamProcNativeRoot {
         return new DreamValue(dreamRef);
     }
 
+    [DreamProc("refcount")]
+    [DreamProcParameter("Object", Type = DreamValueTypeFlag.DreamObject)]
+    public static DreamValue NativeProc_refcount(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        var value = bundle.GetArgument(0, "Object");
+        if (!value.TryGetValueAsDreamObject<DreamObject>(out var dreamObject))
+            return new(0);
+
+        return new(dreamObject.RefCount - 1); // Don't count the active reference that refcount() is holding
+    }
+
     [DreamProc("regex")]
     [DreamProcParameter("pattern", Type = DreamValueTypeFlag.String | DreamValueTypeFlag.DreamObject)]
     [DreamProcParameter("flags", Type = DreamValueTypeFlag.Float)]
@@ -2000,6 +2043,7 @@ internal static class DreamProcNativeRoot {
         }
 
         var newRegex = bundle.ObjectTree.CreateObject(bundle.ObjectTree.Regex);
+
         newRegex.InitSpawn(new DreamProcArguments(bundle.Arguments));
         return new DreamValue(newRegex);
     }
@@ -2198,7 +2242,7 @@ internal static class DreamProcNativeRoot {
                 break;
         }
 
-        if (color.Length == 9 || color.Length == 5) {
+        if (color.Length is 9 or 5) {
             list.AddValue(new DreamValue(c.AByte));
         }
 
@@ -2471,6 +2515,7 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("volume", Type = DreamValueTypeFlag.Float)]
     public static DreamValue NativeProc_sound(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
         DreamObject soundObject = bundle.ObjectTree.CreateObject(bundle.ObjectTree.Sound);
+
         soundObject.InitSpawn(new DreamProcArguments(bundle.Arguments));
         return new DreamValue(soundObject);
     }
@@ -2824,7 +2869,7 @@ internal static class DreamProcNativeRoot {
 
         if (!bundle.GetArgument(0, "timestamp").TryGetValueAsFloat(out var timestamp)) {
             // TODO This copes with nulls and is a sane default, but BYOND has weird returns for strings and stuff
-            bundle.DreamManager.WorldInstance.GetVariable("timeofday").TryGetValueAsFloat(out timestamp);
+            timestamp = bundle.DreamManager.WorldInstance.TimeOfDay;
         }
 
         if (!bundle.GetArgument(1, "format").TryGetValueAsString(out var format)) {
@@ -3210,6 +3255,8 @@ internal static class DreamProcNativeRoot {
                 view.AddValue(item);
             }
         }
+
+        centerContents.Dispose();
 
         // Center gets included during the walk through the tiles
 

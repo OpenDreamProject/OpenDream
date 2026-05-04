@@ -39,9 +39,12 @@ public sealed class DreamObjectParticles : DreamObject {
                 break;
             case "bound1": //list or vector
                 if (value.TryGetValueAsDreamList(out var bound1List) && bound1List.GetLength() >= 3) {
-                    var boundX = bound1List.GetValue(new(1)).UnsafeGetValueAsFloat();
-                    var boundY = bound1List.GetValue(new(2)).UnsafeGetValueAsFloat();
-                    var boundZ = bound1List.GetValue(new(3)).UnsafeGetValueAsFloat();
+                    using var boundXValue = bound1List.GetValue(new(1));
+                    using var boundYValue = bound1List.GetValue(new(2));
+                    using var boundZValue = bound1List.GetValue(new(3));
+                    var boundX = boundXValue.UnsafeGetValueAsFloat();
+                    var boundY = boundYValue.UnsafeGetValueAsFloat();
+                    var boundZ = boundZValue.UnsafeGetValueAsFloat();
 
                     ParticlesComponent.Bound1 = new Vector3(boundX, boundY, boundZ);
                 } //else if vector
@@ -49,9 +52,12 @@ public sealed class DreamObjectParticles : DreamObject {
                 break;
             case "bound2": //list or vector
                 if (value.TryGetValueAsDreamList(out var bound2List) && bound2List.GetLength() >= 3) {
-                    var boundX = bound2List.GetValue(new(1)).UnsafeGetValueAsFloat();
-                    var boundY = bound2List.GetValue(new(2)).UnsafeGetValueAsFloat();
-                    var boundZ = bound2List.GetValue(new(3)).UnsafeGetValueAsFloat();
+                    using var boundXValue = bound2List.GetValue(new(1));
+                    using var boundYValue = bound2List.GetValue(new(2));
+                    using var boundZValue = bound2List.GetValue(new(3));
+                    var boundX = boundXValue.UnsafeGetValueAsFloat();
+                    var boundY = boundYValue.UnsafeGetValueAsFloat();
+                    var boundZ = boundZValue.UnsafeGetValueAsFloat();
 
                     ParticlesComponent.Bound2 = new Vector3(boundX, boundY, boundZ);
                 } //else if vector
@@ -59,9 +65,12 @@ public sealed class DreamObjectParticles : DreamObject {
                 break;
             case "gravity": //list or vector
                 if (value.TryGetValueAsDreamList(out var gravityList) && gravityList.GetLength() >= 3) {
-                    var gravityX = gravityList.GetValue(new(1)).UnsafeGetValueAsFloat();
-                    var gravityY = gravityList.GetValue(new(2)).UnsafeGetValueAsFloat();
-                    var gravityZ = gravityList.GetValue(new(3)).UnsafeGetValueAsFloat();
+                    using var gravityXValue = gravityList.GetValue(new(1));
+                    using var gravityYValue = gravityList.GetValue(new(2));
+                    using var gravityZValue = gravityList.GetValue(new(3));
+                    var gravityX = gravityXValue.UnsafeGetValueAsFloat();
+                    var gravityY = gravityYValue.UnsafeGetValueAsFloat();
+                    var gravityZ = gravityZValue.UnsafeGetValueAsFloat();
 
                     ParticlesComponent.Gravity = new Vector3(gravityX, gravityY, gravityZ);
                 } //else if vector
@@ -174,6 +183,7 @@ public sealed class DreamObjectParticles : DreamObject {
                     ParticlesComponent.SpawnPosition = generator.RequireType<IGeneratorVector>();
                 } else if (DreamObjectVector.TryCreateFromValue(value, ObjectTree, out var vector)) {
                     ParticlesComponent.SpawnPosition = new GeneratorVector2(vector.AsVector2);
+                    vector.DecRef();
                 } else {
                     ParticlesComponent.SpawnPosition = new GeneratorVector2(Vector2.Zero);
                 }
@@ -186,6 +196,7 @@ public sealed class DreamObjectParticles : DreamObject {
                     ParticlesComponent.SpawnVelocity = generator.RequireType<IGeneratorVector>();
                 } else if (DreamObjectVector.TryCreateFromValue(value, ObjectTree, out var vector)) {
                     ParticlesComponent.SpawnVelocity = new GeneratorVector2(vector.AsVector2);
+                    vector.DecRef();
                 } else {
                     ParticlesComponent.SpawnVelocity = new GeneratorVector2(Vector2.Zero);
                 }
@@ -198,6 +209,7 @@ public sealed class DreamObjectParticles : DreamObject {
                     ParticlesComponent.Scale = generator.RequireType<IGeneratorVector>();
                 } else if (DreamObjectVector.TryCreateFromValue(value, ObjectTree, out var vector)) {
                     ParticlesComponent.Scale = new GeneratorVector2(vector.AsVector2);
+                    vector.DecRef();
                 } else {
                     ParticlesComponent.Scale = new GeneratorVector2(Vector2.One);
                 }
@@ -210,6 +222,7 @@ public sealed class DreamObjectParticles : DreamObject {
                     ParticlesComponent.Growth = generator.RequireType<IGeneratorVector>();
                 } else if (DreamObjectVector.TryCreateFromValue(value, ObjectTree, out var vector)) {
                     ParticlesComponent.Growth = new GeneratorVector2(vector.AsVector2);
+                    vector.DecRef();
                 } else {
                     ParticlesComponent.Growth = new GeneratorVector2(Vector2.Zero);
                 }
@@ -238,6 +251,7 @@ public sealed class DreamObjectParticles : DreamObject {
                     ParticlesComponent.Friction = generator.RequireType<IGeneratorVector>();
                 } else if (DreamObjectVector.TryCreateFromValue(value, ObjectTree, out var vector)) {
                     ParticlesComponent.Friction = new GeneratorVector2(vector.AsVector2);
+                    vector.DecRef();
                 } else {
                     ParticlesComponent.Friction = new GeneratorVector2(Vector2.Zero);
                 }
@@ -250,6 +264,7 @@ public sealed class DreamObjectParticles : DreamObject {
                     ParticlesComponent.Drift = generator.RequireType<IGeneratorVector>();
                 } else if (DreamObjectVector.TryCreateFromValue(value, ObjectTree, out var vector)) {
                     ParticlesComponent.Drift = new GeneratorVector2(vector.AsVector2);
+                    vector.DecRef();
                 } else {
                     ParticlesComponent.Drift = new GeneratorVector2(Vector2.Zero);
                 }

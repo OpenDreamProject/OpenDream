@@ -8,6 +8,7 @@ public sealed class ProcDefinitionJson {
     public ProcAttributes Attributes { get; init; }
 
     public int MaxStackSize { get; init; }
+    public int LocalCount { get; init; }
     public List<ProcArgumentJson>? Arguments { get; init; }
     public List<LocalVariableJson>? Locals { get; init; }
     public required List<SourceInfoJson> SourceInfo { get; init; }

@@ -20,7 +20,7 @@ using Robust.Shared.Utility;
 namespace OpenDreamRuntime;
 
 [JsonConverter(typeof(DreamValueJsonConverter))]
-public struct DreamValue : IEquatable<DreamValue> {
+public struct DreamValue : IDisposable, IEquatable<DreamValue> {
     public enum DreamValueType {
         // @formatter:off
         String        = 1,
@@ -137,6 +137,24 @@ public struct DreamValue : IEquatable<DreamValue> {
         } else {
             return _refValue.ToString() ?? "<ToString() = null>";
         }
+    }
+
+    public void Dispose() {
+        DecRef();
+    }
+
+    public void IncRef() {
+        if (Type != DreamValueType.DreamObject || _refValue == null)
+            return;
+
+        Unsafe.As<DreamObject>(_refValue).IncRef();
+    }
+
+    public void DecRef() {
+        if (Type != DreamValueType.DreamObject || _refValue == null)
+            return;
+
+        Unsafe.As<DreamObject>(_refValue).DecRef();
     }
 
     [Obsolete("Deprecated. Use TryGetValueAsString() or MustGetValueAsString() instead.")]
@@ -694,13 +712,10 @@ public sealed class DreamValueMatrix3Serializer : ITypeReader<Matrix3x2, DreamVa
             throw new Exception($"Value {node.Value} was not a matrix");
 
         // Matrix3 except not really because DM matrix is actually 3x2
-        matrixObject.GetVariable("a").TryGetValueAsFloat(out var a);
-        matrixObject.GetVariable("b").TryGetValueAsFloat(out var b);
-        matrixObject.GetVariable("c").TryGetValueAsFloat(out var c);
-        matrixObject.GetVariable("d").TryGetValueAsFloat(out var d);
-        matrixObject.GetVariable("e").TryGetValueAsFloat(out var e);
-        matrixObject.GetVariable("f").TryGetValueAsFloat(out var f);
-        return new Matrix3x2(a, d, b, e, c, f);
+        return new Matrix3x2(
+            matrixObject.A, matrixObject.D,
+            matrixObject.B, matrixObject.E,
+            matrixObject.C, matrixObject.F);
     }
 
     public ValidationNode Validate(ISerializationManager serializationManager,

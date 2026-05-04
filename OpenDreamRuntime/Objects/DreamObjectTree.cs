@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Threading.Tasks;
 using DMCompiler.Json;
+using JetBrains.Annotations;
 using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs;
@@ -220,6 +221,7 @@ public sealed class DreamObjectTree {
         return new DreamAssocList(AssocList.ObjectDefinition, size);
     }
 
+    [MustDisposeResource]
     public DreamValue GetDreamValueFromJsonElement(object? value) {
         if (value == null) return DreamValue.Null;
 
@@ -264,10 +266,14 @@ public sealed class DreamObjectTree {
                                         !listValue.TryGetProperty("value", out var jsonValue))
                                         throw new Exception("List value was missing a key or value property");
 
-                                    list.SetValue(GetDreamValueFromJsonElement(jsonKey),
-                                        GetDreamValueFromJsonElement(jsonValue), allowGrowth: true);
+                                    using var listKey = GetDreamValueFromJsonElement(jsonKey);
+                                    using var dreamValue = GetDreamValueFromJsonElement(jsonValue);
+
+                                    list.SetValue(listKey, dreamValue, allowGrowth: true);
                                 } else {
-                                    list.AddValue(GetDreamValueFromJsonElement(listValue));
+                                    using var dreamValue = GetDreamValueFromJsonElement(listValue);
+
+                                    list.AddValue(dreamValue);
                                 }
                             }
                         }
@@ -285,8 +291,10 @@ public sealed class DreamObjectTree {
                                     throw new Exception("AList value was missing a key or value property");
                                 }
 
-                                aList.SetValue(GetDreamValueFromJsonElement(jsonKey),
-                                    GetDreamValueFromJsonElement(jsonValue));
+                                using var listKey = GetDreamValueFromJsonElement(jsonKey);
+                                using var dreamValue = GetDreamValueFromJsonElement(jsonValue);
+
+                                aList.SetValue(listKey, dreamValue);
                             }
                         }
 
@@ -434,8 +442,8 @@ public sealed class DreamObjectTree {
 
     private void LoadVariablesFromJson(DreamObjectDefinition objectDefinition, DreamTypeJson jsonObject) {
         if (jsonObject.Variables != null) {
-            foreach (KeyValuePair<string, object> jsonVariable in jsonObject.Variables) {
-                DreamValue value = GetDreamValueFromJsonElement(jsonVariable.Value);
+            foreach (var jsonVariable in jsonObject.Variables) {
+                using var value = GetDreamValueFromJsonElement(jsonVariable.Value);
 
                 objectDefinition.SetVariableDefinition(jsonVariable.Key, value);
             }

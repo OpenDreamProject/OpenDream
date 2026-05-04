@@ -146,7 +146,7 @@ namespace OpenDreamRuntime {
                             var result = await state.Call(topicProc, WorldInstance, null, new DreamValue(topic), new DreamValue(remoteAddress));
                             tcs.SetResult(result);
                             return result;
-                        });
+                        }).Dispose();
 
                         var topicResponse = await tcs.Task;
                         if (topicResponse.IsNull) {

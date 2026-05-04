@@ -1101,10 +1101,8 @@ public static unsafe partial class ByondApi {
      */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static void ByondValue_DecTempRef(CByondValue* src) {
-        if (src == null)
-            return;
-        if (!OnMainThread())
-            return;
+        //if (src == null || !OnMainThread())
+        //    return;
 
         // TODO
         // Maybe not worth doing?

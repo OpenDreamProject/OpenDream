@@ -4,11 +4,8 @@ using OpenDreamRuntime.Objects;
 
 namespace OpenDreamRuntime.Procs;
 
-internal sealed class InitDreamObjectState : ProcState {
+internal sealed class InitDreamObjectState(DreamManager dreamManager, DreamObjectTree objectTree) : ProcState {
     public static readonly Stack<InitDreamObjectState> Pool = new();
-
-    private readonly DreamManager _dreamMan;
-    private readonly DreamObjectTree _objectTree;
 
     private enum Stage {
         // Need to call the object's (init) proc
@@ -19,11 +16,6 @@ internal sealed class InitDreamObjectState : ProcState {
 
         // Time to return
         Return,
-    }
-
-    public InitDreamObjectState(DreamManager dreamManager, DreamObjectTree objectTree) {
-        _dreamMan = dreamManager;
-        _objectTree = objectTree;
     }
 
     public void Initialize(DreamThread thread, DreamObject dreamObject, DreamObject? usr, [HandlesResourceDisposal] DreamProcArguments arguments) {
@@ -92,11 +84,11 @@ internal sealed class InitDreamObjectState : ProcState {
             case Stage.Init: {
                 _stage = Stage.OnObjectCreated;
 
-                if (src.ObjectDefinition.InitializationProc == null || _objectTree.Procs[src.ObjectDefinition.InitializationProc.Value] is DMProc { IsNullProc: true }) {
+                if (src.ObjectDefinition.InitializationProc == null || objectTree.Procs[src.ObjectDefinition.InitializationProc.Value] is DMProc { IsNullProc: true }) {
                     goto switch_start;
                 }
 
-                var proc = _objectTree.Procs[src.ObjectDefinition.InitializationProc.Value];
+                var proc = objectTree.Procs[src.ObjectDefinition.InitializationProc.Value];
                 var initProcState = proc.CreateState(Thread, src, _usr, new());
                 Thread.PushProcState(initProcState);
                 return ProcStatus.Called;
@@ -108,7 +100,7 @@ internal sealed class InitDreamObjectState : ProcState {
                 using var initArgs = new DreamProcArguments(_arguments.AsSpan(0, _argumentCount));
                 _dreamObject.Initialize(initArgs);
 
-                if (!_dreamMan.Initialized) {
+                if (!dreamManager.Initialized) {
                     // Suppress all New() calls during /world/<init>() and map loading.
                     goto switch_start;
                 }

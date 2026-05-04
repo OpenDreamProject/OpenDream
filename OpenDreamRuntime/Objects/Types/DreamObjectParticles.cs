@@ -29,13 +29,13 @@ public sealed class DreamObjectParticles : DreamObject {
         }
     }
 
-    protected override void HandleDeletion(bool possiblyThreaded) {
+    protected override void HandleDeletion() {
         Owner = null;
         _icons = null!;
         _iconStates = null!;
         _particlesComponent = null!;
 
-        base.HandleDeletion(possiblyThreaded);
+        base.HandleDeletion();
     }
 
     protected override void SetVar(string varName, DreamValue value) {

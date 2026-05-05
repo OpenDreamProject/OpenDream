@@ -1,4 +1,5 @@
 ﻿using OpenDreamRuntime.Map;
+using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.Types;
@@ -18,6 +19,10 @@ public sealed class DreamObjectTurf : DreamObjectAtom {
         Cell = default!; // NEEDS to be set by DreamMapManager after creation
         Contents = new TurfContentsList(ObjectTree.List.ObjectDefinition, this);
         Appearance = AppearanceSystem!.AddAppearance(AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
+    }
+
+    public override void Initialize(DreamProcArguments args) {
+        base.Initialize(args);
 
         ObjectDefinition.TryGetVariable("density", out var density);
         IsDense = density.IsTruthy();

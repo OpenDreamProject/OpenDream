@@ -34,7 +34,6 @@ public class DreamObjectMovable : DreamObjectAtom {
 
         _transformComponent = EntityManager.GetComponent<TransformComponent>(Entity);
         _contents = new MovableContentsList(ObjectTree.List.ObjectDefinition, this, _transformComponent);
-        _contents.IncRef();
     }
 
     public override void Initialize(DreamProcArguments args) {

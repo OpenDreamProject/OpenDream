@@ -3220,38 +3220,6 @@ namespace OpenDreamRuntime.Procs {
             return new DreamValue(iconObj);
         }
 
-        private static DreamValue GetArgument(IReadOnlyList<DreamValue>? argumentsArray, IReadOnlyDictionary<DreamValue, DreamValue>? argumentsDictionary, int argumentPosition, string argumentName,
-                DreamValue argumentFallback) {
-            if (argumentsArray != null && argumentsArray.Count >= argumentPosition) {
-                return argumentsArray[argumentPosition - 1];
-            }
-
-            if (argumentsDictionary != null && (
-                    argumentsDictionary.TryGetValue(new(argumentName), out var val) ||
-                    argumentsDictionary.TryGetValue(new(argumentPosition), out val))) {
-                return val;
-            }
-
-            return argumentFallback;
-        }
-
-        private static bool IsArgumentDefined(IReadOnlyList<DreamValue>? argumentsArray, IReadOnlyDictionary<DreamValue, DreamValue>? argumentsDictionary, int argumentPosition, string argumentName,
-                DreamValue argumentFallback, out DreamValue val) {
-            if (argumentsArray != null && argumentsArray.Count > argumentPosition) {
-                val = argumentsArray[argumentPosition];
-                return true;
-            }
-
-            if (argumentsDictionary != null && (
-                    argumentsDictionary.TryGetValue(new(argumentName), out val) ||
-                    argumentsDictionary.TryGetValue(new(argumentPosition), out val))) {
-                return true;
-            }
-
-            val = argumentFallback;
-            return false;
-        }
-
         #endregion Helpers
 
         #region Peephole Optimizations

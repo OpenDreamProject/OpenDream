@@ -2163,13 +2163,18 @@ namespace OpenDreamRuntime.Procs {
 
         */
         public static ProcStatus Animate(DMProcState state) {
-            var argumentCount = state.ReadInt();
+            var argumentInfo = state.ReadProcArguments();
+            using var callArguments = new DMProcState.DMStackArguments(state, argumentInfo);
             var arguments = new Dictionary<string, DreamValue>();
 
+            if (callArguments.Count == 0) {
+                state.Push(DreamValue.Null);
+                return ProcStatus.Continue;
+            }
+
             try {
-                for (int i = 0; i < argumentCount; i++) {
-                    using var value = state.Pop();
-                    using var name = state.Pop();
+                var argumentsArray = callArguments.ToArray();
+                foreach (var (name, value) in argumentsArray) {
                     if (!name.TryGetValueAsString(out var argName))
                         continue;
 
@@ -2177,7 +2182,9 @@ namespace OpenDreamRuntime.Procs {
                     arguments[argName] = value;
                 }
 
-                using var objArg = state.Pop();
+                if (!arguments.TryGetValue("Object", out var objArg) && argumentsArray[0].Key == DreamValue.Null)
+                    objArg = argumentsArray[0].Value;
+
                 bool chainAnim = false;
 
                 if (!objArg.TryGetValueAsDreamObject<DreamObject>(out var obj)) {

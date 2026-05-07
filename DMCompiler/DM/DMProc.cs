@@ -1259,10 +1259,11 @@ internal sealed class DMProc {
         WriteStackDelta(argumentStackSize);
     }
 
-    public void Animate(int argCount) {
-        ResizeStack(-(argCount*2 + 1 - 1)); // Pops object and arguments, pushes null
+    public void Animate(DMCallArgumentsType argumentsType, int argumentStackSize) {
+        ResizeStack(-(argumentStackSize - 1)); // Pops arguments, pushes animate result
         WriteOpcode(DreamProcOpcode.Animate);
-        WriteListSize(argCount);
+        WriteArgumentType(argumentsType);
+        WriteStackDelta(argumentStackSize);
     }
 
     public void PickWeighted(int count) {

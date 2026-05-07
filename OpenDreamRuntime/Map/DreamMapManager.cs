@@ -41,6 +41,7 @@ public sealed partial class DreamMapManager : IDreamMapManager {
 
     private List<DreamMapJson>? _jsonMaps = new();
     private readonly HashSet<EntityUid> _entityLookupSet = new();
+    private readonly Dictionary<DreamObjectDefinition, ImmutableAppearance> _defaultTurfAppearanceCache = new();
 
     public void Initialize() {
         _appearanceSystem = _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
@@ -76,7 +77,7 @@ public sealed partial class DreamMapManager : IDreamMapManager {
 
             List<(Vector2i, Tile)> tiles = new(level.QueuedTileUpdates.Count);
             foreach (var tileUpdate in level.QueuedTileUpdates) {
-                tiles.Add( (tileUpdate.Key, tileUpdate.Value) );
+                tiles.Add(tileUpdate);
             }
 
             _mapSystem.SetTiles(level.Grid, tiles);
@@ -165,8 +166,14 @@ public sealed partial class DreamMapManager : IDreamMapManager {
 
         cell.Turf.SetTurfType(type);
 
-        MutableAppearance turfAppearance = _atomManager.GetAppearanceFromDefinition(cell.Turf.ObjectDefinition);
-        SetTurfAppearance(cell.Turf, turfAppearance);
+        if (!_defaultTurfAppearanceCache.TryGetValue(cell.Turf.ObjectDefinition, out var appearance)) {
+            var mutable = _atomManager.GetAppearanceFromDefinition(cell.Turf.ObjectDefinition);
+
+            appearance = _appearanceSystem.AddAppearance(mutable);
+            _defaultTurfAppearanceCache.Add(cell.Turf.ObjectDefinition, appearance);
+        }
+
+        SetTurfAppearance(cell.Turf, appearance);
 
         cell.Turf.InitSpawn(creationArguments);
     }
@@ -179,28 +186,36 @@ public sealed partial class DreamMapManager : IDreamMapManager {
     /// Caches the turf/area appearance pair instead of recreating and re-registering it for every turf in the game.
     /// This is cleared out when an area appearance changes
     /// </summary>
-    private readonly Dictionary<ValueTuple<MutableAppearance, uint>, MutableAppearance> _turfAreaLookup = new();
+    private readonly Dictionary<ValueTuple<ImmutableAppearance, uint>, ImmutableAppearance> _turfAreaLookup = new();
 
-    public void SetTurfAppearance(DreamObjectTurf turf, MutableAppearance appearance) {
+    public void SetTurfAppearance(DreamObjectTurf turf, ImmutableAppearance appearance) {
         appearance.EnabledMouseEvents = _atomManager.GetEnabledMouseEvents(turf);
 
-        if(turf.Cell.Area.Appearance != _appearanceSystem.DefaultAppearance)
-            if(!appearance.Overlays.Contains(turf.Cell.Area.Appearance)) {
-                if(!_turfAreaLookup.TryGetValue((appearance, turf.Cell.Area.Appearance.MustGetId()), out var newAppearance)) {
-                    newAppearance = MutableAppearance.GetCopy(appearance);
-                    newAppearance.Overlays.Add(turf.Cell.Area.Appearance);
+        if (turf.Cell.Area.Appearance != _appearanceSystem.DefaultAppearance) {
+            if (!appearance.Overlays.Contains(turf.Cell.Area.Appearance)) {
+                if (!_turfAreaLookup.TryGetValue((appearance, turf.Cell.Area.Appearance.MustGetId()), out var newAppearance)) {
+                    var mutable = appearance.ToMutable();
+
+                    mutable.Overlays.Add(turf.Cell.Area.Appearance);
+                    newAppearance = _appearanceSystem.AddAppearance(mutable);
                     _turfAreaLookup.Add((appearance, turf.Cell.Area.Appearance.MustGetId()), newAppearance);
                 }
 
                 appearance = newAppearance;
             }
-
-        var immutableAppearance = _appearanceSystem.AddAppearance(appearance);
+        }
 
         var level = _levels[turf.Z - 1];
-        uint turfId = immutableAppearance.MustGetId();
-        level.QueuedTileUpdates[(turf.X, turf.Y)] = new Tile((int)turfId);
-        turf.Appearance = immutableAppearance;
+        var turfId = appearance.MustGetId();
+        var turfPos = new Vector2i(turf.X, turf.Y);
+        level.QueuedTileUpdates.Add( (turfPos, new Tile((int)turfId)) );
+        turf.Appearance = appearance;
+    }
+
+    public void SetTurfAppearance(DreamObjectTurf turf, MutableAppearance appearance) {
+        var immutable = _appearanceSystem.AddAppearance(appearance);
+
+        SetTurfAppearance(turf, immutable);
     }
 
     public void SetAreaAppearance(DreamObjectArea area, MutableAppearance appearance) {
@@ -229,8 +244,9 @@ public sealed partial class DreamMapManager : IDreamMapManager {
             }
 
             var level = _levels[turf.Z - 1];
-            uint turfId = newAppearance.MustGetId();
-            level.QueuedTileUpdates[(turf.X, turf.Y)] = new Tile((int)turfId);
+            var turfId = newAppearance.MustGetId();
+            var turfPos = new Vector2i(turf.X, turf.Y);
+            level.QueuedTileUpdates.Add( (turfPos, new Tile((int)turfId)));
         }
     }
 
@@ -462,7 +478,7 @@ public interface IDreamMapManager {
         public readonly int Z;
         public readonly Entity<MapGridComponent> Grid;
         public Cell[,] Cells;
-        public readonly Dictionary<Vector2i, Tile> QueuedTileUpdates = new();
+        public readonly List<(Vector2i, Tile)> QueuedTileUpdates = new();
 
         public Level(int z, Entity<MapGridComponent> grid, DreamObjectDefinition turfType, DreamObjectArea area, Vector2i size) {
             Z = z;
@@ -521,6 +537,7 @@ public interface IDreamMapManager {
     public void UpdateTiles();
 
     public void SetTurf(DreamObjectTurf turf, DreamObjectDefinition type, DreamProcArguments creationArguments);
+    public void SetTurfAppearance(DreamObjectTurf turf, ImmutableAppearance appearance);
     public void SetTurfAppearance(DreamObjectTurf turf, MutableAppearance appearance);
     public void SetAreaAppearance(DreamObjectArea area, MutableAppearance appearance);
     public bool TryGetCellAt(Vector2i pos, int z, [NotNullWhen(true)] out Cell? cell);

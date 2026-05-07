@@ -64,11 +64,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
     [ViewVariables] public int MouseDropPointer = MutableAppearance.Default.MouseDropPointer;
 
     /// <summary> The Transform property of this appearance, in [a,d,b,e,c,f] order</summary>
-    [ViewVariables] public readonly float[] Transform = [
-        1, 0,   // a d
-        0, 1,   // b e
-        0, 0    // c f
-    ];
+    [ViewVariables] public readonly float[] Transform = MutableAppearance.Default.Transform;
 
     // PixelOffset2 behaves the same as PixelOffset in top-down mode, so this is used
     public Vector2i TotalPixelOffset => PixelOffset + PixelOffset2;
@@ -120,8 +116,10 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         Verbs = appearance.Verbs.ToArray();
         Override = appearance.Override;
 
-        for (int i = 0; i < 6; i++) {
-            Transform[i] = appearance.Transform[i];
+        if (appearance.Transform != MutableAppearance.Default.Transform) {
+            for (int i = 0; i < 6; i++) {
+                Transform[i] = appearance.Transform[i];
+            }
         }
     }
 
@@ -533,7 +531,9 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         result.VisContents.AddRange(VisContents);
         result.Filters.AddRange(Filters);
         result.Verbs.AddRange(Verbs);
-        Array.Copy(Transform, result.Transform, 6);
+
+        if (Transform != MutableAppearance.Default.Transform)
+            Array.Copy(Transform, result.Transform, 6);
 
         return result;
     }

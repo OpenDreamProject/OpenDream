@@ -62,7 +62,7 @@ internal sealed partial class ContextMenuPopup : Popup {
                 continue;
 
             var reference = new ClientObjectReference(_entityManager.GetNetEntity(uid));
-            var name = _appearanceSystem.GetName(reference);
+            var name = _appearanceSystem.GetNameUnformatted(reference);
             ContextMenu.AddChild(new ContextMenuItem(this, reference, name, sprite.Icon));
         }
 
@@ -74,7 +74,7 @@ internal sealed partial class ContextMenuPopup : Popup {
             if (_spriteQuery.TryGetComponent(uid, out var sprite) &&
                 sprite.Icon.Appearance?.MouseOpacity != MouseOpacity.Transparent) {
                 var reference = new ClientObjectReference(_entityManager.GetNetEntity(uid));
-                var name = _appearanceSystem.GetName(reference);
+                var name = _appearanceSystem.GetNameUnformatted(reference);
                 ContextMenu.AddChild(new ContextMenuItem(this, reference, name, sprite.Icon));
             }
         }
@@ -82,7 +82,7 @@ internal sealed partial class ContextMenuPopup : Popup {
         // Append the turf to the end of the context menu
         var turfUnderMouse = _mouseInputSystem.GetTurfUnderMouse(mapCoords, out var turfId)?.Atom;
         if (turfUnderMouse is not null && turfId is not null) {
-            var name = _appearanceSystem.GetName(turfUnderMouse.Value);
+            var name = _appearanceSystem.GetNameUnformatted(turfUnderMouse.Value);
             var icon = _appearanceSystem.GetTurfIcon(turfId.Value);
 
             ContextMenu.AddChild(new ContextMenuItem(this, turfUnderMouse.Value, name, icon));

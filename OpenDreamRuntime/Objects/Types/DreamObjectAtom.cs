@@ -13,20 +13,6 @@ public class DreamObjectAtom : DreamObject {
         Underlays = new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
         VisContents = new(ObjectTree.List.ObjectDefinition, PvsOverrideSystem, this);
         Filters = new(ObjectTree.List.ObjectDefinition, this);
-
-        AtomManager.AddAtom(this);
-    }
-
-    protected override void HandleDeletion(bool possiblyThreaded) {
-        // SAFETY: RemoveAtom is not threadsafe.
-        if (possiblyThreaded) {
-            EnterIntoDelQueue();
-            return;
-        }
-
-        AtomManager.RemoveAtom(this);
-
-        base.HandleDeletion(possiblyThreaded);
     }
 
     public string GetRTEntityDesc() {
@@ -34,6 +20,16 @@ public class DreamObjectAtom : DreamObject {
             return appearance.Desc;
 
         return ObjectDefinition.Type;
+    }
+
+    protected override void HandleDeletion() {
+        Overlays.DecRef();
+        Underlays.DecRef();
+        VisContents.DecRef();
+        Filters.DecRef();
+        VisLocs?.DecRef();
+
+        base.HandleDeletion();
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
@@ -53,22 +49,27 @@ public class DreamObjectAtom : DreamObject {
                 value = new(appearanceCopy);
                 return true;
             case "overlays":
+                Overlays.IncRef();
                 value = new(Overlays);
                 return true;
             case "underlays":
+                Underlays.IncRef();
                 value = new(Underlays);
                 return true;
             case "verbs":
-                value = new(new VerbsList(ObjectTree, AtomManager, VerbSystem, this));
+                value = new(new VerbsList(ObjectTree, AtomManager, this));
                 return true;
             case "filters":
+                Filters.IncRef();
                 value = new(Filters);
                 return true;
             case "vis_locs":
                 VisLocs ??= ObjectTree.CreateList();
+                VisLocs.IncRef();
                 value = new(VisLocs);
                 return true;
             case "vis_contents":
+                VisContents.IncRef();
                 value = new(VisContents);
                 return true;
 
@@ -149,12 +150,15 @@ public class DreamObjectAtom : DreamObject {
 
                 // filters = list("type"=...) or list(filter(...), filter(...))
                 if (value.TryGetValueAsDreamList(out var valueList)) {
-                    if (valueList.GetValue(new("type")) != DreamValue.Null) { // It's a single filter
+                    using var typeArg = valueList.GetValue(new("type"));
+
+                    if (typeArg != DreamValue.Null) { // It's a single filter
                         var filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, valueList);
                         if (filterObject == null) // list() with invalid "type" is ignored
                             break;
 
                         Filters.AddValue(new(filterObject));
+                        filterObject.DecRef();
                     } else { // It's a list of filters
                         foreach (var filter in valueList.EnumerateValues()) {
                             if (!filter.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject)) {
@@ -167,6 +171,7 @@ public class DreamObjectAtom : DreamObject {
                             }
 
                             Filters.AddValue(new(filterObject));
+                            filterObject.DecRef();
                         }
                     }
                 } else if (!value.IsNull) {

@@ -9,6 +9,7 @@ namespace OpenDreamRuntime;
 public static class ServerContentIoC {
     public static void Register(bool unitTests = false) {
         IoCManager.Register<DreamManager>();
+        IoCManager.Register<DreamRefManager>();
         IoCManager.Register<DreamObjectTree>();
         IoCManager.Register<AtomManager>();
         IoCManager.Register<ProcScheduler>();

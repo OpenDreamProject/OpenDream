@@ -19,7 +19,7 @@ public sealed class DreamObjectClient : DreamObject {
     public DreamObjectClient(DreamObjectDefinition objectDefinition, DreamConnection connection, ServerScreenOverlaySystem? screenOverlaySystem, ServerClientImagesSystem? clientImagesSystem) : base(objectDefinition) {
         Connection = connection;
         Screen = new(ObjectTree, screenOverlaySystem, Connection);
-        ClientVerbs = new(ObjectTree, VerbSystem, this);
+        ClientVerbs = new(ObjectTree, this);
         Images = new(ObjectTree, clientImagesSystem, Connection);
 
         DreamManager.Clients.Add(this);
@@ -27,17 +27,15 @@ public sealed class DreamObjectClient : DreamObject {
         View = DreamManager.WorldInstance.DefaultView;
     }
 
-    protected override void HandleDeletion(bool possiblyThreaded) {
-        // SAFETY: Client hashset is not threadsafe, this is not a hot path so no reason to change this.
-        if (possiblyThreaded) {
-            EnterIntoDelQueue();
-            return;
-        }
-
+    protected override void HandleDeletion() {
         Connection.Session?.Channel.Disconnect("Your client object was deleted");
         DreamManager.Clients.Remove(this);
 
-        base.HandleDeletion(possiblyThreaded);
+        Screen.DecRef();
+        ClientVerbs.DecRef();
+        Images.DecRef();
+
+        base.HandleDeletion();
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
@@ -49,12 +47,15 @@ public sealed class DreamObjectClient : DreamObject {
                 value = new(Connection.Key);
                 return true;
             case "mob":
+                Connection.Mob?.IncRef();
                 value = new(Connection.Mob);
                 return true;
             case "statobj":
+                Connection.StatObj.IncRef();
                 value = Connection.StatObj;
                 return true;
             case "eye":
+                Connection.Eye?.IncRef();
                 value = new(Connection.Eye);
                 return true;
             case "view":
@@ -94,15 +95,18 @@ public sealed class DreamObjectClient : DreamObject {
                 value = new("seeker");
                 return true;
             case "screen":
+                Screen.IncRef();
                 value = new(Screen);
                 return true;
             case "verbs":
+                ClientVerbs.IncRef();
                 value = new(ClientVerbs);
                 return true;
             case "show_popup_menus":
                 value = new(ShowPopupMenus ? 1 : 0);
                 return true;
             case "images":
+                Images.IncRef();
                 value = new(Images);
                 return true;
             case "mouse_pointer_icon":
@@ -122,6 +126,8 @@ public sealed class DreamObjectClient : DreamObject {
                 break;
             }
             case "statobj":
+                value.IncRef();
+                Connection.StatObj.DecRef();
                 Connection.StatObj = value;
                 break;
             case "eye": {
@@ -130,6 +136,8 @@ public sealed class DreamObjectClient : DreamObject {
                     throw new Exception($"Cannot set eye to non-movable {value}"); // TODO: You can set it to a turf
                 }
 
+                newEye?.IncRef();
+                Connection.Eye?.DecRef();
                 Connection.Eye = newEye as DreamObjectMovable;
                 break;
             }

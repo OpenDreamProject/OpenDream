@@ -148,6 +148,7 @@ internal partial class DMCodeTree {
             compiler.GlobalInitProc.DebugSource(value.Location);
             value.EmitPushValue(new(compiler, dmObject, compiler.GlobalInitProc));
             compiler.GlobalInitProc.Assign(DMReference.CreateGlobal(globalId));
+            compiler.GlobalInitProc.Pop();
             return true;
         }
 
@@ -298,6 +299,7 @@ internal partial class DMCodeTree {
                 compiler.GlobalInitProc.DebugSource(value.Location);
                 value.EmitPushValue(new(compiler, dmObject, compiler.GlobalInitProc));
                 compiler.GlobalInitProc.Assign(DMReference.CreateGlobal(globalId));
+                compiler.GlobalInitProc.Pop();
             }
 
             return true;

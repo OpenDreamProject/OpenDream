@@ -1,7 +1,8 @@
 ﻿using System.IO;
-using DMCompiler.Bytecode;
+// ReSharper disable once RedundantUsingDirective
 using System.Runtime.CompilerServices;
 using System.Text;
+using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Resources;
 
@@ -80,7 +81,7 @@ public class DreamResource(int id, string? filePath, string? resourcePath) {
         }
 
         // Prune any remaining formatting
-        text = StringFormatEncoder.RemoveFormatting(text);
+        text = StringFormatDecoder.RemoveFormatting(text);
 
         CreateDirectory();
         File.AppendAllText(ResourcePath, text + "\r\n");

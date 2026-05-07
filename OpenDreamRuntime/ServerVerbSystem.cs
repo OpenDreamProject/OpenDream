@@ -179,13 +179,13 @@ public sealed class ServerVerbSystem : VerbSystem {
         }
     }
 
-    private void RunVerb(DreamProc verb, string name, DreamObject? src, DreamConnection usr, params DreamValue[] arguments) {
+    private void RunVerb(DreamProc verb, string name, DreamObject src, DreamConnection usr, params DreamValue[] arguments) {
         using var _ = Profiler.BeginZone("DM Execution", color: (uint)Color.LightPink.ToArgb());
 
         DreamThread.Run($"Execute {name} by {usr.Session!.Name}", async state => {
             await state.Call(verb, src, usr.Mob, arguments);
             return DreamValue.Null;
-        });
+        }).Dispose();
     }
 
     private void OnVerbExecuted(ExecuteVerbEvent msg, EntitySessionEventArgs args) {

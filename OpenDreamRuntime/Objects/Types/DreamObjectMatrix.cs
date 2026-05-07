@@ -4,23 +4,33 @@ using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.Types;
 
-public sealed class DreamObjectMatrix : DreamObject {
-    // TODO: Store a/b/c/d/e/f as fields instead of as DM vars
+public sealed class DreamObjectMatrix(DreamObjectDefinition objectDefinition) : DreamObject(objectDefinition) {
+    public float A { get=> _aInner.UnsafeGetValueAsFloat(); set { _aInner.DecRef(); _aInner = new(value); } }
+    public float B { get=> _bInner.UnsafeGetValueAsFloat(); set { _bInner.DecRef(); _bInner = new(value); } }
+    public float C { get=> _cInner.UnsafeGetValueAsFloat(); set { _cInner.DecRef(); _cInner = new(value); } }
+    public float D { get=> _dInner.UnsafeGetValueAsFloat(); set { _dInner.DecRef(); _dInner = new(value); } }
+    public float E { get=> _eInner.UnsafeGetValueAsFloat(); set { _eInner.DecRef(); _eInner = new(value); } }
+    public float F { get=> _fInner.UnsafeGetValueAsFloat(); set { _fInner.DecRef(); _fInner = new(value); } }
 
-    public DreamObjectMatrix(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
-
-    }
+    private DreamValue _aInner, _bInner, _cInner, _dInner, _eInner, _fInner;
 
     public override void Initialize(DreamProcArguments args) {
-        if (args.Count > 0) {
+        if (args.Count == 0) {
+            A = 1f;
+            B = 0f;
+            C = 0f;
+            D = 0f;
+            E = 1f;
+            F = 0f;
+        } else {
             DreamValue copyMatrixOrA = args.GetArgument(0);
             if (copyMatrixOrA.TryGetValueAsDreamObject<DreamObjectMatrix>(out var matrixToCopy)) {
-                SetVariableValue("a", matrixToCopy.GetVariable("a"));
-                SetVariableValue("b", matrixToCopy.GetVariable("b"));
-                SetVariableValue("c", matrixToCopy.GetVariable("c"));
-                SetVariableValue("d", matrixToCopy.GetVariable("d"));
-                SetVariableValue("e", matrixToCopy.GetVariable("e"));
-                SetVariableValue("f", matrixToCopy.GetVariable("f"));
+                A = matrixToCopy.A;
+                B = matrixToCopy.B;
+                C = matrixToCopy.C;
+                D = matrixToCopy.D;
+                E = matrixToCopy.E;
+                F = matrixToCopy.F;
             } else {
                 DreamValue b = args.GetArgument(1);
                 DreamValue c = args.GetArgument(2);
@@ -28,53 +38,58 @@ public sealed class DreamObjectMatrix : DreamObject {
                 DreamValue e = args.GetArgument(4);
                 DreamValue f = args.GetArgument(5);
                 try { // BYOND runtimes if args are of the wrong type
-                    copyMatrixOrA.MustGetValueAsFloat();
-                    b.MustGetValueAsFloat();
-                    c.MustGetValueAsFloat();
-                    d.MustGetValueAsFloat();
-                    e.MustGetValueAsFloat();
-                    f.MustGetValueAsFloat();
+                    A = copyMatrixOrA.MustGetValueAsFloat();
+                    B = b.MustGetValueAsFloat();
+                    C = c.MustGetValueAsFloat();
+                    D = d.MustGetValueAsFloat();
+                    E = e.MustGetValueAsFloat();
+                    F = f.MustGetValueAsFloat();
                 } catch (InvalidCastException) {
                     throw new ArgumentException($"Invalid arguments used to create matrix {copyMatrixOrA} {b} {c} {d} {e} {f}");
                 }
-
-                SetVariableValue("a", copyMatrixOrA);
-                SetVariableValue("b", b);
-                SetVariableValue("c", c);
-                SetVariableValue("d", d);
-                SetVariableValue("e", e);
-                SetVariableValue("f", f);
             }
         }
 
         base.Initialize(args);
     }
 
+    protected override bool TryGetVar(string varName, out DreamValue value) {
+        switch (varName) {
+            case "a": value = _aInner; return true;
+            case "b": value = _bInner; return true;
+            case "c": value = _cInner; return true;
+            case "d": value = _dInner; return true;
+            case "e": value = _eInner; return true;
+            case "f": value = _fInner; return true;
+            default: return base.TryGetVar(varName, out value);
+        }
+    }
+
+    protected override void SetVar(string varName, DreamValue value) {
+        switch (varName) {
+            case "a": _aInner.DecRef(); _aInner = value; _aInner.IncRef(); break;
+            case "b": _bInner.DecRef(); _bInner = value; _bInner.IncRef(); break;
+            case "c": _cInner.DecRef(); _cInner = value; _cInner.IncRef(); break;
+            case "d": _dInner.DecRef(); _dInner = value; _dInner.IncRef(); break;
+            case "e": _eInner.DecRef(); _eInner = value; _eInner.IncRef(); break;
+            case "f": _fInner.DecRef(); _fInner = value; _fInner.IncRef(); break;
+            default:
+                base.SetVar(varName, value);
+                break;
+        }
+    }
+
     #region Operators
 
     public override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
-        GetVariable("a").TryGetValueAsFloat(out float lA);
-        GetVariable("b").TryGetValueAsFloat(out float lB);
-        GetVariable("c").TryGetValueAsFloat(out float lC);
-        GetVariable("d").TryGetValueAsFloat(out float lD);
-        GetVariable("e").TryGetValueAsFloat(out float lE);
-        GetVariable("f").TryGetValueAsFloat(out float lF);
-
         if (b.TryGetValueAsDreamObject<DreamObjectMatrix>(out var right)) {
-            right.GetVariable("a").TryGetValueAsFloat(out float rA);
-            right.GetVariable("b").TryGetValueAsFloat(out float rB);
-            right.GetVariable("c").TryGetValueAsFloat(out float rC);
-            right.GetVariable("d").TryGetValueAsFloat(out float rD);
-            right.GetVariable("e").TryGetValueAsFloat(out float rE);
-            right.GetVariable("f").TryGetValueAsFloat(out float rF);
-
             DreamObject output = MakeMatrix(ObjectTree,
-                lA + rA, // a
-                lB + rB, // b
-                lC + rC, // c
-                lD + rD, // d
-                lE + rE, // e
-                lF + rF  // f
+                A + right.A, // a
+                B + right.B, // b
+                C + right.C, // c
+                D + right.D, // d
+                E + right.E, // e
+                F + right.F  // f
             );
 
             return new DreamValue(output);
@@ -84,28 +99,14 @@ public sealed class DreamObjectMatrix : DreamObject {
     }
 
     public override DreamValue OperatorSubtract(DreamValue b, DMProcState state) {
-        GetVariable("a").TryGetValueAsFloat(out float lA);
-        GetVariable("b").TryGetValueAsFloat(out float lB);
-        GetVariable("c").TryGetValueAsFloat(out float lC);
-        GetVariable("d").TryGetValueAsFloat(out float lD);
-        GetVariable("e").TryGetValueAsFloat(out float lE);
-        GetVariable("f").TryGetValueAsFloat(out float lF);
-
         if (b.TryGetValueAsDreamObject<DreamObjectMatrix>(out var right)) {
-            right.GetVariable("a").TryGetValueAsFloat(out float rA);
-            right.GetVariable("b").TryGetValueAsFloat(out float rB);
-            right.GetVariable("c").TryGetValueAsFloat(out float rC);
-            right.GetVariable("d").TryGetValueAsFloat(out float rD);
-            right.GetVariable("e").TryGetValueAsFloat(out float rE);
-            right.GetVariable("f").TryGetValueAsFloat(out float rF);
-
             DreamObject output = MakeMatrix(ObjectTree,
-                lA - rA, // a
-                lB - rB, // b
-                lC - rC, // c
-                lD - rD, // d
-                lE - rE, // e
-                lF - rF  // f
+                A - right.A, // a
+                B - right.B, // b
+                C - right.C, // c
+                D - right.D, // d
+                E - right.E, // e
+                F - right.F  // f
             );
 
             return new DreamValue(output);
@@ -115,34 +116,21 @@ public sealed class DreamObjectMatrix : DreamObject {
     }
 
     public override DreamValue OperatorMultiply(DreamValue b, DMProcState state) {
-        GetVariable("a").TryGetValueAsFloat(out float lA);
-        GetVariable("b").TryGetValueAsFloat(out float lB);
-        GetVariable("c").TryGetValueAsFloat(out float lC);
-        GetVariable("d").TryGetValueAsFloat(out float lD);
-        GetVariable("e").TryGetValueAsFloat(out float lE);
-        GetVariable("f").TryGetValueAsFloat(out float lF);
-
         if (b.TryGetValueAsFloat(out float bFloat)) {
             DreamObjectMatrix output = MakeMatrix(ObjectTree,
-                    lA * bFloat,lB * bFloat,lC * bFloat,
-                    lD * bFloat,lE * bFloat,lF * bFloat
-                );
+                A * bFloat, B * bFloat, C * bFloat,
+                D * bFloat, E * bFloat, F * bFloat
+            );
+
             return new DreamValue(output);
         } else if (b.TryGetValueAsDreamObject<DreamObjectMatrix>(out var right)) {
-            right.GetVariable("a").TryGetValueAsFloat(out float rA);
-            right.GetVariable("b").TryGetValueAsFloat(out float rB);
-            right.GetVariable("c").TryGetValueAsFloat(out float rC);
-            right.GetVariable("d").TryGetValueAsFloat(out float rD);
-            right.GetVariable("e").TryGetValueAsFloat(out float rE);
-            right.GetVariable("f").TryGetValueAsFloat(out float rF);
-
             DreamObjectMatrix output = MakeMatrix(ObjectTree,
-                rA * lA + rD * lB, // a
-                rB * lA + rE * lB, // b
-                rC * lA + rF * lB + lC, // c
-                rA * lD + rD * lE, // d
-                rB * lD + rE * lE, // e
-                rC * lD + rF * lE + lF // f
+                right.A * A + right.D * B, // a
+                right.B * A + right.E * B, // b
+                right.C * A + right.F * B + C, // c
+                right.A * D + right.D * E, // d
+                right.B * D + right.E * E, // e
+                right.C * D + right.F * E + F // f
             );
 
             return new DreamValue(output);
@@ -156,24 +144,19 @@ public sealed class DreamObjectMatrix : DreamObject {
     }
 
     public override DreamValue OperatorDivide(DreamValue b, DMProcState state) {
-        GetVariable("a").TryGetValueAsFloat(out float lA);
-        GetVariable("b").TryGetValueAsFloat(out float lB);
-        GetVariable("c").TryGetValueAsFloat(out float lC);
-        GetVariable("d").TryGetValueAsFloat(out float lD);
-        GetVariable("e").TryGetValueAsFloat(out float lE);
-        GetVariable("f").TryGetValueAsFloat(out float lF);
-
         if (b.TryGetValueAsFloat(out float bFloat)) {
             DreamObjectMatrix output = MakeMatrix(ObjectTree,
-                    lA / bFloat,lB / bFloat,lC / bFloat,
-                    lD / bFloat,lE / bFloat,lF / bFloat
+                    A / bFloat, B / bFloat, C / bFloat,
+                    D / bFloat, E / bFloat, F / bFloat
                 );
             return new DreamValue(output);
         } else if(b.TryGetValueAsDreamObject<DreamObjectMatrix>(out var right)) { //matrix divided by matrix isn't a thing, but in BYOND it's apparently multiplication by the inverse, because of course it is
-            DreamObjectMatrix rightCopy = MatrixClone(ObjectTree, right);
+            var rightCopy = MatrixClone(ObjectTree, right);
+            using var rightCopyDreamValue = new DreamValue(rightCopy);
             if (!TryInvert(rightCopy))
                 throw new ArgumentException("Matrix does not have a valid inversion for Invert()");
-            return OperatorMultiply(new(rightCopy), state);
+
+            return OperatorMultiply(rightCopyDreamValue, state);
         }
 
         return base.OperatorDivide(b, state);
@@ -187,39 +170,22 @@ public sealed class DreamObjectMatrix : DreamObject {
         if (!b.TryGetValueAsDreamObject<DreamObjectMatrix>(out var right))
             return DreamValue.False;
 
-        const string elements = "abcdef";
-        for (int i = 0; i < elements.Length; i++) {
-            GetVariable(elements[i].ToString()).TryGetValueAsFloat(out var leftValue); // sets leftValue to 0 if this isn't a float
-            right.GetVariable(elements[i].ToString()).TryGetValueAsFloat(out var rightValue); // ditto
-            if (!leftValue.Equals(rightValue))
-                return DreamValue.False;
-        }
-        return DreamValue.True;
+        return A.Equals(right.A) && B.Equals(right.B) &&
+               C.Equals(right.C) && D.Equals(right.D) &&
+               E.Equals(right.E) && F.Equals(right.F)
+            ? DreamValue.True
+            : DreamValue.False;
     }
 
     public override DreamValue OperatorAppend(DreamValue b) {
-        GetVariable("a").TryGetValueAsFloat(out float lA);
-        GetVariable("b").TryGetValueAsFloat(out float lB);
-        GetVariable("c").TryGetValueAsFloat(out float lC);
-        GetVariable("d").TryGetValueAsFloat(out float lD);
-        GetVariable("e").TryGetValueAsFloat(out float lE);
-        GetVariable("f").TryGetValueAsFloat(out float lF);
-
         if (b.TryGetValueAsDreamObject<DreamObjectMatrix>(out var right)) {
-            right.GetVariable("a").TryGetValueAsFloat(out float rA);
-            right.GetVariable("b").TryGetValueAsFloat(out float rB);
-            right.GetVariable("c").TryGetValueAsFloat(out float rC);
-            right.GetVariable("d").TryGetValueAsFloat(out float rD);
-            right.GetVariable("e").TryGetValueAsFloat(out float rE);
-            right.GetVariable("f").TryGetValueAsFloat(out float rF);
-
-            SetVariableValue("a", new DreamValue(lA + rA));
-            SetVariableValue("b", new DreamValue(lB + rB));
-            SetVariableValue("c", new DreamValue(lC + rC));
-            SetVariableValue("d", new DreamValue(lD + rD));
-            SetVariableValue("e", new DreamValue(lE + rE));
-            SetVariableValue("f", new DreamValue(lF + rF));
-
+            A += right.A;
+            B += right.B;
+            C += right.C;
+            D += right.D;
+            E += right.E;
+            F += right.F;
+            IncRef();
             return new(this);
         }
 
@@ -227,28 +193,14 @@ public sealed class DreamObjectMatrix : DreamObject {
     }
 
     public override DreamValue OperatorRemove(DreamValue b) {
-        GetVariable("a").TryGetValueAsFloat(out float lA);
-        GetVariable("b").TryGetValueAsFloat(out float lB);
-        GetVariable("c").TryGetValueAsFloat(out float lC);
-        GetVariable("d").TryGetValueAsFloat(out float lD);
-        GetVariable("e").TryGetValueAsFloat(out float lE);
-        GetVariable("f").TryGetValueAsFloat(out float lF);
-
         if (b.TryGetValueAsDreamObject<DreamObjectMatrix>(out var right)) {
-            right.GetVariable("a").TryGetValueAsFloat(out float rA);
-            right.GetVariable("b").TryGetValueAsFloat(out float rB);
-            right.GetVariable("c").TryGetValueAsFloat(out float rC);
-            right.GetVariable("d").TryGetValueAsFloat(out float rD);
-            right.GetVariable("e").TryGetValueAsFloat(out float rE);
-            right.GetVariable("f").TryGetValueAsFloat(out float rF);
-
-            SetVariableValue("a", new DreamValue(lA - rA));
-            SetVariableValue("b", new DreamValue(lB - rB));
-            SetVariableValue("c", new DreamValue(lC - rC));
-            SetVariableValue("d", new DreamValue(lD - rD));
-            SetVariableValue("e", new DreamValue(lE - rE));
-            SetVariableValue("f", new DreamValue(lF - rF));
-
+            A -= right.A;
+            B -= right.B;
+            C -= right.C;
+            D -= right.D;
+            E -= right.E;
+            F -= right.F;
+            IncRef();
             return new(this);
         }
 
@@ -260,15 +212,14 @@ public sealed class DreamObjectMatrix : DreamObject {
 
     /// <summary> Used to create a float array understandable by <see cref="MutableAppearance.Transform"/> to be a transform. </summary>
     /// <returns>The matrix's values in an array, in [a,d,b,e,c,f] order.</returns>
-    /// <remarks>This will not verify that this is a /matrix</remarks>
     public static float[] MatrixToTransformFloatArray(DreamObjectMatrix matrix) {
         float[] array = new float[6];
-        matrix.GetVariable("a").TryGetValueAsFloat(out array[0]);
-        matrix.GetVariable("d").TryGetValueAsFloat(out array[1]);
-        matrix.GetVariable("b").TryGetValueAsFloat(out array[2]);
-        matrix.GetVariable("e").TryGetValueAsFloat(out array[3]);
-        matrix.GetVariable("c").TryGetValueAsFloat(out array[4]);
-        matrix.GetVariable("f").TryGetValueAsFloat(out array[5]);
+        array[0] = matrix.A;
+        array[1] = matrix.D;
+        array[2] = matrix.B;
+        array[3] = matrix.E;
+        array[4] = matrix.C;
+        array[5] = matrix.F;
         return array;
     }
 
@@ -302,12 +253,12 @@ public sealed class DreamObjectMatrix : DreamObject {
     /// <returns>A matrix created with a to f manually set to the floats given.</returns>
     public static DreamObjectMatrix MakeMatrix(DreamObjectTree objectTree, float a, float b, float c, float d, float e, float f) {
         var newMatrix = objectTree.CreateObject<DreamObjectMatrix>(objectTree.Matrix);
-        newMatrix.SetVariableValue("a", new(a));
-        newMatrix.SetVariableValue("b", new(b));
-        newMatrix.SetVariableValue("c", new(c));
-        newMatrix.SetVariableValue("d", new(d));
-        newMatrix.SetVariableValue("e", new(e));
-        newMatrix.SetVariableValue("f", new(f));
+        newMatrix.A = a;
+        newMatrix.B = b;
+        newMatrix.C = c;
+        newMatrix.D = d;
+        newMatrix.E = e;
+        newMatrix.F = f;
         return newMatrix;
     }
 
@@ -321,16 +272,8 @@ public sealed class DreamObjectMatrix : DreamObject {
     }
 
     public static float Determinant(DreamObjectMatrix matrix) {
-        try {
-            return matrix.GetVariable("a").MustGetValueAsFloat() *
-                   matrix.GetVariable("e").MustGetValueAsFloat() -
-                   matrix.GetVariable("d").MustGetValueAsFloat() *
-                   matrix.GetVariable("b").MustGetValueAsFloat();
-        } catch(InvalidCastException) {
-            return 0f;
-        } catch(KeyNotFoundException) {
-            return 0f;
-        }
+        return matrix.A * matrix.E -
+               matrix.D * matrix.B;
     }
 
     /// <summary>Inverts the given matrix, in-place.</summary>
@@ -339,26 +282,16 @@ public sealed class DreamObjectMatrix : DreamObject {
         var determinant = Determinant(matrix);
         if (determinant == 0f)
             return false;
+
         var oldValues = EnumerateMatrix(matrix).ToImmutableArray();
+
         //Just going by what we used to have as DM code within DMStandard. No clue if the math is right, here
-        matrix.SetVariableValue("a", new DreamValue( // a = e
-                oldValues[4] / determinant
-        ));
-        matrix.SetVariableValue("b", new DreamValue( // b = -b
-                -oldValues[1] / determinant
-        ));
-        matrix.SetVariableValue("c", new DreamValue( // c = b*f - e*c
-                (oldValues[1] * oldValues[5] - oldValues[4] * oldValues[2]) / determinant
-        ));
-        matrix.SetVariableValue("d", new DreamValue( // d = -d
-                -oldValues[3] / determinant
-        ));
-        matrix.SetVariableValue("e", new DreamValue( // e = a
-                oldValues[0] / determinant
-        ));
-        matrix.SetVariableValue("f", new DreamValue( // f = d*c - a*f
-                (oldValues[3] * oldValues[2] - oldValues[0] * oldValues[5]) / determinant
-        ));
+        matrix.A = oldValues[4] / determinant; // a = e
+        matrix.B = -oldValues[1] / determinant; // b = -b
+        matrix.C = (oldValues[1] * oldValues[5] - oldValues[4] * oldValues[2]) / determinant; // c = b*f - e*c
+        matrix.D = -oldValues[3] / determinant; // d = -d
+        matrix.E = oldValues[0] / determinant; // e = a
+        matrix.F = (oldValues[3] * oldValues[2] - oldValues[0] * oldValues[5]) / determinant; // f = d*c - a*f
         return true;
     }
 
@@ -366,171 +299,67 @@ public sealed class DreamObjectMatrix : DreamObject {
     /// Used when printing this matrix to enumerate its values in order.
     /// </summary>
     /// <returns>The matrix's values in [a,b,c,d,e,f] order.</returns>
-    /// <remarks>This will not verify that this is a /matrix</remarks>
     public static IEnumerable<float> EnumerateMatrix(DreamObjectMatrix matrix) {
-        float ret = 0f;
-        matrix.GetVariable("a").TryGetValueAsFloat(out ret);
-        yield return ret;
-        matrix.GetVariable("b").TryGetValueAsFloat(out ret);
-        yield return ret;
-        matrix.GetVariable("c").TryGetValueAsFloat(out ret);
-        yield return ret;
-        matrix.GetVariable("d").TryGetValueAsFloat(out ret);
-        yield return ret;
-        matrix.GetVariable("e").TryGetValueAsFloat(out ret);
-        yield return ret;
-        matrix.GetVariable("f").TryGetValueAsFloat(out ret);
-        yield return ret;
+        yield return matrix.A;
+        yield return matrix.B;
+        yield return matrix.C;
+        yield return matrix.D;
+        yield return matrix.E;
+        yield return matrix.F;
     }
 
     /// <summary> Translates a given matrix by the two translation factors given.</summary>
     /// <remarks> Note that this does use <see cref="DreamObject.SetVariableValue"/>.</remarks>
     /// <exception cref="InvalidOperationException">Thrown if the matrix has non-float members.</exception>
     public static void TranslateMatrix(DreamObjectMatrix matrix, float x, float y) {
-        try {
-            matrix.SetVariableValue("c", new DreamValue(matrix.GetVariable("c").MustGetValueAsFloat() + x));
-            matrix.SetVariableValue("f", new DreamValue(matrix.GetVariable("f").MustGetValueAsFloat() + y));
-        } catch(InvalidCastException) { // If any of these MustGet()s fail, try to give a more descriptive runtime
-            throw new InvalidOperationException($"Invalid matrix '{matrix}' cannot be scaled");
-        }
+        matrix.C += x;
+        matrix.F += y;
     }
 
     /// <summary> Scales a given matrix by the two scaling factors given.</summary>
     /// <remarks> Note that this does use <see cref="DreamObject.SetVariableValue"/>.</remarks>
     /// <exception cref="InvalidOperationException">Thrown if the matrix has non-float members.</exception>
     public static void ScaleMatrix(DreamObjectMatrix matrix, float x, float y) {
-        try {
-            matrix.SetVariableValue("a", new DreamValue(matrix.GetVariable("a").MustGetValueAsFloat() * x));
-            matrix.SetVariableValue("b", new DreamValue(matrix.GetVariable("b").MustGetValueAsFloat() * x));
-            matrix.SetVariableValue("c", new DreamValue(matrix.GetVariable("c").MustGetValueAsFloat() * x));
+        matrix.A *= x;
+        matrix.B *= x;
+        matrix.C *= x;
 
-            matrix.SetVariableValue("d", new DreamValue(matrix.GetVariable("d").MustGetValueAsFloat() * y));
-            matrix.SetVariableValue("e", new DreamValue(matrix.GetVariable("e").MustGetValueAsFloat() * y));
-            matrix.SetVariableValue("f", new DreamValue(matrix.GetVariable("f").MustGetValueAsFloat() * y));
-        } catch(InvalidCastException) { // If any of these MustGet()s fail, try to give a more descriptive runtime
-            throw new InvalidOperationException($"Invalid matrix '{matrix}' cannot be scaled");
-        }
+        matrix.D *= y;
+        matrix.E *= y;
+        matrix.F *= y;
     }
 
     /// <summary> Adds the second given matrix to the first given matrix. </summary>
-    /// <remarks> Note that this does use <see cref="DreamObject.SetVariableValue"/>.</remarks>
-    /// <exception cref="InvalidOperationException">Thrown if either matrix has non-float members.</exception>
     public static void AddMatrix(DreamObjectMatrix lMatrix, DreamObjectMatrix rMatrix) {
-        float lA;
-        float lB;
-        float lC;
-        float lD;
-        float lE;
-        float lF;
-        float rA;
-        float rB;
-        float rC;
-        float rD;
-        float rE;
-        float rF;
-        try {
-            lA = lMatrix.GetVariable("a").MustGetValueAsFloat();
-            lB = lMatrix.GetVariable("b").MustGetValueAsFloat();
-            lC = lMatrix.GetVariable("c").MustGetValueAsFloat();
-            lD = lMatrix.GetVariable("d").MustGetValueAsFloat();
-            lE = lMatrix.GetVariable("e").MustGetValueAsFloat();
-            lF = lMatrix.GetVariable("f").MustGetValueAsFloat();
-            rA = rMatrix.GetVariable("a").MustGetValueAsFloat();
-            rB = rMatrix.GetVariable("b").MustGetValueAsFloat();
-            rC = rMatrix.GetVariable("c").MustGetValueAsFloat();
-            rD = rMatrix.GetVariable("d").MustGetValueAsFloat();
-            rE = rMatrix.GetVariable("e").MustGetValueAsFloat();
-            rF = rMatrix.GetVariable("f").MustGetValueAsFloat();
-        } catch (InvalidCastException) {
-            throw new InvalidOperationException($"Invalid matrices '{lMatrix}' and '{rMatrix}' cannot be added.");
-        }
-        lMatrix.SetVariableValue("a", new DreamValue(lA + rA));
-        lMatrix.SetVariableValue("b", new DreamValue(lB + rB));
-        lMatrix.SetVariableValue("c", new DreamValue(lC + rC));
-        lMatrix.SetVariableValue("d", new DreamValue(lD + rD));
-        lMatrix.SetVariableValue("e", new DreamValue(lE + rE));
-        lMatrix.SetVariableValue("f", new DreamValue(lF + rF));
+        lMatrix.A += rMatrix.A;
+        lMatrix.B += rMatrix.B;
+        lMatrix.C += rMatrix.C;
+        lMatrix.D += rMatrix.D;
+        lMatrix.E += rMatrix.E;
+        lMatrix.F += rMatrix.F;
     }
 
     /// <summary> Subtracts the second given matrix from the first given matrix. </summary>
-    /// <remarks> Note that this does use <see cref="DreamObject.SetVariableValue"/>.</remarks>
-    /// <exception cref="InvalidOperationException">Thrown if either matrix has non-float members.</exception>
     public static void SubtractMatrix(DreamObjectMatrix lMatrix, DreamObjectMatrix rMatrix) {
-        float lA;
-        float lB;
-        float lC;
-        float lD;
-        float lE;
-        float lF;
-        float rA;
-        float rB;
-        float rC;
-        float rD;
-        float rE;
-        float rF;
-        try {
-            lA = lMatrix.GetVariable("a").MustGetValueAsFloat();
-            lB = lMatrix.GetVariable("b").MustGetValueAsFloat();
-            lC = lMatrix.GetVariable("c").MustGetValueAsFloat();
-            lD = lMatrix.GetVariable("d").MustGetValueAsFloat();
-            lE = lMatrix.GetVariable("e").MustGetValueAsFloat();
-            lF = lMatrix.GetVariable("f").MustGetValueAsFloat();
-            rA = rMatrix.GetVariable("a").MustGetValueAsFloat();
-            rB = rMatrix.GetVariable("b").MustGetValueAsFloat();
-            rC = rMatrix.GetVariable("c").MustGetValueAsFloat();
-            rD = rMatrix.GetVariable("d").MustGetValueAsFloat();
-            rE = rMatrix.GetVariable("e").MustGetValueAsFloat();
-            rF = rMatrix.GetVariable("f").MustGetValueAsFloat();
-        } catch (InvalidCastException) {
-            throw new InvalidOperationException($"Invalid matrices '{lMatrix}' and '{rMatrix}' cannot be subtracted.");
-        }
-        lMatrix.SetVariableValue("a", new DreamValue(lA - rA));
-        lMatrix.SetVariableValue("b", new DreamValue(lB - rB));
-        lMatrix.SetVariableValue("c", new DreamValue(lC - rC));
-        lMatrix.SetVariableValue("d", new DreamValue(lD - rD));
-        lMatrix.SetVariableValue("e", new DreamValue(lE - rE));
-        lMatrix.SetVariableValue("f", new DreamValue(lF - rF));
+        lMatrix.A -= rMatrix.A;
+        lMatrix.B -= rMatrix.B;
+        lMatrix.C -= rMatrix.C;
+        lMatrix.D -= rMatrix.D;
+        lMatrix.E -= rMatrix.E;
+        lMatrix.F -= rMatrix.F;
     }
 
     /// <summary> Multiplies the first given matrix by the other given matrix. </summary>
-    /// <remarks> Note that this does use <see cref="DreamObject.SetVariableValue"/>.</remarks>
-    /// <exception cref="InvalidOperationException">Thrown if either matrix has non-float members.</exception>
     public static void MultiplyMatrix(DreamObjectMatrix lMatrix, DreamObjectMatrix rMatrix) {
-        float lA;
-        float lB;
-        float lC;
-        float lD;
-        float lE;
-        float lF;
-        float rA;
-        float rB;
-        float rC;
-        float rD;
-        float rE;
-        float rF;
-        try {
-            lA = lMatrix.GetVariable("a").MustGetValueAsFloat();
-            lB = lMatrix.GetVariable("b").MustGetValueAsFloat();
-            lC = lMatrix.GetVariable("c").MustGetValueAsFloat();
-            lD = lMatrix.GetVariable("d").MustGetValueAsFloat();
-            lE = lMatrix.GetVariable("e").MustGetValueAsFloat();
-            lF = lMatrix.GetVariable("f").MustGetValueAsFloat();
-            rA = rMatrix.GetVariable("a").MustGetValueAsFloat();
-            rB = rMatrix.GetVariable("b").MustGetValueAsFloat();
-            rC = rMatrix.GetVariable("c").MustGetValueAsFloat();
-            rD = rMatrix.GetVariable("d").MustGetValueAsFloat();
-            rE = rMatrix.GetVariable("e").MustGetValueAsFloat();
-            rF = rMatrix.GetVariable("f").MustGetValueAsFloat();
-        } catch (InvalidCastException) {
-            throw new InvalidOperationException($"Invalid matrices '{lMatrix}' and '{rMatrix}' cannot be multiplied.");
-        }
+        float lA = lMatrix.A, lB = lMatrix.B, lC = lMatrix.C, lD = lMatrix.D, lE = lMatrix.E, lF = lMatrix.F;
+        float rA = rMatrix.A, rB = rMatrix.B, rC = rMatrix.C, rD = rMatrix.D, rE = rMatrix.E, rF = rMatrix.F;
 
-        lMatrix.SetVariableValue("a", new DreamValue(lA*rA + lD*rB));
-        lMatrix.SetVariableValue("b", new DreamValue(lB*rA + lE*rB));
-        lMatrix.SetVariableValue("c", new DreamValue(lC*rA + lF*rB + rC));
-        lMatrix.SetVariableValue("d", new DreamValue(lA*rD + lD*rE));
-        lMatrix.SetVariableValue("e", new DreamValue(lB*rD + lE*rE));
-        lMatrix.SetVariableValue("f", new DreamValue(lC*rD + lF*rE + rF));
+        lMatrix.A = lA * rA + lD * rB;
+        lMatrix.B = lB * rA + lE * rB;
+        lMatrix.C = lC * rA + lF * rB + rC;
+        lMatrix.D = lA * rD + lD * rE;
+        lMatrix.E = lB * rD + lE * rE;
+        lMatrix.F = lC * rD + lF * rE + rF;
     }
     #endregion Helpers
 }

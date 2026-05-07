@@ -1,5 +1,5 @@
-using DMCompiler.Bytecode;
 using OpenDreamRuntime.Procs.DebugAdapter;
+using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Resources;
 
@@ -22,7 +22,7 @@ sealed class ConsoleOutputResource : DreamResource {
     public override void Output(DreamValue value) {
         // Prune any remaining formatting
         var message = value.Stringify();
-        message = StringFormatEncoder.RemoveFormatting(message);
+        message = StringFormatDecoder.RemoveFormatting(message);
 
         WriteConsole(LogLevel.Info, "world.log", message);
     }

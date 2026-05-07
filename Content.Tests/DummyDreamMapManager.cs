@@ -55,6 +55,10 @@ public sealed class DummyDreamMapManager : IDreamMapManager {
         return EntityUid.Invalid;
     }
 
+    public IEnumerable<DreamObjectMob> GetMobsInRange((int X, int Y, int Z) loc, int distance) {
+        yield break;
+    }
+
     public IEnumerable<AtomDirection> CalculateSteps((int X, int Y, int Z) loc, (int X, int Y, int Z) dest, int distance) {
         yield break;
     }

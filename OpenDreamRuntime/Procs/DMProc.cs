@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -693,14 +694,13 @@ public sealed class DMProcState : ProcState {
     /// Pops arguments off the stack and returns them in DreamProcArguments
     /// </summary>
     /// <param name="proc">The target proc we're calling. If null, named args or arglist() cannot be used.</param>
-    /// <param name="argumentsType">The source of the arguments</param>
-    /// <param name="argumentStackSize">The amount of items the arguments have on the stack</param>
+    /// <param name="argumentInfo">Information about the source & amount of the arguments</param>
     /// <returns>The arguments in a DreamProcArguments struct</returns>
     [MustDisposeResource]
-    public DreamProcArguments PopProcArguments(DreamProc? proc, DMCallArgumentsType argumentsType, int argumentStackSize) {
-        var values = PopCount(argumentStackSize);
+    public DreamProcArguments PopProcArguments(DreamProc? proc, DMStackArgumentInfo argumentInfo) {
+        using var stackArgs = new DMStackArguments(this, argumentInfo);
 
-        return CreateProcArguments(values, proc, argumentsType, argumentStackSize);
+        return stackArgs.ToProcArguments(proc);
     }
 
     #endregion
@@ -777,8 +777,8 @@ public sealed class DMProcState : ProcState {
         throw new Exception($"Invalid reference type {type}");
     }
 
-    public (DMCallArgumentsType Type, int StackSize) ReadProcArguments() {
-        return ((DMCallArgumentsType) ReadByte(), ReadInt());
+    public DMStackArgumentInfo ReadProcArguments() {
+        return new((DMCallArgumentsType) ReadByte(), ReadInt());
     }
 
     #endregion
@@ -1140,181 +1140,197 @@ public sealed class DMProcState : ProcState {
         // being there, so just stop after the named locals.
     }
 
-    [MustDisposeResource]
-    public DreamProcArguments CreateProcArguments([HandlesResourceDisposal] ReadOnlySpan<DreamValue> values, DreamProc? proc, DMCallArgumentsType argumentsType, int argumentStackSize) {
-        switch (argumentsType) {
-            case DMCallArgumentsType.None:
-                foreach (var value in values)
-                    value.Dispose();
-
-                return new DreamProcArguments();
-            case DMCallArgumentsType.FromStack:
-                var fromStackArgs = new DreamProcArguments(values);
-                foreach (var value in values)
-                    value.Dispose();
-
-                return fromStackArgs;
-            case DMCallArgumentsType.FromProcArguments:
-                DebugTools.Assert(values.Length == 0);
-                return new DreamProcArguments(GetArguments());
-            case DMCallArgumentsType.FromStackKeyed: {
-                if (argumentStackSize % 2 != 0)
-                    throw new ArgumentException("Argument stack size must be even", nameof(argumentStackSize));
-                if (proc == null)
-                    throw new Exception("Cannot use named arguments here");
-
-                // new /mutable_appearance(...) always uses /image/New()'s arguments, despite any overrides
-                if (proc.OwningType == Proc.ObjectTree.MutableAppearance && proc.Name == "New")
-                    proc = Proc.DreamManager.ImageConstructor;
-
-                var argumentCount = argumentStackSize / 2;
-                var arguments = new DreamValue[Math.Max(argumentCount, proc.ArgumentNames.Count)];
-                var skippingArg = false;
-                var isImageConstructor = proc == Proc.DreamManager.ImageConstructor ||
-                                         proc == Proc.DreamManager.ImageFactoryProc;
-
-                Array.Fill(arguments, DreamValue.Null);
-                for (int i = 0; i < argumentCount; i++) {
-                    var key = values[i * 2];
-                    var value = values[i * 2 + 1];
-
-                    if (key.IsNull) {
-                        // image() or new /image() will skip the loc arg if the second arg is a string
-                        // Really don't like this but it's BYOND behavior
-                        // Note that the way we're doing it leads to different argument placement when there are no named args
-                        // Hopefully nothing depends on that though
-                        // TODO: We aim to do sanity improvements in the future, yea? Big one here
-                        if (isImageConstructor && i == 1 && value.Type == DreamValue.DreamValueType.String)
-                            skippingArg = true;
-
-                        arguments[skippingArg ? i + 1 : i] = value;
-                    } else {
-                        string argumentName = key.MustGetValueAsString();
-                        int argumentIndex = proc.ArgumentNames.IndexOf(argumentName);
-                        if (argumentIndex == -1)
-                            throw new Exception($"{proc} has no argument named \"{argumentName}\"");
-
-                        arguments[argumentIndex] = value;
-                    }
-                }
-
-                var procArgs = new DreamProcArguments(arguments);
-                foreach (var value in values)
-                    value.Dispose();
-
-                return procArgs;
-            }
-            case DMCallArgumentsType.FromArgumentList: {
-                if (proc == null)
-                    throw new Exception("Cannot use an arglist here");
-                if (!values[0].TryGetValueAsDreamList(out var argList))
-                    return new DreamProcArguments(); // Using a non-list gives you no arguments
-
-                // new /mutable_appearance(...) always uses /image/New()'s arguments, despite any overrides
-                if (proc.OwningType == Proc.ObjectTree.MutableAppearance && proc.Name == "New")
-                    proc = Proc.DreamManager.ImageConstructor;
-
-                var listValues = argList.GetValues();
-                var arguments = new DreamValue[Math.Max(listValues.Count, proc.ArgumentNames.Count)];
-                var skippingArg = false;
-                var isImageConstructor = proc == Proc.DreamManager.ImageConstructor ||
-                                         proc == Proc.DreamManager.ImageFactoryProc;
-
-                Array.Fill(arguments, DreamValue.Null);
-                for (int i = 0; i < listValues.Count; i++) {
-                    var value = listValues[i];
-
-                    if (argList.ContainsKey(value)) { //Named argument
-                        if (!value.TryGetValueAsString(out var argumentName))
-                            throw new Exception("List contains a non-string key, and cannot be used as an arglist");
-
-                        int argumentIndex = proc.ArgumentNames.IndexOf(argumentName);
-                        if (argumentIndex == -1)
-                            throw new Exception($"{proc} has no argument named \"{argumentName}\"");
-
-                        arguments[argumentIndex] = argList.GetValue(value);
-                    } else { //Ordered argument
-                        // image() or new /image() will skip the loc arg if the second arg is a string
-                        // Really don't like this but it's BYOND behavior
-                        // Note that the way we're doing it leads to different argument placement when there are no named args
-                        // Hopefully nothing depends on that though
-                        if (isImageConstructor && i == 1 && value.Type == DreamValue.DreamValueType.String)
-                            skippingArg = true;
-
-                        // TODO: Verify ordered args precede all named args
-                        arguments[skippingArg ? i + 1 : i] = value;
-                        value.IncRef();
-                    }
-                }
-
-                var procArgs = new DreamProcArguments(arguments);
-                foreach (var arg in arguments)
-                    arg.Dispose();
-                foreach (var value in values)
-                    value.Dispose();
-
-                return procArgs;
-            }
-            default:
-                throw new Exception($"Invalid arguments type {argumentsType}");
-        }
+    public readonly struct DMStackArgumentInfo(DMCallArgumentsType type, int stackSize) {
+        public readonly DMCallArgumentsType Type = type;
+        public readonly int StackSize = stackSize;
     }
 
-    public (DreamValue[]?, Dictionary<DreamValue, DreamValue>?) CollectProcArguments(ReadOnlySpan<DreamValue> values, DMCallArgumentsType argumentsType, int argumentStackSize) {
-        switch (argumentsType) {
-            case DMCallArgumentsType.None:
-                return (Array.Empty<DreamValue>(), null);
-            case DMCallArgumentsType.FromStack:
-                return (values.ToArray(), null);
-            case DMCallArgumentsType.FromProcArguments:
-                return (GetArguments().ToArray(), null);
-            case DMCallArgumentsType.FromStackKeyed: {
-                if (argumentStackSize % 2 != 0)
-                    throw new ArgumentException("Argument stack size must be even", nameof(argumentStackSize));
+    [MustDisposeResource]
+    public readonly ref struct DMStackArguments : IDisposable {
+        public int Count => GetCount();
 
-                var argumentCount = argumentStackSize / 2;
-                var arguments = new Dictionary<DreamValue, DreamValue>(argumentCount);
+        private readonly DMProcState _state;
+        private readonly DMStackArgumentInfo _info;
+        private readonly ReadOnlySpan<DreamValue> _values;
 
-                for (int i = 0; i < argumentCount; i++) {
-                    var key = values[i*2];
-                    var value = values[i*2+1];
+        public DMStackArguments(DMProcState state, DMStackArgumentInfo info) {
+            _state = state;
+            _info = info;
+            _values = state.PopCount(info.StackSize);
 
-                    if (key.IsNull) {
-                        arguments[new(i + 1)] = value;
-                    } else {
-                        string argumentName = key.MustGetValueAsString();
-
-                        arguments[new(argumentName)] = value;
-                    }
-                }
-
-                return (null, arguments);
+            switch (info.Type) {
+                case DMCallArgumentsType.FromStackKeyed:
+                    Debug.Assert(_values.Length % 2 == 0);
+                    break;
+                case DMCallArgumentsType.FromArgumentList:
+                    Debug.Assert(_values.Length == 1);
+                    break;
             }
-            case DMCallArgumentsType.FromArgumentList: {
-                if (!values[0].TryGetValueAsDreamList(out var argList))
-                    return (Array.Empty<DreamValue>(), null); // Using a non-list gives you no arguments
+        }
 
-                var listValues = argList.GetValues();
-                var arguments = new Dictionary<DreamValue, DreamValue>();
+        public void Dispose() {
+            foreach (var value in _values)
+                value.DecRef();
+        }
 
-                for (int i = 0; i < listValues.Count; i++) {
-                    var value = listValues[i];
+        public (DreamValue Key, DreamValue Value)[] ToArray() {
+            var values = new (DreamValue, DreamValue)[Count];
 
-                    if (argList.ContainsKey(value)) { //Named argument
-                        if (!value.TryGetValueAsString(out var argumentName))
-                            throw new Exception("List contains a non-string key, and cannot be used as an arglist");
+            switch (_info.Type) {
+                case DMCallArgumentsType.FromArgumentList:
+                    if (!_values[0].TryGetValueAsDreamList(out var argList))
+                        break;
 
-                        arguments[new(argumentName)] = argList.GetValue(value);
-                    } else { //Ordered argument
-                        // TODO: Verify ordered args precede all named args
-                        arguments[new(i + 1)] = value;
+                    int i = 0;
+                    foreach (var pair in argList.EnumerateAssocValues()) {
+                        values[i++] = (pair.Key, pair.Value);
                     }
-                }
 
-                return (null, arguments);
+                    break;
+                case DMCallArgumentsType.FromStackKeyed:
+                    for (i = 0; i < _values.Length / 2; i++) {
+                        values[i] = (_values[i * 2], _values[i * 2 + 1]);
+                    }
+
+                    break;
+                case DMCallArgumentsType.FromStack:
+                    for (i = 0; i < _values.Length; i++)
+                        values[i] = (DreamValue.Null, _values[i]);
+
+                    break;
+                case DMCallArgumentsType.FromProcArguments:
+                    var arguments = _state.GetArguments();
+                    for (i = 0; i < arguments.Length; i++)
+                        values[i] = (DreamValue.Null, arguments[i]);
+
+                    break;
             }
-            default:
-                throw new Exception($"Invalid arguments type {argumentsType}");
+
+            return values;
+        }
+
+        [MustDisposeResource]
+        public DreamProcArguments ToProcArguments(DreamProc? proc) {
+            switch (_info.Type) {
+                case DMCallArgumentsType.None:
+                    return new DreamProcArguments();
+                case DMCallArgumentsType.FromStack:
+                    return new DreamProcArguments(_values);
+                case DMCallArgumentsType.FromProcArguments:
+                    return new DreamProcArguments(_state.GetArguments());
+                case DMCallArgumentsType.FromStackKeyed: {
+                    if (proc == null)
+                        throw new Exception("Cannot use named arguments here");
+
+                    // new /mutable_appearance(...) always uses /image/New()'s arguments, despite any overrides
+                    if (proc.OwningType == _state.Proc.ObjectTree.MutableAppearance && proc.Name == "New")
+                        proc = _state.DreamManager.ImageConstructor;
+
+                    var argumentCount = Count;
+                    var arguments = new DreamValue[Math.Max(argumentCount, proc.ArgumentNames.Count)];
+                    var skippingArg = false;
+                    var isImageConstructor = proc == _state.Proc.DreamManager.ImageConstructor ||
+                                             proc == _state.Proc.DreamManager.ImageFactoryProc;
+
+                    Array.Fill(arguments, DreamValue.Null);
+                    for (int i = 0; i < argumentCount; i++) {
+                        var key = _values[i * 2];
+                        var value = _values[i * 2 + 1];
+
+                        if (key.IsNull) {
+                            // image() or new /image() will skip the loc arg if the second arg is a string
+                            // Really don't like this but it's BYOND behavior
+                            // Note that the way we're doing it leads to different argument placement when there are no named args
+                            // Hopefully nothing depends on that though
+                            // TODO: We aim to do sanity improvements in the future, yea? Big one here
+                            if (isImageConstructor && i == 1 && value.Type == DreamValue.DreamValueType.String)
+                                skippingArg = true;
+
+                            arguments[skippingArg ? i + 1 : i] = value;
+                        } else {
+                            string argumentName = key.MustGetValueAsString();
+                            int argumentIndex = proc.ArgumentNames.IndexOf(argumentName);
+                            if (argumentIndex == -1)
+                                throw new Exception($"{proc} has no argument named \"{argumentName}\"");
+
+                            arguments[argumentIndex] = value;
+                        }
+                    }
+
+                    return new DreamProcArguments(arguments);
+                }
+                case DMCallArgumentsType.FromArgumentList: {
+                    if (proc == null)
+                        throw new Exception("Cannot use an arglist here");
+                    if (!_values[0].TryGetValueAsDreamList(out var argList))
+                        return new DreamProcArguments(); // Using a non-list gives you no arguments
+
+                    // new /mutable_appearance(...) always uses /image/New()'s arguments, despite any overrides
+                    if (proc.OwningType == _state.Proc.ObjectTree.MutableAppearance && proc.Name == "New")
+                        proc = _state.Proc.DreamManager.ImageConstructor;
+
+                    var listValues = argList.GetValues();
+                    var arguments = new DreamValue[Math.Max(listValues.Count, proc.ArgumentNames.Count)];
+                    var skippingArg = false;
+                    var isImageConstructor = proc == _state.Proc.DreamManager.ImageConstructor ||
+                                             proc == _state.Proc.DreamManager.ImageFactoryProc;
+
+                    Array.Fill(arguments, DreamValue.Null);
+                    for (int i = 0; i < listValues.Count; i++) {
+                        var value = listValues[i];
+
+                        if (argList.ContainsKey(value)) { //Named argument
+                            if (!value.TryGetValueAsString(out var argumentName))
+                                throw new Exception("List contains a non-string key, and cannot be used as an arglist");
+
+                            int argumentIndex = proc.ArgumentNames.IndexOf(argumentName);
+                            if (argumentIndex == -1)
+                                throw new Exception($"{proc} has no argument named \"{argumentName}\"");
+
+                            arguments[argumentIndex] = argList.GetValue(value);
+                        } else { //Ordered argument
+                            // image() or new /image() will skip the loc arg if the second arg is a string
+                            // Really don't like this but it's BYOND behavior
+                            // Note that the way we're doing it leads to different argument placement when there are no named args
+                            // Hopefully nothing depends on that though
+                            if (isImageConstructor && i == 1 && value.Type == DreamValue.DreamValueType.String)
+                                skippingArg = true;
+
+                            // TODO: Verify ordered args precede all named args
+                            arguments[skippingArg ? i + 1 : i] = value;
+                            value.IncRef();
+                        }
+                    }
+
+                    var procArgs = new DreamProcArguments(arguments);
+                    foreach (var arg in arguments)
+                        arg.Dispose();
+
+                    return procArgs;
+                }
+                default:
+                    throw new Exception($"Invalid arguments type {_info.Type}");
+            }
+        }
+
+        private int GetCount() {
+            switch (_info.Type) {
+                case DMCallArgumentsType.FromStackKeyed:
+                    return _values.Length / 2;
+                case DMCallArgumentsType.FromArgumentList:
+                    Debug.Assert(_values.Length == 1);
+
+                    if (!_values[0].TryGetValueAsDreamList(out var argList))
+                        return 0;
+
+                    return argList.GetLength();
+                case DMCallArgumentsType.FromStack:
+                    return _values.Length;
+                case DMCallArgumentsType.FromProcArguments:
+                    return _state.GetArguments().Length;
+                default:
+                    return 0;
+            }
         }
     }
 }

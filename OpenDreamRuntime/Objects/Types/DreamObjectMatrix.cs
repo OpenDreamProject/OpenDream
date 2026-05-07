@@ -5,8 +5,6 @@ using OpenDreamShared.Dream;
 namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectMatrix(DreamObjectDefinition objectDefinition) : DreamObject(objectDefinition) {
-    public static readonly float[] IdentityMatrixArray = {1f, 0f, 0f, 0f, 1f, 0f};
-
     public float A { get=> _aInner.UnsafeGetValueAsFloat(); set { _aInner.DecRef(); _aInner = new(value); } }
     public float B { get=> _bInner.UnsafeGetValueAsFloat(); set { _bInner.DecRef(); _bInner = new(value); } }
     public float C { get=> _cInner.UnsafeGetValueAsFloat(); set { _cInner.DecRef(); _cInner = new(value); } }

@@ -1,6 +1,7 @@
 using Dependency = Robust.Shared.IoC.DependencyAttribute;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
@@ -207,7 +208,7 @@ public struct DreamValue : IDisposable, IEquatable<DreamValue> {
     /// <summary>
     /// Casts the DreamValue to a float without throwing exceptions. Useful where BYOND coerces non-numbers to 0.
     /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining), Pure]
     public float UnsafeGetValueAsFloat() {
         return _floatValue;
     }

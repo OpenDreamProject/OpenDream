@@ -17,8 +17,8 @@ public sealed class DreamObjectTurf : DreamObjectAtom {
         Z = z;
 
         Cell = default!; // NEEDS to be set by DreamMapManager after creation
+        Appearance = default!; // This will be set by DreamMapManager
         Contents = new TurfContentsList(ObjectTree.List.ObjectDefinition, this);
-        Appearance = AppearanceSystem!.AddAppearance(AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
     }
 
     public override void Initialize(DreamProcArguments args) {

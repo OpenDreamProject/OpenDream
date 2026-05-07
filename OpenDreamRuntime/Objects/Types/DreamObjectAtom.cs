@@ -1,21 +1,20 @@
 ﻿namespace OpenDreamRuntime.Objects.Types;
 
 [Virtual]
-public class DreamObjectAtom : DreamObject {
-    public readonly DreamOverlaysList Overlays;
-    public readonly DreamOverlaysList Underlays;
-    public readonly DreamVisContentsList VisContents;
-    public readonly DreamFilterList Filters;
-    public DreamList? VisLocs; // TODO: Implement
+public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObject(objectDefinition) {
+    private DreamOverlaysList Overlays => _overlays ??= new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
+    private DreamOverlaysList Underlays => _underlays ??= new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
+    private DreamVisContentsList VisContents => _visContents ??= new(ObjectTree.List.ObjectDefinition, PvsOverrideSystem, this);
+    private DreamFilterList Filters => _filters ??= new(ObjectTree.List.ObjectDefinition, this);
+    private DreamList VisLocs => _visLocs ??= ObjectTree.CreateList();
 
-    public DreamObjectAtom(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
-        Overlays = new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
-        Underlays = new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
-        VisContents = new(ObjectTree.List.ObjectDefinition, PvsOverrideSystem, this);
-        Filters = new(ObjectTree.List.ObjectDefinition, this);
-    }
+    private DreamOverlaysList? _overlays;
+    private DreamOverlaysList? _underlays;
+    private DreamVisContentsList? _visContents;
+    private DreamFilterList? _filters;
+    private DreamList? _visLocs; // TODO: Implement
 
-    public string GetRTEntityDesc() {
+    protected string GetRTEntityDesc() {
         if (AtomManager.TryGetAppearance(this, out var appearance) && appearance.Desc != null)
             return appearance.Desc;
 
@@ -23,11 +22,11 @@ public class DreamObjectAtom : DreamObject {
     }
 
     protected override void HandleDeletion() {
-        Overlays.DecRef();
-        Underlays.DecRef();
-        VisContents.DecRef();
-        Filters.DecRef();
-        VisLocs?.DecRef();
+        _overlays?.DecRef();
+        _underlays?.DecRef();
+        _visContents?.DecRef();
+        _filters?.DecRef();
+        _visLocs?.DecRef();
 
         base.HandleDeletion();
     }
@@ -64,7 +63,6 @@ public class DreamObjectAtom : DreamObject {
                 value = new(Filters);
                 return true;
             case "vis_locs":
-                VisLocs ??= ObjectTree.CreateList();
                 VisLocs.IncRef();
                 value = new(VisLocs);
                 return true;

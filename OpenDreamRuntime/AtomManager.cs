@@ -619,6 +619,7 @@ public sealed class AtomManager {
         return false;
     }
 
+    // TODO: This should probably return an ImmutableAppearance so they don't have to be sent through ServerAppearanceSystem.AddAppearance()
     public MutableAppearance GetAppearanceFromDefinition(DreamObjectDefinition def) {
         if (_definitionAppearanceCache.TryGetValue(def, out var appearance))
             return appearance;

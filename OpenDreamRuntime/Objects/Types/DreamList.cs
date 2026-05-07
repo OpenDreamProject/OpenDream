@@ -961,8 +961,6 @@ public sealed class DreamOverlaysList(DreamObjectDefinition listDef, DreamObject
 // atom.vis_contents list
 // Operates on an atom's appearance
 public sealed class DreamVisContentsList : DreamList {
-    [Dependency] private readonly AtomManager _atomManager = default!;
-    [Dependency] private readonly IEntityManager _entityManager = default!;
     private readonly PvsOverrideSystem? _pvsOverrideSystem;
 
     private readonly List<DreamObjectAtom> _visContents = new();
@@ -989,7 +987,7 @@ public sealed class DreamVisContentsList : DreamList {
         if (end == 0 || end > count) end = count;
 
         _visContents.RemoveRange(start - 1, end - start);
-        _atomManager.UpdateAppearance(_atom, appearance => {
+        AtomManager.UpdateAppearance(_atom, appearance => {
             appearance.VisContents.RemoveRange(start - 1, end - start);
         });
     }
@@ -1029,9 +1027,9 @@ public sealed class DreamVisContentsList : DreamList {
         if (entity != EntityUid.Invalid)
             _pvsOverrideSystem?.AddGlobalOverride(entity);
 
-        _atomManager.UpdateAppearance(_atom, appearance => {
+        AtomManager.UpdateAppearance(_atom, appearance => {
             // Add even an invalid UID to keep this and _visContents in sync
-            appearance.VisContents.Add(_entityManager.GetNetEntity(entity));
+            appearance.VisContents.Add(EntityManager.GetNetEntity(entity));
         });
     }
 
@@ -1040,8 +1038,8 @@ public sealed class DreamVisContentsList : DreamList {
             return;
 
         _visContents.Remove(movable);
-        _atomManager.UpdateAppearance(_atom, appearance => {
-            appearance.VisContents.Remove(_entityManager.GetNetEntity(movable.Entity));
+        AtomManager.UpdateAppearance(_atom, appearance => {
+            appearance.VisContents.Remove(EntityManager.GetNetEntity(movable.Entity));
         });
     }
 

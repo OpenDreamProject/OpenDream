@@ -185,7 +185,7 @@ public sealed class ServerVerbSystem : VerbSystem {
         DreamThread.Run($"Execute {name} by {usr.Session!.Name}", async state => {
             await state.Call(verb, src, usr.Mob, arguments);
             return DreamValue.Null;
-        });
+        }).Dispose();
     }
 
     private void OnVerbExecuted(ExecuteVerbEvent msg, EntitySessionEventArgs args) {

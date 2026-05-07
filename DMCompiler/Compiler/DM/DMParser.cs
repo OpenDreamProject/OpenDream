@@ -2761,7 +2761,7 @@ namespace DMCompiler.Compiler.DM {
                         if (callParameters.Length is < 1)
                             Emit(WarningCode.InvalidArgumentCount, callLoc,
                                 "Expected at least 1 argument for animate()");
-                        
+
                         return new DMASTAnimate(identifier.Location, callParameters);
                     }
                     default:

@@ -51,19 +51,16 @@ public class DreamObjectMovable : DreamObjectAtom {
         SetLoc(loc); //loc is set before /New() is ever called
     }
 
-    protected override void HandleDeletion(bool possiblyThreaded) {
-        // SAFETY: Deleting entities is not threadsafe.
-        if (possiblyThreaded) {
-            EnterIntoDelQueue();
-            return;
-        }
-
+    protected override void HandleDeletion() {
+        SetLoc(null);
         WalkManager.StopWalks(this);
         _particles?.Delete();
         _particles = null;
         AtomManager.DeleteMovableEntity(this);
 
-        base.HandleDeletion(possiblyThreaded);
+        _contents.DecRef();
+        _contents.Delete();
+        base.HandleDeletion();
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
@@ -78,6 +75,7 @@ public class DreamObjectMovable : DreamObjectAtom {
                 value = new(Z);
                 return true;
             case "loc":
+                Loc?.IncRef();
                 value = new(Loc);
                 return true;
             case "bound_width":
@@ -88,16 +86,18 @@ public class DreamObjectMovable : DreamObjectAtom {
                 value = (ScreenLoc != null) ? new(ScreenLoc) : DreamValue.Null;
                 return true;
             case "contents":
+                _contents.IncRef();
                 value = new(_contents);
                 return true;
             case "locs":
-                // Unimplemented; just return a list containing src.loc
+                // TODO: Unimplemented; just returns a list containing src.loc
                 DreamList locs = ObjectTree.CreateList();
                 locs.AddValue(new(Loc));
 
                 value = new DreamValue(locs);
                 return true;
             case "particles":
+                _particles?.IncRef();
                 value = new(_particles);
                 return true;
             default:
@@ -150,10 +150,13 @@ public class DreamObjectMovable : DreamObjectAtom {
                         break;
 
                     _particles?.Owner = null;
+                    particles.IncRef();
+                    _particles?.DecRef();
                     _particles = particles;
                     _particles.Owner = this;
                 } else {
                     _particles?.Owner = null;
+                    _particles?.DecRef();
                     _particles = null;
                 }
 
@@ -165,6 +168,10 @@ public class DreamObjectMovable : DreamObjectAtom {
     }
 
     public void SetLoc(DreamObjectAtom? loc) {
+        var oldLoc = Loc;
+
+        loc?.IncRef();
+        Loc?.DecRef();
         Loc = loc;
         if (TransformSystem == null)
             return;
@@ -199,13 +206,19 @@ public class DreamObjectMovable : DreamObjectAtom {
                 TransformSystem.SetWorldPosition(Entity, new Vector2(turf.X, turf.Y));
 
                 turf.Cell.Movables.Add(this);
+                if (oldLoc is null)
+                    IncRef();
                 break;
             case DreamObjectMovable movable:
                 TransformSystem.SetParent(Entity, movable.Entity);
                 TransformSystem.SetLocalPosition(Entity, Vector2.Zero);
+                if (oldLoc is null)
+                    IncRef();
                 break;
             case null:
                 TransformSystem.SetParent(Entity, MapManager.GetMapEntityId(MapId.Nullspace));
+                if (oldLoc is not null)
+                    DecRef();
                 break;
             default:
                 throw new ArgumentException($"Invalid loc {loc}");

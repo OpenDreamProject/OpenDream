@@ -21,15 +21,10 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
         SetupCommand(command, args.Values[1..]);
     }
 
-    protected override void HandleDeletion(bool possiblyThreaded) {
-        if (possiblyThreaded) {
-            EnterIntoDelQueue();
-            return;
-        }
-
+    protected override void HandleDeletion() {
         ClearCommand();
         CloseReader();
-        base.HandleDeletion(possiblyThreaded);
+        base.HandleDeletion();
     }
 
     /// <summary>

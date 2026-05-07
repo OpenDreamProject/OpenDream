@@ -1,7 +1,7 @@
 using System.Reflection;
-using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using DMCompiler.DM;
+using JetBrains.Annotations;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Resources;
 using OpenDreamRuntime.Map;
@@ -62,7 +62,7 @@ public sealed unsafe class NativeProc : DreamProc {
         public WalkManager WalkManager => Proc._walkManager;
         public DreamObjectTree ObjectTree => Proc._objectTree;
 
-        [Pure]
+        [System.Diagnostics.Contracts.Pure]
         public DreamValue GetArgument(int argumentPosition, string argumentName) {
             if (Arguments.Length > argumentPosition && !Arguments[argumentPosition].IsNull) {
                 return Arguments[argumentPosition];
@@ -99,10 +99,12 @@ public sealed unsafe class NativeProc : DreamProc {
         throw new InvalidOperationException("Synchronous native procs cannot create a state. Use Call() instead.");
     }
 
-    public DreamValue Call(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
+    [MustDisposeResource]
+    public DreamValue Call(DreamThread thread, DreamObject? src, DreamObject? usr, [HandlesResourceDisposal] DreamProcArguments arguments) {
         var bundle = new Bundle(this, arguments);
+        var result = _handler(bundle, src, usr); // TODO: Include this call in the thread's stack in error traces
 
-        // TODO: Include this call in the thread's stack in error traces
-        return _handler(bundle, src, usr);
+        arguments.Dispose();
+        return result;
     }
 }

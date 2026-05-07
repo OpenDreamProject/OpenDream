@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using JetBrains.Annotations;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
@@ -29,67 +30,45 @@ public sealed class DreamRefManager {
     /// </summary>
     private sealed class Bucket {
         /// The amount of alive values in this bucket
-        public int FilledCount { get; private set; }
+        public int FilledCount => _values.Count - _emptySlots.Count;
 
-        private readonly List<WeakReference<DreamObject>?> _values = new();
-        private int _earliestEmptySlot;
+        private readonly List<DreamObject?> _values = new();
+        private readonly Queue<int> _emptySlots = new();
 
         public int Add(DreamObject value) {
-            FilledCount++;
+            // We intentionally do not IncRef() here! This is a weak reference.
 
-            var refId = _earliestEmptySlot++;
-            if (refId >= _values.Count) {
-                _values.Add(new(value));
+            if (_emptySlots.TryDequeue(out var refId)) {
+                _values[refId] = value;
                 return refId;
             }
 
-            _values[refId] = new(value);
-
-            // Find the next null value to update _earliestEmptySlot
-            for (; _earliestEmptySlot < _values.Count; _earliestEmptySlot++) {
-                if (_values[_earliestEmptySlot]?.TryGetTarget(out _) is true)
-                    continue;
-
-                _values[_earliestEmptySlot] = null;
-                break;
-            }
-
-            return refId;
+            _values.Add(value);
+            return _values.Count - 1;
         }
 
         public DreamObject? Get(int refId) {
-            var weakRef = _values[refId];
-            DreamObject? value = null;
-
-            weakRef?.TryGetTarget(out value);
+            DreamObject? value = _values[refId];
+            value?.IncRef();
             return value;
         }
 
         public void Remove(int refId) {
-            if (refId >= _values.Count)
+            if (refId >= _values.Count || _values[refId] == null)
                 return;
-            if (_values[refId] != null)
-                FilledCount--;
 
             _values[refId] = null;
-            _earliestEmptySlot = Math.Min(_earliestEmptySlot, refId);
+            _emptySlots.Enqueue(refId);
         }
 
         public IEnumerable<DreamObject> Enumerate() {
             // This cannot ever be a foreach!
             // world.contents allows modification during enumeration
             for (var i = 0; i < _values.Count; i++) {
-                var weakRef = _values[i];
-                if (weakRef is null)
-                    continue;
+                var value = _values[i];
 
-                if (weakRef.TryGetTarget(out var value)) {
+                if (value is not null)
                     yield return value;
-                } else {
-                    // This isn't a common operation so we'll use this time to also do some pruning.
-                    FilledCount--;
-                    _values[i] = null;
-                }
             }
         }
     }
@@ -107,7 +86,8 @@ public sealed class DreamRefManager {
             RefType.DreamObjectImage,
             RefType.DreamObjectFilter,
             RefType.DreamObjectMovable,
-            RefType.DreamObjectList
+            RefType.DreamObjectList,
+            RefType.DreamObjectListArgs
         ];
 
         foreach (var type in bucketTypes) {
@@ -177,6 +157,7 @@ public sealed class DreamRefManager {
                 DreamObjectImage image => CreateRef(RefType.DreamObjectImage, image),
                 DreamObjectFilter filter => CreateRef(RefType.DreamObjectFilter, filter),
                 DreamObjectMovable => CreateRef(RefType.DreamObjectMovable, dreamObject),
+                ProcArgsList argsList => CreateRef(RefType.DreamObjectListArgs, argsList),
                 DreamList list when list.GetType() == typeof(DreamList) => CreateRef(RefType.DreamObjectList, list),
                 _ => CreateRef(RefType.DreamObjectDatum, dreamObject)
             };
@@ -215,6 +196,7 @@ public sealed class DreamRefManager {
     /// May not return the same object that was passed to <see cref="GetRef(DreamValue)"/> if it was deleted and its ID reused
     /// </remarks>
     /// <param name="ref">The number representation of a ref</param>
+    [MustDisposeResource]
     public DreamValue LocateRef(uint @ref) {
         var refType = (RefType)(@ref & RefTypeMask);
         var refId = @ref & RefIdMask;
@@ -272,6 +254,7 @@ public sealed class DreamRefManager {
     /// May not return the same object that was passed to <see cref="GetRefString(DreamValue)"/> if it was deleted and its ID reused
     /// </remarks>
     /// <param name="refStr">The string representation of a ref, or a datum's tag</param>
+    [MustDisposeResource]
     public DreamValue LocateRef(string refStr) {
         if (refStr.StartsWith('[') && refStr.EndsWith(']')) {
             // Strip the surrounding []
@@ -289,7 +272,10 @@ public sealed class DreamRefManager {
         // Note that surrounding [] are stripped out at this point, this is intentional
         // Doing locate("[abc]") is the same as locate("abc")
         if (Tags.TryGetValue(refStr, out var tagList) && tagList.Count > 0) {
-            return new DreamValue(tagList[0]);
+            var located = tagList[0];
+
+            located.IncRef();
+            return new DreamValue(located);
         }
 
         // Nothing found
@@ -393,6 +379,7 @@ public enum RefType : uint {
     DreamResourceIcon = 0xC000000,
     DreamObjectImage = 0xD000000,
     DreamObjectList = 0xF000000,
+    DreamObjectListArgs = 0x10000000,
     DreamObjectDatum = 0x21000000,
     String = 0x6000000,
     DreamType = 0x9000000, //in byond type is from 0x8 to 0xb, but fuck that

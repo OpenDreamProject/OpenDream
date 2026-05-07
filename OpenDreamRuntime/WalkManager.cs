@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Threading;
 using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects.Types;
@@ -24,8 +23,10 @@ public sealed class WalkManager {
     /// Stop any active walks on a movable
     /// </summary>
     public void StopWalks(DreamObjectMovable movable) {
-        if (_walkTasks.TryGetValue(movable, out var walk))
+        if (_walkTasks.Remove(movable, out var walk)) {
             walk.Cancel();
+            movable.DecRef();
+        }
     }
 
     /// <summary>
@@ -38,6 +39,7 @@ public sealed class WalkManager {
 
         CancellationTokenSource cancelSource = new();
         _walkTasks[movable] = cancelSource;
+        movable.IncRef();
 
         DreamThread.Run($"walk {dir}", async state => {
             var moveProc = movable.GetProc("Move");
@@ -52,7 +54,7 @@ public sealed class WalkManager {
             }
 
             return DreamValue.Null;
-        });
+        }).Dispose();
     }
 
     /// <summary>
@@ -65,6 +67,7 @@ public sealed class WalkManager {
 
         CancellationTokenSource cancelSource = new();
         _walkTasks[movable] = cancelSource;
+        movable.IncRef();
 
         DreamThread.Run("walk_rand", async state => {
             var moveProc = movable.GetProc("Move");
@@ -73,13 +76,14 @@ public sealed class WalkManager {
                 await _scheduler.CreateDelayTicks(lag);
                 if (cancelSource.IsCancellationRequested)
                     break;
+
                 var dir = DreamProcNativeHelpers.GetRandomDirection(_dreamManager);
                 DreamObjectTurf? newLoc = DreamProcNativeHelpers.GetStep(_atomManager, _dreamMapManager, movable, dir);
                 await state.CallNoWait(moveProc, movable, null, new(newLoc), new((int)dir));
             }
 
             return DreamValue.Null;
-        });
+        }).Dispose();
     }
 
     /// <summary>
@@ -92,6 +96,7 @@ public sealed class WalkManager {
 
         CancellationTokenSource cancelSource = new();
         _walkTasks[movable] = cancelSource;
+        movable.IncRef();
 
         DreamThread.Run($"walk_towards {movable}", async state => {
             var moveProc = movable.GetProc("Move");
@@ -110,7 +115,7 @@ public sealed class WalkManager {
             }
 
             return DreamValue.Null;
-        });
+        }).Dispose();
     }
 
     /// <summary>
@@ -123,6 +128,7 @@ public sealed class WalkManager {
 
         CancellationTokenSource cancelSource = new();
         _walkTasks[movable] = cancelSource;
+        movable.IncRef();
 
         DreamThread.Run($"walk_to {movable}", async state => {
             var moveProc = movable.GetProc("Move");
@@ -145,6 +151,6 @@ public sealed class WalkManager {
             }
 
             return DreamValue.Null;
-        });
+        }).Dispose();
     }
 }

@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects;
 using Robust.Shared.Utility;
@@ -18,6 +19,7 @@ public static partial class ByondApi {
     private static DreamObjectTree? _objectTree;
 
     private static readonly ConcurrentQueue<Action> ThreadSyncQueue = new();
+    private static readonly Queue<DreamValue> TemporaryReferences = new();
     private static int _mainThreadId;
 
     /// <summary>
@@ -48,15 +50,21 @@ public static partial class ByondApi {
         Marshal.FreeHGlobal(_lastErrorPtr);
     }
 
-    public static void ExecuteThreadSyncs() {
+    /// <summary>
+    /// Execute thread syncs and remove temporary references
+    /// </summary>
+    public static void Update() {
         while (ThreadSyncQueue.TryDequeue(out var task))
             task.Invoke();
+        while (TemporaryReferences.TryDequeue(out var tempRef))
+            tempRef.DecRef();
     }
 
     /// <summary>
     /// Converts a CByondValue to a DreamValue
     /// </summary>
     /// <remarks>Must be run on the main thread</remarks>
+    [MustDisposeResource]
     public static DreamValue ValueFromDreamApi(CByondValue value) {
         DebugTools.AssertEqual(Environment.CurrentManagedThreadId, _mainThreadId);
 
@@ -150,26 +158,32 @@ public static partial class ByondApi {
         return 0;
     }
 
+    private static bool OnMainThread() => Environment.CurrentManagedThreadId == _mainThreadId;
+
     [SuppressMessage("Usage", "RA0004:Risk of deadlock from accessing Task<T>.Result")]
-    private static T RunOnMainThread<T>(Func<T> task) {
-        if (Environment.CurrentManagedThreadId == _mainThreadId)
-            return task.Invoke();
+    private static T RunOnMainThread<T>(Func<bool, T> task) {
+        if (OnMainThread())
+            return task.Invoke(true);
 
         var tcs = new TaskCompletionSource<T>();
 
         ThreadSyncQueue.Enqueue(() => {
-            tcs.SetResult(task.Invoke());
+            tcs.SetResult(task.Invoke(false));
         });
 
         return tcs.Task.Result;
     }
 
     private static void RunOnMainThreadNonBlocking(Action task) {
-        if (Environment.CurrentManagedThreadId == _mainThreadId) {
+        if (OnMainThread()) {
             task();
             return;
         }
 
         ThreadSyncQueue.Enqueue(task);
+    }
+
+    private static void AddTemporaryReference([HandlesResourceDisposal] DreamValue value) {
+        TemporaryReferences.Enqueue(value);
     }
 }

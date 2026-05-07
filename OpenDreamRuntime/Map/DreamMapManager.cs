@@ -121,7 +121,7 @@ public sealed partial class DreamMapManager : IDreamMapManager {
                 for (var x = 1; x <= Size.X; ++x) {
                     var area = _levels[z - 1].Cells[x - 1, y - 1].Area;
                     if (seenAreas.Add(area)) {
-                        area.SpawnProc("New");
+                        area.SpawnProc("New").Dispose();
                     }
                 }
             }
@@ -131,7 +131,7 @@ public sealed partial class DreamMapManager : IDreamMapManager {
         // This may call New() a SECOND TIME. This is intentional.
         foreach (var thing in _atomManager.EnumerateAtoms(_objectTree.Area)) {
             if (seenAreas.Add(thing)) {
-                thing.SpawnProc("New");
+                thing.SpawnProc("New").Dispose();
             }
         }
 
@@ -139,7 +139,7 @@ public sealed partial class DreamMapManager : IDreamMapManager {
         for (var z = 1; z <= Levels; ++z) {
             for (var y = Size.Y; y >= 1; --y) {
                 for (var x = Size.X; x >= 1; --x) {
-                    _levels[z - 1].Cells[x - 1, y - 1].Turf.SpawnProc("New");
+                    _levels[z - 1].Cells[x - 1, y - 1].Turf.SpawnProc("New").Dispose();
                 }
             }
         }
@@ -293,6 +293,7 @@ public sealed partial class DreamMapManager : IDreamMapManager {
                         defaultTurf.Cell = cell;
                         existingLevel.Cells[x - 1, y - 1] = cell;
                         SetTurf(new Vector2i(x, y), existingLevel.Z, defaultTurfDef, new());
+                        defaultTurf.DecRef();
                     }
                 }
             }
@@ -309,9 +310,11 @@ public sealed partial class DreamMapManager : IDreamMapManager {
                     for (var y = 1; y <= oldSize.Y; y++) {
                         if (x > size.X || y > size.Y) {
                             var deleteCell = oldCells[x - 1, y - 1];
+                            deleteCell.Turf.DecRef();
                             deleteCell.Turf.Delete();
                             _mapSystem.SetTile(existingLevel.Grid, new Vector2i(x, y), Tile.Empty);
                             foreach (var movableToDelete in deleteCell.Movables) {
+                                movableToDelete.DecRef();
                                 movableToDelete.Delete();
                             }
                         } else {
@@ -406,6 +409,7 @@ public sealed partial class DreamMapManager : IDreamMapManager {
                         }
 
                         obj.InitSpawn(new(new DreamValue(turf)));
+                        obj.DecRef();
                     }
                 }
 
@@ -423,7 +427,10 @@ public sealed partial class DreamMapManager : IDreamMapManager {
 
             foreach (KeyValuePair<string, object> varOverride in mapObject.VarOverrides) {
                 if (definition.HasVariable(varOverride.Key)) {
-                    definition.Variables[varOverride.Key] = _objectTree.GetDreamValueFromJsonElement(varOverride.Value);
+                    using var overrideValue = _objectTree.GetDreamValueFromJsonElement(varOverride.Value);
+
+                    definition.Variables[varOverride.Key] = overrideValue;
+                    overrideValue.IncRef();
                 }
             }
         }
@@ -469,6 +476,7 @@ public interface IDreamMapManager {
 
                     turf.Cell = cell;
                     Cells[x, y] = cell;
+                    turf.DecRef();
                 }
             }
         }
@@ -497,6 +505,7 @@ public interface IDreamMapManager {
 
         public Cell(DreamObjectArea area, DreamObjectTurf turf) {
             Turf = turf;
+            Turf.IncRef();
             _area = area;
             Area = area;
         }

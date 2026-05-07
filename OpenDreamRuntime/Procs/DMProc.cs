@@ -698,7 +698,9 @@ public sealed class DMProcState : ProcState {
     /// <returns>The arguments in a DreamProcArguments struct</returns>
     [MustDisposeResource]
     public DreamProcArguments PopProcArguments(DreamProc? proc, DMStackArgumentInfo argumentInfo) {
-        return new DMStackArguments(this, argumentInfo).ToProcArguments(proc);
+        using var stackArgs = new DMStackArguments(this, argumentInfo);
+
+        return stackArgs.ToProcArguments(proc);
     }
 
     #endregion
@@ -1143,7 +1145,8 @@ public sealed class DMProcState : ProcState {
         public readonly int StackSize = stackSize;
     }
 
-    public readonly ref struct DMStackArguments {
+    [MustDisposeResource]
+    public readonly ref struct DMStackArguments : IDisposable {
         public int Count => GetCount();
 
         private readonly DMProcState _state;
@@ -1163,6 +1166,11 @@ public sealed class DMProcState : ProcState {
                     Debug.Assert(_values.Length == 1);
                     break;
             }
+        }
+
+        public void Dispose() {
+            foreach (var value in _values)
+                value.DecRef();
         }
 
         public (DreamValue Key, DreamValue Value)[] ToArray() {
@@ -1205,16 +1213,9 @@ public sealed class DMProcState : ProcState {
         public DreamProcArguments ToProcArguments(DreamProc? proc) {
             switch (_info.Type) {
                 case DMCallArgumentsType.None:
-                    foreach (var value in _values)
-                        value.Dispose();
-
                     return new DreamProcArguments();
                 case DMCallArgumentsType.FromStack:
-                    var fromStackArgs = new DreamProcArguments(_values);
-                    foreach (var value in _values)
-                        value.Dispose();
-
-                    return fromStackArgs;
+                    return new DreamProcArguments(_values);
                 case DMCallArgumentsType.FromProcArguments:
                     return new DreamProcArguments(_state.GetArguments());
                 case DMCallArgumentsType.FromStackKeyed: {
@@ -1256,11 +1257,7 @@ public sealed class DMProcState : ProcState {
                         }
                     }
 
-                    var procArgs = new DreamProcArguments(arguments);
-                    foreach (var value in _values)
-                        value.Dispose();
-
-                    return procArgs;
+                    return new DreamProcArguments(arguments);
                 }
                 case DMCallArgumentsType.FromArgumentList: {
                     if (proc == null)
@@ -1308,8 +1305,6 @@ public sealed class DMProcState : ProcState {
                     var procArgs = new DreamProcArguments(arguments);
                     foreach (var arg in arguments)
                         arg.Dispose();
-                    foreach (var value in _values)
-                        value.Dispose();
 
                     return procArgs;
                 }

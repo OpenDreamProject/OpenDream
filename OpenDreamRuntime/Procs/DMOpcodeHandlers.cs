@@ -2115,7 +2115,7 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus Rgb(DMProcState state) {
             var argumentInfo = state.ReadProcArguments();
-            var arguments = new DMProcState.DMStackArguments(state, argumentInfo);
+            using var arguments = new DMProcState.DMStackArguments(state, argumentInfo);
 
             var argumentsArray = arguments.ToArray();
             if (argumentsArray.Length is < 3 or > 5)
@@ -2166,25 +2166,27 @@ namespace OpenDreamRuntime.Procs {
             var argumentCount = state.ReadInt();
             var arguments = new Dictionary<string, DreamValue>();
 
-            for (int i = 0; i < argumentCount; i++) {
-                var value = state.Pop();
-                var name = state.Pop();
-                if (!name.TryGetValueAsString(out var argName))
-                    continue;
+            try {
+                for (int i = 0; i < argumentCount; i++) {
+                    using var value = state.Pop();
+                    using var name = state.Pop();
+                    if (!name.TryGetValueAsString(out var argName))
+                        continue;
 
-                arguments[argName] = value;
-            }
-
-            var objArg = state.Pop();
-            bool chainAnim = false;
-
-            if (!objArg.TryGetValueAsDreamObject<DreamObject>(out var obj)) {
-                if (state.Thread.LastAnimatedObject is null || state.Thread.LastAnimatedObject.Value.IsNull)
-                    throw new Exception("animate() called without an object and no previous object to animate");
-                else if (!state.Thread.LastAnimatedObject.Value.TryGetValueAsDreamObject<DreamObject>(out obj)){
-                    state.Push(DreamValue.Null);
-                    return ProcStatus.Continue;
+                    value.IncRef();
+                    arguments[argName] = value;
                 }
+
+                using var objArg = state.Pop();
+                bool chainAnim = false;
+
+                if (!objArg.TryGetValueAsDreamObject<DreamObject>(out var obj)) {
+                    if (state.Thread.LastAnimatedObject is null || state.Thread.LastAnimatedObject.Value.IsNull) {
+                        throw new Exception("animate() called without an object and no previous object to animate");
+                    } else if (!state.Thread.LastAnimatedObject.Value.TryGetValueAsDreamObject<DreamObject>(out obj)) {
+                        state.Push(DreamValue.Null);
+                        return ProcStatus.Continue;
+                    }
 
                     chainAnim = true;
                 }
@@ -2195,98 +2197,101 @@ namespace OpenDreamRuntime.Procs {
                     return ProcStatus.Continue;
                 }
 
-            arguments.TryGetValue("time", out var timeArg);
-            arguments.TryGetValue("loop", out var loopArg);
-            arguments.TryGetValue("easing", out var easingArg);
-            arguments.TryGetValue("flags", out var flagsArg);
-            arguments.TryGetValue("delay", out var delayArg);
-            loopArg.TryGetValueAsInteger(out int loop);
-            easingArg.TryGetValueAsInteger(out int easing);
-            flagsArg.TryGetValueAsInteger(out int flagsInt);
-            delayArg.TryGetValueAsInteger(out int delay);
+                arguments.TryGetValue("time", out var timeArg);
+                arguments.TryGetValue("loop", out var loopArg);
+                arguments.TryGetValue("easing", out var easingArg);
+                arguments.TryGetValue("flags", out var flagsArg);
+                arguments.TryGetValue("delay", out var delayArg);
+                loopArg.TryGetValueAsInteger(out int loop);
+                easingArg.TryGetValueAsInteger(out int easing);
+                flagsArg.TryGetValueAsInteger(out int flagsInt);
+                delayArg.TryGetValueAsInteger(out int delay);
 
-            if (!timeArg.TryGetValueAsFloat(out float time)) {
-                // A non-number time arg results in the animation happening instantly
-                time = 0f;
-            }
-
-            if (!Enum.IsDefined(typeof(AnimationEasing), easing & ~((int)AnimationEasing.EaseIn | (int)AnimationEasing.EaseOut)))
-                throw new ArgumentOutOfRangeException("easing", easing, $"Invalid easing value in animate(): {easing}");
-
-            var flags = (AnimationFlags)flagsInt;
-            if ((flags & (AnimationFlags.AnimationParallel | AnimationFlags.AnimationContinue)) != 0)
-                chainAnim = true;
-            if ((flags & AnimationFlags.AnimationEndNow) != 0)
-                chainAnim = false;
-
-            var atomManager = state.Proc.AtomManager;
-            var duration = TimeSpan.FromMilliseconds(time * 100);
-            atomManager.AnimateAppearance(obj, duration, (AnimationEasing)easing, loop, flags, delay, chainAnim, appearance => {
-                bool isRelative = flags.HasFlag(AnimationFlags.AnimationRelative);
-
-                foreach (var arg in arguments) {
-                    if (!atomManager.IsValidAppearanceVar(arg.Key))
-                        continue;
-
-                    var animateValue = arg.Value;
-
-                    if (isRelative) {
-                        switch (arg.Key) {
-                            case "transform":
-                                if (!animateValue.TryGetValueAsDreamObject<DreamObjectMatrix>(out var multTransform))
-                                    break;
-
-                                var objTransformClone = DreamObjectMatrix.MakeMatrix(state.Proc.ObjectTree, appearance.Transform);
-
-                                DreamObjectMatrix.MultiplyMatrix(objTransformClone, multTransform);
-                                animateValue = new(objTransformClone);
-                                break;
-                            case "color":
-                                ColorMatrix cMatrix;
-                                if (animateValue.TryGetValueAsString(out var colorStr) && Color.TryParse(colorStr, out var colorObj)) {
-                                    cMatrix = new ColorMatrix(colorObj);
-                                } else if (!animateValue.TryGetValueAsDreamList(out var colorList) || !DreamProcNativeHelpers.TryParseColorMatrix(colorList, out cMatrix)) {
-                                    cMatrix = ColorMatrix.Identity; //fallback to identity if invalid
-                                }
-
-                                ColorMatrix objCMatrix;
-                                DreamValue objColor = obj.GetVariable("color");
-                                if (objColor.TryGetValueAsString(out var objColorStr) && Color.TryParse(objColorStr, out var objColorObj)) {
-                                    objCMatrix = new ColorMatrix(objColorObj);
-                                } else if (!objColor.TryGetValueAsDreamList(out var objColorList) || !DreamProcNativeHelpers.TryParseColorMatrix(objColorList, out objCMatrix)) {
-                                    objCMatrix = ColorMatrix.Identity; //fallback to identity if invalid
-                                }
-
-                                ColorMatrix.Multiply(ref objCMatrix, ref cMatrix, out var resultMatrix);
-                                animateValue = new DreamValue(new DreamList(state.Proc.ObjectTree.List.ObjectDefinition, resultMatrix.GetValues().Select(x => new DreamValue(x)).ToList(), null));
-                                break;
-                            case "pixel_x":
-                            case "pixel_y":
-                            case "pixel_z":
-                            case "pixel_w":
-                            case "maptext_width":
-                            case "maptext_height":
-                            case "maptext_x":
-                            case "maptext_y":
-                            case "luminosity":
-                            case "layer":
-                            case "alpha" :
-                                var originalValue = atomManager.GetAppearanceVar(appearance, arg.Key).UnsafeGetValueAsFloat();
-
-                                animateValue = new(animateValue.UnsafeGetValueAsFloat() + originalValue);
-                                break;
-                        }
-                    }
-
-                    obj.SetVariableValue(arg.Key, animateValue);
-                    atomManager.SetAppearanceVar(appearance, arg.Key, animateValue);
+                if (!timeArg.TryGetValueAsFloat(out float time)) {
+                    // A non-number time arg results in the animation happening instantly
+                    time = 0f;
                 }
-            });
+
+                if (!Enum.IsDefined(typeof(AnimationEasing), easing & ~((int)AnimationEasing.EaseIn | (int)AnimationEasing.EaseOut)))
+                    throw new ArgumentOutOfRangeException("easing", easing, $"Invalid easing value in animate(): {easing}");
+
+                var flags = (AnimationFlags)flagsInt;
+                if ((flags & (AnimationFlags.AnimationParallel | AnimationFlags.AnimationContinue)) != 0)
+                    chainAnim = true;
+                if ((flags & AnimationFlags.AnimationEndNow) != 0)
+                    chainAnim = false;
+
+                var atomManager = state.Proc.AtomManager;
+                var duration = TimeSpan.FromMilliseconds(time * 100);
+                atomManager.AnimateAppearance(obj, duration, (AnimationEasing)easing, loop, flags, delay, chainAnim, appearance => {
+                    bool isRelative = flags.HasFlag(AnimationFlags.AnimationRelative);
+
+                    foreach (var arg in arguments) {
+                        if (!atomManager.IsValidAppearanceVar(arg.Key))
+                            continue;
+
+                        var animateValue = arg.Value;
+
+                        if (isRelative) {
+                            switch (arg.Key) {
+                                case "transform":
+                                    if (!animateValue.TryGetValueAsDreamObject<DreamObjectMatrix>(out var multTransform))
+                                        break;
+
+                                    var objTransformClone = DreamObjectMatrix.MakeMatrix(state.Proc.ObjectTree, appearance.Transform);
+
+                                    DreamObjectMatrix.MultiplyMatrix(objTransformClone, multTransform);
+                                    animateValue = new(objTransformClone);
+                                    break;
+                                case "color": {
+                                    ColorMatrix cMatrix;
+                                    if (animateValue.TryGetValueAsString(out var colorStr) && Color.TryParse(colorStr, out var colorObj)) {
+                                        cMatrix = new ColorMatrix(colorObj);
+                                    } else if (!animateValue.TryGetValueAsDreamList(out var colorList) || !DreamProcNativeHelpers.TryParseColorMatrix(colorList, out cMatrix)) {
+                                        cMatrix = ColorMatrix.Identity; //fallback to identity if invalid
+                                    }
+
+                                    ColorMatrix objCMatrix;
+                                    using var objColor = obj.GetVariable("color");
+                                    if (objColor.TryGetValueAsString(out var objColorStr) && Color.TryParse(objColorStr, out var objColorObj)) {
+                                        objCMatrix = new ColorMatrix(objColorObj);
+                                    } else if (!objColor.TryGetValueAsDreamList(out var objColorList) || !DreamProcNativeHelpers.TryParseColorMatrix(objColorList, out objCMatrix)) {
+                                        objCMatrix = ColorMatrix.Identity; //fallback to identity if invalid
+                                    }
+
+                                    ColorMatrix.Multiply(ref objCMatrix, ref cMatrix, out var resultMatrix);
+                                    animateValue = new DreamValue(new DreamList(state.Proc.ObjectTree.List.ObjectDefinition, resultMatrix.GetValues().Select(x => new DreamValue(x)).ToList(), null));
+                                    break;
+                                }
+                                case "pixel_x":
+                                case "pixel_y":
+                                case "pixel_z":
+                                case "pixel_w":
+                                case "maptext_width":
+                                case "maptext_height":
+                                case "maptext_x":
+                                case "maptext_y":
+                                case "luminosity":
+                                case "layer":
+                                case "alpha": {
+                                    using var originalValue = atomManager.GetAppearanceVar(appearance, arg.Key);
+                                    var originalFloat = originalValue.UnsafeGetValueAsFloat();
+
+                                    animateValue = new(animateValue.UnsafeGetValueAsFloat() + originalFloat);
+                                    break;
+                                }
+                            }
+                        }
+
+                        obj.SetVariableValue(arg.Key, animateValue);
+                        atomManager.SetAppearanceVar(appearance, arg.Key, animateValue);
+                    }
+                });
 
                 state.Push(DreamValue.Null);
                 return ProcStatus.Continue;
             } finally {
-                foreach (var argument in argumentValues)
+                foreach (var argument in arguments.Values)
                     argument.Dispose();
             }
         }
@@ -2845,7 +2850,7 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus DereferenceCall(DMProcState state) {
             string name = state.ReadString();
             var argumentInfo = state.ReadProcArguments();
-            var arguments = new DMProcState.DMStackArguments(state, argumentInfo);
+            using var arguments = new DMProcState.DMStackArguments(state, argumentInfo);
             using var obj = state.Pop();
 
             if (!obj.TryGetValueAsDreamObject(out var instance) || instance == null)

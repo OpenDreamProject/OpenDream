@@ -50,7 +50,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
     [ViewVariables] public readonly MouseOpacity MouseOpacity = MutableAppearance.Default.MouseOpacity;
     [ViewVariables] public readonly ImmutableAppearance[] Overlays;
     [ViewVariables] public readonly ImmutableAppearance[] Underlays;
-    [ViewVariables] public readonly Robust.Shared.GameObjects.NetEntity[] VisContents;
+    [ViewVariables] public readonly NetEntity[] VisContents;
     [ViewVariables] public readonly DreamFilter[] Filters;
     [ViewVariables] public readonly int[] Verbs;
     [ViewVariables] public readonly ColorMatrix ColorMatrix = ColorMatrix.Identity;
@@ -117,9 +117,8 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         Override = appearance.Override;
 
         if (appearance.Transform != MutableAppearance.Default.Transform) {
-            for (int i = 0; i < 6; i++) {
-                Transform[i] = appearance.Transform[i];
-            }
+            Transform = new float[6];
+            Array.Copy(appearance.Transform, Transform, 6);
         }
     }
 

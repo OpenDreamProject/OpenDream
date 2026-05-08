@@ -1,5 +1,5 @@
 var/counter
-#define ExpectOrder(n) ASSERT(++counter == ##n)
+#define ExpectOrder(n) world.log << "[++counter] should equal [##n]" ; ASSERT(counter == ##n)
 
 /proc/BackgroundSleep(delay, expect)
 	set waitfor = FALSE

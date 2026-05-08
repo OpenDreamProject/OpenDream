@@ -1,10 +1,9 @@
 var/counter
-#define ExpectOrder(n) ASSERT(++counter == ##n); world.log << "[counter] should equal [##n]"
+#define ExpectOrder(n) ASSERT(++counter == ##n)
 
 /proc/BackgroundSleep(delay, expect)
 	set waitfor = FALSE
 	sleep(delay)
-	world.log << "Expect: [expect]"
 	ExpectOrder(expect)
 
 #define MODE_INLINE 0 // spawn
@@ -46,13 +45,10 @@ var/counter
 	ExpectOrder(14)
 
 /proc/RunTest()
-	world.log << "Inline:"
 	TestSequence(MODE_INLINE)
 
-	world.log << "Background:"
 	TestSequence(MODE_BACKGROUND)
 
 	rand_seed(22475)
-	for(var/i in 1 to 50)
-		world.log << "Rand-[i]:"
+	for(var/i in 1 to 10000)
 		TestSequence(MODE_RAND)

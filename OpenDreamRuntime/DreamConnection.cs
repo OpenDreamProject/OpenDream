@@ -88,6 +88,7 @@ public sealed class DreamConnection {
                 var fieldObj = _dreamManager.GetFromClientReference(this, field.Value);
                 fieldObj?.DecRef();
             }
+
             if (value != null) {
                 var valueObj = _dreamManager.GetFromClientReference(this, value.Value);
                 valueObj?.IncRef();

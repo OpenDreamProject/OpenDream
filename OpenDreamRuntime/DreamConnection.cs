@@ -17,6 +17,7 @@ namespace OpenDreamRuntime;
 
 public sealed class DreamConnection {
     [Dependency] private readonly DreamManager _dreamManager = default!;
+    [Dependency] private readonly DreamRefManager _refManager = default!;
     [Dependency] private readonly DreamObjectTree _objectTree = default!;
     [Dependency] private readonly DreamResourceManager _resourceManager = default!;
     [Dependency] private readonly IEntityManager _entityManager = default!;
@@ -33,18 +34,20 @@ public sealed class DreamConnection {
 
     [ViewVariables] public ICommonSession? Session { get; private set; }
     [ViewVariables] public DreamObjectClient? Client { get; private set; }
-    [ViewVariables] public string Key { get; private set; }
+    [ViewVariables] public string Key { get; }
 
     [ViewVariables] public DreamObjectMob? Mob {
         get => _mob;
         set {
             if (_mob != value) {
                 var oldMob = _mob;
+                value?.IncRef();
+                _mob?.DecRef();
                 _mob = value;
 
                 if (oldMob != null) {
                     oldMob.Key = null;
-                    oldMob.SpawnProc("Logout");
+                    oldMob.SpawnProc("Logout").Dispose();
                     oldMob.Connection = null;
                 }
 
@@ -54,38 +57,42 @@ public sealed class DreamConnection {
                 if (oldMob != null) {
                     var oldMobNetEntity = _entityManager.GetNetEntity(oldMob.Entity);
                     if (Eye != null && Eye.Value.Entity == oldMobNetEntity) {
-                        if (_mob == null) {
-                            _eye = null;
-                        } else {
+                        ClientObjectReference? newEye = null;
+                        if (_mob != null) {
                             var newMobNetEntity = _entityManager.GetNetEntity(_mob.Entity);
-                            _eye = new(newMobNetEntity);
+                            newEye = new(newMobNetEntity);
                         }
+                        Eye = newEye;
                     }
                 }
-
-                UpdateMobEye();
 
                 if (_mob != null) {
                     _playerManager.SetAttachedEntity(Session!, _mob.Entity);
 
                     // If the mob is already owned by another player, kick them out
-                    if (_mob.Connection != null)
-                        _mob.Connection.Mob = null;
+                    _mob.Connection?.Mob = null;
 
                     _mob.Connection = this;
                     _mob.Key = Key;
-                    _mob.SpawnProc("Login", usr: _mob);
+                    _mob.SpawnProc("Login", usr: _mob).Dispose();
                 }
             }
         }
     }
 
-    private ClientObjectReference? _eye;
-
     [ViewVariables] public ClientObjectReference? Eye {
-        get => _eye;
+        get;
         set {
-            _eye = value;
+
+            if (field != null) {
+                var fieldObj = _dreamManager.GetFromClientReference(this, Eye.Value);
+                fieldObj?.DecRef();
+            }
+            if (value != null) {
+                var valueObj = _dreamManager.GetFromClientReference(this, value.Value);
+                valueObj?.IncRef();
+            }
+            field = value;
             UpdateMobEye();
         }
     }
@@ -140,7 +147,7 @@ public sealed class DreamConnection {
 
         if (_mob != null) {
             // Don't null out the ckey here
-            _mob.SpawnProc("Logout");
+            _mob.SpawnProc("Logout").Dispose();
 
             if (_mob != null) { // Logout() may have removed our mob
                 _mob.Connection = null;
@@ -148,6 +155,7 @@ public sealed class DreamConnection {
             }
         }
 
+        Client.DecRef();
         Client.Delete();
         Client = null;
     }
@@ -173,7 +181,7 @@ public sealed class DreamConnection {
             } finally {
                 _currentlyUpdatingStat = false;
             }
-        });
+        }).Dispose();
     }
 
     public void SendClientInfoUpdate() {
@@ -238,6 +246,7 @@ public sealed class DreamConnection {
             sound.SetVariableValue("file", string.IsNullOrEmpty(soundData.File) ? DreamValue.Null : new DreamValue(soundData.File));
 
             allSounds.AddValue(new DreamValue(sound));
+            sound.DecRef();
         }
 
         promptEvent.Invoke(new DreamValue(allSounds));
@@ -245,34 +254,31 @@ public sealed class DreamConnection {
     }
 
     public void HandleMsgTopic(MsgTopic pTopic) {
-        DreamList hrefList = DreamProcNativeRoot.Params2List(_objectTree, HttpUtility.UrlDecode(pTopic.Query));
-        DreamValue srcRefValue = hrefList.GetValue(new DreamValue("src"));
-        DreamValue src = DreamValue.Null;
+        var hrefList = DreamProcNativeRoot.Params2List(_objectTree, HttpUtility.UrlDecode(pTopic.Query));
+        using var srcRefValue = hrefList.GetValue(new DreamValue("src"));
+        var src = DreamValue.Null;
 
         if (srcRefValue.TryGetValueAsString(out var srcRef)) {
-            src = _dreamManager.LocateRef(srcRef);
+            src = _refManager.LocateRef(srcRef);
         }
 
-        Client?.SpawnProc("Topic", usr: Mob, new(pTopic.Query), new(hrefList), src);
+        Client?.SpawnProc("Topic", usr: Mob, new(pTopic.Query), new(hrefList), src).Dispose();
+        src.Dispose();
+        hrefList.DecRef();
     }
 
     public void OutputDreamValue(DreamValue value) {
-        if (value.TryGetValueAsDreamObject<DreamObjectSound>(out var outputObject)) {
-            ushort channel = (ushort)outputObject.GetVariable("channel").GetValueAsInteger();
-            ushort volume = (ushort)outputObject.GetVariable("volume").GetValueAsInteger();
-            float offset = outputObject.GetVariable("offset").UnsafeGetValueAsFloat();
-            byte repeat = (byte)Math.Clamp(outputObject.GetVariable("repeat").UnsafeGetValueAsFloat(), 0, 2);
-            DreamValue file = outputObject.GetVariable("file");
-
+        if (value.TryGetValueAsDreamObject<DreamObjectSound>(out var sound)) {
             var msg = new MsgSound {
                 SoundData = new SoundData {
-                    Channel = channel,
-                    Volume = volume,
-                    Offset = offset,
-                    Repeat = repeat
+                    Channel = sound.Channel,
+                    Volume = sound.Volume,
+                    Offset = sound.Offset,
+                    Repeat = sound.Repeat
                 }
             };
 
+            var file = sound.File;
             if (!file.TryGetValueAsDreamResource(out var soundResource)) {
                 if (file.TryGetValueAsString(out var soundPath)) {
                     soundResource = _resourceManager.LoadResource(soundPath);
@@ -300,7 +306,7 @@ public sealed class DreamConnection {
 
         // Prune any remaining formatting
         var message = value.Stringify();
-        message = StringFormatEncoder.RemoveFormatting(message);
+        message = StringFormatDecoder.RemoveFormatting(message);
 
         OutputControl(message, null);
     }
@@ -340,6 +346,8 @@ public sealed class DreamConnection {
 
     public async Task<DreamValue> PromptList(DreamValueType types, IDreamList list, string title, string message, DreamValue defaultValue) {
         DreamValue[] listValues = list.CopyToArray();
+        foreach (var value in listValues)
+            value.IncRef();
 
         List<string> promptValues = new(listValues.Length);
         foreach (var value in listValues) {
@@ -373,12 +381,26 @@ public sealed class DreamConnection {
         // The client returns the index of the selected item, this needs turned back into the DreamValue.
         var selectedIndex = await task;
         if (selectedIndex.TryGetValueAsInteger(out int index) && index < listValues.Length) {
-            return listValues[index];
+            var selected = listValues[index];
+
+            selected.IncRef();
+            foreach (var value in listValues)
+                value.DecRef();
+
+            return selected;
         }
 
         // Client returned an invalid value.
         // Return the first value in the list, or null if cancellable
-        return msg.CanCancel ? DreamValue.Null : listValues[0];
+        if (msg.CanCancel) {
+            return DreamValue.Null;
+        } else {
+            listValues[0].IncRef();
+            foreach (var value in listValues)
+                value.DecRef();
+
+            return listValues[0];
+        }
     }
 
     public Task<DreamValue> WinExists(string controlId) {

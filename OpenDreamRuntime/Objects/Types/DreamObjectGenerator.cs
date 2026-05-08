@@ -44,6 +44,9 @@ public sealed class DreamObjectGenerator(DreamObjectDefinition objectDefinition)
                     Generator = typeStr == "vector"
                         ? new GeneratorVector2(low.AsVector2, high.AsVector2, distribution)
                         : new GeneratorBox2(low.AsVector2, high.AsVector2, distribution);
+
+                low.DecRef();
+                high.DecRef();
                 break;
             }
             case "square":
@@ -51,13 +54,18 @@ public sealed class DreamObjectGenerator(DreamObjectDefinition objectDefinition)
                 var low = DreamObjectVector.CreateFromValue(a, ObjectTree);
                 var high = DreamObjectVector.CreateFromValue(b, ObjectTree);
 
-                Generator = typeStr switch {
-                    "square" => new GeneratorSquare(low.AsVector2, high.AsVector2, distribution),
-                    "cube" => new GeneratorCube(low.AsVector3, high.AsVector3, distribution),
-                    _ => throw new ArgumentOutOfRangeException()
-                };
+                try {
+                    Generator = typeStr switch {
+                        "square" => new GeneratorSquare(low.AsVector2, high.AsVector2, distribution),
+                        "cube" => new GeneratorCube(low.AsVector3, high.AsVector3, distribution),
+                        _ => throw new ArgumentOutOfRangeException()
+                    };
 
-                break;
+                    break;
+                } finally {
+                    low.DecRef();
+                    high.DecRef();
+                }
             }
             default:
                 throw new Exception($"Invalid generator type {type}");

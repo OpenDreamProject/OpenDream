@@ -85,21 +85,29 @@ public sealed class DreamObjectImage : DreamObject {
         // TODO: filters, transform
         switch(varName) {
             case "loc": {
+                _loc?.IncRef();
                 value = new(_loc);
                 return true;
             }
             case "overlays":
+                _overlays.IncRef();
                 value = new(_overlays);
                 return true;
             case "underlays":
+                _underlays.IncRef();
                 value = new(_underlays);
                 return true;
             case "filters":
+                _filters.IncRef();
                 value = new(_filters);
                 return true;
             default: {
                 if (AtomManager.IsValidAppearanceVar(varName)) {
-                    value = IsMutableAppearance ? AtomManager.GetAppearanceVar(MutableAppearance!, varName) : AtomManager.GetAppearanceVar(AtomManager.MustGetAppearance(this), varName);
+                    if (IsMutableAppearance)
+                        value = AtomManager.GetAppearanceVar(MutableAppearance!, varName);
+                    else
+                        value = AtomManager.GetAppearanceVar(AtomManager.MustGetAppearance(this), varName);
+
                     return true;
                 } else {
                     return base.TryGetVar(varName, out value);
@@ -121,6 +129,7 @@ public sealed class DreamObjectImage : DreamObject {
                 newAppearance.Dispose();
                 break;
             case "loc":
+                _loc?.DecRef();
                 value.TryGetValueAsDreamObject(out _loc);
                 break;
             case "overlays": {
@@ -132,6 +141,7 @@ public sealed class DreamObjectImage : DreamObject {
                 // Otherwise it attempts to create an appearance and creates a new (normal) list with that appearance
                 if (ObjectDefinition.IsSubtypeOf(ObjectTree.MutableAppearance)) {
                     if (valueList != null) {
+                        _overlays.DecRef();
                         _overlays = (DreamList)valueList.CreateCopy();
                     } else {
                         var overlay = DreamOverlaysList.CreateOverlayAppearance(AtomManager, value, AtomManager.MustGetAppearance(this).Icon);
@@ -165,6 +175,7 @@ public sealed class DreamObjectImage : DreamObject {
                 // See the comment in the overlays setter for info on this
                 if (ObjectDefinition.IsSubtypeOf(ObjectTree.MutableAppearance)) {
                     if (valueList != null) {
+                        _underlays.DecRef();
                         _underlays = (DreamList)valueList.CreateCopy();
                     } else {
                         var underlay = DreamOverlaysList.CreateOverlayAppearance(AtomManager, value, AtomManager.MustGetAppearance(this).Icon);
@@ -199,12 +210,15 @@ public sealed class DreamObjectImage : DreamObject {
 
                 // filters = list("type"=...) or list(filter(...), filter(...))
                 if (valueList != null) { // filters = list("type"=...)
-                    if (valueList.GetValue(new("type")) != DreamValue.Null) { // It's a single filter
+                    using var typeArg = valueList.GetValue(new("type"));
+
+                    if (typeArg != DreamValue.Null) { // It's a single filter
                         var filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, valueList);
                         if (filterObject == null) // list() with invalid "type" is ignored
                             break;
 
                         _filters.AddValue(new(filterObject));
+                        filterObject.DecRef();
                     } else { // It's a list of filters
                         foreach (var filter in valueList.EnumerateValues()) {
                             if (!filter.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject)) {
@@ -217,6 +231,7 @@ public sealed class DreamObjectImage : DreamObject {
                             }
 
                             _filters.AddValue(new(filterObject));
+                            filterObject.DecRef();
                         }
                     }
                 } else if (!value.IsNull) {
@@ -244,22 +259,19 @@ public sealed class DreamObjectImage : DreamObject {
         }
     }
 
-    public DreamObject? GetAttachedLoc(){
-        return this._loc;
+    public DreamObject? GetAttachedLoc() {
+        return _loc;
     }
 
-    protected override void HandleDeletion(bool possiblyThreaded) {
-        // SAFETY: Deleting entities is not threadsafe.
-        if (possiblyThreaded) {
-            EnterIntoDelQueue();
-            return;
-        }
-
-        if(Entity != EntityUid.Invalid) {
+    protected override void HandleDeletion() {
+        if (Entity != EntityUid.Invalid) {
             EntityManager.DeleteEntity(Entity);
         }
 
         MutableAppearance?.Dispose();
-        base.HandleDeletion(possiblyThreaded);
+        _overlays.DecRef();
+        _underlays.DecRef();
+        _filters.DecRef();
+        base.HandleDeletion();
     }
 }

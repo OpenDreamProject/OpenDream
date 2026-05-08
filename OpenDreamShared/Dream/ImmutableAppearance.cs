@@ -50,7 +50,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
     [ViewVariables] public readonly MouseOpacity MouseOpacity = MutableAppearance.Default.MouseOpacity;
     [ViewVariables] public readonly ImmutableAppearance[] Overlays;
     [ViewVariables] public readonly ImmutableAppearance[] Underlays;
-    [ViewVariables] public readonly Robust.Shared.GameObjects.NetEntity[] VisContents;
+    [ViewVariables] public readonly NetEntity[] VisContents;
     [ViewVariables] public readonly DreamFilter[] Filters;
     [ViewVariables] public readonly int[] Verbs;
     [ViewVariables] public readonly ColorMatrix ColorMatrix = ColorMatrix.Identity;
@@ -64,11 +64,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
     [ViewVariables] public int MouseDropPointer = MutableAppearance.Default.MouseDropPointer;
 
     /// <summary> The Transform property of this appearance, in [a,d,b,e,c,f] order</summary>
-    [ViewVariables] public readonly float[] Transform = [
-        1, 0,   // a d
-        0, 1,   // b e
-        0, 0    // c f
-    ];
+    [ViewVariables] public readonly float[] Transform = MutableAppearance.Default.Transform;
 
     // PixelOffset2 behaves the same as PixelOffset in top-down mode, so this is used
     public Vector2i TotalPixelOffset => PixelOffset + PixelOffset2;
@@ -120,8 +116,9 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         Verbs = appearance.Verbs.ToArray();
         Override = appearance.Override;
 
-        for (int i = 0; i < 6; i++) {
-            Transform[i] = appearance.Transform[i];
+        if (appearance.Transform != MutableAppearance.Default.Transform) {
+            Transform = new float[6];
+            Array.Copy(appearance.Transform, Transform, 6);
         }
     }
 
@@ -533,7 +530,9 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         result.VisContents.AddRange(VisContents);
         result.Filters.AddRange(Filters);
         result.Verbs.AddRange(Verbs);
-        Array.Copy(Transform, result.Transform, 6);
+
+        if (Transform != MutableAppearance.Default.Transform)
+            Array.Copy(Transform, result.Transform, 6);
 
         return result;
     }

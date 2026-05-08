@@ -763,7 +763,9 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
             Variable described;
 
             try {
-                described = DescribeValue(name, obj.GetVariable(name));
+                using var value = obj.GetVariable(name);
+
+                described = DescribeValue(name, value);
             } catch (Exception ex) {
                 _sawmill.Log(LogLevel.Error, ex, $"Error in GetVariable({name})");
 

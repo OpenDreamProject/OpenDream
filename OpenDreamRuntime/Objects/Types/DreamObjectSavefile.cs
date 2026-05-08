@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DMCompiler;
+using JetBrains.Annotations;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Resources;
 
@@ -122,22 +123,13 @@ public sealed class DreamObjectSavefile : DreamObject {
         Savefiles.Add(this);
     }
 
-    protected override void HandleDeletion(bool possiblyThreaded) {
-        // SAFETY: Close() is not threadsafe and doesn't have reason to be.
-        if (possiblyThreaded) {
-            EnterIntoDelQueue();
-            return;
-        }
-
-        if (Deleted)
-            return;
-
+    protected override void HandleDeletion() {
         if (Resource is null)
             return; // Seemingly a long-standing issue, I don't know how to fix this, and it only now appears due to the fact objects always Del() now.
                     // Why we can get here? who knows lol
 
         Close();
-        base.HandleDeletion(possiblyThreaded);
+        base.HandleDeletion();
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
@@ -220,6 +212,7 @@ public sealed class DreamObjectSavefile : DreamObject {
         SetSavefileValue(null, value);
     }
 
+    [MustDisposeResource]
     public DreamValue OperatorInput() {
         _eof = true;
         return GetSavefileValue(null);
@@ -297,6 +290,7 @@ public sealed class DreamObjectSavefile : DreamObject {
         return tempDir;
     }
 
+    [MustDisposeResource]
     public DreamValue GetSavefileValue(string? index) {
         if (index == null) {
             return DeserializeJsonValue(CurrentDir);
@@ -311,15 +305,10 @@ public sealed class DreamObjectSavefile : DreamObject {
         }
     }
 
-    public void RenameAndNullSavefileValue(string index, string newIndex) {
+    public void RenameSavefileValue(string index, string newIndex) {
         if (CurrentDir.TryGetValue(index, out var value)) {
             CurrentDir.Remove(index);
-            SfDreamDir newDir = new SfDreamDir();
-            foreach (var key in value.Keys) {
-                newDir[key] = value[key];
-            }
-
-            CurrentDir[newIndex] = newDir;
+            CurrentDir[newIndex] = value;
             SavefilesToFlush.Add(this);
         }
     }
@@ -374,6 +363,7 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// <summary>
     /// Turn the json magic value into real DM values
     /// </summary>
+    [MustDisposeResource]
     public DreamValue DeserializeJsonValue(SfDreamJsonValue value) {
         switch (value) {
             case SfDreamFileValue sfDreamFileValue:
@@ -381,10 +371,15 @@ public sealed class DreamObjectSavefile : DreamObject {
             case SfDreamListValue sfDreamListValue:
                 var l = ObjectTree.CreateList();
                 for (int i=0; i < sfDreamListValue.AssocKeys.Count; i++) {
-                    if (sfDreamListValue.AssocData?[i] != null) //note that null != DreamValue.Null
-                        l.SetValue(DeserializeJsonValue(sfDreamListValue.AssocKeys[i]), DeserializeJsonValue(sfDreamListValue.AssocData[i]!));
-                    else
-                        l.AddValue(DeserializeJsonValue(sfDreamListValue.AssocKeys[i]));
+                    using var sfValue = DeserializeJsonValue(sfDreamListValue.AssocKeys[i]);
+
+                    if (sfDreamListValue.AssocData?[i] != null) { //note that null != DreamValue.Null
+                        using var sfAssocValue = DeserializeJsonValue(sfDreamListValue.AssocData[i]!);
+
+                        l.SetValue(sfValue, sfAssocValue);
+                    } else {
+                        l.AddValue(sfValue);
+                    }
                 }
 
                 return new DreamValue(l);
@@ -397,17 +392,24 @@ public sealed class DreamObjectSavefile : DreamObject {
                     else
                         break;
 
-                if (storedObjectVars.TryGetValue("type", out SfDreamJsonValue? storedObjectTypeJson) && DeserializeJsonValue(storedObjectTypeJson).TryGetValueAsType(out TreeEntry? objectTypeActual)) {
-                    DreamObject resultObj = ObjectTree.CreateObject(objectTypeActual);
-                    foreach (string key in storedObjectVars.Keys) {
-                        if (key == "type" || storedObjectVars[key] is SfDreamDir) //is type or a non-valued dir
-                            continue;
-                        resultObj.SetVariable(key, DeserializeJsonValue(storedObjectVars[key]));
-                    }
+                if (storedObjectVars.TryGetValue("type", out SfDreamJsonValue? storedObjectTypeJson)) {
+                    using var storedObject = DeserializeJsonValue(storedObjectTypeJson);
 
-                    resultObj.InitSpawn(new DreamProcArguments());
-                    resultObj.SpawnProc("Read", null, new DreamValue(this));
-                    return new DreamValue(resultObj);
+                    if (storedObject.TryGetValueAsType(out TreeEntry? objectTypeActual)) {
+                        var resultObj = ObjectTree.CreateObject(objectTypeActual);
+
+                        foreach (string key in storedObjectVars.Keys) {
+                            if (key == "type" || storedObjectVars[key] is SfDreamDir) //is type or a non-valued dir
+                                continue;
+
+                            using var varValue = DeserializeJsonValue(storedObjectVars[key]);
+                            resultObj.SetVariable(key, varValue);
+                        }
+
+                        resultObj.InitSpawn(new DreamProcArguments());
+                        resultObj.SpawnProc("Read", null, new DreamValue(this)).Dispose();
+                        return new DreamValue(resultObj);
+                    }
                 }
 
                 throw new InvalidDataException("Unable to deserialize object in savefile: " + ((storedObjectTypeJson as SfDreamType) is null ? "no type specified (corrupted savefile?)" : "invalid type "+((SfDreamType)storedObjectTypeJson).TypePath));
@@ -471,7 +473,8 @@ public sealed class DreamObjectSavefile : DreamObject {
                             if (!dreamList.ContainsKey(keyValue)) {
                                 jsonEncodedList.AssocData!.Add(null); //store an actual null if this key does not have an associated value - this is distinct from storing DreamValue.Null
                             } else {
-                                var assocValue = dreamList.GetValue(keyValue);
+                                using var assocValue = dreamList.GetValue(keyValue);
+
                                 if (assocValue.TryGetValueAsDreamObject(out _) && !assocValue.IsNull) {
                                     SfDreamJsonValue jsonEncodedObject = SerializeDreamValue(assocValue, thisObjectCount);
                                     //merge the object subdirectories into the list parent directory
@@ -518,7 +521,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                         if((dreamObject.ObjectDefinition.ConstVariables is not null && dreamObject.ObjectDefinition.ConstVariables.Contains(key)) || (dreamObject.ObjectDefinition.TmpVariables is not null && dreamObject.ObjectDefinition.TmpVariables.Contains(key)))
                             continue; //skip const & tmp variables (they're not saved)
 
-                        DreamValue objectVarVal = dreamObject.GetVariable(key);
+                        using var objectVarVal = dreamObject.GetVariable(key);
                         if (dreamObject.ObjectDefinition.Variables[key] == objectVarVal || (objectVarVal.TryGetValueAsDreamObject(out DreamObject? equivTestObject) && equivTestObject != null && equivTestObject.OperatorEquivalent(dreamObject.ObjectDefinition.Variables[key]).IsTruthy()))
                             continue; //skip default values - equivalence check used for lists and objects
 
@@ -536,7 +539,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                     }
 
                     //Call the Write proc on the object - note that this is a weird one, it does not need to call parent to the native function to save the object
-                    dreamObject.SpawnProc("Write", null, new DreamValue(this));
+                    dreamObject.SpawnProc("Write", null, new DreamValue(this)).Dispose();
                     jsonEncodedObject[jsonEncodedObject.Path] = objectVars;
                     return jsonEncodedObject;
                 }

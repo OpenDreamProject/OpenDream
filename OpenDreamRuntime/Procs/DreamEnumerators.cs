@@ -3,7 +3,7 @@ using OpenDreamRuntime.Objects.Types;
 
 namespace OpenDreamRuntime.Procs;
 
-public interface IDreamValueEnumerator {
+public interface IDreamValueEnumerator : IDisposable {
     /// <summary>
     /// Perform the next enumeration, used to advance the state of many types of loops.
     /// </summary>
@@ -32,6 +32,8 @@ internal sealed class DreamValueRangeEnumerator(float rangeStart, float rangeEnd
 
         return successful;
     }
+
+    public void Dispose() { }
 }
 
 /// <summary>
@@ -57,6 +59,10 @@ internal sealed class DreamObjectEnumerator(IEnumerable<DreamObject> dreamObject
         state.AssignReference(assocReference, DreamValue.Null);
         return success;
     }
+
+    public void Dispose() {
+        _dreamObjectEnumerator.Dispose();
+    }
 }
 
 /// <summary>
@@ -77,6 +83,14 @@ internal sealed class DreamValueArrayEnumerator(DreamValue[] values, Dictionary<
         if (assocReference != DreamReference.NoRef)
             state.AssignReference(assocReference, assocValues?.GetValueOrDefault(value, DreamValue.Null) ?? DreamValue.Null);
         return success;
+    }
+
+    public void Dispose() {
+        foreach (var value in values)
+            value.Dispose();
+        if (assocValues != null)
+            foreach (var assocValue in assocValues.Values)
+                assocValue.Dispose();
     }
 }
 
@@ -102,9 +116,18 @@ internal sealed class FilteredDreamValueArrayEnumerator(DreamValue[] values, Dic
                 state.AssignReference(reference, value);
                 if (assocReference != DreamReference.NoRef)
                     state.AssignReference(assocReference, assocValues?.GetValueOrDefault(value, DreamValue.Null) ?? DreamValue.Null);
+                value.Dispose();
                 return true;
+            } else {
+                value.Dispose();
             }
         } while (true);
+    }
+
+    public void Dispose() {
+        if (assocValues != null)
+            foreach (var assocValue in assocValues.Values)
+                assocValue.Dispose();
     }
 }
 
@@ -122,5 +145,9 @@ internal sealed class WorldContentsEnumerator(AtomManager atomManager, TreeEntry
         state.AssignReference(reference, new DreamValue(_enumerator.Current));
         state.AssignReference(assocReference, DreamValue.Null);
         return success;
+    }
+
+    public void Dispose() {
+        _enumerator.Dispose();
     }
 }

@@ -37,8 +37,10 @@ internal partial class DMCodeTree {
                 var procs = dmObject.GetProcs(procDef.Name);
                 if (procs != null) {
                       var parent = compiler.DMObjectTree.AllProcs[procs[0]];
-                      proc.IsVerb = parent.IsVerb;
-                      if (proc.IsVerb) {
+                      if (parent.Attributes.HasFlag(ProcAttributes.DisableWaitfor))
+                          proc.Attributes |= ProcAttributes.DisableWaitfor;
+                      if (parent.IsVerb) {
+                          proc.IsVerb = true;
                           proc.VerbName = parent.VerbName;
                           proc.VerbCategory = parent.VerbCategory;
                           proc.VerbDesc = parent.VerbDesc;

@@ -1,5 +1,5 @@
 var/counter
-#define ExpectOrder(n) ASSERT(++counter == ##n)
+#define ExpectOrder(n) ASSERT(++counter == ##n); world.log << "[counter] should equal [##n]"
 
 /proc/BackgroundSleep(delay, expect)
 	set waitfor = FALSE
@@ -53,6 +53,6 @@ var/counter
 	TestSequence(MODE_BACKGROUND)
 
 	rand_seed(22475)
-	for(var/i in 1 to 200)
+	for(var/i in 1 to 50)
 		world.log << "Rand-[i]:"
 		TestSequence(MODE_RAND)

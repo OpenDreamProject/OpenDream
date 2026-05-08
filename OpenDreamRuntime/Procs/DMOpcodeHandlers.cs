@@ -1958,7 +1958,7 @@ namespace OpenDreamRuntime.Procs {
 
             async Task Wait() {
                 await state.ProcScheduler.CreateDelay(delay, state.Proc.Id, state.Thread.Id);
-                newContext.Resume();
+                newContext.Resume().Dispose();
             }
 
             _ = Wait();
@@ -1967,7 +1967,9 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus Sleep(DMProcState state) {
-            state.Pop().TryGetValueAsFloat(out var delay);
+            var delayValue = state.Pop();
+            delayValue.TryGetValueAsFloat(out var delay);
+            delayValue.Dispose();
             return SleepCore(
                 state,
                 state.ProcScheduler.CreateDelay(delay, state.Proc.Id, state.Thread.Id));
@@ -2025,7 +2027,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             // a sleep is always the top of a thread so it's always safe to resume
-            public override void SafeResume() => Thread.Resume();
+            public override void SafeResume() => Thread.Resume().Dispose();
 
             public override ProcStatus Resume() {
                 if (_task!.IsCompleted) {
@@ -2041,7 +2043,6 @@ namespace OpenDreamRuntime.Procs {
 
                 return Thread.HandleDefer();
             }
-
 
             public override ReadOnlySpan<DreamValue> GetArguments() {
                 return new ReadOnlySpan<DreamValue>();

@@ -548,5 +548,5 @@ public interface IDreamMapManager {
 
     public IEnumerable<DreamObjectMob> GetMobsInRange((int X, int Y, int Z) loc, int distance);
 
-    public IEnumerable<AtomDirection> CalculateSteps((int X, int Y, int Z) loc, (int X, int Y, int Z) dest, int distance);
+    public IEnumerable<AtomDirection> CalculateSteps((int X, int Y, int Z) loc, (int X, int Y, int Z) dest, int targetDistance, int maxSteps);
 }

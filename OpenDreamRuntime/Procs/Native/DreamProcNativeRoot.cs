@@ -841,7 +841,9 @@ internal static class DreamProcNativeRoot {
 
         var loc = bundle.AtomManager.GetAtomPosition(refAtom);
         var dest = bundle.AtomManager.GetAtomPosition(trgAtom);
-        var steps = bundle.MapManager.CalculateSteps(loc, dest, minArg);
+        var worldView = bundle.DreamManager.WorldInstance.DefaultView;
+        var maxSteps = Math.Max(worldView.Width, worldView.Height) - 1;
+        var steps = bundle.MapManager.CalculateSteps(loc, dest, minArg, maxSteps);
 
         // We perform a whole path-find then return only the first step
         // Truly, DM's most optimized proc
@@ -872,7 +874,12 @@ internal static class DreamProcNativeRoot {
 
         var loc = bundle.AtomManager.GetAtomPosition(refAtom);
         var dest = bundle.AtomManager.GetAtomPosition(trgAtom);
-        var steps = bundle.MapManager.CalculateSteps(loc, dest, minArg);
+        var worldView = bundle.DreamManager.WorldInstance.DefaultView;
+        var maxSteps = Math.Max(worldView.Width, worldView.Height) - 1;
+
+        // TODO: The DM ref says null is returned if this needs more than world.view*2 steps, so that's what we do.
+        //       However, that's pretty far off what actually happens. It seems to still try to move you towards the goal in some way.
+        var steps = bundle.MapManager.CalculateSteps(loc, dest, minArg, maxSteps);
         var result = bundle.ObjectTree.CreateList();
 
         foreach (var step in steps) {

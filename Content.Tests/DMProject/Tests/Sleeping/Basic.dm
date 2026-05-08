@@ -1,4 +1,4 @@
-﻿var/should_be_set = FALSE
+var/should_be_set = FALSE
 
 /proc/RunTest()
 	ASSERT(world.time == 0)

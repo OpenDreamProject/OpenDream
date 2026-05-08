@@ -56,6 +56,8 @@ namespace OpenDreamRuntime {
             _netManager.RegisterNetMessage<MsgPrompt>();
             _netManager.RegisterNetMessage<MsgPromptList>();
             _netManager.RegisterNetMessage<MsgPromptResponse>(RxPromptResponse);
+            _netManager.RegisterNetMessage<MsgSoundQuery>();
+            _netManager.RegisterNetMessage<MsgSoundQueryResponse>(RxSoundQueryResponse);
             _netManager.RegisterNetMessage<MsgBrowseResource>();
             _netManager.RegisterNetMessage<MsgBrowseResourceRequest>(RxBrowseResourceRequest);
             _netManager.RegisterNetMessage<MsgBrowseResourceResponse>();
@@ -144,7 +146,7 @@ namespace OpenDreamRuntime {
                             var result = await state.Call(topicProc, WorldInstance, null, new DreamValue(topic), new DreamValue(remoteAddress));
                             tcs.SetResult(result);
                             return result;
-                        });
+                        }).Dispose();
 
                         var topicResponse = await tcs.Task;
                         if (topicResponse.IsNull) {
@@ -220,6 +222,11 @@ namespace OpenDreamRuntime {
         private void RxPromptResponse(MsgPromptResponse message) {
             var connection = ConnectionForChannel(message.MsgChannel);
             connection.HandleMsgPromptResponse(message);
+        }
+
+        private void RxSoundQueryResponse(MsgSoundQueryResponse message) {
+            var connection = ConnectionForChannel(message.MsgChannel);
+            connection.HandleMsgSoundQueryResponse(message);
         }
 
         private void RxTopic(MsgTopic message) {

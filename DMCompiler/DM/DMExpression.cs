@@ -48,6 +48,11 @@ internal abstract class DMExpression(Location location) {
         return DMReference.Invalid;
     }
 
+    public virtual void EmitPushIsSaved(ExpressionContext ctx) {
+        ctx.Compiler.Emit(WarningCode.BadArgument, Location, $"can't get issaved() value of {this}");
+        ctx.Proc.PushNullAndError();
+    }
+
     /// <summary>
     /// Gets the canonical name of the expression if it exists.
     /// </summary>

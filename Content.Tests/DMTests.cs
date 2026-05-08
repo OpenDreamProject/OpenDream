@@ -146,7 +146,7 @@ public sealed partial class DMTests : ContentUnitTest {
                 Assert.Fail("No global proc named RunTest");
                 return DreamValue.Null;
             }
-        });
+        }).Dispose();
 
         var watch = new Stopwatch();
         watch.Start();

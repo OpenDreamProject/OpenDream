@@ -92,7 +92,6 @@
 		return TRUE
 
 	proc/SoundQuery()
-		set opendream_unimplemented = TRUE
 	proc/MeasureText(text, style, width=0)
 		set opendream_unimplemented = TRUE
 

@@ -82,6 +82,7 @@ proc/rand(L, H) as num
 proc/rand_seed(Seed) as null
 proc/range(Dist, Center) as /list|null // NOTE: Not sure if return types have BYOND parity
 proc/ref(Object) as text
+proc/refcount(var/Object) as num
 proc/replacetext(Haystack, Needle, Replacement, Start = 1, End = 0) as text|null
 proc/replacetext_char(Haystack, Needle, Replacement, Start = 1, End = 0) as text|null
 proc/replacetextEx(Haystack, Needle, Replacement, Start = 1, End = 0) as text|null
@@ -226,9 +227,3 @@ proc/lentext(T) as num
 
 proc/winshow(player, window, show=1)
 	winset(player, window, "is-visible=[show ? "true" : "false"]")
-
-proc/refcount(var/Object) as num
-	// woah that's a lot of refs
-	// i wonder if it's true??
-	return 100
-	// (it's not)

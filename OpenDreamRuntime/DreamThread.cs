@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using DMCompiler.DM;
+using JetBrains.Annotations;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.DebugAdapter;
@@ -64,11 +65,12 @@ namespace OpenDreamRuntime {
             Invisibility = invisibility;
         }
 
-        public abstract ProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments);
+        public abstract ProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, [HandlesResourceDisposal] DreamProcArguments arguments);
 
         // Execute this proc. This will behave as if the proc has `set waitfor = 0`
-        public DreamValue Spawn(DreamObject src, DreamProcArguments arguments, DreamObject? usr = null) {
-            var context = new DreamThread(this.ToString());
+        [MustDisposeResource]
+        public DreamValue Spawn(DreamObject src, [HandlesResourceDisposal] DreamProcArguments arguments, DreamObject? usr = null) {
+            var context = new DreamThread(ToString());
             var state = CreateState(context, src, usr, arguments);
             context.PushProcState(state);
             return context.Resume();
@@ -101,8 +103,13 @@ namespace OpenDreamRuntime {
     }
 
     [Virtual]
-    internal class DMThrowException(DreamValue value) : Exception(GetRuntimeMessage(value)) {
-        public readonly DreamValue Value = value;
+    internal class DMThrowException : Exception {
+        public readonly DreamValue Value;
+
+        public DMThrowException(DreamValue value) : base(GetRuntimeMessage(value))  {
+            Value = value;
+            Value.IncRef(); // Better hope we're gracefully caught!
+        }
 
         private static string GetRuntimeMessage(DreamValue value) {
             string? name;
@@ -110,6 +117,7 @@ namespace OpenDreamRuntime {
             value.TryGetValueAsDreamObject(out var dreamObject);
             if (dreamObject?.TryGetVariable("name", out var nameVar) == true) {
                 name = nameVar.TryGetValueAsString(out name) ? name : string.Empty;
+                nameVar.Dispose();
             } else {
                 name = string.Empty;
             }
@@ -130,6 +138,7 @@ namespace OpenDreamRuntime {
 
         public int Id { get; private set; }
         public DreamThread Thread { get; set; } = default!;
+
         #if TOOLS
         public abstract (string SourceFile, int Line) TracyLocationId { get; }
         public ProfilerZone? TracyZoneId { get; set; }
@@ -140,6 +149,11 @@ namespace OpenDreamRuntime {
 
         public bool WaitFor { get; set; } = true;
 
+        /// <summary> This stores our 'src' value. May be null!</summary>
+        public DreamObject? Instance;
+
+        public DreamObject? Usr;
+        public int ArgumentCount;
         public abstract DreamProc? Proc { get; }
 
         protected void Initialize(DreamThread thread, bool waitFor) {
@@ -169,10 +183,15 @@ namespace OpenDreamRuntime {
 
         public virtual void Dispose() {
             Thread = null!;
+            Result.DecRef();
             Result = DreamValue.Null;
             WaitFor = true;
             Id = -1;
         }
+
+        public abstract ReadOnlySpan<DreamValue> GetArguments();
+
+        public abstract void SetArgument(int id, DreamValue value);
     }
 
     public sealed class DreamThread(string name) {
@@ -199,6 +218,7 @@ namespace OpenDreamRuntime {
 
         internal DreamDebugManager.ThreadStepMode? StepMode { get; set; }
 
+        [MustDisposeResource]
         public static DreamValue Run(DreamProc proc, DreamObject src, DreamObject? usr, params DreamValue[] arguments) {
             var context = new DreamThread(proc.ToString());
 
@@ -214,13 +234,16 @@ namespace OpenDreamRuntime {
             return context.Resume();
         }
 
-        public static DreamValue Run(string name, Func<AsyncNativeProc.State, Task<DreamValue>> anonymousFunc) {
+        [MustDisposeResource]
+        public static DreamValue Run(string name, Func<AsyncNativeProc.AsyncNativeProcState, Task<DreamValue>> anonymousFunc) {
             var context = new DreamThread(name);
             var state = AsyncNativeProc.CreateAnonymousState(context, anonymousFunc);
+
             context.PushProcState(state);
             return context.Resume();
         }
 
+        [MustDisposeResource]
         public DreamValue Resume() {
             return ReentrantResume(null, out _);
         }
@@ -233,6 +256,7 @@ namespace OpenDreamRuntime {
         /// This function is suitable for executing from inside a running opcode handler if
         /// <paramref name="untilState"/> is provided.
         /// </para>
+        /// Ownership of the return value will be transferred to the caller, so be sure to call <see cref="DreamValue.DecRef"/>.
         /// </remarks>
         /// <param name="untilState">
         /// If not null, only continue running until this proc state gets returned into.
@@ -242,6 +266,7 @@ namespace OpenDreamRuntime {
         /// The proc result status that caused this resume to return.
         /// </param>
         /// <returns>The return value of the last proc to return.</returns>
+        [MustDisposeResource]
         public DreamValue ReentrantResume(ProcState? untilState, out ProcStatus resultStatus) {
             try {
                 CurrentlyExecuting.Value!.Push(this);
@@ -305,6 +330,7 @@ namespace OpenDreamRuntime {
                         // Our top-most proc just returned a value
                         case ProcStatus.Returned:
                             var returned = _current.Result;
+                            returned.IncRef();
                             PopProcState();
 
                             // If our stack is empty, the context has finished execution
@@ -316,6 +342,7 @@ namespace OpenDreamRuntime {
 
                             // ... otherwise we just push the return value onto the dm caller's stack
                             _current.ReturnedInto(returned);
+                            returned.DecRef();
                             break;
 
                         // The context is done executing for now

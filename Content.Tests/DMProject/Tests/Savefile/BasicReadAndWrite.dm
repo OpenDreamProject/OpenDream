@@ -33,7 +33,8 @@
 	ASSERT(S["pie2"] ~= assoc)
 
 	// Shouldn't evaluate CRASH
-	S2?["ABC"] << CRASH("rhs should not evaluate due to null-conditional")
+	//NB: using = rather than << here because << *does* evaluate the RHS regardless of the nullness of the LHS
+	S2?["ABC"] = CRASH("rhs should not evaluate due to null-conditional")
 
 	// Test EOF
 	S.cd = "DEF"
@@ -49,11 +50,17 @@
 	//Test dir
 	S.cd = "/"
 	var/dir = S.dir
-	ASSERT(dir ~= list("ABC", "DEF", "notakey", "pathymcpathface", "pie", "pie2"))
+	var/dir_compare = list("ABC", "DEF", "notakey", "pathymcpathface", "pie", "pie2") 
+	ASSERT(length(dir) == length(dir_compare))
+	for(var/d in dir)
+		ASSERT(d in dir_compare)
 
 	//test add
 	dir += "test/beep"
-	ASSERT(dir ~= list("ABC", "DEF", "notakey", "pathymcpathface", "pie", "pie2", "test"))
+	dir_compare = list("ABC", "DEF", "notakey", "pathymcpathface", "pie", "pie2", "test")
+	ASSERT(length(dir) == length(dir_compare))
+	for(var/d in dir)
+		ASSERT(d in dir_compare)
 	ASSERT(S["test"] == null)
 	S.cd = "test"
 	ASSERT(dir ~= list("beep"))
@@ -61,15 +68,24 @@
 	//test del
 	S.cd = "/"
 	dir -= "test"
-	ASSERT(dir ~= list("ABC", "DEF", "notakey", "pathymcpathface", "pie", "pie2"))
+	dir_compare = list("ABC", "DEF", "notakey", "pathymcpathface", "pie", "pie2")
+	ASSERT(length(dir) == length(dir_compare))
+	for(var/d in dir)
+		ASSERT(d in dir_compare)
 
 	//test rename and null
 	dir[1] = "CBA"
-	ASSERT(dir ~= list("CBA", "DEF", "notakey", "pathymcpathface", "pie", "pie2"))
-	ASSERT(S["CBA"] == null)
+	dir_compare = list("CBA", "DEF", "notakey", "pathymcpathface", "pie", "pie2")
+	ASSERT(length(dir) == length(dir_compare))
+	for(var/d in dir)
+		ASSERT(d in dir_compare)
+
+	ASSERT(S["CBA"] == 5)
 
 	fdel("savefile.sav")
 
+#ifdef OPENDREAM
+//we're only testing this in OD for now, BYOND reports an error but not a runtime when reading from a malformed save
 	file("badsavefile.sav") << "hey wait, this isn't json! oh well, better fail miserably and die"
 	
 	var/savefile/fail
@@ -79,3 +95,4 @@
 		ASSERT(isnull(fail))
 	ASSERT(fail == null)
 	fdel("badsavefile.sav")
+#endif

@@ -23,6 +23,8 @@ public sealed class DreamObjectWorld : DreamObject {
     public float TickUsage =>
         (Environment.TickCount64 - DreamManager.CurrentTickStart) / (float)(_gameTiming.TickPeriod.TotalMilliseconds) * 100;
 
+    public int TimeOfDay => (int)DateTime.UtcNow.TimeOfDay.TotalMilliseconds / 100;
+
     public float Cpu { get; set; }
     public readonly int IconSize;
 
@@ -68,8 +70,7 @@ public sealed class DreamObjectWorld : DreamObject {
     /// <summary> Tries to return the address of the server, as it appears over the internet. May return null.</summary>
     private IPAddress? InternetAddress => null; //TODO: Implement this!
 
-    public DreamObjectWorld(DreamObjectDefinition objectDefinition) :
-        base(objectDefinition) {
+    public DreamObjectWorld(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
         IoCManager.InjectDependencies(this);
 
         SetTicklag(objectDefinition.Variables["tick_lag"]);
@@ -102,25 +103,18 @@ public sealed class DreamObjectWorld : DreamObject {
             new DreamValue(ObjectTree.CreateList());
     }
 
-    protected override void HandleDeletion(bool possiblyThreaded) {
-        // SAFETY: Server shutdown is, spoiler, not threadsafe.
-        if (possiblyThreaded) {
-            EnterIntoDelQueue();
-            return;
-        }
+    // TODO: Respect /world/Delete() not calling parent and aborting shutdown
+    protected override void HandleDeletion() {
+        // TODO: Delete every atom
 
-        base.HandleDeletion(possiblyThreaded);
+        _params.DecRef();
 
-        _server.Shutdown("world was deleted");
-    }
+        // There shouldn't be two instances of world, but to be safe
+        var isServerWorld = (this == DreamManager.WorldInstance);
 
-    ~DreamObjectWorld() {
-        if (this != DreamManager.WorldInstance) {
-            Deleted = true;
-            return;
-        }
-
-        Delete(true);
+        base.HandleDeletion();
+        if (isServerWorld)
+            _server.Shutdown("world was deleted");
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
@@ -130,6 +124,7 @@ public sealed class DreamObjectWorld : DreamObject {
                 return true;
 
             case "params":
+                _params.IncRef();
                 value = _params;
                 return true;
 
@@ -155,7 +150,7 @@ public sealed class DreamObjectWorld : DreamObject {
                 return true;
 
             case "timeofday":
-                value = new DreamValue((int)DateTime.UtcNow.TimeOfDay.TotalMilliseconds / 100);
+                value = new DreamValue(TimeOfDay);
                 return true;
 
             case "timezone":

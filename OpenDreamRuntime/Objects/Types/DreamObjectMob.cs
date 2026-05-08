@@ -38,6 +38,7 @@ public sealed class DreamObjectMob : DreamObjectMovable {
     protected override bool TryGetVar(string varName, out DreamValue value) {
         switch (varName) {
             case "client":
+                Connection?.Client?.IncRef();
                 value = new(Connection?.Client);
                 return true;
             case "key":
@@ -60,10 +61,8 @@ public sealed class DreamObjectMob : DreamObjectMovable {
     protected override void SetVar(string varName, DreamValue value) {
         switch (varName) {
             case "client":
-                value.TryGetValueAsDreamObject<DreamObjectClient>(out var newClient);
-
                 // An invalid client or a null does nothing here
-                if (newClient != null) {
+                if (value.TryGetValueAsDreamObject<DreamObjectClient>(out var newClient)) {
                     newClient.Connection.Mob = this;
                 }
 
@@ -73,8 +72,7 @@ public sealed class DreamObjectMob : DreamObjectMovable {
             case "key":
             case "ckey":
                 if (!value.TryGetValueAsString(out Key)) { // TODO: Does the key get set to a player's un-canonized username?
-                    if (Connection != null)
-                        Connection.Mob = null;
+                    Connection?.Mob = null;
                     break;
                 }
 

@@ -1,4 +1,5 @@
 // COMPILE ERROR OD0011
+// NOBYOND
 
 /proc/RunTest()
 	var/list/L = list()

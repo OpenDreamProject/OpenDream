@@ -56,6 +56,8 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     private readonly Dictionary<(int X, int Y, int Z), Flick> _turfFlicks = new();
     private readonly Dictionary<EntityUid, Flick> _movableFlicks = new();
     private bool _receivedAllAppearancesMsg;
+    private float _refreshVerbRemainingTime = 0.5f;
+    private readonly float _refreshVerbPeriod = 0.5f;
 
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IDreamResourceManager _dreamResourceManager = default!;
@@ -68,6 +70,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly MapSystem _mapSystem = default!;
     [Dependency] private readonly IPrototypeManager _protoManager = default!;
+    [Dependency] private readonly ClientVerbSystem _verbSystem = default!;
 
     public override void Initialize() {
         UpdatesOutsidePrediction = true;
@@ -98,6 +101,12 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         foreach (var (flickKey, flick) in _movableFlicks) {
             if (flick.GetAnimationFrame(_gameTiming) == -1)
                 _movableFlicks.Remove(flickKey);
+        }
+
+        _refreshVerbRemainingTime -= frameTime;
+        if (_refreshVerbRemainingTime < 0) {
+            _refreshVerbRemainingTime = _refreshVerbPeriod;
+            _verbSystem.RefreshVerbs();
         }
     }
 
@@ -341,7 +350,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         return false;
     }
 
-    public string GetName(ClientObjectReference reference) {
+    public string GetNameUnformatted(ClientObjectReference reference) {
         switch (reference.Type) {
             case ClientObjectReference.RefType.Client:
                 return _playerManager.LocalSession?.Name ?? "<unknown>";
@@ -350,7 +359,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
                 if (!TryGetAppearance(reference, out var appearance))
                     break;
 
-                return appearance.Name;
+                return StringFormatDecoder.RemoveFormatting(appearance.Name);
         }
 
         return "<unknown>";

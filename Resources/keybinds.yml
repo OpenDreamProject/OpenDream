@@ -142,6 +142,7 @@ binds: # These are all the current engine keybinds.
   type: State
   key: BackSpace
   canRepeat: true
+  priority: 1 # ensures that it hooks before a macro binding can interfere
 - function: TextSubmit
   type: State
   key: Return

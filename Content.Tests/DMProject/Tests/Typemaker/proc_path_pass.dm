@@ -1,3 +1,4 @@
+// NOBYOND
 #pragma InvalidReturnType error
 /datum/foo
 /datum/proc/meep() as /datum/foo

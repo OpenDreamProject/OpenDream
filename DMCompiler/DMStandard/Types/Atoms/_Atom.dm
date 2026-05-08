@@ -62,6 +62,7 @@
 	var/mouse_drop_zone = FALSE
 	var/render_target
 	var/vis_flags as opendream_unimplemented
+	var/pixloc/pixloc as opendream_unimplemented
 
 	proc/Click(location, control, params)
 	proc/DblClick(location, control, params)

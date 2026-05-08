@@ -103,13 +103,17 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         LoadInterface(interfaceDescriptor);
     }
 
-    public void Initialize() {
+    private void SetupBaseDreamBinds() {
         // Set up the middle-mouse button keybind
         _inputManager.Contexts.GetContext("common").AddFunction(OpenDreamKeyFunctions.MouseMiddle);
         _inputManager.RegisterBinding(new KeyBindingRegistration() {
             Function = OpenDreamKeyFunctions.MouseMiddle,
             BaseKey = Keyboard.Key.MouseMiddle
         });
+    }
+
+    public void Initialize() {
+        SetupBaseDreamBinds();
 
         Cursors = new(_clyde);
 
@@ -199,7 +203,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 browser.SetFileSource(null);
             }
         } else if (pBrowse.HtmlSource != null) {
-            var htmlFileName = $"browse{_random.Next()}"; // TODO: Possible collisions and explicit file names
+            var htmlFileName = $"browse_{pBrowse.Window}_{_random.Next()}"; // TODO: Possible collisions and explicit file names
             ControlBrowser? outputBrowser = referencedElement as ControlBrowser;
 
             if (outputBrowser == null) {
@@ -452,7 +456,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     public void RunCommand(string fullCommand, bool repeating = false) {
         switch (fullCommand) {
             case not null when fullCommand.StartsWith(".quit"):
-                IoCManager.Resolve<IClientNetManager>().ClientDisconnect(".quit used");
+                _gameController.Shutdown(".quit used");
                 break;
 
             case not null when fullCommand.StartsWith(".screenshot"):
@@ -936,6 +940,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         MacroSets.Clear();
 
         _inputManager.ResetAllBindings();
+        SetupBaseDreamBinds();
     }
 
     private void LoadInterface(InterfaceDescriptor descriptor) {
@@ -1043,28 +1048,19 @@ public sealed class CursorHolder(IClyde clyde) {
     public readonly bool AllStateSet;
 
     public CursorHolder(IClyde clyde, DMIResource resource) : this(clyde) {
-        var allState = resource.GetStateAsImage("all", AtomDirection.South);
+        var allCursor = resource.GetStateAsImage(clyde, "all");
 
-        if (allState is not null) { //all overrides all possible states
-            BaseCursor = clyde.CreateCursor(allState, new(32, 32));
+        if (allCursor is not null) { //all overrides all possible states
+            BaseCursor = allCursor;
             DragCursor = BaseCursor;
             DropCursor = BaseCursor;
             OverCursor = BaseCursor;
             AllStateSet = true;
         } else {
-            var baseState = resource.GetStateAsImage("", AtomDirection.South);
-            var overState = resource.GetStateAsImage("over", AtomDirection.South);
-            var dragState = resource.GetStateAsImage("drag", AtomDirection.South);
-            var dropState = resource.GetStateAsImage("drop", AtomDirection.South);
-
-            if (baseState is not null)
-                BaseCursor = clyde.CreateCursor(baseState, new(32, 32));
-            if (overState is not null)
-                OverCursor = clyde.CreateCursor(overState, new(32, 32));
-            if (dragState is not null)
-                DragCursor = clyde.CreateCursor(dragState, new(32, 32));
-            if (dropState is not null)
-                DropCursor = clyde.CreateCursor(dropState, new(32, 32));
+            BaseCursor = resource.GetStateAsImage(clyde, "");
+            OverCursor = resource.GetStateAsImage(clyde, "over");
+            DragCursor = resource.GetStateAsImage(clyde, "drag");
+            DropCursor = resource.GetStateAsImage(clyde, "drop");
         }
     }
 }

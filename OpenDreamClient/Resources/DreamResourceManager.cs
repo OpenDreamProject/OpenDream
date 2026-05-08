@@ -98,7 +98,7 @@ internal sealed class DreamResourceManager : IDreamResourceManager {
     }
 
     private byte[] GetFileHash(ResPath path) {
-        var stream = _resourceManager.UserData.OpenRead(path);
+        using var stream = _resourceManager.UserData.OpenRead(path);
         Span<byte> filebytes = new(new byte[stream.Length]);
         stream.ReadToEnd(filebytes);
         return CryptoGenericHashBlake2B.Hash(32, filebytes, ReadOnlySpan<byte>.Empty);

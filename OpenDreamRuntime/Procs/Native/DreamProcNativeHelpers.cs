@@ -230,26 +230,22 @@ internal static partial class DreamProcNativeHelpers {
         if (depthValue is null || !depthValue.Value.TryGetValueAsInteger(out var depth))
             depth = bundle.DreamManager.WorldInstance.DefaultView.Range;
 
-        foreach (var atom in bundle.AtomManager.EnumerateAtoms(bundle.ObjectTree.Mob)) {
-            var mob = (DreamObjectMob)atom;
+        foreach (var mob in bundle.MapManager.GetMobsInRange(centerPos, depth)) {
+            var (_, range) = ResolveViewArguments(bundle.DreamManager, mob, bundle.Arguments);
+            var eyePos = bundle.AtomManager.GetAtomPosition(mob);
+            var viewData = CollectViewData(bundle.AtomManager, bundle.MapManager, eyePos, range);
 
-            if (centerPos.Z == mob.Z && Math.Abs(centerPos.X - mob.X) <= depth && Math.Abs(centerPos.Y - mob.Y) <= depth) {
-                (_, ViewRange range) = ResolveViewArguments(bundle.DreamManager, mob, bundle.Arguments);
-                var eyePos = bundle.AtomManager.GetAtomPosition(mob);
-                var viewData = CollectViewData(bundle.AtomManager, bundle.MapManager, eyePos, range);
+            ViewAlgorithm.CalculateVisibility(viewData, ignoreLight);
 
-                ViewAlgorithm.CalculateVisibility(viewData, ignoreLight);
+            for (int x = 0; x < viewData.GetLength(0); x++) {
+                for (int y = 0; y < viewData.GetLength(1); y++) {
+                    var tile = viewData[x, y];
+                    if (tile == null || tile.IsVisible == false)
+                        continue;
 
-                for (int x = 0; x < viewData.GetLength(0); x++) {
-                    for (int y = 0; y < viewData.GetLength(1); y++) {
-                        var tile = viewData[x, y];
-                        if (tile == null || tile.IsVisible == false)
-                            continue;
-
-                        if (centerPos.X == eyePos.X + tile.DeltaX && eyePos.Y + tile.DeltaY == centerPos.Y) {
-                            view.AddValue(new DreamValue(mob));
-                            break;
-                        }
+                    if (centerPos.X == eyePos.X + tile.DeltaX && eyePos.Y + tile.DeltaY == centerPos.Y) {
+                        view.AddValue(new DreamValue(mob));
+                        break;
                     }
                 }
             }

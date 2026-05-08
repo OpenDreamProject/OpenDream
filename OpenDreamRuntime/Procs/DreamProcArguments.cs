@@ -1,9 +1,11 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text;
+using JetBrains.Annotations;
 
 namespace OpenDreamRuntime.Procs;
 
-public readonly ref struct DreamProcArguments {
+[MustDisposeResource]
+public readonly ref struct DreamProcArguments : IDisposable {
     public int Count => Values.Length;
 
     public readonly ReadOnlySpan<DreamValue> Values;
@@ -14,10 +16,14 @@ public readonly ref struct DreamProcArguments {
 
     public DreamProcArguments(ReadOnlySpan<DreamValue> values) {
         Values = values;
+        foreach (var value in Values)
+            value.IncRef();
     }
 
     public DreamProcArguments(params DreamValue[] values) {
         Values = values;
+        foreach (var value in Values)
+            value.IncRef();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -43,5 +49,10 @@ public readonly ref struct DreamProcArguments {
 
         strBuilder.Append(')');
         return strBuilder.ToString();
+    }
+
+    public void Dispose() {
+        foreach (var value in Values)
+            value.Dispose();
     }
 }

@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using System.Web;
+using DMCompiler.Bytecode;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.Native;
@@ -15,9 +16,9 @@ namespace OpenDreamRuntime;
 
 public sealed class DreamConnection {
     [Dependency] private readonly DreamManager _dreamManager = default!;
+    [Dependency] private readonly DreamRefManager _refManager = default!;
     [Dependency] private readonly DreamObjectTree _objectTree = default!;
     [Dependency] private readonly DreamResourceManager _resourceManager = default!;
-    [Dependency] private readonly WalkManager _walkManager = default!;
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
     [Dependency] private readonly ISharedPlayerManager _playerManager = default!;
 
@@ -31,18 +32,20 @@ public sealed class DreamConnection {
 
     [ViewVariables] public ICommonSession? Session { get; private set; }
     [ViewVariables] public DreamObjectClient? Client { get; private set; }
-    [ViewVariables] public string Key { get; private set; }
+    [ViewVariables] public string Key { get; }
 
     [ViewVariables] public DreamObjectMob? Mob {
         get => _mob;
         set {
             if (_mob != value) {
                 var oldMob = _mob;
+                value?.IncRef();
+                _mob?.DecRef();
                 _mob = value;
 
                 if (oldMob != null) {
                     oldMob.Key = null;
-                    oldMob.SpawnProc("Logout");
+                    oldMob.SpawnProc("Logout").Dispose();
                     oldMob.Connection = null;
                 }
 
@@ -53,22 +56,24 @@ public sealed class DreamConnection {
 
                 if (_mob != null) {
                     // If the mob is already owned by another player, kick them out
-                    if (_mob.Connection != null)
-                        _mob.Connection.Mob = null;
+                    _mob.Connection?.Mob = null;
 
                     _mob.Connection = this;
                     _mob.Key = Key;
-                    _mob.SpawnProc("Login", usr: _mob);
+                    _mob.SpawnProc("Login", usr: _mob).Dispose();
                 }
             }
         }
     }
 
     [ViewVariables] public DreamObjectMovable? Eye {
-        get => _eye;
+        get;
         set {
-            _eye = value;
-            _playerManager.SetAttachedEntity(Session!, _eye?.Entity);
+            value?.IncRef();
+            field?.DecRef();
+            field = value;
+            if (Session != null)
+                _playerManager.SetAttachedEntity(Session, field?.Entity);
         }
     }
 
@@ -81,7 +86,6 @@ public sealed class DreamConnection {
     [ViewVariables] private int _nextPromptEvent = 1;
     private readonly Dictionary<string, DreamResource> _permittedBrowseRscFiles = new();
     private DreamObjectMob? _mob;
-    private DreamObjectMovable? _eye;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.connection");
 
@@ -118,9 +122,12 @@ public sealed class DreamConnection {
         if (Session == null || Client == null) // Already disconnected?
             return;
 
+        _verbSystem?.RemoveConnectionFromRepeatingVerbs(this);
+        Session = null;
+
         if (_mob != null) {
             // Don't null out the ckey here
-            _mob.SpawnProc("Logout");
+            _mob.SpawnProc("Logout").Dispose();
 
             if (_mob != null) { // Logout() may have removed our mob
                 _mob.Connection = null;
@@ -128,12 +135,9 @@ public sealed class DreamConnection {
             }
         }
 
-        _verbSystem?.RemoveConnectionFromRepeatingVerbs(this);
-
+        Client.DecRef();
         Client.Delete();
         Client = null;
-
-        Session = null;
     }
 
     public void UpdateStat() {
@@ -157,7 +161,7 @@ public sealed class DreamConnection {
             } finally {
                 _currentlyUpdatingStat = false;
             }
-        });
+        }).Dispose();
     }
 
     public void SendClientInfoUpdate() {
@@ -202,31 +206,59 @@ public sealed class DreamConnection {
         _promptEvents.Remove(message.PromptId);
     }
 
-    public void HandleMsgTopic(MsgTopic pTopic) {
-        DreamList hrefList = DreamProcNativeRoot.Params2List(_objectTree, HttpUtility.UrlDecode(pTopic.Query));
-        DreamValue srcRefValue = hrefList.GetValue(new DreamValue("src"));
-        DreamValue src = DreamValue.Null;
+    public void HandleMsgSoundQueryResponse(MsgSoundQueryResponse message) {
+        // PARITY NOTE: BYOND excludes certain sound datum vars like "volume" for no better reason than "it isn't tracked"
+        // Well we track it so we send those vars too under the assumption that more info won't break anything
 
-        if (srcRefValue.TryGetValueAsString(out var srcRef)) {
-            src = _dreamManager.LocateRef(srcRef);
+        if (!_promptEvents.TryGetValue(message.PromptId, out var promptEvent)) {
+            _sawmill.Warning($"{message.MsgChannel}: Received MsgSoundQueryResponse for prompt {message.PromptId} which does not exist.");
+            return;
         }
 
-        Client?.SpawnProc("Topic", usr: Mob, new(pTopic.Query), new(hrefList), src);
+        DreamList allSounds = _objectTree.CreateList(message.Sounds.Count);
+        foreach (var soundData in message.Sounds) {
+            var sound = _objectTree.CreateObject(_objectTree.Sound);
+            sound.SetVariableValue("channel", new DreamValue(soundData.Channel));
+            sound.SetVariableValue("offset", new DreamValue(soundData.Offset));
+            sound.SetVariableValue("volume", new DreamValue(soundData.Volume));
+            sound.SetVariableValue("len", new DreamValue(soundData.Length));
+            sound.SetVariableValue("repeat", new DreamValue(soundData.Repeat));
+            sound.SetVariableValue("file", string.IsNullOrEmpty(soundData.File) ? DreamValue.Null : new DreamValue(soundData.File));
+
+            allSounds.AddValue(new DreamValue(sound));
+            sound.DecRef();
+        }
+
+        promptEvent.Invoke(new DreamValue(allSounds));
+        _promptEvents.Remove(message.PromptId);
+    }
+
+    public void HandleMsgTopic(MsgTopic pTopic) {
+        var hrefList = DreamProcNativeRoot.Params2List(_objectTree, HttpUtility.UrlDecode(pTopic.Query));
+        using var srcRefValue = hrefList.GetValue(new DreamValue("src"));
+        var src = DreamValue.Null;
+
+        if (srcRefValue.TryGetValueAsString(out var srcRef)) {
+            src = _refManager.LocateRef(srcRef);
+        }
+
+        Client?.SpawnProc("Topic", usr: Mob, new(pTopic.Query), new(hrefList), src).Dispose();
+        src.Dispose();
+        hrefList.DecRef();
     }
 
     public void OutputDreamValue(DreamValue value) {
-        if (value.TryGetValueAsDreamObject<DreamObjectSound>(out var outputObject)) {
-            ushort channel = (ushort)outputObject.GetVariable("channel").GetValueAsInteger();
-            ushort volume = (ushort)outputObject.GetVariable("volume").GetValueAsInteger();
-            float offset = outputObject.GetVariable("offset").UnsafeGetValueAsFloat();
-            DreamValue file = outputObject.GetVariable("file");
-
-            var msg = new MsgSound() {
-                Channel = channel,
-                Volume = volume,
-                Offset = offset
+        if (value.TryGetValueAsDreamObject<DreamObjectSound>(out var sound)) {
+            var msg = new MsgSound {
+                SoundData = new SoundData {
+                    Channel = sound.Channel,
+                    Volume = sound.Volume,
+                    Offset = sound.Offset,
+                    Repeat = sound.Repeat
+                }
             };
 
+            var file = sound.File;
             if (!file.TryGetValueAsDreamResource(out var soundResource)) {
                 if (file.TryGetValueAsString(out var soundPath)) {
                     soundResource = _resourceManager.LoadResource(soundPath);
@@ -236,7 +268,8 @@ public sealed class DreamConnection {
             }
 
             msg.ResourceId = soundResource?.Id;
-            if (soundResource?.ResourcePath is { } resourcePath) {
+            var resourcePath = soundResource?.ResourcePath;
+            if (resourcePath != null) {
                 if (resourcePath.EndsWith(".ogg"))
                     msg.Format = MsgSound.FormatType.Ogg;
                 else if (resourcePath.EndsWith(".wav"))
@@ -245,11 +278,17 @@ public sealed class DreamConnection {
                     throw new Exception($"Sound {resourcePath} is not a supported file type");
             }
 
+            msg.SoundData.File = resourcePath ?? string.Empty;
+
             Session?.Channel.SendMessage(msg);
             return;
         }
 
-        OutputControl(value.Stringify(), null);
+        // Prune any remaining formatting
+        var message = value.Stringify();
+        message = StringFormatDecoder.RemoveFormatting(message);
+
+        OutputControl(message, null);
     }
 
     public void OutputControl(string message, string? control) {
@@ -275,8 +314,20 @@ public sealed class DreamConnection {
         return task;
     }
 
+    public Task<DreamValue> SoundQuery() {
+        var task = MakePromptTask(out var promptId);
+        var msg = new MsgSoundQuery {
+            PromptId = promptId,
+        };
+
+        Session?.Channel.SendMessage(msg);
+        return task;
+    }
+
     public async Task<DreamValue> PromptList(DreamValueType types, IDreamList list, string title, string message, DreamValue defaultValue) {
         DreamValue[] listValues = list.CopyToArray();
+        foreach (var value in listValues)
+            value.IncRef();
 
         List<string> promptValues = new(listValues.Length);
         foreach (var value in listValues) {
@@ -310,12 +361,26 @@ public sealed class DreamConnection {
         // The client returns the index of the selected item, this needs turned back into the DreamValue.
         var selectedIndex = await task;
         if (selectedIndex.TryGetValueAsInteger(out int index) && index < listValues.Length) {
-            return listValues[index];
+            var selected = listValues[index];
+
+            selected.IncRef();
+            foreach (var value in listValues)
+                value.DecRef();
+
+            return selected;
         }
 
         // Client returned an invalid value.
         // Return the first value in the list, or null if cancellable
-        return msg.CanCancel ? DreamValue.Null : listValues[0];
+        if (msg.CanCancel) {
+            return DreamValue.Null;
+        } else {
+            listValues[0].IncRef();
+            foreach (var value in listValues)
+                value.DecRef();
+
+            return listValues[0];
+        }
     }
 
     public Task<DreamValue> WinExists(string controlId) {
@@ -343,7 +408,7 @@ public sealed class DreamConnection {
         return task;
     }
 
-    public Task<DreamValue> Alert(String title, String message, String button1, String button2, String button3) {
+    public Task<DreamValue> Alert(string title, string message, string button1, string button2, string button3) {
         var task = MakePromptTask(out var promptId);
         var msg = new MsgAlert() {
             PromptId = promptId,
@@ -393,7 +458,6 @@ public sealed class DreamConnection {
         } else {
             _sawmill.Error($"Client({Session}) requested a browse_rsc file they had not been permitted to request ({filename}).");
         }
-
     }
 
     public void Browse(string? body, string? options) {

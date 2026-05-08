@@ -1,15 +1,15 @@
 ﻿using System.Diagnostics.Contracts;
 using System.IO;
 using Lidgren.Network;
-using Robust.Shared.Network;
 using Robust.Shared.Serialization;
 using System.Linq;
 using Robust.Shared.ViewVariables;
 using Robust.Shared.Maths;
 using System;
-using OpenDreamShared.Rendering;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using Robust.Shared.GameObjects;
+using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
 
 namespace OpenDreamShared.Dream;
 
@@ -50,7 +50,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
     [ViewVariables] public readonly MouseOpacity MouseOpacity = MutableAppearance.Default.MouseOpacity;
     [ViewVariables] public readonly ImmutableAppearance[] Overlays;
     [ViewVariables] public readonly ImmutableAppearance[] Underlays;
-    [ViewVariables] public readonly Robust.Shared.GameObjects.NetEntity[] VisContents;
+    [ViewVariables] public readonly NetEntity[] VisContents;
     [ViewVariables] public readonly DreamFilter[] Filters;
     [ViewVariables] public readonly int[] Verbs;
     [ViewVariables] public readonly ColorMatrix ColorMatrix = ColorMatrix.Identity;
@@ -64,11 +64,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
     [ViewVariables] public int MouseDropPointer = MutableAppearance.Default.MouseDropPointer;
 
     /// <summary> The Transform property of this appearance, in [a,d,b,e,c,f] order</summary>
-    [ViewVariables] public readonly float[] Transform = [
-        1, 0,   // a d
-        0, 1,   // b e
-        0, 0    // c f
-    ];
+    [ViewVariables] public readonly float[] Transform = MutableAppearance.Default.Transform;
 
     // PixelOffset2 behaves the same as PixelOffset in top-down mode, so this is used
     public Vector2i TotalPixelOffset => PixelOffset + PixelOffset2;
@@ -120,8 +116,9 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         Verbs = appearance.Verbs.ToArray();
         Override = appearance.Override;
 
-        for (int i = 0; i < 6; i++) {
-            Transform[i] = appearance.Transform[i];
+        if (appearance.Transform != MutableAppearance.Default.Transform) {
+            Transform = new float[6];
+            Array.Copy(appearance.Transform, Transform, 6);
         }
     }
 
@@ -292,7 +289,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         return (int)_storedHashCode;
     }
 
-    public ImmutableAppearance(NetIncomingMessage buffer, IRobustSerializer serializer) {
+    public ImmutableAppearance(NetBuffer buffer, IRobustSerializer serializer) {
         Overlays = [];
         Underlays = [];
         VisContents = [];
@@ -330,7 +327,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
                     PixelOffset2 = (buffer.ReadVariableInt32(), buffer.ReadVariableInt32());
                     break;
                 case IconAppearanceProperty.Color:
-                    Color = buffer.ReadColor();
+                    Color = new Color(buffer.ReadByte(), buffer.ReadByte(), buffer.ReadByte(), buffer.ReadByte());
                     break;
                 case IconAppearanceProperty.Alpha:
                     Alpha = buffer.ReadByte();
@@ -403,9 +400,9 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
                 case IconAppearanceProperty.VisContents: {
                     var visContentsCount = buffer.ReadVariableInt32();
 
-                    VisContents = new Robust.Shared.GameObjects.NetEntity[visContentsCount];
+                    VisContents = new NetEntity[visContentsCount];
                     for (int visContentsI = 0; visContentsI < visContentsCount; visContentsI++) {
-                        VisContents[visContentsI] = buffer.ReadNetEntity();
+                        VisContents[visContentsI] = new NetEntity(buffer.ReadInt32());
                     }
 
                     break;
@@ -533,12 +530,14 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         result.VisContents.AddRange(VisContents);
         result.Filters.AddRange(Filters);
         result.Verbs.AddRange(Verbs);
-        Array.Copy(Transform, result.Transform, 6);
+
+        if (Transform != MutableAppearance.Default.Transform)
+            Array.Copy(Transform, result.Transform, 6);
 
         return result;
     }
 
-    public void WriteToBuffer(NetOutgoingMessage buffer, IRobustSerializer serializer) {
+    public void WriteToBuffer(NetBuffer buffer, IRobustSerializer serializer) {
         buffer.Write((byte)IconAppearanceProperty.Id);
         buffer.WriteVariableUInt32(MustGetId());
 
@@ -585,7 +584,10 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
 
         if (Color != MutableAppearance.Default.Color) {
             buffer.Write((byte)IconAppearanceProperty.Color);
-            buffer.Write(Color);
+            buffer.Write(Color.RByte);
+            buffer.Write(Color.GByte);
+            buffer.Write(Color.BByte);
+            buffer.Write(Color.AByte);
         }
 
         if (Alpha != MutableAppearance.Default.Alpha) {
@@ -678,7 +680,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
 
             buffer.WriteVariableInt32(VisContents.Length);
             foreach (var item in VisContents) {
-                buffer.Write(item);
+                buffer.Write((int)item);
             }
         }
 
@@ -757,7 +759,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         buffer.Write((byte)IconAppearanceProperty.End);
     }
 
-    public int ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {
+    public int ReadFromBuffer(NetBuffer buffer, IRobustSerializer serializer) {
         throw new NotImplementedException();
     }
 }

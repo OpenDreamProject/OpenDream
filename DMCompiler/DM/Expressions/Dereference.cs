@@ -246,7 +246,7 @@ internal class Dereference : LValue {
         ctx.Proc.AddLabel(endLabel);
     }
 
-    public void EmitPushIsSaved(ExpressionContext ctx) {
+    public override void EmitPushIsSaved(ExpressionContext ctx) {
         string endLabel = ctx.Proc.NewLabelName();
 
         if (_expression is LValue exprLValue) {

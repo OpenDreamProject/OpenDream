@@ -3320,7 +3320,6 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus SwitchOnFloat(DMProcState state) {
             int casePosition = state.ReadInt();
             float testValue = state.ReadFloat();
-            int casePosition = state.ReadInt();
             using var test = state.Pop();
             if (test.TryGetValueAsFloat(out var value)) {
                 if (testValue.Equals(value)) {
@@ -3338,7 +3337,6 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus SwitchOnString(DMProcState state) {
             int casePosition = state.ReadInt();
             string testValue = state.ReadString();
-            int casePosition = state.ReadInt();
             using var test = state.Pop();
             if (test.TryGetValueAsString(out var value)) {
                 if (testValue.Equals(value)) {

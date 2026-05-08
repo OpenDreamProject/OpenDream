@@ -7,9 +7,9 @@ using Robust.Client.UserInterface.Controls;
 
 namespace OpenDreamClient.Interface.Controls;
 
-public sealed class ControlWindow : InterfaceControl {
-    [Dependency] private readonly IClyde _clyde = default!;
-    [Dependency] private readonly IUserInterfaceManager _uiMgr = default!;
+public sealed partial class ControlWindow : InterfaceControl {
+    [Dependency] private IClyde _clyde = default!;
+    [Dependency] private IUserInterfaceManager _uiMgr = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.window");
 

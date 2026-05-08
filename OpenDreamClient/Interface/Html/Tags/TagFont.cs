@@ -12,9 +12,9 @@ namespace OpenDreamClient.Interface.Html.Tags;
 /// Supports text color and uses font sizes that better match BYOND's
 /// </summary>
 [UsedImplicitly]
-public sealed class TagFont : IMarkupTag {
-    [Dependency] private readonly IResourceCache _resourceCache = default!;
-    [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
+public sealed partial class TagFont : IMarkupTag {
+    [Dependency] private IResourceCache _resourceCache = default!;
+    [Dependency] private IPrototypeManager _prototypeManager = default!;
 
     public string Name => "font"; // Overrides RobustToolbox's font tag
 

@@ -506,9 +506,9 @@ public struct DreamValue : IDisposable, IEquatable<DreamValue> {
 
 #region Serialization
 
-public sealed class DreamValueJsonConverter : JsonConverter<DreamValue> {
-    [Dependency] private readonly DreamObjectTree _objectTree = default!;
-    [Dependency] private readonly DreamResourceManager _resourceManager = default!;
+public sealed partial class DreamValueJsonConverter : JsonConverter<DreamValue> {
+    [Dependency] private DreamObjectTree _objectTree = default!;
+    [Dependency] private DreamResourceManager _resourceManager = default!;
 
     public DreamValueJsonConverter() {
         IoCManager.InjectDependencies(this);

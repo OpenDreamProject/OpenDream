@@ -3,8 +3,8 @@ using OpenDreamShared.Rendering;
 
 namespace OpenDreamClient.Rendering;
 
-internal sealed class ClientImagesSystem : SharedClientImagesSystem {
-    [Dependency] private readonly IEntityManager _entityManager = default!;
+internal sealed partial class ClientImagesSystem : SharedClientImagesSystem {
+    [Dependency] private IEntityManager _entityManager = default!;
 
     private readonly Dictionary<Vector3, List<NetEntity>> _turfClientImages = new();
     private readonly Dictionary<EntityUid, List<NetEntity>> _amClientImages = new();

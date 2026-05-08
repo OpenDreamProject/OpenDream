@@ -11,15 +11,15 @@ namespace OpenDreamRuntime.Objects;
 /// Holds collections of every alive DreamObject
 /// </summary>
 // TODO: This could probably be expanded to hold buckets for non-DreamObject values as well (strings, appearances, etc)
-public sealed class DreamRefManager {
+public sealed partial class DreamRefManager {
     public const uint RefTypeMask = 0xFF000000;
     public const uint RefIdMask = 0x00FFFFFF;
 
     public Dictionary<string, List<DreamObject>> Tags { get; } = new();
 
-    [Dependency] private readonly DreamObjectTree _objectTree = default!;
-    [Dependency] private readonly DreamResourceManager _resourceManager = default!;
-    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+    [Dependency] private DreamObjectTree _objectTree = default!;
+    [Dependency] private DreamResourceManager _resourceManager = default!;
+    [Dependency] private IEntitySystemManager _entitySystemManager = default!;
     private ServerAppearanceSystem? _appearanceSystem;
 
     private readonly Dictionary<RefType, Bucket> _buckets = new();

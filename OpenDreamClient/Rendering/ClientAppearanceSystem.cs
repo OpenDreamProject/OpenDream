@@ -14,7 +14,7 @@ using Robust.Shared.Timing;
 
 namespace OpenDreamClient.Rendering;
 
-internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
+internal sealed partial class ClientAppearanceSystem : SharedAppearanceSystem {
     public sealed class Flick {
         public readonly DMIResource Icon;
         public readonly string? IconState;
@@ -59,18 +59,18 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     private float _refreshVerbRemainingTime = 0.5f;
     private readonly float _refreshVerbPeriod = 0.5f;
 
-    [Dependency] private readonly IEntityManager _entityManager = default!;
-    [Dependency] private readonly IDreamResourceManager _dreamResourceManager = default!;
-    [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
-    [Dependency] private readonly TransformSystem _transformSystem = default!;
-    [Dependency] private readonly IGameTiming _gameTiming = default!;
-    [Dependency] private readonly IClyde _clyde = default!;
-    [Dependency] private readonly DMISpriteSystem _spriteSystem = default!;
-    [Dependency] private readonly IPlayerManager _playerManager = default!;
-    [Dependency] private readonly IMapManager _mapManager = default!;
-    [Dependency] private readonly MapSystem _mapSystem = default!;
-    [Dependency] private readonly IPrototypeManager _protoManager = default!;
-    [Dependency] private readonly ClientVerbSystem _verbSystem = default!;
+    [Dependency] private IEntityManager _entityManager = default!;
+    [Dependency] private IDreamResourceManager _dreamResourceManager = default!;
+    [Dependency] private IDreamInterfaceManager _interfaceManager = default!;
+    [Dependency] private TransformSystem _transformSystem = default!;
+    [Dependency] private IGameTiming _gameTiming = default!;
+    [Dependency] private IClyde _clyde = default!;
+    [Dependency] private DMISpriteSystem _spriteSystem = default!;
+    [Dependency] private IPlayerManager _playerManager = default!;
+    [Dependency] private IMapManager _mapManager = default!;
+    [Dependency] private MapSystem _mapSystem = default!;
+    [Dependency] private IPrototypeManager _protoManager = default!;
+    [Dependency] private ClientVerbSystem _verbSystem = default!;
 
     public override void Initialize() {
         UpdatesOutsidePrediction = true;

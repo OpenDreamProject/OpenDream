@@ -176,10 +176,10 @@ internal sealed class StatPanel : InfoPanel {
     }
 }
 
-internal sealed class VerbPanel : InfoPanel {
+internal sealed partial class VerbPanel : InfoPanel {
     public static readonly string DefaultVerbPanel = "Verbs"; // TODO: default_verb_category
 
-    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+    [Dependency] private IEntitySystemManager _entitySystemManager = default!;
     private readonly ClientVerbSystem? _verbSystem;
 
     private readonly VerbPanelGrid _grid;
@@ -269,13 +269,13 @@ internal sealed class VerbPanel : InfoPanel {
     }
 }
 
-public sealed class ControlInfo : InterfaceControl {
+public sealed partial class ControlInfo : InterfaceControl {
     public static readonly string StyleClassDMFInfo = "DMFInfo";
 
     public ControlDescriptorInfo InfoDescriptor => (ControlDescriptorInfo)ControlDescriptor;
 
-    [Dependency] private readonly IClientNetManager _netManager = default!;
-    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+    [Dependency] private IClientNetManager _netManager = default!;
+    [Dependency] private IEntitySystemManager _entitySystemManager = default!;
 
     private PanelContainer _container;
     private TabContainer _tabControl;

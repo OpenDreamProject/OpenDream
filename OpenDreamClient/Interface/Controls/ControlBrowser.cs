@@ -16,7 +16,7 @@ using Robust.Shared.Utility;
 
 namespace OpenDreamClient.Interface.Controls;
 
-internal sealed class ControlBrowser : InterfaceControl {
+internal sealed partial class ControlBrowser : InterfaceControl {
     private static readonly Dictionary<string, string> FileExtensionMimeTypes = new() {
         { "css", "text/css" },
         { "html", "text/html" },
@@ -31,9 +31,9 @@ internal sealed class ControlBrowser : InterfaceControl {
         { "txt", "text/plain" }
     };
 
-    [Dependency] private readonly IResourceManager _resourceManager = default!;
-    [Dependency] private readonly IClientNetManager _netManager = default!;
-    [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
+    [Dependency] private IResourceManager _resourceManager = default!;
+    [Dependency] private IClientNetManager _netManager = default!;
+    [Dependency] private IDreamResourceManager _dreamResource = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.browser");
 

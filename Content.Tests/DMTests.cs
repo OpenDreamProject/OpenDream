@@ -21,9 +21,9 @@ public sealed partial class DMTests : ContentUnitTest {
     private const string InitializeEnvironment = "./environment.dme";
     private const string TestsDirectory = "Tests";
 
-    [Dependency] private readonly DreamManager _dreamMan = default!;
-    [Dependency] private readonly DreamObjectTree _objectTree = default!;
-    [Dependency] private readonly ITaskManager _taskManager = default!;
+    [Dependency] private DreamManager _dreamMan = default!;
+    [Dependency] private DreamObjectTree _objectTree = default!;
+    [Dependency] private ITaskManager _taskManager = default!;
 
     [Flags]
     public enum DMTestFlags {

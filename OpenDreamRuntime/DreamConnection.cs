@@ -62,6 +62,7 @@ public sealed class DreamConnection {
                             var newMobNetEntity = _entityManager.GetNetEntity(_mob.Entity);
                             newEye = new(newMobNetEntity);
                         }
+
                         Eye = newEye;
                     }
                 }
@@ -83,15 +84,15 @@ public sealed class DreamConnection {
     [ViewVariables] public ClientObjectReference? Eye {
         get;
         set {
-
             if (field != null) {
-                var fieldObj = _dreamManager.GetFromClientReference(this, Eye.Value);
+                var fieldObj = _dreamManager.GetFromClientReference(this, field.Value);
                 fieldObj?.DecRef();
             }
             if (value != null) {
                 var valueObj = _dreamManager.GetFromClientReference(this, value.Value);
                 valueObj?.IncRef();
             }
+
             field = value;
             UpdateMobEye();
         }

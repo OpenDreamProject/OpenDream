@@ -140,7 +140,9 @@ public sealed class WalkManager {
 
                 var currentLoc = _atomManager.GetAtomPosition(movable);
                 var targetLoc = _atomManager.GetAtomPosition(target);
-                var steps = _dreamMapManager.CalculateSteps(currentLoc, targetLoc, min);
+                var worldView = _dreamManager.WorldInstance.DefaultView;
+                var maxSteps = Math.Max(worldView.Width, worldView.Height) - 1;
+                var steps = _dreamMapManager.CalculateSteps(currentLoc, targetLoc, min, maxSteps);
                 using var enumerator = steps.GetEnumerator();
                 if (!enumerator.MoveNext()) // No more steps to take
                     break;

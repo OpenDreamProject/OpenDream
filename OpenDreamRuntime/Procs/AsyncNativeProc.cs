@@ -22,7 +22,7 @@ namespace OpenDreamRuntime.Procs {
         public sealed partial class AsyncNativeProcState : ProcState {
             public static readonly Stack<AsyncNativeProcState> Pool = new();
 
-            #if TOOLS
+#if TOOLS
             public override (string SourceFile, int Line) TracyLocationId => ("Async Native Proc", 0);
 #endif
 

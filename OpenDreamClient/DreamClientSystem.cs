@@ -8,11 +8,11 @@ using Robust.Shared.Player;
 
 namespace OpenDreamClient;
 
-internal sealed class DreamClientSystem : EntitySystem {
-    [Dependency] private readonly IEntityManager _entityManager = default!;
-    [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
-    [Dependency] private readonly IEyeManager _eyeManager = default!;
-    [Dependency] private readonly TransformSystem _transformSystem = default!;
+internal sealed partial class DreamClientSystem : EntitySystem {
+    [Dependency] private IEntityManager _entityManager = default!;
+    [Dependency] private IDreamInterfaceManager _interfaceManager = default!;
+    [Dependency] private IEyeManager _eyeManager = default!;
+    [Dependency] private TransformSystem _transformSystem = default!;
 
     // Current NetEntityof player's mob, or Invalid if could not be determined.
     private NetEntity _mobNet = NetEntity.Invalid;

@@ -8,7 +8,7 @@ using OpenDreamRuntime.Resources;
 using Dependency = Robust.Shared.IoC.DependencyAttribute;
 
 namespace OpenDreamRuntime.Procs {
-    public sealed class AsyncNativeProc(
+    public sealed partial class AsyncNativeProc(
         int id,
         TreeEntry owningType,
         string name,
@@ -19,18 +19,18 @@ namespace OpenDreamRuntime.Procs {
         /// <summary>
         /// ProcState specifically for running native procs, not DM procs
         /// </summary>
-        public sealed class AsyncNativeProcState : ProcState {
+        public sealed partial class AsyncNativeProcState : ProcState {
             public static readonly Stack<AsyncNativeProcState> Pool = new();
 
-            #if TOOLS
+#if TOOLS
             public override (string SourceFile, int Line) TracyLocationId => ("Async Native Proc", 0);
-            #endif
+#endif
 
             // IoC dependencies instead of proc fields because _proc can be null
-            [Dependency] public readonly DreamManager DreamManager = default!;
-            [Dependency] public readonly DreamResourceManager ResourceManager = default!;
-            [Dependency] public readonly DreamObjectTree ObjectTree = default!;
-            [Dependency] public readonly ProcScheduler ProcScheduler = default!;
+            [Dependency] public DreamManager DreamManager = default!;
+            [Dependency] public DreamResourceManager ResourceManager = default!;
+            [Dependency] public DreamObjectTree ObjectTree = default!;
+            [Dependency] public ProcScheduler ProcScheduler = default!;
 
             private readonly DreamValue[] _arguments = new DreamValue[128];
 

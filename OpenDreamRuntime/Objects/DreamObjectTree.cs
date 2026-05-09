@@ -20,7 +20,7 @@ using MethodImplOptions = System.Runtime.CompilerServices.MethodImplOptions;
 
 namespace OpenDreamRuntime.Objects;
 
-public sealed class DreamObjectTree {
+public sealed partial class DreamObjectTree {
     public TreeEntry[] Types { get; private set; }
     public List<DreamProc> Procs { get; } = new();
     public List<string> Strings { get; private set; } //TODO: Store this somewhere else
@@ -57,18 +57,18 @@ public sealed class DreamObjectTree {
     private FrozenDictionary<string, TreeEntry> _pathToType = FrozenDictionary<string, TreeEntry>.Empty;
     private FrozenDictionary<string, int> _globalProcIds = FrozenDictionary<string, int>.Empty;
 
-    [Dependency] private readonly AtomManager _atomManager = default!;
-    [Dependency] private readonly DreamManager _dreamManager = default!;
-    [Dependency] private readonly DreamRefManager _refManager = default!;
-    [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
-    [Dependency] private readonly IMapManager _mapManager = default!;
-    [Dependency] private readonly IDreamDebugManager _dreamDebugManager = default!;
-    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-    [Dependency] private readonly IEntityManager _entityManager = default!;
-    [Dependency] private readonly DreamResourceManager _dreamResourceManager = default!;
-    [Dependency] private readonly WalkManager _walkManager = default!;
-    [Dependency] private readonly ISerializationManager _serializationManager = default!;
-    [Dependency] private readonly ProcScheduler _procScheduler = default!;
+    [Dependency] private AtomManager _atomManager = default!;
+    [Dependency] private DreamManager _dreamManager = default!;
+    [Dependency] private DreamRefManager _refManager = default!;
+    [Dependency] private IDreamMapManager _dreamMapManager = default!;
+    [Dependency] private IMapManager _mapManager = default!;
+    [Dependency] private IDreamDebugManager _dreamDebugManager = default!;
+    [Dependency] private IEntitySystemManager _entitySystemManager = default!;
+    [Dependency] private IEntityManager _entityManager = default!;
+    [Dependency] private DreamResourceManager _dreamResourceManager = default!;
+    [Dependency] private WalkManager _walkManager = default!;
+    [Dependency] private ISerializationManager _serializationManager = default!;
+    [Dependency] private ProcScheduler _procScheduler = default!;
     private ServerAppearanceSystem? _appearanceSystem;
     private TransformSystem? _transformSystem;
     private PvsOverrideSystem? _pvsOverrideSystem;

@@ -11,11 +11,11 @@ namespace OpenDreamRuntime;
 /// Handles walking movables.<br/>
 /// walk_towards(), walk_to(), walk_away(), etc.
 /// </summary>
-public sealed class WalkManager {
-    [Dependency] private readonly AtomManager _atomManager = default!;
-    [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
-    [Dependency] private readonly ProcScheduler _scheduler = default!;
-    [Dependency] private readonly DreamManager _dreamManager = default!;
+public sealed partial class WalkManager {
+    [Dependency] private AtomManager _atomManager = default!;
+    [Dependency] private IDreamMapManager _dreamMapManager = default!;
+    [Dependency] private ProcScheduler _scheduler = default!;
+    [Dependency] private DreamManager _dreamManager = default!;
 
     private readonly Dictionary<DreamObjectMovable, CancellationTokenSource> _walkTasks = new();
 
@@ -140,7 +140,9 @@ public sealed class WalkManager {
 
                 var currentLoc = _atomManager.GetAtomPosition(movable);
                 var targetLoc = _atomManager.GetAtomPosition(target);
-                var steps = _dreamMapManager.CalculateSteps(currentLoc, targetLoc, min);
+                var worldView = _dreamManager.WorldInstance.DefaultView;
+                var maxSteps = Math.Max(worldView.Width, worldView.Height) - 1;
+                var steps = _dreamMapManager.CalculateSteps(currentLoc, targetLoc, min, maxSteps);
                 using var enumerator = steps.GetEnumerator();
                 if (!enumerator.MoveNext()) // No more steps to take
                     break;

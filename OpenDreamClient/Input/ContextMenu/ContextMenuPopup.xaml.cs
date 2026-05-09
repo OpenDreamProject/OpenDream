@@ -14,10 +14,10 @@ namespace OpenDreamClient.Input.ContextMenu;
 
 [GenerateTypedNameReferences]
 internal sealed partial class ContextMenuPopup : Popup {
-    [Dependency] private readonly IPlayerManager _playerManager = default!;
-    [Dependency] private readonly IEntityManager _entityManager = default!;
-    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-    [Dependency] private readonly IUserInterfaceManager _uiManager = default!;
+    [Dependency] private IPlayerManager _playerManager = default!;
+    [Dependency] private IEntityManager _entityManager = default!;
+    [Dependency] private IEntitySystemManager _entitySystemManager = default!;
+    [Dependency] private IUserInterfaceManager _uiManager = default!;
     private readonly ClientAppearanceSystem _appearanceSystem;
     private readonly DreamClientSystem _dreamClientSystem;
     private readonly ClientVerbSystem _verbSystem;

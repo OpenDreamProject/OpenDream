@@ -16,11 +16,11 @@ using Cell = OpenDreamRuntime.Map.IDreamMapManager.Cell;
 namespace OpenDreamRuntime.Map;
 
 public sealed partial class DreamMapManager : IDreamMapManager {
-    [Dependency] private readonly DreamManager _dreamManager = default!;
-    [Dependency] private readonly AtomManager _atomManager = default!;
-    [Dependency] private readonly IMapManager _mapManager = default!;
-    [Dependency] private readonly DreamObjectTree _objectTree = default!;
-    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+    [Dependency] private DreamManager _dreamManager = default!;
+    [Dependency] private AtomManager _atomManager = default!;
+    [Dependency] private IMapManager _mapManager = default!;
+    [Dependency] private DreamObjectTree _objectTree = default!;
+    [Dependency] private IEntitySystemManager _entitySystemManager = default!;
 
     // Set in Initialize
     private ServerAppearanceSystem _appearanceSystem = default!;
@@ -548,5 +548,5 @@ public interface IDreamMapManager {
 
     public IEnumerable<DreamObjectMob> GetMobsInRange((int X, int Y, int Z) loc, int distance);
 
-    public IEnumerable<AtomDirection> CalculateSteps((int X, int Y, int Z) loc, (int X, int Y, int Z) dest, int distance);
+    public IEnumerable<AtomDirection> CalculateSteps((int X, int Y, int Z) loc, (int X, int Y, int Z) dest, int targetDistance, int maxSteps);
 }

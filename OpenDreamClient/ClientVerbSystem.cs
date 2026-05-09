@@ -11,15 +11,15 @@ using Robust.Shared.Timing;
 
 namespace OpenDreamClient;
 
-public sealed class ClientVerbSystem : VerbSystem {
-    [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
-    [Dependency] private readonly IPlayerManager _playerManager = default!;
-    [Dependency] private readonly IEntityManager _entityManager = default!;
-    [Dependency] private readonly ITaskManager _taskManager = default!;
-    [Dependency] private readonly ITimerManager _timerManager = default!;
-    [Dependency] private readonly IOverlayManager _overlayManager = default!;
-    [Dependency] private readonly DreamClientSystem _dreamClientSystem = default!;
-    [Dependency] private readonly TransformSystem _transformSystem = default!;
+public sealed partial class ClientVerbSystem : VerbSystem {
+    [Dependency] private IDreamInterfaceManager _interfaceManager = default!;
+    [Dependency] private IPlayerManager _playerManager = default!;
+    [Dependency] private IEntityManager _entityManager = default!;
+    [Dependency] private ITaskManager _taskManager = default!;
+    [Dependency] private ITimerManager _timerManager = default!;
+    [Dependency] private IOverlayManager _overlayManager = default!;
+    [Dependency] private DreamClientSystem _dreamClientSystem = default!;
+    [Dependency] private TransformSystem _transformSystem = default!;
 
     private EntityQuery<DMISpriteComponent> _spriteQuery;
     private EntityQuery<DreamMobSightComponent> _sightQuery;

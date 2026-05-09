@@ -17,19 +17,19 @@ using Robust.Shared.Map;
 
 namespace OpenDreamClient.Input;
 
-internal sealed class MouseInputSystem : SharedMouseInputSystem {
-    [Dependency] private readonly IInputManager _inputManager = default!;
-    [Dependency] private readonly IUserInterfaceManager _userInterfaceManager = default!;
-    [Dependency] private readonly IMapManager _mapManager = default!;
-    [Dependency] private readonly IOverlayManager _overlayManager = default!;
-    [Dependency] private readonly IEntityManager _entityManager = default!;
-    [Dependency] private readonly MapSystem _mapSystem = default!;
-    [Dependency] private readonly IConfigurationManager _configurationManager = default!;
-    [Dependency] private readonly IDreamInterfaceManager _dreamInterfaceManager = default!;
-    [Dependency] private readonly ClientAppearanceSystem _appearanceSystem = default!;
-    [Dependency] private readonly DreamClientSystem _dreamClientSystem = default!;
-    [Dependency] private readonly IClyde _clyde = default!;
-    [Dependency] private readonly ILogManager _logManager = default!;
+internal sealed partial class MouseInputSystem : SharedMouseInputSystem {
+    [Dependency] private IInputManager _inputManager = default!;
+    [Dependency] private IUserInterfaceManager _userInterfaceManager = default!;
+    [Dependency] private IMapManager _mapManager = default!;
+    [Dependency] private IOverlayManager _overlayManager = default!;
+    [Dependency] private IEntityManager _entityManager = default!;
+    [Dependency] private MapSystem _mapSystem = default!;
+    [Dependency] private IConfigurationManager _configurationManager = default!;
+    [Dependency] private IDreamInterfaceManager _dreamInterfaceManager = default!;
+    [Dependency] private ClientAppearanceSystem _appearanceSystem = default!;
+    [Dependency] private DreamClientSystem _dreamClientSystem = default!;
+    [Dependency] private IClyde _clyde = default!;
+    [Dependency] private ILogManager _logManager = default!;
     private ISawmill _sawmill = default!;
 
     private DreamViewOverlay? _dreamViewOverlay;

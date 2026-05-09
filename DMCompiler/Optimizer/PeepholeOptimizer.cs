@@ -109,14 +109,21 @@ internal sealed class PeepholeOptimizer {
     }
 
     public void RunPeephole(List<IAnnotatedBytecode> input) {
-        foreach (var optPass in _passes) {
-            RunPass((byte)optPass, input);
-        }
+        bool changed;
+
+        do {
+            changed = false;
+
+            foreach (var optPass in _passes) {
+                changed |= RunPass((byte)optPass, input);
+            }
+        } while (changed);
     }
 
-    private void RunPass(byte pass, List<IAnnotatedBytecode> input) {
+    private bool RunPass(byte pass, List<IAnnotatedBytecode> input) {
         OptimizationTreeEntry? currentOpt = null;
         int optSize = 0;
+        bool changed = false;
 
         int AttemptCurrentOpt(int i) {
             if (currentOpt == null)
@@ -126,6 +133,7 @@ internal sealed class PeepholeOptimizer {
 
             if (currentOpt.Optimization?.CheckPreconditions(input, i - optSize) is true) {
                 currentOpt.Optimization.Apply(_compiler, input, i - optSize);
+                changed = true;
                 offset = (optSize + 2); // Run over the new opcodes for potential further optimization
             } else {
                 // This chain of opcodes did not lead to a valid optimization.
@@ -139,7 +147,7 @@ internal sealed class PeepholeOptimizer {
 
         for (int i = 0; i <= input.Count; i++) {
             if (i == input.Count) {
-                i -=  AttemptCurrentOpt(i);
+                i -= AttemptCurrentOpt(i);
                 i = Math.Max(i, -1); // i++ brings -1 back to 0
                 continue;
             }
@@ -168,5 +176,7 @@ internal sealed class PeepholeOptimizer {
             i -= AttemptCurrentOpt(i);
             i = Math.Max(i, -1); // i++ brings -1 back to 0
         }
+
+        return changed;
     }
 }

@@ -14,7 +14,7 @@ using Dependency = Robust.Shared.IoC.DependencyAttribute;
 
 namespace OpenDreamRuntime;
 
-public sealed class AtomManager {
+public sealed partial class AtomManager {
     public int AtomCount {
         get {
             ReadOnlySpan<RefType> atomTypes = [
@@ -33,12 +33,12 @@ public sealed class AtomManager {
         }
     }
 
-    [Dependency] private readonly IEntityManager _entityManager = default!;
-    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-    [Dependency] private readonly DreamObjectTree _objectTree = default!;
-    [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
-    [Dependency] private readonly DreamResourceManager _resourceManager = default!;
-    [Dependency] private readonly DreamRefManager _refManager = default!;
+    [Dependency] private IEntityManager _entityManager = default!;
+    [Dependency] private IEntitySystemManager _entitySystemManager = default!;
+    [Dependency] private DreamObjectTree _objectTree = default!;
+    [Dependency] private IDreamMapManager _dreamMapManager = default!;
+    [Dependency] private DreamResourceManager _resourceManager = default!;
+    [Dependency] private DreamRefManager _refManager = default!;
 
     private readonly Dictionary<EntityUid, DreamObjectMovable> _entityToAtom = new();
     private readonly Dictionary<DreamObjectDefinition, MutableAppearance> _definitionAppearanceCache = new();

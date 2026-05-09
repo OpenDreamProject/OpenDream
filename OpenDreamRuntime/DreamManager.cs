@@ -46,16 +46,16 @@ public sealed partial class DreamManager {
 
     private ISawmill _sawmill = default!;
 
-    [Dependency] private readonly AtomManager _atomManager = default!;
-    [Dependency] private readonly DreamRefManager _refManager = default!;
-    [Dependency] private readonly IPlayerManager _playerManager = default!;
-    [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
-    [Dependency] private readonly ProcScheduler _procScheduler = default!;
-    [Dependency] private readonly DreamResourceManager _dreamResourceManager = default!;
-    [Dependency] private readonly ITaskManager _taskManager = default!;
-    [Dependency] private readonly IOpenDreamGameTiming _gameTiming = default!;
-    [Dependency] private readonly DreamObjectTree _objectTree = default!;
-    [Dependency] private readonly IEntityManager _entityManager = default!;
+    [Dependency] private AtomManager _atomManager = default!;
+    [Dependency] private DreamRefManager _refManager = default!;
+    [Dependency] private IPlayerManager _playerManager = default!;
+    [Dependency] private IDreamMapManager _dreamMapManager = default!;
+    [Dependency] private ProcScheduler _procScheduler = default!;
+    [Dependency] private DreamResourceManager _dreamResourceManager = default!;
+    [Dependency] private ITaskManager _taskManager = default!;
+    [Dependency] private IOpenDreamGameTiming _gameTiming = default!;
+    [Dependency] private DreamObjectTree _objectTree = default!;
+    [Dependency] private IEntityManager _entityManager = default!;
 
     //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
     public void PreInitialize(string? jsonPath) {

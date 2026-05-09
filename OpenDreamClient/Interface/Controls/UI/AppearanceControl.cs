@@ -8,12 +8,12 @@ namespace OpenDreamClient.Interface.Controls.UI;
 /// <summary>
 /// Draws an icon with an appearance ID
 /// </summary>
-public sealed class AppearanceControl : Control {
-    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-    [Dependency] private readonly IGameTiming _gameTiming = default!;
-    [Dependency] private readonly IClyde _clyde = default!;
-    [Dependency] private readonly IOverlayManager _overlayManager = default!;
-    [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
+public sealed partial class AppearanceControl : Control {
+    [Dependency] private IEntitySystemManager _entitySystemManager = default!;
+    [Dependency] private IGameTiming _gameTiming = default!;
+    [Dependency] private IClyde _clyde = default!;
+    [Dependency] private IOverlayManager _overlayManager = default!;
+    [Dependency] private IDreamInterfaceManager _interfaceManager = default!;
 
     private readonly DreamViewOverlay _overlay;
     private readonly DreamIcon _icon;

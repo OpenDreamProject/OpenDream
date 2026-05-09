@@ -11,7 +11,7 @@ public sealed partial class ProcScheduler {
         public readonly Dictionary<int, uint> ProcYieldCounter = new();
     }
 
-    [Dependency] private readonly IOpenDreamGameTiming _gameTiming = default!;
+    [Dependency] private IOpenDreamGameTiming _gameTiming = default!;
 
     private PriorityQueue<DelayTicker, uint> _tickers = new();
 

@@ -54,7 +54,7 @@ public sealed class DummyDreamMapManager : IDreamMapManager {
         yield break;
     }
 
-    public IEnumerable<AtomDirection> CalculateSteps((int X, int Y, int Z) loc, (int X, int Y, int Z) dest, int distance) {
+    public IEnumerable<AtomDirection> CalculateSteps((int X, int Y, int Z) loc, (int X, int Y, int Z) dest, int targetDistance, int maxSteps) {
         yield break;
     }
 }

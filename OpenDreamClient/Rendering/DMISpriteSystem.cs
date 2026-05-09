@@ -8,16 +8,16 @@ using Robust.Shared.Timing;
 
 namespace OpenDreamClient.Rendering;
 
-internal sealed class DMISpriteSystem : EntitySystem {
-    [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
-    [Dependency] private readonly IEntityManager _entityManager = default!;
-    [Dependency] private readonly IGameTiming _gameTiming = default!;
-    [Dependency] private readonly ClientAppearanceSystem _appearanceSystem = default!;
-    [Dependency] private readonly IOverlayManager _overlayManager = default!;
-    [Dependency] private readonly IClyde _clyde = default!;
-    [Dependency] private readonly IPlayerManager _playerManager = default!;
-    [Dependency] private readonly EntityLookupSystem _lookupSystem = default!;
-    [Dependency] private readonly TransformSystem _transformSystem = default!;
+internal sealed partial class DMISpriteSystem : EntitySystem {
+    [Dependency] private IDreamInterfaceManager _interfaceManager = default!;
+    [Dependency] private IEntityManager _entityManager = default!;
+    [Dependency] private IGameTiming _gameTiming = default!;
+    [Dependency] private ClientAppearanceSystem _appearanceSystem = default!;
+    [Dependency] private IOverlayManager _overlayManager = default!;
+    [Dependency] private IClyde _clyde = default!;
+    [Dependency] private IPlayerManager _playerManager = default!;
+    [Dependency] private EntityLookupSystem _lookupSystem = default!;
+    [Dependency] private TransformSystem _transformSystem = default!;
 
     public RenderTargetPool RenderTargetPool = default!;
 

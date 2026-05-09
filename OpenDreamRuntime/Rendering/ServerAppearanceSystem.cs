@@ -11,7 +11,7 @@ using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
 
 namespace OpenDreamRuntime.Rendering;
 
-public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
+public sealed partial class ServerAppearanceSystem : SharedAppearanceSystem {
     public ImmutableAppearance DefaultAppearance = default!;
 
     /// <summary>
@@ -29,8 +29,8 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     private readonly Dictionary<uint, ProxyWeakRef> _idToAppearance = new();
     private uint _counter;
 
-    [Dependency] private readonly DreamManager _dreamManager = default!;
-    [Dependency] private readonly IPlayerManager _playerManager = default!;
+    [Dependency] private DreamManager _dreamManager = default!;
+    [Dependency] private IPlayerManager _playerManager = default!;
 
     public override void Initialize() {
         DefaultAppearance = new ImmutableAppearance(MutableAppearance.Default, this);

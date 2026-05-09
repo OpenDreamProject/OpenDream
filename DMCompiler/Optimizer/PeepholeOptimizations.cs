@@ -139,7 +139,7 @@ internal sealed class IndexRefWithString : IOptimization {
         AnnotatedBytecodeString strIndex = secondInstruction.GetArg<AnnotatedBytecodeString>(0);
 
         input.RemoveRange(index, 3);
-        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.IndexRefWithString, -1,
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.IndexRefWithString,
             [pushVal, strIndex]));
     }
 }

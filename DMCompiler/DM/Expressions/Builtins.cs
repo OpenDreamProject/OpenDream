@@ -674,7 +674,7 @@ internal sealed class CallStatement : DMExpression {
 
         _b?.EmitPushValue(ctx);
         _a.EmitPushValue(ctx);
-        ctx.Proc.CallStatement(argumentInfo.Type, argumentInfo.StackSize);
+        ctx.Proc.CallStatement(argumentInfo.Type, argumentInfo.StackSize, _b is not null);
     }
 }
 

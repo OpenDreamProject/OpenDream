@@ -200,7 +200,9 @@ internal sealed class DMProc {
     public ProcDefinitionJson GetJsonRepresentation() {
         var serializer = new AnnotatedBytecodeSerializer(_compiler);
 
-        _compiler.BytecodeOptimizer.Optimize(AnnotatedBytecode.GetAnnotatedBytecode());
+        List<IAnnotatedBytecode> annotatedBytecode = AnnotatedBytecode.GetAnnotatedBytecode();
+        _compiler.BytecodeOptimizer.Optimize(annotatedBytecode);
+        int maxStackSize = AnnotatedBytecode.RecalculateMaxStackSize();
 
         List<ProcArgumentJson>? arguments = null;
         if (_parameters.Count > 0) {
@@ -228,8 +230,8 @@ internal sealed class DMProc {
             OwningTypeId = _dmObject.Id,
             Name = Name,
             Attributes = Attributes,
-            MaxStackSize = AnnotatedBytecode.GetMaxStackSize(),
-            Bytecode = serializer.Serialize(AnnotatedBytecode.GetAnnotatedBytecode()),
+            MaxStackSize = maxStackSize,
+            Bytecode = serializer.Serialize(annotatedBytecode),
             Arguments = arguments,
             SourceInfo = serializer.SourceInfo,
             Locals = (_localVariableNames.Count > 0) ? serializer.GetLocalVariablesJson() : null,
@@ -901,9 +903,8 @@ internal sealed class DMProc {
         WriteStackDelta(argumentStackSize);
     }
 
-    public void CallStatement(DMCallArgumentsType argumentsType, int argumentStackSize) {
-        //Shrinks the stack by argumentStackSize. Could also shrink it by argumentStackSize+1, but assume not.
-        ResizeStack(-argumentStackSize);
+    public void CallStatement(DMCallArgumentsType argumentsType, int argumentStackSize, bool hasProcName) {
+        ResizeStack(-(argumentStackSize + (hasProcName ? 1 : 0)));
         WriteOpcode(DreamProcOpcode.CallStatement);
         WriteArgumentType(argumentsType);
         WriteStackDelta(argumentStackSize);
@@ -937,7 +938,7 @@ internal sealed class DMProc {
     }
 
     public void CreateObject(DMCallArgumentsType argumentsType, int argumentStackSize) {
-        ResizeStack(-argumentStackSize); // Pops type and arguments, pushes new object
+        ResizeStack(-(argumentStackSize + 1)); // Pops overrides, type, and arguments, pushes new object
         WriteOpcode(DreamProcOpcode.CreateObject);
         WriteArgumentType(argumentsType);
         WriteStackDelta(argumentStackSize);
@@ -1267,7 +1268,7 @@ internal sealed class DMProc {
     }
 
     public void PickWeighted(int count) {
-        ResizeStack(-(count - 1));
+        ResizeStack(-(count * 2 - 1));
         WriteOpcode(DreamProcOpcode.PickWeighted);
         WritePickCount(count);
     }

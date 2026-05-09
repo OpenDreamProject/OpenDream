@@ -136,7 +136,7 @@ public enum DreamProcOpcode : byte {
     EnumerateAssoc = 0x43,
     [OpcodeMetadata(-2)]
     Link = 0x44,
-    [OpcodeMetadata(-3, OpcodeArgType.TypeId)]
+    [OpcodeMetadata(-4, OpcodeArgType.TypeId)]
     Prompt = 0x45,
     [OpcodeMetadata(-3)]
     Ftp = 0x46,
@@ -301,7 +301,7 @@ public enum DreamProcOpcode : byte {
     ReturnFloat = 0x98,
     [OpcodeMetadata(1, OpcodeArgType.Reference, OpcodeArgType.String)]
     IndexRefWithString = 0x99,
-    [OpcodeMetadata(2, OpcodeArgType.Float, OpcodeArgType.Reference)]
+    [OpcodeMetadata(0, OpcodeArgType.Float, OpcodeArgType.Reference)]
     PushFloatAssign = 0x9A,
     [OpcodeMetadata(true, 0, OpcodeArgType.Int)]
     NPushFloatAssign = 0x9B,

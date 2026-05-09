@@ -46,7 +46,6 @@ internal sealed class PushFloatAssign : IOptimization {
 
         // Otherwise, replace with NPushFloatAssign
 
-        int stackDelta = 0;
         List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(2 * count + 1) { new AnnotatedBytecodeInteger(count, input[index].GetLocation()) };
 
         for (int i = 0; i < count; i++) {
@@ -54,11 +53,10 @@ internal sealed class PushFloatAssign : IOptimization {
             AnnotatedBytecodeInstruction assignInstruction = (AnnotatedBytecodeInstruction)(input[index + i*2 + 1]);
             args.Add(floatInstruction.GetArg<AnnotatedBytecodeFloat>(0));
             args.Add(assignInstruction.GetArg<AnnotatedBytecodeReference>(0));
-            stackDelta += 2;
         }
 
         input.RemoveRange(index, count * 2);
-        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.NPushFloatAssign, stackDelta, args));
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.NPushFloatAssign, 0, args));
     }
 }
 

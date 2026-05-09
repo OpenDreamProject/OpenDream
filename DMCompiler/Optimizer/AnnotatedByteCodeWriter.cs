@@ -18,6 +18,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
     private Location _location;
     private int _maxStackSize;
     private bool _negativeStackSizeError;
+    private int _pendingInstructionStackDelta;
     private int _requiredArgIdx;
     private OpcodeMetadata? _currentMetadata;
     private Dictionary<string, long> _labels = new();
@@ -49,9 +50,10 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
 
         // Goal here is to maintain correspondence between the raw bytecode and the annotated bytecode such that
         // the annotated bytecode can be used to generate the raw bytecode again.
-        _annotatedBytecode.Add(new AnnotatedBytecodeInstruction(opcode, metadata.StackDelta, location));
+        _annotatedBytecode.Add(new AnnotatedBytecodeInstruction(opcode, metadata.StackDelta + _pendingInstructionStackDelta, location));
+        _pendingInstructionStackDelta = 0;
 
-        ResizeStack(metadata.StackDelta);
+        ResizeStackOnly(metadata.StackDelta);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -215,6 +217,19 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
     /// </summary>
     /// <param name="sizeDelta">The net change in stack size caused by an operation</param>
     public void ResizeStack(int sizeDelta) {
+        _pendingInstructionStackDelta += sizeDelta;
+        ResizeStackOnly(sizeDelta);
+    }
+
+    private void ResizeCurrentInstructionStack(int sizeDelta) {
+        if (_annotatedBytecode.Count > 0 && _annotatedBytecode[^1] is AnnotatedBytecodeInstruction instruction) {
+            instruction.StackSizeDelta += sizeDelta;
+        }
+
+        ResizeStackOnly(sizeDelta);
+    }
+
+    private void ResizeStackOnly(int sizeDelta) {
         _currentStackSize += sizeDelta;
         _maxStackSize = Math.Max(_currentStackSize, _maxStackSize);
         if (_currentStackSize < 0 && !_negativeStackSizeError) {
@@ -227,6 +242,27 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
     /// Gets the maximum possible stack size of the proc
     /// </summary>
     public int GetMaxStackSize() {
+        return _maxStackSize;
+    }
+
+    /// <summary>
+    /// Recomputes the maximum possible stack size from the current annotated bytecode.
+    /// Used after optimization because peephole rewrites can change the max stack size.
+    /// </summary>
+    public int RecalculateMaxStackSize() {
+        _currentStackSize = 0;
+        _maxStackSize = 0;
+        _negativeStackSizeError = false;
+        _pendingInstructionStackDelta = 0;
+
+        foreach (IAnnotatedBytecode bytecode in _annotatedBytecode) {
+            if (bytecode is not AnnotatedBytecodeInstruction instruction)
+                continue;
+
+            _location = instruction.GetLocation();
+            ResizeStackOnly(instruction.StackSizeDelta);
+        }
+
         return _maxStackSize;
     }
 
@@ -294,7 +330,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
                 int fieldId = compiler.DMObjectTree.AddString(reference.Name);
                 _annotatedBytecode[^1]
                     .AddArg(compiler, new AnnotatedBytecodeReference(reference.RefType, fieldId, location));
-                ResizeStack(affectStack ? -1 : 0);
+                ResizeCurrentInstructionStack(affectStack ? -1 : 0);
                 break;
 
             case DMReference.Type.SrcProc:
@@ -306,7 +342,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
 
             case DMReference.Type.ListIndex:
                 _annotatedBytecode[^1].AddArg(compiler, new AnnotatedBytecodeReference(reference.RefType, location));
-                ResizeStack(affectStack ? -2 : 0);
+                ResizeCurrentInstructionStack(affectStack ? -2 : 0);
                 break;
 
             case DMReference.Type.SuperProc:

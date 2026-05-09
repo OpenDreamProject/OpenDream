@@ -37,7 +37,7 @@ internal sealed class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
     public AnnotatedBytecodeInstruction(DreamProcOpcode op, List<IAnnotatedBytecode> args) {
         Opcode = op;
         OpcodeMetadata metadata = OpcodeMetadataCache.GetMetadata(op);
-        StackSizeDelta = metadata.StackDelta;
+        StackSizeDelta = metadata.StackDelta + GetArgsStackSizeDelta(args);
         Location = new Location("Internal", null, null);
         ValidateArgs(metadata, args);
         _args = args;
@@ -45,10 +45,31 @@ internal sealed class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
 
     public AnnotatedBytecodeInstruction(DreamProcOpcode opcode, int stackSizeDelta, List<IAnnotatedBytecode> args) {
         Opcode = opcode;
-        StackSizeDelta = stackSizeDelta;
+        StackSizeDelta = stackSizeDelta + GetArgsStackSizeDelta(args);
         Location = new Location("Internal", null, null);
         ValidateArgs(OpcodeMetadataCache.GetMetadata(opcode), args);
         _args = args;
+    }
+
+    private static int GetArgsStackSizeDelta(List<IAnnotatedBytecode> args) {
+        int delta = 0;
+
+        foreach (IAnnotatedBytecode arg in args) {
+            if (arg is not AnnotatedBytecodeReference reference)
+                continue;
+
+            delta += GetReferenceStackSizeDelta(reference.RefType);
+        }
+
+        return delta;
+    }
+
+    private static int GetReferenceStackSizeDelta(DMReference.Type refType) {
+        return refType switch {
+            DMReference.Type.Field => -1,
+            DMReference.Type.ListIndex => -2,
+            _ => 0
+        };
     }
 
     private void ValidateArgs(OpcodeMetadata metadata, List<IAnnotatedBytecode> args) {

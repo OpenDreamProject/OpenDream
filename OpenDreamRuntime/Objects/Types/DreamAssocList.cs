@@ -148,4 +148,38 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     public bool ContainsValue(DreamValue value) {
         return _values.ContainsKey(value);
     }
+
+    public override DreamValue OperatorAppend(DreamValue b) {
+        if (b.TryGetValueAsIDreamList(out var bList)) {
+            foreach (var pair in bList.EnumerateAssocValues()) {
+                if (ContainsKey(pair.Key)) {
+                    continue;
+                }
+
+                SetValue(pair.Key, pair.Value);
+            }
+        } else {
+            AddValue(b);
+        }
+
+        IncRef();
+        return new(this);
+    }
+
+    public override DreamValue OperatorRemove(DreamValue b) {
+        if (b.TryGetValueAsIDreamList(out var bList)) {
+            var values = bList.EnumerateValues();
+
+            foreach (var value in values) {
+                RemoveValue(value);
+            }
+        } else {
+            RemoveValue(b);
+        }
+
+        IncRef();
+        return new(this);
+    }
 }
+
+

@@ -58,7 +58,7 @@ internal sealed class AssignNoPush : IOptimization {
 
 // PushNull
 // AssignNoPush [ref]
-// -> AssignNull [ref]
+// -> NullRef [ref]
 internal sealed class AssignNull : IOptimization {
     public OptPass OptimizationPass => OptPass.PeepholeOptimization;
 

@@ -137,7 +137,13 @@ internal sealed class PeepholeOptimizer {
             return offset;
         }
 
-        for (int i = 0; i < input.Count; i++) {
+        for (int i = 0; i <= input.Count; i++) {
+            if (i == input.Count) {
+                i -=  AttemptCurrentOpt(i);
+                i = Math.Max(i, -1); // i++ brings -1 back to 0
+                continue;
+            }
+
             var bytecode = input[i];
             if (bytecode is not AnnotatedBytecodeInstruction instruction) {
                 i -= AttemptCurrentOpt(i);
@@ -162,7 +168,5 @@ internal sealed class PeepholeOptimizer {
             i -= AttemptCurrentOpt(i);
             i = Math.Max(i, -1); // i++ brings -1 back to 0
         }
-
-        AttemptCurrentOpt(input.Count);
     }
 }

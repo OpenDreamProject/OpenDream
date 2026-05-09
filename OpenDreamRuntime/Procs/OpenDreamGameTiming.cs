@@ -2,8 +2,8 @@
 
 namespace OpenDreamRuntime.Procs;
 
-internal sealed class OpenDreamGameTiming : IOpenDreamGameTiming {
-    [Dependency] private readonly IGameTiming _gameTiming = default!;
+internal sealed partial class OpenDreamGameTiming : IOpenDreamGameTiming {
+    [Dependency] private IGameTiming _gameTiming = default!;
 
     public GameTick CurTick => _gameTiming.CurTick;
 

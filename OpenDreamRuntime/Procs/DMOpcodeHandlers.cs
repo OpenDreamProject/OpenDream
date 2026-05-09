@@ -1991,10 +1991,10 @@ namespace OpenDreamRuntime.Procs {
         }
 
         // "proc state" we just need something to hold the delay task
-        sealed class SleepState : AsyncProcState {
+        sealed partial class SleepState : AsyncProcState {
             public static readonly Stack<SleepState> Pool = new();
 
-            [Dependency] private readonly ProcScheduler _procScheduler = null!;
+            [Dependency] private ProcScheduler _procScheduler = null!;
 
             DreamProc? _proc;
             Task? _task;

@@ -24,10 +24,10 @@ public sealed partial class DMTests : ContentUnitTest {
     private const string TestsDirectory = "Tests";
 
     [Dependency] IOpenDreamGameTiming _gameTiming = default!;
-    [Dependency] private readonly DreamManager _dreamMan = default!;
-    [Dependency] private readonly DreamObjectTree _objectTree = default!;
-    [Dependency] private readonly ProcScheduler _procScheduler = default!;
-    [Dependency] private readonly ITaskManager _taskManager = default!;
+    [Dependency] private DreamManager _dreamMan = default!;
+    [Dependency] private DreamObjectTree _objectTree = default!;
+    [Dependency] private ProcScheduler _procScheduler = default!;
+    [Dependency] private ITaskManager _taskManager = default!;
 
     DummyOpenDreamGameTiming GameTiming => (DummyOpenDreamGameTiming)_gameTiming;
 

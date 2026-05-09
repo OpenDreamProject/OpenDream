@@ -6,7 +6,7 @@ using Robust.Shared.Timing;
 using System;
 
 namespace Content.Tests {
-    sealed class DummyOpenDreamGameTiming : IOpenDreamGameTiming {
+    sealed partial class DummyOpenDreamGameTiming : IOpenDreamGameTiming {
 
         [Dependency] IGameTiming _gameTiming = null!;
 

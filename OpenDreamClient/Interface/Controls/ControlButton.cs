@@ -71,7 +71,7 @@ internal sealed partial class ControlButton(ControlDescriptor controlDescriptor,
         }
 
         if (!string.IsNullOrEmpty(controlDescriptor.Command.Value)) {
-            _interfaceManager.RunCommand(controlDescriptor.Command.AsRaw());
+            InterfaceManager.RunCommand(controlDescriptor.Command.AsRaw());
         }
     }
 }

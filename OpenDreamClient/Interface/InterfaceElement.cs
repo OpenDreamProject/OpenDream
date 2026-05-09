@@ -14,7 +14,7 @@ public partial class InterfaceElement {
 
     public ElementDescriptor ElementDescriptor;
 
-    [Dependency] protected IDreamInterfaceManager _interfaceManager = default!;
+    [Dependency] protected IDreamInterfaceManager InterfaceManager = default!;
     [Dependency] private ISerializationManager _serializationManager = default!;
 
     protected InterfaceElement(ElementDescriptor elementDescriptor) {

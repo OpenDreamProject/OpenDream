@@ -12,7 +12,7 @@ namespace OpenDreamClient.Interface.Html.Tags;
 /// Supports text color and uses font sizes that better match BYOND's
 /// </summary>
 [UsedImplicitly]
-public sealed partial class TagFont : IMarkupTag {
+public sealed partial class TagFont : IMarkupTagHandler {
     [Dependency] private IResourceCache _resourceCache = default!;
     [Dependency] private IPrototypeManager _prototypeManager = default!;
 

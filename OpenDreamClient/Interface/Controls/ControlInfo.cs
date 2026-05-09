@@ -428,14 +428,14 @@ public sealed partial class ControlInfo : InterfaceControl {
     public void OnShowEvent() {
         ControlDescriptorInfo controlDescriptor = (ControlDescriptorInfo)ControlDescriptor;
         if (!string.IsNullOrWhiteSpace(controlDescriptor.OnShowCommand.Value)) {
-            _interfaceManager.RunCommand(controlDescriptor.OnShowCommand.AsRaw());
+            InterfaceManager.RunCommand(controlDescriptor.OnShowCommand.AsRaw());
         }
     }
 
     public void OnHideEvent() {
         ControlDescriptorInfo controlDescriptor = (ControlDescriptorInfo)ControlDescriptor;
         if (!string.IsNullOrWhiteSpace(controlDescriptor.OnHideCommand.Value)) {
-            _interfaceManager.RunCommand(controlDescriptor.OnHideCommand.AsRaw());
+            InterfaceManager.RunCommand(controlDescriptor.OnHideCommand.AsRaw());
         }
     }
 }

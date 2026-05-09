@@ -38,14 +38,14 @@ public sealed partial class ControlMap(ControlDescriptor controlDescriptor, Cont
             "normal" or _ => ScalingViewportStretchMode.Nearest
         };
 
-        UpdateViewRange(_interfaceManager.View);
+        UpdateViewRange(InterfaceManager.View);
     }
 
     public void UpdateViewRange(ViewRange view) {
         var viewWidth = Math.Max(view.Width, 1);
         var viewHeight = Math.Max(view.Height, 1);
 
-        Viewport.ViewportSize = new Vector2i(viewWidth, viewHeight) * _interfaceManager.IconSize;
+        Viewport.ViewportSize = new Vector2i(viewWidth, viewHeight) * InterfaceManager.IconSize;
         if (MapDescriptor.IconSize.Value != 0) {
             // BYOND supports a negative number here (flips the view), but we're gonna enforce a positive number instead
             var iconSize = Math.Max(MapDescriptor.IconSize.Value, 1);
@@ -78,7 +78,7 @@ public sealed partial class ControlMap(ControlDescriptor controlDescriptor, Cont
         else
             OnHideEvent();
 
-        UpdateViewRange(_interfaceManager.View);
+        UpdateViewRange(InterfaceManager.View);
 
         return new PanelContainer { StyleClasses = {"MapBackground"}, Children = { Viewport } };
     }
@@ -109,14 +109,14 @@ public sealed partial class ControlMap(ControlDescriptor controlDescriptor, Cont
     public void OnShowEvent() {
         ControlDescriptorMap controlDescriptor = (ControlDescriptorMap)ControlDescriptor;
         if (!string.IsNullOrWhiteSpace(controlDescriptor.OnShowCommand.Value)) {
-            _interfaceManager.RunCommand(controlDescriptor.OnShowCommand.AsRaw());
+            InterfaceManager.RunCommand(controlDescriptor.OnShowCommand.AsRaw());
         }
     }
 
     public void OnHideEvent() {
         ControlDescriptorMap controlDescriptor = (ControlDescriptorMap)ControlDescriptor;
         if (!string.IsNullOrWhiteSpace(controlDescriptor.OnHideCommand.Value)) {
-            _interfaceManager.RunCommand(controlDescriptor.OnHideCommand.AsRaw());
+            InterfaceManager.RunCommand(controlDescriptor.OnHideCommand.AsRaw());
         }
     }
 

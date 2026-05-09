@@ -16,7 +16,6 @@ public sealed partial class ClientVerbSystem : VerbSystem {
     [Dependency] private IPlayerManager _playerManager = default!;
     [Dependency] private IEntityManager _entityManager = default!;
     [Dependency] private ITaskManager _taskManager = default!;
-    [Dependency] private ITimerManager _timerManager = default!;
     [Dependency] private IOverlayManager _overlayManager = default!;
     [Dependency] private TransformSystem _transformSystem = default!;
 

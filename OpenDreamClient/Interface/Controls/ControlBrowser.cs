@@ -196,7 +196,7 @@ internal sealed partial class ControlBrowser : InterfaceControl {
         modifiedQuery = modifiedQuery!.Replace('&', ';'); // TODO: More robust parsing
 
         // We can finally call winset
-        _interfaceManager.WinSet(element, modifiedQuery);
+        InterfaceManager.WinSet(element, modifiedQuery);
     }
 
     /// <summary>
@@ -238,7 +238,7 @@ internal sealed partial class ControlBrowser : InterfaceControl {
             jsonBuilder.Append('"');
             jsonBuilder.Append(HttpUtility.JavaScriptStringEncode(wingetting));
             jsonBuilder.Append("\": ");
-            var result = _interfaceManager.WinGet(elementId, wingetting, forceJson: forceJson);
+            var result = InterfaceManager.WinGet(elementId, wingetting, forceJson: forceJson);
             jsonBuilder.Append(result);
         }
 
@@ -252,14 +252,14 @@ internal sealed partial class ControlBrowser : InterfaceControl {
     private void OnShowEvent() {
         ControlDescriptorBrowser controlDescriptor = (ControlDescriptorBrowser)ControlDescriptor;
         if (!string.IsNullOrWhiteSpace(controlDescriptor.OnShowCommand.Value)) {
-            _interfaceManager.RunCommand(controlDescriptor.OnShowCommand.AsRaw());
+            InterfaceManager.RunCommand(controlDescriptor.OnShowCommand.AsRaw());
         }
     }
 
     private void OnHideEvent() {
         ControlDescriptorBrowser controlDescriptor = (ControlDescriptorBrowser)ControlDescriptor;
         if (!string.IsNullOrWhiteSpace(controlDescriptor.OnHideCommand.Value)) {
-            _interfaceManager.RunCommand(controlDescriptor.OnHideCommand.AsRaw());
+            InterfaceManager.RunCommand(controlDescriptor.OnHideCommand.AsRaw());
         }
     }
 }

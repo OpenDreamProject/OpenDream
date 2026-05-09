@@ -13,13 +13,13 @@ using System.Linq;
 [module: System.Runtime.CompilerServices.SkipLocalsInit]
 
 namespace OpenDreamRuntime {
-    public sealed class EntryPoint : GameServer {
-        [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-        [Dependency] private readonly DreamManager _dreamManager = default!;
-        [Dependency] private readonly IConfigurationManager _configManager = default!;
-        [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
-        [Dependency] private readonly IDreamDebugManager _debugManager = default!;
-        [Dependency] private readonly ServerInfoManager _serverInfoManager = default!;
+    public sealed partial class EntryPoint : GameServer {
+        [Dependency] private IEntitySystemManager _entitySystemManager = default!;
+        [Dependency] private DreamManager _dreamManager = default!;
+        [Dependency] private IConfigurationManager _configManager = default!;
+        [Dependency] private IPrototypeManager _prototypeManager = default!;
+        [Dependency] private IDreamDebugManager _debugManager = default!;
+        [Dependency] private ServerInfoManager _serverInfoManager = default!;
 
         private ServerVerbSystem? _serverVerbSystem;
 

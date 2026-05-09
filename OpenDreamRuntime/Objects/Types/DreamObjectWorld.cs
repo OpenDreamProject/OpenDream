@@ -12,7 +12,7 @@ using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime.Objects.Types;
 
-public sealed class DreamObjectWorld : DreamObject {
+public sealed partial class DreamObjectWorld : DreamObject {
     public override bool ShouldCallNew => false; // Gets called manually later
 
     public readonly ViewRange DefaultView;
@@ -27,10 +27,10 @@ public sealed class DreamObjectWorld : DreamObject {
     public float Cpu { get; set; }
     public readonly int IconSize;
 
-    [Dependency] private readonly IBaseServer _server = default!;
-    [Dependency] private readonly IGameTiming _gameTiming = default!;
-    [Dependency] private readonly INetManager _netManager = default!;
-    [Dependency] private readonly IConfigurationManager _cfg = default!;
+    [Dependency] private IBaseServer _server = default!;
+    [Dependency] private IGameTiming _gameTiming = default!;
+    [Dependency] private INetManager _netManager = default!;
+    [Dependency] private IConfigurationManager _cfg = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.world");
 

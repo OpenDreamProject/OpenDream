@@ -8,12 +8,12 @@ using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime.Input;
 
-internal sealed class MouseInputSystem : SharedMouseInputSystem {
-    [Dependency] private readonly AtomManager _atomManager = default!;
-    [Dependency] private readonly DreamManager _dreamManager = default!;
-    [Dependency] private readonly DreamRefManager _refManager = default!;
-    [Dependency] private readonly IDreamMapManager _mapManager = default!;
-    [Dependency] private readonly IGameTiming _timing = default!;
+internal sealed partial class MouseInputSystem : SharedMouseInputSystem {
+    [Dependency] private AtomManager _atomManager = default!;
+    [Dependency] private DreamManager _dreamManager = default!;
+    [Dependency] private DreamRefManager _refManager = default!;
+    [Dependency] private IDreamMapManager _mapManager = default!;
+    [Dependency] private IGameTiming _timing = default!;
 
     private readonly TimeSpan _doubleClickDelay = TimeSpan.FromMilliseconds(250);
 

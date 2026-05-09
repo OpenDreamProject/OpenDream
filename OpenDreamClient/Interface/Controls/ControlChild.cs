@@ -21,10 +21,10 @@ internal sealed class ControlChild(ControlDescriptor controlDescriptor, ControlW
     protected override void UpdateElementDescriptor() {
         base.UpdateElementDescriptor();
 
-        var newLeftElement = _interfaceManager.Windows.TryGetValue(ChildDescriptor.Left.Value, out var leftWindow)
+        var newLeftElement = InterfaceManager.Windows.TryGetValue(ChildDescriptor.Left.Value, out var leftWindow)
             ? leftWindow.UIElement
             : null;
-        var newRightElement = _interfaceManager.Windows.TryGetValue(ChildDescriptor.Right.Value, out var rightWindow)
+        var newRightElement = InterfaceManager.Windows.TryGetValue(ChildDescriptor.Right.Value, out var rightWindow)
             ? rightWindow.UIElement
             : null;
 
@@ -45,9 +45,9 @@ internal sealed class ControlChild(ControlDescriptor controlDescriptor, ControlW
     }
 
     public override void Shutdown() {
-        if (_interfaceManager.Windows.TryGetValue(ChildDescriptor.Left.Value, out var left))
+        if (InterfaceManager.Windows.TryGetValue(ChildDescriptor.Left.Value, out var left))
             left.Shutdown();
-        if (_interfaceManager.Windows.TryGetValue(ChildDescriptor.Right.Value, out var right))
+        if (InterfaceManager.Windows.TryGetValue(ChildDescriptor.Right.Value, out var right))
             right.Shutdown();
     }
 

@@ -132,7 +132,7 @@ public sealed class InterfaceMenu : InterfaceElement {
                         MenuElementDescriptor.IsChecked = new DMFPropertyBool(!MenuElementDescriptor.IsChecked.Value);
                 menu.CreateMenu();
                 if(!string.IsNullOrEmpty(MenuElementDescriptor.Command.Value))
-                    _interfaceManager.RunCommand(Command.AsRaw());
+                    InterfaceManager.RunCommand(Command.AsRaw());
             };
             return menuButton;
         }

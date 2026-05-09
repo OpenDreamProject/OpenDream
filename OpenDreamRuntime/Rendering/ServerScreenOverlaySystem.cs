@@ -4,9 +4,9 @@ using Robust.Server.GameStates;
 
 namespace OpenDreamRuntime.Rendering;
 
-public sealed class ServerScreenOverlaySystem : SharedScreenOverlaySystem {
-    [Dependency] private readonly IEntityManager _entityManager = default!;
-    [Dependency] private readonly PvsOverrideSystem _pvsOverride = default!;
+public sealed partial class ServerScreenOverlaySystem : SharedScreenOverlaySystem {
+    [Dependency] private IEntityManager _entityManager = default!;
+    [Dependency] private PvsOverrideSystem _pvsOverride = default!;
 
     public void AddScreenObject(DreamConnection connection, DreamObjectMovable screenObject) {
         if (connection.Session is null)

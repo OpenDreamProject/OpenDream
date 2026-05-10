@@ -145,6 +145,12 @@ public class BytecodeOptimizer(DMCompiler compiler) {
                     case AnnotatedBytecodeLabel label:
                         labels.Add(label.LabelName);
                         continue;
+                    // Edge case in which we have Return, EndTry, Jump
+                    case AnnotatedBytecodeInstruction cleanup when labels.Count == 0 && cleanup.Opcode is DreamProcOpcode.EndTry:
+                        input.RemoveAt(j);
+                        i -= 1;
+                        j -= 1;
+                        continue;
                     case AnnotatedBytecodeInstruction { Opcode: DreamProcOpcode.Jump } jump when labels.Count > 0: {
                         string targetLabel = jump.GetArg<AnnotatedBytecodeLabel>(0).LabelName;
                         if (labels.Contains(targetLabel))
@@ -159,7 +165,7 @@ public class BytecodeOptimizer(DMCompiler compiler) {
                     }
                     case AnnotatedBytecodeInstruction { Opcode: DreamProcOpcode.Jump }: {
                         input.RemoveAt(j);
-                        i--;
+                        i -= 1;
                         break;
                     }
                 }

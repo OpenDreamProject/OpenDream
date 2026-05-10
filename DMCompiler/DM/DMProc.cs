@@ -694,6 +694,15 @@ internal sealed class DMProc {
         Jump($"{loopLabel}_start");
     }
 
+    /// <summary>
+    /// Jump to start but only if the last instruction doesn't supersede the Jump (e.g. a return)
+    /// </summary>
+    public void LoopJumpToStartIfReachable(string loopLabel) {
+        if (!LastInstructionTransfersControl()) {
+            LoopJumpToStart(loopLabel);
+        }
+    }
+
     public void LoopEnd() {
         if (_loopStack?.TryPop(out var pop) ?? false) {
             AddLabel(pop + "_end");
@@ -850,26 +859,55 @@ internal sealed class DMProc {
         WriteLabel(label);
     }
 
-    // TODO: Once we have a CFG we'll likely be storing this info in opcode metadata and this method's hardcoded list can be removed
     public bool LastInstructionTransfersControl() {
         List<IAnnotatedBytecode> bytecode = AnnotatedBytecode.GetAnnotatedBytecode();
+        HashSet<string>? referencedLabels = null;
         // Man sometimes it'd be nice if we had a list of just instructions and didn't need loops like this just to grab the last actual instruction
         for (int i = bytecode.Count - 1; i >= 0; i--) {
             switch (bytecode[i]) {
                 case AnnotatedBytecodeVariable:
                     continue;
+                case AnnotatedBytecodeLabel label:
+                    referencedLabels ??= GetReferencedLabels(bytecode);
+                    if (referencedLabels is not null && referencedLabels.Contains(label.LabelName))
+                        return false;
+
+                    continue;
                 case AnnotatedBytecodeInstruction instruction:
-                    return instruction.Opcode is DreamProcOpcode.Jump or
-                        DreamProcOpcode.Return or
-                        DreamProcOpcode.ReturnReferenceValue or
-                        DreamProcOpcode.ReturnFloat or
-                        DreamProcOpcode.Throw;
+                    return InstructionTransfersControl(instruction.Opcode);
                 default:
                     return false;
             }
         }
 
         return false;
+    }
+
+    private HashSet<string>? GetReferencedLabels(List<IAnnotatedBytecode> bytecode) {
+        HashSet<string>? referencedLabels = null;
+
+        foreach (IAnnotatedBytecode item in bytecode) {
+            if (item is not AnnotatedBytecodeInstruction instruction)
+                continue;
+
+            foreach (IAnnotatedBytecode arg in instruction.GetArgs()) {
+                if (arg is AnnotatedBytecodeLabel label) {
+                    referencedLabels ??= new HashSet<string>(1);
+                    referencedLabels.Add(label.LabelName);
+                }
+            }
+        }
+
+        return referencedLabels;
+    }
+
+    // TODO: Once we have a CFG we'll likely be storing this info in opcode metadata and this method's hardcoded list can be removed
+    private bool InstructionTransfersControl(DreamProcOpcode opcode) {
+        return opcode is DreamProcOpcode.Jump or
+            DreamProcOpcode.Return or
+            DreamProcOpcode.ReturnReferenceValue or
+            DreamProcOpcode.ReturnFloat or
+            DreamProcOpcode.Throw;
     }
 
     public void JumpIfFalse(string label) {

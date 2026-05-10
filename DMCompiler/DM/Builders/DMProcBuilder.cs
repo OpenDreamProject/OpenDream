@@ -244,7 +244,8 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
             proc.StartScope();
             ProcessBlockInner(statement.Body);
             proc.EndScope();
-            proc.Jump(endLabel);
+            if (!proc.LastInstructionTransfersControl())
+                proc.Jump(endLabel);
 
             proc.AddLabel(elseLabel);
             proc.StartScope();
@@ -548,7 +549,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                 }
 
                 ProcessBlockInner(body);
-                proc.LoopJumpToStart(loopLabel);
+                proc.LoopJumpToStartIfReachable(loopLabel);
             }
             proc.LoopEnd();
         }
@@ -590,7 +591,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                 }
 
                 ProcessBlockInner(body);
-                proc.LoopJumpToStart(loopLabel);
+                proc.LoopJumpToStartIfReachable(loopLabel);
             }
             proc.LoopEnd();
         }
@@ -627,7 +628,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                 }
 
                 ProcessBlockInner(body);
-                proc.LoopJumpToStart(loopLabel);
+                proc.LoopJumpToStartIfReachable(loopLabel);
             }
             proc.LoopEnd();
         }
@@ -644,7 +645,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
             {
                 proc.MarkLoopContinue(loopLabel);
                 ProcessBlockInner(statementInfLoop.Body);
-                proc.LoopJumpToStart(loopLabel);
+                proc.LoopJumpToStartIfReachable(loopLabel);
             }
             proc.LoopEnd();
         }
@@ -663,7 +664,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
             proc.StartScope();
             {
                 ProcessBlockInner(statementWhile.Body);
-                proc.LoopJumpToStart(loopLabel);
+                proc.LoopJumpToStartIfReachable(loopLabel);
             }
             proc.EndScope();
         }

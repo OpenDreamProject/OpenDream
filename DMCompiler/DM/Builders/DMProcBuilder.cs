@@ -549,7 +549,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                 }
 
                 ProcessBlockInner(body);
-                proc.LoopJumpToStartIfReachable(loopLabel);
+                proc.LoopJumpToStart(loopLabel);
             }
             proc.LoopEnd();
         }
@@ -591,7 +591,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                 }
 
                 ProcessBlockInner(body);
-                proc.LoopJumpToStartIfReachable(loopLabel);
+                proc.LoopJumpToStart(loopLabel);
             }
             proc.LoopEnd();
         }
@@ -628,7 +628,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                 }
 
                 ProcessBlockInner(body);
-                proc.LoopJumpToStartIfReachable(loopLabel);
+                proc.LoopJumpToStart(loopLabel);
             }
             proc.LoopEnd();
         }
@@ -645,7 +645,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
             {
                 proc.MarkLoopContinue(loopLabel);
                 ProcessBlockInner(statementInfLoop.Body);
-                proc.LoopJumpToStartIfReachable(loopLabel);
+                proc.LoopJumpToStart(loopLabel);
             }
             proc.LoopEnd();
         }
@@ -664,7 +664,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
             proc.StartScope();
             {
                 ProcessBlockInner(statementWhile.Body);
-                proc.LoopJumpToStartIfReachable(loopLabel);
+                proc.LoopJumpToStart(loopLabel);
             }
             proc.EndScope();
         }

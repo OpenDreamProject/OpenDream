@@ -694,15 +694,6 @@ internal sealed class DMProc {
         Jump($"{loopLabel}_start");
     }
 
-    /// <summary>
-    /// Jump to start but only if the last instruction doesn't supersede the Jump (e.g. a return)
-    /// </summary>
-    public void LoopJumpToStartIfReachable(string loopLabel) {
-        if (!LastInstructionTransfersControl()) {
-            LoopJumpToStart(loopLabel);
-        }
-    }
-
     public void LoopEnd() {
         if (_loopStack?.TryPop(out var pop) ?? false) {
             AddLabel(pop + "_end");

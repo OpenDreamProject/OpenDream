@@ -106,7 +106,8 @@ public class BytecodeOptimizer(DMCompiler compiler) {
     }
 
     private void RewriteLabelAliases(List<IAnnotatedBytecode> input, Dictionary<string, string>? labelAliases) {
-        if (labelAliases is null || labelAliases.Count == 0) return;
+        if (labelAliases is null || labelAliases.Count == 0)
+            return;
 
         for (int i = 0; i < input.Count; i++) {
             if (input[i] is AnnotatedBytecodeInstruction instruction) {
@@ -145,10 +146,8 @@ public class BytecodeOptimizer(DMCompiler compiler) {
                     case AnnotatedBytecodeLabel label:
                         labels.Add(label.LabelName);
                         continue;
-                    // Edge case in which we have Return, EndTry, Jump
-                    case AnnotatedBytecodeInstruction cleanup when labels.Count == 0 && cleanup.Opcode is DreamProcOpcode.EndTry:
+                    case AnnotatedBytecodeInstruction when labels.Count == 0:
                         input.RemoveAt(j);
-                        i -= 1;
                         j -= 1;
                         continue;
                     case AnnotatedBytecodeInstruction { Opcode: DreamProcOpcode.Jump } jump when labels.Count > 0: {
@@ -157,13 +156,10 @@ public class BytecodeOptimizer(DMCompiler compiler) {
                             break;
 
                         foreach (string labelName in labels) {
-                            labelAliases ??= new Dictionary<string, string>();
+                            labelAliases ??= new Dictionary<string, string>(1);
                             labelAliases[labelName] = targetLabel;
                         }
 
-                        break;
-                    }
-                    case AnnotatedBytecodeInstruction { Opcode: DreamProcOpcode.Jump }: {
                         input.RemoveAt(j);
                         i -= 1;
                         break;
@@ -179,9 +175,11 @@ public class BytecodeOptimizer(DMCompiler compiler) {
 
     // TODO: Once we have a CFG we'll likely be storing this info in opcode metadata and this hardcoded list can be removed
     private bool IsTerminalInstruction(DreamProcOpcode opcode) {
-        return opcode is
-            DreamProcOpcode.Jump or DreamProcOpcode.Return or DreamProcOpcode.ReturnReferenceValue or
-            DreamProcOpcode.ReturnFloat or DreamProcOpcode.Throw;
+        return opcode is DreamProcOpcode.Jump or
+            DreamProcOpcode.Return or
+            DreamProcOpcode.ReturnReferenceValue or
+            DreamProcOpcode.ReturnFloat or
+            DreamProcOpcode.Throw;
     }
 
     private string ResolveLabelAlias(Dictionary<string, string> labelAliases, string labelName) {

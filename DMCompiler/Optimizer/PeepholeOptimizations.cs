@@ -268,6 +268,24 @@ internal sealed class RemoveJumpAfterReturnRefValue : IOptimization {
     }
 }
 
+// Throw
+// Jump [label]
+// -> Throw
+internal sealed class RemoveJumpAfterThrow : IOptimization {
+    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
+
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.Throw,
+            DreamProcOpcode.Jump
+        ];
+    }
+
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
+        input.RemoveRange(index + 1, 1);
+    }
+}
+
 // PushFloat [float]
 // SwitchCase [label]
 // -> SwitchOnFloat [float] [label]

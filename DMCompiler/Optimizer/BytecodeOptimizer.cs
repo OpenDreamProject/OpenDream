@@ -150,6 +150,9 @@ public class BytecodeOptimizer(DMCompiler compiler) {
                         input.RemoveAt(j);
                         j -= 1;
                         continue;
+                    case AnnotatedBytecodeInstruction { Opcode: DreamProcOpcode.Jump } when labels.Count > 0 &&
+                        instruction.Opcode == DreamProcOpcode.Jump:
+                        break;
                     case AnnotatedBytecodeInstruction { Opcode: DreamProcOpcode.Jump } jump when labels.Count > 0: {
                         string targetLabel = jump.GetArg<AnnotatedBytecodeLabel>(0).LabelName;
                         if (labels.Contains(targetLabel))

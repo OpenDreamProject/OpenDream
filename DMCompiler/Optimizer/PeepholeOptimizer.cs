@@ -122,26 +122,35 @@ internal sealed class PeepholeOptimizer {
 
     private bool RunPass(byte pass, List<IAnnotatedBytecode> input) {
         OptimizationTreeEntry? currentOpt = null;
+        int currentOptStartIndex = -1;
         int optSize = 0;
         bool changed = false;
 
         int AttemptCurrentOpt(int i) {
-            if (currentOpt == null)
+            if (currentOpt == null || currentOptStartIndex == -1)
                 return 0;
 
             int offset;
 
-            if (currentOpt.Optimization?.CheckPreconditions(input, i - optSize) is true) {
-                currentOpt.Optimization.Apply(_compiler, input, i - optSize);
+            int startIndex = currentOptStartIndex;
+            var skippedVariables = RemoveTransparentVariables(input, startIndex);
+            if (currentOpt.Optimization?.CheckPreconditions(input, startIndex) is true) {
+                IAnnotatedBytecode[] inputBeforeApply = input.ToArray();
+                currentOpt.Optimization.Apply(_compiler, input, startIndex);
+                ReinsertSkippedVariables(input, skippedVariables, inputBeforeApply, startIndex);
+
                 changed = true;
                 offset = (optSize + 2); // Run over the new opcodes for potential further optimization
             } else {
+                RestoreSkippedVariables(input, skippedVariables);
+
                 // This chain of opcodes did not lead to a valid optimization.
                 // Start again from the opcode after the first.
                 offset = optSize;
             }
 
             currentOpt = null;
+            currentOptStartIndex = -1;
             return offset;
         }
 
@@ -154,6 +163,10 @@ internal sealed class PeepholeOptimizer {
 
             var bytecode = input[i];
             if (bytecode is not AnnotatedBytecodeInstruction instruction) {
+                if (bytecode is AnnotatedBytecodeVariable && currentOpt is not null) {
+                    continue;
+                }
+
                 i -= AttemptCurrentOpt(i);
                 i = Math.Max(i, -1); // i++ brings -1 back to 0
                 continue;
@@ -164,6 +177,7 @@ internal sealed class PeepholeOptimizer {
             if (currentOpt == null) {
                 optSize = 1;
                 _optimizationTrees[pass].TryGetValue(opcode, out currentOpt);
+                currentOptStartIndex = currentOpt is null ? -1 : i;
                 continue;
             }
 
@@ -178,5 +192,72 @@ internal sealed class PeepholeOptimizer {
         }
 
         return changed;
+    }
+
+    private sealed record RemovedVariable(int Index, int InstructionOffset, IAnnotatedBytecode Variable);
+
+    private static List<RemovedVariable> RemoveTransparentVariables(List<IAnnotatedBytecode> input, int startIndex) {
+        var variables = new List<RemovedVariable>();
+        int instructionOffset = 0;
+
+        for (int i = startIndex; i < input.Count; i++) {
+            switch (input[i]) {
+                case AnnotatedBytecodeInstruction:
+                    instructionOffset++;
+                    break;
+                case AnnotatedBytecodeVariable variable:
+                    variables.Add(new RemovedVariable(i, instructionOffset, variable));
+                    break;
+                default:
+                    return RemoveVariables(input, variables);
+            }
+        }
+
+        return RemoveVariables(input, variables);
+    }
+
+    private static List<RemovedVariable> RemoveVariables(List<IAnnotatedBytecode> input, List<RemovedVariable> variables) {
+        for (int i = variables.Count - 1; i >= 0; i--) {
+            input.RemoveAt(variables[i].Index);
+        }
+
+        return variables;
+    }
+
+    private static void ReinsertSkippedVariables(List<IAnnotatedBytecode> input, List<RemovedVariable> variables, IAnnotatedBytecode[] inputBeforeApply, int startIndex) {
+        if (variables.Count == 0)
+            return;
+
+        // Find how much of the normalized instruction run Apply() rewrote.
+        // Some compactors consume more opcodes than the matched tree path.
+        int beforeSuffixStart = inputBeforeApply.Length;
+        int afterSuffixStart = input.Count;
+
+        while (beforeSuffixStart > startIndex &&
+               afterSuffixStart > startIndex &&
+               ReferenceEquals(inputBeforeApply[beforeSuffixStart - 1], input[afterSuffixStart - 1])) {
+            beforeSuffixStart--;
+            afterSuffixStart--;
+        }
+
+        int removedInstructionCount = beforeSuffixStart - startIndex;
+        int insertedItemCount = afterSuffixStart - startIndex;
+
+        for (int i = 0; i < variables.Count; i++) {
+            var variable = variables[i];
+            int insertIndex = startIndex + insertedItemCount;
+            if (variable.InstructionOffset > removedInstructionCount) {
+                insertIndex += variable.InstructionOffset - removedInstructionCount;
+            }
+
+            insertIndex = Math.Min(insertIndex + i, input.Count);
+            input.Insert(insertIndex, variable.Variable);
+        }
+    }
+
+    private static void RestoreSkippedVariables(List<IAnnotatedBytecode> input, List<RemovedVariable> variables) {
+        foreach (var variable in variables) {
+            input.Insert(variable.Index, variable.Variable);
+        }
     }
 }

@@ -27,6 +27,8 @@ public class BytecodeOptimizer(DMCompiler compiler) {
         RemoveUnreferencedLabels(input);
         RemoveImmediateJumps(input);
         RemoveUnreferencedLabels(input);
+        RemoveJumpsAfterTerminalInstructions(input);
+        RemoveUnreferencedLabels(input);
     }
 
     private void RemoveUnreferencedLabels(List<IAnnotatedBytecode> input) {
@@ -99,7 +101,12 @@ public class BytecodeOptimizer(DMCompiler compiler) {
             }
         }
 
-        ForwardLabelsAfterTerminalJump(input, labelAliases);
+        RemoveJumpsAfterTerminalInstructions(input, labelAliases);
+        RewriteLabelAliases(input, labelAliases);
+    }
+
+    private void RewriteLabelAliases(List<IAnnotatedBytecode> input, Dictionary<string, string>? labelAliases) {
+        if (labelAliases is null || labelAliases.Count == 0) return;
 
         for (int i = 0; i < input.Count; i++) {
             if (input[i] is AnnotatedBytecodeInstruction instruction) {
@@ -120,7 +127,12 @@ public class BytecodeOptimizer(DMCompiler compiler) {
         }
     }
 
-    private void ForwardLabelsAfterTerminalJump(List<IAnnotatedBytecode> input, Dictionary<string, string> labelAliases) {
+    private void RemoveJumpsAfterTerminalInstructions(List<IAnnotatedBytecode> input) {
+        var labelAliases = RemoveJumpsAfterTerminalInstructions(input, null);
+        RewriteLabelAliases(input, labelAliases);
+    }
+
+    private Dictionary<string, string>? RemoveJumpsAfterTerminalInstructions(List<IAnnotatedBytecode> input, Dictionary<string, string>? labelAliases) {
         for (int i = 0; i < input.Count; i++) {
             if (input[i] is not AnnotatedBytecodeInstruction instruction || !IsTerminalInstruction(instruction.Opcode))
                 continue;
@@ -139,9 +151,15 @@ public class BytecodeOptimizer(DMCompiler compiler) {
                             break;
 
                         foreach (string labelName in labels) {
+                            labelAliases ??= new Dictionary<string, string>();
                             labelAliases[labelName] = targetLabel;
                         }
 
+                        break;
+                    }
+                    case AnnotatedBytecodeInstruction { Opcode: DreamProcOpcode.Jump }: {
+                        input.RemoveAt(j);
+                        i--;
                         break;
                     }
                 }
@@ -149,11 +167,15 @@ public class BytecodeOptimizer(DMCompiler compiler) {
                 break;
             }
         }
+
+        return labelAliases;
     }
 
     // TODO: Once we have a CFG we'll likely be storing this info in opcode metadata and this hardcoded list can be removed
     private bool IsTerminalInstruction(DreamProcOpcode opcode) {
-        return opcode is DreamProcOpcode.Return or DreamProcOpcode.ReturnReferenceValue or DreamProcOpcode.ReturnFloat or DreamProcOpcode.Throw;
+        return opcode is
+            DreamProcOpcode.Jump or DreamProcOpcode.Return or DreamProcOpcode.ReturnReferenceValue or
+            DreamProcOpcode.ReturnFloat or DreamProcOpcode.Throw;
     }
 
     private string ResolveLabelAlias(Dictionary<string, string> labelAliases, string labelName) {

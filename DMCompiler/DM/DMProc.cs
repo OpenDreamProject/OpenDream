@@ -850,6 +850,28 @@ internal sealed class DMProc {
         WriteLabel(label);
     }
 
+    // TODO: Once we have a CFG we'll likely be storing this info in opcode metadata and this method's hardcoded list can be removed
+    public bool LastInstructionTransfersControl() {
+        List<IAnnotatedBytecode> bytecode = AnnotatedBytecode.GetAnnotatedBytecode();
+        // Man sometimes it'd be nice if we had a list of just instructions and didn't need loops like this just to grab the last actual instruction
+        for (int i = bytecode.Count - 1; i >= 0; i--) {
+            switch (bytecode[i]) {
+                case AnnotatedBytecodeVariable:
+                    continue;
+                case AnnotatedBytecodeInstruction instruction:
+                    return instruction.Opcode is DreamProcOpcode.Jump or
+                        DreamProcOpcode.Return or
+                        DreamProcOpcode.ReturnReferenceValue or
+                        DreamProcOpcode.ReturnFloat or
+                        DreamProcOpcode.Throw;
+                default:
+                    return false;
+            }
+        }
+
+        return false;
+    }
+
     public void JumpIfFalse(string label) {
         WriteOpcode(DreamProcOpcode.JumpIfFalse);
         WriteLabel(label);

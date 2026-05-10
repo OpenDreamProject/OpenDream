@@ -758,7 +758,9 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
             proc.EndScope();
         }
 
-        proc.Jump(endLabel);
+        // don't Jump after a Return (or similar)
+        if (!proc.LastInstructionTransfersControl())
+            proc.Jump(endLabel);
 
         foreach ((string CaseLabel, DMASTProcBlockInner CaseBody) valueCase in valueCases) {
             proc.AddLabel(valueCase.CaseLabel);
@@ -767,7 +769,10 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                 ProcessBlockInner(valueCase.CaseBody);
             }
             proc.EndScope();
-            proc.Jump(endLabel);
+
+            // don't Jump after a Return (or similar)
+            if (!proc.LastInstructionTransfersControl())
+                proc.Jump(endLabel);
         }
 
         proc.AddLabel(endLabel);

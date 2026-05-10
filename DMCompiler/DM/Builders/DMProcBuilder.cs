@@ -153,8 +153,10 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
             ProcessBlockInner(statementSpawn.Body);
 
             //Prevent the new thread from executing outside its own code
-            proc.PushNull();
-            proc.Return();
+            if (!proc.LastInstructionTransfersControl()) {
+                proc.PushNull();
+                proc.Return();
+            }
         }
         proc.EndScope();
 

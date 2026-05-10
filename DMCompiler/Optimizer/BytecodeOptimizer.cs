@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using DMCompiler.Bytecode;
 
 namespace DMCompiler.Optimizer;
 
@@ -98,6 +99,8 @@ public class BytecodeOptimizer(DMCompiler compiler) {
             }
         }
 
+        ForwardLabelsAfterTerminalJump(input, labelAliases);
+
         for (int i = 0; i < input.Count; i++) {
             if (input[i] is AnnotatedBytecodeInstruction instruction) {
                 if (TryGetLabelName(instruction, out string? labelName)) {
@@ -105,7 +108,7 @@ public class BytecodeOptimizer(DMCompiler compiler) {
                         List<IAnnotatedBytecode> args = instruction.GetArgs();
                         for (int j = 0; j < args.Count; j++) {
                             if (args[j] is AnnotatedBytecodeLabel argLabel) {
-                                args[j] = new AnnotatedBytecodeLabel(labelAliases[argLabel.LabelName],
+                                args[j] = new AnnotatedBytecodeLabel(ResolveLabelAlias(labelAliases, argLabel.LabelName),
                                     argLabel.Location);
                             }
                         }
@@ -115,6 +118,55 @@ public class BytecodeOptimizer(DMCompiler compiler) {
                 }
             }
         }
+    }
+
+    private void ForwardLabelsAfterTerminalJump(List<IAnnotatedBytecode> input, Dictionary<string, string> labelAliases) {
+        for (int i = 0; i < input.Count; i++) {
+            if (input[i] is not AnnotatedBytecodeInstruction instruction || !IsTerminalInstruction(instruction.Opcode))
+                continue;
+
+            var labels = new List<string>();
+            for (int j = i + 1; j < input.Count; j++) {
+                switch (input[j]) {
+                    case AnnotatedBytecodeVariable:
+                        continue;
+                    case AnnotatedBytecodeLabel label:
+                        labels.Add(label.LabelName);
+                        continue;
+                    case AnnotatedBytecodeInstruction { Opcode: DreamProcOpcode.Jump } jump when labels.Count > 0: {
+                        string targetLabel = jump.GetArg<AnnotatedBytecodeLabel>(0).LabelName;
+                        if (labels.Contains(targetLabel))
+                            break;
+
+                        foreach (string labelName in labels) {
+                            labelAliases[labelName] = targetLabel;
+                        }
+
+                        break;
+                    }
+                }
+
+                break;
+            }
+        }
+    }
+
+    // TODO: Once we have a CFG we'll likely be storing this info in opcode metadata and this hardcoded list can be removed
+    private bool IsTerminalInstruction(DreamProcOpcode opcode) {
+        return opcode is DreamProcOpcode.Return or DreamProcOpcode.ReturnReferenceValue or DreamProcOpcode.ReturnFloat or DreamProcOpcode.Throw;
+    }
+
+    private string ResolveLabelAlias(Dictionary<string, string> labelAliases, string labelName) {
+        HashSet<string>? visited = null;
+        while (labelAliases.TryGetValue(labelName, out string? alias) && alias != labelName) {
+            visited ??= new();
+            if (!visited.Add(labelName))
+                break;
+
+            labelName = alias;
+        }
+
+        return labelName;
     }
 
     private bool TryGetLabelName(AnnotatedBytecodeInstruction instruction, [NotNullWhen(true)] out string? labelName) {

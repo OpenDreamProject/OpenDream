@@ -42,57 +42,79 @@ public static class ViewAlgorithm {
     public static void CalculateVisibility(Tile?[,] tiles, bool ignoreLight = false) { // ignore light is used for hearers()
         var width = tiles.GetLength(0);
         var height = tiles.GetLength(1);
-        Tile? eye = null;
+        var viewRange = new ViewRange(width, height);
 
         // Step 2
-        var highestMaxDelta = 0;
-        var highestSumDelta = 0;
-        foreach (var tile in tiles) {
-            if (tile == null)
-                continue;
-
-            highestMaxDelta = Math.Max(highestMaxDelta, tile.MaxDelta);
-            highestSumDelta = Math.Max(highestSumDelta, tile.SumDelta);
-
-            tile.Vis = 0;
-            tile.Vis2 = 0;
-            tile.Visibility = 0;
-
-            if (tile is {DeltaX: 0, DeltaY: 0})
-                eye = tile;
-        }
-
-        // TODO: Lummox mentions an optimization in step 3 and 4. Probably worthwhile.
+        // Assume the delta values are done by calling code, and that the eye is in the center
+        var (eyeX, eyeY) = viewRange.Center;
+        var eye = tiles[eyeX, eyeY];
+        var highestMaxDelta = Math.Max(width - eyeX, height - eyeY);
+        var highestSumDelta = (width - eyeX) + (height - eyeY);
 
         // Step 3, Diagonal shadow loop
+        // Radiates out from the eye and updates Vis2:
+        // 2 2 2 2 2
+        // 2 1 1 1 2
+        // 2 1   1 2
+        // 2 1 1 1 2
+        // 2 2 2 2 2
         for (int d = 0; d < highestMaxDelta; d++) {
-            for (int x = 0; x < width; x++) {
-                for (int y = 0; y < height; y++) {
-                    var tile = tiles[x, y];
-                    if (tile == null)
-                        continue;
+            var lowerX = eyeX - d - 1;
+            var upperX = eyeX + d + 1;
 
-                    if (tile.MaxDelta == d + 1 && CheckNeighborsVis(tiles, true, x, y, d)) {
+            for (int x = Math.Max(lowerX, 0); x <= Math.Min(upperX, width - 1); x++) {
+                var y = eyeY - d - 1;
+                var upperY = eyeY + d + 1;
+                var skipMiddle = x != lowerX && x != upperX;
+
+                if (y < 0)
+                    y = skipMiddle ? upperY : 0;
+
+                while (y <= upperY && y < height) {
+                    var tile = tiles[x, y];
+                    if (tile != null && CheckNeighborsVis(tiles, true, x, y, d)) {
                         tile.Vis2 = (tile.Opaque) ? -1 : d + 1;
+                    }
+
+                    // Jump to the other side if we're not on the left or right
+                    if (skipMiddle && y != upperY) {
+                        y = upperY;
+                    } else {
+                        y++;
                     }
                 }
             }
         }
 
         // Step 4, Straight shadow loop
+        // Radiates out from the eye in a diamond shape and updates Vis:
+        //     2
+        //   2 1 2
+        // 2 1   1 2
+        //   2 1 2
+        //     2
         for (int d = 0; d < highestSumDelta; d++) {
-            for (int x = 0; x < width; x++) {
-                for (int y = 0; y < height; y++) {
-                    var tile = tiles[x, y];
-                    if (tile == null)
-                        continue;
+            var lowerX = Math.Max(eyeX - d - 1, 0);
+            var upperX = Math.Min(eyeX + d + 1, width - 1);
 
-                    if (tile.SumDelta == d + 1 && CheckNeighborsVis(tiles, false, x, y, d)) {
-                        if (tile.Opaque) {
-                            tile.Vis = -1;
-                        } else if (tile.Vis2 != 0) {
-                            // Lummox says "set vis=d" but I think this is a typo?
-                            tile.Vis = d + 1;
+            for (int x = lowerX; x <= upperX; x++) {
+                var offsetY = (d + 1) - Math.Abs(eyeX - x);
+
+                UpdateTile(eyeY - offsetY);
+                if (offsetY != 0)
+                    UpdateTile(eyeY + offsetY);
+
+                continue;
+
+                void UpdateTile(int y) {
+                    if (y >= 0 && y < height && tiles[x, y] is { } tile) {
+                        if (CheckNeighborsVis(tiles, false, x, y, d)) {
+                            if (tile.Opaque) {
+                                tile.Vis = -1;
+                            } else if (tile.Vis2 != 0) {
+                                // Lummox says "set vis=d" but that's a typo
+                                tile.Vis = d + 1;
+                            }
                         }
                     }
                 }

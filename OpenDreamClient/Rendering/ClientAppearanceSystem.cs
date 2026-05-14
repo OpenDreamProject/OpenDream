@@ -76,7 +76,7 @@ internal sealed partial class ClientAppearanceSystem : SharedAppearanceSystem {
         UpdatesOutsidePrediction = true;
 
         SubscribeNetworkEvent<NewAppearanceEvent>(OnNewAppearance);
-        SubscribeNetworkEvent<RemoveAppearanceEvent>(e => _appearances.Remove(e.AppearanceId));
+        SubscribeNetworkEvent<RemoveAppearancesEvent>(OnRemoveAppearances);
         SubscribeNetworkEvent<AnimationEvent>(OnAnimation);
         SubscribeNetworkEvent<FlickEvent>(OnFlick);
         SubscribeLocalEvent<DMISpriteComponent, WorldAABBEvent>(OnWorldAABB);
@@ -164,6 +164,13 @@ internal sealed partial class ClientAppearanceSystem : SharedAppearanceSystem {
             if (_appearanceLoadCallbacks.TryGetValue(appearanceId, out var callbacks)) {
                 foreach (var callback in callbacks) callback(_appearances[appearanceId]);
             }
+        }
+    }
+
+    private void OnRemoveAppearances(RemoveAppearancesEvent e) {
+        foreach (var appearanceId in e.Appearances) {
+            _appearances.Remove(appearanceId);
+            _appearanceLoadCallbacks.Remove(appearanceId);
         }
     }
 

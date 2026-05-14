@@ -625,7 +625,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
         foreach (var tile in tiles) {
             if (tile == null)
                 continue;
-            if (tile.IsVisible == false && (sight & SightFlags.SeeTurfs) == 0)
+            if (!tile.IsVisible && (sight & SightFlags.SeeTurfs) == 0)
                 continue;
 
             Vector2i tilePos = eyeTile.GridIndices + (tile.DeltaX, tile.DeltaY);
@@ -655,7 +655,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
                 // Check for visibility if the eye doesn't have SEE_OBJS or SEE_MOBS
                 // TODO: Differentiate between objs and mobs
                 if ((sight & (SightFlags.SeeObjs|SightFlags.SeeMobs)) == 0 && _tileInfo != null) {
-                    var tilePos = _mapSystem.WorldToTile(gridUid, grid, worldPos) - eyeTile.GridIndices + _interfaceManager.View.Center;
+                    var tilePos = _mapSystem.WorldToTile(gridUid, grid, worldPos) - eyeTile.GridIndices + _interfaceManager.View.Center + 1;
                     if (tilePos.X < 0 || tilePos.Y < 0 || tilePos.X >= _tileInfo.GetLength(0) || tilePos.Y >= _tileInfo.GetLength(1))
                         continue;
 

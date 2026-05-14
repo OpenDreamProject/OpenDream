@@ -75,7 +75,7 @@ internal sealed partial class ClientAppearanceSystem : SharedAppearanceSystem {
     public override void Initialize() {
         UpdatesOutsidePrediction = true;
 
-        SubscribeNetworkEvent<NewAppearanceEvent>(OnNewAppearance);
+        SubscribeNetworkEvent<NewAppearancesEvent>(OnNewAppearances);
         SubscribeNetworkEvent<RemoveAppearancesEvent>(OnRemoveAppearances);
         SubscribeNetworkEvent<AnimationEvent>(OnAnimation);
         SubscribeNetworkEvent<FlickEvent>(OnFlick);
@@ -153,16 +153,18 @@ internal sealed partial class ClientAppearanceSystem : SharedAppearanceSystem {
         return icon;
     }
 
-    private void OnNewAppearance(NewAppearanceEvent e) {
-        uint appearanceId = e.Appearance.MustGetId();
-        _appearances[appearanceId] = e.Appearance;
+    private void OnNewAppearances(NewAppearancesEvent e) {
+        foreach (var appearance in e.Appearances) {
+            uint appearanceId = appearance.MustGetId();
+            _appearances[appearanceId] = appearance;
 
-        // If we haven't received the MsgAllAppearances yet, leave this initialization for later
-        if (_receivedAllAppearancesMsg) {
-            _appearances[appearanceId].ResolveOverlays(this);
+            // If we haven't received the MsgAllAppearances yet, leave this initialization for later
+            if (_receivedAllAppearancesMsg) {
+                _appearances[appearanceId].ResolveOverlays(this);
 
-            if (_appearanceLoadCallbacks.TryGetValue(appearanceId, out var callbacks)) {
-                foreach (var callback in callbacks) callback(_appearances[appearanceId]);
+                if (_appearanceLoadCallbacks.TryGetValue(appearanceId, out var callbacks)) {
+                    foreach (var callback in callbacks) callback(_appearances[appearanceId]);
+                }
             }
         }
     }

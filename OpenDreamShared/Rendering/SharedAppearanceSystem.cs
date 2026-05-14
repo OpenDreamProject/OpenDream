@@ -10,8 +10,8 @@ public abstract class SharedAppearanceSystem : EntitySystem {
     public abstract void RemoveAppearance(ImmutableAppearance appearance);
 
     [Serializable, NetSerializable]
-    public sealed class NewAppearanceEvent(ImmutableAppearance appearance) : EntityEventArgs {
-        public ImmutableAppearance Appearance { get; } = appearance;
+    public sealed class NewAppearancesEvent(ImmutableAppearance[] appearances) : EntityEventArgs {
+        public ImmutableAppearance[] Appearances { get; } = appearances;
     }
 
     [Serializable, NetSerializable]

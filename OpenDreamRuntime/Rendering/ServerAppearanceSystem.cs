@@ -27,6 +27,7 @@ public sealed partial class ServerAppearanceSystem : SharedAppearanceSystem {
     private readonly Lock _lock = new();
 
     private readonly Queue<uint> _appearanceRemovalQueue = new();
+    private readonly List<ImmutableAppearance> _appearanceSendQueue = new();
     private readonly Dictionary<uint, ProxyWeakRef> _idToAppearance = new();
     private uint _counter;
 
@@ -57,6 +58,11 @@ public sealed partial class ServerAppearanceSystem : SharedAppearanceSystem {
 
     public override void Update(float frameTime) {
         lock (_lock) {
+            if (_appearanceSendQueue.Count > 0) {
+                RaiseNetworkEvent(new NewAppearancesEvent(_appearanceSendQueue.ToArray()));
+                _appearanceSendQueue.Clear();
+            }
+
             if (_appearanceRemovalQueue.Count > 0) {
                 var removalEvent = new RemoveAppearancesEvent(_appearanceRemovalQueue.ToArray());
                 RaiseNetworkEvent(removalEvent);
@@ -99,11 +105,11 @@ public sealed partial class ServerAppearanceSystem : SharedAppearanceSystem {
 
     private void RegisterAppearance(ImmutableAppearance immutableAppearance) {
         immutableAppearance.MarkRegistered(_counter++); //lets this appearance know it needs to do GC finaliser & get an ID
+
         ProxyWeakRef proxyWeakRef = new(immutableAppearance);
         _appearanceLookup.Add(proxyWeakRef);
         _idToAppearance.Add(immutableAppearance.MustGetId(), proxyWeakRef);
-
-        RaiseNetworkEvent(new NewAppearanceEvent(immutableAppearance));
+        _appearanceSendQueue.Add(immutableAppearance);
     }
 
     public ImmutableAppearance AddAppearance(MutableAppearance appearance, bool registerAppearance = true) {

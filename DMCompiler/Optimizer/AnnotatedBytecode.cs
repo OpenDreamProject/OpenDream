@@ -51,7 +51,7 @@ internal sealed class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
         _args = args;
     }
 
-    private static int GetArgsStackSizeDelta(List<IAnnotatedBytecode> args) {
+    private int GetArgsStackSizeDelta(List<IAnnotatedBytecode> args) {
         int delta = 0;
 
         foreach (IAnnotatedBytecode arg in args) {
@@ -64,7 +64,7 @@ internal sealed class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
         return delta;
     }
 
-    private static int GetReferenceStackSizeDelta(DMReference.Type refType) {
+    private int GetReferenceStackSizeDelta(DMReference.Type refType) {
         return refType switch {
             DMReference.Type.Field => -1,
             DMReference.Type.ListIndex => -2,

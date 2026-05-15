@@ -543,7 +543,6 @@ public sealed partial class AtomManager {
         MutableAppearance appearance;
         EntityUid targetEntity;
         DMISpriteComponent? targetComponent = null;
-        NetEntity ent = NetEntity.Invalid;
         uint? turfId = null;
 
         if (atom is DreamObjectMovable movable) {
@@ -573,7 +572,6 @@ public sealed partial class AtomManager {
         animate(appearance);
 
         if(targetComponent is not null) {
-            ent = _entityManager.GetNetEntity(targetEntity);
             // Don't send the updated appearance to clients, they will animate it
             DMISpriteSystem?.SetSpriteAppearance(new(targetEntity, targetComponent), appearance, dirty: false);
         } else if (atom is DreamObjectTurf turf) {
@@ -584,7 +582,7 @@ public sealed partial class AtomManager {
             //fuck knows, this will trigger a bunch of turf updates to? idek
         }
 
-        AppearanceSystem?.Animate(ent, appearance, duration, easing, loop, flags, delay, chainAnim, turfId);
+        AppearanceSystem?.Animate(targetEntity, appearance, duration, easing, loop, flags, delay, chainAnim, turfId);
     }
 
     public bool TryCreateAppearanceFrom(DreamValue value, [NotNullWhen(true)] out MutableAppearance? appearance) {

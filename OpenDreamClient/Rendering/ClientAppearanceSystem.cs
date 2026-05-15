@@ -7,9 +7,11 @@ using Robust.Client.Graphics;
 using Robust.Shared.Prototypes;
 using OpenDreamClient.Resources;
 using OpenDreamClient.Resources.ResourceTypes;
+using OpenDreamShared.Network.Messages;
 using OpenDreamShared.Resources;
 using Robust.Client.Player;
 using Robust.Shared.Map;
+using Robust.Shared.Serialization;
 using Robust.Shared.Timing;
 
 namespace OpenDreamClient.Rendering;
@@ -70,6 +72,7 @@ internal sealed partial class ClientAppearanceSystem : SharedAppearanceSystem {
     [Dependency] private IMapManager _mapManager = default!;
     [Dependency] private MapSystem _mapSystem = default!;
     [Dependency] private IPrototypeManager _protoManager = default!;
+    [Dependency] private IRobustSerializer _serializer = default!;
     [Dependency] private ClientVerbSystem _verbSystem = default!;
 
     public override void Initialize() {
@@ -154,7 +157,11 @@ internal sealed partial class ClientAppearanceSystem : SharedAppearanceSystem {
     }
 
     private void OnNewAppearances(NewAppearancesEvent e) {
-        foreach (var appearance in e.Appearances) {
+        var decompressed = MsgAllAppearances.DecompressAppearances(new(e.Data));
+        var count = decompressed.ReadInt32();
+
+        for (int i = 0; i < count; i++) {
+            var appearance = new ImmutableAppearance(decompressed, _serializer);
             uint appearanceId = appearance.MustGetId();
             _appearances[appearanceId] = appearance;
 

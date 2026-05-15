@@ -7,6 +7,7 @@ using Robust.Shared.Player;
 using System.Diagnostics;
 using System.Threading;
 using OpenDreamRuntime.Objects.Types;
+using Robust.Shared.Serialization;
 using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
 
 namespace OpenDreamRuntime.Rendering;
@@ -33,6 +34,7 @@ public sealed partial class ServerAppearanceSystem : SharedAppearanceSystem {
 
     [Dependency] private DreamManager _dreamManager = default!;
     [Dependency] private IPlayerManager _playerManager = default!;
+    [Dependency] private IRobustSerializer _serializer = default!;
 
     public override void Initialize() {
         UpdatesOutsidePrediction = true;
@@ -59,7 +61,9 @@ public sealed partial class ServerAppearanceSystem : SharedAppearanceSystem {
     public override void Update(float frameTime) {
         lock (_lock) {
             if (_appearanceSendQueue.Count > 0) {
-                RaiseNetworkEvent(new NewAppearancesEvent(_appearanceSendQueue.ToArray()));
+                using var compressed = MsgAllAppearances.CompressAppearances(_appearanceSendQueue, _appearanceSendQueue.Count, _serializer);
+
+                RaiseNetworkEvent(new NewAppearancesEvent(compressed.ToArray()));
                 _appearanceSendQueue.Clear();
             }
 

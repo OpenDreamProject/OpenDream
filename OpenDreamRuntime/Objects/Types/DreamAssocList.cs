@@ -255,7 +255,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
             }
         } else {
             foreach (var value in EnumerateValues()) {
-                if (value != b) {
+                if (!value.Equals(b)) {
                     RemoveValue(value);
                 }
             }
@@ -263,6 +263,26 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
 
         IncRef();
         return new(this);
+    }
+
+    public override DreamValue OperatorEquivalent(DreamValue b) {
+        if (!b.TryGetValueAsIDreamList(out var secondList))
+            return DreamValue.False;
+        if (GetLength() != secondList.GetLength())
+            return DreamValue.False;
+
+        foreach (var pair in secondList.EnumerateAssocValues()) {
+            if (!ContainsKey(pair.Key)) {
+                return DreamValue.False;
+            }
+
+            using var temp = GetValue(pair.Key);
+            if (!temp.Equals(pair.Value)) {
+                return DreamValue.False;
+            }
+        }
+
+        return DreamValue.True;
     }
 }
 

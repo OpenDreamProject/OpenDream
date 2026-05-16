@@ -58,13 +58,7 @@ internal sealed partial class DreamClientSystem : EntitySystem {
     }
 
     public void RxNotifyMobEyeUpdate(MsgNotifyMobEyeUpdate msg) {
-        var prevMobNet = _mobNet;
         _mobNet = msg.MobNetEntity;
-
-        if (prevMobNet != _mobNet) {
-            // mark mob cache as dirty/invalid
-            _mobUid = EntityUid.Invalid;
-        }
 
         var incomingEyeRef = msg.EyeRef;
 

@@ -1,7 +1,11 @@
+using System.ComponentModel;
+using System.Linq;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
+using SixLabors.ImageSharp.Advanced;
+using SixLabors.ImageSharp.Processing;
 using BlendType = OpenDreamRuntime.Objects.DreamIconOperationBlend.BlendType;
 using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
 
@@ -74,6 +78,53 @@ namespace OpenDreamRuntime.Procs.Native {
 
             Blend(((DreamObjectIcon)src!).Icon, icon, (BlendType)functionValue, x, y);
             return DreamValue.Null;
+        }
+
+//x, y, icon_state, dir = 0, frame = 0, moving = -1
+        [DreamProc("GetPixel")]
+        [DreamProcParameter("x", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("y", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("icon_state", Type = DreamValueTypeFlag.String, DefaultValue = "")]
+        [DreamProcParameter("dir", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+        [DreamProcParameter("frame", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+        [DreamProcParameter("moving", Type = DreamValueTypeFlag.Float, DefaultValue = -1)]
+        public static DreamValue NativeProc_GetPixel(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+            var srcDreamIcon = (DreamObjectIcon)src!;
+
+            //arg validation
+            int x = bundle.GetArgument(0, "x").MustGetValueAsInteger();
+            int y = bundle.GetArgument(1, "y").MustGetValueAsInteger();
+
+            //outside valid bounds returns null
+            if(x < 1 || x > srcDreamIcon.Icon.Width || y < 1 || y > srcDreamIcon.Icon.Height)
+                return DreamValue.Null;
+
+            string iconState = bundle.GetArgument(2, "icon_state").MustGetValueAsString();
+            if(!srcDreamIcon.Icon.States.TryGetValue(iconState, out var iconStateObject)){
+                if(iconState == string.Empty)
+                    iconStateObject = srcDreamIcon.Icon.States.First().Value;
+                else //invalid icon state causes BYOND to create error.log but it's empty
+                    throw new ArgumentException($"Invalid icon_state {iconState} passed to /icon.GetPixel()");
+            }
+
+            AtomDirection dir = (AtomDirection)bundle.GetArgument(3, "dir").MustGetValueAsInteger();
+            if(dir == AtomDirection.None)
+                dir = iconStateObject.Directions.Keys.First();
+            else if(!iconStateObject.Directions.ContainsKey(dir))
+                return DreamValue.Null;
+
+            int frame = Math.Max(0, bundle.GetArgument(4, "frame").MustGetValueAsInteger());
+            if (iconStateObject.Frames < frame)
+                return DreamValue.Null;
+
+            DreamValue moving = bundle.GetArgument(5, "moving"); //TODO what does this do?
+
+            var stateDirFrame = iconStateObject.Directions[dir][frame];
+            var pixel = stateDirFrame.Image![stateDirFrame.DMIFrame.X+x-1,stateDirFrame.DMIFrame.Y+y-1];
+            if(pixel.A == 255)
+                return new DreamValue(new Color(pixel.ToVector4()).ToHexNoAlpha().ToLower());
+            else
+                return new DreamValue(pixel.ToHex().ToLower());
         }
 
         [DreamProc("Scale")]

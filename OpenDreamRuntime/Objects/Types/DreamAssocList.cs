@@ -149,6 +149,73 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         return _values.ContainsKey(value);
     }
 
+    public override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
+        var listCopy = (DreamAssocList)CreateCopy();
+
+        if (b.TryGetValueAsIDreamList(out var bList)) {
+            foreach (var pair in bList.EnumerateAssocValues()) {
+                if (listCopy.ContainsKey(pair.Key)) {
+                    continue;
+                }
+
+                listCopy.SetValue(pair.Key, pair.Value);
+            }
+        } else {
+            listCopy.AddValue(b);
+        }
+
+        return new DreamValue(listCopy);
+    }
+
+    public override DreamValue OperatorSubtract(DreamValue b, DMProcState state) {
+        var listCopy = (DreamAssocList)CreateCopy();
+
+        if (b.TryGetValueAsIDreamList(out var bList)) {
+            foreach (DreamValue value in bList.EnumerateValues()) {
+                listCopy.RemoveValue(value);
+            }
+        } else {
+            listCopy.RemoveValue(b);
+        }
+
+        return new DreamValue(listCopy);
+    }
+
+    public override DreamValue OperatorOr(DreamValue b, DMProcState state) {
+        var listCopy = (DreamAssocList)CreateCopy();
+
+        if (b.TryGetValueAsIDreamList(out var bList)) {
+            foreach (var pair in bList.EnumerateAssocValues()) {
+                if (listCopy.ContainsKey(pair.Key)) {
+                    continue;
+                }
+
+                listCopy.SetValue(pair.Key, pair.Value);
+            }
+        } else {
+            listCopy.AddValue(b);
+        }
+
+        return new DreamValue(listCopy);
+    }
+
+    public override DreamValue OperatorCombine(DreamValue b) {
+        if (b.TryGetValueAsIDreamList(out var bList)) {
+            foreach (var pair in bList.EnumerateAssocValues()) {
+                if (ContainsKey(pair.Key)) {
+                    continue;
+                }
+
+                SetValue(pair.Key, pair.Value);
+            }
+        } else {
+            AddValue(b);
+        }
+
+        IncRef();
+        return new(this);
+    }
+
     public override DreamValue OperatorAppend(DreamValue b) {
         if (b.TryGetValueAsIDreamList(out var bList)) {
             foreach (var pair in bList.EnumerateAssocValues()) {
@@ -168,13 +235,30 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
 
     public override DreamValue OperatorRemove(DreamValue b) {
         if (b.TryGetValueAsIDreamList(out var bList)) {
-            var values = bList.EnumerateValues();
-
-            foreach (var value in values) {
+            foreach (var value in bList.EnumerateValues()) {
                 RemoveValue(value);
             }
         } else {
             RemoveValue(b);
+        }
+
+        IncRef();
+        return new(this);
+    }
+
+    public override DreamValue OperatorMask(DreamValue b) {
+        if (b.TryGetValueAsIDreamList(out var bList)) {
+            foreach (var value in EnumerateValues()) {
+                if (!bList.ContainsKey(value)) {
+                    RemoveValue(value);
+                }
+            }
+        } else {
+            foreach (var value in EnumerateValues()) {
+                if (value != b) {
+                    RemoveValue(value);
+                }
+            }
         }
 
         IncRef();

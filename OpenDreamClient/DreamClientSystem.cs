@@ -18,19 +18,7 @@ internal sealed partial class DreamClientSystem : EntitySystem {
     private NetEntity _mobNet = NetEntity.Invalid;
 
     // Current Entity of player's mob, or Invalid if could not be determined.
-    private EntityUid _mobUid = EntityUid.Invalid;
-
-    // Sometimes we get mob info before we know all the net entities, so store the net entity and refer to it 
-    public EntityUid MobUid {
-        get {
-            // if entity of mob is invalid but net entity isn't, try referring to known net entities
-            if (! _mobUid.IsValid() && _mobNet.IsValid() && _entityManager.TryGetEntity(_mobNet, out var ent)) {
-                _mobUid = ent.GetValueOrDefault(EntityUid.Invalid);
-            }
-
-            return _mobUid;
-        }
-    }
+    public EntityUid MobUid => _entityManager.GetEntity(_mobNet);
 
     // Current Entity of player's eye, or Invalid if could not be determined.
     private ClientObjectReference _eyeRef = new(NetEntity.Invalid);

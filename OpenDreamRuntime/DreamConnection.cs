@@ -55,15 +55,8 @@ public sealed partial class DreamConnection {
 
                 // If eye is equivalent to old mob, and the new mob is different from old mob, set eye to new mob.
                 if (oldMob != null) {
-                    var oldMobNetEntity = _entityManager.GetNetEntity(oldMob.Entity);
-                    if (Eye != null && Eye.Value.Entity == oldMobNetEntity) {
-                        ClientObjectReference? newEye = null;
-                        if (_mob != null) {
-                            var newMobNetEntity = _entityManager.GetNetEntity(_mob.Entity);
-                            newEye = new(newMobNetEntity);
-                        }
-
-                        Eye = newEye;
+                    if (Eye != null && Eye is DreamObjectMovable eyeMovable && eyeMovable.Entity == oldMob.Entity) {
+                        Eye = _mob;
                     }
                 }
 
@@ -81,17 +74,15 @@ public sealed partial class DreamConnection {
         }
     }
 
-    [ViewVariables] public ClientObjectReference? Eye {
+    [ViewVariables] public DreamObjectAtom? Eye {
         get;
         set {
             if (field != null) {
-                var fieldObj = _dreamManager.GetFromClientReference(this, field.Value);
-                fieldObj?.DecRef();
+                field?.DecRef();
             }
 
             if (value != null) {
-                var valueObj = _dreamManager.GetFromClientReference(this, value.Value);
-                valueObj?.IncRef();
+                value?.IncRef();
             }
 
             field = value;
@@ -594,18 +585,19 @@ public sealed partial class DreamConnection {
     private void UpdateMobEye() {
         var mobUid = Mob?.Entity ?? EntityUid.Invalid;
         ClientObjectReference eyeRef;
-        switch (Eye?.Type) {
-            default:
-                eyeRef = new(_entityManager.GetNetEntity(mobUid));
-                break;
+        switch (Eye) {
             case null:
                 eyeRef = new();
                 break;
-            case ClientObjectReference.RefType.Entity when Eye.HasValue:
-                eyeRef = new(_entityManager.GetNetEntity(new(Eye.Value.Entity.Id)));
+            default:
+                eyeRef = new(_entityManager.GetNetEntity(mobUid));
                 break;
-            case ClientObjectReference.RefType.Turf:
-                eyeRef = new(new(Eye.Value.TurfX, Eye.Value.TurfY), Eye.Value.TurfZ);
+            case DreamObjectMovable movable:
+                var eyeEnt = _dreamManager.GetClientReference(Eye);
+                eyeRef = new(_entityManager.GetNetEntity(new(eyeEnt.Entity.Id)));
+                break;
+            case DreamObjectTurf turf:
+                eyeRef = new(new(turf.X,turf.Y),turf.Z);
                 break;
         }
 

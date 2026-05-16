@@ -60,7 +60,7 @@ public sealed class DreamObjectClient : DreamObject {
                     return true;
                 }
 
-                var eyeObj = DreamManager.GetFromClientReference(Connection, Connection.Eye.Value);
+                var eyeObj = Connection.Eye;
                 eyeObj?.IncRef();
                 value = new(eyeObj);
                 return true;
@@ -140,10 +140,10 @@ public sealed class DreamObjectClient : DreamObject {
                 value.TryGetValueAsDreamObject<DreamObjectAtom>(out var newEye);
                 switch (newEye) {
                     case DreamObjectMovable movable:
-                        Connection.Eye = new(EntityManager.GetNetEntity(movable.Entity));
+                        Connection.Eye = movable;
                         break;
                     case DreamObjectTurf turf:
-                        Connection.Eye = new(new(turf.X, turf.Y), turf.Z);
+                        Connection.Eye = turf;
                         break;
                     case null:
                         Connection.Eye = null;

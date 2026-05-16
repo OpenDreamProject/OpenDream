@@ -113,11 +113,11 @@ namespace OpenDreamRuntime.Procs.Native {
             else if(!iconStateObject.Directions.ContainsKey(dir))
                 return DreamValue.Null;
 
-            int frame = Math.Max(0, bundle.GetArgument(4, "frame").MustGetValueAsInteger());
+            int frame = Math.Max(1, bundle.GetArgument(4, "frame").MustGetValueAsInteger());
             if (iconStateObject.Frames < frame)
                 return DreamValue.Null;
 
-            DreamValue moving = bundle.GetArgument(5, "moving"); //TODO what does this do?
+            DreamValue moving = bundle.GetArgument(5, "moving"); // TODO: implement movement states
 
             var stateDirFrame = iconStateObject.Directions[dir][frame];
             var pixel = stateDirFrame.Image![stateDirFrame.DMIFrame.X+x-1,stateDirFrame.DMIFrame.Y+(srcDreamIcon.Icon.Height-y)];

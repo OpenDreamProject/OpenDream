@@ -54,10 +54,8 @@ public sealed partial class DreamConnection {
                 StatObj = new(value);
 
                 // If eye is equivalent to old mob, and the new mob is different from old mob, set eye to new mob.
-                if (oldMob != null) {
-                    if (Eye != null && Eye is DreamObjectMovable eyeMovable && eyeMovable.Entity == oldMob.Entity) {
-                        Eye = _mob;
-                    }
+                if (oldMob != null && Eye is DreamObjectMovable eyeMovable && eyeMovable.Entity == oldMob.Entity) {
+                    Eye = _mob;
                 }
 
                 if (_mob != null) {
@@ -78,11 +76,11 @@ public sealed partial class DreamConnection {
         get;
         set {
             if (field != null) {
-                field?.DecRef();
+                field.DecRef();
             }
 
             if (value != null) {
-                value?.IncRef();
+                value.IncRef();
             }
 
             field = value;
@@ -592,7 +590,7 @@ public sealed partial class DreamConnection {
             default:
                 eyeRef = new(_entityManager.GetNetEntity(mobUid));
                 break;
-            case DreamObjectMovable movable:
+            case DreamObjectMovable:
                 var eyeEnt = _dreamManager.GetClientReference(Eye);
                 eyeRef = new(_entityManager.GetNetEntity(new(eyeEnt.Entity.Id)));
                 break;

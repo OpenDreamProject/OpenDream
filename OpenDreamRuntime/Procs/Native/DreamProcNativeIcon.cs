@@ -120,7 +120,7 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamValue moving = bundle.GetArgument(5, "moving"); //TODO what does this do?
 
             var stateDirFrame = iconStateObject.Directions[dir][frame];
-            var pixel = stateDirFrame.Image![stateDirFrame.DMIFrame.X+x-1,stateDirFrame.DMIFrame.Y+y-1];
+            var pixel = stateDirFrame.Image![stateDirFrame.DMIFrame.X+x-1,stateDirFrame.DMIFrame.Y+(srcDreamIcon.Icon.Height-y)];
             if(pixel.A == 255)
                 return new DreamValue(new Color(pixel.ToVector4()).ToHexNoAlpha().ToLower());
             else

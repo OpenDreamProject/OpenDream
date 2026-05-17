@@ -120,10 +120,11 @@ namespace OpenDreamRuntime.Procs.Native {
             var stateDirFrame = iconStateObject.Directions[dir][frame];
 
             var pixel = srcDreamIcon.Icon.GenerateDMI().Texture[stateDirFrame.X+x-1,stateDirFrame.Y+(srcDreamIcon.Icon.Height-y)];
-            if(pixel.A == 255)
-                return new DreamValue(new Color(pixel.ToVector4()).ToHexNoAlpha().ToLower());
-            else
-                return new DreamValue(pixel.ToHex().ToLower());
+            return pixel.A switch {
+                0 => DreamValue.Null,
+                255 => new DreamValue($"#{pixel.R:x2}{pixel.G:x2}{pixel.B:x2}"),
+                _ => new DreamValue($"#{pixel.R:x2}{pixel.G:x2}{pixel.B:x2}{pixel.A:x2}")
+            };
         }
 
         [DreamProc("Scale")]

@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading.Tasks;
 using OpenDreamClient.Interface;
 using OpenDreamClient.Rendering;
@@ -82,10 +83,16 @@ public sealed partial class ClientVerbSystem : VerbSystem {
         sbyte? seeInvisibility = null;
 
         EntityUid mob = _dreamClientSystem.MobUid;
+
+        var viewOverlay = _overlayManager.GetOverlay<DreamViewOverlay>();
+        var entitiesToCheck = viewOverlay.EntitiesInView.AsEnumerable();
+
         if (mob.IsValid()) {
             _sightQuery.TryGetComponent(mob, out var mobSight);
 
             seeInvisibility = mobSight?.SeeInvisibility;
+
+            entitiesToCheck = entitiesToCheck.Prepend(mob);
         }
 
         // First, the verbs attached to our client
@@ -100,9 +107,8 @@ public sealed partial class ClientVerbSystem : VerbSystem {
             }
         }
 
-        // Then, the verbs on objects around us
-        var viewOverlay = _overlayManager.GetOverlay<DreamViewOverlay>();
-        foreach (var entity in viewOverlay.EntitiesInView) {
+        // Then, the verbs on our mob (if it is valid) and the objects around us
+        foreach (var entity in entitiesToCheck) {
             if (!_spriteQuery.TryGetComponent(entity, out var sprite))
                 continue;
             if (sprite.Icon.Appearance is not { } appearance)

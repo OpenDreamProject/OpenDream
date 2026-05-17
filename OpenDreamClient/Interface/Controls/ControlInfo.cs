@@ -255,9 +255,8 @@ internal sealed partial class VerbPanel : InfoPanel {
                 _verbButtons[key] = verbButton;
                 _grid.AddChild(verbButton);
                 verbButton.SetPositionInParent(gridIndex);
+                gridIndex++;
             }
-
-            gridIndex++;
         }
 
         foreach (var key in _verbButtons.Keys) {

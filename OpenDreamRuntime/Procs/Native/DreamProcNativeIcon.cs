@@ -1,11 +1,8 @@
-using System.ComponentModel;
 using System.Linq;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
-using SixLabors.ImageSharp.Advanced;
-using SixLabors.ImageSharp.Processing;
 using BlendType = OpenDreamRuntime.Objects.DreamIconOperationBlend.BlendType;
 using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
 
@@ -100,11 +97,11 @@ namespace OpenDreamRuntime.Procs.Native {
                 return DreamValue.Null;
 
             string iconState = bundle.GetArgument(2, "icon_state").MustGetValueAsString();
-            if(!srcDreamIcon.Icon.States.TryGetValue(iconState, out var iconStateObject)){
+            if(!srcDreamIcon.Icon.GenerateDMI().DMI.States.TryGetValue(iconState, out var iconStateObject)){
                 if(iconState == string.Empty)
-                    iconStateObject = srcDreamIcon.Icon.States.First().Value;
+                    iconStateObject = srcDreamIcon.Icon.GenerateDMI().DMI.States.First().Value;
                 else //invalid icon state causes BYOND to create error.log but it's empty
-                    throw new ArgumentException($"Invalid icon_state {iconState} passed to /icon.GetPixel()");
+                    return DreamValue.Null; //throw new ArgumentException($"Invalid icon_state {iconState} passed to /icon.GetPixel()");
             }
 
             AtomDirection dir = (AtomDirection)bundle.GetArgument(3, "dir").MustGetValueAsInteger();
@@ -113,14 +110,16 @@ namespace OpenDreamRuntime.Procs.Native {
             else if(!iconStateObject.Directions.ContainsKey(dir))
                 return DreamValue.Null;
 
-            int frame = Math.Max(1, bundle.GetArgument(4, "frame").MustGetValueAsInteger());
-            if (iconStateObject.Frames < frame)
+            int frame = Math.Max(1, bundle.GetArgument(4, "frame").MustGetValueAsInteger())-1;
+
+            if (iconStateObject.FrameCount < frame)
                 return DreamValue.Null;
 
             DreamValue moving = bundle.GetArgument(5, "moving"); // TODO: implement movement states
 
             var stateDirFrame = iconStateObject.Directions[dir][frame];
-            var pixel = stateDirFrame.Image![stateDirFrame.DMIFrame.X+x-1,stateDirFrame.DMIFrame.Y+(srcDreamIcon.Icon.Height-y)];
+
+            var pixel = srcDreamIcon.Icon.GenerateDMI().Texture[stateDirFrame.X+x-1,stateDirFrame.Y+(srcDreamIcon.Icon.Height-y)];
             if(pixel.A == 255)
                 return new DreamValue(new Color(pixel.ToVector4()).ToHexNoAlpha().ToLower());
             else

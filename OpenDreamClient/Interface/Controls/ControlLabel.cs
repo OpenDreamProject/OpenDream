@@ -1,5 +1,5 @@
 using System.Globalization;
-using OpenDreamClient.Interface.Descriptors;
+using OpenDreamShared.Interface.Descriptors;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 

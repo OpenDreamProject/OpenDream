@@ -1,0 +1,6 @@
+/proc/RunTest()
+	var/alist/AL = alist("a" = 1, "b" = 2, "c" = -4)
+	ASSERT(AL.Remove("a", "b"))
+	ASSERT(!("a" in AL))
+	ASSERT(!("b" in AL))
+	ASSERT("c" in AL)

@@ -1,5 +1,5 @@
 using System.Globalization;
-using OpenDreamClient.Interface.Descriptors;
+using OpenDreamShared.Interface.Descriptors;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
@@ -97,7 +97,7 @@ internal sealed class ControlBar : InterfaceControl {
             var valueReplaced =
                 BarDescriptor.OnChange.Value.Replace("[[*]]", range.Value.ToString(CultureInfo.InvariantCulture));
 
-            _interfaceManager.RunCommand(valueReplaced);
+            InterfaceManager.RunCommand(valueReplaced);
         }
     }
 

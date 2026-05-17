@@ -1,4 +1,4 @@
-﻿/proc/RunTest()
+/proc/RunTest()
 	ASSERT("[0.000001]" == "1e-06")
 	ASSERT("[-0.000001]" == "-1e-06")
 	ASSERT("[99999999]" == "1e+08")

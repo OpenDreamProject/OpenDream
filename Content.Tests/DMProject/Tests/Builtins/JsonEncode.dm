@@ -1,4 +1,4 @@
-﻿
+
 /datum/proc/foo()
 
 /proc/RunTest()

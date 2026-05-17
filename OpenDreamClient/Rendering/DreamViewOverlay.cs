@@ -7,6 +7,7 @@ using OpenDreamShared.Dream;
 using Robust.Shared.Console;
 using Robust.Shared.Prototypes;
 using OpenDreamShared.Rendering;
+using OpenDreamClient.Rendering.Particles;
 using Robust.Client.GameObjects;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Profiling;
@@ -38,16 +39,17 @@ internal sealed partial class DreamViewOverlay : Overlay {
 
     private const LookupFlags MapLookupFlags = LookupFlags.Approximate | LookupFlags.Uncontained;
 
-    [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
-    [Dependency] private readonly IPlayerManager _playerManager = default!;
-    [Dependency] private readonly IEntityManager _entityManager = default!;
-    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-    [Dependency] private readonly IMapManager _mapManager = default!;
-    [Dependency] private readonly IClyde _clyde = default!;
-    [Dependency] private readonly IPrototypeManager _protoManager = default!;
-    [Dependency] private readonly ProfManager _prof = default!;
-    [Dependency] private readonly IResourceCache _resourceCache = default!;
-    [Dependency] private readonly MarkupTagManager _tagManager = default!;
+    [Dependency] private IDreamInterfaceManager _interfaceManager = default!;
+    [Dependency] private IPlayerManager _playerManager = default!;
+    [Dependency] private IEntityManager _entityManager = default!;
+    [Dependency] private ParticlesManager _particlesManager = default!;
+    [Dependency] private IEntitySystemManager _entitySystemManager = default!;
+    [Dependency] private IMapManager _mapManager = default!;
+    [Dependency] private IClyde _clyde = default!;
+    [Dependency] private IPrototypeManager _protoManager = default!;
+    [Dependency] private ProfManager _prof = default!;
+    [Dependency] private IResourceCache _resourceCache = default!;
+    [Dependency] private MarkupTagManager _tagManager = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.view");
 
@@ -384,7 +386,10 @@ internal sealed partial class DreamViewOverlay : Overlay {
             result.Add(maptext);
         }
 
-        //TODO particles - colour and transform don't apply?
+        //query entity for particles component - check for parent to make sure this is the top level entity
+        if(parentIcon is null && _particlesManager.TryGetParticleSystem(uid, out var particlesSystem)){
+            current.Particles = particlesSystem;
+        }
 
         //flatten KeepTogetherGroup. Done here so we get implicit recursive iteration down the tree.
         if (current.KeepTogetherGroup?.Count > 0) {
@@ -432,8 +437,9 @@ internal sealed partial class DreamViewOverlay : Overlay {
 
         //KEEP_TOGETHER groups
         if (iconMetaData.KeepTogetherGroup?.Count > 0) {
-            // TODO: Use something better than a hardcoded 64x64 fallback
-            Vector2i ktSize = iconMetaData.MainIcon?.DMI?.IconSize ?? (64,64);
+            // TODO: Calculate an appropriate size based on overlays/underlays, offsets and transforms.
+            // For now, just generate a buffer of 128 pixels around the main icon...
+            Vector2i ktSize = (256, 256) + iconMetaData.MainIcon?.DMI?.IconSize ?? (0,0);
             iconMetaData.TextureOverride = ProcessKeepTogether(handle, iconMetaData, ktSize);
             positionOffset -= ((ktSize/IconSize) - Vector2.One) * new Vector2(0.5f); //correct for KT group texture offset
         }
@@ -466,7 +472,16 @@ internal sealed partial class DreamViewOverlay : Overlay {
         handle.UseShader(GetBlendAndColorShader(iconMetaData, ignoreColor: true));
 
         handle.SetTransform(CalculateDrawingMatrix(iconMetaData.TransformToApply, pixelPosition, frame.Size, renderTargetSize));
-        handle.DrawTextureRect(frame, Box2.FromDimensions(Vector2.Zero, frame.Size), iconMetaData.ColorToApply);
+
+        Color colorToApply = iconMetaData.ColorToApply;
+        colorToApply.A *= iconMetaData.AlphaToApply;
+
+        handle.DrawTextureRect(frame, Box2.FromDimensions(Vector2.Zero, frame.Size), colorToApply);
+
+        if (iconMetaData.Particles is not null) {
+            handle.UseShader(GetBlendAndColorShader(iconMetaData, ignoreColor: true));
+            iconMetaData.Particles.Draw(handle, CalculateDrawingMatrix(iconMetaData.TransformToApply, pixelPosition, iconMetaData.Particles.RenderSize, renderTargetSize));
+        }
     }
 
     /// <summary>
@@ -610,7 +625,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
         foreach (var tile in tiles) {
             if (tile == null)
                 continue;
-            if (tile.IsVisible == false && (sight & SightFlags.SeeTurfs) == 0)
+            if (!tile.IsVisible && (sight & SightFlags.SeeTurfs) == 0)
                 continue;
 
             Vector2i tilePos = eyeTile.GridIndices + (tile.DeltaX, tile.DeltaY);
@@ -640,7 +655,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
                 // Check for visibility if the eye doesn't have SEE_OBJS or SEE_MOBS
                 // TODO: Differentiate between objs and mobs
                 if ((sight & (SightFlags.SeeObjs|SightFlags.SeeMobs)) == 0 && _tileInfo != null) {
-                    var tilePos = _mapSystem.WorldToTile(gridUid, grid, worldPos) - eyeTile.GridIndices + _interfaceManager.View.Center;
+                    var tilePos = _mapSystem.WorldToTile(gridUid, grid, worldPos) - eyeTile.GridIndices + _interfaceManager.View.Center + 1;
                     if (tilePos.X < 0 || tilePos.Y < 0 || tilePos.X >= _tileInfo.GetLength(0) || tilePos.Y >= _tileInfo.GetLength(1))
                         continue;
 
@@ -725,7 +740,8 @@ internal sealed partial class DreamViewOverlay : Overlay {
 
         handle.RenderInRenderTarget(tempTexture, () => {
             foreach (RendererMetaData ktItem in ktItems) {
-                DrawIcon(handle, tempTexture.Size, ktItem, -ktItem.Position+((tempTexture.Size/IconSize) - Vector2.One) * new Vector2(0.5f)); //draw the icon in the centre of the KT render target
+                //draw the icon in the centre of the KT render target, based on the main icon position
+                DrawIcon(handle, tempTexture.Size, ktItem, -iconMetaData.Position+((tempTexture.Size/IconSize) - Vector2.One) * new Vector2(0.5f));
             }
         }, Color.Transparent);
 

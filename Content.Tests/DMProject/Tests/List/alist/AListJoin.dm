@@ -1,0 +1,6 @@
+/proc/RunTest()
+	var/alist/AL = alist("a" = 1, "b" = 2, "c" = -4)
+	var/string_output = AL.Join(",")
+	ASSERT(string_output == "a,b,c")
+	string_output = AL.Join("", 2)
+	ASSERT(string_output == "bc")

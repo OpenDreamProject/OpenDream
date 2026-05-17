@@ -19,8 +19,8 @@ namespace OpenDreamRuntime {
         private static readonly byte[] ByondTopicHeaderRaw = { 0x00, 0x83 };
         private static readonly byte[] ByondTopicHeaderEncrypted = { 0x00, 0x15 };
 
-        [Dependency] private readonly IServerNetManager _netManager = default!;
-        [Dependency] private readonly IConfigurationManager _config = default!;
+        [Dependency] private IServerNetManager _netManager = default!;
+        [Dependency] private IConfigurationManager _config = default!;
 
         private readonly Dictionary<NetUserId, DreamConnection> _connections = new();
 
@@ -56,10 +56,14 @@ namespace OpenDreamRuntime {
             _netManager.RegisterNetMessage<MsgPrompt>();
             _netManager.RegisterNetMessage<MsgPromptList>();
             _netManager.RegisterNetMessage<MsgPromptResponse>(RxPromptResponse);
+            _netManager.RegisterNetMessage<MsgSoundQuery>();
+            _netManager.RegisterNetMessage<MsgSoundQueryResponse>(RxSoundQueryResponse);
             _netManager.RegisterNetMessage<MsgBrowseResource>();
             _netManager.RegisterNetMessage<MsgBrowseResourceRequest>(RxBrowseResourceRequest);
             _netManager.RegisterNetMessage<MsgBrowseResourceResponse>();
             _netManager.RegisterNetMessage<MsgBrowse>();
+            _netManager.RegisterNetMessage<MsgLookupResource>(RxLookupResourceRequest);
+            _netManager.RegisterNetMessage<MsgLookupResourceResponse>();
             _netManager.RegisterNetMessage<MsgTopic>(RxTopic);
             _netManager.RegisterNetMessage<MsgWinSet>();
             _netManager.RegisterNetMessage<MsgWinClone>();
@@ -142,7 +146,7 @@ namespace OpenDreamRuntime {
                             var result = await state.Call(topicProc, WorldInstance, null, new DreamValue(topic), new DreamValue(remoteAddress));
                             tcs.SetResult(result);
                             return result;
-                        });
+                        }).Dispose();
 
                         var topicResponse = await tcs.Task;
                         if (topicResponse.IsNull) {
@@ -220,6 +224,11 @@ namespace OpenDreamRuntime {
             connection.HandleMsgPromptResponse(message);
         }
 
+        private void RxSoundQueryResponse(MsgSoundQueryResponse message) {
+            var connection = ConnectionForChannel(message.MsgChannel);
+            connection.HandleMsgSoundQueryResponse(message);
+        }
+
         private void RxTopic(MsgTopic message) {
             var connection = ConnectionForChannel(message.MsgChannel);
             connection.HandleMsgTopic(message);
@@ -235,6 +244,24 @@ namespace OpenDreamRuntime {
         private void RxBrowseResourceRequest(MsgBrowseResourceRequest message) {
             var connection = ConnectionForChannel(message.MsgChannel);
             connection.HandleBrowseResourceRequest(message.Filename);
+        }
+
+        private void RxLookupResourceRequest(MsgLookupResource message) {
+            if (_dreamResourceManager.TryLoadResource(message.ResourcePathOrRef, out var dreamResource)) {
+                var msg = new MsgLookupResourceResponse() {
+                    ResourceId = dreamResource.Id,
+                    ResourcePathOrRef = message.ResourcePathOrRef,
+                    Success = true
+                };
+                message.MsgChannel.SendMessage(msg);
+            } else {
+                var msg = new MsgLookupResourceResponse() {
+                    ResourceId = 0,
+                    ResourcePathOrRef = message.ResourcePathOrRef,
+                    Success = false
+                };
+                message.MsgChannel.SendMessage(msg);
+            }
         }
 
         private DreamConnection ConnectionForChannel(INetChannel channel) {

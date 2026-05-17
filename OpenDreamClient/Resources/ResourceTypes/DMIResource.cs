@@ -4,12 +4,11 @@ using OpenDreamShared.Resources;
 using Robust.Client.Graphics;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 
 namespace OpenDreamClient.Resources.ResourceTypes;
 
 public sealed class DMIResource : DreamResource {
-    private static readonly byte[] PngHeader = [0x89, 0x50, 0x4E, 0x47, 0xD, 0xA, 0x1A, 0xA];
-
     public Texture Texture;
     public Vector2i IconSize;
     public DMIParser.ParsedDMIDescription Description;
@@ -27,8 +26,6 @@ public sealed class DMIResource : DreamResource {
     }
 
     private void ProcessDMIData() {
-        if (!IsValidPNG()) throw new Exception("Attempted to create a DMI using an invalid PNG");
-
         using Stream dmiStream = new MemoryStream(Data);
         DMIParser.ParsedDMIDescription description = DMIParser.ParseDMI(dmiStream);
 
@@ -54,14 +51,26 @@ public sealed class DMIResource : DreamResource {
         return _states[stateName];
     }
 
-    private bool IsValidPNG() {
-        if (Data.Length < PngHeader.Length) return false;
+    public ICursor? GetStateAsImage(IClyde clyde, string? stateName) {
+        using var dmiStream = new MemoryStream(Data);
+        var description = DMIParser.ParseDMI(dmiStream);
 
-        for (int i=0; i<PngHeader.Length; i++) {
-            if (Data[i] != PngHeader[i]) return false;
-        }
+        dmiStream.Seek(0, SeekOrigin.Begin);
 
-        return true;
+        Image<Rgba32> image = Image.Load<Rgba32>(dmiStream);
+        var state = description.GetStateOrDefault(stateName);
+        if (!(state?.Directions.TryGetValue(AtomDirection.South, out var frames) ?? false))
+            return null;
+
+        var stateImage = image.Clone(clone => {
+            var frame = frames[0];
+
+            clone.Crop(new Rectangle(frame.X, frame.Y, frame.X + description.Width, frame.Y + description.Height));
+        });
+
+        var hotspot = state.Hotspot ?? (0, stateImage.Height - 1); // Default to the top-left
+        var cursor = clyde.CreateCursor(stateImage, hotspot);
+        return cursor;
     }
 
     public struct State {

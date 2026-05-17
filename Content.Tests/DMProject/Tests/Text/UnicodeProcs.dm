@@ -1,4 +1,5 @@
-﻿/proc/RunTest()
+// NOBYOND - unicode memes
+/proc/RunTest()
 	ASSERT(length("😀") == 2)
 	ASSERT(length_char("😀") == 1)
 

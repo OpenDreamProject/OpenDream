@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using OpenDreamClient.Interface.Controls.UI;
-using OpenDreamClient.Interface.Descriptors;
-using OpenDreamClient.Interface.DMF;
+using OpenDreamShared.Interface.Descriptors;
+using OpenDreamShared.Interface.DMF;
 using Robust.Client.ResourceManagement;
 using Robust.Client.UserInterface;
 
@@ -21,10 +21,10 @@ internal sealed class ControlChild(ControlDescriptor controlDescriptor, ControlW
     protected override void UpdateElementDescriptor() {
         base.UpdateElementDescriptor();
 
-        var newLeftElement = _interfaceManager.Windows.TryGetValue(ChildDescriptor.Left.Value, out var leftWindow)
+        var newLeftElement = InterfaceManager.Windows.TryGetValue(ChildDescriptor.Left.Value, out var leftWindow)
             ? leftWindow.UIElement
             : null;
-        var newRightElement = _interfaceManager.Windows.TryGetValue(ChildDescriptor.Right.Value, out var rightWindow)
+        var newRightElement = InterfaceManager.Windows.TryGetValue(ChildDescriptor.Right.Value, out var rightWindow)
             ? rightWindow.UIElement
             : null;
 
@@ -45,9 +45,9 @@ internal sealed class ControlChild(ControlDescriptor controlDescriptor, ControlW
     }
 
     public override void Shutdown() {
-        if (_interfaceManager.Windows.TryGetValue(ChildDescriptor.Left.Value, out var left))
+        if (InterfaceManager.Windows.TryGetValue(ChildDescriptor.Left.Value, out var left))
             left.Shutdown();
-        if (_interfaceManager.Windows.TryGetValue(ChildDescriptor.Right.Value, out var right))
+        if (InterfaceManager.Windows.TryGetValue(ChildDescriptor.Right.Value, out var right))
             right.Shutdown();
     }
 

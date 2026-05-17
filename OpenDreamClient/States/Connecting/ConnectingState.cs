@@ -5,10 +5,10 @@ using Robust.Shared.Configuration;
 
 namespace OpenDreamClient.States.Connecting;
 
-public sealed class ConnectingState : State {
-    [Dependency] private readonly IUserInterfaceManager _userInterfaceManager = default!;
-    [Dependency] private readonly IResourceCache _resourceCache = default!;
-    [Dependency] private readonly IConfigurationManager _configurationManager = default!;
+public sealed partial class ConnectingState : State {
+    [Dependency] private IUserInterfaceManager _userInterfaceManager = default!;
+    [Dependency] private IResourceCache _resourceCache = default!;
+    [Dependency] private IConfigurationManager _configurationManager = default!;
 
     private ConnectingControl _connectingControl = default!;
 

@@ -6,6 +6,7 @@ namespace OpenDreamRuntime.Procs;
 
 public static class DllHelper {
     private static readonly Dictionary<string, nint> LoadedDlls = new();
+    private static readonly Dictionary<(nint DLL, string ExportName), nint> LoadedExports = new();
 
     public static unsafe delegate* unmanaged[Cdecl]<int, byte**, byte*> ResolveDllTarget(
         DreamResourceManager resource,
@@ -17,8 +18,12 @@ public static class DllHelper {
 
         var dll = GetDll(resource, dllName);
 
-        if (!NativeLibrary.TryGetExport(dll, funcName, out var export))
-            throw new MissingMethodException($"FFI: Unable to find symbol {funcName} in library {dllName}");
+        if (!LoadedExports.TryGetValue((dll, funcName), out var export)) {
+            if (!NativeLibrary.TryGetExport(dll, funcName, out export))
+                throw new MissingMethodException($"FFI: Unable to find symbol {funcName} in library {dllName}");
+
+            LoadedExports.Add((dll, funcName), export);
+        }
 
         return (delegate* unmanaged[Cdecl]<int, byte**, byte*>)export;
     }

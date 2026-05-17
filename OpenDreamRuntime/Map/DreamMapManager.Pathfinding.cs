@@ -40,7 +40,7 @@ public partial class DreamMapManager {
         }
     }
 
-    public IEnumerable<AtomDirection> CalculateSteps((int X, int Y, int Z) loc, (int X, int Y, int Z) dest, int distance) {
+    public IEnumerable<AtomDirection> CalculateSteps((int X, int Y, int Z) loc, (int X, int Y, int Z) dest, int targetDistance, int maxSteps) {
         int z = loc.Z;
         if (z != dest.Z) // Different Z-levels are unreachable
             yield break;
@@ -55,6 +55,8 @@ public partial class DreamMapManager {
             var nextY = current.Y + offsetY;
             if (nextX < 1 || nextX > Size.X || nextY < 1 || nextY > Size.Y)
                 return; // This is outside of map bounds
+            if (current.NeededSteps >= maxSteps)
+                return; // We won't search any further than maxSteps
 
             var next = PathFindNode.GetNode(nextX, nextY);
             if (explored.Contains(next))
@@ -74,7 +76,7 @@ public partial class DreamMapManager {
         while (toExplore.TryDequeue(out var node)) {
             var distX = node.X - dest.X;
             var distY = node.Y - dest.Y;
-            if (Math.Sqrt(distX * distX + distY * distY) <= distance) { // Path to the destination was found
+            if ((int)Math.Sqrt(distX * distX + distY * distY) <= targetDistance) { // Path to the destination was found
                 Stack<AtomDirection> path = new(node.NeededSteps);
 
                 while (node.Parent != null) {

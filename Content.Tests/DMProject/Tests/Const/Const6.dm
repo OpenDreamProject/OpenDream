@@ -1,4 +1,4 @@
-﻿/proc/RunTest()
+/proc/RunTest()
 	var/a = 137
 	switch(a)
 		if(20)

@@ -1,4 +1,4 @@
-﻿// COMPILE ERROR OD3100
+// COMPILE ERROR OD3100
 #pragma EmptyBlock error
 
 /proc/RunTest()

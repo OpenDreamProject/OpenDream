@@ -3,8 +3,8 @@ using System.Text;
 using System.Globalization;
 using OpenDreamShared.Network.Messages;
 using OpenDreamClient.Interface.Controls;
-using OpenDreamClient.Interface.Descriptors;
-using OpenDreamClient.Interface.DMF;
+using OpenDreamShared.Interface.Descriptors;
+using OpenDreamShared.Interface.DMF;
 using OpenDreamClient.Interface.Prompts;
 using OpenDreamClient.Resources;
 using OpenDreamClient.Resources.ResourceTypes;
@@ -26,24 +26,24 @@ using Robust.Shared.Map;
 
 namespace OpenDreamClient.Interface;
 
-internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
+internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
     private static readonly ResPath DefaultInterfaceFile = new("/OpenDream/DefaultInterface.dmf");
 
-    [Dependency] private readonly IClyde _clyde = default!;
-    [Dependency] private readonly IBaseClient _client = default!;
-    [Dependency] private readonly IEyeManager _eyeManager = default!;
-    [Dependency] private readonly IClientNetManager _netManager = default!;
-    [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
-    [Dependency] private readonly IResourceManager _resourceManager = default!;
-    [Dependency] private readonly IFileDialogManager _fileDialogManager = default!;
-    [Dependency] private readonly ISerializationManager _serializationManager = default!;
-    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-    [Dependency] private readonly IInputManager _inputManager = default!;
-    [Dependency] private readonly IUserInterfaceManager _uiManager = default!;
-    [Dependency] private readonly IRobustRandom _random = default!;
-    [Dependency] private readonly ITimerManager _timerManager = default!;
-    [Dependency] private readonly IUriOpener _uriOpener = default!;
-    [Dependency] private readonly IGameController _gameController = default!;
+    [Dependency] private IClyde _clyde = default!;
+    [Dependency] private IBaseClient _client = default!;
+    [Dependency] private IEyeManager _eyeManager = default!;
+    [Dependency] private IClientNetManager _netManager = default!;
+    [Dependency] private IDreamResourceManager _dreamResource = default!;
+    [Dependency] private IResourceManager _resourceManager = default!;
+    [Dependency] private IFileDialogManager _fileDialogManager = default!;
+    [Dependency] private ISerializationManager _serializationManager = default!;
+    [Dependency] private IEntitySystemManager _entitySystemManager = default!;
+    [Dependency] private IInputManager _inputManager = default!;
+    [Dependency] private IUserInterfaceManager _uiManager = default!;
+    [Dependency] private IRobustRandom _random = default!;
+    [Dependency] private ITimerManager _timerManager = default!;
+    [Dependency] private IUriOpener _uriOpener = default!;
+    [Dependency] private IGameController _gameController = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.interface");
 
@@ -58,6 +58,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     public Dictionary<string, InterfaceMenu> Menus { get; } = new();
     public Dictionary<string, InterfaceMacroSet> MacroSets { get; } = new();
     private Dictionary<WindowId, ControlWindow> ClydeWindowIdToControl { get; } = new();
+    public CursorHolder Cursors { get; private set; } = default!;
 
     public ViewRange View {
         get => _view;
@@ -102,13 +103,19 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         LoadInterface(interfaceDescriptor);
     }
 
-    public void Initialize() {
+    private void SetupBaseDreamBinds() {
         // Set up the middle-mouse button keybind
         _inputManager.Contexts.GetContext("common").AddFunction(OpenDreamKeyFunctions.MouseMiddle);
         _inputManager.RegisterBinding(new KeyBindingRegistration() {
             Function = OpenDreamKeyFunctions.MouseMiddle,
             BaseKey = Keyboard.Key.MouseMiddle
         });
+    }
+
+    public void Initialize() {
+        SetupBaseDreamBinds();
+
+        Cursors = new(_clyde);
 
         _netManager.RegisterNetMessage<MsgUpdateStatPanels>(RxUpdateStatPanels);
         _netManager.RegisterNetMessage<MsgSelectStatPanel>(RxSelectStatPanel);
@@ -196,7 +203,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 browser.SetFileSource(null);
             }
         } else if (pBrowse.HtmlSource != null) {
-            var htmlFileName = $"browse{_random.Next()}"; // TODO: Possible collisions and explicit file names
+            var htmlFileName = $"browse_{pBrowse.Window}_{_random.Next()}"; // TODO: Possible collisions and explicit file names
             ControlBrowser? outputBrowser = referencedElement as ControlBrowser;
 
             if (outputBrowser == null) {
@@ -326,6 +333,14 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         IconSize = msg.IconSize;
         View = msg.View;
         ShowPopupMenus = msg.ShowPopupMenus;
+        if (msg.CursorResource != 0)
+            _dreamResource.LoadResourceAsync<DMIResource>(msg.CursorResource, resource => {
+                //TODO should trigger a cursor update immediately
+                Cursors = new(_clyde, resource);
+            });
+        else {
+            Cursors = new(_clyde); //reset to default
+        }
     }
 
     private void ShowPrompt(PromptWindow prompt) {
@@ -441,7 +456,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     public void RunCommand(string fullCommand, bool repeating = false) {
         switch (fullCommand) {
             case not null when fullCommand.StartsWith(".quit"):
-                IoCManager.Resolve<IClientNetManager>().ClientDisconnect(".quit used");
+                _gameController.Shutdown(".quit used");
                 break;
 
             case not null when fullCommand.StartsWith(".screenshot"):
@@ -925,6 +940,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         MacroSets.Clear();
 
         _inputManager.ResetAllBindings();
+        SetupBaseDreamBinds();
     }
 
     private void LoadInterface(InterfaceDescriptor descriptor) {
@@ -972,17 +988,17 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     }
 
     private void OnWindowFocused(WindowFocusedEventArgs args) {
-        if(ClydeWindowIdToControl.TryGetValue(args.Window.Id, out var controlWindow)){
-            _sawmill.Debug($"window id {controlWindow.Id} was {(args.Focused ? "focused" : "defocused")}");
-            WindowDescriptor descriptor = (WindowDescriptor) controlWindow.ElementDescriptor;
+        if (ClydeWindowIdToControl.TryGetValue(args.Window.Id, out var controlWindow)) {
+            _sawmill.Verbose($"window id {controlWindow.Id} was {(args.Focused ? "focused" : "defocused")}");
+            WindowDescriptor descriptor = (WindowDescriptor)controlWindow.ElementDescriptor;
             descriptor.Focus = new DMFPropertyBool(args.Focused);
-            if(args.Focused && MacroSets.TryGetValue(descriptor.Macro.AsRaw(), out var windowMacroSet)){
-                _sawmill.Debug($"Activating macroset {descriptor.Macro}");
+            if (args.Focused && MacroSets.TryGetValue(descriptor.Macro.AsRaw(), out var windowMacroSet)) {
+                _sawmill.Verbose($"Activating macroset {descriptor.Macro}");
                 windowMacroSet.SetActive();
             }
+        } else {
+            _sawmill.Verbose($"window id was not found (probably a modal) but was {(args.Focused ? "focused" : "defocused")}");
         }
-        else
-            _sawmill.Debug($"window id was not found (probably a modal) but was {(args.Focused ? "focused" : "defocused")}");
     }
 
     private void LoadDescriptor(ElementDescriptor descriptor) {
@@ -1024,6 +1040,31 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     }
 }
 
+public sealed class CursorHolder(IClyde clyde) {
+    public readonly ICursor? BaseCursor;
+    public readonly ICursor? DragCursor = clyde.GetStandardCursor(StandardCursorShape.Crosshair);
+    public readonly ICursor? OverCursor;
+    public readonly ICursor? DropCursor = clyde.GetStandardCursor(StandardCursorShape.Hand);
+    public readonly bool AllStateSet;
+
+    public CursorHolder(IClyde clyde, DMIResource resource) : this(clyde) {
+        var allCursor = resource.GetStateAsImage(clyde, "all");
+
+        if (allCursor is not null) { //all overrides all possible states
+            BaseCursor = allCursor;
+            DragCursor = BaseCursor;
+            DropCursor = BaseCursor;
+            OverCursor = BaseCursor;
+            AllStateSet = true;
+        } else {
+            BaseCursor = resource.GetStateAsImage(clyde, "");
+            OverCursor = resource.GetStateAsImage(clyde, "over");
+            DragCursor = resource.GetStateAsImage(clyde, "drag");
+            DropCursor = resource.GetStateAsImage(clyde, "drop");
+        }
+    }
+}
+
 public interface IDreamInterfaceManager {
     Dictionary<string, ControlWindow> Windows { get; }
     Dictionary<string, InterfaceMenu> Menus { get; }
@@ -1035,6 +1076,7 @@ public interface IDreamInterfaceManager {
     public ViewRange View { get; }
     public bool ShowPopupMenus { get; }
     public int IconSize { get; }
+    public CursorHolder Cursors { get; }
 
     void Initialize();
     void FrameUpdate(FrameEventArgs frameEventArgs);

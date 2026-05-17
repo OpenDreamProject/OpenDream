@@ -54,6 +54,10 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
     [ViewVariables] public Vector2i MaptextSize = new(32,32);
     [ViewVariables] public Vector2i MaptextOffset = new(0,0);
     [ViewVariables] public string? Maptext;
+    [ViewVariables] public int MouseDragPointer;
+    [ViewVariables] public bool MouseDropZone;
+    [ViewVariables] public int MouseOverPointer;
+    [ViewVariables] public int MouseDropPointer;
 
     /// <summary>
     /// Used by atoms to mark what mouse events are enabled. Doesn't mean anything outside the context of atoms.
@@ -138,6 +142,10 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         MaptextSize = appearance.MaptextSize;
         MaptextOffset = appearance.MaptextOffset;
         EnabledMouseEvents = appearance.EnabledMouseEvents;
+        MouseDragPointer = appearance.MouseDragPointer;
+        MouseDropZone = appearance.MouseDropZone;
+        MouseOverPointer = appearance.MouseOverPointer;
+        MouseDropPointer = appearance.MouseDropPointer;
 
         Overlays.Clear();
         Underlays.Clear();
@@ -187,6 +195,10 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         if (appearance.Maptext != Maptext) return false;
         if (appearance.MaptextSize != MaptextSize) return false;
         if (appearance.MaptextOffset != MaptextOffset) return false;
+        if (MouseDragPointer != appearance.MouseDragPointer) return false;
+        if (MouseDropZone != appearance.MouseDropZone) return false;
+        if (MouseOverPointer != appearance.MouseOverPointer) return false;
+        if (MouseDropPointer != appearance.MouseDropPointer) return false;
 
         for (int i = 0; i < Filters.Count; i++) {
             if (appearance.Filters[i] != Filters[i]) return false;
@@ -276,6 +288,10 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         hashCode.Add(Maptext);
         hashCode.Add(MaptextOffset);
         hashCode.Add(MaptextSize);
+        hashCode.Add(MouseDragPointer);
+        hashCode.Add(MouseDropZone);
+        hashCode.Add(MouseOverPointer);
+        hashCode.Add(MouseDropPointer);
 
         foreach (var overlay in Overlays) {
             hashCode.Add(overlay.GetHashCode());
@@ -431,6 +447,10 @@ public enum IconAppearanceProperty : byte {
         MaptextSize,
         MaptextOffset,
         EnabledMouseEvents,
+        MouseDragPointer,
+        MouseDropZone,
+        MouseOverPointer,
+        MouseDropPointer,
         Id,
         End
     }

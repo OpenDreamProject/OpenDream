@@ -1,16 +1,16 @@
 
-/obj/o
+/datum/o
 	var/A
 	var/tmp/B
 
-/obj/o/proc/IsSavedSrcVars()
+/datum/o/proc/IsSavedSrcVars()
 	ASSERT(issaved(A))
 	ASSERT(!issaved(B))
 	ASSERT(issaved(vars["A"]))
 	ASSERT(!issaved(vars["B"]))
 
 /proc/RunTest()
-	var/obj/o/test = new
+	var/datum/o/test = new
 	ASSERT(!issaved(test.type))
 	ASSERT(issaved(test.A))
 	ASSERT(!issaved(test.B))

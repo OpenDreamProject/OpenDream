@@ -38,9 +38,11 @@ public sealed class DreamObjectCallee(DreamObjectDefinition objectDefinition) : 
                 value = new(ProcState.Proc.GetSourceAtOffset(0).Line);
                 return true;
             case "src":
+                ProcState.Instance?.IncRef();
                 value = new(ProcState.Instance);
                 return true;
             case "usr":
+                ProcState.Usr?.IncRef();
                 value = new(ProcState.Usr);
                 return true;
             case "type":

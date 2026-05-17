@@ -1,4 +1,4 @@
-﻿using OpenDreamClient.Interface.Descriptors;
+﻿using OpenDreamShared.Interface.Descriptors;
 using Robust.Client.Input;
 using Robust.Client.UserInterface;
 using Robust.Shared.Input;
@@ -148,6 +148,7 @@ internal struct ParsedKeybind {
         {";", Keyboard.Key.SemiColon}, // undocumented but works in BYOND
         {",", Keyboard.Key.Comma},
         {".", Keyboard.Key.Period},
+        {"`", Keyboard.Key.Tilde},
         //TODO: Right shift/ctrl/alt
         {"SHIFT", Keyboard.Key.Shift},
         {"CTRL", Keyboard.Key.Control},
@@ -300,14 +301,12 @@ public sealed class InterfaceMacro : InterfaceElement {
             return;
         }
 
-
         string? keyName = ParsedKeybind.KeyToKeyName(args.Key);
         if (keyName == null)
             return;
         string command = Command.Replace("[[*]]", keyName);
-        _interfaceManager.RunCommand(command);
+        InterfaceManager.RunCommand(command);
         // args.Handle() omitted on purpose, in BYOND both the "specific" keybind and the ANY keybind are triggered
-
     }
 
     private void OnMacroPress(ICommonSession? session) {
@@ -315,7 +314,7 @@ public sealed class InterfaceMacro : InterfaceElement {
             return;
         if (_isRelease)
             return;
-        _interfaceManager.RunCommand(Command, _isRepeating);
+        InterfaceManager.RunCommand(Command, _isRepeating);
     }
 
     private void OnMacroRelease(ICommonSession? session) {
@@ -323,11 +322,10 @@ public sealed class InterfaceMacro : InterfaceElement {
             return;
 
         if (_isRepeating) {
-            _interfaceManager.StopRepeatingCommand(Command);
+            InterfaceManager.StopRepeatingCommand(Command);
         } else if (_isRelease) {
-            _interfaceManager.RunCommand(Command);
+            InterfaceManager.RunCommand(Command);
         }
-
     }
 
     private static KeyBindingRegistration? CreateMacroBinding(BoundKeyFunction function, ParsedKeybind keybind) {

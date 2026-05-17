@@ -2,6 +2,7 @@ using System.Globalization;
 using OpenDreamClient.Audio;
 using OpenDreamClient.Interface;
 using OpenDreamClient.Rendering;
+using OpenDreamClient.Rendering.Particles;
 using OpenDreamClient.Resources;
 using OpenDreamClient.States;
 using OpenDreamShared;
@@ -17,13 +18,14 @@ using Robust.Shared.Timing;
 
 namespace OpenDreamClient;
 
-public sealed class EntryPoint : GameClient {
-    [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
-    [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
-    [Dependency] private readonly ILightManager _lightManager = default!;
-    [Dependency] private readonly IConfigurationManager _configurationManager = default!;
-    [Dependency] private readonly IClientNetManager _netManager = default!;
-    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+public sealed partial class EntryPoint : GameClient {
+    [Dependency] private IDreamInterfaceManager _dreamInterface = default!;
+    [Dependency] private IDreamResourceManager _dreamResource = default!;
+    [Dependency] private ILightManager _lightManager = default!;
+    [Dependency] private IConfigurationManager _configurationManager = default!;
+    [Dependency] private IClientNetManager _netManager = default!;
+    [Dependency] private ParticlesManager _particleManager = default!;
+    [Dependency] private IEntitySystemManager _entitySystemManager = default!;
 
     private const string IEUserAgent =
         "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.2; WOW64; Trident/7.0; .NET4.0C; .NET4.0E; .NET CLR 2.0.50727; .NET CLR 3.0.30729; .NET CLR 3.5.30729)";
@@ -50,7 +52,7 @@ public sealed class EntryPoint : GameClient {
 
         // This needs to happen after all IoC registrations, but before IoC.BuildGraph();
         foreach (var callback in TestingCallbacks) {
-            var cast = (ClientModuleTestingCallbacks) callback;
+            var cast = (ClientModuleTestingCallbacks)callback;
             cast.ClientBeforeIoC?.Invoke();
         }
 
@@ -96,6 +98,7 @@ public sealed class EntryPoint : GameClient {
         switch (level) {
             case ModUpdateLevel.FramePostEngine:
                 _dreamInterface.FrameUpdate(frameEventArgs);
+                _particleManager.FrameUpdate(frameEventArgs); //TODO remove when particles RT PR is merged
                 break;
             case ModUpdateLevel.PostEngine:
                 break;

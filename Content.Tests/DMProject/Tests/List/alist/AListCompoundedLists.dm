@@ -1,0 +1,7 @@
+/proc/RunTest()
+	var/alist/AL = alist("left"=alist("one"=1,"two"=2),"right"=1)
+	ASSERT(istype(AL["left"], /alist))
+	ASSERT(AL["left"]["one"] == 1)
+	ASSERT(AL["left"]["two"] == 2)
+	ASSERT(AL["right"] == 1)
+	ASSERT(!("two" in AL))

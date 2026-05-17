@@ -5,6 +5,7 @@ using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Formats.Png.Chunks;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -17,6 +18,7 @@ namespace OpenDreamRuntime.Objects;
 
 public sealed class DreamIcon(DreamManager dreamManager, DreamResourceManager resourceManager) {
     private static readonly ArrayPool<Rgba32> PixelArrayPool = ArrayPool<Rgba32>.Shared;
+    private static readonly PngEncoder PngEncoder = new() { TextCompressionThreshold = 0 }; // Always encode the description in a zTXt chunk
 
     public int Width, Height;
     public readonly Dictionary<string, IconState> States = new();
@@ -120,7 +122,7 @@ public sealed class DreamIcon(DreamManager dreamManager, DreamResourceManager re
         int currentFrame = 0;
         foreach (var iconStatePair in States) {
             var iconState = iconStatePair.Value;
-            ParsedDMIState newState = new() { Name = iconStatePair.Key, Loop = false, Rewind = false };
+            ParsedDMIState newState = new(iconStatePair.Key) { Loop = false, Rewind = false };
 
             newDescription.States.Add(newState.Name, newState);
 
@@ -147,7 +149,7 @@ public sealed class DreamIcon(DreamManager dreamManager, DreamResourceManager re
         var pngMetadata = dmiImage.Metadata.GetPngMetadata();
         pngMetadata.TextData.Add(pngTextData);
 
-        dmiImage.SaveAsPng(dmiImageStream);
+        dmiImage.SaveAsPng(dmiImageStream, PngEncoder);
 
         IconResource newResource = resourceManager.CreateIconResource(dmiImageStream.GetBuffer(), dmiImage, newDescription);
         _cachedDMI = newResource;
@@ -182,24 +184,22 @@ public sealed class DreamIcon(DreamManager dreamManager, DreamResourceManager re
             foreach (var copyStateName in icon.DMI.States.Keys) {
                 InsertState(icon, copyStateName, copyStateName,
                     copyingAllDirs ? null : copyingDirection, copyingAllFrames ? null : copyingFrame,
-                    isConstructor: isConstructor);
+                    forceSouth: false);
             }
         } else {
             InsertState(icon, isConstructor ? string.Empty : copyingState!, copyingState!,
                 copyingAllDirs ? null : copyingDirection, copyingAllFrames ? null : copyingFrame,
-                isConstructor: isConstructor);
+                forceSouth: isConstructor);
         }
     }
 
     private void InsertState(IconResource icon, string stateName, string copyingState, AtomDirection? dir = null,
-        int? frame = null, bool isConstructor = false) {
+        int? frame = null, bool forceSouth = false) {
         ParsedDMIState? inserting = icon.DMI.GetStateOrDefault(copyingState);
         if (inserting == null)
             return;
 
-        // TODO: Passing "asSouth: isConstructor" here would be the correct behavior
-        // But that currently breaks /icon.Insert(other_icon, dir=...) in some important cases
-        var insertingDirections = inserting.GetFrames(dir, frame - 1, asSouth: false);
+        var insertingDirections = inserting.GetFrames(dir, frame - 1, asSouth: forceSouth);
 
         if (!States.TryGetValue(stateName, out var iconState)) {
             iconState = new IconState();

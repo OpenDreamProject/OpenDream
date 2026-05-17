@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using OpenDreamClient.Interface.Descriptors;
-using OpenDreamClient.Interface.DMF;
+using OpenDreamShared.Interface.Descriptors;
+using OpenDreamShared.Interface.DMF;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 
@@ -30,7 +30,7 @@ internal sealed class ControlTab(ControlDescriptor controlDescriptor, ControlWin
             StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
 
         foreach (var tabId in tabIds) {
-            if (!_interfaceManager.Windows.TryGetValue(tabId, out var pane))
+            if (!InterfaceManager.Windows.TryGetValue(tabId, out var pane))
                 continue;
 
             TabContainer.SetTabTitle(pane.UIElement, pane.Title);

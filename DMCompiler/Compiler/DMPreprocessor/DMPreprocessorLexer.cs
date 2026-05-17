@@ -12,7 +12,7 @@ namespace DMCompiler.Compiler.DMPreprocessor;
 internal sealed class DMPreprocessorLexer {
     private static readonly StringBuilder TokenTextBuilder = new();
 
-    public readonly string IncludeDirectory;
+    public readonly string? IncludeDirectory;
     public readonly string File;
 
     private readonly DMCompiler _compiler;
@@ -23,7 +23,7 @@ internal sealed class DMPreprocessorLexer {
     private int _previousLine = 1, _previousColumn;
     private readonly Queue<Token> _pendingTokenQueue = new(); // TODO: Possible to remove this?
 
-    public DMPreprocessorLexer(DMCompiler compiler, string includeDirectory, string file, string source) {
+    public DMPreprocessorLexer(DMCompiler compiler, string? includeDirectory, string file, string source) {
         _compiler = compiler;
         IncludeDirectory = includeDirectory;
         File = file;
@@ -32,12 +32,12 @@ internal sealed class DMPreprocessorLexer {
         Advance();
     }
 
-    public DMPreprocessorLexer(DMCompiler compiler, string includeDirectory, string file, bool isDMStandard) {
+    public DMPreprocessorLexer(DMCompiler compiler, string? includeDirectory, string file, bool isDMStandard) {
         _compiler = compiler;
         IncludeDirectory = includeDirectory;
         File = file;
 
-        _source = new StreamReader(Path.Combine(includeDirectory, file), Encoding.UTF8);
+        _source = new StreamReader(Path.Combine(includeDirectory ?? string.Empty, file), Encoding.UTF8);
         _isDMStandard = isDMStandard;
         Advance();
     }
@@ -442,7 +442,7 @@ internal sealed class DMPreprocessorLexer {
                 }
 
                 TokenTextBuilder.Clear();
-                while (char.IsAsciiLetter(GetCurrent()) || GetCurrent() == '_') {
+                while (char.IsAsciiLetterOrDigit(GetCurrent()) || GetCurrent() == '_') {
                     TokenTextBuilder.Append(GetCurrent());
                     Advance();
                 }

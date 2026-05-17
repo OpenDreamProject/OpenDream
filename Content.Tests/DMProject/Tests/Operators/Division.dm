@@ -7,7 +7,7 @@
 	var/list/expected = list(
 		1,
 		"Error",
-		10,
+		"Error",
 		"Error",
 		"Error", // index 5
 		"Error",

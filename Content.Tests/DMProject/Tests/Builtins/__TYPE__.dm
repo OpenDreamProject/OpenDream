@@ -1,11 +1,11 @@
 
-/atom/movable/proc/foo()
+/datum/proc/foo()
 	return __TYPE__
 
 /proc/bar()
 	return __TYPE__
 
 /proc/RunTest()
-	var/atom/movable/A = new
-	ASSERT(A.foo() == /atom/movable)
+	var/datum/A = new
+	ASSERT(A.foo() == /datum)
 	ASSERT(isnull(bar()))

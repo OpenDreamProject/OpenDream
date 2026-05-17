@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using OpenDreamClient.Input;
 using OpenDreamClient.Interface.Controls.UI;
-using OpenDreamClient.Interface.Descriptors;
-using OpenDreamClient.Interface.DMF;
+using OpenDreamShared.Interface.Descriptors;
+using OpenDreamShared.Interface.DMF;
 using OpenDreamClient.Rendering;
 using OpenDreamShared.Dream;
 using Robust.Client.Graphics;
@@ -12,10 +12,10 @@ using Robust.Shared.Input;
 
 namespace OpenDreamClient.Interface.Controls;
 
-public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindow window) : InterfaceControl(controlDescriptor, window) {
+public sealed partial class ControlMap(ControlDescriptor controlDescriptor, ControlWindow window) : InterfaceControl(controlDescriptor, window) {
     public ScalingViewport Viewport { get; private set; }
 
-    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+    [Dependency] private IEntitySystemManager _entitySystemManager = default!;
     private MouseInputSystem? _mouseInput;
     private ClientAppearanceSystem? _appearanceSystem;
 
@@ -38,14 +38,14 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
             "normal" or _ => ScalingViewportStretchMode.Nearest
         };
 
-        UpdateViewRange(_interfaceManager.View);
+        UpdateViewRange(InterfaceManager.View);
     }
 
     public void UpdateViewRange(ViewRange view) {
         var viewWidth = Math.Max(view.Width, 1);
         var viewHeight = Math.Max(view.Height, 1);
 
-        Viewport.ViewportSize = new Vector2i(viewWidth, viewHeight) * _interfaceManager.IconSize;
+        Viewport.ViewportSize = new Vector2i(viewWidth, viewHeight) * InterfaceManager.IconSize;
         if (MapDescriptor.IconSize.Value != 0) {
             // BYOND supports a negative number here (flips the view), but we're gonna enforce a positive number instead
             var iconSize = Math.Max(MapDescriptor.IconSize.Value, 1);
@@ -78,7 +78,7 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
         else
             OnHideEvent();
 
-        UpdateViewRange(_interfaceManager.View);
+        UpdateViewRange(InterfaceManager.View);
 
         return new PanelContainer { StyleClasses = {"MapBackground"}, Children = { Viewport } };
     }
@@ -109,14 +109,14 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
     public void OnShowEvent() {
         ControlDescriptorMap controlDescriptor = (ControlDescriptorMap)ControlDescriptor;
         if (!string.IsNullOrWhiteSpace(controlDescriptor.OnShowCommand.Value)) {
-            _interfaceManager.RunCommand(controlDescriptor.OnShowCommand.AsRaw());
+            InterfaceManager.RunCommand(controlDescriptor.OnShowCommand.AsRaw());
         }
     }
 
     public void OnHideEvent() {
         ControlDescriptorMap controlDescriptor = (ControlDescriptorMap)ControlDescriptor;
         if (!string.IsNullOrWhiteSpace(controlDescriptor.OnHideCommand.Value)) {
-            _interfaceManager.RunCommand(controlDescriptor.OnHideCommand.AsRaw());
+            InterfaceManager.RunCommand(controlDescriptor.OnHideCommand.AsRaw());
         }
     }
 
@@ -140,14 +140,14 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
     private void UpdateAtomUnderMouse(ClientObjectReference? atom, Vector2 relativePos, Vector2i iconPos) {
         if (!_atomUnderMouse.Equals(atom)) {
             _entitySystemManager.Resolve(ref _appearanceSystem);
-
-            var name = (atom != null) ? _appearanceSystem.GetName(atom.Value) : string.Empty;
+            var name = (atom != null) ? _appearanceSystem.GetNameUnformatted(atom.Value) : string.Empty;
             Window?.SetStatus(name);
 
             if (_atomUnderMouse != null)
                 _mouseInput?.HandleAtomMouseExited(Viewport, _atomUnderMouse.Value);
-            if (atom != null)
+            if (atom != null) {
                 _mouseInput?.HandleAtomMouseEntered(Viewport, relativePos, atom.Value, iconPos);
+            }
         } else if (atom.HasValue) {
             _mouseInput?.HandleAtomMouseMove(Viewport, relativePos, atom.Value, iconPos);
         }

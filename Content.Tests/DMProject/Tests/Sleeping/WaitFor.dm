@@ -1,4 +1,4 @@
-﻿/proc/RunTest()
+/proc/RunTest()
 	ASSERT(waitfor_2_a() == 2)
 	ASSERT(waitfor_1_a() == 3)
 

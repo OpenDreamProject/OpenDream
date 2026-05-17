@@ -38,6 +38,7 @@
 	proc/operator|(datum/complex/C)
 		//nonsense, used for testing
 		src.a = C.a
+		return src
 
 	proc/operator[](index) 
 		switch(index)

@@ -1,21 +1,21 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using OpenDreamClient.Interface.Controls;
-using OpenDreamClient.Interface.Descriptors;
-using OpenDreamClient.Interface.DMF;
+using OpenDreamShared.Interface.Descriptors;
+using OpenDreamShared.Interface.DMF;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
 
 namespace OpenDreamClient.Interface;
 
 [Virtual]
-public class InterfaceElement {
+public partial class InterfaceElement {
     public DMFPropertyString Type => ElementDescriptor.Type;
     public DMFPropertyString Id => ElementDescriptor.Id;
 
     public ElementDescriptor ElementDescriptor;
 
-    [Dependency] protected readonly IDreamInterfaceManager _interfaceManager = default!;
-    [Dependency] private readonly ISerializationManager _serializationManager = default!;
+    [Dependency] protected IDreamInterfaceManager InterfaceManager = default!;
+    [Dependency] private ISerializationManager _serializationManager = default!;
 
     protected InterfaceElement(ElementDescriptor elementDescriptor) {
         ElementDescriptor = elementDescriptor;

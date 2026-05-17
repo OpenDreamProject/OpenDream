@@ -1,6 +1,6 @@
 var/count = 0
 
-/obj/object
+/datum/dat
 	var/t = 1
 	var/f = 0
 
@@ -9,10 +9,10 @@ var/count = 0
 	return 5
 
 /proc/RunTest()
-	var/obj/object/o_and = new
-	var/obj/object/o_or = new
-	var/obj/object/on_and = null
-	var/obj/object/on_or = null
+	var/datum/dat/o_and = new
+	var/datum/dat/o_or = new
+	var/datum/dat/on_and = null
+	var/datum/dat/on_or = null
 
 	var/v1,v2,v3,v4
 

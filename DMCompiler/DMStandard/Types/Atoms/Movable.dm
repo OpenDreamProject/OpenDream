@@ -13,7 +13,7 @@
 	//Undocumented var. "[x],[y]" or "[x],[y] to [x2],[y2]" based on bound_* vars
 	var/bounds as opendream_unimplemented
 
-	var/particles/particles as opendream_unimplemented
+	var/particles/particles 
 
 	proc/Bump(atom/Obstacle)
 

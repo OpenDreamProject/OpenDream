@@ -59,7 +59,7 @@ public sealed class DMASTProcDefinition : DMASTStatement {
         }
 
         ObjectPath = (path.Elements.Length > 1) ? path.FromElements(0, -2) : DreamPath.Root;
-        Name = path.LastElement;
+        Name = path.LastElement ?? throw new ArgumentException($"Proc path \"{path}\" is missing a name", nameof(path));
         Parameters = parameters;
         Body = body;
         ReturnTypes = returnType;
@@ -103,7 +103,7 @@ public sealed class DMASTObjectVarOverride : DMASTStatement {
 
     public DMASTObjectVarOverride(Location location, DreamPath path, DMASTExpression value) : base(location) {
         ObjectPath = path.FromElements(0, -2);
-        VarName = path.LastElement;
+        VarName = path.LastElement ?? throw new ArgumentException($"Var override path \"{path}\" is missing a name", nameof(path));
         Value = value;
     }
 }

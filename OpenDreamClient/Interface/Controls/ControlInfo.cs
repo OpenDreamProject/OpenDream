@@ -2,7 +2,7 @@ using System.Linq;
 using OpenDreamShared.Network.Messages;
 using OpenDreamClient.Input;
 using OpenDreamClient.Interface.Controls.UI;
-using OpenDreamClient.Interface.Descriptors;
+using OpenDreamShared.Interface.Descriptors;
 using OpenDreamClient.Interface.Html;
 using OpenDreamShared.Dream;
 using Robust.Client.Graphics;
@@ -176,13 +176,14 @@ internal sealed class StatPanel : InfoPanel {
     }
 }
 
-internal sealed class VerbPanel : InfoPanel {
+internal sealed partial class VerbPanel : InfoPanel {
     public static readonly string DefaultVerbPanel = "Verbs"; // TODO: default_verb_category
 
-    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+    [Dependency] private IEntitySystemManager _entitySystemManager = default!;
     private readonly ClientVerbSystem? _verbSystem;
 
     private readonly VerbPanelGrid _grid;
+    private readonly Dictionary<(int VerbId, ClientObjectReference Src), Button> _verbButtons = new();
 
     private Color _highlightColor;
     private Color _textColor;
@@ -218,46 +219,63 @@ internal sealed class VerbPanel : InfoPanel {
     }
 
     public void RefreshVerbs(IEnumerable<(int, ClientObjectReference, VerbSystem.VerbInfo)> verbs) {
-        _grid.Children.Clear();
+        var panelVerbs = verbs
+            .Where(v => v.Item3.GetCategoryOrDefault(DefaultVerbPanel) == PanelName)
+            .Order(VerbNameComparer.OrdinalInstance);
 
-        foreach (var (verbId, src, verbInfo) in verbs.Order(VerbNameComparer.OrdinalInstance)) {
-            if (verbInfo.GetCategoryOrDefault(DefaultVerbPanel) != PanelName)
-                continue;
+        var seenKeys = new HashSet<(int, ClientObjectReference)>();
+        var gridIndex = 0;
+        foreach (var (verbId, src, verbInfo) in panelVerbs) {
+            var key = (verbId, src);
+            seenKeys.Add(key);
 
-            Button verbButton = new Button {
-                Margin = new Thickness(2),
-                Text = verbInfo.Name,
-                TextAlign = Label.AlignMode.Center
-            };
+            if (!_verbButtons.ContainsKey(key)) {
+                var verbButton = new Button {
+                    Margin = new Thickness(2),
+                    Text = verbInfo.Name,
+                    TextAlign = Label.AlignMode.Center
+                };
 
-            verbButton.Label.Margin = new Thickness(6, 0, 6, 2);
-            verbButton.Label.FontColorOverride = _textColor;
-            verbButton.StyleBoxOverride = new StyleBoxEmpty();
-
-            verbButton.OnPressed += _ => {
-                _verbSystem?.ExecuteVerb(src, verbId);
-            };
-
-            verbButton.OnMouseEntered += _ => {
-                verbButton.Label.FontColorOverride = _highlightColor;
-            };
-
-            verbButton.OnMouseExited += _ => {
+                verbButton.Label.Margin = new Thickness(6, 0, 6, 2);
                 verbButton.Label.FontColorOverride = _textColor;
-            };
+                verbButton.StyleBoxOverride = new StyleBoxEmpty();
 
-            _grid.Children.Add(verbButton);
+                verbButton.OnButtonDown += _ => {
+                    _verbSystem?.ExecuteVerb(src, verbId);
+                };
+
+                verbButton.OnMouseEntered += _ => {
+                    verbButton.Label.FontColorOverride = _highlightColor;
+                };
+
+                verbButton.OnMouseExited += _ => {
+                    verbButton.Label.FontColorOverride = _textColor;
+                };
+
+                _verbButtons[key] = verbButton;
+                _grid.AddChild(verbButton);
+                verbButton.SetPositionInParent(gridIndex);
+            }
+
+            gridIndex++;
+        }
+
+        foreach (var key in _verbButtons.Keys) {
+            if (seenKeys.Contains(key)) continue;
+
+            _grid.RemoveChild(_verbButtons[key]);
+            _verbButtons.Remove(key);
         }
     }
 }
 
-public sealed class ControlInfo : InterfaceControl {
+public sealed partial class ControlInfo : InterfaceControl {
     public static readonly string StyleClassDMFInfo = "DMFInfo";
 
     public ControlDescriptorInfo InfoDescriptor => (ControlDescriptorInfo)ControlDescriptor;
 
-    [Dependency] private readonly IClientNetManager _netManager = default!;
-    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+    [Dependency] private IClientNetManager _netManager = default!;
+    [Dependency] private IEntitySystemManager _entitySystemManager = default!;
 
     private PanelContainer _container;
     private TabContainer _tabControl;
@@ -410,14 +428,14 @@ public sealed class ControlInfo : InterfaceControl {
     public void OnShowEvent() {
         ControlDescriptorInfo controlDescriptor = (ControlDescriptorInfo)ControlDescriptor;
         if (!string.IsNullOrWhiteSpace(controlDescriptor.OnShowCommand.Value)) {
-            _interfaceManager.RunCommand(controlDescriptor.OnShowCommand.AsRaw());
+            InterfaceManager.RunCommand(controlDescriptor.OnShowCommand.AsRaw());
         }
     }
 
     public void OnHideEvent() {
         ControlDescriptorInfo controlDescriptor = (ControlDescriptorInfo)ControlDescriptor;
         if (!string.IsNullOrWhiteSpace(controlDescriptor.OnHideCommand.Value)) {
-            _interfaceManager.RunCommand(controlDescriptor.OnHideCommand.AsRaw());
+            InterfaceManager.RunCommand(controlDescriptor.OnHideCommand.AsRaw());
         }
     }
 }

@@ -5,8 +5,8 @@ using Robust.Server.GameStates;
 
 namespace OpenDreamRuntime.Rendering;
 
-public sealed class ServerClientImagesSystem : SharedClientImagesSystem {
-    [Dependency] private readonly PvsOverrideSystem _pvsOverrideSystem = default!;
+public sealed partial class ServerClientImagesSystem : SharedClientImagesSystem {
+    [Dependency] private PvsOverrideSystem _pvsOverrideSystem = default!;
 
     public void AddImageObject(DreamConnection connection, DreamObjectImage imageObject) {
         if (connection.Session == null || imageObject.GetAttachedLoc() is not { } loc)

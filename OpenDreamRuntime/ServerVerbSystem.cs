@@ -10,11 +10,11 @@ using Robust.Shared.Player;
 
 namespace OpenDreamRuntime;
 
-public sealed class ServerVerbSystem : VerbSystem {
-    [Dependency] private readonly DreamManager _dreamManager = default!;
-    [Dependency] private readonly AtomManager _atomManager = default!;
-    [Dependency] private readonly DreamObjectTree _objectTree = default!;
-    [Dependency] private readonly IPlayerManager _playerManager = default!;
+public sealed partial class ServerVerbSystem : VerbSystem {
+    [Dependency] private DreamManager _dreamManager = default!;
+    [Dependency] private AtomManager _atomManager = default!;
+    [Dependency] private DreamObjectTree _objectTree = default!;
+    [Dependency] private IPlayerManager _playerManager = default!;
 
     private readonly List<VerbInfo> _verbs = new();
     private readonly Dictionary<int, DreamProc> _verbIdToProc = new();
@@ -179,13 +179,13 @@ public sealed class ServerVerbSystem : VerbSystem {
         }
     }
 
-    private void RunVerb(DreamProc verb, string name, DreamObject? src, DreamConnection usr, params DreamValue[] arguments) {
+    private void RunVerb(DreamProc verb, string name, DreamObject src, DreamConnection usr, params DreamValue[] arguments) {
         using var _ = Profiler.BeginZone("DM Execution", color: (uint)Color.LightPink.ToArgb());
 
         DreamThread.Run($"Execute {name} by {usr.Session!.Name}", async state => {
             await state.Call(verb, src, usr.Mob, arguments);
             return DreamValue.Null;
-        });
+        }).Dispose();
     }
 
     private void OnVerbExecuted(ExecuteVerbEvent msg, EntitySessionEventArgs args) {

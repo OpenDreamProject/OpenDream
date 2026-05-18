@@ -147,11 +147,13 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
             X *= scalar;
             Y *= scalar;
             Z *= scalar;
+            IncRef();
             return new DreamValue(this);
         } else if (b.TryGetValueAsDreamObject<DreamObjectVector>(out var right)) {
             X *= right.X;
             Y *= right.Y;
             Z *= right.Z;
+            IncRef();
             return new DreamValue(this);
         }
 
@@ -192,6 +194,7 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
             X /= scalar;
             Y /= scalar;
             Z /= scalar;
+            IncRef();
             return new DreamValue(this);
         } else if (b.TryGetValueAsDreamObject<DreamObjectVector>(out var right)) {
             if (right.X == 0 || right.Y == 0 || (Is3D && right.Z == 0))
@@ -199,6 +202,7 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
             X /= right.X;
             Y /= right.Y;
             Z = right.Z == 0 ? 0 : Z / right.Z;
+            IncRef();
             return new DreamValue(this);
         }
 
@@ -212,6 +216,7 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
             Z += right.Z;
             Is3D = Is3D || right.Is3D;
 
+            IncRef();
             return new DreamValue(this);
         }
 
@@ -225,6 +230,7 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
             Z -= right.Z;
             Is3D = Is3D || right.Is3D;
 
+            IncRef();
             return new DreamValue(this);
         }
 
@@ -303,9 +309,9 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
             var length = list.GetLength();
 
             if (length >= 3) {
-                var x = list.GetValue(new(1));
-                var y = list.GetValue(new(2));
-                var z = list.GetValue(new(3));
+                using var x = list.GetValue(new(1));
+                using var y = list.GetValue(new(2));
+                using var z = list.GetValue(new(3));
 
                 vector = tree.CreateObject<DreamObjectVector>(tree.Vector);
                 vector.Initialize(new(x, y, z));
@@ -313,8 +319,8 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
             }
 
             if (length == 2) {
-                var x = list.GetValue(new(1));
-                var y = list.GetValue(new(2));
+                using var x = list.GetValue(new(1));
+                using var y = list.GetValue(new(2));
 
                 vector = tree.CreateObject<DreamObjectVector>(tree.Vector);
                 vector.Initialize(new(x, y));
@@ -354,6 +360,10 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
         var vector = tree.CreateObject<DreamObjectVector>(tree.Vector);
         vector.Initialize(new(new(value.X), new(value.Y)));
         return vector;
+    }
+
+    public override string ToString() {
+        return Is3D ? $"vector({X},{Y},{Z})" : $"vector({X},{Y})";
     }
 
     // TODO: Operators, supports indexing and "most math"

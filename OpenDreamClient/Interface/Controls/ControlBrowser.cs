@@ -16,7 +16,7 @@ using Robust.Shared.Utility;
 
 namespace OpenDreamClient.Interface.Controls;
 
-internal sealed class ControlBrowser : InterfaceControl {
+internal sealed partial class ControlBrowser : InterfaceControl {
     private static readonly Dictionary<string, string> FileExtensionMimeTypes = new() {
         { "css", "text/css" },
         { "html", "text/html" },
@@ -31,9 +31,9 @@ internal sealed class ControlBrowser : InterfaceControl {
         { "txt", "text/plain" }
     };
 
-    [Dependency] private readonly IResourceManager _resourceManager = default!;
-    [Dependency] private readonly IClientNetManager _netManager = default!;
-    [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
+    [Dependency] private IResourceManager _resourceManager = default!;
+    [Dependency] private IClientNetManager _netManager = default!;
+    [Dependency] private IDreamResourceManager _dreamResource = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.browser");
 
@@ -196,7 +196,7 @@ internal sealed class ControlBrowser : InterfaceControl {
         modifiedQuery = modifiedQuery!.Replace('&', ';'); // TODO: More robust parsing
 
         // We can finally call winset
-        _interfaceManager.WinSet(element, modifiedQuery);
+        InterfaceManager.WinSet(element, modifiedQuery);
     }
 
     /// <summary>
@@ -238,7 +238,7 @@ internal sealed class ControlBrowser : InterfaceControl {
             jsonBuilder.Append('"');
             jsonBuilder.Append(HttpUtility.JavaScriptStringEncode(wingetting));
             jsonBuilder.Append("\": ");
-            var result = _interfaceManager.WinGet(elementId, wingetting, forceJson: forceJson);
+            var result = InterfaceManager.WinGet(elementId, wingetting, forceJson: forceJson);
             jsonBuilder.Append(result);
         }
 
@@ -252,14 +252,14 @@ internal sealed class ControlBrowser : InterfaceControl {
     private void OnShowEvent() {
         ControlDescriptorBrowser controlDescriptor = (ControlDescriptorBrowser)ControlDescriptor;
         if (!string.IsNullOrWhiteSpace(controlDescriptor.OnShowCommand.Value)) {
-            _interfaceManager.RunCommand(controlDescriptor.OnShowCommand.AsRaw());
+            InterfaceManager.RunCommand(controlDescriptor.OnShowCommand.AsRaw());
         }
     }
 
     private void OnHideEvent() {
         ControlDescriptorBrowser controlDescriptor = (ControlDescriptorBrowser)ControlDescriptor;
         if (!string.IsNullOrWhiteSpace(controlDescriptor.OnHideCommand.Value)) {
-            _interfaceManager.RunCommand(controlDescriptor.OnHideCommand.AsRaw());
+            InterfaceManager.RunCommand(controlDescriptor.OnHideCommand.AsRaw());
         }
     }
 }

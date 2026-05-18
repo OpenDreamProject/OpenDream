@@ -21,7 +21,9 @@ public static unsafe partial class ByondApi {
      */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte ByondValue_IsTrue(CByondValue* v) {
-        return ValueFromDreamApi(*v).IsTruthy() ? (byte)1 : (byte)0;
+        using var value = ValueFromDreamApi(*v);
+
+        return value.IsTruthy() ? (byte)1 : (byte)0;
     }
 
     /** byondapi.h comment:
@@ -32,8 +34,8 @@ public static unsafe partial class ByondApi {
      */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte ByondValue_Equals(CByondValue* a, CByondValue* b) {
-        var left = ValueFromDreamApi(*a);
-        var right = ValueFromDreamApi(*b);
+        using var left = ValueFromDreamApi(*a);
+        using var right = ValueFromDreamApi(*b);
 
         return DMOpcodeHandlers.IsEqual(left, right) ? (byte)1 : (byte)0;
     }
@@ -85,7 +87,7 @@ public static unsafe partial class ByondApi {
         }
 
         if (block > 0) {
-            return RunOnMainThread(() => callback(data));
+            return RunOnMainThread(_ => callback(data));
         }
 
         RunOnMainThreadNonBlocking(() => callback(data));
@@ -109,7 +111,7 @@ public static unsafe partial class ByondApi {
             return NONE;
         }
 
-        return RunOnMainThread(() => {
+        return RunOnMainThread(_ => {
             var strId = _refManager!.FindStringId(str);
             if (strId != null) {
                 return strId.Value;
@@ -136,7 +138,7 @@ public static unsafe partial class ByondApi {
             return NONE;
         }
 
-        return RunOnMainThread(() => {
+        return RunOnMainThread(_ => {
             var strIdx = _refManager!.GetRef(str);
             return strIdx;
         });
@@ -155,13 +157,13 @@ public static unsafe partial class ByondApi {
         if (loc == null || varname == null || result == null)
             return SetLastError("loc, varname, or result argument was a null pointer");
 
-        return RunOnMainThread<byte>(() => {
+        return RunOnMainThread<byte>(calledFromMain => {
             try {
                 string? varName = Marshal.PtrToStringUTF8((nint)varname);
                 if (varName == null)
                     return SetLastError("varname argument was a null pointer");
 
-                DreamValue srcValue = ValueFromDreamApi(*loc);
+                using var srcValue = ValueFromDreamApi(*loc);
                 if (!srcValue.TryGetValueAsDreamObject(out var srcObj))
                     return SetLastError("loc was not a DreamObject");
                 if (srcObj == null)
@@ -170,6 +172,8 @@ public static unsafe partial class ByondApi {
                 var srcVar = srcObj.GetVariable(varName);
                 var cSrcVar = ValueToByondApi(srcVar);
                 *result = cSrcVar;
+                if (!calledFromMain)
+                    AddTemporaryReference(srcVar);
             } catch (Exception e) {
                 return SetLastError(e.Message);
             }
@@ -193,13 +197,13 @@ public static unsafe partial class ByondApi {
         if (loc == null || result == null)
             return SetLastError("loc or result argument was a null pointer");
 
-        return RunOnMainThread<byte>(() => {
+        return RunOnMainThread<byte>(calledFromMain => {
             try {
-                DreamValue varNameVal = _refManager!.LocateRef((uint)RefType.String | varname);
+                using var varNameVal = _refManager!.LocateRef((uint)RefType.String | varname);
                 if (!varNameVal.TryGetValueAsString(out var varName))
                     return SetLastError("varname argument was an invalid string ID");
 
-                DreamValue srcValue = ValueFromDreamApi(*loc);
+                using var srcValue = ValueFromDreamApi(*loc);
                 if (!srcValue.TryGetValueAsDreamObject(out var srcObj))
                     return SetLastError("loc argument was not a DreamObject");
                 if (srcObj == null)
@@ -208,6 +212,8 @@ public static unsafe partial class ByondApi {
                 var srcVar = srcObj.GetVariable(varName);
                 var cSrcVar = ValueToByondApi(srcVar);
                 *result = cSrcVar;
+                if (!calledFromMain)
+                    AddTemporaryReference(srcVar);
             } catch (Exception e) {
                 return SetLastError(e.Message);
             }
@@ -229,14 +235,14 @@ public static unsafe partial class ByondApi {
         if (loc == null || varname == null || val == null)
             return SetLastError("loc, varname, or val argument was a null pointer");
 
-        return RunOnMainThread<byte>(() => {
+        return RunOnMainThread<byte>(_ => {
             try {
                 string? varName = Marshal.PtrToStringUTF8((nint)varname);
                 if (varName == null)
                     return SetLastError("varname was a null pointer");
 
-                DreamValue srcValue = ValueFromDreamApi(*val);
-                DreamValue dstValue = ValueFromDreamApi(*loc);
+                using var srcValue = ValueFromDreamApi(*val);
+                using var dstValue = ValueFromDreamApi(*loc);
                 if (!dstValue.TryGetValueAsDreamObject(out var dstObj))
                     return SetLastError("loc argument was not a DreamObject");
                 if (dstObj == null)
@@ -262,14 +268,14 @@ public static unsafe partial class ByondApi {
      */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_WriteVarByStrId(CByondValue* loc, uint varname, CByondValue* val) {
-        return RunOnMainThread<byte>(() => {
+        return RunOnMainThread<byte>(_ => {
             try {
-                DreamValue varNameVal = _refManager!.LocateRef((uint)RefType.String | varname);
+                using var varNameVal = _refManager!.LocateRef((uint)RefType.String | varname);
                 if (!varNameVal.TryGetValueAsString(out var varName))
                     return SetLastError("varname argument was an invalid string ID");
 
-                DreamValue srcValue = ValueFromDreamApi(*val);
-                DreamValue dstValue = ValueFromDreamApi(*loc);
+                using var srcValue = ValueFromDreamApi(*val);
+                using var dstValue = ValueFromDreamApi(*loc);
                 if (!dstValue.TryGetValueAsDreamObject(out var dstObj))
                     return SetLastError("loc argument was not a DreamObject");
                 if (dstObj == null)
@@ -292,8 +298,9 @@ public static unsafe partial class ByondApi {
      */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte Byond_CreateList(CByondValue* result) {
-        return RunOnMainThread<byte>(() => {
+        return RunOnMainThread<byte>(calledFromMain => {
             var newList = _objectTree!.CreateList();
+
             DreamValue val = new DreamValue(newList);
             try {
                 *result = ValueToByondApi(val);
@@ -301,6 +308,8 @@ public static unsafe partial class ByondApi {
                 return SetLastError(e.Message);
             }
 
+            if (!calledFromMain)
+                AddTemporaryReference(val);
             return 1;
         });
     }
@@ -320,8 +329,8 @@ public static unsafe partial class ByondApi {
 
         int providedBufLen = (int)*len;
 
-        return RunOnMainThread<byte>(() => {
-            DreamValue srcValue = ValueFromDreamApi(*loc);
+        return RunOnMainThread<byte>(calledFromMain => {
+            using var srcValue = ValueFromDreamApi(*loc);
             if (!srcValue.TryGetValueAsDreamList(out var srcList)) {
                 *len = 0;
                 return SetLastError("loc argument was not a list");
@@ -341,6 +350,8 @@ public static unsafe partial class ByondApi {
                         throw new Exception($"List {srcList} had more elements than the expected {length}");
 
                     list[i++] = ValueToByondApi(value);
+                    if (!calledFromMain)
+                        AddTemporaryReference(value);
                 }
             } catch (Exception e) {
                 return SetLastError(e.Message);
@@ -363,15 +374,15 @@ public static unsafe partial class ByondApi {
         if (list == null || loc == null)
             return SetLastError("list or loc argument was a null pointer");
 
-        return RunOnMainThread<byte>(() => {
+        return RunOnMainThread<byte>(_ => {
             try {
-                DreamValue dstValue = ValueFromDreamApi(*loc);
+                using var dstValue = ValueFromDreamApi(*loc);
                 if (!dstValue.TryGetValueAsDreamList(out DreamList? dstListValue))
                     return SetLastError("loc argument was not a list");
 
                 dstListValue.Cut();
                 for (int i = 0; i < len; i++) {
-                    DreamValue srcValue = ValueFromDreamApi(list[i]);
+                    using var srcValue = ValueFromDreamApi(list[i]);
                     dstListValue.AddValue(srcValue);
                 }
             } catch (Exception e) {
@@ -397,8 +408,8 @@ public static unsafe partial class ByondApi {
 
         int providedBufLen = (int)*len;
 
-        return RunOnMainThread<byte>(() => {
-            DreamValue srcValue = ValueFromDreamApi(*loc);
+        return RunOnMainThread<byte>(calledFromMain => {
+            using var srcValue = ValueFromDreamApi(*loc);
             if (!srcValue.TryGetValueAsDreamList(out var srcList)) {
                 *len = 0;
                 return SetLastError("loc argument was not a list");
@@ -418,6 +429,11 @@ public static unsafe partial class ByondApi {
                     list[i] = ValueToByondApi(entry.Key);
                     list[i + 1] = ValueToByondApi(entry.Value);
                     i += 2;
+
+                    if (!calledFromMain) {
+                        AddTemporaryReference(entry.Key);
+                        AddTemporaryReference(entry.Value);
+                    }
                 }
             } catch (Exception e) {
                 return SetLastError(e.Message);
@@ -440,15 +456,17 @@ public static unsafe partial class ByondApi {
         if (loc == null || cIdx == null || result == null)
             return SetLastError("loc, cIdx, or result argument was a null pointer");
 
-        return RunOnMainThread<byte>(() => {
+        return RunOnMainThread<byte>(calledFromMain => {
             try {
-                DreamValue idx = ValueFromDreamApi(*cIdx);
-                DreamValue listValue = ValueFromDreamApi(*loc);
+                using var idx = ValueFromDreamApi(*cIdx);
+                using var listValue = ValueFromDreamApi(*loc);
                 if (!listValue.TryGetValueAsDreamList(out var srcList))
                     return SetLastError("loc argument was not a list");
 
                 var val = srcList.GetValue(idx);
                 *result = ValueToByondApi(val);
+                if (!calledFromMain)
+                    AddTemporaryReference(val);
             } catch (Exception e) {
                 return SetLastError(e.Message);
             }
@@ -470,14 +488,14 @@ public static unsafe partial class ByondApi {
         if (loc == null || cIdx == null || cVal == null)
             return SetLastError("loc, cIdx, or cVal argument was a null pointer");
 
-        return RunOnMainThread<byte>(() => {
+        return RunOnMainThread<byte>(_ => {
             try {
-                DreamValue idx = ValueFromDreamApi(*cIdx);
-                DreamValue listValue = ValueFromDreamApi(*loc);
+                using var idx = ValueFromDreamApi(*cIdx);
+                using var listValue = ValueFromDreamApi(*loc);
                 if (!listValue.TryGetValueAsDreamList(out var dstList))
                     return SetLastError("loc argument was not a list");
 
-                var val = ValueFromDreamApi(*cVal);
+                using var val = ValueFromDreamApi(*cVal);
                 dstList.SetValue(idx, val, true);
             } catch (Exception e) {
                 return SetLastError(e.Message);
@@ -517,19 +535,21 @@ public static unsafe partial class ByondApi {
         throw new NotImplementedException();
     }
 
-    private static byte CallProcShared(DreamObject? src, DreamProc proc, CByondValue* cArgs, uint arg_count, CByondValue* cResult) {
+    private static byte CallProcShared(DreamObject? src, DreamProc proc, CByondValue* cArgs, uint arg_count, CByondValue* cResult, bool tempRef) {
         DreamValue[] argList = new DreamValue[arg_count];
 
         for (int i = 0; i < arg_count; i++) {
-            var arg = ValueFromDreamApi(cArgs[i]);
+            using var arg = ValueFromDreamApi(cArgs[i]);
+
             argList[i] = arg;
         }
 
         var args = new DreamProcArguments(argList);
-
         var result = proc.Spawn(src, args);
 
         *cResult = ValueToByondApi(result);
+        if (tempRef)
+            AddTemporaryReference(result);
         return 1;
     }
 
@@ -550,13 +570,13 @@ public static unsafe partial class ByondApi {
         if (cSrc == null || cArgs == null || cResult == null)
             return SetLastError("cSrc, cArgs, or cResult argument was a null pointer");
 
-        return RunOnMainThread(() => {
+        return RunOnMainThread(calledFromMain => {
             try {
                 string? str = Marshal.PtrToStringUTF8((nint)cName);
                 if (str == null)
                     return SetLastError("cName argument was a null pointer");
 
-                DreamValue src = ValueFromDreamApi(*cSrc);
+                using var src = ValueFromDreamApi(*cSrc);
                 if (!src.TryGetValueAsDreamObject(out var srcObj))
                     return SetLastError("cSrc argument was not a DreamObject");
                 if (srcObj == null)
@@ -564,7 +584,7 @@ public static unsafe partial class ByondApi {
                 if (!srcObj.TryGetProc(str, out var proc))
                     return SetLastError($"cSrc argument does not own a proc named \"{str}\"");
 
-                return CallProcShared(srcObj, proc, cArgs, arg_count, cResult);
+                return CallProcShared(srcObj, proc, cArgs, arg_count, cResult, !calledFromMain);
             } catch (Exception e) {
                 return SetLastError(e.Message);
             }
@@ -588,13 +608,13 @@ public static unsafe partial class ByondApi {
         if (cSrc == null || cArgs == null || cResult == null)
             return SetLastError("cSrc, cArgs, or cResult argument was a null pointer");
 
-        return RunOnMainThread(() => {
+        return RunOnMainThread(calledFromMain => {
             try {
-                DreamValue procNameVal = _refManager!.LocateRef((uint)RefType.String | name);
+                using var procNameVal = _refManager!.LocateRef((uint)RefType.String | name);
                 if (!procNameVal.TryGetValueAsString(out var procName))
                     return SetLastError("name argument was an invalid string ID");
 
-                DreamValue src = ValueFromDreamApi(*cSrc);
+                using var src = ValueFromDreamApi(*cSrc);
                 if (!src.TryGetValueAsDreamObject(out var srcObj))
                     return SetLastError("cSrc argument was not a DreamObject");
                 if (srcObj == null)
@@ -602,7 +622,7 @@ public static unsafe partial class ByondApi {
                 if (!srcObj.TryGetProc(procName, out var proc))
                     return SetLastError($"cSrc does not own a proc named \"{procName}\"");
 
-                return CallProcShared(srcObj, proc, cArgs, arg_count, cResult);
+                return CallProcShared(srcObj, proc, cArgs, arg_count, cResult, !calledFromMain);
             } catch (Exception e) {
                 return SetLastError(e.Message);
             }
@@ -624,7 +644,7 @@ public static unsafe partial class ByondApi {
         if (cArgs == null || cResult == null)
             return SetLastError("cArgs or cResult argument was a null pointer");
 
-        return RunOnMainThread<byte>(() => {
+        return RunOnMainThread<byte>(calledFromMain => {
             try {
                 string? str = Marshal.PtrToStringUTF8((nint)cName);
                 if (str == null)
@@ -632,7 +652,7 @@ public static unsafe partial class ByondApi {
                 if (!_dreamManager!.TryGetGlobalProc(str, out var proc))
                     return SetLastError($"no global proc named \"{str}\"");
 
-                CallProcShared(null, proc, cArgs, arg_count, cResult);
+                CallProcShared(null, proc, cArgs, arg_count, cResult, !calledFromMain);
             } catch (Exception e) {
                 return SetLastError(e.Message);
             }
@@ -657,15 +677,15 @@ public static unsafe partial class ByondApi {
         if (cArgs == null || cResult == null)
             return SetLastError("cArgs or cResult argument was a null pointer");
 
-        return RunOnMainThread<byte>(() => {
+        return RunOnMainThread<byte>(calledFromMain => {
             try {
-                DreamValue procNameVal = _refManager!.LocateRef((uint)RefType.String | name);
+                using var procNameVal = _refManager!.LocateRef((uint)RefType.String | name);
                 if (!procNameVal.TryGetValueAsString(out var procName))
                     return SetLastError("name argument was an invalid string ID");
                 if (!_dreamManager!.TryGetGlobalProc(procName, out var proc))
                     return SetLastError($"no global proc named \"{procName}\"");
 
-                CallProcShared(null, proc, cArgs, arg_count, cResult);
+                CallProcShared(null, proc, cArgs, arg_count, cResult, calledFromMain);
             } catch (Exception e) {
                 return SetLastError(e.Message);
             }
@@ -687,10 +707,10 @@ public static unsafe partial class ByondApi {
         if (src == null || buflen == null)
             return SetLastError("src or buflen argument was a null pointer");
 
-        return RunOnMainThread<byte>(() => {
+        return RunOnMainThread<byte>(_ => {
             try {
                 int providedBufLen = (int)*buflen;
-                DreamValue srcValue = ValueFromDreamApi(*src);
+                using var srcValue = ValueFromDreamApi(*src);
                 var str = srcValue.Stringify();
                 var utf8 = Encoding.UTF8.GetBytes(str);
                 int length = utf8.Length;
@@ -726,7 +746,7 @@ public static unsafe partial class ByondApi {
         if (corner1 == null || corner2 == null || cList == null || len == null)
             return SetLastError("corner1, corner2, cList, or len argument was a null pointer");
 
-        return RunOnMainThread<byte>(() => {
+        return RunOnMainThread<byte>(calledFromMain => {
             List<CByondValue> list = new();
             try {
                 var turfs = DreamProcNativeRoot.Block(_objectTree!, _dreamMapManager!,
@@ -735,6 +755,8 @@ public static unsafe partial class ByondApi {
 
                 foreach (var turf in turfs.EnumerateValues()) {
                     list.Add(ValueToByondApi(turf));
+                    if (!calledFromMain)
+                        AddTemporaryReference(turf);
                 }
             } catch (Exception e) {
                 return SetLastError(e.Message);
@@ -766,14 +788,15 @@ public static unsafe partial class ByondApi {
         if (src == null || result == null)
             return SetLastError("src or result argument was a null pointer");
 
-        return RunOnMainThread<byte>(() => {
-            DreamValue srcValue = ValueFromDreamApi(*src);
+        return RunOnMainThread<byte>(_ => {
+            using var srcValue = ValueFromDreamApi(*src);
             try {
                 *result = ValueToByondApi(DreamProcNativeRoot._length(srcValue, true));
-                return 1;
             } catch (Exception e) {
                 return SetLastError(e.Message);
             }
+
+            return 1;
         });
     }
 
@@ -798,11 +821,13 @@ public static unsafe partial class ByondApi {
             return 1;
         }
 
-        return RunOnMainThread<byte>(() => {
+        return RunOnMainThread<byte>(calledFromMain => {
             try {
                 if (_dreamMapManager!.TryGetTurfAt(new Vector2i(xyz->x, xyz->y), xyz->z, out var turf)) {
                     DreamValue val = new(turf);
                     *result = ValueToByondApi(val);
+                    if (!calledFromMain)
+                        AddTemporaryReference(val);
                 } else {
                     *result = ValueToByondApi(DreamValue.Null);
                 }
@@ -829,9 +854,9 @@ public static unsafe partial class ByondApi {
         if (cType == null || cArgs == null || cResult == null)
             return SetLastError("cType, cArgs, or cResult argument was a null pointer");
 
-        return RunOnMainThread<byte>(() => {
+        return RunOnMainThread<byte>(calledFromMain => {
             try {
-                var typeVal = ValueFromDreamApi(*cType);
+                using var typeVal = ValueFromDreamApi(*cType);
                 if (!typeVal.TryGetValueAsType(out var treeEntry)) {
                     if (typeVal.TryGetValueAsString(out var pathString)) {
                         if (!_objectTree!.TryGetTreeEntry(pathString, out treeEntry))
@@ -844,7 +869,8 @@ public static unsafe partial class ByondApi {
                 var objectDef = treeEntry.ObjectDefinition;
                 var argList = new DreamValue[arg_count];
                 for (int i = 0; i < arg_count; i++) {
-                    var arg = ValueFromDreamApi(cArgs[i]);
+                    using var arg = ValueFromDreamApi(cArgs[i]);
+
                     argList[i] = arg;
                 }
 
@@ -865,7 +891,11 @@ public static unsafe partial class ByondApi {
 
                 var newObject = _objectTree.CreateObject(treeEntry);
                 newObject.InitSpawn(args);
-                *cResult = ValueToByondApi(new DreamValue(newObject));
+
+                var newObjectValue = new DreamValue(newObject);
+                *cResult = ValueToByondApi(newObjectValue);
+                if (!calledFromMain)
+                    AddTemporaryReference(newObjectValue);
             } catch (Exception e) {
                 return SetLastError(e.Message);
             }
@@ -888,9 +918,9 @@ public static unsafe partial class ByondApi {
         if (cType == null || cArglist == null || cResult == null)
             return SetLastError("cType, cArglist, or cResult argument was a null pointer");
 
-        return RunOnMainThread<byte>(() => {
+        return RunOnMainThread<byte>(calledFromMain => {
             try {
-                var typeVal = ValueFromDreamApi(*cType);
+                using var typeVal = ValueFromDreamApi(*cType);
                 if (!typeVal.TryGetValueAsType(out var treeEntry)) {
                     if (typeVal.TryGetValueAsString(out var pathString)) {
                         if (!_objectTree!.TryGetTreeEntry(pathString, out treeEntry))
@@ -902,7 +932,7 @@ public static unsafe partial class ByondApi {
 
                 var objectDef = treeEntry.ObjectDefinition;
 
-                var arglistVal = ValueFromDreamApi(*cArglist);
+                using var arglistVal = ValueFromDreamApi(*cArglist);
                 if (!arglistVal.TryGetValueAsIDreamList(out var arglist))
                     return SetLastError("cArglist argument was not a list");
 
@@ -925,7 +955,11 @@ public static unsafe partial class ByondApi {
 
                 var newObject = _objectTree.CreateObject(treeEntry);
                 newObject.InitSpawn(args);
-                *cResult = ValueToByondApi(new DreamValue(newObject));
+
+                var newObjectValue = new DreamValue(newObject);
+                *cResult = ValueToByondApi(newObjectValue);
+                if (!calledFromMain)
+                    AddTemporaryReference(newObjectValue);
             } catch (Exception e) {
                 return SetLastError(e.Message);
             }
@@ -946,14 +980,12 @@ public static unsafe partial class ByondApi {
         if (src == null || result == null)
             return SetLastError("src or result argument was a null pointer");
 
-        return RunOnMainThread<byte>(() => {
-            // TODO
-            // woah that's a lot of refs
-            // i wonder if it's true??
-            *result = 100;
-            // (it's not)
+        return RunOnMainThread<byte>(_ => {
+            using var value = ValueFromDreamApi(*src);
+            if (!value.TryGetValueAsDreamObject<DreamObject>(out var dreamObject))
+                return 0;
 
-            return 1;
+            return (byte)(dreamObject.RefCount - 1); // Don't count the active reference held by this function
         });
     }
 
@@ -971,9 +1003,9 @@ public static unsafe partial class ByondApi {
 
         *xyz = new CByondXYZ();
 
-        return RunOnMainThread<byte>(() => {
+        return RunOnMainThread<byte>(_ => {
             try {
-                var srcVal = ValueFromDreamApi(*src);
+                using var srcVal = ValueFromDreamApi(*src);
                 if (!srcVal.TryGetValueAsDreamObject<DreamObjectAtom>(out var srcObj))
                     return SetLastError("src argument was not an atom");
 
@@ -1028,8 +1060,16 @@ public static unsafe partial class ByondApi {
      */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static void ByondValue_IncRef(CByondValue* src) {
-        //if (src == null) return;
-        //throw new NotImplementedException();
+        if (src == null)
+            return;
+
+        RunOnMainThread(_ => {
+            using var srcValue = ValueFromDreamApi(*src);
+            if (srcValue.TryGetValueAsDreamObject<DreamObject>(out var dreamObject))
+                dreamObject.IncRef();
+
+            return 0;
+        });
     }
 
     /** byondapi.h comment:
@@ -1041,8 +1081,16 @@ public static unsafe partial class ByondApi {
      */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static void ByondValue_DecRef(CByondValue* src) {
-        //if (src == null) return;
-        //throw new NotImplementedException();
+        if (src == null)
+            return;
+
+        RunOnMainThread(_ => {
+            using var srcValue = ValueFromDreamApi(*src);
+            if (srcValue.TryGetValueAsDreamObject<DreamObject>(out var dreamObject))
+                dreamObject.DecRef();
+
+            return 0;
+        });
     }
 
     /** byondapi.h comment:
@@ -1053,8 +1101,12 @@ public static unsafe partial class ByondApi {
      */
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static void ByondValue_DecTempRef(CByondValue* src) {
-        //if (src == null) return;
-        //throw new NotImplementedException();
+        //if (src == null || !OnMainThread())
+        //    return;
+
+        // TODO
+        // Maybe not worth doing?
+        // Newer versions get rid of this, and calling it doesn't result in much different behavior
     }
 
     /** byondapi.h comment:
@@ -1073,8 +1125,8 @@ public static unsafe partial class ByondApi {
         if (src->type == ByondValueType.Null)
             return 1;
 
-        return RunOnMainThread<byte>(() => {
-            var srcValue = ValueFromDreamApi(*src);
+        return RunOnMainThread<byte>(_ => {
+            using var srcValue = ValueFromDreamApi(*src);
 
             if (srcValue == DreamValue.Null) {
                 src->type = 0;

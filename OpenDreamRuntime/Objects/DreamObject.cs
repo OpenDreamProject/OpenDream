@@ -3,6 +3,7 @@ using OpenDreamRuntime.Procs;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using DMCompiler.Bytecode;
+using JetBrains.Annotations;
 using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Rendering;
@@ -21,9 +22,12 @@ public class DreamObject {
     public DreamObjectDefinition ObjectDefinition;
 
     [Access(typeof(DreamObject))]
-    public bool Deleted;
+    public bool Deleting, Deleted;
 
     public readonly uint RefId;
+
+    [Access(typeof(DreamObject))]
+    public int RefCount = 1; // Starts at 1 because the code creating us is considered to hold a ref to us now
 
     public virtual bool ShouldCallNew => true;
 
@@ -99,23 +103,23 @@ public class DreamObject {
         // For subtypes to implement
     }
 
-    protected virtual void HandleDeletion(bool possiblyThreaded) {
-        if (possiblyThreaded) {
-            // DeleteRef is not thread-safe, so pawn this off to the server thread
-            lock (DreamManager.RefDeleteQueue) {
-                DreamManager.RefDeleteQueue.Add(RefId);
+    protected virtual void HandleDeletion() {
+        // Remove the locate()-able reference to this object
+        // Freeing up the slot for later reuse, as well as the .NET hard ref
+        DreamRefManager.DeleteRef(RefId);
+
+        if (Variables != null) {
+            foreach (var varValue in Variables.Values) {
+                varValue.DecRef();
             }
-        } else {
-            // Remove the locate()-able reference to this object
-            // Freeing up the slot for later reuse
-            DreamRefManager.DeleteRef(RefId);
         }
 
         //we release all relevant information, making this a very tiny object
         Tag = null;
         Deleted = true;
         Variables = null;
-        _varsList?.Delete(possiblyThreaded);
+        _varsList?.DecRef();
+        _varsList?.Delete();
         _varsList = null;
 
         ObjectDefinition = null!;
@@ -125,40 +129,39 @@ public class DreamObject {
 #endif
     }
 
-    /// <summary>
-    ///     Enters the current dream object into a global del queue that is guaranteed to run on the DM thread.
-    ///     Use if your deletion handler must be on the DM thread.
-    /// </summary>
-    protected void EnterIntoDelQueue() {
-        DreamManager.DelQueue.Add(this);
+    public void IncRef() {
+        if (Deleted || Deleting)
+            return;
+
+        RefCount++;
+    }
+
+    public void DecRef() {
+        if (Deleted || Deleting)
+            return;
+
+        RefCount--;
+        if (RefCount == 0)
+            Delete();
     }
 
     /// <summary>
-    ///     Del() the object, cleaning up its variables and refs to minimize size until the .NET GC collects it.
+    ///     Del() the object, cleaning up its variables and refs to allow the .NET GC to collect it.
     /// </summary>
-    /// <param name="possiblyThreaded">If true, Delete() will be defensive and assume it may have been called from another thread by .NET</param>
-    public void Delete(bool possiblyThreaded = false) {
-        if (Deleted)
+    public void Delete() {
+        if (Deleting || Deleted)
             return;
 
+        Deleting = true;
         if (TryGetProc("Del", out var delProc)) {
-            // SAFETY: See associated comment in Datum.dm. This relies on the invariant that this proc is in a
-            //         thread-safe subset of DM (if such a thing exists) or empty. Currently, it is empty.
+            // Don't bother running Del() if there's no code in it
             var datumBaseProc = delProc is DMProc {Bytecode.Length: 0};
-            if (possiblyThreaded && !datumBaseProc) {
-                EnterIntoDelQueue();
-                return; //Whoops, cannot thread.
-            } else if (!datumBaseProc) {
-                DreamThread.Run(delProc, this, null);
+            if (!datumBaseProc) {
+                DreamThread.Run(delProc, this, null).Dispose();
             }
         }
 
-        HandleDeletion(possiblyThreaded);
-    }
-
-    ~DreamObject() {
-        // Softdel, possibly.
-        Delete(true);
+        HandleDeletion();
     }
 
     public bool IsSubtypeOf(TreeEntry ancestor) {
@@ -182,10 +185,11 @@ public class DreamObject {
         return ObjectDefinition.HasVariable(name);
     }
 
+    [MustDisposeResource]
     public DreamValue GetVariable(string name) {
         DebugTools.Assert(!Deleted, "Cannot call GetVariable() on a deleted object");
 
-        if (TryGetVariable(name, out DreamValue variableValue)) {
+        if (TryGetVariable(name, out var variableValue)) {
             return variableValue;
         } else {
             throw new KeyNotFoundException($"Variable {name} doesn't exist");
@@ -198,7 +202,7 @@ public class DreamObject {
         return ObjectDefinition.Variables.Keys;
     }
 
-    protected virtual bool TryGetVar(string varName, out DreamValue value) {
+    protected virtual bool TryGetVar(string varName, [MustDisposeResource] out DreamValue value) {
         switch (varName) {
             case "type":
                 value = new(ObjectDefinition.TreeEntry);
@@ -212,15 +216,19 @@ public class DreamObject {
                 return true;
             case "vars":
                 _varsList ??= new DreamListVars(ObjectTree.List.ObjectDefinition, this);
+                _varsList.IncRef();
                 value = new(_varsList);
                 return true;
             case "tag":
                 value = (Tag != null) ? new(Tag) : DreamValue.Null;
                 return true;
             default:
-                return (Variables?.TryGetValue(varName, out value) is true) ||
-                       (ObjectDefinition.Variables.TryGetValue(varName, out value)) ||
-                       (ObjectDefinition.GlobalVariables.TryGetValue(varName, out var globalIndex)) && ObjectDefinition.DreamManager.Globals.TryGetValue(globalIndex, out value);
+                var success = (Variables?.TryGetValue(varName, out value) is true) ||
+                               (ObjectDefinition.Variables.TryGetValue(varName, out value)) ||
+                               (ObjectDefinition.GlobalVariables.TryGetValue(varName, out var globalIndex)) && ObjectDefinition.DreamManager.Globals.TryGetValue(globalIndex, out value);
+
+                value.IncRef();
+                return success;
         }
     }
 
@@ -246,7 +254,7 @@ public class DreamObject {
         }
     }
 
-    public bool TryGetVariable(string name, out DreamValue variableValue) {
+    public bool TryGetVariable(string name, [MustDisposeResource] out DreamValue variableValue) {
         DebugTools.Assert(!Deleted, "Cannot call TryGetVariable() on a deleted object");
 
         return TryGetVar(name, out variableValue);
@@ -264,12 +272,14 @@ public class DreamObject {
     /// <summary>
     /// Directly sets a variable's value, bypassing any special behavior
     /// </summary>
-    /// <returns>The OLD variable value</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SetVariableValue(string name, DreamValue value) {
         DebugTools.Assert(!Deleted, "Cannot call SetVariableValue() on a deleted object");
 
         Variables ??= new(4);
+        value.IncRef();
+        if (Variables.TryGetValue(name, out var oldValue))
+            oldValue.DecRef();
         Variables[name] = value;
     }
 
@@ -289,10 +299,11 @@ public class DreamObject {
         return ObjectDefinition.TryGetProc(procName, out proc);
     }
 
-    public void InitSpawn(DreamProcArguments creationArguments) {
+    public void InitSpawn([HandlesResourceDisposal] DreamProcArguments creationArguments) {
         if (ObjectDefinition.NoConstructors) {
             // Skip thread spinup.
             Initialize(creationArguments);
+            creationArguments.Dispose();
             return;
         }
 
@@ -300,10 +311,10 @@ public class DreamObject {
         var procState = InitProc(thread, null, creationArguments);
 
         thread.PushProcState(procState);
-        thread.Resume();
+        thread.Resume().Dispose();
     }
 
-    public ProcState InitProc(DreamThread thread, DreamObject? usr, DreamProcArguments arguments) {
+    public ProcState InitProc(DreamThread thread, DreamObject? usr, [HandlesResourceDisposal] DreamProcArguments arguments) {
         DebugTools.Assert(!Deleted, "Cannot call InitProc() on a deleted object");
 
         if (!InitDreamObjectState.Pool.TryPop(out var state)) {
@@ -314,6 +325,7 @@ public class DreamObject {
         return state;
     }
 
+    [MustDisposeResource]
     public DreamValue SpawnProc(string procName, DreamObject? usr = null, params DreamValue[] arguments) {
         DebugTools.Assert(!Deleted, "Cannot call SpawnProc() on a deleted object");
 
@@ -403,8 +415,11 @@ public class DreamObject {
         if (this is DreamObjectAtom) {
             if (AtomManager.TryGetAppearance(this, out var appearance))
                 name = appearance.Name;
-        } else if (TryGetVariable("name", out DreamValue nameVar) && nameVar.TryGetValueAsString(out var nameVarStr)) {
-            name = nameVarStr;
+        } else if (TryGetVariable("name", out DreamValue nameVar)) {
+            if (nameVar.TryGetValueAsString(out var nameVarStr))
+                name = nameVarStr;
+
+            nameVar.Dispose();
         }
 
         return name;
@@ -415,6 +430,7 @@ public class DreamObject {
     #region Operators
 
     // +
+    [MustDisposeResource]
     public virtual DreamValue OperatorAdd(DreamValue b, DMProcState state) {
         if (TryExecuteOperatorOverload(state, "operator+", new DreamProcArguments(b), out var result))
             return result;
@@ -423,6 +439,7 @@ public class DreamObject {
     }
 
     // -
+    [MustDisposeResource]
     public virtual DreamValue OperatorSubtract(DreamValue b, DMProcState state) {
         if (TryExecuteOperatorOverload(state, "operator-", new DreamProcArguments(b), out var result))
             return result;
@@ -431,6 +448,7 @@ public class DreamObject {
     }
 
     // *
+    [MustDisposeResource]
     public virtual DreamValue OperatorMultiply(DreamValue b, DMProcState state) {
         if (TryExecuteOperatorOverload(state, "operator*", new DreamProcArguments(b), out var result))
             return result;
@@ -439,18 +457,18 @@ public class DreamObject {
     }
 
     // *=
+    [MustDisposeResource]
     public virtual DreamValue OperatorMultiplyRef(DreamValue b, DMProcState state) {
-        var args = new DreamProcArguments(b);
-        if (TryExecuteOperatorOverload(state, "operator*=", args, out var result))
+        if (TryExecuteOperatorOverload(state, "operator*=", new(b), out var result))
             return result;
-
-        if (TryExecuteOperatorOverload(state, "operator*", args, out result))
+        if (TryExecuteOperatorOverload(state, "operator*", new(b), out result))
             return result;
 
         throw new InvalidOperationException($"Multiplication cannot be done between {this} and {b}");
     }
 
     // /
+    [MustDisposeResource]
     public virtual DreamValue OperatorDivide(DreamValue b, DMProcState state) {
         if (TryExecuteOperatorOverload(state, "operator/", new DreamProcArguments(b), out var result))
             return result;
@@ -459,6 +477,7 @@ public class DreamObject {
     }
 
     // /=
+    [MustDisposeResource]
     public virtual DreamValue OperatorDivideRef(DreamValue b, DMProcState state) {
         var args = new DreamProcArguments(b);
         if (TryExecuteOperatorOverload(state, "operator/=", args, out var result))
@@ -471,6 +490,7 @@ public class DreamObject {
     }
 
     // |
+    [MustDisposeResource]
     public virtual DreamValue OperatorOr(DreamValue b, DMProcState state) {
         if (TryExecuteOperatorOverload(state, "operator|", new DreamProcArguments(b), out var result))
             return result;
@@ -479,26 +499,31 @@ public class DreamObject {
     }
 
     // +=
+    [MustDisposeResource]
     public virtual DreamValue OperatorAppend(DreamValue b) {
         throw new InvalidOperationException($"Cannot append {b} to {this}");
     }
 
     // -=
+    [MustDisposeResource]
     public virtual DreamValue OperatorRemove(DreamValue b) {
         throw new InvalidOperationException($"Cannot remove {b} from {this}");
     }
 
     // |=
+    [MustDisposeResource]
     public virtual DreamValue OperatorCombine(DreamValue b) {
         throw new InvalidOperationException($"Cannot combine {this} and {b}");
     }
 
     // &=
+    [MustDisposeResource]
     public virtual DreamValue OperatorMask(DreamValue b) {
         throw new InvalidOperationException($"Cannot mask {this} and {b}");
     }
 
     // ~=
+    [MustDisposeResource]
     public virtual DreamValue OperatorEquivalent(DreamValue b) {
         if (!b.TryGetValueAsDreamObject(out var bObject))
             return DreamValue.False;
@@ -512,6 +537,7 @@ public class DreamObject {
     }
 
     // []
+    [MustDisposeResource]
     public virtual DreamValue OperatorIndex(DreamValue index, DMProcState state) {
         if (TryExecuteOperatorOverload(state, "operator[]", new DreamProcArguments(index), out var result))
             return result;
@@ -521,8 +547,10 @@ public class DreamObject {
 
     // []=
     public virtual void OperatorIndexAssign(DreamValue index, DMProcState state, DreamValue value) {
-        if (TryExecuteOperatorOverload(state, "operator[]=", new DreamProcArguments(index, value), out _))
+        if (TryExecuteOperatorOverload(state, "operator[]=", new DreamProcArguments(index, value), out var result)) {
+            result.Dispose();
             return;
+        }
 
         throw new InvalidOperationException($"Cannot assign {value} to index {index} of {this}");
     }
@@ -532,8 +560,8 @@ public class DreamObject {
     private bool TryExecuteOperatorOverload(
         DMProcState parentState,
         string operatorName,
-        DreamProcArguments arguments,
-        out DreamValue procResult) {
+        [HandlesResourceDisposal] DreamProcArguments arguments,
+        [MustDisposeResource] out DreamValue procResult) {
         if (!TryGetProc(operatorName, out var proc)) {
             procResult = default;
             return false;
@@ -570,5 +598,9 @@ public class DreamObject {
         }
 
         return ObjectDefinition.Type;
+    }
+
+    public override int GetHashCode() {
+        return (int)RefId;
     }
 }

@@ -1,4 +1,5 @@
 using System.Linq;
+using JetBrains.Annotations;
 using OpenDreamRuntime.Procs;
 
 namespace OpenDreamRuntime.Objects.Types;
@@ -15,14 +16,31 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         }
     }
 
-    public void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
-        _values[key] = value;
+    protected override void HandleDeletion() {
+        foreach (var pair in _values) {
+            pair.Key.DecRef();
+            pair.Value.DecRef();
+        }
+
+        base.HandleDeletion();
     }
 
+    public void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
+        if (_values.TryGetValue(key, out var oldValue))
+            oldValue.DecRef();
+        else
+            key.IncRef();
+
+        _values[key] = value;
+        value.IncRef();
+    }
+
+    [MustDisposeResource]
     public DreamValue GetValue(DreamValue key) {
         if (!_values.TryGetValue(key, out var value))
             return DreamValue.Null;
 
+        value.IncRef();
         return value;
     }
 
@@ -51,6 +69,11 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
             throw new Exception($"Cut() was called with non-default end value of {end}.");
         }
 
+        foreach (var value in _values) {
+            value.Key.DecRef();
+            value.Value.DecRef();
+        }
+
         _values.Clear();
     }
 
@@ -64,6 +87,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
 
     public void RemoveValue(DreamValue value) {
         _values.Remove(value);
+        value.DecRef();
     }
 
     public IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateAssocValues() {
@@ -87,6 +111,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         }
 
         _values[value] = DreamValue.Null;
+        value.IncRef();
     }
 
     public IDreamList CreateCopy(int start = 1, int end = 0) {
@@ -94,7 +119,12 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
             throw new Exception("list index out of bounds");
         }
 
-        Dictionary<DreamValue, DreamValue> copyValues = new(_values);
+        var copyValues = new Dictionary<DreamValue, DreamValue>(_values);
+        foreach (var value in _values) {
+            value.Key.IncRef();
+            value.Value.IncRef();
+        }
+
         return new DreamAssocList(ObjectDefinition, copyValues);
     }
 
@@ -118,5 +148,4 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     public bool ContainsValue(DreamValue value) {
         return _values.ContainsKey(value);
     }
-
 }

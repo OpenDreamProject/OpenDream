@@ -26,24 +26,24 @@ using Robust.Shared.Map;
 
 namespace OpenDreamClient.Interface;
 
-internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
+internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
     private static readonly ResPath DefaultInterfaceFile = new("/OpenDream/DefaultInterface.dmf");
 
-    [Dependency] private readonly IClyde _clyde = default!;
-    [Dependency] private readonly IBaseClient _client = default!;
-    [Dependency] private readonly IEyeManager _eyeManager = default!;
-    [Dependency] private readonly IClientNetManager _netManager = default!;
-    [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
-    [Dependency] private readonly IResourceManager _resourceManager = default!;
-    [Dependency] private readonly IFileDialogManager _fileDialogManager = default!;
-    [Dependency] private readonly ISerializationManager _serializationManager = default!;
-    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-    [Dependency] private readonly IInputManager _inputManager = default!;
-    [Dependency] private readonly IUserInterfaceManager _uiManager = default!;
-    [Dependency] private readonly IRobustRandom _random = default!;
-    [Dependency] private readonly ITimerManager _timerManager = default!;
-    [Dependency] private readonly IUriOpener _uriOpener = default!;
-    [Dependency] private readonly IGameController _gameController = default!;
+    [Dependency] private IClyde _clyde = default!;
+    [Dependency] private IBaseClient _client = default!;
+    [Dependency] private IEyeManager _eyeManager = default!;
+    [Dependency] private IClientNetManager _netManager = default!;
+    [Dependency] private IDreamResourceManager _dreamResource = default!;
+    [Dependency] private IResourceManager _resourceManager = default!;
+    [Dependency] private IFileDialogManager _fileDialogManager = default!;
+    [Dependency] private ISerializationManager _serializationManager = default!;
+    [Dependency] private IEntitySystemManager _entitySystemManager = default!;
+    [Dependency] private IInputManager _inputManager = default!;
+    [Dependency] private IUserInterfaceManager _uiManager = default!;
+    [Dependency] private IRobustRandom _random = default!;
+    [Dependency] private ITimerManager _timerManager = default!;
+    [Dependency] private IUriOpener _uriOpener = default!;
+    [Dependency] private IGameController _gameController = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.interface");
 

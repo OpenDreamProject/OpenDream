@@ -97,7 +97,7 @@ internal sealed class ControlBar : InterfaceControl {
             var valueReplaced =
                 BarDescriptor.OnChange.Value.Replace("[[*]]", range.Value.ToString(CultureInfo.InvariantCulture));
 
-            _interfaceManager.RunCommand(valueReplaced);
+            InterfaceManager.RunCommand(valueReplaced);
         }
     }
 

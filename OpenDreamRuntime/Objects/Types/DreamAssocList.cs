@@ -182,38 +182,11 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     }
 
     public override DreamValue OperatorOr(DreamValue b, DMProcState state) {
-        var listCopy = (DreamAssocList)CreateCopy();
-
-        if (b.TryGetValueAsIDreamList(out var bList)) {
-            foreach (var pair in bList.EnumerateAssocValues()) {
-                if (listCopy.ContainsKey(pair.Key)) {
-                    continue;
-                }
-
-                listCopy.SetValue(pair.Key, pair.Value);
-            }
-        } else {
-            listCopy.AddValue(b);
-        }
-
-        return new DreamValue(listCopy);
+        return OperatorAdd(b, state);
     }
 
     public override DreamValue OperatorCombine(DreamValue b) {
-        if (b.TryGetValueAsIDreamList(out var bList)) {
-            foreach (var pair in bList.EnumerateAssocValues()) {
-                if (ContainsKey(pair.Key)) {
-                    continue;
-                }
-
-                SetValue(pair.Key, pair.Value);
-            }
-        } else {
-            AddValue(b);
-        }
-
-        IncRef();
-        return new(this);
+        return OperatorAppend(b);
     }
 
     public override DreamValue OperatorAppend(DreamValue b) {

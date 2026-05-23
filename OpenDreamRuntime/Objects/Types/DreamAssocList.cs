@@ -168,6 +168,10 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     }
 
     public override DreamValue OperatorSubtract(DreamValue b, DMProcState state) {
+        if (Equals(b)) {
+            return new DreamValue(new DreamAssocList(ObjectDefinition, null));
+        }
+
         var listCopy = (DreamAssocList)CreateCopy();
 
         if (b.TryGetValueAsIDreamList(out var bList)) {
@@ -207,7 +211,9 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     }
 
     public override DreamValue OperatorRemove(DreamValue b) {
-        if (b.TryGetValueAsIDreamList(out var bList)) {
+        if (Equals(b)) {
+            Cut();
+        } else if (b.TryGetValueAsIDreamList(out var bList)) {
             foreach (var value in bList.EnumerateValues()) {
                 RemoveValue(value);
             }
@@ -220,17 +226,21 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     }
 
     public override DreamValue OperatorMask(DreamValue b) {
-        if (b.TryGetValueAsIDreamList(out var bList)) {
-            foreach (var value in EnumerateValues()) {
-                if (!bList.ContainsKey(value)) {
+        if (Equals(b)) {
+            ;
+        } else if (b.TryGetValueAsIDreamList(out var bList)) {
+            foreach (var value in CopyToArray()) {
+                if (!bList.ContainsValue(value)) {
                     RemoveValue(value);
                 }
             }
         } else {
-            foreach (var value in EnumerateValues()) {
-                if (!value.Equals(b)) {
-                    RemoveValue(value);
-                }
+            if (!ContainsKey(b)) {
+                Cut();
+            } else {
+                using var item = GetValue(b);
+                Cut();
+                SetValue(b, item);
             }
         }
 
@@ -239,10 +249,17 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     }
 
     public override DreamValue OperatorEquivalent(DreamValue b) {
-        if (!b.TryGetValueAsIDreamList(out var secondList))
+        if (!b.TryGetValueAsIDreamList(out var secondList)) {
             return DreamValue.False;
-        if (GetLength() != secondList.GetLength())
+        }
+
+        if (Equals(secondList)) {
+            return DreamValue.True;
+        }
+
+        if (GetLength() != secondList.GetLength()) {
             return DreamValue.False;
+        }
 
         foreach (var pair in secondList.EnumerateAssocValues()) {
             if (!ContainsKey(pair.Key)) {

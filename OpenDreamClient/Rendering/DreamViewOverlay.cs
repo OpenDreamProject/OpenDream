@@ -153,7 +153,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
             _rendererMetaDataRental.Push(_rendererMetaDataToReturn.Pop());
     }
 
-    private void DrawAll(OverlayDrawArgs args, EntityUid mob, Vector2i viewportSize) {;
+    private void DrawAll(OverlayDrawArgs args, EntityUid mob, Vector2i viewportSize) {
         DreamMobSightComponent? eyeSight, mobSight;
         Box2 worldAABB = args.WorldAABB;
         sbyte seeVis;

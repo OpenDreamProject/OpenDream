@@ -40,6 +40,7 @@ public sealed class MsgNotifyMobEyeUpdate : NetMessage {
             serializer.SerializeDirect(memoryStream, EyeRef.Value);
             buffer.WriteVariableInt32((int)memoryStream.Length);
         }
+
         buffer.Write(memoryStream.AsSpan());
     }
 }

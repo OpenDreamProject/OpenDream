@@ -147,10 +147,12 @@ internal sealed class DMProc {
     private int AllocLocalVariable(string name) {
         _localVariableNames.Add(name);
         WriteLocalVariable(name);
+
         int variableId = _localVariableIdCounter++;
         if(variableId > _localVariableHighestId) {
             _localVariableHighestId = variableId;
         }
+
         return variableId;
     }
 

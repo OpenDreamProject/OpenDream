@@ -45,6 +45,7 @@ public class DMCompiler {
     }
 
     public bool Compile(DMCompilerSettings settings) => Compile(settings, out _);
+
     public bool Compile(DMCompilerSettings settings, out DreamCompiledJson? compiledDream) {
         if (_compileStartTime != default)
             throw new Exception("Create a new DMCompiler to compile again");

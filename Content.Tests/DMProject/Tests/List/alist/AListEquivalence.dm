@@ -5,7 +5,7 @@
 	var/list/L = list("a", "b", "c")
 	var/list/L2 = list("a" = 1, "b" = 2, "c" = 3)
 	var/list/L3 = list("a", "b", "c", "d")
-	var/list/L3 = list("a", "b", "d")
+	var/list/L4 = list("a", "b", "d")
 	
 	
 	ASSERT(AL ~= AL)

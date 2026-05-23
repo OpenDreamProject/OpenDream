@@ -3,7 +3,8 @@ using OpenDreamShared.Dream;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Network;
 using Robust.Shared.Serialization;
-using static OpenDreamShared.Dream.ClientObjectReference;
+using Robust.Shared.Utility;
+using System.IO;
 
 namespace OpenDreamShared.Network.Messages;
 
@@ -13,43 +14,32 @@ public sealed class MsgNotifyMobEyeUpdate : NetMessage {
 
     public NetEntity MobNetEntity;
 
-    // Type = Client -> null
-    public ClientObjectReference EyeRef;
+    public ClientObjectReference? EyeRef;
 
     public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {
         MobNetEntity = new(buffer.ReadInt32());
 
-        RefType eyeType = (RefType)buffer.ReadInt32();
-        switch (eyeType) {
-            case RefType.Entity:
-                EyeRef = new(new NetEntity(buffer.ReadInt32()));
-                break;
-            case RefType.Turf:
-                int x = buffer.ReadInt32();
-                int y = buffer.ReadInt32();
-                int z = buffer.ReadInt32();
-                EyeRef = new(new(x, y), z);
-                break;
-            default:
-                // null eye
-                EyeRef = new();
-                break;
+        var length = buffer.ReadVariableInt32();
+        if (length == 0) {
+            EyeRef = null;
+        } else {
+            var memoryStream = new MemoryStream(length);
+            buffer.ReadAlignedMemory(memoryStream, length);
+            serializer.DeserializeDirect<ClientObjectReference>(memoryStream, out var res);
+            EyeRef = res;
         }
     }
 
     public override void WriteToBuffer(NetOutgoingMessage buffer, IRobustSerializer serializer) {
         buffer.Write(MobNetEntity.Id);
 
-        buffer.Write((int)EyeRef.Type);
-        switch (EyeRef.Type) {
-            case RefType.Entity:
-                buffer.Write(EyeRef.Entity.Id);
-                break;
-            case RefType.Turf:
-                buffer.Write(EyeRef.TurfX);
-                buffer.Write(EyeRef.TurfY);
-                buffer.Write(EyeRef.TurfZ);
-                break;
+        var memoryStream = new MemoryStream();
+        if (EyeRef == null) {
+            buffer.WriteVariableInt32(0);
+        } else {
+            serializer.SerializeDirect(memoryStream, EyeRef.Value);
+            buffer.WriteVariableInt32((int)memoryStream.Length);
         }
+        buffer.Write(memoryStream.AsSpan());
     }
 }

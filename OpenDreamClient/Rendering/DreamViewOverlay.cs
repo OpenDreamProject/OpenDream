@@ -136,7 +136,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
         try {
             var viewportSize = (Vector2i)(args.Viewport.Size / args.Viewport.RenderScale);
 
-            DrawAll(args, mob, eyeRef, viewportSize);
+            DrawAll(args, mob, viewportSize);
         } catch (Exception e) {
             _sawmill.Error($"Error occurred while rendering frame. Error details:\n{e.Message}\n{e.StackTrace}");
         }
@@ -153,36 +153,29 @@ internal sealed partial class DreamViewOverlay : Overlay {
             _rendererMetaDataRental.Push(_rendererMetaDataToReturn.Pop());
     }
 
-    private void DrawAll(OverlayDrawArgs args, EntityUid mob, ClientObjectReference eyeRef, Vector2i viewportSize) {
-        MapCoordinates eyeCoords;
+    private void DrawAll(OverlayDrawArgs args, EntityUid mob, Vector2i viewportSize) {;
         DreamMobSightComponent? eyeSight, mobSight;
         Box2 worldAABB = args.WorldAABB;
         sbyte seeVis;
 
         EntitiesInView.Clear();
-        
-        switch (eyeRef.Type) {
-            default:
-                _mobSightQuery.TryGetComponent(mob, out mobSight);
-                seeVis = mobSight?.SeeInvisibility ?? 127;
-                DrawNullEyeSprites(args, viewportSize, seeVis);
-                return;
-            case ClientObjectReference.RefType.Turf:
-                eyeCoords = new(new(eyeRef.TurfX, eyeRef.TurfY), new(eyeRef.TurfZ));
-                _mobSightQuery.TryGetComponent(mob, out eyeSight);
-                break;
-            case ClientObjectReference.RefType.Entity:
-                var eyeUid = _entityManager.GetEntity(eyeRef.Entity);
-                if (!_xformQuery.TryGetComponent(eyeUid, out var eyeTransform))
-                    return;
-                eyeCoords = _transformSystem.GetMapCoordinates(eyeUid, eyeTransform);
-                _mobSightQuery.TryGetComponent(eyeUid, out eyeSight);
-                break;
+
+        var eye = args.Viewport.Eye as DreamClientEye;
+        if (eye == null || eye.IsNullEye) {
+            _mobSightQuery.TryGetComponent(mob, out mobSight);
+            seeVis = mobSight?.SeeInvisibility ?? 127;
+            DrawNullEyeSprites(args, viewportSize, seeVis);
+            return;
         }
 
-        MapId mapId = eyeCoords.MapId;
+        if (!eye.TryGetEyeCoords(out MapCoordinates? eyeCoords))
+            return;
 
-        if (!_mapManager.TryFindGridAt(eyeCoords, out var gridUid, out var grid))
+        eyeSight = eye.GetSight(mob);
+
+        MapId mapId = eyeCoords.Value.MapId;
+
+        if (!_mapManager.TryFindGridAt(eyeCoords.Value, out var gridUid, out var grid))
             return;
 
         _mobSightQuery.TryGetComponent(mob, out mobSight);
@@ -197,7 +190,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
             _lookupSystem.GetEntitiesIntersecting(mapId, worldAABB.Scale(1.2f), EntitiesInView, MapLookupFlags);
         }
 
-        var eyeTile = _mapSystem.GetTileRef(gridUid, grid, eyeCoords);
+        var eyeTile = _mapSystem.GetTileRef(gridUid, grid, eyeCoords.Value);
         var tiles = CalculateTileVisibility(gridUid, grid, eyeTile, seeVis);
 
         RefreshRenderTargets(args.WorldHandle, viewportSize);

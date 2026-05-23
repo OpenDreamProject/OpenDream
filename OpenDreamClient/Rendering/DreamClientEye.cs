@@ -1,14 +1,19 @@
 ﻿using OpenDreamShared.Dream;
+using OpenDreamShared.Rendering;
 using Robust.Client.GameObjects;
 using Robust.Shared.Graphics;
 using Robust.Shared.Map;
+using System.Diagnostics.CodeAnalysis;
 
 namespace OpenDreamClient.Rendering;
 
-public sealed class DreamClientEye: IEye {
+public sealed class DreamClientEye : IEye {
     private readonly ClientObjectReference _eyeRef;
     private readonly IEntityManager _entityManager;
     private readonly TransformSystem _transformSystem;
+
+    private readonly EntityQuery<TransformComponent> _xformQuery;
+    private readonly EntityQuery<DreamMobSightComponent> _mobSightQuery;
 
     public DreamClientEye(IEye baseEye, ClientObjectReference eyeRef, IEntityManager entityManager, TransformSystem transformSystem) {
         Rotation = baseEye.Rotation;
@@ -19,6 +24,9 @@ public sealed class DreamClientEye: IEye {
         _eyeRef = eyeRef;
         _entityManager = entityManager;
         _transformSystem = transformSystem;
+
+        _xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
+        _mobSightQuery = _entityManager.GetEntityQuery<DreamMobSightComponent>();
     }
 
     [ViewVariables(VVAccess.ReadOnly)]
@@ -97,5 +105,41 @@ public sealed class DreamClientEye: IEye {
     public Vector2 Scale {
         get => _scale;
         set => _scale = value;
+    }
+
+    public bool IsNullEye => _eyeRef.Type == ClientObjectReference.RefType.Client;
+
+    public bool TryGetEyeCoords([NotNullWhen(true)] out MapCoordinates? coords) {
+        switch (_eyeRef.Type) {
+            default:
+                coords = null;
+                return false;
+            case ClientObjectReference.RefType.Turf:
+                coords = new(new(_eyeRef.TurfX, _eyeRef.TurfY), new(_eyeRef.TurfZ));
+                return true;
+            case ClientObjectReference.RefType.Entity:
+                var eyeUid = _entityManager.GetEntity(_eyeRef.Entity);
+                if (!_xformQuery.TryGetComponent(eyeUid, out var eyeTransform)) {
+                    coords = null;
+                    return false;
+                }
+                coords = _transformSystem.GetMapCoordinates(eyeUid, eyeTransform);
+                return true;
+        }
+    }
+
+    public DreamMobSightComponent? GetSight(EntityUid mob) {
+        DreamMobSightComponent? res;
+        switch (_eyeRef.Type) {
+            default:
+                return null;
+            case ClientObjectReference.RefType.Turf:
+                _mobSightQuery.TryGetComponent(mob, out res);
+                return res;
+            case ClientObjectReference.RefType.Entity:
+                var eyeUid = _entityManager.GetEntity(_eyeRef.Entity);
+                _mobSightQuery.TryGetComponent(eyeUid, out res);
+                return res;
+        }
     }
 }

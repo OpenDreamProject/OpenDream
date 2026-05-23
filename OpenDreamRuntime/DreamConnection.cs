@@ -582,10 +582,10 @@ public sealed partial class DreamConnection {
 
     private void UpdateMobEye() {
         var mobUid = Mob?.Entity ?? EntityUid.Invalid;
-        ClientObjectReference eyeRef;
+        ClientObjectReference? eyeRef;
         switch (Eye) {
             case null:
-                eyeRef = new();
+                eyeRef = null;
                 break;
             default:
                 eyeRef = new(_entityManager.GetNetEntity(mobUid));

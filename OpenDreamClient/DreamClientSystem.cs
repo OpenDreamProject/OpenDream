@@ -60,7 +60,7 @@ internal sealed partial class DreamClientSystem : EntitySystem {
     public void RxNotifyMobEyeUpdate(MsgNotifyMobEyeUpdate msg) {
         _mobNet = msg.MobNetEntity;
 
-        var incomingEyeRef = msg.EyeRef;
+        ClientObjectReference incomingEyeRef = msg.EyeRef.GetValueOrDefault(new());
 
         if (incomingEyeRef.Type == ClientObjectReference.RefType.Entity && !incomingEyeRef.Entity.IsValid()) {
             EyeRef = new(msg.MobNetEntity);

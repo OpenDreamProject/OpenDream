@@ -17,7 +17,8 @@
 	ASSERT("c" in AL)
 	ASSERT(length(AL) == 2)
 	
-	AL2 -= AL2
+	var/holder = AL2
+	AL2 -= holder
 	ASSERT(!("a" in AL2))
 	ASSERT(!("b" in AL2))
 	ASSERT(!("c" in AL2))

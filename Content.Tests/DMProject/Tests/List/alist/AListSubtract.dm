@@ -18,7 +18,8 @@
 	ASSERT("c" in holder)
 	ASSERT(length(holder) == 2)
 	
-	holder = AL2 - AL2
+	holder = AL2
+	holder = holder - AL2
 	ASSERT(!("a" in holder))
 	ASSERT(!("b" in holder))
 	ASSERT(!("c" in holder))

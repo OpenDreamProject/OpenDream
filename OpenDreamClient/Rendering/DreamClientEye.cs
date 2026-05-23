@@ -123,6 +123,7 @@ public sealed class DreamClientEye : IEye {
                     coords = null;
                     return false;
                 }
+
                 coords = _transformSystem.GetMapCoordinates(eyeUid, eyeTransform);
                 return true;
         }

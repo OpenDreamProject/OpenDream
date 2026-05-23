@@ -44,7 +44,8 @@ public class DMCompiler {
         _errorConfig = new Dictionary<WarningCode, ErrorLevel>(CompilerEmission.DefaultErrorConfig);
     }
 
-    public bool Compile(DMCompilerSettings settings) {
+    public bool Compile(DMCompilerSettings settings) => Compile(settings, out _);
+    public bool Compile(DMCompilerSettings settings, out DreamCompiledJson? compiledDream) {
         if (_compileStartTime != default)
             throw new Exception("Create a new DMCompiler to compile again");
 
@@ -54,6 +55,7 @@ public class DMCompiler {
         _errorCount = 0;
         _warningCount = 0;
         _compileStartTime = DateTime.Now;
+        compiledDream = null;
 
         //TODO: Only use InvariantCulture where necessary instead of it being the default
         CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
@@ -77,7 +79,8 @@ public class DMCompiler {
             List<DreamMapJson> maps = ConvertMaps(this, preprocessor.IncludedMaps);
 
             if (_errorCount == 0) {
-                var output = SaveJson(maps, preprocessor.IncludedInterface, outputFile);
+                compiledDream = CompileToJson(maps, preprocessor.IncludedInterface, outputFile);
+                var output = SaveJson(compiledDream, outputFile);
 
                 if (_errorCount == 0) {
                     successfulCompile = true;
@@ -291,7 +294,7 @@ public class DMCompiler {
         return maps;
     }
 
-    private string SaveJson(List<DreamMapJson> maps, string? interfaceFile, string outputFile) {
+    private DreamCompiledJson? CompileToJson(List<DreamMapJson> maps, string? interfaceFile, string outputFile) {
         if (!string.IsNullOrWhiteSpace(interfaceFile) &&
                 Path.GetDirectoryName(Path.GetFullPath(outputFile)) is { } interfaceDirectory) {
             interfaceFile = Path.GetRelativePath(interfaceDirectory, interfaceFile);
@@ -353,8 +356,16 @@ public class DMCompiler {
             compiledDream.GlobalProcs = DMObjectTree.GlobalProcs.Values.ToArray();
         }
 
+        if(_errorCount == 0) {
+            return compiledDream;
+        }
+
+        return null;
+    }
+
+    private string SaveJson(DreamCompiledJson? compiledDream, string outputFile) {
         // Successful serialization
-        if (_errorCount == 0) {
+        if (_errorCount == 0 && compiledDream != null) {
             using var outputFileHandle = File.Create(outputFile);
 
             try {

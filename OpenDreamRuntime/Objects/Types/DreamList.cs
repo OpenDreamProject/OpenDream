@@ -1539,8 +1539,8 @@ public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectA
         if (value.TryGetValueAsDreamObject<DreamObjectArea>(out _)) // areas do not contain themselves
             return false;
 
-        var pos = AtomManager.GetAtomPosition(atom);
-        if (!DreamMapManager.TryGetCellAt((pos.X, pos.Y), pos.Z, out var cell))
+        var (x, y, z) = AtomManager.GetAtomPosition(atom);
+        if (!DreamMapManager.TryGetCellAt((x, y), z, out var cell))
             return false;
 
         return cell.Area == area;

@@ -956,10 +956,6 @@ public sealed class DreamOverlaysList(DreamObjectDefinition listDef, DreamObject
 
         return overlay;
     }
-
-    public override bool ContainsValue(DreamValue value) {
-        return false; // explicitly, you can't do this
-    }
 }
 
 // atom.vis_contents list
@@ -1207,10 +1203,6 @@ public sealed class DreamFilterList(DreamObjectDefinition listDef, DreamObject o
             throw new Exception("Atom has no appearance");
 
         return appearance;
-    }
-
-    public override bool ContainsValue(DreamValue value) {
-        return false;
     }
 }
 

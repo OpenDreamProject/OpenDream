@@ -1546,7 +1546,7 @@ public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectA
             }
 
             dreamAtom.TryGetVariable("loc", out current);
-            current.DecRef(); // TryGetVar auto-increments
+            current.Dispose(); // TryGetVar auto-increments
         }
 
         return false;

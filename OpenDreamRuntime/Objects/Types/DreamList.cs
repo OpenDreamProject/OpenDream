@@ -1390,12 +1390,7 @@ public sealed class WorldContentsList(DreamObjectDefinition listDef, AtomManager
     public override bool ContainsValue(DreamValue value) {
         // world.contents is a list of every atom that exists,
         // so this should be equivalent across the board
-        if(!value.TryGetValueAsDreamObject<DreamObjectAtom>(out var dreamObject))
-            return false;
-
-        if(dreamObject.Deleting || dreamObject.Deleted) // ??
-            return false;
-        return true;
+        return value.TryGetValueAsDreamObject<DreamObjectAtom>(out _);
     }
 }
 
@@ -1538,18 +1533,17 @@ public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectA
     }
 
     public override bool ContainsValue(DreamValue value) {
-        DreamValue current = value;
+        if (!value.TryGetValueAsDreamObject<DreamObjectAtom>(out var atom))
+            return false;
 
-        while(current.TryGetValueAsDreamObject<DreamObjectAtom>(out var dreamAtom)) {
-            if(current.TryGetValueAsDreamObject<DreamObjectTurf>(out var dreamTurf)) {
-                return dreamTurf.Cell.Area == area;
-            }
+        if (value.TryGetValueAsDreamObject<DreamObjectArea>(out _)) // areas do not contain themselves
+            return false;
 
-            dreamAtom.TryGetVariable("loc", out current);
-            current.Dispose(); // TryGetVar auto-increments
-        }
+        var (X, Y, Z) = AtomManager.GetAtomPosition(atom);
+        if (!DreamMapManager.TryGetCellAt((X, Y), Z, out var cell))
+            return false;
 
-        return false;
+        return cell.Area == area;
     }
 }
 

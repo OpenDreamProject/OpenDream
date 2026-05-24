@@ -1052,6 +1052,13 @@ public sealed class DreamVisContentsList : DreamList {
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
         throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
+
+    public override bool ContainsValue(DreamValue value) {
+        if (!value.TryGetValueAsDreamObject<DreamObjectAtom>(out var dreamObject))
+            return false;
+
+        return _visContents.Contains(dreamObject);
+    }
 }
 
 // atom.filters list
@@ -1379,6 +1386,12 @@ public sealed class WorldContentsList(DreamObjectDefinition listDef, AtomManager
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
         throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
+
+    public override bool ContainsValue(DreamValue value) {
+        // world.contents is a list of every atom that exists,
+        // so this should be equivalent across the board
+        return value.TryGetValueAsDreamObject<DreamObjectAtom>(out _);
+    }
 }
 
 // turf.contents list
@@ -1432,6 +1445,13 @@ public sealed class TurfContentsList(DreamObjectDefinition listDef, DreamObjectT
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
         throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
+
+    public override bool ContainsValue(DreamValue value) {
+        if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var dreamObject))
+            return false;
+
+        return dreamObject.Loc == turf;
+    }
 }
 
 // area.contents list
@@ -1454,7 +1474,6 @@ public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectA
 
             if (index <= contentsLength) { // The index references one of the turf's contents
                 var contentsItem = turf.Contents.GetValue(new(index));
-                contentsItem.IncRef();
                 return contentsItem;
             }
 
@@ -1510,6 +1529,20 @@ public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectA
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
         throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
+    }
+
+    public override bool ContainsValue(DreamValue value) {
+        if (!value.TryGetValueAsDreamObject<DreamObjectAtom>(out var atom))
+            return false;
+
+        if (atom is DreamObjectArea) // areas do not contain themselves
+            return false;
+
+        var (x, y, z) = AtomManager.GetAtomPosition(atom);
+        if (!DreamMapManager.TryGetCellAt((x, y), z, out var cell))
+            return false;
+
+        return cell.Area == area;
     }
 }
 

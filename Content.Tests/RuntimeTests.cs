@@ -48,11 +48,7 @@ public sealed class RuntimeTests {
         compiler.Compile(new() {
             Files = [Path.Join(Directory.GetCurrentDirectory(), SpecialTestsDirectory, testPath)]
         }, out DreamCompiledJson? compiledDream);
-
-        if(compiledDream is null) {
-            Assert.Fail("Failed to compile test environnment");
-            return;
-        }
+        Assert.That(compiledDream, Is.Not.Null, "Environment failed to compile");
 
         var tests = compiledDream.Procs
             .Where((proc) => proc.Name.StartsWith(testIdentifier))

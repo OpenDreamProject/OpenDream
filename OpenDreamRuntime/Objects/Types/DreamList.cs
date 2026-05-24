@@ -1427,6 +1427,13 @@ public sealed class TurfContentsList(DreamObjectDefinition listDef, DreamObjectT
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
         throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
+
+    public override bool ContainsValue(DreamValue value) {
+        if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var dreamObject))
+            return false;
+
+        return dreamObject.Loc == turf;
+    }
 }
 
 // area.contents list

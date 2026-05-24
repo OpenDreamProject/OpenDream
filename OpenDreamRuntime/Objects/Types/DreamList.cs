@@ -956,6 +956,10 @@ public sealed class DreamOverlaysList(DreamObjectDefinition listDef, DreamObject
 
         return overlay;
     }
+
+    public override bool ContainsValue(DreamValue value) {
+        return false; // explicitly, you can't do this
+    }
 }
 
 // atom.vis_contents list
@@ -1049,6 +1053,13 @@ public sealed class DreamVisContentsList : DreamList {
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
         throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
+    }
+
+    public override bool ContainsValue(DreamValue value) {
+        if (!value.TryGetValueAsDreamObject<DreamObjectAtom>(out var dreamObject))
+            return false;
+
+        return _visContents.Contains(dreamObject);
     }
 }
 
@@ -1195,6 +1206,10 @@ public sealed class DreamFilterList(DreamObjectDefinition listDef, DreamObject o
             throw new Exception("Atom has no appearance");
 
         return appearance;
+    }
+
+    public override bool ContainsValue(DreamValue value) {
+        return false;
     }
 }
 
@@ -1376,6 +1391,17 @@ public sealed class WorldContentsList(DreamObjectDefinition listDef, AtomManager
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
         throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
+
+    public override bool ContainsValue(DreamValue value) {
+        // world.contents is a list of every atom that exists,
+        // so this should be equivalent across the board
+        if(!value.TryGetValueAsDreamObject<DreamObjectAtom>(out var dreamObject))
+            return false;
+
+        if(dreamObject.Deleting || dreamObject.Deleted) // ??
+            return false;
+        return true;
+    }
 }
 
 // turf.contents list
@@ -1516,6 +1542,21 @@ public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectA
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
         throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
+    }
+
+    public override bool ContainsValue(DreamValue value) {
+        DreamValue current = value;
+
+        while(current.TryGetValueAsDreamObject<DreamObjectAtom>(out var dreamAtom)) {
+            if(current.TryGetValueAsDreamObject<DreamObjectTurf>(out var dreamTurf)) {
+                return dreamTurf.Cell.Area == area;
+            }
+
+            current = dreamAtom.GetVariable("loc");
+            current.DecRef(); // TryGetVar auto-increments
+        }
+
+        return false;
     }
 }
 

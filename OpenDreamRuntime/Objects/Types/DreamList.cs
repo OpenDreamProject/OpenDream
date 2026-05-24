@@ -1529,8 +1529,7 @@ public sealed class MovableContentsList(DreamObjectDefinition listDef, DreamObje
                 if (AtomManager.TryGetMovableFromEntity(child, out var childObject)) {
                     childObject.IncRef();
                     return new DreamValue(childObject);
-                }
-                else
+                } else
                     throw new Exception($"Invalid child in movable contents list: {child}");
             }
 

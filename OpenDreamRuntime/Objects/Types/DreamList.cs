@@ -1545,7 +1545,7 @@ public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectA
                 return dreamTurf.Cell.Area == area;
             }
 
-            current = dreamAtom.GetVariable("loc");
+            dreamAtom.TryGetVariable("loc", out current);
             current.DecRef(); // TryGetVar auto-increments
         }
 

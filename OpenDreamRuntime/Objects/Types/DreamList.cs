@@ -1474,7 +1474,6 @@ public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectA
 
             if (index <= contentsLength) { // The index references one of the turf's contents
                 var contentsItem = turf.Contents.GetValue(new(index));
-                contentsItem.IncRef();
                 return contentsItem;
             }
 

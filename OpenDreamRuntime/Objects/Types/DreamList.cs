@@ -568,7 +568,6 @@ internal sealed class DreamListVars(DreamObjectDefinition listDef, DreamObject d
             return new DreamValue(DreamObject.GetVariableNames().ElementAt(keyInteger - 1)); //1-indexed
         } else if (key.TryGetValueAsString(out var varName)) {
             if (DreamObject.TryGetVariable(varName, out var objectVar)) {
-                objectVar.IncRef();
                 return objectVar;
             }
 
@@ -1121,7 +1120,6 @@ public sealed class DreamFilterList(DreamObjectDefinition listDef, DreamObject o
 
         DreamObjectFilter filterObject = ObjectTree.CreateObject<DreamObjectFilter>(ObjectTree.Filter);
         filterObject.Filter = appearance.Filters[filterIndex - 1];
-        filterObject.IncRef();
         return new DreamValue(filterObject);
     }
 

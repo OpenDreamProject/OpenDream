@@ -309,9 +309,6 @@ public class DreamIconOperationBlend : IDreamIconOperation {
         _type = type;
         _xOffset = xOffset;
         _yOffset = yOffset;
-
-        if (_type is not BlendType.Overlay and not BlendType.Underlay and not BlendType.Multiply and not BlendType.Add and not BlendType.Subtract)
-            throw new NotImplementedException($"\"{_type}\" blending is not implemented");
     }
 
     public virtual void OnApply(DreamIcon icon) { }
@@ -371,6 +368,25 @@ public class DreamIconOperationBlend : IDreamIconOperation {
                 pixels[dstPixelPosition].A = (byte) (highAlpha + (highAlpha * lowAlpha / 255));
                 break;
             }
+
+            case BlendType.And: {
+                pixels[dstPixelPosition].R = (byte)(dst.R & src.R);
+                pixels[dstPixelPosition].G = (byte)(dst.G & src.G);
+                pixels[dstPixelPosition].B = (byte)(dst.B & src.B);
+
+                pixels[dstPixelPosition].A = (byte)(dst.A & src.A);
+                break;
+            }
+
+            case BlendType.Or: {
+                pixels[dstPixelPosition].R = (byte)(dst.R | src.R);
+                pixels[dstPixelPosition].G = (byte)(dst.G | src.G);
+                pixels[dstPixelPosition].B = (byte)(dst.B | src.B);
+
+                pixels[dstPixelPosition].A = (byte)(dst.A | src.A);
+                break;
+            }
+
             case BlendType.Underlay: {
                 // Opposite of overlay
                 (dst, src) = (src, dst);

@@ -80,7 +80,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("GetPixel")]
         [DreamProcParameter("x", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("y", Type = DreamValueTypeFlag.Float)]
-        [DreamProcParameter("icon_state", Type = DreamValueTypeFlag.String, DefaultValue = null)]
+        [DreamProcParameter("icon_state", Type = DreamValueTypeFlag.DreamObject | DreamValueTypeFlag.String, DefaultValue = null)]
         [DreamProcParameter("dir", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
         [DreamProcParameter("frame", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
         [DreamProcParameter("moving", Type = DreamValueTypeFlag.Float, DefaultValue = -1)]

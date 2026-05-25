@@ -226,21 +226,21 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     }
 
     public override DreamValue OperatorMask(DreamValue b) {
-        if (Equals(b)) {
-            ;
-        } else if (b.TryGetValueAsIDreamList(out var bList)) {
-            foreach (var value in CopyToArray()) {
-                if (!bList.ContainsValue(value)) {
-                    RemoveValue(value);
+        if (!Equals(b)) {
+            if (b.TryGetValueAsIDreamList(out var bList)) {
+                foreach (var value in CopyToArray()) {
+                    if (!bList.ContainsValue(value)) {
+                        RemoveValue(value);
+                    }
                 }
-            }
-        } else {
-            if (!ContainsKey(b)) {
-                Cut();
             } else {
-                using var item = GetValue(b);
-                Cut();
-                SetValue(b, item);
+                if (!ContainsKey(b)) {
+                    Cut();
+                } else {
+                    using var item = GetValue(b);
+                    Cut();
+                    SetValue(b, item);
+                }
             }
         }
 

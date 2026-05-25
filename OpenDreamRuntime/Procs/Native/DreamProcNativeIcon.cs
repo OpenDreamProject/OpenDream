@@ -88,12 +88,8 @@ namespace OpenDreamRuntime.Procs.Native {
             var srcDreamIcon = (DreamObjectIcon)src!;
 
             //arg validation
-            int x = 0;
-            int y = 0;
-            if(bundle.GetArgument(0, "x").TryGetValueAsFloatCoerceNull(out float floatx))
-                x = (int) floatx;
-            if(bundle.GetArgument(1, "y").TryGetValueAsFloatCoerceNull(out float floaty))
-                y = (int) floaty;
+            int x = (int)bundle.GetArgument(0, "x").UnsafeGetValueAsFloat();
+            int y = (int)bundle.GetArgument(1, "y").UnsafeGetValueAsFloat();
 
             //outside valid bounds returns null
             if(x < 1 || x > srcDreamIcon.Icon.Width || y < 1 || y > srcDreamIcon.Icon.Height)

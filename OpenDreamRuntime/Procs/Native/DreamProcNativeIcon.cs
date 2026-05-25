@@ -106,9 +106,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     return DreamValue.Null; //throw new ArgumentException($"Invalid icon_state {iconState} passed to /icon.GetPixel()");
             }
 
-            if(!bundle.GetArgument(3, "dir").TryGetValueAsFloatCoerceNull(out float dirFloat))
-                dirFloat = 0;
-            AtomDirection dir = (AtomDirection) dirFloat;
+            AtomDirection dir = (AtomDirection)bundle.GetArgument(3, "dir").UnsafeGetValueAsFloat();
             if(dir == AtomDirection.None)
                 dir = iconStateObject.Directions.Keys.First();
             else if(!iconStateObject.Directions.ContainsKey(dir))

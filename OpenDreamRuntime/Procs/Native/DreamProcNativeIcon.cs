@@ -77,7 +77,6 @@ namespace OpenDreamRuntime.Procs.Native {
             return DreamValue.Null;
         }
 
-//x, y, icon_state, dir = 0, frame = 0, moving = -1
         [DreamProc("GetPixel")]
         [DreamProcParameter("x", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("y", Type = DreamValueTypeFlag.Float)]

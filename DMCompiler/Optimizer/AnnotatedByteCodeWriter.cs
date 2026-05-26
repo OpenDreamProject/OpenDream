@@ -37,9 +37,9 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
     public void WriteOpcode(DreamProcOpcode opcode, Location location) {
         _location = location;
         if (_currentMetadata is not null) {
-            if (_requiredArgIdx < _currentMetadata.Value.RequiredArgs.Count - 1) {
+            if (_requiredArgIdx < _currentMetadata.Value.RequiredArgs.Length - 1) {
                 compiler.ForcedError(location, "Expected argument");
-            } else if (_requiredArgIdx > _currentMetadata.Value.RequiredArgs.Count) {
+            } else if (_requiredArgIdx > _currentMetadata.Value.RequiredArgs.Length) {
                 compiler.ForcedError(location, "Unexpected argument count. Opcode arguments have likely been mishandled internally");
             }
         }
@@ -58,7 +58,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ValidateArgument(Location location, OpcodeArgType argType) {
-        if (_currentMetadata!.Value.RequiredArgs.Count == 0 || _requiredArgIdx >= _currentMetadata.Value.RequiredArgs.Count || _currentMetadata.Value.RequiredArgs[_requiredArgIdx] != argType) {
+        if (_currentMetadata!.Value.RequiredArgs.Length == 0 || _requiredArgIdx >= _currentMetadata.Value.RequiredArgs.Length || _currentMetadata.Value.RequiredArgs[_requiredArgIdx] != argType) {
             compiler.ForcedError(location, $"Expected {argType.ToString()} argument");
         }
 

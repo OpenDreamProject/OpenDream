@@ -38,8 +38,8 @@ internal partial class DreamViewOverlay {
             if (appearance == null)
                 continue;
 
-            int xIndex = delta.X + viewRange.CenterX;
-            int yIndex = delta.Y + viewRange.CenterY;
+            int xIndex = delta.X + viewRange.CenterX + 1;
+            int yIndex = delta.Y + viewRange.CenterY + 1;
             if (xIndex < 0 || yIndex < 0 || xIndex >= _tileInfo.GetLength(0) || yIndex >= _tileInfo.GetLength(1))
                 continue;
 
@@ -66,7 +66,7 @@ internal partial class DreamViewOverlay {
                 continue;
 
             var worldPos = _transformSystem.GetWorldPosition(transform);
-            var tilePos = _mapSystem.WorldToTile(gridUid, grid, worldPos) - eyeTile.GridIndices + viewRange.Center;
+            var tilePos = _mapSystem.WorldToTile(gridUid, grid, worldPos) - eyeTile.GridIndices + viewRange.Center + 1;
             if (tilePos.X < 0 || tilePos.Y < 0 || tilePos.X >= _tileInfo.GetLength(0) ||
                 tilePos.Y >= _tileInfo.GetLength(1))
                 continue;

@@ -1,10 +1,9 @@
-﻿using OpenDreamRuntime.Procs;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using DMCompiler.Bytecode;
 using DMCompiler.DM;
 using DMCompiler.Json;
-using JetBrains.Annotations;
 
 namespace DMDisassembler;
 
@@ -26,7 +25,7 @@ internal class DMProc(ProcDefinitionJson json) {
         StringBuilder result = new StringBuilder();
         foreach (DecompiledOpcode decompiledOpcode in decompiled) {
             if (labeledPositions.Contains(decompiledOpcode.Position)) {
-                result.AppendFormat("0x{0:x}", decompiledOpcode.Position);
+                result.AppendFormat("0x{0:x}", decompiledOpcode.Position.ToString());
                 result.AppendLine();
             }
 
@@ -36,7 +35,7 @@ internal class DMProc(ProcDefinitionJson json) {
 
         if (labeledPositions.Contains(Bytecode.Length)) {
             // In case of a Jump off the end of the proc.
-            result.AppendFormat("0x{0:x}", Bytecode.Length);
+            result.AppendFormat("0x{0:x}", Bytecode.Length.ToString());
             result.AppendLine();
         }
 
@@ -48,13 +47,14 @@ internal class DMProc(ProcDefinitionJson json) {
     }
 
     public List<DecompiledOpcode> GetDecompiledOpcodes(out HashSet<int> labeledPositions) {
-        List<DecompiledOpcode> decompiled = new();
+        List<DecompiledOpcode> decompiled = new(Bytecode.Length);
         labeledPositions = new();
 
         try {
-            foreach (var (position, instruction) in new ProcDecoder(Program.CompiledJson.Strings, Bytecode).Disassemble()) {
-                decompiled.Add(new DecompiledOpcode(position, ProcDecoder.Format(instruction, type => Program.CompiledJson.Types[type].Path)));
-                if (ProcDecoder.GetJumpDestination(instruction) is int jumpPosition) {
+            var decoder = new BytecodeProcDecoder(Program.CompiledJson.Strings, Bytecode);
+            foreach (var (position, instruction) in decoder.Disassemble()) {
+                decompiled.Add(new DecompiledOpcode(position, instruction.Format(type => Program.CompiledJson.Types[type].Path)));
+                if (decoder.GetBranchTarget(instruction) is { } jumpPosition) {
                     labeledPositions.Add(jumpPosition);
                 }
             }

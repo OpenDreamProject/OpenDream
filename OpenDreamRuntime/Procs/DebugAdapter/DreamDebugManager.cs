@@ -807,7 +807,7 @@ internal sealed partial class DreamDebugManager : IDreamDebugManager {
         List<DisassembledInstruction> output = new();
         DisassembledInstruction? previousInstruction = null;
         int previousOffset = 0;
-        foreach (var (offset, instruction) in new ProcDecoder(_objectTree.Strings, proc.Bytecode).Disassemble()) {
+        foreach (var (offset, instruction) in new BytecodeProcDecoder(_objectTree.Strings, proc.Bytecode).Disassemble()) {
             /*if (previousInstruction != null) {
                 previousInstruction.InstructionBytes = BitConverter.ToString(proc.Bytecode, previousOffset, offset - previousOffset).Replace("-", " ").ToLowerInvariant();
             }*/
@@ -815,7 +815,7 @@ internal sealed partial class DreamDebugManager : IDreamDebugManager {
             previousOffset = offset;
             previousInstruction = new DisassembledInstruction {
                 Address = EncodeInstructionPointer(proc, offset),
-                Instruction = ProcDecoder.Format(instruction, type => _objectTree.Types[type].Path.ToString()),
+                Instruction = instruction.Format(type => _objectTree.Types[type].Path.ToString()),
             };
 
             var sourceInfo = proc.GetSourceAtOffset(previousOffset);

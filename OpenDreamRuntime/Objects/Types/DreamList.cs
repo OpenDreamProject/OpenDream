@@ -539,10 +539,9 @@ public class DreamList : DreamObject, IDreamList {
             else if(value.TryGetValueAsDreamObject<DreamObjectMob>(out var dreamMob))
                 connection = dreamMob.Connection;
 
-            if(connection is null || passedConnections.Contains(connection))
+            if(connection is null || !passedConnections.Add(connection))
                 continue;
 
-            passedConnections.Add(connection);
             connection.OutputDreamValue(b);
         }
     }

@@ -55,6 +55,8 @@ while read -r file; do
 		sed -i '/^[[:space:]]*$/d' $basedir/errors.log
 		cat $basedir/errors.log
 		rm $basedir/errors.log
+		testsfailed=$((testsfailed + 1))
+		continue		
 	fi
 	if [ -s "$basedir/errors.log" ]; then
 		if [[ $first_line == "// RUNTIME ERROR"* || $first_line == "//RUNTIME ERROR"* ]]	then #expected runtime error, should compile but then fail to run

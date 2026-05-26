@@ -545,8 +545,6 @@ public class DreamList : DreamObject, IDreamList {
             passedConnections.Add(connection);
             connection.OutputDreamValue(b);
         }
-
-        base.OperatorOutput(b);
     }
 
     #endregion Operators

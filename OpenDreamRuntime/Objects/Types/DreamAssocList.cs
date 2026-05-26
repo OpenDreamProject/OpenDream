@@ -168,17 +168,19 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     }
 
     public override DreamValue OperatorSubtract(DreamValue b, DMProcState state) {
-        if (Equals(b)) {
-            return new DreamValue(new DreamAssocList(ObjectDefinition, null));
-        }
-
-        var listCopy = (DreamAssocList)CreateCopy();
+        DreamAssocList listCopy;
 
         if (b.TryGetValueAsIDreamList(out var bList)) {
+            if (bList == this) {
+                return new DreamValue(ObjectTree.CreateAssocList());
+            }
+
+            listCopy = (DreamAssocList)CreateCopy();
             foreach (DreamValue value in bList.EnumerateValues()) {
                 listCopy.RemoveValue(value);
             }
         } else {
+            listCopy = (DreamAssocList)CreateCopy();
             listCopy.RemoveValue(b);
         }
 
@@ -211,11 +213,13 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     }
 
     public override DreamValue OperatorRemove(DreamValue b) {
-        if (Equals(b)) {
-            Cut();
-        } else if (b.TryGetValueAsIDreamList(out var bList)) {
-            foreach (var value in bList.EnumerateValues()) {
-                RemoveValue(value);
+        if (b.TryGetValueAsIDreamList(out var bList)) {
+            if (bList == this) {
+                Cut();
+            } else {
+                foreach (var value in bList.EnumerateValues()) {
+                    RemoveValue(value);
+                }
             }
         } else {
             RemoveValue(b);
@@ -226,21 +230,21 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     }
 
     public override DreamValue OperatorMask(DreamValue b) {
-        if (!Equals(b)) {
-            if (b.TryGetValueAsIDreamList(out var bList)) {
+        if (b.TryGetValueAsIDreamList(out var bList)) {
+            if (bList != this) {
                 foreach (var value in CopyToArray()) {
                     if (!bList.ContainsValue(value)) {
                         RemoveValue(value);
                     }
                 }
+            }
+        } else {
+            if (!ContainsKey(b)) {
+                Cut();
             } else {
-                if (!ContainsKey(b)) {
-                    Cut();
-                } else {
-                    using var item = GetValue(b);
-                    Cut();
-                    SetValue(b, item);
-                }
+                using var item = GetValue(b);
+                Cut();
+                SetValue(b, item);
             }
         }
 
@@ -253,7 +257,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
             return DreamValue.False;
         }
 
-        if (Equals(secondList)) {
+        if (secondList == this) {
             return DreamValue.True;
         }
 

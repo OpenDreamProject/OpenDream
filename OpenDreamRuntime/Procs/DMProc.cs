@@ -23,7 +23,7 @@ public sealed class DMProc : DreamProc {
     public readonly bool IsNullProc;
     public IReadOnlyList<LocalVariableJson> LocalNames { get; }
     public readonly List<SourceInfoJson> SourceInfo;
-    public int LocalCount => LocalNames.Count;
+    public readonly int LocalCount;
 
     public readonly AtomManager AtomManager;
     public readonly DreamManager DreamManager;
@@ -42,6 +42,7 @@ public sealed class DMProc : DreamProc {
         Bytecode = json.Bytecode ?? [];
         LocalNames = json.Locals ?? [];
         SourceInfo = json.SourceInfo;
+        LocalCount = json.MaxVariableId;
         _maxStackSize = json.MaxStackSize;
         IsNullProc = CheckIfNullProc();
 

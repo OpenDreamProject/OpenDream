@@ -92,6 +92,7 @@ internal sealed class DMProc {
 
     private readonly List<string> _localVariableNames = new();
     private int _localVariableIdCounter;
+    private int _localVariableHighestId; // 0 is a valid alloc index, which will clip procs with no localvars but that shouldn't matter
 
     private readonly List<SourceInfoJson> _sourceInfo = new();
     private string? _lastSourceFile;
@@ -146,7 +147,13 @@ internal sealed class DMProc {
     private int AllocLocalVariable(string name) {
         _localVariableNames.Add(name);
         WriteLocalVariable(name);
-        return _localVariableIdCounter++;
+
+        int variableId = _localVariableIdCounter++;
+        if(variableId > _localVariableHighestId) {
+            _localVariableHighestId = variableId;
+        }
+
+        return variableId;
     }
 
     private void DeallocLocalVariables(int amount) {
@@ -228,6 +235,7 @@ internal sealed class DMProc {
             OwningTypeId = _dmObject.Id,
             Name = Name,
             Attributes = Attributes,
+            MaxVariableId = _localVariableHighestId,
             MaxStackSize = AnnotatedBytecode.GetMaxStackSize(),
             Bytecode = serializer.Serialize(AnnotatedBytecode.GetAnnotatedBytecode()),
             Arguments = arguments,

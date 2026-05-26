@@ -529,6 +529,23 @@ public class DreamList : DreamObject, IDreamList {
         return DreamValue.True;
     }
 
+    public override void OperatorOutput(DreamValue b) {
+        HashSet<DreamConnection> passedConnections = new(); // BYOND only outputs to a client once per list
+
+        foreach(var value in EnumerateValues()) {
+            DreamConnection? connection = null;
+            if(value.TryGetValueAsDreamObject<DreamObjectClient>(out var dreamClient))
+                connection = dreamClient.Connection;
+            else if(value.TryGetValueAsDreamObject<DreamObjectMob>(out var dreamMob))
+                connection = dreamMob.Connection;
+
+            if(connection is null || !passedConnections.Add(connection))
+                continue;
+
+            connection.OutputDreamValue(b);
+        }
+    }
+
     #endregion Operators
 }
 

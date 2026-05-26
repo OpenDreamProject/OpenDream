@@ -1,3 +1,5 @@
+// Used in the EnsureLocalCountIsValid test
+
 #define TEST_PROC(name) /proc/Test___##name()
 
 TEST_PROC(ProcWithNothing)

@@ -43,23 +43,22 @@ public sealed class RuntimeTests {
     public void EnsureLocalCountIsValid() {
         const string testPath = "Procs/local_count.dme";
         const string testIdentifier = "Test___";
-
         var compiler = new DMCompiler.DMCompiler();
-        compiler.Compile(new() {
-            Files = [Path.Join(Directory.GetCurrentDirectory(), SpecialTestsDirectory, testPath)]
-        }, out DreamCompiledJson? compiledDream);
-        Assert.That(compiledDream, Is.Not.Null, "Environment failed to compile");
 
-        var tests = compiledDream.Procs
-            .Where((proc) => proc.Name.StartsWith(testIdentifier))
-            .ToDictionary((proc) => proc.Name[testIdentifier.Length..]); // strip the identifier out
+        if(!compiler.Compile(new() {Files = [Path.Join(Directory.GetCurrentDirectory(), SpecialTestsDirectory, testPath)]}, out var compiledDream))
+            Assert.Fail("Environment failed to compile");
+        else {
+            var tests = compiledDream.Procs
+                .Where((proc) => proc.Name.StartsWith(testIdentifier))
+                .ToDictionary((proc) => proc.Name[testIdentifier.Length..]); // strip the identifier out
 
-        using (Assert.EnterMultipleScope()) {
-            Assert.That(tests["ProcWithNothing"].MaxVariableId, Is.Zero);
-            Assert.That(tests["ProcWithNoScope"].MaxVariableId, Is.EqualTo(5));
-            Assert.That(tests["ProcWithOnlyScope"].MaxVariableId, Is.EqualTo(5));
-            Assert.That(tests["ProcWithFullOuterScope"].MaxVariableId, Is.EqualTo(3));
-            Assert.That(tests["ProcWithFullInnerScope"].MaxVariableId, Is.EqualTo(4));
+            using (Assert.EnterMultipleScope()) {
+                Assert.That(tests["ProcWithNothing"].MaxVariableId, Is.Zero);
+                Assert.That(tests["ProcWithNoScope"].MaxVariableId, Is.EqualTo(5));
+                Assert.That(tests["ProcWithOnlyScope"].MaxVariableId, Is.EqualTo(5));
+                Assert.That(tests["ProcWithFullOuterScope"].MaxVariableId, Is.EqualTo(3));
+                Assert.That(tests["ProcWithFullInnerScope"].MaxVariableId, Is.EqualTo(4));
+            }
         }
     }
 }

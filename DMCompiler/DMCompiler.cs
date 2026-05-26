@@ -15,6 +15,7 @@ using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM.Builders;
 using DMCompiler.Json;
 using DMCompiler.Optimizer;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DMCompiler;
 
@@ -46,7 +47,7 @@ public class DMCompiler {
 
     public bool Compile(DMCompilerSettings settings) => Compile(settings, out _);
 
-    public bool Compile(DMCompilerSettings settings, out DreamCompiledJson? compiledDream) {
+    public bool Compile(DMCompilerSettings settings, [NotNullWhen(true)] out DreamCompiledJson? compiledDream) {
         if (_compileStartTime != default)
             throw new Exception("Create a new DMCompiler to compile again");
 
@@ -56,7 +57,6 @@ public class DMCompiler {
         _errorCount = 0;
         _warningCount = 0;
         _compileStartTime = DateTime.Now;
-        compiledDream = null;
 
         //TODO: Only use InvariantCulture where necessary instead of it being the default
         CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
@@ -74,6 +74,7 @@ public class DMCompiler {
 
         var preprocessor = Preprocess(this, settings.Files, settings.MacroDefines);
         var successfulCompile = false;
+        compiledDream = null;
         if (preprocessor is not null && Compile(preprocessor)) {
             //Output file is the first file with the extension changed to .json
             string outputFile = Path.ChangeExtension(settings.Files[0], "json");

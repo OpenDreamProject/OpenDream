@@ -60,11 +60,11 @@ internal sealed class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
             return;
         }
 
-        if (metadata.RequiredArgs.Count != args.Count) {
-            throw new Exception($"Expected {metadata.RequiredArgs.Count} args, got {args.Count}");
+        if (metadata.RequiredArgs.Length != args.Count) {
+            throw new Exception($"Expected {metadata.RequiredArgs.Length} args, got {args.Count}");
         }
 
-        for (int i = 0; i < metadata.RequiredArgs.Count; i++) {
+        for (int i = 0; i < metadata.RequiredArgs.Length; i++) {
             if (!MatchArgs(metadata.RequiredArgs[i], args[i])) {
                 throw new Exception($"Expected arg {i} to be {metadata.RequiredArgs[i]}, got {args[i].GetType()}");
             }

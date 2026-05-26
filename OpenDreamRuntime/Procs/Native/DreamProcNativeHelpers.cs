@@ -468,7 +468,7 @@ internal static partial class DreamProcNativeHelpers {
             if (!char.IsAsciiDigit(c)) {
                 if (c >= 'A' && c < 'A' + letterDigitsVariety) {
                     digit -= 'A' - 10;
-                } else if (c >= 'a' && c <= 'a' + letterDigitsVariety) {
+                } else if (c >= 'a' && c < 'a' + letterDigitsVariety) {
                     digit -= 'a' - 10;
                 } else {
                     break;

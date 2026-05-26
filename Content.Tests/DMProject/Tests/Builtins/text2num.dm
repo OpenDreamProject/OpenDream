@@ -37,3 +37,8 @@
 
 	ASSERT(text2num("nan") == null)
 	ASSERT(text2num(" -nansomething") == null)
+
+	ASSERT(text2num("a") == null)
+	ASSERT(text2num("A") == null)
+	ASSERT(text2num("a", 11) == 10)
+	ASSERT(text2num("A", 11) == 10)

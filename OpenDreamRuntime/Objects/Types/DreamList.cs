@@ -529,6 +529,23 @@ public class DreamList : DreamObject, IDreamList {
         return DreamValue.True;
     }
 
+    public override void OperatorOutput(DreamValue b) {
+        HashSet<DreamConnection> passedConnections = new(); // BYOND only outputs to a client once per list
+
+        foreach(var value in EnumerateValues()) {
+            DreamConnection? connection = null;
+            if(value.TryGetValueAsDreamObject<DreamObjectClient>(out var dreamClient))
+                connection = dreamClient.Connection;
+            else if(value.TryGetValueAsDreamObject<DreamObjectMob>(out var dreamMob))
+                connection = dreamMob.Connection;
+
+            if(connection is null || !passedConnections.Add(connection))
+                continue;
+
+            connection.OutputDreamValue(b);
+        }
+    }
+
     #endregion Operators
 }
 
@@ -998,7 +1015,9 @@ public sealed class DreamVisContentsList : DreamList {
         if (visContentsIndex > _visContents.Count)
             throw new Exception($"Atom only has {_visContents.Count} vis_contents element(s), cannot index {visContentsIndex}");
 
-        return new DreamValue(_visContents[visContentsIndex - 1]);
+        var value = _visContents[visContentsIndex - 1];
+        value.IncRef();
+        return new DreamValue(value);
     }
 
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
@@ -1049,6 +1068,13 @@ public sealed class DreamVisContentsList : DreamList {
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
         throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
+    }
+
+    public override bool ContainsValue(DreamValue value) {
+        if (!value.TryGetValueAsDreamObject<DreamObjectAtom>(out var dreamObject))
+            return false;
+
+        return _visContents.Contains(dreamObject);
     }
 }
 
@@ -1116,9 +1142,8 @@ public sealed class DreamFilterList(DreamObjectDefinition listDef, DreamObject o
         if (filterIndex < 1 || filterIndex > appearance.Filters.Length)
             throw new Exception($"Atom only has {appearance.Filters.Length} filter(s), cannot index {filterIndex}");
 
-        DreamFilter filter = appearance.Filters[filterIndex - 1];
         DreamObjectFilter filterObject = ObjectTree.CreateObject<DreamObjectFilter>(ObjectTree.Filter);
-        filterObject.Filter = filter;
+        filterObject.Filter = appearance.Filters[filterIndex - 1];
         return new DreamValue(filterObject);
     }
 
@@ -1216,7 +1241,9 @@ public sealed class ClientScreenList(DreamObjectTree objectTree, ServerScreenOve
         if (!key.TryGetValueAsInteger(out var screenIndex) || screenIndex < 1 || screenIndex > _screenObjects.Count)
             throw new Exception($"Invalid index into screen list: {key}");
 
-        return _screenObjects[screenIndex - 1];
+        var value = _screenObjects[screenIndex - 1];
+        value.IncRef();
+        return value;
     }
 
     public override List<DreamValue> GetValues() {
@@ -1273,17 +1300,16 @@ public sealed class ClientScreenList(DreamObjectTree objectTree, ServerScreenOve
 }
 
 // client.images list
-public sealed class ClientImagesList(
-    DreamObjectTree objectTree,
-    ServerClientImagesSystem? clientImagesSystem,
-    DreamConnection connection) : DreamList(objectTree.List.ObjectDefinition, 0) {
+public sealed class ClientImagesList(DreamObjectTree objectTree, ServerClientImagesSystem? clientImagesSystem, DreamConnection connection) : DreamList(objectTree.List.ObjectDefinition, 0) {
     private readonly List<DreamValue> _imageObjects = new();
 
     public override DreamValue GetValue(DreamValue key) {
         if (!key.TryGetValueAsInteger(out var imageIndex) || imageIndex < 1 || imageIndex > _imageObjects.Count)
             throw new Exception($"Invalid index into client images list: {key}");
 
-        return _imageObjects[imageIndex - 1];
+        var value = _imageObjects[imageIndex - 1];
+        value.IncRef();
+        return value;
     }
 
     public override List<DreamValue> GetValues() {
@@ -1346,6 +1372,7 @@ public sealed class WorldContentsList(DreamObjectDefinition listDef, AtomManager
             throw new Exception($"Out of bounds index on world contents list: {index}");
 
         var element = atomManager.EnumerateAtoms().ElementAt(index - 1); // Ouch
+        element.IncRef();
         return new DreamValue(element);
     }
 
@@ -1376,6 +1403,12 @@ public sealed class WorldContentsList(DreamObjectDefinition listDef, AtomManager
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
         throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
+
+    public override bool ContainsValue(DreamValue value) {
+        // world.contents is a list of every atom that exists,
+        // so this should be equivalent across the board
+        return value.TryGetValueAsDreamObject<DreamObjectAtom>(out _);
+    }
 }
 
 // turf.contents list
@@ -1388,7 +1421,9 @@ public sealed class TurfContentsList(DreamObjectDefinition listDef, DreamObjectT
         if (index < 1 || index > Cell.Movables.Count)
             throw new Exception($"Out of bounds index on turf contents list: {index}");
 
-        return new DreamValue(Cell.Movables[index - 1]);
+        var value = Cell.Movables[index - 1];
+        value.IncRef();
+        return new DreamValue(value);
     }
 
     public override List<DreamValue> GetValues() {
@@ -1427,6 +1462,13 @@ public sealed class TurfContentsList(DreamObjectDefinition listDef, DreamObjectT
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
         throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
+
+    public override bool ContainsValue(DreamValue value) {
+        if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var dreamObject))
+            return false;
+
+        return dreamObject.Loc == turf;
+    }
 }
 
 // area.contents list
@@ -1439,25 +1481,20 @@ public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectA
             if (index < 1)
                 break;
 
-            turf.IncRef();
-
-            if (index == 1) // The index references this turf
+            if (index == 1) { // The index references this turf
+                turf.IncRef();
                 return new(turf);
+            }
 
             index -= 1;
-
             int contentsLength = turf.Contents.GetLength();
 
             if (index <= contentsLength) { // The index references one of the turf's contents
                 var contentsItem = turf.Contents.GetValue(new(index));
-
-                contentsItem.IncRef();
-                turf.DecRef();
                 return contentsItem;
             }
 
             index -= contentsLength;
-            turf.DecRef();
         }
 
         throw new Exception($"Out of bounds index on turf contents list: {key}");
@@ -1510,6 +1547,20 @@ public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectA
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
         throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
+
+    public override bool ContainsValue(DreamValue value) {
+        if (!value.TryGetValueAsDreamObject<DreamObjectAtom>(out var atom))
+            return false;
+
+        if (atom is DreamObjectArea) // areas do not contain themselves
+            return false;
+
+        var (x, y, z) = AtomManager.GetAtomPosition(atom);
+        if (!DreamMapManager.TryGetCellAt((x, y), z, out var cell))
+            return false;
+
+        return cell.Area == area;
+    }
 }
 
 // mob.contents, obj.contents list
@@ -1525,9 +1576,10 @@ public sealed class MovableContentsList(DreamObjectDefinition listDef, DreamObje
             childEnumerator.MoveNext(out EntityUid child);
 
             if (index == 1) {
-                if (AtomManager.TryGetMovableFromEntity(child, out var childObject))
+                if (AtomManager.TryGetMovableFromEntity(child, out var childObject)) {
+                    childObject.IncRef();
                     return new DreamValue(childObject);
-                else
+                } else
                     throw new Exception($"Invalid child in movable contents list: {child}");
             }
 
@@ -1615,7 +1667,9 @@ internal sealed class ProcArgsList(DreamObjectDefinition listDef, ProcState stat
         if (index < 1 || index > state.ArgumentCount)
             throw new Exception($"Out of bounds index on args list: {index}");
 
-        return state.GetArguments()[index - 1];
+        var value = state.GetArguments()[index - 1];
+        value.IncRef();
+        return value;
     }
 
     public override List<DreamValue> GetValues() {

@@ -321,6 +321,7 @@ public class DreamIconOperationBlend : IDreamIconOperation {
         Rgba32 dst = pixels[dstPixelPosition];
 
         switch (_type) {
+            case BlendType.And: // Byond for reasons known only to God does And as a copy of Add.
             case BlendType.Add: {
                 pixels[dstPixelPosition].R = (byte)Math.Min(dst.R + src.R, byte.MaxValue);
                 pixels[dstPixelPosition].G = (byte)Math.Min(dst.G + src.G, byte.MaxValue);
@@ -366,15 +367,6 @@ public class DreamIconOperationBlend : IDreamIconOperation {
                 byte highAlpha = Math.Max(dst.A, src.A);
                 byte lowAlpha = Math.Min(dst.A, src.A);
                 pixels[dstPixelPosition].A = (byte) (highAlpha + (highAlpha * lowAlpha / 255));
-                break;
-            }
-
-            case BlendType.And: {
-                pixels[dstPixelPosition].R = (byte)(dst.R & src.R);
-                pixels[dstPixelPosition].G = (byte)(dst.G & src.G);
-                pixels[dstPixelPosition].B = (byte)(dst.B & src.B);
-
-                pixels[dstPixelPosition].A = (byte)(dst.A & src.A);
                 break;
             }
 

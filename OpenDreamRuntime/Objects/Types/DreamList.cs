@@ -537,7 +537,7 @@ public class DreamList : DreamObject, IDreamList {
             if(value.TryGetValueAsDreamObject<DreamObjectClient>(out var dreamClient))
                 connection = dreamClient.Connection;
             else if(value.TryGetValueAsDreamObject<DreamObjectMob>(out var dreamMob))
-                connection = dreamMob?.Connection;
+                connection = dreamMob.Connection;
 
             if(connection is null || passedConnections.Contains(connection))
                 continue;

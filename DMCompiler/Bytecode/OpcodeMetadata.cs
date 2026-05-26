@@ -33,8 +33,7 @@ public static class OpcodeMetadataCache {
     private static readonly OpcodeMetadata[] MetadataCache = new OpcodeMetadata[256];
 
     static OpcodeMetadataCache() {
-        var allOpcodes = Enum.GetValues(typeof(DreamProcOpcode));
-        foreach (DreamProcOpcode opcode in allOpcodes) {
+        foreach (DreamProcOpcode opcode in Enum.GetValues(typeof(DreamProcOpcode))) {
             var field = typeof(DreamProcOpcode).GetField(opcode.ToString());
             var attribute = Attribute.GetCustomAttribute(field!, typeof(OpcodeMetadataAttribute));
             var metadataAttribute = (OpcodeMetadataAttribute?)attribute;

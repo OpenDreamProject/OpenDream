@@ -80,7 +80,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("GetPixel")]
         [DreamProcParameter("x", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("y", Type = DreamValueTypeFlag.Float)]
-        [DreamProcParameter("icon_state", Type = DreamValueTypeFlag.String, DefaultValue = null)]
+        [DreamProcParameter("icon_state", Type = DreamValueTypeFlag.DreamObject | DreamValueTypeFlag.String, DefaultValue = null)]
         [DreamProcParameter("dir", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
         [DreamProcParameter("frame", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
         [DreamProcParameter("moving", Type = DreamValueTypeFlag.Float, DefaultValue = -1)]
@@ -88,12 +88,8 @@ namespace OpenDreamRuntime.Procs.Native {
             var srcDreamIcon = (DreamObjectIcon)src!;
 
             //arg validation
-            int x = 0;
-            int y = 0;
-            if(bundle.GetArgument(0, "x").TryGetValueAsFloatCoerceNull(out float floatx))
-                x = (int) floatx;
-            if(bundle.GetArgument(1, "y").TryGetValueAsFloatCoerceNull(out float floaty))
-                y = (int) floaty;
+            int x = (int)bundle.GetArgument(0, "x").UnsafeGetValueAsFloat();
+            int y = (int)bundle.GetArgument(1, "y").UnsafeGetValueAsFloat();
 
             //outside valid bounds returns null
             if(x < 1 || x > srcDreamIcon.Icon.Width || y < 1 || y > srcDreamIcon.Icon.Height)
@@ -110,9 +106,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     return DreamValue.Null; //throw new ArgumentException($"Invalid icon_state {iconState} passed to /icon.GetPixel()");
             }
 
-            if(!bundle.GetArgument(3, "dir").TryGetValueAsFloatCoerceNull(out float dirFloat))
-                dirFloat = 0;
-            AtomDirection dir = (AtomDirection) dirFloat;
+            AtomDirection dir = (AtomDirection)bundle.GetArgument(3, "dir").UnsafeGetValueAsFloat();
             if(dir == AtomDirection.None)
                 dir = iconStateObject.Directions.Keys.First();
             else if(!iconStateObject.Directions.ContainsKey(dir))

@@ -532,7 +532,7 @@ public class DreamList : DreamObject, IDreamList {
     public override void OperatorOutput(DreamValue b) {
         HashSet<DreamConnection> passedConnections = new(); // BYOND only outputs to a client once per list
 
-        foreach(var value in _values) {
+        foreach(var value in EnumerateValues()) {
             DreamConnection? connection = null;
             if(value.TryGetValueAsDreamObject<DreamObjectClient>(out var dreamClient))
                 connection = dreamClient.Connection;

@@ -25,7 +25,8 @@ internal class DMProc(ProcDefinitionJson json) {
         StringBuilder result = new StringBuilder();
         foreach (DecompiledOpcode decompiledOpcode in decompiled) {
             if (labeledPositions.Contains(decompiledOpcode.Position)) {
-                result.AppendFormat("0x{0:x}", decompiledOpcode.Position.ToString());
+                // Calling ToString() on Position will mess up the format conversion to hexadecimal
+                result.AppendFormat("0x{0:x}", decompiledOpcode.Position);
                 result.AppendLine();
             }
 
@@ -35,7 +36,7 @@ internal class DMProc(ProcDefinitionJson json) {
 
         if (labeledPositions.Contains(Bytecode.Length)) {
             // In case of a Jump off the end of the proc.
-            result.AppendFormat("0x{0:x}", Bytecode.Length.ToString());
+            result.AppendFormat("0x{0:x}", Bytecode.Length);
             result.AppendLine();
         }
 

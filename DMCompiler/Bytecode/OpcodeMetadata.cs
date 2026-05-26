@@ -22,7 +22,7 @@ internal sealed class OpcodeMetadataAttribute : Attribute {
 /// </summary>
 public struct OpcodeMetadata(int stackDelta = 0, bool variableArgs = false, params OpcodeArgType[] requiredArgs) {
     public readonly int StackDelta = stackDelta; // Net change in stack size caused by this opcode
-    public readonly List<OpcodeArgType> RequiredArgs = [..requiredArgs]; // The types of arguments this opcode requires
+    public readonly OpcodeArgType[] RequiredArgs = requiredArgs; // The types of arguments this opcode requires
     public readonly bool VariableArgs = variableArgs; // Whether this opcode takes a variable number of arguments
 }
 
@@ -33,7 +33,8 @@ public static class OpcodeMetadataCache {
     private static readonly OpcodeMetadata[] MetadataCache = new OpcodeMetadata[256];
 
     static OpcodeMetadataCache() {
-        foreach (DreamProcOpcode opcode in Enum.GetValues(typeof(DreamProcOpcode))) {
+        var allOpcodes = Enum.GetValues(typeof(DreamProcOpcode));
+        foreach (DreamProcOpcode opcode in allOpcodes) {
             var field = typeof(DreamProcOpcode).GetField(opcode.ToString());
             var attribute = Attribute.GetCustomAttribute(field!, typeof(OpcodeMetadataAttribute));
             var metadataAttribute = (OpcodeMetadataAttribute?)attribute;

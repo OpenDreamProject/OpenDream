@@ -327,8 +327,7 @@ public class DreamIconOperationBlend : IDreamIconOperation {
                 pixels[dstPixelPosition].G = (byte)Math.Min(dst.G + src.G, byte.MaxValue);
                 pixels[dstPixelPosition].B = (byte)Math.Min(dst.B + src.B, byte.MaxValue);
 
-                // BYOND uses the smaller of the two alphas
-                pixels[dstPixelPosition].A = Math.Min(dst.A, src.A);
+                pixels[dstPixelPosition].A = (byte)Math.Round((dst.A * src.A)/255.0);
                 break;
             }
             case BlendType.Subtract: {
@@ -336,8 +335,7 @@ public class DreamIconOperationBlend : IDreamIconOperation {
                 pixels[dstPixelPosition].G = (byte)Math.Max(dst.G - src.G, byte.MinValue);
                 pixels[dstPixelPosition].B = (byte)Math.Max(dst.B - src.B, byte.MinValue);
 
-                // BYOND uses the smaller of the two alphas
-                pixels[dstPixelPosition].A = Math.Min(dst.A, src.A);
+                pixels[dstPixelPosition].A = (byte)Math.Round((dst.A * src.A)/255.0);
                 break;
             }
 
@@ -360,30 +358,28 @@ public class DreamIconOperationBlend : IDreamIconOperation {
                     break;
                 }
 
-                pixels[dstPixelPosition].R = (byte) (dst.R + (src.R - dst.R) * src.A / 255);
-                pixels[dstPixelPosition].G = (byte) (dst.G + (src.G - dst.G) * src.A / 255);
-                pixels[dstPixelPosition].B = (byte) (dst.B + (src.B - dst.B) * src.A / 255);
+                pixels[dstPixelPosition].R = (byte) Math.Round(dst.R + (src.R - dst.R) * src.A / 255.0);
+                pixels[dstPixelPosition].G = (byte) Math.Round(dst.G + (src.G - dst.G) * src.A / 255.0);
+                pixels[dstPixelPosition].B = (byte) Math.Round(dst.B + (src.B - dst.B) * src.A / 255.0);
 
-                byte highAlpha = Math.Max(dst.A, src.A);
-                byte lowAlpha = Math.Min(dst.A, src.A);
-                pixels[dstPixelPosition].A = (byte) (highAlpha + (highAlpha * lowAlpha / 255));
+                pixels[dstPixelPosition].A = (byte) Math.Round(dst.A + src.A - (dst.A * src.A)/255.0);
                 break;
             }
-
-            case BlendType.Or: {
-                pixels[dstPixelPosition].R = (byte)(dst.R | src.R);
-                pixels[dstPixelPosition].G = (byte)(dst.G | src.G);
-                pixels[dstPixelPosition].B = (byte)(dst.B | src.B);
-
-                pixels[dstPixelPosition].A = (byte)(dst.A | src.A);
-                break;
-            }
-
             case BlendType.Underlay: {
                 // Opposite of overlay
                 (dst, src) = (src, dst);
                 goto case BlendType.Overlay;
             }
+            case BlendType.Or: {
+                pixels[dstPixelPosition].R = (byte)(dst.R | src.R);
+                pixels[dstPixelPosition].G = (byte)(dst.G | src.G);
+                pixels[dstPixelPosition].B = (byte)(dst.B | src.B);
+
+                pixels[dstPixelPosition].A = (byte) Math.Round(dst.A + src.A - (dst.A * src.A)/255.0);
+                break;
+            }
+            default:
+                throw new NotImplementedException("Blend type not implemented");
         }
     }
 }

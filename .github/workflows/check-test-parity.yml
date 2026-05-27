@@ -23,7 +23,7 @@ jobs:
       - name: Check for test changes
         id: changed-files
         run: |
-            git diff --diff-filter=ACMR --name-only origin/master...HEAD Content.Tests/DMProject/Tests/**/*.dm Content.Tests/DMProject/BrokenTests/**/*.dm >> test_file_diffs
+            git diff --diff-filter=ACMR --name-only origin/master...HEAD 'Content.Tests/DMProject/Tests/**/*.dm' 'Content.Tests/DMProject/BrokenTests/**/*.dm' >> test_file_diffs
             echo "changed_files_count=$(wc -l < test_file_diffs)" >> $GITHUB_OUTPUT
 
       - name: Add Architecture

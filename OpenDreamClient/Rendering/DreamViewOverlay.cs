@@ -81,7 +81,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
     };
 
     //Used for supressing the "No Literals" warning on shader index lookups
-    private static class ODShaderID
+    private static class OdShaderId
     {
         public const string
             BlockColor = "blockcolor",
@@ -109,15 +109,15 @@ internal sealed partial class DreamViewOverlay : Overlay {
         _mobSightQuery = _entityManager.GetEntityQuery<DreamMobSightComponent>();
 
         _sawmill.Debug("Loading shaders...");
-        BlockColorInstance = _protoManager.Index<ShaderPrototype>(ODShaderID.BlockColor).InstanceUnique();
-        ColorInstance = _protoManager.Index<ShaderPrototype>(ODShaderID.Color).InstanceUnique();
+        BlockColorInstance = _protoManager.Index<ShaderPrototype>(OdShaderId.BlockColor).InstanceUnique();
+        ColorInstance = _protoManager.Index<ShaderPrototype>(OdShaderId.Color).InstanceUnique();
         _blendModeInstances = new(6) {
-            {BlendMode.Default, _protoManager.Index<ShaderPrototype>(ODShaderID.BlendOverlay).InstanceUnique()}, //BLEND_DEFAULT (Same as BLEND_OVERLAY when there's no parent)
-            {BlendMode.Overlay, _protoManager.Index<ShaderPrototype>(ODShaderID.BlendOverlay).InstanceUnique()}, //BLEND_OVERLAY
-            {BlendMode.Add, _protoManager.Index<ShaderPrototype>(ODShaderID.BlendAdd).InstanceUnique()}, //BLEND_ADD
-            {BlendMode.Subtract, _protoManager.Index<ShaderPrototype>(ODShaderID.BlendSubtract).InstanceUnique()}, //BLEND_SUBTRACT
-            {BlendMode.Multiply, _protoManager.Index<ShaderPrototype>(ODShaderID.BlendMultiply).InstanceUnique()}, //BLEND_MULTIPLY
-            {BlendMode.InsertOverlay, _protoManager.Index<ShaderPrototype>(ODShaderID.BlendInsetOverlay).InstanceUnique()} //BLEND_INSET_OVERLAY //TODO
+            {BlendMode.Default, _protoManager.Index<ShaderPrototype>(OdShaderId.BlendOverlay).InstanceUnique()}, //BLEND_DEFAULT (Same as BLEND_OVERLAY when there's no parent)
+            {BlendMode.Overlay, _protoManager.Index<ShaderPrototype>(OdShaderId.BlendOverlay).InstanceUnique()}, //BLEND_OVERLAY
+            {BlendMode.Add, _protoManager.Index<ShaderPrototype>(OdShaderId.BlendAdd).InstanceUnique()}, //BLEND_ADD
+            {BlendMode.Subtract, _protoManager.Index<ShaderPrototype>(OdShaderId.BlendSubtract).InstanceUnique()}, //BLEND_SUBTRACT
+            {BlendMode.Multiply, _protoManager.Index<ShaderPrototype>(OdShaderId.BlendMultiply).InstanceUnique()}, //BLEND_MULTIPLY
+            {BlendMode.InsertOverlay, _protoManager.Index<ShaderPrototype>(OdShaderId.BlendInsetOverlay).InstanceUnique()} //BLEND_INSET_OVERLAY //TODO
         };
 
         // Set the default parameters for each blend mode

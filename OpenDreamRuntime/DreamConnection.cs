@@ -48,10 +48,9 @@ public sealed partial class DreamConnection {
                 oldConnection.HandleDisconnection();
                 _mob!.SpawnProc("Logout").Dispose();
             }
-            if(oldMob is not null)
-                oldMob!.SpawnProc("Logout").Dispose();
-            if(_mob is not null)
-                _mob!.SpawnProc("Login", usr: _mob).Dispose();
+
+            oldMob?.SpawnProc("Logout").Dispose();
+            _mob?.SpawnProc("Login", usr: _mob).Dispose();
         }
     }
 

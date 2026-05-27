@@ -16,5 +16,10 @@
 	layer = MOB_LAYER
 
 	proc/Login()
+		if(!loc)
+			var/turf/fallback_spawn = locate(1, 1, 1) // TODO: Find nearest non-dense turf
+			if(fallback_spawn)
+				loc = fallback_spawn
 
 	proc/Logout()
+		del client

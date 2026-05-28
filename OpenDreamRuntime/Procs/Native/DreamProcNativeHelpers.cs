@@ -199,6 +199,86 @@ internal static partial class DreamProcNativeHelpers {
         return tiles;
     }
 
+    public static DreamValue HandleRange(NativeProc.Bundle bundle, DreamObject? usr, bool includeCenter) {
+        (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, usr as DreamObjectAtom, bundle.Arguments);
+        if (center is null)
+            return new DreamValue(bundle.ObjectTree.CreateList());
+
+        HashSet<DreamObjectArea> seenAreas = [];
+        DreamList rangeList = bundle.ObjectTree.CreateList(range.Height * range.Width);
+
+        void addToList(DreamValue value) {
+            rangeList.AddValue(value);
+            if(value.TryGetValueAsDreamObject<DreamObjectTurf>(out var turfValue) && !seenAreas.Contains(turfValue.Cell.Area)) {
+                var area = turfValue.Cell.Area;
+                rangeList.AddValue(new(area));
+                seenAreas.Add(area);
+            }
+        }
+
+        if(center is DreamObjectArea areaCenter) { // yeah you can do this
+            // setting rangeList directly cause we'll never hit the area case
+            rangeList.AddValue(new(center));
+            foreach(var turf in areaCenter.Turfs) {
+                rangeList.AddValue(new(turf));
+                foreach(var content in turf.Contents.EnumerateValues()) {
+                    rangeList.AddValue(content);
+                }
+            }
+            return new(rangeList);
+        }
+        else if(center is DreamObjectTurf turfCenter) {
+            if(includeCenter) { // if we're orange, we want to skip the else block too
+                addToList(new(center));
+                foreach(DreamValue content in turfCenter.Contents.EnumerateValues()) {
+                    addToList(content);
+                }
+            }
+        }
+        else { // we're getting the range of a container
+            // add our contents first
+            if(includeCenter) {
+                if(center.TryGetVariable("contents", out var centerContents) && centerContents.TryGetValueAsDreamList(out var centerContentsList)) {
+                    foreach(DreamValue content in centerContentsList.EnumerateValues()) {
+                        addToList(content);
+                    }
+                }
+                centerContents.Dispose();
+            }
+
+            // then we include our loc and the loc's contents (which includes us)
+            if (center.TryGetVariable("loc", out DreamValue centerLoc)) {
+                if (centerLoc.TryGetValueAsDreamObject<DreamObjectAtom>(out var centerLocObject)) {
+                    addToList(centerLoc);
+
+                    using var contents = centerLocObject.GetVariable("contents");
+                    if (contents.TryGetValueAsDreamList(out var locContentsList)) {
+                        foreach (DreamValue content in locContentsList.EnumerateValues()) {
+                            if(!includeCenter && content.TryGetValueAsDreamObject(out var dreamObject) && dreamObject == center)
+                                continue;
+                            addToList(content);
+                        }
+                    }
+                }
+                centerLoc.Dispose();
+                // if center isn't a turf either, abort here
+                if(centerLocObject is not DreamObjectTurf) {
+                    return new(rangeList);
+                }
+            }
+        }
+
+        // finally, add the surrounding turfs
+        foreach (var turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
+            addToList(new DreamValue(turf));
+            foreach (DreamValue content in turf.Contents.EnumerateValues()) {
+                addToList(content);
+            }
+        }
+
+        return new(rangeList);
+    }
+
     public static DreamValue HandleViewersHearers(NativeProc.Bundle bundle, DreamObject? usr, bool ignoreLight) {
         DreamValue? depthValue = null;
         DreamObjectAtom? center = null;
@@ -228,7 +308,7 @@ internal static partial class DreamProcNativeHelpers {
 
         var centerPos = bundle.AtomManager.GetAtomPosition(center);
         if (depthValue is null || !depthValue.Value.TryGetValueAsInteger(out var depth))
-            depth = bundle.DreamManager.WorldInstance.DefaultView.Range;
+            depth = bundle.DreamManager.WorldInstance.DefaultView.BiggestAxis;
 
         foreach (var mob in bundle.MapManager.GetMobsInRange(centerPos, depth)) {
             var (_, range) = ResolveViewArguments(bundle.DreamManager, mob, bundle.Arguments);
@@ -283,7 +363,7 @@ internal static partial class DreamProcNativeHelpers {
 
         var centerPos = bundle.AtomManager.GetAtomPosition(center);
         if (depthValue is null || !depthValue.Value.TryGetValueAsInteger(out var depth))
-            depth = bundle.DreamManager.WorldInstance.DefaultView.Range;
+            depth = bundle.DreamManager.WorldInstance.DefaultView.BiggestAxis;
 
         foreach (var atom in bundle.AtomManager.EnumerateAtoms(bundle.ObjectTree.Mob)) {
             var mob = (DreamObjectMob)atom;

@@ -945,6 +945,7 @@ public sealed class DMProcState : ProcState {
 
                     Caller = DreamObjectCallee.FromDMProcState(dmProcState);
                 }
+
                 Caller.IncRef();
                 return new(Caller);
             }

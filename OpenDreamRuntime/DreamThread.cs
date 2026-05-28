@@ -156,6 +156,8 @@ namespace OpenDreamRuntime {
         public DreamObject? Usr;
         public int ArgumentCount;
         public abstract DreamProc? Proc { get; }
+        [Access(typeof(DreamThread), Other = AccessPermissions.Read)]
+        public int Depth;
 
         protected DreamObjectCallee? Callee { get; set; }
         protected DreamObjectCallee? Caller { get; set; }
@@ -209,6 +211,7 @@ namespace OpenDreamRuntime {
 
         private ProcState? _current;
         private readonly Stack<ProcState> _stack = new();
+        public int StackDepth => _current is null ? 0 : (_stack.Count + 1); // including _current
 
         // The amount of stack frames containing `WaitFor = false`
         private int _syncCount;
@@ -250,11 +253,6 @@ namespace OpenDreamRuntime {
         [MustDisposeResource]
         public DreamValue Resume() {
             return ReentrantResume(null, out _);
-        }
-
-        public ProcState? PeekStack(int index = 0) {
-            if (_stack.Count == 0) return null;
-            return index == 0 ? _stack.Peek() : _stack.ElementAt(index);
         }
 
         /// <summary>
@@ -403,6 +401,7 @@ namespace OpenDreamRuntime {
             }
 
             _current = state;
+            _current.Depth = StackDepth;
         }
 
         public void PopProcState(bool dispose = true) {
@@ -425,6 +424,15 @@ namespace OpenDreamRuntime {
             if (!_stack.TryPop(out _current)) {
                 _current = null;
             }
+        }
+
+        /// <remarks><c>index == 0</c> will return the current proc. Greater values returns the callers.</remarks>
+        /// <returns>ProcState in the call stack offset by index</returns>
+        /// <exception cref="Exception.ArgumentOutOfRangeException"/>
+        public ProcState? PeekStack(int index) {
+            if (StackDepth == 0) return null;
+            if (index == 0) return _current;
+            return index == 1 ? _stack.Peek() : _stack.ElementAt(index - 1);
         }
 
         // Used by implementations of DreamProc::InternalContinue to defer execution to be resumed later.

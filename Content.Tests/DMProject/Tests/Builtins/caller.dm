@@ -1,14 +1,16 @@
+#define COMPARE(a, b) if(a != b) {CRASH("Assertion failed: expected [b] got [a]")}
+
 /datum/meep/proc/bar()
-    ASSERT(caller.caller.caller.name == "ihateithere")
+    COMPARE("[caller.caller.caller.name]", nameof(/proc/RunTest))
 
 /datum/proc/foo()
     var/datum/meep/M = new
-    ASSERT(caller.name == "ihateithere")
+    COMPARE("[caller.name]", nameof(/proc/ihateithere))
     M.bar()
 
 /proc/ihateithere()
 	var/datum/D = new
-	ASSERT(caller.name == "RunTest")
+	COMPARE("[caller.name]", nameof(/proc/RunTest))
 	D.foo()
 
 /proc/RunTest()

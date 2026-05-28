@@ -3,13 +3,23 @@ using OpenDreamRuntime.Procs;
 
 namespace OpenDreamRuntime.Objects.Types;
 
-public sealed class DreamObjectCallee : DreamObject {
+public sealed class DreamObjectCallee(DreamObjectDefinition objectDefinition) : DreamObject(objectDefinition) {
     public ProcState? ProcState;
     public long ProcStateId; // Used to ensure the proc state hasn't been reused for another proc
-    private DreamObjectCallee? _caller; // Caching caller prevents issues with returning incorrect info when the proc ends or calls another proc
+    private DreamObjectCallee? _caller; // cached, we'll build the call stack only if we actually need to
 
-    public DreamObjectCallee(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
-        SetCaller(); // we need to cache _caller recursively
+    public static DreamObjectCallee FromDMProcState(DMProcState procState) {
+        var proc = procState.Proc;
+        var callee = proc.ObjectTree.CreateObject<DreamObjectCallee>(proc.ObjectTree.Callee);
+        callee.ProcState = procState;
+        callee.ProcStateId = procState.Id;
+        return callee;
+    }
+
+    protected override void HandleDeletion() {
+        _caller?.DecRef();
+        _caller = null;
+        base.HandleDeletion();
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
@@ -25,7 +35,8 @@ public sealed class DreamObjectCallee : DreamObject {
                 value = new(new ProcArgsList(ObjectTree.List.ObjectDefinition, ProcState));
                 return true;
             case "caller":
-                SetCaller(); // sometimes ProcState is null in the constructor?
+                if(_caller is null)
+                    SetCaller();
                 value = new DreamValue(_caller);
                 return true;
             case "name":
@@ -71,12 +82,12 @@ public sealed class DreamObjectCallee : DreamObject {
     /// </summary>
     private void SetCaller() {
         if (ProcState is null || _caller is not null) return;
-        if (ProcState.Thread.PeekStack(1) is not DMProcState dmProcState) return;
+        int ourIndex = ProcState.Thread.StackDepth - ProcState.Depth;
+        if (ProcState.Thread.PeekStack(ourIndex + 1) is not DMProcState dmProcState) return;
 
-        var caller = ObjectTree.CreateObject<DreamObjectCallee>(ObjectTree.Callee);
-        caller.ProcState = dmProcState;
-        caller.ProcStateId = dmProcState.Id;
-        _caller = caller;
+        _caller = FromDMProcState(dmProcState);
+        _caller.IncRef();
+        _caller.SetCaller();
     }
 
     protected override void SetVar(string varName, DreamValue value) {

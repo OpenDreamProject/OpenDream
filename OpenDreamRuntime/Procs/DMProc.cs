@@ -372,13 +372,23 @@ public sealed class DMProcState : ProcState {
     public int ProgramCounter => _pc;
     public override DMProc? Proc => (DMProc?)_proc; // spawn() procs can make this null for a sec, don't worry about it
 
-    public DreamObjectCallee CalleeObject { get; set; } = default!;
+    public DreamObjectCallee CalleeObject { get {
+            if(Thread is null) // we've been disposed, whatever fails deserves to fail
+                return null!;
+            if(_callee is null) {
+                _callee = DreamObjectCallee.FromDMProcState(this);
+                _callee.IncRef(); // the state's ref to the callee
+            }
+
+            return _callee;
+        } }
 
 #if TOOLS
     public override (string SourceFile, int Line) TracyLocationId => _proc.GetSourceAtOffset(_pc+1);
 #endif
 
     private DMProc _proc = default!;
+    private DreamObjectCallee? _callee = default;
     private bool _firstResume = true;
     private int _pc;
     private readonly Stack<int> _catchPosition = new();
@@ -415,8 +425,6 @@ public sealed class DMProcState : ProcState {
         Instance?.IncRef();
         Usr = other.Usr;
         Usr?.IncRef();
-        CalleeObject = DreamObjectCallee.FromDMProcState(this);
-        CalleeObject.IncRef();
         ArgumentCount = other.ArgumentCount;
         _pc = other._pc;
         _firstResume = false;
@@ -437,8 +445,6 @@ public sealed class DMProcState : ProcState {
         Instance?.IncRef();
         Usr = usr;
         Usr?.IncRef();
-        CalleeObject = DreamObjectCallee.FromDMProcState(this);
-        CalleeObject.IncRef();
         ArgumentCount = Math.Max(arguments.Count, _proc.ArgumentNames?.Count ?? 0);
         _stack = DreamValuePool.Rent(maxStackSize);
         _firstResume = true;
@@ -619,8 +625,8 @@ public sealed class DMProcState : ProcState {
         _pc = 0;
         _proc = null!;
 
-        CalleeObject.DecRef();
-        CalleeObject = null!;
+        _callee?.DecRef();
+        _callee = null;
 
         DreamValuePool.Return(_stack);
         _stackIndex = 0;

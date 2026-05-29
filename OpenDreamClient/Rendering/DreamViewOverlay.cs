@@ -81,8 +81,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
     };
 
     //Used for supressing the "No Literals" warning on shader index lookups
-    private static class OdShaderId
-    {
+    private static class OdShaderId {
         public const string
             BlockColor = "blockcolor",
             Color = "color",

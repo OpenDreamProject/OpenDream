@@ -206,7 +206,6 @@ namespace OpenDreamRuntime {
 
         private ProcState? _current;
         private readonly Stack<ProcState> _stack = new();
-        public int StackDepth => _current is null ? 0 : (_stack.Count + 1); // including _current
 
         // The amount of stack frames containing `WaitFor = false`
         private int _syncCount;

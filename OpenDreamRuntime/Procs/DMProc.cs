@@ -370,7 +370,7 @@ public sealed class DMProcState : ProcState {
     public readonly IDreamValueEnumerator?[] Enumerators = new IDreamValueEnumerator?[16];
 
     public int ProgramCounter => _pc;
-    public override DMProc Proc => _proc;
+    public override DMProc? Proc => _proc;
 
     public DreamObjectCallee CalleeObject { get; set; } = default!;
 
@@ -441,7 +441,6 @@ public sealed class DMProcState : ProcState {
         for (int i = 0; i < ArgumentCount; i++) {
             SetArgument(i, arguments.GetArgument(i));
         }
-
 
         var callee = Proc.ObjectTree.CreateObject<DreamObjectCallee>(Proc.ObjectTree.Callee);
         callee.ProcState = this;
@@ -956,6 +955,7 @@ public sealed class DMProcState : ProcState {
                         return DreamValue.Null;
                     dmCaller = realDmCaller;
                 }
+
                 dmCaller.CalleeObject.IncRef();
                 return new(dmCaller.CalleeObject);
             }

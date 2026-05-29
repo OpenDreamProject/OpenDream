@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using DMCompiler.DM;
 using JetBrains.Annotations;
 using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamShared.Dream;

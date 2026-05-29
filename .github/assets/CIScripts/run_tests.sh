@@ -47,36 +47,49 @@ while read -r file; do
 	fi
 
 	echo "Running $relative"
-	touch $basedir/errors.log
-	if ! DreamDaemon $basedir/environment.dmb -once -close -trusted -verbose -invisible; then
-		echo "TEST FAILED: BYOND CRASHED!"
-		echo "TEST FAILED: $relative" >> summary.log
+	touch Tests/errors.log
+	if ! DreamDaemon Tests/environment.dmb -once -close -trusted -verbose -invisible -log errors.log ; then
+		echo "TEST FAILED:$file:BYOND crashed"
+		echo "CRASHED: $relative" >> $logfile
 		byondcrashes=$((byondcrashes+1))
-		sed -i '/^[[:space:]]*$/d' $basedir/errors.log
-		cat $basedir/errors.log
-		rm $basedir/errors.log
+		sed -i '/^[[:space:]]*$/d' Tests/errors.log
+		cat Tests/errors.log
+		rm Tests/errors.log
 		testsfailed=$((testsfailed + 1))
-		continue		
+		return
 	fi
-	if [ -s "$basedir/errors.log" ]; then
-		if [[ $first_line == "// RUNTIME ERROR"* || $first_line == "//RUNTIME ERROR"* ]]	then #expected runtime error, should compile but then fail to run
+	sed -i '1,3d; /^[[:space:]]*$/d' Tests/errors.log
+	if [ -s Tests/errors.log ]
+	then
+		if [[ $first_line == "// RUNTIME ERROR"* || $first_line == "//RUNTIME ERROR"* ]]
+		then #expected runtime error, should compile but then fail to run
 			echo "Expected runtime error, test passed"
-			rm $basedir/errors.log
+			rm Tests/errors.log
 			testspassed=$((testspassed + 1))
-			continue
+			return
 		else
 			echo "Errors detected!"
-			sed -i '/^[[:space:]]*$/d' $basedir/errors.log
-			cat $basedir/errors.log
-			echo "TEST FAILED: $relative"
-			rm $basedir/errors.log
-			echo "TEST FAILED: $relative" >> summary.log
+			sed -i '/^[[:space:]]*$/d' Tests/errors.log
+			cat Tests/errors.log
+			echo "TEST FAILED:$file:Unexpected runtime error"
+			rm Tests/errors.log
+			echo "Failed: $relative" >> $logfile
 			testsfailed=$((testsfailed + 1))
-			continue
+			return
 		fi
 	else
-		echo "Test passed: $relative"
-		testspassed=$((testspassed + 1))
+		if [[ $first_line == "// RUNTIME ERROR"* || $first_line == "//RUNTIME ERROR"* ]]
+		then #expected runtime error, should compile but then fail to run
+			echo "TEST FAILED:$file:Expected runtime error, but none found!"
+			rm Tests/errors.log
+			echo "Failed: $relative" >> $logfile
+			testsfailed=$((testsfailed + 1))
+			return
+		else	
+			echo "Test passed: $relative"
+			testspassed=$((testspassed + 1))
+			rm Tests/errors.log
+		fi
 	fi
 done < test_file_diffs
 

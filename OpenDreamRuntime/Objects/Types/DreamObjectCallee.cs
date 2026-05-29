@@ -83,14 +83,7 @@ public sealed class DreamObjectCallee(DreamObjectDefinition objectDefinition) : 
     private void SetCaller() {
         if (ProcState is null || _caller is not null) return;
         int ourIndex = ProcState.Thread.StackDepth - ProcState.Depth;
-        ProcState? callerProcState = ProcState.Thread.PeekStack(ourIndex + 1);
-        if(callerProcState is not DMProcState dmProcState) { // avert your eyes
-            if(callerProcState is not InitDreamObjectState) return;
-            callerProcState = ProcState.Thread.PeekStack(ourIndex + 2);
-            if(callerProcState is not DMProcState realDmProcState) return;
-            dmProcState = realDmProcState;
-        }
-
+        if (ProcState.Thread.PeekStack(ourIndex + 1) is not DMProcState dmProcState) return;
 
         _caller = FromDMProcState(dmProcState);
         _caller.IncRef();

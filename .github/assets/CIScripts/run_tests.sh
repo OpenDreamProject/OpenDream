@@ -48,7 +48,7 @@ while read -r file; do
 
 	echo "Running $relative"
 	touch $basedir/errors.log
-	if ! DreamDaemon Tests/environment.dmb -once -close -trusted -verbose -invisible -log errors.log ; then
+	if ! DreamDaemon $basedir/environment.dmb -once -close -trusted -verbose -invisible -log errors.log ; then
 		echo "TEST FAILED:$file:BYOND crashed"
 		echo "CRASHED: $relative" >> $logfile
 		byondcrashes=$((byondcrashes+1))

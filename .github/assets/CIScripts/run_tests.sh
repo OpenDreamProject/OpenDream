@@ -50,7 +50,7 @@ while read -r file; do
 	touch $basedir/errors.log
 	if ! DreamDaemon $basedir/environment.dmb -once -close -trusted -verbose -invisible -log errors.log ; then
 		echo "TEST FAILED:$file:BYOND crashed"
-		echo "CRASHED: $relative" >> $logfile
+		echo "CRASHED: $relative" >> summary.log
 		byondcrashes=$((byondcrashes+1))
 		sed -i '/^[[:space:]]*$/d' $basedir/errors.log
 		cat $basedir/errors.log
@@ -73,7 +73,7 @@ while read -r file; do
 			cat $basedir/errors.log
 			echo "TEST FAILED:$file:Unexpected runtime error"
 			rm $basedir/errors.log
-			echo "Failed: $relative" >> $logfile
+			echo "Failed: $relative" >> summary.log
 			testsfailed=$((testsfailed + 1))
 			continue
 		fi
@@ -82,7 +82,7 @@ while read -r file; do
 		then #expected runtime error, should compile but then fail to run
 			echo "TEST FAILED:$file:Expected runtime error, but none found!"
 			rm $basedir/errors.log
-			echo "Failed: $relative" >> $logfile
+			echo "Failed: $relative" >> summary.log
 			testsfailed=$((testsfailed + 1))
 			continue
 		else	

@@ -1,30 +1,18 @@
-﻿using DMCompiler.Bytecode;
+﻿using System.Diagnostics.CodeAnalysis;
+using DMCompiler.Bytecode;
 using OpenDreamRuntime.Procs;
 
 namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectCallee(DreamObjectDefinition objectDefinition) : DreamObject(objectDefinition) {
-    public ProcState? ProcState;
+    public DMProcState? ProcState;
     public long ProcStateId; // Used to ensure the proc state hasn't been reused for another proc
-    private DreamObjectCallee? _caller; // cached, we'll build the call stack only if we actually need to
-
-    public static DreamObjectCallee FromDMProcState(DMProcState procState) {
-        var proc = procState.Proc;
-        var callee = proc.ObjectTree.CreateObject<DreamObjectCallee>(proc.ObjectTree.Callee);
-        callee.ProcState = procState;
-        callee.ProcStateId = procState.Id;
-        return callee;
-    }
-
-    protected override void HandleDeletion() {
-        _caller?.DecRef();
-        _caller = null;
-        base.HandleDeletion();
-    }
+    [MemberNotNullWhen(false, nameof(ProcState))]
+    public bool Expired => ProcState == null || ProcState.Id != ProcStateId;
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
         // TODO: This ProcState check doesn't match byond behavior?
-        if (ProcState == null || ProcState.Id != ProcStateId)
+        if (Expired)
             throw new Exception("This callee has expired");
 
         switch (varName) {
@@ -35,9 +23,16 @@ public sealed class DreamObjectCallee(DreamObjectDefinition objectDefinition) : 
                 value = new(new ProcArgsList(ObjectTree.List.ObjectDefinition, ProcState));
                 return true;
             case "caller":
-                if(_caller is null)
-                    SetCaller();
-                value = new DreamValue(_caller);
+                if(ProcState.Caller is DMProcState callerState) {
+                    callerState.CalleeObject.IncRef();
+                    value = new(callerState.CalleeObject);
+                }
+                else if(ProcState.Caller?.Caller is DMProcState superCallerState) { // init case
+                    superCallerState.CalleeObject.IncRef();
+                    value = new(superCallerState.CalleeObject);
+                }
+                else
+                    value = DreamValue.Null;
                 return true;
             case "name":
                 value = ProcState.Proc?.VerbName != null ? new(ProcState.Proc.VerbName) : DreamValue.Null;
@@ -77,27 +72,14 @@ public sealed class DreamObjectCallee(DreamObjectDefinition objectDefinition) : 
         }
     }
 
-    /// <summary>
-    /// Sets <see cref="_caller"/> if it hasn't been already and <see cref="ProcState"/> is not null
-    /// </summary>
-    private void SetCaller() {
-        if (ProcState is null || _caller is not null) return;
-        int ourIndex = ProcState.Thread.StackDepth - ProcState.Depth;
-        if (ProcState.Thread.PeekStack(ourIndex + 1) is not DMProcState dmProcState) return;
-
-        _caller = FromDMProcState(dmProcState);
-        _caller.IncRef();
-        _caller.SetCaller();
-    }
-
     protected override void SetVar(string varName, DreamValue value) {
         throw new Exception($"Cannot set var {varName} on /callee");
     }
 
     public override string GetDisplayName(StringFormatEncoder.FormatSuffix? suffix = null) {
-        if (ProcState == null || ProcState.Id != ProcStateId)
+        if (Expired)
             return string.Empty;
 
-        return $"proc<{ProcState.Proc},0>"; // TODO: Call depth
+        return $"proc<{ProcState.Proc},{ProcState.Id}>"; // ID isn't accurate but does that really matter?
     }
 }

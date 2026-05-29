@@ -156,12 +156,7 @@ namespace OpenDreamRuntime {
         public DreamObject? Usr;
         public int ArgumentCount;
         public abstract DreamProc? Proc { get; }
-
-        [Access(typeof(DreamThread), Other = AccessPermissions.Read)]
-        public int Depth;
-
-        protected DreamObjectCallee? Callee { get; set; }
-        protected DreamObjectCallee? Caller { get; set; }
+        public ProcState? Caller { get; set; }
 
         protected void Initialize(DreamThread thread, bool waitFor) {
             Thread = thread;
@@ -401,8 +396,8 @@ namespace OpenDreamRuntime {
                 _stack.Push(_current);
             }
 
+            state.Caller = _current;
             _current = state;
-            _current.Depth = StackDepth;
         }
 
         public void PopProcState(bool dispose = true) {
@@ -425,14 +420,6 @@ namespace OpenDreamRuntime {
             if (!_stack.TryPop(out _current)) {
                 _current = null;
             }
-        }
-
-        /// <remarks><c>index == 0</c> will return the current proc. Greater values returns the callers.</remarks>
-        /// <returns>ProcState in the call stack offset by index, or null if the index held nothing.</returns>
-        public ProcState? PeekStack(int index) {
-            if (StackDepth == 0) return null;
-            if (index == 0) return _current;
-            return index == 1 ? _stack.Peek() : _stack.ElementAtOrDefault(index - 1);
         }
 
         // Used by implementations of DreamProc::InternalContinue to defer execution to be resumed later.

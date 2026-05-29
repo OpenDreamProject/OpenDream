@@ -372,6 +372,8 @@ public sealed class DMProcState : ProcState {
     public int ProgramCounter => _pc;
     public override DMProc Proc => _proc;
 
+    public DreamObjectCallee CalleeObject { get; set; } = default!;
+
 #if TOOLS
     public override (string SourceFile, int Line) TracyLocationId => _proc.GetSourceAtOffset(_pc+1);
 #endif
@@ -439,6 +441,14 @@ public sealed class DMProcState : ProcState {
         for (int i = 0; i < ArgumentCount; i++) {
             SetArgument(i, arguments.GetArgument(i));
         }
+
+
+        var callee = Proc.ObjectTree.CreateObject<DreamObjectCallee>(Proc.ObjectTree.Callee);
+        callee.ProcState = this;
+        callee.ProcStateId = Id;
+        callee.IncRef();
+        CalleeObject = callee;
+
 
         arguments.Dispose();
     }
@@ -611,6 +621,9 @@ public sealed class DMProcState : ProcState {
         ArgumentCount = 0;
         _pc = 0;
         _proc = null!;
+
+        CalleeObject.DecRef();
+        CalleeObject = null!;
 
         DreamValuePool.Return(_stack);
         _stackIndex = 0;
@@ -933,21 +946,18 @@ public sealed class DMProcState : ProcState {
                 return new(DreamManager.WorldInstance);
             case DMReference.Type.Callee: {
                 // BYOND seems to reuse the same object. At least, callee == callee
-                Callee ??= DreamObjectCallee.FromDMProcState(this);
-                Callee.IncRef();
-                return new(Callee);
+                CalleeObject.IncRef();
+                return new(CalleeObject);
             }
             case DMReference.Type.Caller: {
                 // Note that the ref says that caller still returns a "/callee" object, just with the caller's info
-                if(Caller is null) {
-                    if(Thread.PeekStack(1) is not DMProcState dmProcState)
+                if(Caller is not DMProcState dmCaller) {
+                    if(Caller?.Caller is not DMProcState realDmCaller) // init case
                         return DreamValue.Null;
-
-                    Caller = DreamObjectCallee.FromDMProcState(dmProcState);
+                    dmCaller = realDmCaller;
                 }
-
-                Caller.IncRef();
-                return new(Caller);
+                dmCaller.CalleeObject.IncRef();
+                return new(dmCaller.CalleeObject);
             }
             case DMReference.Type.Field: {
                 var owner = peek ? Peek() : Pop();

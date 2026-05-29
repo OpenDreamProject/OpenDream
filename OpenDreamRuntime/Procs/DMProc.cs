@@ -940,8 +940,14 @@ public sealed class DMProcState : ProcState {
             case DMReference.Type.Caller: {
                 // Note that the ref says that caller still returns a "/callee" object, just with the caller's info
                 if(Caller is null) {
-                    if(Thread.PeekStack(1) is not DMProcState dmProcState)
-                        return DreamValue.Null;
+                    var peekState = Thread.PeekStack(1);
+                    if(peekState is not DMProcState dmProcState)
+                        // THIS IS A HACK!!!!! But it works
+                        if(peekState is not InitDreamObjectState)
+                            return DreamValue.Null;
+                        if(Thread.PeekStack(2) is not DMProcState realDmProcState)
+                            return DreamValue.Null;
+                        dmProcState = realDmProcState;
 
                     Caller = DreamObjectCallee.FromDMProcState(dmProcState);
                 }

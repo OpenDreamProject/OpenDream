@@ -373,7 +373,8 @@ public sealed class DMProcState : ProcState {
     public override DMProc? Proc => (DMProc?)_proc; // spawn() procs can make this null for a sec, don't worry about it
 
     public DreamObjectCallee CalleeObject { get {
-            if(Thread is null) // we've been disposed, whatever fails deserves to fail
+            var maybeThread = (DreamThread?)Thread;
+            if(maybeThread is null) // we've been disposed, whatever fails deserves to fail
                 return null!;
             if(_callee is null) {
                 _callee = DreamObjectCallee.FromDMProcState(this);
@@ -388,7 +389,7 @@ public sealed class DMProcState : ProcState {
 #endif
 
     private DMProc _proc = default!;
-    private DreamObjectCallee? _callee = default;
+    private DreamObjectCallee? _callee;
     private bool _firstResume = true;
     private int _pc;
     private readonly Stack<int> _catchPosition = new();

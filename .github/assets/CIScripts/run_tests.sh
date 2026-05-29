@@ -47,48 +47,48 @@ while read -r file; do
 	fi
 
 	echo "Running $relative"
-	touch Tests/errors.log
+	touch $basedir/errors.log
 	if ! DreamDaemon Tests/environment.dmb -once -close -trusted -verbose -invisible -log errors.log ; then
 		echo "TEST FAILED:$file:BYOND crashed"
 		echo "CRASHED: $relative" >> $logfile
 		byondcrashes=$((byondcrashes+1))
-		sed -i '/^[[:space:]]*$/d' Tests/errors.log
-		cat Tests/errors.log
-		rm Tests/errors.log
+		sed -i '/^[[:space:]]*$/d' $basedir/errors.log
+		cat $basedir/errors.log
+		rm $basedir/errors.log
 		testsfailed=$((testsfailed + 1))
-		return
+		continue
 	fi
-	sed -i '1,3d; /^[[:space:]]*$/d' Tests/errors.log
-	if [ -s Tests/errors.log ]
+	sed -i '1,3d; /^[[:space:]]*$/d' $basedir/errors.log
+	if [ -s $basedir/errors.log ]
 	then
 		if [[ $first_line == "// RUNTIME ERROR"* || $first_line == "//RUNTIME ERROR"* ]]
 		then #expected runtime error, should compile but then fail to run
 			echo "Expected runtime error, test passed"
-			rm Tests/errors.log
+			rm $basedir/errors.log
 			testspassed=$((testspassed + 1))
-			return
+			continue
 		else
 			echo "Errors detected!"
-			sed -i '/^[[:space:]]*$/d' Tests/errors.log
-			cat Tests/errors.log
+			sed -i '/^[[:space:]]*$/d' $basedir/errors.log
+			cat $basedir/errors.log
 			echo "TEST FAILED:$file:Unexpected runtime error"
-			rm Tests/errors.log
+			rm $basedir/errors.log
 			echo "Failed: $relative" >> $logfile
 			testsfailed=$((testsfailed + 1))
-			return
+			continue
 		fi
 	else
 		if [[ $first_line == "// RUNTIME ERROR"* || $first_line == "//RUNTIME ERROR"* ]]
 		then #expected runtime error, should compile but then fail to run
 			echo "TEST FAILED:$file:Expected runtime error, but none found!"
-			rm Tests/errors.log
+			rm $basedir/errors.log
 			echo "Failed: $relative" >> $logfile
 			testsfailed=$((testsfailed + 1))
-			return
+			continue
 		else	
 			echo "Test passed: $relative"
 			testspassed=$((testspassed + 1))
-			rm Tests/errors.log
+			rm $basedir/errors.log
 		fi
 	fi
 done < test_file_diffs

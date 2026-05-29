@@ -11,6 +11,14 @@ public sealed class DreamObjectCallee(DreamObjectDefinition objectDefinition) : 
     [MemberNotNullWhen(false, nameof(ProcState))]
     public bool Expired => ProcState == null || ProcState.Id != ProcStateId;
 
+    public static DreamObjectCallee FromDMProcState(DMProcState procState) {
+        var proc = procState.Proc!;
+        var callee = proc.ObjectTree.CreateObject<DreamObjectCallee>(proc.ObjectTree.Callee);
+        callee.ProcState = procState;
+        callee.ProcStateId = procState.Id;
+        return callee;
+    }
+
     protected override bool TryGetVar(string varName, out DreamValue value) {
         // TODO: This ProcState check doesn't match byond behavior?
         if (Expired)
@@ -38,17 +46,17 @@ public sealed class DreamObjectCallee(DreamObjectDefinition objectDefinition) : 
                     value = DreamValue.Null;
                 return true;
             case "name":
-                value = ProcState.Proc is not null
+                value = ProcState.Proc?.VerbName is not null
                     ? new(ProcState.Proc.VerbName)
                     : DreamValue.Null;
                 return true;
             case "desc":
-                value = ProcState.Proc is not null
+                value = ProcState.Proc?.VerbDesc is not null
                     ? new(ProcState.Proc.VerbDesc)
                     : DreamValue.Null;
                 return true;
             case "category":
-                value = ProcState.Proc is not null
+                value = ProcState.Proc?.VerbCategory is not null
                     ? new(ProcState.Proc.VerbCategory)
                     : DreamValue.Null;
                 return true;

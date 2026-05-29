@@ -370,7 +370,7 @@ public sealed class DMProcState : ProcState {
     public readonly IDreamValueEnumerator?[] Enumerators = new IDreamValueEnumerator?[16];
 
     public int ProgramCounter => _pc;
-    public override DMProc? Proc => _proc;
+    public override DMProc? Proc => (DMProc?)_proc; // spawn() procs can make this null for a sec, don't worry about it
 
     public DreamObjectCallee CalleeObject { get; set; } = default!;
 
@@ -407,6 +407,7 @@ public sealed class DMProcState : ProcState {
 
     public DMProcState() { }
 
+    /// <remarks>This handles spawn() threads</remarks>
     private DMProcState(DMProcState other, DreamThread thread) {
         base.Initialize(thread, other.WaitFor);
         _proc = other._proc;
@@ -414,6 +415,8 @@ public sealed class DMProcState : ProcState {
         Instance?.IncRef();
         Usr = other.Usr;
         Usr?.IncRef();
+        CalleeObject = DreamObjectCallee.FromDMProcState(this);
+        CalleeObject.IncRef();
         ArgumentCount = other.ArgumentCount;
         _pc = other._pc;
         _firstResume = false;
@@ -434,6 +437,8 @@ public sealed class DMProcState : ProcState {
         Instance?.IncRef();
         Usr = usr;
         Usr?.IncRef();
+        CalleeObject = DreamObjectCallee.FromDMProcState(this);
+        CalleeObject.IncRef();
         ArgumentCount = Math.Max(arguments.Count, _proc.ArgumentNames?.Count ?? 0);
         _stack = DreamValuePool.Rent(maxStackSize);
         _firstResume = true;
@@ -441,13 +446,6 @@ public sealed class DMProcState : ProcState {
         for (int i = 0; i < ArgumentCount; i++) {
             SetArgument(i, arguments.GetArgument(i));
         }
-
-        var callee = Proc.ObjectTree.CreateObject<DreamObjectCallee>(Proc.ObjectTree.Callee);
-        callee.ProcState = this;
-        callee.ProcStateId = Id;
-        callee.IncRef();
-        CalleeObject = callee;
-
 
         arguments.Dispose();
     }

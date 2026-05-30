@@ -18,7 +18,7 @@
 	ASSERT(length(AL) == 2)
 	
 	var/holder = AL2
-	AL2 -= holder //pretty sure this being broken is a byond bug
+	AL2 -= holder
 	ASSERT(!("a" in AL2))
 	ASSERT(!("b" in AL2))
 	ASSERT(!("c" in AL2))

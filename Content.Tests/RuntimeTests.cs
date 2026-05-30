@@ -54,10 +54,10 @@ public sealed class RuntimeTests {
 
             using (Assert.EnterMultipleScope()) {
                 Assert.That(tests["ProcWithNothing"].MaxVariableId, Is.Zero);
-                Assert.That(tests["ProcWithNoScope"].MaxVariableId, Is.EqualTo(5));
-                Assert.That(tests["ProcWithOnlyScope"].MaxVariableId, Is.EqualTo(5));
-                Assert.That(tests["ProcWithFullOuterScope"].MaxVariableId, Is.EqualTo(3));
-                Assert.That(tests["ProcWithFullInnerScope"].MaxVariableId, Is.EqualTo(4));
+                Assert.That(tests["ProcWithNoScope"].MaxVariableId, Is.EqualTo(6));
+                Assert.That(tests["ProcWithOnlyScope"].MaxVariableId, Is.EqualTo(6));
+                Assert.That(tests["ProcWithFullOuterScope"].MaxVariableId, Is.EqualTo(4));
+                Assert.That(tests["ProcWithFullInnerScope"].MaxVariableId, Is.EqualTo(5));
             }
         }
     }

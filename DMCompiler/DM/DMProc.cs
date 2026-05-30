@@ -92,7 +92,7 @@ internal sealed class DMProc {
 
     private readonly List<string> _localVariableNames = new();
     private int _localVariableIdCounter;
-    private int _localVariableHighestId; // 0 is a valid alloc index, which will clip procs with no localvars but that shouldn't matter
+    private int _localVariableHighestId;
 
     private readonly List<SourceInfoJson> _sourceInfo = new();
     private string? _lastSourceFile;
@@ -149,8 +149,8 @@ internal sealed class DMProc {
         WriteLocalVariable(name);
 
         int variableId = _localVariableIdCounter++;
-        if(variableId > _localVariableHighestId) {
-            _localVariableHighestId = variableId;
+        if(_localVariableIdCounter > _localVariableHighestId) {
+            _localVariableHighestId = _localVariableIdCounter;
         }
 
         return variableId;

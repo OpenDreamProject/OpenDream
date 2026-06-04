@@ -947,10 +947,8 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("Icon", Type = DreamValueTypeFlag.DreamResource)]
     [DreamProcParameter("mode", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
     public static DreamValue NativeProc_icon_states(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-        var mode = bundle.GetArgument(1, "mode").MustGetValueAsInteger();
-        if (mode != 0) {
-            throw new NotImplementedException("Only mode 0 is implemented");
-        }
+        // TODO: implement mode=0 and mode=2 when TILED_ICON_MAP is implemented
+        // var mode = bundle.GetArgument(1, "mode").MustGetValueAsInteger();
 
         var arg = bundle.GetArgument(0, "Icon");
 

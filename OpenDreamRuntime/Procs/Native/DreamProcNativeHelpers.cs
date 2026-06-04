@@ -129,6 +129,7 @@ internal static partial class DreamProcNativeHelpers {
                 for(int posX = startingPosX; posX <= endingPosX; posX++) {
                     //the criss
                     yield return tiles[posX, centerPos.Y - donut];
+
                     if(donut > topRange) continue;
                     //the cross
                     yield return tiles[posX, centerPos.Y + donut];

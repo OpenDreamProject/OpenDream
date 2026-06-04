@@ -7,7 +7,7 @@
 
 /datum/unit_test/range/proc/run_case(atom/center, list/expected, identifier, isorange, view_size = 1)
   var/error_index = 0
-  var/list/result = isorange ? orange(center, 1) : range(center, view_size)
+  var/list/result = isorange ? orange(center, view_size) : range(center, view_size)
   try
     if(result.len != expected.len)
       error_index = expected.len

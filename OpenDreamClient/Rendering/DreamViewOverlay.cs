@@ -211,6 +211,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
         current.TieBreaker = tieBreaker;
         current.RenderSource = icon.Appearance.RenderSource;
         current.RenderTarget = icon.Appearance.RenderTarget;
+        current.VisFlags = icon.Appearance.VisFlags;
         current.AppearanceFlags = icon.Appearance.AppearanceFlags;
         current.BlendMode = icon.Appearance.BlendMode;
         current.Flick = flick;

@@ -142,6 +142,7 @@ public sealed partial class AtomManager {
             case "plane":
             case "blend_mode":
             case "appearance_flags":
+            case "vis_flags":
             case "alpha":
             case "glide_size":
             case "render_source":
@@ -252,8 +253,12 @@ public sealed partial class AtomManager {
                 appearance.BlendMode = Enum.IsDefined((BlendMode)blendMode) ? (BlendMode)blendMode : BlendMode.Default;
                 break;
             case "appearance_flags":
-                value.TryGetValueAsInteger(out int flagsVar);
-                appearance.AppearanceFlags = (AppearanceFlags) flagsVar;
+                value.TryGetValueAsInteger(out int appearanceFlagsVar);
+                appearance.AppearanceFlags = (AppearanceFlags) appearanceFlagsVar;
+                break;
+            case "vis_flags":
+                value.TryGetValueAsInteger(out int visFlagsVar);
+                appearance.VisFlags = (VisFlags) visFlagsVar;
                 break;
             case "alpha":
                 value.TryGetValueAsFloat(out float floatAlpha);
@@ -408,6 +413,8 @@ public sealed partial class AtomManager {
                 return new((int) appearance.BlendMode);
             case "appearance_flags":
                 return new((int) appearance.AppearanceFlags);
+            case "vis_flags":
+                return new((int) appearance.VisFlags);
             case "alpha":
                 return new(appearance.Alpha);
             case "glide_size":
@@ -641,6 +648,7 @@ public sealed partial class AtomManager {
         def.TryGetVariable("render_target", out var renderTargetVar);
         def.TryGetVariable("blend_mode", out var blendModeVar);
         def.TryGetVariable("appearance_flags", out var appearanceFlagsVar);
+        def.TryGetVariable("vis_flags", out var visFlagsVar);
         def.TryGetVariable("maptext", out var maptextVar);
         def.TryGetVariable("maptext_width", out var maptextWidthVar);
         def.TryGetVariable("maptext_height", out var maptextHeightVar);
@@ -671,6 +679,7 @@ public sealed partial class AtomManager {
         SetAppearanceVar(appearance, "render_target", renderTargetVar);
         SetAppearanceVar(appearance, "blend_mode", blendModeVar);
         SetAppearanceVar(appearance, "appearance_flags", appearanceFlagsVar);
+        SetAppearanceVar(appearance, "vis_flags", visFlagsVar);
         SetAppearanceVar(appearance, "maptext", maptextVar);
         SetAppearanceVar(appearance, "maptext_width", maptextWidthVar);
         SetAppearanceVar(appearance, "maptext_height", maptextHeightVar);

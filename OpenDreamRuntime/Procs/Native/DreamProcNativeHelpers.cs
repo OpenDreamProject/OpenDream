@@ -71,6 +71,7 @@ internal static partial class DreamProcNativeHelpers {
                     if(mapMgr.TryGetTurfAt((posX, centerPos.Y - donut), centerPos.Z, out var crissTurf)) {
                         yield return crissTurf;
                     }
+
                     if(donut > topRange) continue;
                     // the cross
                     if(mapMgr.TryGetTurfAt((posX, centerPos.Y + donut), centerPos.Z, out var crossTurf)) {
@@ -129,7 +130,6 @@ internal static partial class DreamProcNativeHelpers {
                 for(int posX = startingPosX; posX <= endingPosX; posX++) {
                     //the criss
                     yield return tiles[posX, centerPos.Y - donut];
-
                     if(donut > topRange) continue;
                     //the cross
                     yield return tiles[posX, centerPos.Y + donut];

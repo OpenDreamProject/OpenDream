@@ -37,51 +37,55 @@ internal static partial class DreamProcNativeHelpers {
     /// This helper attempts to mimic this iteration pattern.
     /// NOTE: THIS DOES NOT ITERATE OVER THE CENTRE. THAT'S THE PROC'S JOB.
     /// </summary>
-    /// <remarks>
-    /// This proc tries to handle the rectangular case, but I am not totally confident that it's up to parity.
-    /// </remarks>
-    /// <returns>Turfs, in the correct, parity order for the above procs.</returns>
+    /// <returns>Turfs, in the above order for the above procs.</returns>
     public static IEnumerable<DreamObjectTurf> MakeViewSpiral(DreamObjectAtom center, ViewRange distance) {
         var mapMgr = IoCManager.Resolve<IDreamMapManager>();
         var atomMgr = IoCManager.Resolve<AtomManager>();
         var centerPos = atomMgr.GetAtomPosition(center);
 
-        int widthRange = (distance.Width - 1) >> 1; // TODO: Make rectangles work.
-        int heightRange = (distance.Height - 1) >> 1;
-        int donutCount = Math.Max(widthRange, heightRange);
-        for(int d = 1; d <= donutCount; d++) { // for each donut
-            int sideLength = d + d + 1;
-            //The left column
-            {
-                int leftColumnX = centerPos.X - d;
-                int startingLeftColumnY = centerPos.Y - d;
-                for (int i = 0; i < sideLength; ++i) {
-                    if (mapMgr.TryGetTurfAt((leftColumnX, startingLeftColumnY + i), centerPos.Z, out var turf)) {
+        int bottomRange = distance.Height / 2;
+        int topRange = (distance.Height - 1) / 2;
+        int leftRange = distance.Width / 2;
+        int rightRange = (distance.Width - 1) / 2;
+
+        int donutCount = Math.Max(bottomRange, leftRange);
+        for(int donut = 1; donut <= donutCount; donut++) {
+            // left column
+            if(donut <= leftRange) {
+                int posX = centerPos.X - donut;
+                int startingPosY = centerPos.Y - Math.Min(donut, bottomRange);
+                int endingPosY = centerPos.Y + Math.Min(donut, topRange);
+                for(int posY = startingPosY; posY <= endingPosY; posY++) {
+                    if(mapMgr.TryGetTurfAt((posX, posY), centerPos.Z, out var turf)) {
                         yield return turf;
                     }
                 }
             }
-            //The criss-cross-apple-sauce
-            {
-                int crissCrossLength = sideLength - 2;
-                int startingCrossX = centerPos.X - d + 1;
-                for(int i = 0; i < crissCrossLength; ++i) {
-                    //the criss
-                    if (mapMgr.TryGetTurfAt((startingCrossX+i, centerPos.Y - d), centerPos.Z, out var crissTurf)) {
+
+            // the criss-cross-apple-sauce
+            if(donut <= bottomRange) {
+                int startingPosX = centerPos.X - donut + 1;
+                int endingPosX = centerPos.X + donut - 1;
+                for(int posX = startingPosX; posX <= endingPosX; posX++) {
+                    // the criss
+                    if(mapMgr.TryGetTurfAt((posX, centerPos.Y - donut), centerPos.Z, out var crissTurf)) {
                         yield return crissTurf;
                     }
-                    //the cross
-                    if (mapMgr.TryGetTurfAt((startingCrossX + i, centerPos.Y + d), centerPos.Z, out var crossTurf)) {
+                    if(donut > topRange) continue;
+                    // the cross
+                    if(mapMgr.TryGetTurfAt((posX, centerPos.Y + donut), centerPos.Z, out var crossTurf)) {
                         yield return crossTurf;
                     }
                 }
             }
-            //The right column
-            {
-                int rightColumnX = centerPos.X + d;
-                int startingRightColumnY = centerPos.Y - d;
-                for (int i = 0; i < sideLength; ++i) {
-                    if (mapMgr.TryGetTurfAt((rightColumnX, startingRightColumnY + i), centerPos.Z, out var turf)) {
+
+            // right column
+            if(donut <= rightRange) {
+                int posX = centerPos.X + donut; // this is the only difference
+                int startingPosY = centerPos.Y - Math.Min(donut, bottomRange);
+                int endingPosY = centerPos.Y + Math.Min(donut, topRange);
+                for(int posY = startingPosY; posY <= endingPosY; posY++) {
+                    if(mapMgr.TryGetTurfAt((posX, posY), centerPos.Z, out var turf)) {
                         yield return turf;
                     }
                 }
@@ -90,7 +94,7 @@ internal static partial class DreamProcNativeHelpers {
     }
 
     /// <summary>
-    /// A variation of <see cref="MakeViewSpiral(OpenDreamRuntime.Objects.Types.DreamObjectAtom,OpenDreamShared.Dream.ViewRange)"/>
+    /// A variation of <see cref="MakeViewSpiral(DreamObjectAtom, ViewRange)"/>
     /// that works on the view algorithm's collection of tiles
     /// </summary>
     public static IEnumerable<ViewAlgorithm.Tile?> MakeViewSpiral(ViewAlgorithm.Tile?[,] tiles, bool includeCenter) {
@@ -101,35 +105,44 @@ internal static partial class DreamProcNativeHelpers {
         if (includeCenter)
             yield return tiles[centerPos.X, centerPos.Y];
 
-        int widthRange = (width - 1) >> 1; // TODO: Make rectangles work.
-        int heightRange = (height - 1) >> 1;
-        int donutCount = Math.Max(widthRange, heightRange);
-        for(int d = 1; d <= donutCount; d++) { // for each donut
-            int sideLength = d + d + 1;
+        int bottomRange = height / 2;
+        int topRange = (height - 1) / 2;
+        int leftRange = width / 2;
+        int rightRange = (width - 1) / 2;
+        int donutCount = Math.Max(bottomRange, leftRange);
+        for(int donut = 1; donut <= donutCount; donut++) { // for each donut
 
             //The left column
-            int leftColumnX = centerPos.X - d;
-            int startingLeftColumnY = centerPos.Y - d;
-            for (int i = 0; i < sideLength; ++i) {
-                yield return tiles[leftColumnX, startingLeftColumnY + i];
+            if(donut <= leftRange) {
+                int posX = centerPos.X - donut;
+                int startingPosY = centerPos.Y - Math.Min(donut, bottomRange);
+                int endingPosY = centerPos.Y + Math.Min(donut, topRange);
+                for(int posY = startingPosY; posY <= endingPosY; posY++) {
+                    yield return tiles[posX, posY];
+                }
             }
 
             //The criss-cross-apple-sauce
-            int crissCrossLength = sideLength - 2;
-            int startingCrossX = centerPos.X - d + 1;
-            for(int i = 0; i < crissCrossLength; ++i) {
-                //the criss
-                yield return tiles[startingCrossX + i, centerPos.Y - d];
-
-                //the cross
-                yield return tiles[startingCrossX + i, centerPos.Y + d];
+            if(donut <= bottomRange) {
+                int startingPosX = centerPos.X - donut + 1;
+                int endingPosX = centerPos.X + donut - 1;
+                for(int posX = startingPosX; posX <= endingPosX; posX++) {
+                    //the criss
+                    yield return tiles[posX, centerPos.Y - donut];
+                    if(donut > topRange) continue;
+                    //the cross
+                    yield return tiles[posX, centerPos.Y + donut];
+                }
             }
 
-            //The right column
-            int rightColumnX = centerPos.X + d;
-            int startingRightColumnY = centerPos.Y - d;
-            for (int i = 0; i < sideLength; ++i) {
-                yield return tiles[rightColumnX, startingRightColumnY + i];
+            //The left column
+            if(donut <= rightRange) {
+                int posX = centerPos.X + donut; // this is the only difference
+                int startingPosY = centerPos.Y - Math.Min(donut, bottomRange);
+                int endingPosY = centerPos.Y + Math.Min(donut, topRange);
+                for(int posY = startingPosY; posY <= endingPosY; posY++) {
+                    yield return tiles[posX, posY];
+                }
             }
         }
     }

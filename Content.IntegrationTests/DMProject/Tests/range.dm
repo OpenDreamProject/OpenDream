@@ -5,9 +5,9 @@
 /obj/contained/one
 /obj/contained/two
 
-/datum/unit_test/range/proc/run_case(atom/center, list/expected, identifier, isorange)
+/datum/unit_test/range/proc/run_case(atom/center, list/expected, identifier, isorange, view_size = 1)
   var/error_index = 0
-  var/list/result = isorange ? orange(center, 1) : range(center, 1)
+  var/list/result = isorange ? orange(center, 1) : range(center, view_size)
   try
     if(result.len != expected.len)
       error_index = expected.len
@@ -116,6 +116,59 @@
 	run_case(container, container_orange_case, nameof(container_orange_case), TRUE)
 	run_case(contained, contained_range_case, nameof(contained_range_case), FALSE)
 	run_case(contained, contained_orange_case, nameof(contained_orange_case), TRUE)
+
+	// unusual cases
+
+	var/list/turf_range_2x2 = list(
+		center,
+		outer_area,
+		container,
+		LOC(2, 2),
+		LOC(2, 3),
+		LOC(3, 2),
+	)
+
+	var/list/turf_orange_2x2 = list(
+		LOC(2, 2),
+		outer_area,
+		LOC(2, 3),
+		LOC(3, 2),
+	)
+
+	var/list/turf_range_1x3 = list(
+		center,
+		outer_area,
+		container,
+		LOC(3, 2),
+		LOC(3, 4),
+	)
+
+	var/list/turf_orange_1x3 = list(
+		LOC(3, 2),
+		outer_area,
+		LOC(3, 4)
+	)
+
+	var/list/turf_range_3x1 = list(
+		center,
+		outer_area,
+		container,
+		LOC(2, 3),
+		LOC(4, 3),
+	)
+
+	var/list/turf_orange_3x1 = list(
+		LOC(2, 3),
+		outer_area,
+		LOC(4, 3),
+	)
+
+	run_case(center, turf_range_2x2, nameof(turf_range_2x2), FALSE, "2x2")
+	run_case(center, turf_orange_2x2, nameof(turf_orange_2x2), TRUE, "2x2")
+	run_case(center, turf_range_1x3, nameof(turf_range_1x3), FALSE, "1x3")
+	run_case(center, turf_orange_1x3, nameof(turf_orange_1x3), TRUE, "1x3")
+	run_case(center, turf_range_3x1, nameof(turf_range_3x1), FALSE, "3x1")
+	run_case(center, turf_orange_3x1, nameof(turf_orange_3x1), TRUE, "3x1")
 
 	// FIXME: these pass in BYOND, but the way we iterate over area turfs diverges
 	// var/list/area_range_case = list(outer_area) + outer_area.contents

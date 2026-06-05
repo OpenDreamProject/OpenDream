@@ -1,6 +1,6 @@
 /proc/blend_test(var/operation, var/list/target_pixels)
 	var/icon/B = icon('hanoi.dmi',"gradient")
-	B.Blend(rgb(200, 10, 0, 170), ICON_ADD)
+	B.Blend(rgb(200, 10, 0, 170), operation)
 	var/list/actual_pixels = list()
 	var/matching = TRUE
 	for(var/x in 1 to 32)

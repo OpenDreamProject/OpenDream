@@ -110,7 +110,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
     }
 
     private void ProcessStatementContinue(DMASTProcStatementContinue statementContinue) {
-        proc.Continue(statementContinue.Label);
+        proc.Continue(statementContinue.Location, statementContinue.Label);
     }
 
     private void ProcessStatementGoto(DMASTProcStatementGoto statementGoto) {
@@ -134,7 +134,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
     }
 
     private void ProcessStatementBreak(DMASTProcStatementBreak statementBreak) {
-        proc.Break(statementBreak.Label);
+        proc.Break(statementBreak.Location, statementBreak.Label);
     }
 
     private void ProcessStatementDel(DMASTProcStatementDel statementDel) {
@@ -423,7 +423,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
             {
                 if (comparator != null) {
                     comparator.EmitPushValue(ExprContext);
-                    proc.BreakIfFalse();
+                    proc.BreakIfFalse(comparator.Location);
                 }
 
                 ProcessBlockInner(body);
@@ -447,20 +447,20 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
             string endLabel2 = proc.NewLabelName();
 
             DMReference outputRef = lValue.EmitReference(ExprContext, endLabel, DMExpression.ShortCircuitMode.PopNull);
-            proc.Enumerate(outputRef);
+            proc.Enumerate(outputRef, lValue.Location);
             proc.Jump(endLabel2);
 
             proc.AddLabel(endLabel);
-            proc.EnumerateNoAssign();
+            proc.EnumerateNoAssign(lValue.Location);
             proc.AddLabel(endLabel2);
         } else {
             if (assocValue != null && list != null) {
                 DMReference assocRef = assocValue.EmitReference(ExprContext, string.Empty);
                 DMReference outputRef = lValue.EmitReference(ExprContext, string.Empty);
-                proc.EnumerateAssoc(assocRef, outputRef);
+                proc.EnumerateAssoc(assocRef, outputRef, lValue.Location);
             } else {
                 DMReference outputRef = lValue.EmitReference(ExprContext, string.Empty);
-                proc.Enumerate(outputRef);
+                proc.Enumerate(outputRef, lValue.Location);
             }
         }
     }
@@ -539,7 +539,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                     if (doOr) {
                         proc.Not();
                         proc.JumpIfFalse(afterTypeCheckIf);
-                        proc.Continue();
+                        proc.Continue(lValue.Location);
                     }
 
                     proc.AddLabel(afterTypeCheckIf);
@@ -656,7 +656,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
         {
             proc.MarkLoopContinue(loopLabel);
             _exprBuilder.Emit(statementWhile.Conditional);
-            proc.BreakIfFalse();
+            proc.BreakIfFalse(statementWhile.Conditional.Location);
 
             proc.StartScope();
             {
@@ -682,7 +682,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
             proc.LoopJumpToStart(loopLabel);
 
             proc.AddLabel(loopEndLabel);
-            proc.Break();
+            proc.Break(statementDoWhile.Conditional.Location);
         }
         proc.LoopEnd();
     }

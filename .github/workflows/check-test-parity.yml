@@ -3,9 +3,6 @@ name: Run BYOND Against Modified Tests
 on:
   pull_request:
     branches: [master]
-  push:
-    branches:
-      - "master"
 
 jobs:
   unit_test:

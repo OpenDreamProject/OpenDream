@@ -45,8 +45,8 @@ public sealed partial class DreamConnection {
 
                 if (oldMob != null) {
                     oldMob.Key = null;
-                    oldMob.SpawnProc("Logout").Dispose();
                     oldMob.Connection = null;
+                    oldMob.SpawnProc("Logout").Dispose();
                 }
 
                 StatObj = new(value);

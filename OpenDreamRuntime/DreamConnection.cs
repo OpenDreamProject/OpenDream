@@ -45,7 +45,7 @@ public sealed partial class DreamConnection {
             SetClientMob(value);
 
             if(oldConnection is not null) {
-                oldConnection.HandleDisconnection();
+                oldConnection.Client?.Delete();
                 _mob!.SpawnProc("Logout").Dispose();
             }
 

@@ -1,9 +1,9 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using OpenDreamShared.Interface.Descriptors;
+﻿using OpenDreamShared.Interface.Descriptors;
 using OpenDreamShared.Interface.DMF;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
+using System.Diagnostics.CodeAnalysis;
 
 namespace OpenDreamClient.Interface.Controls;
 
@@ -22,7 +22,7 @@ public abstract class InterfaceControl : InterfaceElement {
     /// </summary>
     public Vector2i AnchorPosition = Vector2i.Zero;
 
-    protected ControlDescriptor ControlDescriptor => (ControlDescriptor) ElementDescriptor;
+    protected ControlDescriptor ControlDescriptor => (ControlDescriptor)ElementDescriptor;
     protected readonly ControlWindow? Window;
 
     [SuppressMessage("ReSharper", "VirtualMemberCallInConstructor")]
@@ -45,7 +45,7 @@ public abstract class InterfaceControl : InterfaceElement {
 
         //transparent is default because it's white with 0 alpha, and DMF color can't have none-255 alpha
         StyleBox? styleBox = (ControlDescriptor.BackgroundColor.Value != Color.Transparent)
-            ? new StyleBoxFlat {BackgroundColor = ControlDescriptor.BackgroundColor.Value}
+            ? new StyleBoxFlat { BackgroundColor = ControlDescriptor.BackgroundColor.Value }
             : null;
 
         switch (UIElement) {

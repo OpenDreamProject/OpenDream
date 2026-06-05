@@ -1,9 +1,9 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using OpenDreamShared.Interface.Descriptors;
+﻿using OpenDreamShared.Interface.Descriptors;
 using OpenDreamShared.Interface.DMF;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
+using System.Diagnostics.CodeAnalysis;
 
 namespace OpenDreamClient.Interface.Controls;
 
@@ -50,7 +50,7 @@ public sealed partial class ControlWindow : InterfaceControl {
             _menuContainer.Visible = false;
         }
 
-        if(!WindowDescriptor.IsPane.Value)
+        if (!WindowDescriptor.IsPane.Value)
             UpdateWindowAttributes(_myWindow);
 
         if (WindowDescriptor.IsDefault.Value) {
@@ -62,16 +62,16 @@ public sealed partial class ControlWindow : InterfaceControl {
     /// Closes the window if it is a child window. No effect if it is either a default window or a pane
     /// </summary>
     public void CloseChildWindow() {
-        if(_myWindow.osWindow is not null)
+        if (_myWindow.osWindow is not null)
             _myWindow.osWindow.Close();
     }
 
     public OSWindow CreateWindow() {
-        if(_myWindow.osWindow is not null)
+        if (_myWindow.osWindow is not null)
             return _myWindow.osWindow;
 
         OSWindow window = new();
-        if(UIElement.Parent is not null)
+        if (UIElement.Parent is not null)
             UIElement.Orphan();
         window.Children.Add(UIElement);
 
@@ -103,7 +103,7 @@ public sealed partial class ControlWindow : InterfaceControl {
 
     public void RegisterOnClydeWindow(IClydeWindow window) {
         // todo: listen for closed.
-        if(_myWindow.osWindow is not null){
+        if (_myWindow.osWindow is not null) {
             _myWindow.osWindow.Close();
             UIElement.Orphan();
         }
@@ -171,9 +171,9 @@ public sealed partial class ControlWindow : InterfaceControl {
         // Also update the anchor position for anything with a size of 0
         foreach (var child in ChildControls) {
             if (child.UIElement.SetWidth == 0)
-                child.AnchorPosition = child.AnchorPosition with {X = _canvas.PixelWidth + child.Size.X};
+                child.AnchorPosition = child.AnchorPosition with { X = _canvas.PixelWidth + child.Size.X };
             if (child.UIElement.SetHeight == 0)
-                child.AnchorPosition = child.AnchorPosition with {Y = _canvas.PixelHeight + child.Size.Y};
+                child.AnchorPosition = child.AnchorPosition with { Y = _canvas.PixelHeight + child.Size.Y };
         }
 
         UpdateAnchors();
@@ -184,7 +184,7 @@ public sealed partial class ControlWindow : InterfaceControl {
         var (osWindow, clydeWindow) = windowRoot;
 
         //if our window is null or closed, we need to create a new one. Otherwise we need to update the existing one.
-        if(osWindow == null && clydeWindow == null) {
+        if (osWindow == null && clydeWindow == null) {
             CreateWindow();
             return; //we return because CreateWindow() calls UpdateWindowAttributes() again.
         }
@@ -206,8 +206,10 @@ public sealed partial class ControlWindow : InterfaceControl {
 
         if (osWindow != null && osWindow.ClydeWindow != null) {
             osWindow.ClydeWindow.IsVisible = WindowDescriptor.IsVisible.Value;
+            osWindow.ClydeWindow.IsTitleBarVisible = WindowDescriptor.TitleBar.Value;
         } else if (clydeWindow != null) {
             clydeWindow.IsVisible = WindowDescriptor.IsVisible.Value;
+            clydeWindow.IsTitleBarVisible = WindowDescriptor.TitleBar.Value;
         }
     }
 
@@ -341,7 +343,7 @@ public sealed partial class ControlWindow : InterfaceControl {
     public override void SetProperty(string property, string value, bool manualWinset = false) {
         switch (property) {
             case "size":
-                if (_myWindow.osWindow is {ClydeWindow: not null}) {
+                if (_myWindow.osWindow is { ClydeWindow: not null }) {
                     var size = new DMFPropertySize(value);
                     var uiScale = _myWindow.osWindow.UIScale;
                     size.X = (int)(size.X * uiScale); // TODO: RT should probably do this itself

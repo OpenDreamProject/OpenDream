@@ -379,7 +379,7 @@ public class DreamIconOperationBlend : IDreamIconOperation {
                 break;
             }
             default:
-                throw new NotImplementedException("Blend type not implemented");
+                throw new NotImplementedException($"Blend type {_type} not implemented");
         }
     }
 }

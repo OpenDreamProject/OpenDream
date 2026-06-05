@@ -227,6 +227,7 @@ public struct CompilerEmission {
         if (usedColor is null) {
             return;
         }
+        
         Console.ForegroundColor = usedColor.Value;
         Console.Write($"{Level.ToString()} OD{(int)Code:d4}");
         Console.ResetColor();

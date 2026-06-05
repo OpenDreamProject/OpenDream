@@ -339,11 +339,6 @@ internal sealed class ScopeReference(DMObjectTree objectTree, Location location,
             return true;
         }
 
-        if (expression is not IConstantPath) {
-            constant = null;
-            return false;
-        }
-
         return dmVar.Value!.TryAsConstant(compiler, out constant);
     }
 }

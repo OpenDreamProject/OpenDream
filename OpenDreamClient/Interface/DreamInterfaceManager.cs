@@ -226,6 +226,7 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
 
                     DMFParser? parser;
                     WindowDescriptor? descriptor = null;
+                    (int x, int y) size = (480, 480);
 
                     // Handle using options to set the initial properties of the window
                     if (pBrowse.Options != null
@@ -242,13 +243,16 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
                         descriptor = (WindowDescriptor?)_serializationManager.Read(typeof(WindowDescriptor), mappingElement);
 
                         if (descriptor?.Size.X == 0 || descriptor?.Size.Y == 0) {
-                            descriptor.Size.X = 480;
-                            descriptor.Size.Y = 480;
+                            descriptor.Size.X = size.x;
+                            descriptor.Size.Y = size.y;
+                        } else if (descriptor != null) {
+                            size.x = descriptor.Size.X;
+                            size.y = descriptor.Size.Y;
                         }
                     }
 
                     // Creating a new popup
-                    var popup = new BrowsePopup(pBrowse.Window, (480, 480), _clyde.MainWindow, descriptor);
+                    var popup = new BrowsePopup(pBrowse.Window, size, _clyde.MainWindow, descriptor);
                     popup.Closed += () => { Windows.Remove(pBrowse.Window); };
 
                     outputBrowser = popup.Browser;

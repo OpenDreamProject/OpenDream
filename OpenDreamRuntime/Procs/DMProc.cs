@@ -373,9 +373,8 @@ public sealed class DMProcState : ProcState {
     public override DMProc? Proc => (DMProc?)_proc; // spawn() procs can make this null for a sec, don't worry about it
 
     public DreamObjectCallee CalleeObject { get {
-            var maybeThread = (DreamThread?)Thread;
-            if(maybeThread is null) // we've been disposed, whatever fails deserves to fail
-                return null!;
+            if(Thread is null)
+                throw new InvalidOperationException($"Attempted to get the callee of a disposed proc");
             if(_callee is null) {
                 _callee = DreamObjectCallee.FromDMProcState(this);
                 _callee.IncRef(); // the state's ref to the callee

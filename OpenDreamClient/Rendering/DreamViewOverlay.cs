@@ -80,6 +80,18 @@ internal sealed partial class DreamViewOverlay : Overlay {
         M22 = -1
     };
 
+    //Used for supressing the "No Literals" warning on shader index lookups
+    private static class OdShaderId {
+        public const string
+            BlockColor = "blockcolor",
+            Color = "color",
+            BlendOverlay = "blend_overlay",
+            BlendAdd = "blend_add",
+            BlendSubtract = "blend_subtract",
+            BlendMultiply = "blend_multiply",
+            BlendInsetOverlay = "blend_inset_overlay";
+    }
+
     public DreamViewOverlay(RenderTargetPool renderTargetPool) {
         IoCManager.InjectDependencies(this);
         _renderTargetPool = renderTargetPool;
@@ -96,15 +108,15 @@ internal sealed partial class DreamViewOverlay : Overlay {
         _mobSightQuery = _entityManager.GetEntityQuery<DreamMobSightComponent>();
 
         _sawmill.Debug("Loading shaders...");
-        BlockColorInstance = _protoManager.Index<ShaderPrototype>("blockcolor").InstanceUnique();
-        ColorInstance = _protoManager.Index<ShaderPrototype>("color").InstanceUnique();
+        BlockColorInstance = _protoManager.Index<ShaderPrototype>(OdShaderId.BlockColor).InstanceUnique();
+        ColorInstance = _protoManager.Index<ShaderPrototype>(OdShaderId.Color).InstanceUnique();
         _blendModeInstances = new(6) {
-            {BlendMode.Default, _protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()}, //BLEND_DEFAULT (Same as BLEND_OVERLAY when there's no parent)
-            {BlendMode.Overlay, _protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()}, //BLEND_OVERLAY
-            {BlendMode.Add, _protoManager.Index<ShaderPrototype>("blend_add").InstanceUnique()}, //BLEND_ADD
-            {BlendMode.Subtract, _protoManager.Index<ShaderPrototype>("blend_subtract").InstanceUnique()}, //BLEND_SUBTRACT
-            {BlendMode.Multiply, _protoManager.Index<ShaderPrototype>("blend_multiply").InstanceUnique()}, //BLEND_MULTIPLY
-            {BlendMode.InsertOverlay, _protoManager.Index<ShaderPrototype>("blend_inset_overlay").InstanceUnique()} //BLEND_INSET_OVERLAY //TODO
+            {BlendMode.Default, _protoManager.Index<ShaderPrototype>(OdShaderId.BlendOverlay).InstanceUnique()}, //BLEND_DEFAULT (Same as BLEND_OVERLAY when there's no parent)
+            {BlendMode.Overlay, _protoManager.Index<ShaderPrototype>(OdShaderId.BlendOverlay).InstanceUnique()}, //BLEND_OVERLAY
+            {BlendMode.Add, _protoManager.Index<ShaderPrototype>(OdShaderId.BlendAdd).InstanceUnique()}, //BLEND_ADD
+            {BlendMode.Subtract, _protoManager.Index<ShaderPrototype>(OdShaderId.BlendSubtract).InstanceUnique()}, //BLEND_SUBTRACT
+            {BlendMode.Multiply, _protoManager.Index<ShaderPrototype>(OdShaderId.BlendMultiply).InstanceUnique()}, //BLEND_MULTIPLY
+            {BlendMode.InsertOverlay, _protoManager.Index<ShaderPrototype>(OdShaderId.BlendInsetOverlay).InstanceUnique()} //BLEND_INSET_OVERLAY //TODO
         };
 
         // Set the default parameters for each blend mode
@@ -347,7 +359,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
             EntityUid visContentEntity = _entityManager.GetEntity(visContent);
             if (!_spriteQuery.TryGetComponent(visContentEntity, out var sprite))
                 continue;
-            if (!_spriteSystem.IsVisible(sprite, isScreen ? null : _xformQuery.GetComponent(visContentEntity), seeVis, null))
+            if (!_spriteSystem.IsVisible(sprite, null, seeVis, null))
                 continue;
 
             ProcessIconComponents(sprite.Icon, position, visContentEntity, false, ref tieBreaker, result, seeVis, current, keepTogether);

@@ -102,10 +102,10 @@ public struct DMFPropertyNum(float value) : IDMFProperty {
 
     public DMFPropertyNum(string value) : this(0) {
         try {
-            Value = float.Parse(value);
+            Value = float.Parse(value, CultureInfo.InvariantCulture);
         } catch {
             int lastValidPos = value.LastIndexOfAny("0123456789".ToCharArray());
-            Value = float.Parse(value.Substring(0, lastValidPos+1));
+            Value = float.Parse(value.Substring(0, lastValidPos + 1), CultureInfo.InvariantCulture);
             Logger.GetSawmill("opendream.interface").Warning($"Invalid value in DMFPropertyNum '{value}'. Parsed as '{Value}'. {lastValidPos}");
         }
     }
@@ -173,8 +173,8 @@ public struct DMFPropertyVec2 : IDMFProperty, IEquatable<DMFPropertyVec2> {
 
         string[] parts = value.Split([',', 'x', ' ']);
 
-        X = (int)float.Parse(parts[0]);
-        Y = (int)float.Parse(parts[1]);
+        X = (int)float.Parse(parts[0], CultureInfo.InvariantCulture);
+        Y = (int)float.Parse(parts[1], CultureInfo.InvariantCulture);
     }
 
     public DMFPropertyVec2(Vector2 value) {

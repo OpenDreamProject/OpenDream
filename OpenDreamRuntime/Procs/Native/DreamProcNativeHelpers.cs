@@ -48,12 +48,13 @@ internal static partial class DreamProcNativeHelpers {
 
         int donutCount = Math.Max(bottomRange, leftRange);
         for(int donut = 1; donut <= donutCount; donut++) {
+            int columnBottom = center.Y - Math.Min(donut, bottomRange);
+            int columnTop = center.Y + Math.Min(donut, topRange);
+
             // left column
             if(donut <= leftRange) {
                 int posX = center.X - donut;
-                int startingPosY = center.Y - Math.Min(donut, bottomRange);
-                int endingPosY = center.Y + Math.Min(donut, topRange);
-                for(int posY = startingPosY; posY <= endingPosY; posY++) {
+                for(int posY = columnBottom; posY <= columnTop; posY++) {
                     yield return (posX, posY);
                 }
             }
@@ -74,9 +75,7 @@ internal static partial class DreamProcNativeHelpers {
             // right column
             if(donut <= rightRange) {
                 int posX = center.X + donut; // this is the only difference
-                int startingPosY = center.Y - Math.Min(donut, bottomRange);
-                int endingPosY = center.Y + Math.Min(donut, topRange);
-                for(int posY = startingPosY; posY <= endingPosY; posY++) {
+                for(int posY = columnBottom; posY <= columnTop; posY++) {
                     yield return (posX, posY);
                 }
             }

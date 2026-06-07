@@ -50,7 +50,7 @@ jobs:
 
       # 3. Run Linter (Added --no-run-if-empty for safety)
       - name: Run Linter
-        run: git diff --diff-filter=ACMR --name-only origin/master...HEAD | xargs --no-run-if-empty jb cleanupcode
+        run: git diff --diff-filter=ACMR --name-only origin/master...HEAD | xargs --no-run-if-empty jb cleanupcode OpenDream.slnx --include-files
 
       # 4. Push changes back to the PR
       - name: Push changes

@@ -198,7 +198,7 @@ public class DMCompiler {
     /// <returns> True if the warning was an error, false if not.</returns>
     public bool Emit(WarningCode code, Location loc, string message) {
         if (!_errorConfig.TryGetValue(code, out var level)) {
-            ForcedError(loc, $"Unknown warning code \"{code}\". Is it being used before the preprocessor has set it? Emission: \"{message}\"");
+            ForcedError(loc, $"Unknown warning code \"{code}\". Does it have a default error level? Emission: \"{message}\"");
             return true;
         }
 

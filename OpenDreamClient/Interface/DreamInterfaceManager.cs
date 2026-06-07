@@ -206,11 +206,14 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
         } else if (pBrowse.HtmlSource != null) {
             Dictionary<string, string>? options = null;
 
-            if (pBrowse.Options is not null
-                && ParseDmfParams(pBrowse.Options, out var checkParserErrors) is DMFParser parser
-                && parser.AttributesValues() is Dictionary<string, string> attributes
-                && !checkParserErrors()) {
-                options = attributes;
+            if (pBrowse.Options is not null) {
+                DMFParser? parser = ParseDmfParams(pBrowse.Options, out var checkParserErrors);
+                if (parser is not null) {
+                    Dictionary<string, string> attributes = parser.AttributesValues();
+                    if (!checkParserErrors()) {
+                        options = attributes;
+                    }
+                }
             }
 
             string htmlFileName;

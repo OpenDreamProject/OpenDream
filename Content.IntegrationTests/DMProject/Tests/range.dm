@@ -28,7 +28,6 @@
       var/atom/A = result[i]
       error_output += ("\t([A.x], [A.y]) [A.type] [i == error_index ? "<-- here" : null]")
     
-
     CRASH(error_output.Join("\n"))
 
 /datum/unit_test/range/RunTest()

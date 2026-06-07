@@ -1,6 +1,6 @@
-﻿using System.Text;
-using OpenDreamShared.Dream;
+﻿using OpenDreamShared.Dream;
 using Robust.Shared.Utility;
+using System.Text;
 
 namespace OpenDreamClient.Interface.Html;
 
@@ -31,6 +31,11 @@ public static class HtmlParser {
 
             appendTo.AddText(currentText.ToString());
             currentText.Clear();
+        }
+
+        void SkipComment() {
+            while ((i - 2 < 0 || (text[i - 2] != '-' || text[i - 1] != '-' || text[i] != '>')) && text.Length > 2)
+                i++;
         }
 
         for (i = 0; i < text.Length; i++) {
@@ -98,6 +103,12 @@ public static class HtmlParser {
                         appendTo.Pop();
                         tags.Pop();
                     } else {
+                        // If a comment contained other HTML tags, we need to make sure those also
+                        // get skipped.
+                        if (tagType == "!--") {
+                            SkipComment();
+                            continue;
+                        }
                         if (!isSelfClosing) {
                             tags.Push(tagType);
                         }
@@ -123,7 +134,7 @@ public static class HtmlParser {
 
                     if (insideEntity.StartsWith('#')) {
                         if (int.TryParse(insideEntity.Substring(1), out int result)) {
-                            currentText.Append((char) result);
+                            currentText.Append((char)result);
                         }
                     } else {
                         switch (insideEntity) {

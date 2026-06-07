@@ -13,7 +13,7 @@ public static class HtmlParser {
     private static readonly ISawmill Sawmill;
     private static readonly HashSet<string> WarnedAttributes = new();
 
-    private static Regex? _attributeMatchRegex = null;
+    private static Regex? _attributeMatchRegex;
     private static Regex AttributeMatchRegex => _attributeMatchRegex ??= new Regex(@"[^ =]+(?:=(?:\w+|""[^""]*""|'[^']*'))?");
 
     static HtmlParser() {

@@ -1,0 +1,29 @@
+name: AutoLint
+on: issue_comment
+
+jobs:
+  pr_commented:
+    # This job only runs for pull request comments
+    name: PR comment
+    if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '!autolint') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup submodule
+        run: |
+          git submodule update --init --recursive
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 10.0.x
+      - name: Setup Resharper
+        run: dotnet tool install -g JetBrains.ReSharper.GlobalTools
+      - name: Run Linter
+        run: jb cleanupcode OpenDream.slnx
+      - name: Push changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add .
+          git commit -m "Auto-lint changes"
+          git push

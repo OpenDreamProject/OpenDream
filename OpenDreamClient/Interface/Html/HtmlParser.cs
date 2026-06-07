@@ -1,6 +1,8 @@
 ﻿using OpenDreamShared.Dream;
 using Robust.Shared.Utility;
+using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace OpenDreamClient.Interface.Html;
 
@@ -10,6 +12,9 @@ public static class HtmlParser {
 
     private static readonly ISawmill Sawmill;
     private static readonly HashSet<string> WarnedAttributes = new();
+
+    private static Regex? _attributeMatchRegex = null;
+    private static Regex AttributeMatchRegex => _attributeMatchRegex ??= new Regex(@"\w+(?:=(?:\w+|""[^""]*""|'[^']*'))?");
 
     static HtmlParser() {
         Sawmill = IoCManager.Resolve<ILogManager>().GetSawmill("opendream.html_parser");
@@ -72,7 +77,10 @@ public static class HtmlParser {
                     }
 
                     string insideTag = currentText.ToString();
-                    string[] attributes = insideTag.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    string[] attributes = AttributeMatchRegex.Matches(insideTag)
+                        .Where(x => x.Length > 0)
+                        .Select(x => x.Value)
+                        .ToArray();
                     string tagType = attributes[0].ToLowerInvariant();
 
                     currentText.Clear();

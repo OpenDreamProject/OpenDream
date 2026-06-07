@@ -224,6 +224,7 @@ public struct CompilerEmission {
             ErrorLevel.Error => ConsoleColor.Red,
             _ => null
         };
+        
         if (usedColor is null) {
             return;
         }
@@ -233,5 +234,4 @@ public struct CompilerEmission {
         Console.ResetColor();
         Console.WriteLine($" at {Location.ToString()}: {Message}");
     }
-
 }

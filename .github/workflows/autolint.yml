@@ -4,14 +4,14 @@ on: issue_comment
 jobs:
   pr_commented:
     name: PR comment
-    # Runs ONLY if: it's a PR + contains the command + commenter is PR author OR a maintainer
-    if: >
-      github.event.issue.pull_request &&
-      contains(github.event.comment.body, '!autolint') &&
-      (
-        github.event.comment.user.login == github.event.issue.user.login ||
-        contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
-      )
+    # # Runs ONLY if: it's a PR + contains the command + commenter is PR author OR a maintainer
+    # if: >
+    #   github.event.issue.pull_request &&
+    #   contains(github.event.comment.body, '!autolint') &&
+    #   (
+    #     github.event.comment.user.login == github.event.issue.user.login ||
+    #     contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
+    #   )
     runs-on: ubuntu-latest
     steps:
       # 1. Fetch PR details using the pre-installed GitHub CLI
@@ -20,9 +20,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          HEAD_REF=$(gh pr view ${{ github.event.issue.number }} --json headRefName -q ".headRefName")
-          HEAD_REPO_OWNER=$(gh pr view ${{ github.event.issue.number }} --json headRepositoryOwner -q ".headRepositoryOwner.login")
-          
+          HEAD_REF=$(gh pr view ${{ github.event.issue.number }} --repo ${{ github.repository }} --json headRefName -q ".headRefName")
+          HEAD_REPO_OWNER=$(gh pr view ${{ github.event.issue.number }} --repo ${{ github.repository }} --json headRepositoryOwner -q ".headRepositoryOwner.login")
+
           echo "head_ref=$HEAD_REF" >> $GITHUB_OUTPUT
           echo "head_repo=$HEAD_REPO_OWNER/${{ github.event.repository.name }}" >> $GITHUB_OUTPUT
 

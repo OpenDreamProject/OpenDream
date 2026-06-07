@@ -204,10 +204,22 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
                 browser.SetFileSource(null);
             }
         } else if (pBrowse.HtmlSource != null) {
-            // TODO: Possible collisions and explicit file names
-            // pBrowse contains options, which may contain the 'file' property. When this is explicitly declared, instead of
-            // using a random htmlFileName, we should instead use that file instead.
-            var htmlFileName = $"browse_{pBrowse.Window}_{_random.Next()}";
+            Dictionary<string, string>? options = null;
+
+            if (pBrowse.Options is not null
+                && ParseDmfParams(pBrowse.Options, out var checkParserErrors) is DMFParser parser
+                && parser.AttributesValues() is Dictionary<string, string> attributes
+                && !checkParserErrors()) {
+                options = attributes;
+            }
+
+            string htmlFileName;
+            if (options?.TryGetValue("file", out var fileName) ?? false) {
+                htmlFileName = fileName;
+            } else {
+                // TODO: Possible collisions
+                htmlFileName = $"browse_{pBrowse.Window}_{_random.Next()}";
+            }
             ControlBrowser? outputBrowser = referencedElement as ControlBrowser;
 
             if (outputBrowser == null) {
@@ -223,20 +235,16 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
                         break;
                     }
                 } else if (pBrowse.Window != null) {
-                    DMFParser? parser;
                     WindowDescriptor? descriptor = null;
                     (int x, int y) size = (480, 480);
 
                     // Handle using options to set the initial properties of the window
-                    if (pBrowse.Options is not null
-                        && (parser = ParseDmfParams(pBrowse.Options, out var checkParserErrors)) != null
-                        && parser.AttributesValues() is Dictionary<string, string> attributes
-                        && !checkParserErrors()) {
+                    if (options != null) {
                         var mappingElement = new MappingDataNode {
                             { "id", pBrowse.Window }
                         };
 
-                        foreach (var attribute in attributes) {
+                        foreach (var attribute in options) {
                             mappingElement.Add(attribute.Key, attribute.Value);
                         }
 

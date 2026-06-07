@@ -1,4 +1,4 @@
-﻿// tests all of range's possible cases
+﻿// Tests the implementation of range() and orange()
 
 #define LOC(x, y) locate(x, y, 3)
 
@@ -31,7 +31,6 @@
 
     CRASH(error_output.Join("\n"))
 
-// Tests the implementation of range() and orange()
 /datum/unit_test/range/RunTest()
 	world.maxx = world.maxy = 5
 

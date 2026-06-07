@@ -213,4 +213,25 @@ public struct CompilerEmission {
         ErrorLevel.Error => $"Error OD{(int)Code:d4} at {Location.ToString()}: {Message}",
         _ => ""
     };
+
+    /// <summary>
+    /// Write to the console with coloured formatting.
+    /// </summary>
+    public void WriteConsole() {
+        ConsoleColor? usedColor = Level switch {
+            ErrorLevel.Notice => ConsoleColor.Cyan,
+            ErrorLevel.Warning => ConsoleColor.Yellow,
+            ErrorLevel.Error => ConsoleColor.Red,
+            _ => null
+        };
+        
+        if (usedColor is null) {
+            return;
+        }
+        
+        Console.ForegroundColor = usedColor.Value;
+        Console.Write($"{Level.ToString()} OD{(int)Code:d4}");
+        Console.ResetColor();
+        Console.WriteLine($" at {Location.ToString()}: {Message}");
+    }
 }

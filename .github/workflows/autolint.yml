@@ -4,14 +4,14 @@ on: issue_comment
 jobs:
   pr_commented:
     name: PR comment
-    # # Runs ONLY if: it's a PR + contains the command + commenter is PR author OR a maintainer
-    # if: >
-    #   github.event.issue.pull_request &&
-    #   contains(github.event.comment.body, '!autolint') &&
-    #   (
-    #     github.event.comment.user.login == github.event.issue.user.login ||
-    #     contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
-    #   )
+    # Runs ONLY if: it's a PR + contains the command + commenter is PR author OR a maintainer
+    if: >
+      github.event.issue.pull_request &&
+      contains(github.event.comment.body, '!autolint') &&
+      (
+        github.event.comment.user.login == github.event.issue.user.login ||
+        contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
+      )
     runs-on: ubuntu-latest
     steps:
       # 1. Fetch PR details using the pre-installed GitHub CLI

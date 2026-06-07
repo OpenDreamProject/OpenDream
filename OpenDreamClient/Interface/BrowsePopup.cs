@@ -19,7 +19,6 @@ internal sealed class BrowsePopup {
         Vector2i size,
         IClydeWindow ownerWindow,
         WindowDescriptor? descriptor = null) {
-
         WindowDescriptor popupWindowDescriptor = descriptor ?? new WindowDescriptor(name) {
             Size = new DMFPropertySize(size)
         };

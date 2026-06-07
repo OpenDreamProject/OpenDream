@@ -223,23 +223,23 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
                         break;
                     }
                 } else if (pBrowse.Window != null) {
-
                     DMFParser? parser;
                     WindowDescriptor? descriptor = null;
                     (int x, int y) size = (480, 480);
 
                     // Handle using options to set the initial properties of the window
-                    if (pBrowse.Options != null
-                        && (parser = ParseDmfParams(pBrowse.Options, out var CheckParserErrors)) != null
+                    if (pBrowse.Options is not null
+                        && (parser = ParseDmfParams(pBrowse.Options, out var checkParserErrors)) != null
                         && parser.AttributesValues() is Dictionary<string, string> attributes
-                        && !CheckParserErrors()) {
+                        && !checkParserErrors()) {
+                        var mappingElement = new MappingDataNode {
+                            { "id", pBrowse.Window }
+                        };
 
-                        var mappingElement = new MappingDataNode();
-
-                        mappingElement.Add("id", pBrowse.Window);
                         foreach (var attribute in attributes) {
                             mappingElement.Add(attribute.Key, attribute.Value);
                         }
+
                         descriptor = (WindowDescriptor?)_serializationManager.Read(typeof(WindowDescriptor), mappingElement);
 
                         if (descriptor?.Size.X == 0 || descriptor?.Size.Y == 0) {
@@ -667,8 +667,8 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
         return result;
     }
 
-    private DMFParser? ParseDmfParams(string dmfParams, out Func<bool> CheckErrors) {
-        CheckErrors = null!;
+    private DMFParser? ParseDmfParams(string dmfParams, out Func<bool> checkErrors) {
+        checkErrors = null!;
         DMFParser parser;
         try {
             var lexer = new DMFLexer(dmfParams);
@@ -689,12 +689,12 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
             return true;
         }
 
-        CheckErrors = CheckParserErrors;
+        checkErrors = CheckParserErrors;
         return parser;
     }
 
     public void WinSet(string? controlId, string winsetParams) {
-        DMFParser? parser = ParseDmfParams(winsetParams, out var CheckParserErrors);
+        DMFParser? parser = ParseDmfParams(winsetParams, out var checkParserErrors);
 
         if (parser == null) {
             return;
@@ -703,7 +703,7 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
         if (string.IsNullOrEmpty(controlId)) {
             List<DMFWinSet> winSets = parser.GlobalWinSet();
 
-            if (CheckParserErrors())
+            if (checkParserErrors())
                 return;
 
             // id=abc overrides the elements of other winsets without an element
@@ -763,7 +763,7 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
             InterfaceElement? element = FindElementWithId(controlId);
             var attributes = parser.AttributesValues();
 
-            if (CheckParserErrors())
+            if (checkParserErrors())
                 return;
 
             if (element == null && attributes.TryGetValue("parent", out var parentId)) {

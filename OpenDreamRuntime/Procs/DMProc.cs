@@ -370,14 +370,12 @@ public sealed class DMProcState : ProcState {
     public readonly IDreamValueEnumerator?[] Enumerators = new IDreamValueEnumerator?[16];
 
     public int ProgramCounter => _pc;
-    public override DMProc? Proc => (DMProc?)_proc; // spawn() procs can make this null for a sec, don't worry about it
+    public override DMProc Proc => _proc;
 
     public DreamObjectCallee CalleeObject { get {
             if(Thread is null)
                 throw new InvalidOperationException("Attempted to get the callee of a disposed proc");
-            if(_callee is null) {
-                _callee = DreamObjectCallee.FromDMProcState(this);
-            }
+            _callee ??= DreamObjectCallee.FromDMProcState(this);
 
             return _callee;
         } }

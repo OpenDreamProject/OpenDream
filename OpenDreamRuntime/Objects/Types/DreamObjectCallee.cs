@@ -12,7 +12,7 @@ public sealed class DreamObjectCallee(DreamObjectDefinition objectDefinition) : 
     public bool Expired => ProcState == null || ProcState.Id != ProcStateId;
 
     public static DreamObjectCallee FromDMProcState(DMProcState procState) {
-        var proc = procState.Proc!;
+        var proc = procState.Proc;
         var callee = proc.ObjectTree.CreateObject<DreamObjectCallee>(proc.ObjectTree.Callee);
         callee.ProcState = procState;
         callee.ProcStateId = procState.Id;
@@ -26,9 +26,7 @@ public sealed class DreamObjectCallee(DreamObjectDefinition objectDefinition) : 
 
         switch (varName) {
             case "proc":
-                value = ProcState.Proc is not null
-                    ? new(ProcState.Proc)
-                    : DreamValue.Null;
+                value = new(ProcState.Proc);
                 return true;
             case "args":
                 value = new(new ProcArgsList(ObjectTree.List.ObjectDefinition, ProcState));
@@ -46,29 +44,25 @@ public sealed class DreamObjectCallee(DreamObjectDefinition objectDefinition) : 
                     value = DreamValue.Null;
                 return true;
             case "name":
-                value = ProcState.Proc?.VerbName is not null
+                value = ProcState.Proc.VerbName is not null
                     ? new(ProcState.Proc.VerbName)
                     : DreamValue.Null;
                 return true;
             case "desc":
-                value = ProcState.Proc?.VerbDesc is not null
+                value = ProcState.Proc.VerbDesc is not null
                     ? new(ProcState.Proc.VerbDesc)
                     : DreamValue.Null;
                 return true;
             case "category":
-                value = ProcState.Proc?.VerbCategory is not null
+                value = ProcState.Proc.VerbCategory is not null
                     ? new(ProcState.Proc.VerbCategory)
                     : DreamValue.Null;
                 return true;
             case "file":
-                value = ProcState.Proc is not null
-                    ? new DreamValue(ProcState.Proc.GetSourceAtOffset(0).Source)
-                    : DreamValue.Null;
+                value = new DreamValue(ProcState.Proc.GetSourceAtOffset(0).Source);
                 return true;
             case "line":
-                value = ProcState.Proc is not null
-                    ? new DreamValue(ProcState.Proc.GetSourceAtOffset(0).Line)
-                    : DreamValue.Null;
+                value = new DreamValue(ProcState.Proc.GetSourceAtOffset(0).Line);
                 return true;
             case "src":
                 ProcState.Instance?.IncRef();

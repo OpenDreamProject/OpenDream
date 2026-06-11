@@ -44,9 +44,7 @@ public sealed class DreamObjectCallee(DreamObjectDefinition objectDefinition) : 
                     value = DreamValue.Null;
                 return true;
             case "name":
-                value = ProcState.Proc.VerbName is not null
-                    ? new(ProcState.Proc.VerbName)
-                    : DreamValue.Null;
+                value = new(ProcState.Proc.VerbName);
                 return true;
             case "desc":
                 value = ProcState.Proc.VerbDesc is not null

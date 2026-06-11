@@ -377,7 +377,6 @@ public sealed class DMProcState : ProcState {
                 throw new InvalidOperationException("Attempted to get the callee of a disposed proc");
             if(_callee is null) {
                 _callee = DreamObjectCallee.FromDMProcState(this);
-                _callee.IncRef(); // the state's ref to the callee
             }
 
             return _callee;

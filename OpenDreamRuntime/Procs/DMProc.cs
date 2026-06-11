@@ -951,14 +951,13 @@ public sealed class DMProcState : ProcState {
             }
             case DMReference.Type.Caller: {
                 // Note that the ref says that caller still returns a "/callee" object, just with the caller's info
-                if(Caller is not DMProcState dmCaller) {
-                    if(Caller?.Caller is not DMProcState realDmCaller) // init case
-                        return DreamValue.Null;
-                    dmCaller = realDmCaller;
-                }
+                var caller = Caller;
+                while(caller is not (DMProcState or null))
+                    caller = caller.Caller;
 
-                dmCaller.CalleeObject.IncRef();
-                return new(dmCaller.CalleeObject);
+                var value = caller is DMProcState dmCaller ? new(dmCaller.CalleeObject) : DreamValue.Null;
+                value.IncRef();
+                return value;
             }
             case DMReference.Type.Field: {
                 var owner = peek ? Peek() : Pop();

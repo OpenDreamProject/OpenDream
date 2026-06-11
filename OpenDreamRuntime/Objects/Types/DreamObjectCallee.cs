@@ -32,16 +32,12 @@ public sealed class DreamObjectCallee(DreamObjectDefinition objectDefinition) : 
                 value = new(new ProcArgsList(ObjectTree.List.ObjectDefinition, ProcState));
                 return true;
             case "caller":
-                if(ProcState.Caller is DMProcState callerState) {
-                    callerState.CalleeObject.IncRef();
-                    value = new(callerState.CalleeObject);
-                }
-                else if(ProcState.Caller?.Caller is DMProcState superCallerState) { // init case
-                    superCallerState.CalleeObject.IncRef();
-                    value = new(superCallerState.CalleeObject);
-                }
-                else
-                    value = DreamValue.Null;
+                var caller = ProcState.Caller;
+                while(caller is not (DMProcState or null))
+                    caller = caller.Caller;
+
+                value = caller is DMProcState dmCaller ? new DreamValue(dmCaller.CalleeObject) : DreamValue.Null;
+                value.IncRef();
                 return true;
             case "name":
                 value = new(ProcState.Proc.VerbName);

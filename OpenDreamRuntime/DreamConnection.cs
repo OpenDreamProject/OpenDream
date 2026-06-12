@@ -45,7 +45,7 @@ public sealed partial class DreamConnection {
             SetClientMob(value);
 
             if(oldConnection is not null) {
-                oldConnection.Client?.Delete();
+                oldConnection.Client?.Delete(); // TODO: This should tell you why you disconnected
                 _mob!.SpawnProc("Logout").Dispose();
             }
 
@@ -113,16 +113,22 @@ public sealed partial class DreamConnection {
         _verbSystem?.RemoveConnectionFromRepeatingVerbs(this);
         Session = null;
 
-        Mob = null;
+        // The client still has a reference to the mob when deleted, so we do this first
         Client.DecRef();
         Client.Delete();
         Client = null;
+
+        if(Mob is not null) {
+            var oldMob = Mob;
+            SetClientMob(null, true);
+            oldMob.SpawnProc("Logout").Dispose();
+        }
     }
 
     /// <summary>
     /// Sets the <see cref="Mob">connection's mob</see> without any side effects.
     /// </summary>
-    private void SetClientMob(DreamObjectMob? newMob) {
+    private void SetClientMob(DreamObjectMob? newMob, bool preserveKey = false) {
         if(newMob == _mob)
             return;
 
@@ -132,7 +138,8 @@ public sealed partial class DreamConnection {
         oldMob?.DecRef();
 
         if (oldMob is not null) {
-            oldMob.Key = null;
+            if(!preserveKey)
+                oldMob.Key = null;
             oldMob.Connection = null;
         }
 
@@ -146,7 +153,8 @@ public sealed partial class DreamConnection {
             newMob.Connection?.SetClientMob(null);
 
             newMob.Connection = this;
-            newMob.Key = Key;
+            if(!preserveKey)
+                newMob.Key = Key;
         }
     }
 

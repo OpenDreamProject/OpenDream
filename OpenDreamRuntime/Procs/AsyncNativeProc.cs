@@ -1,10 +1,11 @@
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using DMCompiler.DM;
 using JetBrains.Annotations;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Resources;
+using System.Runtime.CompilerServices;
+using System.Text;
+using System.Threading.Tasks;
+using static OpenDreamRuntime.Procs.AsyncNativeProc;
 using Dependency = Robust.Shared.IoC.DependencyAttribute;
 
 namespace OpenDreamRuntime.Procs {
@@ -14,12 +15,12 @@ namespace OpenDreamRuntime.Procs {
         string name,
         List<string> argumentNames,
         Dictionary<string, DreamValue> defaultArgumentValues,
-        Func<AsyncNativeProc.AsyncNativeProcState, Task<DreamValue>> taskFunc)
+        Func<AsyncNativeProcState, Task<DreamValue>> taskFunc)
         : DreamProc(id, owningType, name, null, ProcAttributes.None, argumentNames, null, null, null, null, null, 0) {
         /// <summary>
         /// ProcState specifically for running native procs, not DM procs
         /// </summary>
-        public sealed partial class AsyncNativeProcState : ProcState {
+        public sealed partial class AsyncNativeProcState : AsyncProcState {
             public static readonly Stack<AsyncNativeProcState> Pool = new();
 
 #if TOOLS
@@ -66,7 +67,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             // Used to avoid reentrant resumptions in our proc
-            public void SafeResume() {
+            public override void SafeResume() {
                 if (_inResume) {
                     return;
                 }

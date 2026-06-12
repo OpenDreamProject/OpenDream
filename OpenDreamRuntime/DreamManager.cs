@@ -53,7 +53,7 @@ public sealed partial class DreamManager {
     [Dependency] private ProcScheduler _procScheduler = default!;
     [Dependency] private DreamResourceManager _dreamResourceManager = default!;
     [Dependency] private ITaskManager _taskManager = default!;
-    [Dependency] private IGameTiming _gameTiming = default!;
+    [Dependency] private IOpenDreamGameTiming _gameTiming = default!;
     [Dependency] private DreamObjectTree _objectTree = default!;
     [Dependency] private IEntityManager _entityManager = default!;
 

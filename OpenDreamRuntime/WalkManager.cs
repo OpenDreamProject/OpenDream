@@ -45,7 +45,7 @@ public sealed partial class WalkManager {
             var moveProc = movable.GetProc("Move");
 
             while (true) {
-                await _scheduler.CreateDelayTicks(lag);
+                await _scheduler.CreateDelayTicks(lag, state.Proc!.Id, state.Thread.Id);
                 if (cancelSource.IsCancellationRequested)
                     break;
 
@@ -73,7 +73,7 @@ public sealed partial class WalkManager {
             var moveProc = movable.GetProc("Move");
 
             while (true) {
-                await _scheduler.CreateDelayTicks(lag);
+                await _scheduler.CreateDelayTicks(lag, state.Proc!.Id, state.Thread.Id);
                 if (cancelSource.IsCancellationRequested)
                     break;
 
@@ -102,7 +102,7 @@ public sealed partial class WalkManager {
             var moveProc = movable.GetProc("Move");
 
             while (true) {
-                await _scheduler.CreateDelayTicks(lag);
+                await _scheduler.CreateDelayTicks(lag, state.Proc!.Id, state.Thread.Id);
                 if (cancelSource.IsCancellationRequested)
                     break;
 
@@ -134,7 +134,7 @@ public sealed partial class WalkManager {
             var moveProc = movable.GetProc("Move");
 
             while (true) {
-                await _scheduler.CreateDelayTicks(lag);
+                await _scheduler.CreateDelayTicks(lag, state.Proc!.Id, state.Thread.Id);
                 if (cancelSource.IsCancellationRequested)
                     break;
 

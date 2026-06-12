@@ -41,6 +41,7 @@ public enum WarningCode {
     ErrorDirective = 1200,
     WarningDirective = 1201,
     MiscapitalizedDirective = 1300,
+    ErrorRecoveryActivated = 1999, // Error recovery kicked in, should probably be a non-fatal error since it means a chunk of code was so malformed we couldn't compile it
 
     // 2000 - 2999 are reserved for compiler configuration of actual behaviour.
     SoftReservedKeyword = 2000, // For keywords that SHOULD be reserved, but don't have to be. 'null' and 'defined', for instance
@@ -141,6 +142,7 @@ public struct CompilerEmission {
         {WarningCode.ErrorDirective, ErrorLevel.Error},
         {WarningCode.WarningDirective, ErrorLevel.Warning},
         {WarningCode.MiscapitalizedDirective, ErrorLevel.Warning},
+        {WarningCode.ErrorRecoveryActivated, ErrorLevel.Error},
 
         //2000-2999
         {WarningCode.SoftReservedKeyword, ErrorLevel.Error},

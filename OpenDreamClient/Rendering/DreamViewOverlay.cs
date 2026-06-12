@@ -237,8 +237,23 @@ internal sealed partial class DreamViewOverlay : Overlay {
         );
 
         if (parentIcon != null) {
-            current.ClickUid = parentIcon.ClickUid;
-            current.MouseOpacity = parentIcon.MouseOpacity;
+            if(isVisContent) {
+                var visFlags = current.VisFlags;
+                current.ClickUid = (visFlags & VisFlags.InheritId) != 0 ? parentIcon.ClickUid : current.ClickUid;
+                current.MouseOpacity = (visFlags & VisFlags.InheritId) != 0 ? parentIcon.MouseOpacity : icon.Appearance.MouseOpacity;
+
+                if((visFlags & (VisFlags.InheritIcon | VisFlags.InheritIconState | VisFlags.InheritDir)) != 0) {
+                    var usedIcon = (visFlags & VisFlags.InheritIcon) != 0 ? parentIcon.MainIcon! : current.MainIcon;
+                    var usedIconState = (visFlags & VisFlags.InheritIconState) != 0 ? parentIcon.MainIcon!.Appearance!.IconState : current.MainIcon.Appearance.IconState;
+                    var usedDir = (visFlags & VisFlags.InheritDir) != 0 ? parentIcon.MainIcon!.Appearance!.Direction : current.MainIcon.Appearance.Direction;
+
+                    current.TextureOverride = usedIcon.DMI?.GetState(usedIconState)?.GetFrames(usedDir).ElementAtOrDefault(usedIcon.GetAnimationFrame(usedIconState, usedDir));
+                }
+            } else {
+                current.ClickUid = parentIcon.ClickUid;
+                current.MouseOpacity = parentIcon.MouseOpacity;
+            }
+
             if ((icon.Appearance.AppearanceFlags & AppearanceFlags.ResetColor) != 0 || keepTogether) { //RESET_COLOR
                 current.ColorToApply = icon.Appearance.Color;
                 current.ColorMatrixToApply = icon.Appearance.ColorMatrix;
@@ -257,13 +272,16 @@ internal sealed partial class DreamViewOverlay : Overlay {
             else
                 current.TransformToApply = iconAppearanceTransformMatrix * parentIcon.TransformToApply;
 
-            if ((icon.Appearance.Plane < -10000)) //FLOAT_PLANE - Note: yes, this really is how it works. Yes it's dumb as shit.
-                current.Plane = parentIcon.Plane + (icon.Appearance.Plane + 32767);
+            var effectivePlane = (isVisContent && (current.VisFlags & VisFlags.InheritPlane) != 0) ? parentIcon.Plane : icon.Appearance.Plane;
+            var effectiveLayer = (isVisContent && (current.VisFlags & VisFlags.InheritLayer) != 0) ? parentIcon.Layer : icon.Appearance.Layer;
+
+            if ((effectivePlane < -10000)) //FLOAT_PLANE - Note: yes, this really is how it works. Yes it's dumb as shit.
+                current.Plane = parentIcon.Plane + (effectivePlane + 32767);
             else
-                current.Plane = icon.Appearance.Plane;
+                current.Plane = effectivePlane;
 
             //FLOAT_LAYER - if this icon's layer is negative, it's a float layer so set it's layer equal to the parent object and sort through the float_layer shit later
-            current.Layer = (icon.Appearance.Layer < 0) ? parentIcon.Layer : icon.Appearance.Layer;
+            current.Layer = (effectiveLayer < 0) ? parentIcon.Layer : effectiveLayer;
 
             if (current.BlendMode == BlendMode.Default)
                 current.BlendMode = parentIcon.BlendMode;
@@ -374,6 +392,10 @@ internal sealed partial class DreamViewOverlay : Overlay {
             if (!_spriteQuery.TryGetComponent(visContentEntity, out var sprite))
                 continue;
             if (!_spriteSystem.IsVisible(sprite, null, seeVis, null))
+                continue;
+
+            var spriteIcon = sprite.Icon;
+            if(spriteIcon.Appearance is null || (spriteIcon.Appearance.VisFlags & VisFlags.Hide) != 0)
                 continue;
 
             ProcessIconComponents(sprite.Icon, position, visContentEntity, false, true, ref tieBreaker, result, seeVis, current, keepTogether);

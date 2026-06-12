@@ -29,10 +29,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
     private DMIResource? _dmi;
 
     public int AnimationFrame {
-        get {
-            UpdateAnimation();
-            return _animationFrame;
-        }
+        get => GetAnimationFrame(_iconState, _direction);
     }
 
     [ViewVariables]
@@ -221,16 +218,16 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
         }
     }
 
-    private void UpdateAnimation() {
+    public int GetAnimationFrame(string? iconState, AtomDirection dir) {
         if(DMI == null || Appearance == null || _animationComplete)
-            return;
+            return 0;
 
-        DMIParser.ParsedDMIState? dmiState = DMI.Description.GetStateOrDefault(_iconState);
+        DMIParser.ParsedDMIState? dmiState = DMI.Description.GetStateOrDefault(iconState);
         if(dmiState == null)
-            return;
-        DMIParser.ParsedDMIFrame[] frames = dmiState.GetFrames(_direction);
+            return 0;
+        DMIParser.ParsedDMIFrame[] frames = dmiState.GetFrames(dir);
 
-        if (frames.Length <= 1) return;
+        if (frames.Length <= 1) return 0;
 
         var oldFrame = _animationFrame;
         var currentGameTicks = gameTiming.CurTime.Ticks;
@@ -253,6 +250,8 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
 
         if (oldFrame != _animationFrame)
             DirtyTexture();
+
+        return _animationFrame;
     }
 
     private ImmutableAppearance? CalculateAnimatedAppearance() {

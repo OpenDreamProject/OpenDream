@@ -213,6 +213,8 @@ internal sealed partial class DreamViewOverlay : Overlay {
     ) {
         if (icon.Appearance is null) //in the event that appearance hasn't loaded yet
             return;
+        if (isVisContent && (icon.Appearance.VisFlags & VisFlags.Hide) != 0)
+            return;
 
         result.EnsureCapacity(result.Count + icon.Underlays.Count + icon.Overlays.Count + 1);
         RendererMetaData current = RentRendererMetaData();
@@ -340,10 +342,10 @@ internal sealed partial class DreamViewOverlay : Overlay {
                             (underlay.Appearance.AppearanceFlags & AppearanceFlags.KeepApart) != 0;
 
             if (!keepTogether || keepApart) { //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
-                ProcessIconComponents(underlay, current.Position, uid, isScreen, false, ref tieBreaker, result, seeVis, current);
+                ProcessIconComponents(underlay, current.Position, uid, isScreen, isVisContent, ref tieBreaker, result, seeVis, current);
             } else {
                 current.KeepTogetherGroup ??= new();
-                ProcessIconComponents(underlay, current.Position, uid, isScreen, false, ref tieBreaker, current.KeepTogetherGroup, seeVis, current, keepTogether);
+                ProcessIconComponents(underlay, current.Position, uid, isScreen, isVisContent, ref tieBreaker, current.KeepTogetherGroup, seeVis, current, keepTogether);
             }
         }
 
@@ -362,10 +364,10 @@ internal sealed partial class DreamViewOverlay : Overlay {
                             (overlay.Appearance.AppearanceFlags & AppearanceFlags.KeepApart) != 0;
 
             if (!keepTogether || keepApart) { //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
-                ProcessIconComponents(overlay, current.Position, uid, isScreen, false, ref tieBreaker, result, seeVis, current);
+                ProcessIconComponents(overlay, current.Position, uid, isScreen, isVisContent, ref tieBreaker, result, seeVis, current);
             } else {
                 current.KeepTogetherGroup ??= new();
-                ProcessIconComponents(overlay, current.Position, uid, isScreen, false, ref tieBreaker, current.KeepTogetherGroup, seeVis, current, keepTogether);
+                ProcessIconComponents(overlay, current.Position, uid, isScreen, isVisContent, ref tieBreaker, current.KeepTogetherGroup, seeVis, current, keepTogether);
             }
         }
 
@@ -392,10 +394,6 @@ internal sealed partial class DreamViewOverlay : Overlay {
             if (!_spriteQuery.TryGetComponent(visContentEntity, out var sprite))
                 continue;
             if (!_spriteSystem.IsVisible(sprite, null, seeVis, null))
-                continue;
-
-            var spriteIcon = sprite.Icon;
-            if(spriteIcon.Appearance is null || (spriteIcon.Appearance.VisFlags & VisFlags.Hide) != 0)
                 continue;
 
             ProcessIconComponents(sprite.Icon, position, visContentEntity, false, true, ref tieBreaker, result, seeVis, current, keepTogether);

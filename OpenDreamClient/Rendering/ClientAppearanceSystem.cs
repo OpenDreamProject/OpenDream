@@ -7,14 +7,16 @@ using Robust.Client.Graphics;
 using Robust.Shared.Prototypes;
 using OpenDreamClient.Resources;
 using OpenDreamClient.Resources.ResourceTypes;
+using OpenDreamShared.Network.Messages;
 using OpenDreamShared.Resources;
 using Robust.Client.Player;
 using Robust.Shared.Map;
+using Robust.Shared.Serialization;
 using Robust.Shared.Timing;
 
 namespace OpenDreamClient.Rendering;
 
-internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
+internal sealed partial class ClientAppearanceSystem : SharedAppearanceSystem {
     public sealed class Flick {
         public readonly DMIResource Icon;
         public readonly string? IconState;
@@ -56,24 +58,28 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     private readonly Dictionary<(int X, int Y, int Z), Flick> _turfFlicks = new();
     private readonly Dictionary<EntityUid, Flick> _movableFlicks = new();
     private bool _receivedAllAppearancesMsg;
+    private float _refreshVerbRemainingTime = 0.5f;
+    private readonly float _refreshVerbPeriod = 0.5f;
 
-    [Dependency] private readonly IEntityManager _entityManager = default!;
-    [Dependency] private readonly IDreamResourceManager _dreamResourceManager = default!;
-    [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
-    [Dependency] private readonly TransformSystem _transformSystem = default!;
-    [Dependency] private readonly IGameTiming _gameTiming = default!;
-    [Dependency] private readonly IClyde _clyde = default!;
-    [Dependency] private readonly DMISpriteSystem _spriteSystem = default!;
-    [Dependency] private readonly IPlayerManager _playerManager = default!;
-    [Dependency] private readonly IMapManager _mapManager = default!;
-    [Dependency] private readonly MapSystem _mapSystem = default!;
-    [Dependency] private readonly IPrototypeManager _protoManager = default!;
+    [Dependency] private IEntityManager _entityManager = default!;
+    [Dependency] private IDreamResourceManager _dreamResourceManager = default!;
+    [Dependency] private IDreamInterfaceManager _interfaceManager = default!;
+    [Dependency] private TransformSystem _transformSystem = default!;
+    [Dependency] private IGameTiming _gameTiming = default!;
+    [Dependency] private IClyde _clyde = default!;
+    [Dependency] private DMISpriteSystem _spriteSystem = default!;
+    [Dependency] private IPlayerManager _playerManager = default!;
+    [Dependency] private IMapManager _mapManager = default!;
+    [Dependency] private MapSystem _mapSystem = default!;
+    [Dependency] private IPrototypeManager _protoManager = default!;
+    [Dependency] private IRobustSerializer _serializer = default!;
+    [Dependency] private ClientVerbSystem _verbSystem = default!;
 
     public override void Initialize() {
         UpdatesOutsidePrediction = true;
 
-        SubscribeNetworkEvent<NewAppearanceEvent>(OnNewAppearance);
-        SubscribeNetworkEvent<RemoveAppearanceEvent>(e => _appearances.Remove(e.AppearanceId));
+        SubscribeNetworkEvent<NewAppearancesEvent>(OnNewAppearances);
+        SubscribeNetworkEvent<RemoveAppearancesEvent>(OnRemoveAppearances);
         SubscribeNetworkEvent<AnimationEvent>(OnAnimation);
         SubscribeNetworkEvent<FlickEvent>(OnFlick);
         SubscribeLocalEvent<DMISpriteComponent, WorldAABBEvent>(OnWorldAABB);
@@ -98,6 +104,12 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         foreach (var (flickKey, flick) in _movableFlicks) {
             if (flick.GetAnimationFrame(_gameTiming) == -1)
                 _movableFlicks.Remove(flickKey);
+        }
+
+        _refreshVerbRemainingTime -= frameTime;
+        if (_refreshVerbRemainingTime < 0) {
+            _refreshVerbRemainingTime = _refreshVerbPeriod;
+            _verbSystem.RefreshVerbs();
         }
     }
 
@@ -144,17 +156,30 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         return icon;
     }
 
-    private void OnNewAppearance(NewAppearanceEvent e) {
-        uint appearanceId = e.Appearance.MustGetId();
-        _appearances[appearanceId] = e.Appearance;
+    private void OnNewAppearances(NewAppearancesEvent e) {
+        var decompressed = MsgAllAppearances.DecompressAppearances(new(e.Data));
+        var count = decompressed.ReadInt32();
 
-        // If we haven't received the MsgAllAppearances yet, leave this initialization for later
-        if (_receivedAllAppearancesMsg) {
-            _appearances[appearanceId].ResolveOverlays(this);
+        for (int i = 0; i < count; i++) {
+            var appearance = new ImmutableAppearance(decompressed, _serializer);
+            uint appearanceId = appearance.MustGetId();
+            _appearances[appearanceId] = appearance;
 
-            if (_appearanceLoadCallbacks.TryGetValue(appearanceId, out var callbacks)) {
-                foreach (var callback in callbacks) callback(_appearances[appearanceId]);
+            // If we haven't received the MsgAllAppearances yet, leave this initialization for later
+            if (_receivedAllAppearancesMsg) {
+                _appearances[appearanceId].ResolveOverlays(this);
+
+                if (_appearanceLoadCallbacks.TryGetValue(appearanceId, out var callbacks)) {
+                    foreach (var callback in callbacks) callback(_appearances[appearanceId]);
+                }
             }
+        }
+    }
+
+    private void OnRemoveAppearances(RemoveAppearancesEvent e) {
+        foreach (var appearanceId in e.Appearances) {
+            _appearances.Remove(appearanceId);
+            _appearanceLoadCallbacks.Remove(appearanceId);
         }
     }
 
@@ -341,7 +366,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         return false;
     }
 
-    public string GetName(ClientObjectReference reference) {
+    public string GetNameUnformatted(ClientObjectReference reference) {
         switch (reference.Type) {
             case ClientObjectReference.RefType.Client:
                 return _playerManager.LocalSession?.Name ?? "<unknown>";
@@ -350,7 +375,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
                 if (!TryGetAppearance(reference, out var appearance))
                     break;
 
-                return appearance.Name;
+                return StringFormatDecoder.RemoveFormatting(appearance.Name);
         }
 
         return "<unknown>";

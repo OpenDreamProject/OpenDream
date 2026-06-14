@@ -5,52 +5,25 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 
 [*.{cs, xaml}]
-indent_style = space
 indent_size = 4
+indent_style = space
 
 [*.cs]
-csharp_new_line_before_open_brace = none
-csharp_new_line_before_else = false
-csharp_new_line_before_catch = false
-csharp_new_line_before_members_in_object_initializers = false
-csharp_new_line_before_members_in_anonymous_types = true
-csharp_indent_case_contents = true
-csharp_indent_switch_labels = true
+# Microsoft .NET properties
 csharp_indent_block_contents = true
 csharp_indent_braces = false
+csharp_indent_case_contents = true
 csharp_indent_case_contents_when_block = false
-
-# Microsoft .NET properties
-csharp_preferred_modifier_order = public, private, protected, internal, file, new, static, abstract, virtual, sealed, readonly, override, extern, unsafe, volatile, async, required:suggestion
-csharp_space_after_cast = false
-csharp_style_prefer_utf8_string_literals = true:suggestion
-csharp_style_var_elsewhere = true:suggestion
-dotnet_style_parentheses_in_arithmetic_binary_operators = never_if_unnecessary:none
-dotnet_style_parentheses_in_other_binary_operators = always_for_clarity:none
-dotnet_style_parentheses_in_relational_binary_operators = never_if_unnecessary:none
-dotnet_style_predefined_type_for_locals_parameters_members = true:suggestion
-dotnet_style_predefined_type_for_member_access = true:suggestion
-dotnet_style_qualification_for_event = false:suggestion
-dotnet_style_qualification_for_field = false:suggestion
-dotnet_style_qualification_for_method = false:suggestion
-dotnet_style_qualification_for_property = false:suggestion
-dotnet_style_require_accessibility_modifiers = for_non_interface_members:suggestion
-csharp_style_namespace_declarations=file_scoped:warning
-
-[*.csproj]
-indent_style = space
-indent_size = 2
-
-# Microsoft .NET properties
+csharp_indent_switch_labels = true
 csharp_new_line_before_catch = false
 csharp_new_line_before_else = false
+csharp_new_line_before_members_in_anonymous_types = true
 csharp_new_line_before_members_in_object_initializers = false
 csharp_new_line_before_open_brace = none
 csharp_preferred_modifier_order = public, private, protected, internal, file, new, static, abstract, virtual, sealed, readonly, override, extern, unsafe, volatile, async, required:suggestion
+csharp_space_after_cast = false
+csharp_style_namespace_declarations=file_scoped:warning
 csharp_style_prefer_utf8_string_literals = true:suggestion
-csharp_style_var_elsewhere = true:suggestion
-csharp_style_var_for_built_in_types = true:suggestion
-csharp_style_var_when_type_is_apparent = true:suggestion
 dotnet_style_parentheses_in_arithmetic_binary_operators = never_if_unnecessary:none
 dotnet_style_parentheses_in_other_binary_operators = always_for_clarity:none
 dotnet_style_parentheses_in_relational_binary_operators = never_if_unnecessary:none
@@ -64,14 +37,19 @@ dotnet_style_require_accessibility_modifiers = for_non_interface_members:suggest
 
 # ReSharper properties
 resharper_allow_comment_after_lbrace = true
+resharper_arrange_type_member_modifiers_highlighting = none
 resharper_autodetect_indent_settings = true
+resharper_csharp_keep_blank_lines_in_code = 1
+resharper_csharp_keep_blank_lines_in_declarations = 1
 resharper_place_simple_initializer_on_single_line = false
 resharper_place_simple_property_pattern_on_single_line = false
 resharper_show_autodetect_configure_formatting_tip = false
 resharper_space_within_single_line_array_initializer_braces = false
 resharper_use_indent_from_vs = false
-resharper_csharp_keep_blank_lines_in_code = 1
-resharper_csharp_keep_blank_lines_in_declarations = 1
+
+[*.csproj]
+indent_size = 2
+indent_style = space
 
 [*.{dm, dme, dmm, dmf}]
 indent_style = tab

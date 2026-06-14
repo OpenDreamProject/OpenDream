@@ -1,7 +1,7 @@
 
 var/gvar = 3
 
-/obj
+/datum
 	var/static/osvar = gvar
 
 /proc/sproc()
@@ -9,6 +9,6 @@ var/gvar = 3
 	ASSERT(psvar == 3)
 
 /proc/RunTest()
-	var/obj/o = new
+	var/datum/o = new
 	sproc()
 	ASSERT(o.osvar == 3)

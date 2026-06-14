@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Threading;
 using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects.Types;
@@ -12,11 +11,11 @@ namespace OpenDreamRuntime;
 /// Handles walking movables.<br/>
 /// walk_towards(), walk_to(), walk_away(), etc.
 /// </summary>
-public sealed class WalkManager {
-    [Dependency] private readonly AtomManager _atomManager = default!;
-    [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
-    [Dependency] private readonly ProcScheduler _scheduler = default!;
-    [Dependency] private readonly DreamManager _dreamManager = default!;
+public sealed partial class WalkManager {
+    [Dependency] private AtomManager _atomManager = default!;
+    [Dependency] private IDreamMapManager _dreamMapManager = default!;
+    [Dependency] private ProcScheduler _scheduler = default!;
+    [Dependency] private DreamManager _dreamManager = default!;
 
     private readonly Dictionary<DreamObjectMovable, CancellationTokenSource> _walkTasks = new();
 
@@ -24,8 +23,10 @@ public sealed class WalkManager {
     /// Stop any active walks on a movable
     /// </summary>
     public void StopWalks(DreamObjectMovable movable) {
-        if (_walkTasks.TryGetValue(movable, out var walk))
+        if (_walkTasks.Remove(movable, out var walk)) {
             walk.Cancel();
+            movable.DecRef();
+        }
     }
 
     /// <summary>
@@ -38,6 +39,7 @@ public sealed class WalkManager {
 
         CancellationTokenSource cancelSource = new();
         _walkTasks[movable] = cancelSource;
+        movable.IncRef();
 
         DreamThread.Run($"walk {dir}", async state => {
             var moveProc = movable.GetProc("Move");
@@ -48,11 +50,11 @@ public sealed class WalkManager {
                     break;
 
                 DreamObjectTurf? newLoc = DreamProcNativeHelpers.GetStep(_atomManager, _dreamMapManager, movable, (AtomDirection)dir);
-                await state.Call(moveProc, movable, null, new(newLoc), new(dir));
+                await state.CallNoWait(moveProc, movable, null, new(newLoc), new(dir));
             }
 
             return DreamValue.Null;
-        });
+        }).Dispose();
     }
 
     /// <summary>
@@ -65,6 +67,7 @@ public sealed class WalkManager {
 
         CancellationTokenSource cancelSource = new();
         _walkTasks[movable] = cancelSource;
+        movable.IncRef();
 
         DreamThread.Run("walk_rand", async state => {
             var moveProc = movable.GetProc("Move");
@@ -73,13 +76,14 @@ public sealed class WalkManager {
                 await _scheduler.CreateDelayTicks(lag);
                 if (cancelSource.IsCancellationRequested)
                     break;
+
                 var dir = DreamProcNativeHelpers.GetRandomDirection(_dreamManager);
                 DreamObjectTurf? newLoc = DreamProcNativeHelpers.GetStep(_atomManager, _dreamMapManager, movable, dir);
-                await state.Call(moveProc, movable, null, new(newLoc), new((int)dir));
+                await state.CallNoWait(moveProc, movable, null, new(newLoc), new((int)dir));
             }
 
             return DreamValue.Null;
-        });
+        }).Dispose();
     }
 
     /// <summary>
@@ -92,6 +96,7 @@ public sealed class WalkManager {
 
         CancellationTokenSource cancelSource = new();
         _walkTasks[movable] = cancelSource;
+        movable.IncRef();
 
         DreamThread.Run($"walk_towards {movable}", async state => {
             var moveProc = movable.GetProc("Move");
@@ -106,11 +111,11 @@ public sealed class WalkManager {
                     continue;
 
                 DreamObjectTurf? newLoc = DreamProcNativeHelpers.GetStep(_atomManager, _dreamMapManager, movable, dir);
-                await state.Call(moveProc, movable, null, new(newLoc), new((int)dir));
+                await state.CallNoWait(moveProc, movable, null, new(newLoc), new((int)dir));
             }
 
             return DreamValue.Null;
-        });
+        }).Dispose();
     }
 
     /// <summary>
@@ -123,6 +128,7 @@ public sealed class WalkManager {
 
         CancellationTokenSource cancelSource = new();
         _walkTasks[movable] = cancelSource;
+        movable.IncRef();
 
         DreamThread.Run($"walk_to {movable}", async state => {
             var moveProc = movable.GetProc("Move");
@@ -134,17 +140,19 @@ public sealed class WalkManager {
 
                 var currentLoc = _atomManager.GetAtomPosition(movable);
                 var targetLoc = _atomManager.GetAtomPosition(target);
-                var steps = _dreamMapManager.CalculateSteps(currentLoc, targetLoc, min);
+                var worldView = _dreamManager.WorldInstance.DefaultView;
+                var maxSteps = Math.Max(worldView.Width, worldView.Height) - 1;
+                var steps = _dreamMapManager.CalculateSteps(currentLoc, targetLoc, min, maxSteps);
                 using var enumerator = steps.GetEnumerator();
                 if (!enumerator.MoveNext()) // No more steps to take
                     break;
 
                 var dir = enumerator.Current;
                 var newLoc = DreamProcNativeHelpers.GetStep(_atomManager, _dreamMapManager, movable, dir);
-                await state.Call(moveProc, movable, null, new(newLoc), new((int)dir));
+                await state.CallNoWait(moveProc, movable, null, new(newLoc), new((int)dir));
             }
 
             return DreamValue.Null;
-        });
+        }).Dispose();
     }
 }

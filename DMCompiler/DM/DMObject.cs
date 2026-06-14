@@ -169,6 +169,7 @@ internal sealed class DMObject(DMCompiler compiler, int id, DreamPath path, DMOb
         foreach (var assignment in InitializationProcAssignments) {
             init.DebugSource(assignment.Assignment.Location);
             assignment.Assignment.EmitPushValue(new(compiler, this, init));
+            init.Pop();
         }
     }
 

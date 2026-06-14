@@ -1,9 +1,9 @@
 
-/obj
+/datum
 	proc/TheCall()
 		return 7
 
-var/obj/i = new
+var/datum/i = new
 
 /proc/RunTest()
 	ASSERT(global.i.TheCall() == 7)

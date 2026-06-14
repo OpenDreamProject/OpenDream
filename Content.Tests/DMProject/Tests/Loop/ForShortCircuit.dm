@@ -1,4 +1,4 @@
-﻿/proc/RunTest()
+/proc/RunTest()
 	var/i = 0
 	var/j = 0
 	var/list/L1 = null

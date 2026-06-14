@@ -141,6 +141,7 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
             case DreamProcOpcode.CreateObject:
             case DreamProcOpcode.Gradient:
             case DreamProcOpcode.Rgb:
+            case DreamProcOpcode.Animate:
                 return (opcode, (DMCallArgumentsType)ReadByte(), ReadInt());
 
             case DreamProcOpcode.Call:
@@ -183,7 +184,7 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
             case DreamProcOpcode.Enumerate:
                 return (opcode, ReadInt(), ReadReference(), ReadInt());
             case DreamProcOpcode.EnumerateAssoc:
-                return (opcode, ReadInt(), ReadReference(), ReadReference(), ReadReference(), ReadInt());
+                return (opcode, ReadInt(), ReadReference(), ReadReference(), ReadInt());
 
             case DreamProcOpcode.CreateFilteredListEnumerator:
             case DreamProcOpcode.EnumerateNoAssign:
@@ -307,21 +308,6 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
                     or DreamProcOpcode.JumpIfReferenceFalse, DMReference reference, int jumpPosition):
                 text.Append(reference.ToString());
                 text.AppendFormat(" 0x{0:x}", jumpPosition);
-                break;
-
-            case (DreamProcOpcode.Enumerate, DMReference reference, int jumpPosition):
-                text.Append(reference);
-                text.Append(' ');
-                text.Append(jumpPosition);
-                break;
-            case (DreamProcOpcode.EnumerateAssoc, DMReference reference, DMReference assocReference, DMReference listReference, int jumpPosition):
-                text.Append(reference);
-                text.Append(' ');
-                text.Append(assocReference);
-                text.Append(' ');
-                text.Append(listReference);
-                text.Append(' ');
-                text.Append(jumpPosition);
                 break;
 
             case (DreamProcOpcode.PushType

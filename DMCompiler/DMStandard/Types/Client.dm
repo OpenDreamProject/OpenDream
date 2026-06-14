@@ -40,7 +40,7 @@
 	var/script as opendream_unimplemented
 	var/color = 0 as opendream_unimplemented
 	var/control_freak as opendream_unimplemented
-	var/mouse_pointer_icon as opendream_unimplemented
+	var/mouse_pointer_icon
 	var/preload_rsc = 1 as opendream_unimplemented
 	var/fps = 0 as opendream_unimplemented
 	var/dir = NORTH as opendream_unimplemented
@@ -92,7 +92,6 @@
 		return TRUE
 
 	proc/SoundQuery()
-		set opendream_unimplemented = TRUE
 	proc/MeasureText(text, style, width=0)
 		set opendream_unimplemented = TRUE
 

@@ -1,4 +1,4 @@
-﻿/proc/RunTest()
+/proc/RunTest()
 	var/counter = 0
 	for(var/i in 1 to 3)
 		counter++

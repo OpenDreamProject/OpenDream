@@ -35,6 +35,11 @@ internal sealed class Add(Location location, DMExpression lhs, DMExpression rhs)
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         LHS.EmitPushValue(ctx);
         RHS.EmitPushValue(ctx);
         ctx.Proc.Add();
@@ -60,6 +65,11 @@ internal sealed class Subtract(Location location, DMExpression lhs, DMExpression
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         LHS.EmitPushValue(ctx);
         RHS.EmitPushValue(ctx);
         ctx.Proc.Subtract();
@@ -85,6 +95,11 @@ internal sealed class Multiply(Location location, DMExpression lhs, DMExpression
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         LHS.EmitPushValue(ctx);
         RHS.EmitPushValue(ctx);
         ctx.Proc.Multiply();
@@ -101,6 +116,10 @@ internal sealed class Divide(Location location, DMExpression lhs, DMExpression r
 
         if (lhs is Number lhsNum && rhs is Number rhsNum) {
             constant = new Number(Location, lhsNum.Value / rhsNum.Value);
+        } else if (rhs is Null) {
+            compiler.Emit(WarningCode.BadExpression, Location, "Division by null is invalid");
+            constant = null;
+            return false;
         } else {
             constant = null;
             return false;
@@ -110,6 +129,11 @@ internal sealed class Divide(Location location, DMExpression lhs, DMExpression r
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         LHS.EmitPushValue(ctx);
         RHS.EmitPushValue(ctx);
         ctx.Proc.Divide();
@@ -125,7 +149,7 @@ internal sealed class Modulo(Location location, DMExpression lhs, DMExpression r
         }
 
         if (lhs is Number lhsNum && rhs is Number rhsNum) {
-            constant = new Number(Location, lhsNum.Value % rhsNum.Value);
+            constant = new Number(Location, (int)lhsNum.Value % (int)rhsNum.Value);
         } else {
             constant = null;
             return false;
@@ -135,6 +159,11 @@ internal sealed class Modulo(Location location, DMExpression lhs, DMExpression r
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         LHS.EmitPushValue(ctx);
         RHS.EmitPushValue(ctx);
         ctx.Proc.Modulus();
@@ -163,6 +192,11 @@ internal sealed class ModuloModulo(Location location, DMExpression lhs, DMExpres
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         LHS.EmitPushValue(ctx);
         RHS.EmitPushValue(ctx);
         ctx.Proc.ModulusModulus();
@@ -188,6 +222,11 @@ internal sealed class Power(Location location, DMExpression lhs, DMExpression rh
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         LHS.EmitPushValue(ctx);
         RHS.EmitPushValue(ctx);
         ctx.Proc.Power();
@@ -213,6 +252,11 @@ internal sealed class LeftShift(Location location, DMExpression lhs, DMExpressio
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         LHS.EmitPushValue(ctx);
         RHS.EmitPushValue(ctx);
         ctx.Proc.BitShiftLeft();
@@ -238,6 +282,11 @@ internal sealed class RightShift(Location location, DMExpression lhs, DMExpressi
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         LHS.EmitPushValue(ctx);
         RHS.EmitPushValue(ctx);
         ctx.Proc.BitShiftRight();
@@ -265,6 +314,11 @@ internal sealed class BinaryAnd(Location location, DMExpression lhs, DMExpressio
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         LHS.EmitPushValue(ctx);
         RHS.EmitPushValue(ctx);
         ctx.Proc.BinaryAnd();
@@ -290,6 +344,11 @@ internal sealed class BinaryXor(Location location, DMExpression lhs, DMExpressio
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         LHS.EmitPushValue(ctx);
         RHS.EmitPushValue(ctx);
         ctx.Proc.BinaryXor();
@@ -315,6 +374,11 @@ internal sealed class BinaryOr(Location location, DMExpression lhs, DMExpression
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         LHS.EmitPushValue(ctx);
         RHS.EmitPushValue(ctx);
         ctx.Proc.BinaryOr();
@@ -378,6 +442,11 @@ internal sealed class GreaterThan(Location location, DMExpression lhs, DMExpress
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         LHS.EmitPushValue(ctx);
         RHS.EmitPushValue(ctx);
         ctx.Proc.GreaterThan();
@@ -387,6 +456,11 @@ internal sealed class GreaterThan(Location location, DMExpression lhs, DMExpress
 // x >= y
 internal sealed class GreaterThanOrEqual(Location location, DMExpression lhs, DMExpression rhs) : BinaryOp(location, lhs, rhs) {
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         LHS.EmitPushValue(ctx);
         RHS.EmitPushValue(ctx);
         ctx.Proc.GreaterThanOrEqual();
@@ -414,6 +488,11 @@ internal sealed class GreaterThanOrEqual(Location location, DMExpression lhs, DM
 // x < y
 internal sealed class LessThan(Location location, DMExpression lhs, DMExpression rhs) : BinaryOp(location, lhs, rhs) {
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         LHS.EmitPushValue(ctx);
         RHS.EmitPushValue(ctx);
         ctx.Proc.LessThan();
@@ -441,6 +520,11 @@ internal sealed class LessThan(Location location, DMExpression lhs, DMExpression
 // x <= y
 internal sealed class LessThanOrEqual(Location location, DMExpression lhs, DMExpression rhs) : BinaryOp(location, lhs, rhs) {
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         LHS.EmitPushValue(ctx);
         RHS.EmitPushValue(ctx);
         ctx.Proc.LessThanOrEqual();
@@ -485,6 +569,11 @@ internal sealed class Or(Location location, DMExpression lhs, DMExpression rhs) 
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            constant.EmitPushValue(ctx);
+            return;
+        }
+
         string endLabel = ctx.Proc.NewLabelName();
 
         LHS.EmitPushValue(ctx);
@@ -512,6 +601,21 @@ internal sealed class And(Location location, DMExpression lhs, DMExpression rhs)
     }
 
     public override void EmitPushValue(ExpressionContext ctx) {
+        if (LHS.TryAsConstant(ctx.Compiler, out var lhs)) {
+            if (lhs.IsTruthy()) {
+                if (RHS.TryAsConstant(ctx.Compiler, out var constant)) {
+                    constant.EmitPushValue(ctx);
+                    return;
+                }
+
+                RHS.EmitPushValue(ctx);
+                return;
+            }
+
+            lhs.EmitPushValue(ctx);
+            return;
+        }
+
         string endLabel = ctx.Proc.NewLabelName();
 
         LHS.EmitPushValue(ctx);

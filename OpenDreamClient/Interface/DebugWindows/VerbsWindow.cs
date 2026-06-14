@@ -9,8 +9,8 @@ namespace OpenDreamClient.Interface.DebugWindows;
 /// <summary>
 /// A debug window that displays all existing verbs, and all executable verbs
 /// </summary>
-internal sealed class VerbsWindow : OSWindow {
-    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+internal sealed partial class VerbsWindow : OSWindow {
+    [Dependency] private IEntitySystemManager _entitySystemManager = default!;
 
     public VerbsWindow() {
         IoCManager.InjectDependencies(this);

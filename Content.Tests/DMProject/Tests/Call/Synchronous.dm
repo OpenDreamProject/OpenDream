@@ -1,4 +1,4 @@
-﻿/proc/sync_test()
+/proc/sync_test()
 	return 1992
 
 /proc/RunTest()

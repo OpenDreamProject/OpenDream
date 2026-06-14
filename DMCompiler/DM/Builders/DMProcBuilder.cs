@@ -19,7 +19,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
 
             if (parameter.Value != null) { //Parameter has a default value
                 string afterDefaultValueCheck = proc.NewLabelName();
-                DMReference parameterRef = proc.GetLocalVariableReference(parameterName);
+                DMReference parameterRef = proc.GetLocalVariableReference(parameterName, parameter.Location);
 
                 //Don't set parameter to default if not null
                 proc.PushReferenceValue(parameterRef);
@@ -110,7 +110,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
     }
 
     private void ProcessStatementContinue(DMASTProcStatementContinue statementContinue) {
-        proc.Continue(statementContinue.Label);
+        proc.Continue(statementContinue.Location, statementContinue.Label);
     }
 
     private void ProcessStatementGoto(DMASTProcStatementGoto statementGoto) {
@@ -134,7 +134,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
     }
 
     private void ProcessStatementBreak(DMASTProcStatementBreak statementBreak) {
-        proc.Break(statementBreak.Label);
+        proc.Break(statementBreak.Location, statementBreak.Label);
     }
 
     private void ProcessStatementDel(DMASTProcStatementDel statementDel) {
@@ -197,7 +197,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
         }
 
         value.EmitPushValue(ExprContext);
-        proc.Assign(proc.GetLocalVariableReference(varDeclaration.Name));
+        proc.Assign(proc.GetLocalVariableReference(varDeclaration.Name, varDeclaration.Location));
         proc.Pop();
     }
 
@@ -396,10 +396,11 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
         }
         proc.EndScope();
 
-        IEnumerable<DMASTVarDeclExpression> FindVarDecls(DMASTExpression expr) {
-            if (expr is DMASTVarDeclExpression p) {
+        IEnumerable<DMASTVarDeclExpression> FindVarDecls(DMASTExpression? expr) {
+            if (expr is null)
+                yield break;
+            if (expr is DMASTVarDeclExpression p)
                 yield return p;
-            }
 
             foreach (var leaf in expr.Leaves()) {
                 foreach(var decl in FindVarDecls(leaf)) {
@@ -422,7 +423,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
             {
                 if (comparator != null) {
                     comparator.EmitPushValue(ExprContext);
-                    proc.BreakIfFalse();
+                    proc.BreakIfFalse(comparator.Location);
                 }
 
                 ProcessBlockInner(body);
@@ -446,20 +447,20 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
             string endLabel2 = proc.NewLabelName();
 
             DMReference outputRef = lValue.EmitReference(ExprContext, endLabel, DMExpression.ShortCircuitMode.PopNull);
-            proc.Enumerate(outputRef);
+            proc.Enumerate(outputRef, lValue.Location);
             proc.Jump(endLabel2);
 
             proc.AddLabel(endLabel);
-            proc.EnumerateNoAssign();
+            proc.EnumerateNoAssign(lValue.Location);
             proc.AddLabel(endLabel2);
         } else {
             if (assocValue != null && list != null) {
                 DMReference assocRef = assocValue.EmitReference(ExprContext, string.Empty);
                 DMReference outputRef = lValue.EmitReference(ExprContext, string.Empty);
-                proc.EnumerateAssoc(assocRef, outputRef);
+                proc.EnumerateAssoc(assocRef, outputRef, lValue.Location);
             } else {
                 DMReference outputRef = lValue.EmitReference(ExprContext, string.Empty);
-                proc.Enumerate(outputRef);
+                proc.Enumerate(outputRef, lValue.Location);
             }
         }
     }
@@ -538,7 +539,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                     if (doOr) {
                         proc.Not();
                         proc.JumpIfFalse(afterTypeCheckIf);
-                        proc.Continue();
+                        proc.Continue(lValue.Location);
                     }
 
                     proc.AddLabel(afterTypeCheckIf);
@@ -655,7 +656,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
         {
             proc.MarkLoopContinue(loopLabel);
             _exprBuilder.Emit(statementWhile.Conditional);
-            proc.BreakIfFalse();
+            proc.BreakIfFalse(statementWhile.Conditional.Location);
 
             proc.StartScope();
             {
@@ -681,7 +682,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
             proc.LoopJumpToStart(loopLabel);
 
             proc.AddLabel(loopEndLabel);
-            proc.Break();
+            proc.Break(statementDoWhile.Conditional.Location);
         }
         proc.LoopEnd();
     }
@@ -709,10 +710,10 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                         Constant lower = GetCaseValue(range.RangeStart);
                         Constant upper = GetCaseValue(range.RangeEnd);
 
-                        Constant CoerceBound(Constant bound) {
+                        Constant CoerceBound(Constant bound, bool upperRange) {
                             if (bound is Null) { // We do a little null coercion, as a treat
                                 compiler.Emit(WarningCode.MalformedRange, range.RangeStart.Location,
-                                    "Malformed range, lower bound is coerced from null to 0");
+                                    $"Malformed range, {(upperRange ? "upper" : "lower")} bound is coerced from null to 0");
                                 return new Number(lower.Location, 0.0f);
                             }
 
@@ -720,15 +721,15 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                             //We are (hopefully) deviating from parity here and just calling that a Compiler error.
                             if (bound is not Number) {
                                 compiler.Emit(WarningCode.InvalidRange, range.RangeStart.Location,
-                                    "Invalid range, lower bound is not a number");
+                                    $"Invalid range, {(upperRange ? "upper" : "lower")} bound is not a number");
                                 bound = new Number(bound.Location, 0.0f);
                             }
 
                             return bound;
                         }
 
-                        lower = CoerceBound(lower);
-                        upper = CoerceBound(upper);
+                        lower = CoerceBound(lower, false);
+                        upper = CoerceBound(upper, true);
 
                         lower.EmitPushValue(ExprContext);
                         upper.EmitPushValue(ExprContext);
@@ -863,7 +864,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                 compiler.Emit(WarningCode.DuplicateVariable, param.Location, $"Duplicate var {param.Name}");
             }
 
-            proc.StartTry(catchLabel, proc.GetLocalVariableReference(param.Name));
+            proc.StartTry(catchLabel, proc.GetLocalVariableReference(param.Name, param.Location));
         } else {
             if (tryCatch.CatchParameter != null)
                 compiler.Emit(WarningCode.InvalidVarDefinition, tryCatch.CatchParameter.Location,

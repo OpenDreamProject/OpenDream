@@ -1,6 +1,7 @@
 using Dependency = Robust.Shared.IoC.DependencyAttribute;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
@@ -20,7 +21,7 @@ using Robust.Shared.Utility;
 namespace OpenDreamRuntime;
 
 [JsonConverter(typeof(DreamValueJsonConverter))]
-public struct DreamValue : IEquatable<DreamValue> {
+public struct DreamValue : IDisposable, IEquatable<DreamValue> {
     public enum DreamValueType {
         // @formatter:off
         String        = 1,
@@ -61,6 +62,11 @@ public struct DreamValue : IEquatable<DreamValue> {
         get => new DreamValue(0f);
     }
 
+    public static DreamValue EmptyString {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => new DreamValue("");
+    }
+
     public readonly DreamValueType Type;
 
     private object? _refValue;
@@ -70,7 +76,7 @@ public struct DreamValue : IEquatable<DreamValue> {
     //ReSharper disable once NotAccessedField.Local
     private readonly ProfilerMemory? _tracyMemoryId; //only used for strings, since everything else is a value type or handled in DreamObject
     #endif
-    
+
     public DreamValue(string value) {
         DebugTools.Assert(value != null);
         Type = DreamValueType.String;
@@ -134,6 +140,24 @@ public struct DreamValue : IEquatable<DreamValue> {
         }
     }
 
+    public void Dispose() {
+        DecRef();
+    }
+
+    public void IncRef() {
+        if (Type != DreamValueType.DreamObject || _refValue == null)
+            return;
+
+        Unsafe.As<DreamObject>(_refValue).IncRef();
+    }
+
+    public void DecRef() {
+        if (Type != DreamValueType.DreamObject || _refValue == null)
+            return;
+
+        Unsafe.As<DreamObject>(_refValue).DecRef();
+    }
+
     [Obsolete("Deprecated. Use TryGetValueAsString() or MustGetValueAsString() instead.")]
     public string GetValueAsString() {
         return MustGetValueAsString();
@@ -184,7 +208,7 @@ public struct DreamValue : IEquatable<DreamValue> {
     /// <summary>
     /// Casts the DreamValue to a float without throwing exceptions. Useful where BYOND coerces non-numbers to 0.
     /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining), Pure]
     public float UnsafeGetValueAsFloat() {
         return _floatValue;
     }
@@ -418,7 +442,7 @@ public struct DreamValue : IEquatable<DreamValue> {
 
             case DreamValueType.DreamResource:
                 var rsc = MustGetValueAsDreamResource();
-                return rsc.ResourcePath ?? rsc.Id.ToString();
+                return rsc.ResourcePath ?? string.Empty;
             case DreamValueType.DreamType:
                 return MustGetValueAsType().Path;
             case DreamValueType.DreamProc:
@@ -482,9 +506,9 @@ public struct DreamValue : IEquatable<DreamValue> {
 
 #region Serialization
 
-public sealed class DreamValueJsonConverter : JsonConverter<DreamValue> {
-    [Dependency] private readonly DreamObjectTree _objectTree = default!;
-    [Dependency] private readonly DreamResourceManager _resourceManager = default!;
+public sealed partial class DreamValueJsonConverter : JsonConverter<DreamValue> {
+    [Dependency] private DreamObjectTree _objectTree = default!;
+    [Dependency] private DreamResourceManager _resourceManager = default!;
 
     public DreamValueJsonConverter() {
         IoCManager.InjectDependencies(this);
@@ -689,13 +713,10 @@ public sealed class DreamValueMatrix3Serializer : ITypeReader<Matrix3x2, DreamVa
             throw new Exception($"Value {node.Value} was not a matrix");
 
         // Matrix3 except not really because DM matrix is actually 3x2
-        matrixObject.GetVariable("a").TryGetValueAsFloat(out var a);
-        matrixObject.GetVariable("b").TryGetValueAsFloat(out var b);
-        matrixObject.GetVariable("c").TryGetValueAsFloat(out var c);
-        matrixObject.GetVariable("d").TryGetValueAsFloat(out var d);
-        matrixObject.GetVariable("e").TryGetValueAsFloat(out var e);
-        matrixObject.GetVariable("f").TryGetValueAsFloat(out var f);
-        return new Matrix3x2(a, d, b, e, c, f);
+        return new Matrix3x2(
+            matrixObject.A, matrixObject.D,
+            matrixObject.B, matrixObject.E,
+            matrixObject.C, matrixObject.F);
     }
 
     public ValidationNode Validate(ISerializationManager serializationManager,

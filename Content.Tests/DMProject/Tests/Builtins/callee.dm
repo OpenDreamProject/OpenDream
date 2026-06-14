@@ -7,7 +7,7 @@
 
 /proc/RunTest()
 	ASSERT(callee.name == "RunTest")
-	ASSERT(callee.file == "callee.dm")
+	ASSERT(copytext(callee.file, -9) == "callee.dm")
 	
 	var/callee/expired_callee = bar()
 	var/failed = FALSE

@@ -10,10 +10,10 @@ namespace OpenDreamClient.States;
 ///     Handles changing the UI state depending on connection status.
 /// </summary>
 [UsedImplicitly]
-public sealed class DreamUserInterfaceStateManager {
-    [Dependency] private readonly IGameController _gameController = default!;
-    [Dependency] private readonly IStateManager _stateManager = default!;
-    [Dependency] private readonly IBaseClient _client = default!;
+public sealed partial class DreamUserInterfaceStateManager {
+    [Dependency] private IGameController _gameController = default!;
+    [Dependency] private IStateManager _stateManager = default!;
+    [Dependency] private IBaseClient _client = default!;
 
     public void Initialize() {
         _client.RunLevelChanged += ((_, args) => {

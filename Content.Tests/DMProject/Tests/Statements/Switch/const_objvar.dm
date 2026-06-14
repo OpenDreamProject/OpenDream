@@ -1,9 +1,9 @@
 
-/obj
+/datum
 	var/const/test = 5
 
 /proc/RunTest()
-	var/obj/o = new
+	var/datum/o = new
 	var/a = 0
 	switch(a)
 		if(o.test)

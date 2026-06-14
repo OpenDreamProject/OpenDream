@@ -11,14 +11,13 @@ using Robust.Shared.Timing;
 
 namespace OpenDreamClient;
 
-public sealed class ClientVerbSystem : VerbSystem {
-    [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
-    [Dependency] private readonly IPlayerManager _playerManager = default!;
-    [Dependency] private readonly IEntityManager _entityManager = default!;
-    [Dependency] private readonly ITaskManager _taskManager = default!;
-    [Dependency] private readonly ITimerManager _timerManager = default!;
-    [Dependency] private readonly IOverlayManager _overlayManager = default!;
-    [Dependency] private readonly TransformSystem _transformSystem = default!;
+public sealed partial class ClientVerbSystem : VerbSystem {
+    [Dependency] private IDreamInterfaceManager _interfaceManager = default!;
+    [Dependency] private IPlayerManager _playerManager = default!;
+    [Dependency] private IEntityManager _entityManager = default!;
+    [Dependency] private ITaskManager _taskManager = default!;
+    [Dependency] private IOverlayManager _overlayManager = default!;
+    [Dependency] private TransformSystem _transformSystem = default!;
 
     private EntityQuery<DMISpriteComponent> _spriteQuery;
     private EntityQuery<DreamMobSightComponent> _sightQuery;
@@ -29,8 +28,6 @@ public sealed class ClientVerbSystem : VerbSystem {
     public override void Initialize() {
         _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
         _sightQuery = _entityManager.GetEntityQuery<DreamMobSightComponent>();
-
-        _playerManager.LocalPlayerAttached += OnLocalPlayerAttached;
 
         SubscribeNetworkEvent<AllVerbsEvent>(OnAllVerbsEvent);
         SubscribeNetworkEvent<RegisterVerbEvent>(OnRegisterVerbEvent);
@@ -242,10 +239,7 @@ public sealed class ClientVerbSystem : VerbSystem {
         _interfaceManager.DefaultInfo?.RefreshVerbs(this);
     }
 
-    private void OnLocalPlayerAttached(EntityUid obj) {
-        // Our mob changed, update our verb panels
-        // A little hacky, but also wait half a second for verb information about our mob to arrive
-        // TODO: Remove this timer
-        _timerManager.AddTimer(new Timer(500, false, () => _interfaceManager.DefaultInfo?.RefreshVerbs(this)));
+    public void RefreshVerbs() {
+        _interfaceManager.DefaultInfo?.RefreshVerbs(this);
     }
 }

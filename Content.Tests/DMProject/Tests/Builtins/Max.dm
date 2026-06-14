@@ -1,4 +1,4 @@
-﻿/proc/RunTest()
+/proc/RunTest()
 	// Single arg returns that arg
 	ASSERT(max(1) == 1)
 

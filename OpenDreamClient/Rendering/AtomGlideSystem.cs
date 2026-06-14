@@ -8,7 +8,7 @@ namespace OpenDreamClient.Rendering;
 /// <summary>
 /// Disables RobustToolbox's transform lerping and replaces it with our own gliding
 /// </summary>
-public sealed class AtomGlideSystem : EntitySystem {
+public sealed partial class AtomGlideSystem : EntitySystem {
     private sealed class Glide(EntityUid uid, TransformComponent transform, DMISpriteComponent sprite) {
         public readonly EntityUid Uid = uid;
         public readonly TransformComponent Transform = transform;
@@ -16,9 +16,9 @@ public sealed class AtomGlideSystem : EntitySystem {
         public Vector2 EndPos;
     }
 
-    [Dependency] private readonly TransformSystem _transformSystem = default!;
-    [Dependency] private readonly IEntityManager _entityManager = default!;
-    [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
+    [Dependency] private TransformSystem _transformSystem = default!;
+    [Dependency] private IEntityManager _entityManager = default!;
+    [Dependency] private IDreamInterfaceManager _interfaceManager = default!;
     private EntityQuery<DMISpriteComponent> _spriteQuery;
 
     private readonly List<Glide> _currentGlides = new();
@@ -52,7 +52,7 @@ public sealed class AtomGlideSystem : EntitySystem {
         for (int i = 0; i < _currentGlides.Count; i++) {
             var glide = _currentGlides[i];
 
-            if (glide.Sprite.Icon.Appearance == null) {
+            if (_entityManager.Deleted(glide.Uid) || glide.Sprite.Icon.Appearance == null) {
                 _currentGlides.RemoveSwap(i--);
                 continue;
             }

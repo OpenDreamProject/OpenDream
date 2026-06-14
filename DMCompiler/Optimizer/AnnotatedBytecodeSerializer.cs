@@ -76,7 +76,7 @@ internal class AnnotatedBytecodeSerializer(DMCompiler compiler) {
 
         _bytecodeWriter.Write((byte)instruction.Opcode);
         var opcodeMetadata = OpcodeMetadataCache.GetMetadata(instruction.Opcode);
-        if (opcodeMetadata.RequiredArgs.Count != instruction.GetArgs().Count && !opcodeMetadata.VariableArgs) {
+        if (opcodeMetadata.RequiredArgs.Length != instruction.GetArgs().Count && !opcodeMetadata.VariableArgs) {
             throw new Exception("Invalid number of arguments for opcode " + instruction.Opcode);
         }
 

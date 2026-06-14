@@ -1,41 +1,34 @@
-﻿using OpenDreamRuntime.Procs;
-
-namespace OpenDreamRuntime.Objects.Types;
+﻿namespace OpenDreamRuntime.Objects.Types;
 
 [Virtual]
-public class DreamObjectAtom : DreamObject {
-    public readonly DreamOverlaysList Overlays;
-    public readonly DreamOverlaysList Underlays;
-    public readonly DreamVisContentsList VisContents;
-    public readonly DreamFilterList Filters;
-    public DreamList? VisLocs; // TODO: Implement
+public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObject(objectDefinition) {
+    private DreamOverlaysList Overlays => _overlays ??= new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
+    private DreamOverlaysList Underlays => _underlays ??= new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
+    private DreamVisContentsList VisContents => _visContents ??= new(ObjectTree.List.ObjectDefinition, PvsOverrideSystem, this);
+    private DreamFilterList Filters => _filters ??= new(ObjectTree.List.ObjectDefinition, this);
+    private DreamList VisLocs => _visLocs ??= ObjectTree.CreateList();
 
-    public DreamObjectAtom(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
-        Overlays = new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
-        Underlays = new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
-        VisContents = new(ObjectTree.List.ObjectDefinition, PvsOverrideSystem, this);
-        Filters = new(ObjectTree.List.ObjectDefinition, this);
+    private DreamOverlaysList? _overlays;
+    private DreamOverlaysList? _underlays;
+    private DreamVisContentsList? _visContents;
+    private DreamFilterList? _filters;
+    private DreamList? _visLocs; // TODO: Implement
 
-        AtomManager.AddAtom(this);
-    }
-
-    protected override void HandleDeletion(bool possiblyThreaded) {
-        // SAFETY: RemoveAtom is not threadsafe.
-        if (possiblyThreaded) {
-            EnterIntoDelQueue();
-            return;
-        }
-
-        AtomManager.RemoveAtom(this);
-
-        base.HandleDeletion(possiblyThreaded);
-    }
-
-    public string GetRTEntityDesc() {
+    protected string GetRTEntityDesc() {
         if (AtomManager.TryGetAppearance(this, out var appearance) && appearance.Desc != null)
             return appearance.Desc;
 
         return ObjectDefinition.Type;
+    }
+
+    protected override void HandleDeletion() {
+        _overlays?.DecRef();
+        _underlays?.DecRef();
+        _visContents?.DecRef();
+        _filters?.DecRef();
+        _visLocs?.DecRef();
+
+        base.HandleDeletion();
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
@@ -55,22 +48,26 @@ public class DreamObjectAtom : DreamObject {
                 value = new(appearanceCopy);
                 return true;
             case "overlays":
+                Overlays.IncRef();
                 value = new(Overlays);
                 return true;
             case "underlays":
+                Underlays.IncRef();
                 value = new(Underlays);
                 return true;
             case "verbs":
-                value = new(new VerbsList(ObjectTree, AtomManager, VerbSystem, this));
+                value = new(new VerbsList(ObjectTree, AtomManager, this));
                 return true;
             case "filters":
+                Filters.IncRef();
                 value = new(Filters);
                 return true;
             case "vis_locs":
-                VisLocs ??= ObjectTree.CreateList();
+                VisLocs.IncRef();
                 value = new(VisLocs);
                 return true;
             case "vis_contents":
+                VisContents.IncRef();
                 value = new(VisContents);
                 return true;
 
@@ -149,12 +146,32 @@ public class DreamObjectAtom : DreamObject {
             case "filters": {
                 Filters.Cut();
 
-                if (value.TryGetValueAsDreamList(out var valueList)) { // filters = list("type"=...)
-                    var filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, valueList);
-                    if (filterObject == null) // list() with invalid "type" is ignored
-                        break;
+                // filters = list("type"=...) or list(filter(...), filter(...))
+                if (value.TryGetValueAsDreamList(out var valueList)) {
+                    using var typeArg = valueList.GetValue(new("type"));
 
-                    Filters.AddValue(new(filterObject));
+                    if (typeArg != DreamValue.Null) { // It's a single filter
+                        var filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, valueList);
+                        if (filterObject == null) // list() with invalid "type" is ignored
+                            break;
+
+                        Filters.AddValue(new(filterObject));
+                        filterObject.DecRef();
+                    } else { // It's a list of filters
+                        foreach (var filter in valueList.EnumerateValues()) {
+                            if (!filter.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject)) {
+                                if (!filter.TryGetValueAsDreamList(out var filterValues))
+                                    continue;
+
+                                filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, filterValues);
+                                if (filterObject == null)
+                                    continue;
+                            }
+
+                            Filters.AddValue(new(filterObject));
+                            filterObject.DecRef();
+                        }
+                    }
                 } else if (!value.IsNull) {
                     Filters.AddValue(value);
                 }

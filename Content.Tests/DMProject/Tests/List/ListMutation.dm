@@ -1,4 +1,4 @@
-﻿/proc/RunTest()
+/proc/RunTest()
 	var/list/L = list(1, 2, 3)
 	L[2] *= 15
 	L[3] *= 0

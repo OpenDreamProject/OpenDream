@@ -15,11 +15,13 @@ using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM.Builders;
 using DMCompiler.Json;
 using DMCompiler.Optimizer;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DMCompiler;
 
 public class DMCompiler {
     public readonly HashSet<WarningCode> UniqueEmissions = new();
+    public readonly List<string> CompilerMessages = new();
     public DMCompilerSettings Settings;
     public IReadOnlyCollection<string> ResourceDirectories => _resourceDirectories;
 
@@ -43,7 +45,9 @@ public class DMCompiler {
         _errorConfig = new Dictionary<WarningCode, ErrorLevel>(CompilerEmission.DefaultErrorConfig);
     }
 
-    public bool Compile(DMCompilerSettings settings) {
+    public bool Compile(DMCompilerSettings settings) => Compile(settings, out _);
+
+    public bool Compile(DMCompilerSettings settings, [NotNullWhen(true)] out DreamCompiledJson? compiledDream) {
         if (_compileStartTime != default)
             throw new Exception("Create a new DMCompiler to compile again");
 
@@ -70,13 +74,15 @@ public class DMCompiler {
 
         var preprocessor = Preprocess(this, settings.Files, settings.MacroDefines);
         var successfulCompile = false;
+        compiledDream = null;
         if (preprocessor is not null && Compile(preprocessor)) {
             //Output file is the first file with the extension changed to .json
             string outputFile = Path.ChangeExtension(settings.Files[0], "json");
             List<DreamMapJson> maps = ConvertMaps(this, preprocessor.IncludedMaps);
 
             if (_errorCount == 0) {
-                var output = SaveJson(maps, preprocessor.IncludedInterface, outputFile);
+                compiledDream = CompileToJson(maps, preprocessor.IncludedInterface, outputFile);
+                var output = SaveJson(compiledDream, outputFile);
 
                 if (_errorCount == 0) {
                     successfulCompile = true;
@@ -126,11 +132,12 @@ public class DMCompiler {
                     return null;
                 }
 
-                string includeDir = Path.GetDirectoryName(files[i]);
+                string? includeDir = Path.GetDirectoryName(files[i]);
                 string fileName = Path.GetFileName(files[i]);
 
                 preproc.IncludeFile(includeDir, fileName, false);
-                compiler.AddResourceDirectory(includeDir, Location.Internal);
+                if (includeDir is not null)
+                    compiler.AddResourceDirectory(includeDir, Location.Internal);
             }
 
             // Adds the root of the DM project to FILE_DIR
@@ -159,8 +166,8 @@ public class DMCompiler {
                     result.Append(t.Text);
                 }
 
-                string outputDir = Path.GetDirectoryName(Settings.Files[0]);
-                string outputPath = Path.Combine(outputDir, "preprocessor_dump.dm");
+                string? outputDir = Path.GetDirectoryName(Settings.Files[0]);
+                string outputPath = Path.Combine(outputDir ?? string.Empty, "preprocessor_dump.dm");
 
                 File.WriteAllText(outputPath, result.ToString());
                 Console.WriteLine($"Preprocessor output dumped to {outputPath}");
@@ -188,7 +195,7 @@ public class DMCompiler {
     /// <returns> True if the warning was an error, false if not.</returns>
     public bool Emit(WarningCode code, Location loc, string message) {
         if (!_errorConfig.TryGetValue(code, out var level)) {
-            ForcedError(loc, $"Unknown warning code \"{code}\". Is it being used before the preprocessor has set it? Emission: \"{message}\"");
+            ForcedError(loc, $"Unknown warning code \"{code}\". Does it have a default error level? Emission: \"{message}\"");
             return true;
         }
 
@@ -208,8 +215,15 @@ public class DMCompiler {
                 break;
         }
 
+        if (Settings.StoreMessages)
+            if (CompilerMessages.Count < 1000)
+                CompilerMessages.Add(emission.ToString());
+            else {
+                Settings.StoreMessages = false;
+                CompilerMessages.Add(new CompilerEmission(ErrorLevel.Warning, null, "No longer storing error messages due to excessive error counts.").ToString());
+            }
         UniqueEmissions.Add(emission.Code);
-        Console.WriteLine(emission);
+        emission.WriteConsole();
         return level == ErrorLevel.Error;
     }
 
@@ -218,7 +232,7 @@ public class DMCompiler {
     /// Completely ignores the warning configuration. Use wisely!
     /// </summary>
     public void ForcedError(Location loc, string message) {
-        Console.WriteLine(new CompilerEmission(ErrorLevel.Error, loc, message).ToString());
+        new CompilerEmission(ErrorLevel.Error, loc, message).WriteConsole();
         _errorCount++;
     }
 
@@ -227,13 +241,13 @@ public class DMCompiler {
     /// Completely ignores the warning configuration. Use wisely!
     /// </summary>
     public void ForcedWarning(string message) {
-        Console.WriteLine(new CompilerEmission(ErrorLevel.Warning, Location.Internal, message).ToString());
+        new CompilerEmission(ErrorLevel.Warning, Location.Internal, message).WriteConsole();
         _warningCount++;
     }
 
     /// <inheritdoc cref="ForcedWarning(string)"/>
     public void ForcedWarning(Location loc, string message) {
-        Console.WriteLine(new CompilerEmission(ErrorLevel.Warning, loc, message).ToString());
+        new CompilerEmission(ErrorLevel.Warning, loc, message).WriteConsole();
         _warningCount++;
     }
 
@@ -279,7 +293,7 @@ public class DMCompiler {
         return maps;
     }
 
-    private string SaveJson(List<DreamMapJson> maps, string? interfaceFile, string outputFile) {
+    private DreamCompiledJson? CompileToJson(List<DreamMapJson> maps, string? interfaceFile, string outputFile) {
         if (!string.IsNullOrWhiteSpace(interfaceFile) &&
                 Path.GetDirectoryName(Path.GetFullPath(outputFile)) is { } interfaceDirectory) {
             interfaceFile = Path.GetRelativePath(interfaceDirectory, interfaceFile);
@@ -341,8 +355,16 @@ public class DMCompiler {
             compiledDream.GlobalProcs = DMObjectTree.GlobalProcs.Values.ToArray();
         }
 
-        // Successful serialization
         if (_errorCount == 0) {
+            return compiledDream;
+        }
+
+        return null;
+    }
+
+    private string SaveJson(DreamCompiledJson? compiledDream, string outputFile) {
+        // Successful serialization
+        if (_errorCount == 0 && compiledDream != null) {
             using var outputFileHandle = File.Create(outputFile);
 
             try {
@@ -372,6 +394,8 @@ public struct DMCompilerSettings {
     public bool NoStandard = false;
     public bool Verbose = false;
     public bool PrintCodeTree = false;
+    public bool StoreMessages = false;
+
     public Dictionary<string, string>? MacroDefines = null;
 
     /// <summary> The value of the DM_VERSION macro </summary>

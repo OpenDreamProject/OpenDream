@@ -167,6 +167,8 @@ internal sealed class Local(Location location, DMProc.LocalVariable localVar, bo
 
     public override DMReference EmitReference(ExpressionContext ctx, string endLabel,
         ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+        // BYOND lets you reference a local var in a static context
+        // Actually using it is off the table though
         if (staticContext) {
             ctx.Compiler.Emit(WarningCode.BadExpression,
                 Location, $"Cannot use local \"{LocalVar.Name}\" in a static context");

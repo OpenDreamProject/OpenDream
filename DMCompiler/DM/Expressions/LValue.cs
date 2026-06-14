@@ -159,7 +159,7 @@ internal sealed class World(Location location) : LValue(location, DreamPath.Worl
 }
 
 // Identifier of local variable
-internal sealed class Local(Location location, DMProc.LocalVariable localVar) : LValue(location, localVar.Type) {
+internal sealed class Local(Location location, DMProc.LocalVariable localVar, bool staticContext) : LValue(location, localVar.Type) {
     public DMProc.LocalVariable LocalVar { get; } = localVar;
 
     // TODO: non-const local var static typing
@@ -167,6 +167,12 @@ internal sealed class Local(Location location, DMProc.LocalVariable localVar) : 
 
     public override DMReference EmitReference(ExpressionContext ctx, string endLabel,
         ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+        if (staticContext) {
+            ctx.Compiler.Emit(WarningCode.BadExpression,
+                Location, $"Cannot use local \"{LocalVar.Name}\" in a static context");
+            return DMReference.Invalid;
+        }
+
         if (LocalVar.IsParameter) {
             return DMReference.CreateArgument(LocalVar.Id);
         } else {

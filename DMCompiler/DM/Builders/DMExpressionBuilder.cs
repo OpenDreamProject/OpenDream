@@ -595,11 +595,11 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
 
     private DMExpression BuildIdentifier(DMASTIdentifier identifier, DreamPath? inferredPath = null) {
         var name = identifier.Identifier;
-        if (scopeMode == Normal || scopeMode == Static) {
+        if (scopeMode is Normal or Static) {
             // ReSharper disable once ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
             var localVar = ctx.Proc?.GetLocalVariable(name);
             if (localVar is not null) {
-                return new Local(identifier.Location, localVar);
+                return new Local(identifier.Location, localVar, scopeMode is Static);
             }
         }
 

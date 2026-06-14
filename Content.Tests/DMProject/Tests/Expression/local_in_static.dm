@@ -1,4 +1,4 @@
-// RUNTIME ERROR OD0011
+// COMPILE ERROR OD0011
 // PR #2390
 
 /proc/RunTest()

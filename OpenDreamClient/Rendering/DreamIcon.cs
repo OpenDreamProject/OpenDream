@@ -28,10 +28,6 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
 
     private DMIResource? _dmi;
 
-    public int AnimationFrame {
-        get => GetAnimationFrame(_iconState, _direction);
-    }
-
     [ViewVariables]
     public ImmutableAppearance? Appearance {
         get => CalculateAnimatedAppearance();
@@ -92,9 +88,9 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
 
             var dmi = flick?.Icon ?? DMI;
             var iconState = flick?.IconState ?? _iconState;
-            var animationFrame = flick?.GetAnimationFrame(gameTiming) ?? AnimationFrame;
+            var animationFrame = flick?.GetAnimationFrame(gameTiming) ?? GetAnimationFrame();
             if (animationFrame == -1) // A flick returns -1 for a finished animation
-                animationFrame = AnimationFrame;
+                animationFrame = GetAnimationFrame();
             if (CachedTexture != null && !_textureDirty && flick == null)
                 return CachedTexture.Texture;
 
@@ -217,6 +213,8 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
             overlay.GetWorldAABB(worldPos, ref aabb);
         }
     }
+
+    public int GetAnimationFrame() => GetAnimationFrame(_iconState, _direction);
 
     public int GetAnimationFrame(string? iconState, AtomDirection dir) {
         if(DMI == null || Appearance == null || _animationComplete)

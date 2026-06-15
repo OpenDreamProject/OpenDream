@@ -21,6 +21,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public string? RenderTarget;
     public List<RendererMetaData>? KeepTogetherGroup;
     public VisFlags VisFlags;
+    public bool IsVisContent;
     public AppearanceFlags AppearanceFlags;
     public BlendMode BlendMode;
     public MouseOpacity MouseOpacity;
@@ -55,6 +56,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         RenderTarget = "";
         KeepTogetherGroup = null; //don't actually need to allocate this 90% of the time
         VisFlags = VisFlags.None;
+        IsVisContent = false;
         AppearanceFlags = AppearanceFlags.None;
         BlendMode = BlendMode.Default;
         MouseOpacity = MouseOpacity.Transparent;

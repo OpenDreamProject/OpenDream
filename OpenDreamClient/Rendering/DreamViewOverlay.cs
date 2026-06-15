@@ -202,7 +202,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
         Vector2 position,
         EntityUid uid,
         bool isScreen,
-        bool isVisContent,
+        bool isVisChild, // DIRECT vis_contents child
         ref int tieBreaker,
         List<RendererMetaData> result,
         sbyte seeVis,
@@ -213,7 +213,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
     ) {
         if (icon.Appearance is null) //in the event that appearance hasn't loaded yet
             return;
-        if (isVisContent && (icon.Appearance.VisFlags & VisFlags.Hide) != 0)
+        if ((isVisChild || (parentIcon?.IsVisContent ?? false)) && (icon.Appearance.VisFlags & VisFlags.Hide) != 0)
             return;
 
         result.EnsureCapacity(result.Count + icon.Underlays.Count + icon.Overlays.Count + 1);
@@ -227,6 +227,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
         current.RenderSource = icon.Appearance.RenderSource;
         current.RenderTarget = icon.Appearance.RenderTarget;
         current.VisFlags = icon.Appearance.VisFlags;
+        current.IsVisContent = parentIcon?.IsVisContent ?? false;
         current.AppearanceFlags = icon.Appearance.AppearanceFlags;
         current.BlendMode = icon.Appearance.BlendMode;
         current.Flick = flick;
@@ -239,7 +240,8 @@ internal sealed partial class DreamViewOverlay : Overlay {
         );
 
         if (parentIcon != null) {
-            if(isVisContent) {
+            if(isVisChild) {
+                current.IsVisContent = true;
                 var visFlags = current.VisFlags;
                 current.ClickUid = (visFlags & VisFlags.InheritId) != 0 ? parentIcon.ClickUid : current.ClickUid;
                 current.MouseOpacity = (visFlags & VisFlags.InheritId) != 0 ? parentIcon.MouseOpacity : icon.Appearance.MouseOpacity;
@@ -274,8 +276,8 @@ internal sealed partial class DreamViewOverlay : Overlay {
             else
                 current.TransformToApply = iconAppearanceTransformMatrix * parentIcon.TransformToApply;
 
-            var effectivePlane = (isVisContent && (current.VisFlags & VisFlags.InheritPlane) != 0) ? parentIcon.Plane : icon.Appearance.Plane;
-            var effectiveLayer = (isVisContent && (current.VisFlags & VisFlags.InheritLayer) != 0) ? parentIcon.Layer : icon.Appearance.Layer;
+            var effectivePlane = (isVisChild && (current.VisFlags & VisFlags.InheritPlane) != 0) ? parentIcon.Plane : icon.Appearance.Plane;
+            var effectiveLayer = (isVisChild && (current.VisFlags & VisFlags.InheritLayer) != 0) ? parentIcon.Layer : icon.Appearance.Layer;
 
             if ((effectivePlane < -10000)) //FLOAT_PLANE - Note: yes, this really is how it works. Yes it's dumb as shit.
                 current.Plane = parentIcon.Plane + (effectivePlane + 32767);
@@ -342,10 +344,10 @@ internal sealed partial class DreamViewOverlay : Overlay {
                             (underlay.Appearance.AppearanceFlags & AppearanceFlags.KeepApart) != 0;
 
             if (!keepTogether || keepApart) { //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
-                ProcessIconComponents(underlay, current.Position, uid, isScreen, isVisContent, ref tieBreaker, result, seeVis, current);
+                ProcessIconComponents(underlay, current.Position, uid, isScreen, false, ref tieBreaker, result, seeVis, current);
             } else {
                 current.KeepTogetherGroup ??= new();
-                ProcessIconComponents(underlay, current.Position, uid, isScreen, isVisContent, ref tieBreaker, current.KeepTogetherGroup, seeVis, current, keepTogether);
+                ProcessIconComponents(underlay, current.Position, uid, isScreen, false, ref tieBreaker, current.KeepTogetherGroup, seeVis, current, keepTogether);
             }
         }
 
@@ -364,10 +366,10 @@ internal sealed partial class DreamViewOverlay : Overlay {
                             (overlay.Appearance.AppearanceFlags & AppearanceFlags.KeepApart) != 0;
 
             if (!keepTogether || keepApart) { //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
-                ProcessIconComponents(overlay, current.Position, uid, isScreen, isVisContent, ref tieBreaker, result, seeVis, current);
+                ProcessIconComponents(overlay, current.Position, uid, isScreen, false, ref tieBreaker, result, seeVis, current);
             } else {
                 current.KeepTogetherGroup ??= new();
-                ProcessIconComponents(overlay, current.Position, uid, isScreen, isVisContent, ref tieBreaker, current.KeepTogetherGroup, seeVis, current, keepTogether);
+                ProcessIconComponents(overlay, current.Position, uid, isScreen, false, ref tieBreaker, current.KeepTogetherGroup, seeVis, current, keepTogether);
             }
         }
 
@@ -397,9 +399,6 @@ internal sealed partial class DreamViewOverlay : Overlay {
                 continue;
 
             ProcessIconComponents(sprite.Icon, position, visContentEntity, false, true, ref tieBreaker, result, seeVis, current, keepTogether);
-
-            // TODO: click uid should be set to current.uid again
-            // TODO: vis_flags
         }
 
         //maptext is basically just an image of rendered text added as an overlay

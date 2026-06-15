@@ -157,7 +157,13 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         VisContents.AddRange(appearance.VisContents);
         Filters.AddRange(appearance.Filters);
         Verbs.AddRange(appearance.Verbs);
-        Array.Copy(appearance.Transform, Transform, 6);
+
+        if (appearance.Transform == Default.Transform) {
+            Transform = Default.Transform;
+        } else {
+            Transform = new float[6];
+            Array.Copy(appearance.Transform, Transform, 6);
+        }
     }
 
     public override bool Equals(object? obj) => obj is MutableAppearance appearance && Equals(appearance);

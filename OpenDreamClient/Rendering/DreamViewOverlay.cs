@@ -486,7 +486,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
             // For now, just generate a buffer of 128 pixels around the main icon...
             Vector2i ktSize = (256, 256) + iconMetaData.MainIcon?.DMI?.IconSize ?? (0,0);
             iconMetaData.TextureOverride = ProcessKeepTogether(handle, iconMetaData, ktSize);
-            positionOffset -= ((ktSize/IconSize) - Vector2.One) * new Vector2(0.5f); //correct for KT group texture offset
+            iconMetaData.RenderPosOffset -= ((ktSize/IconSize) - Vector2.One) * new Vector2(0.5f); //correct for KT group texture offset
         }
 
         //Maptext
@@ -505,7 +505,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
         }
 
         var frame = iconMetaData.GetTexture(this, handle);
-        var pixelPosition = (iconMetaData.Position + positionOffset) * IconSize;
+        var pixelPosition = (iconMetaData.Position + (positionOffset + iconMetaData.RenderPosOffset)) * IconSize;
 
         //if frame is null, this doesn't require a draw, so return NOP
         if (frame == null)

@@ -61,8 +61,8 @@ internal static partial class DreamProcNativeHelpers {
 
             // the criss-cross-apple-sauce
             if(donut <= bottomRange) {
-                int startingPosX = center.X - donut + 1;
-                int endingPosX = center.X + donut - 1;
+                int startingPosX = center.X - Math.Min(donut, leftRange + 1) + 1;
+                int endingPosX = center.X + Math.Min(donut, rightRange + 1) - 1;
                 for(int posX = startingPosX; posX <= endingPosX; posX++) {
                     yield return (posX, center.Y - donut); // the criss
 

@@ -133,40 +133,48 @@
 		LOC(3, 2),
 	)
 
-	var/list/turf_range_1x3 = list(
+	var/list/turf_range_1x5 = list(
 		center,
 		outer_area,
 		container,
 		LOC(3, 2),
 		LOC(3, 4),
+		LOC(3, 1),
+		LOC(3, 5),
 	)
 
-	var/list/turf_orange_1x3 = list(
+	var/list/turf_orange_1x5 = list(
 		LOC(3, 2),
 		outer_area,
-		LOC(3, 4)
+		LOC(3, 4),
+		LOC(3, 1),
+		LOC(3, 5),
 	)
 
-	var/list/turf_range_3x1 = list(
+	var/list/turf_range_5x1 = list(
 		center,
 		outer_area,
 		container,
 		LOC(2, 3),
 		LOC(4, 3),
+		LOC(1, 3),
+		LOC(5, 3),
 	)
 
-	var/list/turf_orange_3x1 = list(
+	var/list/turf_orange_5x1 = list(
 		LOC(2, 3),
 		outer_area,
 		LOC(4, 3),
+		LOC(1, 3),
+		LOC(5, 3),
 	)
 
 	run_case(center, turf_range_2x2, nameof(turf_range_2x2), FALSE, "2x2")
 	run_case(center, turf_orange_2x2, nameof(turf_orange_2x2), TRUE, "2x2")
-	run_case(center, turf_range_1x3, nameof(turf_range_1x3), FALSE, "1x3")
-	run_case(center, turf_orange_1x3, nameof(turf_orange_1x3), TRUE, "1x3")
-	run_case(center, turf_range_3x1, nameof(turf_range_3x1), FALSE, "3x1")
-	run_case(center, turf_orange_3x1, nameof(turf_orange_3x1), TRUE, "3x1")
+	run_case(center, turf_range_1x5, nameof(turf_range_1x5), FALSE, "1x5")
+	run_case(center, turf_orange_1x5, nameof(turf_orange_1x5), TRUE, "1x5")
+	run_case(center, turf_range_5x1, nameof(turf_range_5x1), FALSE, "5x1")
+	run_case(center, turf_orange_5x1, nameof(turf_orange_5x1), TRUE, "5x1")
 
 	// FIXME: these pass in BYOND, but the way we iterate over area turfs diverges
 	// var/list/area_range_case = list(outer_area) + outer_area.contents

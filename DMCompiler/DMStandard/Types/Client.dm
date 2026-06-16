@@ -34,6 +34,7 @@
 	var/connection
 	var/computer_id = 0
 	var/tick_lag = 0 as opendream_unimplemented
+	var/authenticate = TRUE as opendream_unimplemented // TODO: auth.mode CVar
 
 	var/timezone
 

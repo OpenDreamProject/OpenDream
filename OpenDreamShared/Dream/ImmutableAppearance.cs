@@ -539,8 +539,10 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         result.Filters.AddRange(Filters);
         result.Verbs.AddRange(Verbs);
 
-        if (Transform != MutableAppearance.Default.Transform)
+        if (Transform != MutableAppearance.Default.Transform) {
+            result.Transform = new float[6];
             Array.Copy(Transform, result.Transform, 6);
+        }
 
         return result;
     }

@@ -71,7 +71,6 @@
 		return mob
 
 	proc/Del()
-		set opendream_unimplemented = TRUE
 
 	proc/Topic(href, list/href_list, datum/hsrc)
 		if (hsrc != null)

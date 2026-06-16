@@ -395,7 +395,7 @@ public enum VisFlags {
     InheritLayer = 8,
     InheritPlane = 16,
     InheritId = 32,
-    Underlay = 64, // unimplemented
+    Underlay = 64,
     Hide = 128,
 }
 

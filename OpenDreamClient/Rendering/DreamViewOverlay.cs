@@ -330,6 +330,35 @@ internal sealed partial class DreamViewOverlay : Overlay {
             result.Add(renderTargetPlaceholder);
         }
 
+        // vis_contents are split with VIS_UNDERLAY, so we need to do this early
+        var visContents = icon.Appearance.VisContents;
+        List<EntityUid>? underContents = null;
+        List<EntityUid>? overContents = null;
+        foreach(var visContent in visContents) {
+            EntityUid visContentEntity = _entityManager.GetEntity(visContent);
+            if (!_spriteQuery.TryGetComponent(visContentEntity, out var sprite))
+                continue;
+
+            var appearance = sprite.Icon.Appearance;
+            if(appearance is null || (appearance.VisFlags & VisFlags.Hide) != 0) // don't waste our time
+                continue;
+            if (!_spriteSystem.IsVisible(sprite, null, seeVis, null))
+                continue;
+
+            if((appearance.VisFlags & VisFlags.Underlay) == 0)
+                (overContents ??= new(visContents.Length)).Add(visContentEntity);
+            else
+                (underContents ??= new(visContents.Length)).Add(visContentEntity);
+        }
+
+        //underlay vis_contents are rendered first, before the underlays even
+        if(underContents is not null) {
+            foreach(var visContentEntity in underContents) {
+                var sprite = _spriteQuery.GetComponent(visContentEntity);
+                ProcessIconComponents(sprite.Icon, position, visContentEntity, false, true, ref tieBreaker, result, seeVis, current, keepTogether);
+            }
+        }
+
         //underlays - colour, alpha, and transform are inherited, but filters aren't
         //underlays are sorted in reverse order to overlays
         for(int underlayIndex = icon.Underlays.Count-1; underlayIndex >= 0; underlayIndex--) {
@@ -391,14 +420,12 @@ internal sealed partial class DreamViewOverlay : Overlay {
             }
         }
 
-        foreach (var visContent in icon.Appearance.VisContents) {
-            EntityUid visContentEntity = _entityManager.GetEntity(visContent);
-            if (!_spriteQuery.TryGetComponent(visContentEntity, out var sprite))
-                continue;
-            if (!_spriteSystem.IsVisible(sprite, null, seeVis, null))
-                continue;
-
-            ProcessIconComponents(sprite.Icon, position, visContentEntity, false, true, ref tieBreaker, result, seeVis, current, keepTogether);
+        // overlay vis_contents are rendered last
+        if(overContents is not null) {
+           foreach(var visContentEntity in overContents) {
+                var sprite = _spriteQuery.GetComponent(visContentEntity);
+                ProcessIconComponents(sprite.Icon, position, visContentEntity, false, true, ref tieBreaker, result, seeVis, current, keepTogether);
+            }
         }
 
         //maptext is basically just an image of rendered text added as an overlay

@@ -422,7 +422,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
 
         // overlay vis_contents are rendered last
         if(overContents is not null) {
-           foreach(var visContentEntity in overContents) {
+            foreach(var visContentEntity in overContents) {
                 var sprite = _spriteQuery.GetComponent(visContentEntity);
                 ProcessIconComponents(sprite.Icon, position, visContentEntity, false, true, ref tieBreaker, result, seeVis, current, keepTogether);
             }

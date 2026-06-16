@@ -218,14 +218,15 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
 
     public int GetAnimationFrame(string? iconState, AtomDirection dir) {
         if(DMI == null || Appearance == null || _animationComplete)
-            return 0;
+            return _animationFrame;
 
         DMIParser.ParsedDMIState? dmiState = DMI.Description.GetStateOrDefault(iconState);
         if(dmiState == null)
-            return 0;
+            return _animationFrame;
         DMIParser.ParsedDMIFrame[] frames = dmiState.GetFrames(dir);
 
-        if (frames.Length <= 1) return 0;
+        if (frames.Length <= 1)
+            return _animationFrame;
 
         var oldFrame = _animationFrame;
         var currentGameTicks = gameTiming.CurTime.Ticks;

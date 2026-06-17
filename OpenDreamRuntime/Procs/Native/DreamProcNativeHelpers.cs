@@ -184,7 +184,8 @@ internal static partial class DreamProcNativeHelpers {
 
         void AddToList(DreamValue value) {
             if(value.TryGetValueAsDreamObject<DreamObjectAtom>(out var atomValue)) {
-                using MutableAppearance appearance = atomValue.GetVariable("appearance").MustGetValueAsAppearance();
+                using var appearanceValue = atomValue.GetVariable("appearance");
+                using var appearance = appearanceValue.MustGetValueAsAppearance();
                 if(appearance.Invisibility >= 101)
                     return;
             }

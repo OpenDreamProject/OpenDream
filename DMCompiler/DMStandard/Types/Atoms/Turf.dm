@@ -23,9 +23,11 @@
 		// /atom/movable/Move() is responsible for calling Uncross() on contents
 
 	Entered(atom/movable/Obj, atom/OldLoc)
+		..()
 		Crossed(Obj)
 		// /atom/movable/Move() is responsible for calling Crossed() on contents
 
 	Exited(atom/movable/Obj, atom/newloc)
+		..()
 		Uncrossed(Obj)
 		// /atom/movable/Move() is responsible for calling Uncrossed() on contents

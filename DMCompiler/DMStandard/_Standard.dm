@@ -167,7 +167,19 @@ proc/winset(player, control_id, params)
 
 /proc/step(atom/movable/Ref as /atom/movable, var/Dir, var/Speed=0) as num
 	//TODO: Speed = step_size if Speed is 0
-	return Ref.Move(get_step(Ref, Dir), Dir)
+	if((Dir & (NORTH | SOUTH)) == (NORTH | SOUTH))
+		Dir &= ~(NORTH | SOUTH)
+	if((Dir & (EAST | WEST)) == (EAST | WEST))
+		Dir &= ~(EAST | WEST)
+	if((Dir & (UP | DOWN)) == (UP | DOWN))
+		Dir &= ~(UP | DOWN)
+	if(!Dir)
+		return 0
+
+	var/atom/step = get_step(Ref, Dir)
+	if(!step || step == get_step(Ref, 0))
+		return 0
+	return Ref.Move(step, Dir)
 
 /proc/step_away(atom/movable/Ref as /atom/movable, /atom/Trg, Max=5, Speed=0) as num
     return Ref.Move(get_step_away(Ref, Trg, Max), turn(get_dir(Ref, Trg), 180))

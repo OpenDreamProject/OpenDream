@@ -29,8 +29,9 @@
 				return FALSE
 			// Ensure the atoms on the turf also permit this exit
 			for (var/atom/movable/exiting in loc)
-				if (!exiting.Uncross(src))
-					return FALSE
+				if (exiting != src)
+					if (!exiting.Uncross(src))
+						return FALSE
 
 		if (NewLoc.Enter(src, loc))
 			var/atom/oldloc = loc
@@ -50,7 +51,8 @@
 			// Third, call Entered() on the new turf and Crossed() on its contents
 			loc.Entered(src, oldloc)
 			for (var/atom/movable/crossed in loc)
-				crossed.Crossed(src)
+				if(crossed != src)
+					crossed.Crossed(src)
 
 			// Fourth, call Entered() on the new area
 			if (newarea != oldarea)

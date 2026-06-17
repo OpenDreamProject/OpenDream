@@ -184,10 +184,11 @@ internal static partial class DreamProcNativeHelpers {
 
         void AddToList(DreamValue value) {
             if(value.TryGetValueAsDreamObject<DreamObjectAtom>(out var atomValue)) {
-                MutableAppearance appearance = atomValue.GetVariable("appearance").MustGetValueAsAppearance();
+                using MutableAppearance appearance = atomValue.GetVariable("appearance").MustGetValueAsAppearance();
                 if(appearance.Invisibility >= 101)
                     return;
             }
+
             rangeList.AddValue(value);
             if(value.TryGetValueAsDreamObject<DreamObjectTurf>(out var turfValue) && !seenAreas.Contains(turfValue.Cell.Area)) {
                 var area = turfValue.Cell.Area;

@@ -183,6 +183,11 @@ internal static partial class DreamProcNativeHelpers {
         DreamList rangeList = bundle.ObjectTree.CreateList(range.Height * range.Width);
 
         void AddToList(DreamValue value) {
+            if(value.TryGetValueAsDreamObject<DreamObjectAtom>(out var atomValue)) {
+                MutableAppearance appearance = atomValue.GetVariable("appearance").MustGetValueAsAppearance();
+                if(appearance.Invisibility >= 101)
+                    return;
+            }
             rangeList.AddValue(value);
             if(value.TryGetValueAsDreamObject<DreamObjectTurf>(out var turfValue) && !seenAreas.Contains(turfValue.Cell.Area)) {
                 var area = turfValue.Cell.Area;
@@ -192,12 +197,12 @@ internal static partial class DreamProcNativeHelpers {
         }
 
         if(center is DreamObjectArea areaCenter) { // yeah you can do this
-            // setting rangeList directly cause we'll never hit the area case
-            rangeList.AddValue(new(center));
+            rangeList.AddValue(new(areaCenter)); // dodges the invisibility check
+            seenAreas.Add(areaCenter);
             foreach(var turf in areaCenter.Turfs) {
-                rangeList.AddValue(new(turf));
+                AddToList(new(turf));
                 foreach(var content in turf.Contents.EnumerateValues()) {
-                    rangeList.AddValue(content);
+                    AddToList(content);
                 }
             }
 

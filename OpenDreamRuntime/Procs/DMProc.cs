@@ -372,11 +372,20 @@ public sealed class DMProcState : ProcState {
     public int ProgramCounter => _pc;
     public override DMProc Proc => _proc;
 
+    public DreamObjectCallee CalleeObject { get {
+            if(Thread is null)
+                throw new InvalidOperationException("Attempted to get the callee of a disposed proc");
+            _callee ??= DreamObjectCallee.FromDMProcState(this);
+
+            return _callee;
+        } }
+
 #if TOOLS
     public override (string SourceFile, int Line) TracyLocationId => _proc.GetSourceAtOffset(_pc+1);
 #endif
 
     private DMProc _proc = default!;
+    private DreamObjectCallee? _callee;
     private bool _firstResume = true;
     private int _pc;
     private readonly Stack<int> _catchPosition = new();
@@ -405,6 +414,7 @@ public sealed class DMProcState : ProcState {
 
     public DMProcState() { }
 
+    /// <remarks>This handles spawn() threads</remarks>
     private DMProcState(DMProcState other, DreamThread thread) {
         base.Initialize(thread, other.WaitFor);
         _proc = other._proc;
@@ -611,6 +621,9 @@ public sealed class DMProcState : ProcState {
         ArgumentCount = 0;
         _pc = 0;
         _proc = null!;
+
+        _callee?.DecRef();
+        _callee = null;
 
         DreamValuePool.Return(_stack);
         _stackIndex = 0;
@@ -932,16 +945,19 @@ public sealed class DMProcState : ProcState {
                 DreamManager.WorldInstance.IncRef();
                 return new(DreamManager.WorldInstance);
             case DMReference.Type.Callee: {
-                // TODO: BYOND seems to reuse the same object. At least, callee == callee
-                var callee = Proc.ObjectTree.CreateObject<DreamObjectCallee>(Proc.ObjectTree.Callee);
-
-                callee.ProcState = this;
-                callee.ProcStateId = Id;
-                return new(callee);
+                // BYOND seems to reuse the same object. At least, callee == callee
+                CalleeObject.IncRef();
+                return new(CalleeObject);
             }
             case DMReference.Type.Caller: {
-                // TODO
-                return DreamValue.Null;
+                // Note that the ref says that caller still returns a "/callee" object, just with the caller's info
+                var caller = Caller;
+                while(caller is not (DMProcState or null))
+                    caller = caller.Caller;
+
+                var value = caller is DMProcState dmCaller ? new(dmCaller.CalleeObject) : DreamValue.Null;
+                value.IncRef();
+                return value;
             }
             case DMReference.Type.Field: {
                 var owner = peek ? Peek() : Pop();

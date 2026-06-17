@@ -184,10 +184,7 @@ public class DMCompiler {
         VerbosePrint("Parsing");
         DMASTFile astFile = dmParser.File();
 
-        DMASTFolder astSimplifier = new DMASTFolder();
-        VerbosePrint("Constant folding");
-        astSimplifier.FoldAst(astFile);
-
+        VerbosePrint("Building code tree");
         DMCodeTreeBuilder dmCodeTreeBuilder = new(this);
         dmCodeTreeBuilder.BuildCodeTree(astFile);
 
@@ -226,7 +223,7 @@ public class DMCompiler {
                 CompilerMessages.Add(new CompilerEmission(ErrorLevel.Warning, null, "No longer storing error messages due to excessive error counts.").ToString());
             }
         UniqueEmissions.Add(emission.Code);
-        Console.WriteLine(emission);
+        emission.WriteConsole();
         return level == ErrorLevel.Error;
     }
 
@@ -235,7 +232,7 @@ public class DMCompiler {
     /// Completely ignores the warning configuration. Use wisely!
     /// </summary>
     public void ForcedError(Location loc, string message) {
-        Console.WriteLine(new CompilerEmission(ErrorLevel.Error, loc, message).ToString());
+        new CompilerEmission(ErrorLevel.Error, loc, message).WriteConsole();
         _errorCount++;
     }
 
@@ -244,13 +241,13 @@ public class DMCompiler {
     /// Completely ignores the warning configuration. Use wisely!
     /// </summary>
     public void ForcedWarning(string message) {
-        Console.WriteLine(new CompilerEmission(ErrorLevel.Warning, Location.Internal, message).ToString());
+        new CompilerEmission(ErrorLevel.Warning, Location.Internal, message).WriteConsole();
         _warningCount++;
     }
 
     /// <inheritdoc cref="ForcedWarning(string)"/>
     public void ForcedWarning(Location loc, string message) {
-        Console.WriteLine(new CompilerEmission(ErrorLevel.Warning, loc, message).ToString());
+        new CompilerEmission(ErrorLevel.Warning, loc, message).WriteConsole();
         _warningCount++;
     }
 
@@ -358,7 +355,7 @@ public class DMCompiler {
             compiledDream.GlobalProcs = DMObjectTree.GlobalProcs.Values.ToArray();
         }
 
-        if(_errorCount == 0) {
+        if (_errorCount == 0) {
             return compiledDream;
         }
 
@@ -398,6 +395,7 @@ public struct DMCompilerSettings {
     public bool Verbose = false;
     public bool PrintCodeTree = false;
     public bool StoreMessages = false;
+
     public Dictionary<string, string>? MacroDefines = null;
 
     /// <summary> The value of the DM_VERSION macro </summary>

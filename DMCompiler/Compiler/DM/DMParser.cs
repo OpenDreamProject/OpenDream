@@ -166,7 +166,7 @@ namespace DMCompiler.Compiler.DM {
                 if (Current().Type != TokenType.EndOfFile) {
                     Token skipFrom = Current();
                     LocateNextTopLevel();
-                    Warning($"Error recovery had to skip to {Current().Location}", token: skipFrom);
+                    Emit(WarningCode.ErrorRecoveryActivated, $"Error recovery had to skip to {Current().Location} due to bad token {skipFrom.PrintableText} at {skipFrom.Location}");
                 }
             }
 

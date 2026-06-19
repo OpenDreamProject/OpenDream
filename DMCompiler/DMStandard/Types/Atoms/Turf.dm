@@ -8,10 +8,9 @@
 			return FALSE
 		if (!src.Cross(O))
 			return FALSE
-
+		
 		for (var/atom/content in src.contents)
 			if (!content.Cross(O))
-				O.Bump(content)
 				return FALSE
 
 		return TRUE

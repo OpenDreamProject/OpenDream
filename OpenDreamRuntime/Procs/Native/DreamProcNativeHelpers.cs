@@ -338,7 +338,7 @@ internal static partial class DreamProcNativeHelpers {
         var replacement = replacementValue.Stringify();
 
         needleValue.TryGetValueAsString(out var needle);
-        if(needle is null || needle.Length == 0) {
+        if(string.IsNullOrEmpty(needle)) {
             if(replacement.Length == 0) {
                 return new DreamValue(haystack);
             }

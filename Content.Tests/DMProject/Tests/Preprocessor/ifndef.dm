@@ -1,7 +1,7 @@
 #define BUH boh
 
 #ifndef BUH
-#error "buh is defined!"
+#error "buh is not defined!"
 #endif
 
 /proc/RunTest()

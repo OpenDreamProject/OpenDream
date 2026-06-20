@@ -58,11 +58,11 @@ var/global/list/move_trace = list()
 	TRACE_STEP(src, MOVE)
 	. = ..()
 
-#define RUN_TEST(expected, target, expression)\
+#define RUN_TEST(expected, expression)\
 	BEGIN_TRACE("running [nameof(expected)]"); \
 	##expression; \
-	_run_test(expected, nameof(expected), target);
-/datum/unit_test/move_parity/proc/_run_test(list/expected, identifier, atom/movable/target)
+	_run_test(expected, nameof(expected));
+/datum/unit_test/move_parity/proc/_run_test(list/expected, identifier)
 	var/error_index = 1
 	try
 		if(expected.len != move_trace.len)
@@ -100,7 +100,7 @@ var/global/list/move_trace = list()
 	var/mob/protag = new(LOC(1, 1))
 	protag.name = "protag"
 	var/list/protag_init = list()
-	RUN_TEST(protag_init, protag, step(protag, 0))
+	RUN_TEST(protag_init, step(protag, 0))
 
 	var/list/protag_step = list(
 		MARK(protag, MOVE),
@@ -113,10 +113,10 @@ var/global/list/move_trace = list()
 		MARK(LOC(2, 1), ENTERED),
 		MARK(LOC(2, 1), CROSSED),
 	)
-	RUN_TEST(protag_step, protag, step(protag, EAST))
+	RUN_TEST(protag_step, step(protag, EAST))
 
 	var/list/protag_wall = list()
-	RUN_TEST(protag_wall, protag, step(protag, EAST))
+	RUN_TEST(protag_wall, step(protag, EAST))
 
 	var/mob/antag = new()
 	antag.name = "antag"
@@ -131,7 +131,7 @@ var/global/list/move_trace = list()
 		MARK(local_area, ENTERED),
 		MARK(local_area, CROSSED),
 	)
-	RUN_TEST(antag_summon, antag, antag.Move(LOC(1, 1)))
+	RUN_TEST(antag_summon, antag.Move(LOC(1, 1)))
 
 	var/list/protag_bump = list(
 		MARK(protag, MOVE),
@@ -142,7 +142,7 @@ var/global/list/move_trace = list()
 		MARK(antag, CROSS),
 		MARK(protag, BUMP),
 	)
-	RUN_TEST(protag_bump, protag, step(protag, WEST))
+	RUN_TEST(protag_bump, step(protag, WEST))
 
 	var/mob/deuterag = new(LOC(2, 2))
 	deuterag.name = "deuterag"
@@ -160,7 +160,7 @@ var/global/list/move_trace = list()
 		MARK(LOC(2, 2), CROSSED),
 		MARK(deuterag, CROSSED),
 	)
-	RUN_TEST(protag_cross, protag, step(protag, NORTH))
+	RUN_TEST(protag_cross, step(protag, NORTH))
 
 	var/list/protag_uncross = list(
 		MARK(protag, MOVE),
@@ -175,7 +175,7 @@ var/global/list/move_trace = list()
 		MARK(LOC(2, 1), ENTERED),
 		MARK(LOC(2, 1), CROSSED),
 	)
-	RUN_TEST(protag_uncross, protag, step(protag, SOUTH))
+	RUN_TEST(protag_uncross, step(protag, SOUTH))
 
 	var/mob/minion = new(antag)
 	minion.name = "minion"
@@ -190,7 +190,7 @@ var/global/list/move_trace = list()
 		MARK(local_area, CROSS),
 		MARK(minion, BUMP)
 	)
-	RUN_TEST(minion_bump, minion, step(minion, EAST))
+	RUN_TEST(minion_bump, step(minion, EAST))
 
 	var/list/minion_deploy = list(
 		MARK(minion, MOVE),
@@ -205,7 +205,7 @@ var/global/list/move_trace = list()
 		MARK(local_area, ENTERED),
 		MARK(local_area, CROSSED),
 	)
-	RUN_TEST(minion_deploy, minion, step(minion, NORTH))
+	RUN_TEST(minion_deploy, step(minion, NORTH))
 
 	// TODO: implement mob.group shuffling and test here
 
@@ -221,12 +221,12 @@ var/global/list/move_trace = list()
 		MARK(local_area, UNCROSSED),
 		MARK(antag, ENTERED),
 	)
-	RUN_TEST(minion_retreat, minion, minion.Move(antag, SOUTH))
+	RUN_TEST(minion_retreat, minion.Move(antag, SOUTH))
 
 	var/list/antag_banish = list(
 		MARK(antag, MOVE),
 	)
-	RUN_TEST(antag_banish, antag, antag.Move(null))
+	RUN_TEST(antag_banish, antag.Move(null))
 
 	del(minion)
 	del(deuterag)

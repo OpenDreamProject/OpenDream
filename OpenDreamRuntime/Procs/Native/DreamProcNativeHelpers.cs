@@ -317,7 +317,7 @@ internal static partial class DreamProcNativeHelpers {
     }
 
     public static DreamValue HandleReplaceText(DreamValue haystackValue, DreamValue needleValue, DreamValue replacementValue, int start, int end, bool exact) {
-        // TODO: _char support if/when we support char
+        // TODO: byte support if/when we support working with bytes
 
         if(needleValue.TryGetValueAsDreamObject<DreamObjectRegex>(out var regexObject)) {
             // Equivalent to regex.Replace according to spec

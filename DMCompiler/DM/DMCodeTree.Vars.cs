@@ -44,8 +44,8 @@ internal partial class DMCodeTree {
             if (value.TryAsConstant(compiler, out var constant)) {
                 variable.Value = constant;
 
-                // Overrides shouldn't succeed while the parent init proc is undefined
-                if (isOverride && dmObject.Parent?.InitializationProc == null && IsFirstPass) return false;
+                // Overrides that are defined out of order need an opportunity for the parent to perform runtime initializations
+                if (isOverride && !dmObject.IsRuntimeInitialized(variable.Name) && IsFirstPass) return false;
 
                 // We want to continue with putting this in the init proc if a base type initializes it to another value
                 if (!isOverride || !dmObject.IsRuntimeInitialized(variable.Name)) {
@@ -99,7 +99,7 @@ internal partial class DMCodeTree {
     }
 
     private class ObjectVarNode(DreamPath owner, DMASTObjectVarDefinition varDef) : VarNode {
-        private string VarName => varDef.Name;
+        public string VarName => varDef.Name;
         private bool IsStatic => varDef.IsStatic;
 
         private bool _defined;
@@ -262,9 +262,9 @@ internal partial class DMCodeTree {
                     "var \"tag\" cannot be set to a value at compile-time");
 
             dmObject.VariableOverrides[variable.Name] = variable;
-            _finished = true;
+            _finished = TrySetVariableValue(compiler, dmObject, variable, value, true);
 
-            return TrySetVariableValue(compiler, dmObject, variable, value, true);
+            return _finished;
         }
 
         public override string ToString() {

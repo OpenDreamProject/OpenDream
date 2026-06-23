@@ -591,7 +591,10 @@ public sealed class TreeEntry {
     public bool TryGetTypeVar(string field, out DreamValue value) {
         switch(field) {
             case "parent_type":
-                value = new(ParentEntry);
+                if(ParentEntry == ObjectDefinition.ObjectTree.Root)
+                    value = DreamValue.Null;
+                else
+                    value = new(ParentEntry);
                 return true;
             case "type":
                 value = new(this);

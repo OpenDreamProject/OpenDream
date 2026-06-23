@@ -15,6 +15,7 @@ using Robust.Server.GameStates;
 using Robust.Shared.Map;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Manager.Exceptions;
+using Robust.Shared.Utility;
 using MethodImplAttribute = System.Runtime.CompilerServices.MethodImplAttribute;
 using MethodImplOptions = System.Runtime.CompilerServices.MethodImplOptions;
 
@@ -585,6 +586,28 @@ public sealed class TreeEntry {
         Name = (lastSlash != -1) ? path.Substring(lastSlash + 1) : path;
         Path = path;
         Id = id;
+    }
+
+    public bool TryGetTypeVar(string field, out DreamValue value) {
+        switch(field) {
+            case "parent_type":
+                value = new(ParentEntry);
+                return true;
+            case "type":
+                value = new(this);
+                return true;
+            case "vars":
+                // Unimplemented
+                value = DreamValue.Null;
+                return false;
+            default:
+                var success =
+                    (ObjectDefinition.Variables.TryGetValue(field, out value)) ||
+                    (ObjectDefinition.GlobalVariables.TryGetValue(field, out var globalIndex)) && ObjectDefinition.DreamManager.Globals.TryGetValue(globalIndex, out value);
+
+                value.IncRef(); // globals
+                return success;
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

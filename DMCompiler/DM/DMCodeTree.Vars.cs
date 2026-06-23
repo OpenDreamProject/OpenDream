@@ -45,7 +45,7 @@ internal partial class DMCodeTree {
                 variable.Value = constant;
 
                 // Overrides that are defined out of order need an opportunity for the parent to perform runtime initializations
-                if (isOverride && !dmObject.IsRuntimeInitialized(variable.Name) && IsFirstPass) return false;
+                if (isOverride && IsFirstPass && !dmObject.IsRuntimeInitialized(variable.Name)) return false;
 
                 // We want to continue with putting this in the init proc if a base type initializes it to another value
                 if (!isOverride || !dmObject.IsRuntimeInitialized(variable.Name)) {

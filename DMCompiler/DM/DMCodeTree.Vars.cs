@@ -99,7 +99,7 @@ internal partial class DMCodeTree {
     }
 
     private class ObjectVarNode(DreamPath owner, DMASTObjectVarDefinition varDef) : VarNode {
-        public string VarName => varDef.Name;
+        private string VarName => varDef.Name;
         private bool IsStatic => varDef.IsStatic;
 
         private bool _defined;

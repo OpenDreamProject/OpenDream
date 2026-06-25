@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using OpenDreamRuntime.Map;
+using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Input;
@@ -7,11 +8,12 @@ using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime.Input;
 
-internal sealed class MouseInputSystem : SharedMouseInputSystem {
-    [Dependency] private readonly AtomManager _atomManager = default!;
-    [Dependency] private readonly DreamManager _dreamManager = default!;
-    [Dependency] private readonly IDreamMapManager _mapManager = default!;
-    [Dependency] private readonly IGameTiming _timing = default!;
+internal sealed partial class MouseInputSystem : SharedMouseInputSystem {
+    [Dependency] private AtomManager _atomManager = default!;
+    [Dependency] private DreamManager _dreamManager = default!;
+    [Dependency] private DreamRefManager _refManager = default!;
+    [Dependency] private IDreamMapManager _mapManager = default!;
+    [Dependency] private IGameTiming _timing = default!;
 
     private readonly TimeSpan _doubleClickDelay = TimeSpan.FromMilliseconds(250);
 
@@ -64,11 +66,12 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
             overLocValue,
             DreamValue.Null, // TODO: src_control and over_control
             DreamValue.Null,
-            new DreamValue(ConstructClickParams(e.Params)));
+            new DreamValue(ConstructClickParams(e.Params))).Dispose();
     }
 
     private void OnStatClicked(StatClickedEvent e, EntitySessionEventArgs sessionEvent) {
-        if (!_dreamManager.LocateRef(e.AtomRef).TryGetValueAsDreamObject<DreamObjectAtom>(out var dreamObject))
+        using var atom = _refManager.LocateRef(e.AtomRef);
+        if (!atom.TryGetValueAsDreamObject<DreamObjectAtom>(out var dreamObject))
             return;
 
         HandleAtomClick(e, dreamObject, sessionEvent);
@@ -82,10 +85,11 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
         if (!_atomManager.GetEnabledMouseEvents(atom).HasFlag(AtomMouseEvents.Enter))
             return;
 
+        using var loc = atom.GetVariable("loc");
         atom.SpawnProc("MouseEntered", usr: connection.Mob,
-            atom.GetVariable("loc"),
+            loc,
             DreamValue.Null,
-            new DreamValue(ConstructClickParams(e.Params)));
+            new DreamValue(ConstructClickParams(e.Params))).Dispose();
     }
 
     private void OnMouseExited(MouseExitedEvent e, EntitySessionEventArgs sessionEvent) {
@@ -96,10 +100,11 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
         if (!_atomManager.GetEnabledMouseEvents(atom).HasFlag(AtomMouseEvents.Exit))
             return;
 
+        using var loc = atom.GetVariable("loc");
         atom.SpawnProc("MouseExited", usr: connection.Mob,
-            atom.GetVariable("loc"),
+            loc,
             DreamValue.Null,
-            new DreamValue(ConstructClickParams(e.Params)));
+            new DreamValue(ConstructClickParams(e.Params))).Dispose();
     }
 
     private void OnMouseMove(MouseMoveEvent e, EntitySessionEventArgs sessionEvent) {
@@ -110,10 +115,11 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
         if (!_atomManager.GetEnabledMouseEvents(atom).HasFlag(AtomMouseEvents.Move))
             return;
 
+        using var loc = atom.GetVariable("loc");
         atom.SpawnProc("MouseMove", usr: connection.Mob,
-            atom.GetVariable("loc"),
+            loc,
             DreamValue.Null,
-            new DreamValue(ConstructClickParams(e.Params)));
+            new DreamValue(ConstructClickParams(e.Params))).Dispose();
     }
 
     private void HandleAtomClick(IAtomMouseEvent e, DreamObjectAtom atom, EntitySessionEventArgs sessionEvent) {
@@ -129,14 +135,14 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
                 new DreamValue(atom),
                 DreamValue.Null,
                 DreamValue.Null,
-                new DreamValue(clickParams));
+                new DreamValue(clickParams)).Dispose();
         }
 
         connection.Client?.SpawnProc("Click", usr: usr,
             new DreamValue(atom),
             DreamValue.Null,
             DreamValue.Null,
-            new DreamValue(clickParams));
+            new DreamValue(clickParams)).Dispose();
 
         connection.LastClickTime = _timing.RealTime;
     }

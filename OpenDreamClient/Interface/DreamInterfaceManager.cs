@@ -26,24 +26,24 @@ using Robust.Shared.Map;
 
 namespace OpenDreamClient.Interface;
 
-internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
+internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
     private static readonly ResPath DefaultInterfaceFile = new("/OpenDream/DefaultInterface.dmf");
 
-    [Dependency] private readonly IClyde _clyde = default!;
-    [Dependency] private readonly IBaseClient _client = default!;
-    [Dependency] private readonly IEyeManager _eyeManager = default!;
-    [Dependency] private readonly IClientNetManager _netManager = default!;
-    [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
-    [Dependency] private readonly IResourceManager _resourceManager = default!;
-    [Dependency] private readonly IFileDialogManager _fileDialogManager = default!;
-    [Dependency] private readonly ISerializationManager _serializationManager = default!;
-    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-    [Dependency] private readonly IInputManager _inputManager = default!;
-    [Dependency] private readonly IUserInterfaceManager _uiManager = default!;
-    [Dependency] private readonly IRobustRandom _random = default!;
-    [Dependency] private readonly ITimerManager _timerManager = default!;
-    [Dependency] private readonly IUriOpener _uriOpener = default!;
-    [Dependency] private readonly IGameController _gameController = default!;
+    [Dependency] private IClyde _clyde = default!;
+    [Dependency] private IBaseClient _client = default!;
+    [Dependency] private IEyeManager _eyeManager = default!;
+    [Dependency] private IClientNetManager _netManager = default!;
+    [Dependency] private IDreamResourceManager _dreamResource = default!;
+    [Dependency] private IResourceManager _resourceManager = default!;
+    [Dependency] private IFileDialogManager _fileDialogManager = default!;
+    [Dependency] private ISerializationManager _serializationManager = default!;
+    [Dependency] private IEntitySystemManager _entitySystemManager = default!;
+    [Dependency] private IInputManager _inputManager = default!;
+    [Dependency] private IUserInterfaceManager _uiManager = default!;
+    [Dependency] private IRobustRandom _random = default!;
+    [Dependency] private ITimerManager _timerManager = default!;
+    [Dependency] private IUriOpener _uriOpener = default!;
+    [Dependency] private IGameController _gameController = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.interface");
 
@@ -103,13 +103,17 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         LoadInterface(interfaceDescriptor);
     }
 
-    public void Initialize() {
+    private void SetupBaseDreamBinds() {
         // Set up the middle-mouse button keybind
         _inputManager.Contexts.GetContext("common").AddFunction(OpenDreamKeyFunctions.MouseMiddle);
         _inputManager.RegisterBinding(new KeyBindingRegistration() {
             Function = OpenDreamKeyFunctions.MouseMiddle,
             BaseKey = Keyboard.Key.MouseMiddle
         });
+    }
+
+    public void Initialize() {
+        SetupBaseDreamBinds();
 
         Cursors = new(_clyde);
 
@@ -199,7 +203,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 browser.SetFileSource(null);
             }
         } else if (pBrowse.HtmlSource != null) {
-            var htmlFileName = $"browse{_random.Next()}"; // TODO: Possible collisions and explicit file names
+            var htmlFileName = $"browse_{pBrowse.Window}_{_random.Next()}"; // TODO: Possible collisions and explicit file names
             ControlBrowser? outputBrowser = referencedElement as ControlBrowser;
 
             if (outputBrowser == null) {
@@ -936,6 +940,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         MacroSets.Clear();
 
         _inputManager.ResetAllBindings();
+        SetupBaseDreamBinds();
     }
 
     private void LoadInterface(InterfaceDescriptor descriptor) {
@@ -1043,28 +1048,19 @@ public sealed class CursorHolder(IClyde clyde) {
     public readonly bool AllStateSet;
 
     public CursorHolder(IClyde clyde, DMIResource resource) : this(clyde) {
-        var allState = resource.GetStateAsImage("all", AtomDirection.South);
+        var allCursor = resource.GetStateAsImage(clyde, "all");
 
-        if (allState is not null) { //all overrides all possible states
-            BaseCursor = clyde.CreateCursor(allState, new(32, 32));
+        if (allCursor is not null) { //all overrides all possible states
+            BaseCursor = allCursor;
             DragCursor = BaseCursor;
             DropCursor = BaseCursor;
             OverCursor = BaseCursor;
             AllStateSet = true;
         } else {
-            var baseState = resource.GetStateAsImage("", AtomDirection.South);
-            var overState = resource.GetStateAsImage("over", AtomDirection.South);
-            var dragState = resource.GetStateAsImage("drag", AtomDirection.South);
-            var dropState = resource.GetStateAsImage("drop", AtomDirection.South);
-
-            if (baseState is not null)
-                BaseCursor = clyde.CreateCursor(baseState, new(32, 32));
-            if (overState is not null)
-                OverCursor = clyde.CreateCursor(overState, new(32, 32));
-            if (dragState is not null)
-                DragCursor = clyde.CreateCursor(dragState, new(32, 32));
-            if (dropState is not null)
-                DropCursor = clyde.CreateCursor(dropState, new(32, 32));
+            BaseCursor = resource.GetStateAsImage(clyde, "");
+            OverCursor = resource.GetStateAsImage(clyde, "over");
+            DragCursor = resource.GetStateAsImage(clyde, "drag");
+            DropCursor = resource.GetStateAsImage(clyde, "drop");
         }
     }
 }

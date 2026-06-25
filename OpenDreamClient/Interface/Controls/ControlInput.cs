@@ -26,9 +26,9 @@ internal sealed class ControlInput(ControlDescriptor controlDescriptor, ControlW
 
         var command = InputDescriptor.Command.Value;
         if (command.StartsWith('!')) {
-            _interfaceManager.RunCommand(lineEditEventArgs.Text);
+            InterfaceManager.RunCommand(lineEditEventArgs.Text);
         } else {
-            _interfaceManager.RunCommand(command + lineEditEventArgs.Text);
+            InterfaceManager.RunCommand(command + lineEditEventArgs.Text);
         }
     }
 

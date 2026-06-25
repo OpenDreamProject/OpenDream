@@ -16,7 +16,6 @@
 		set opendream_unimplemented = TRUE
 
 	proc/GetPixel(x, y, icon_state, dir = 0, frame = 0, moving = -1)
-		set opendream_unimplemented = TRUE
 
 	proc/Height()
 

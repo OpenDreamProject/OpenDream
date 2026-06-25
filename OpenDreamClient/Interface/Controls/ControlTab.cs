@@ -30,7 +30,7 @@ internal sealed class ControlTab(ControlDescriptor controlDescriptor, ControlWin
             StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
 
         foreach (var tabId in tabIds) {
-            if (!_interfaceManager.Windows.TryGetValue(tabId, out var pane))
+            if (!InterfaceManager.Windows.TryGetValue(tabId, out var pane))
                 continue;
 
             TabContainer.SetTabTitle(pane.UIElement, pane.Title);

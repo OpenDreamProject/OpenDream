@@ -595,11 +595,11 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
 
     private DMExpression BuildIdentifier(DMASTIdentifier identifier, DreamPath? inferredPath = null) {
         var name = identifier.Identifier;
-        if (scopeMode == Normal) {
+        if (scopeMode is Normal or Static) {
             // ReSharper disable once ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
             var localVar = ctx.Proc?.GetLocalVariable(name);
             if (localVar is not null) {
-                return new Local(identifier.Location, localVar);
+                return new Local(identifier.Location, localVar, scopeMode is Static);
             }
         }
 
@@ -1144,11 +1144,16 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
     private DMExpression BuildImplicitAsType(DMASTImplicitAsType asType, DreamPath? inferredPath) {
         var expr = BuildExpression(asType.Value, inferredPath);
 
-        if (inferredPath is null) {
+        // From the DM ref:
+        // 1. If astype() is on the right-hand side of an assignment operation, the left-hand side's var type is the implied type, just like with the new() operator.
+        // 2. Otherwise, the var type of the first argument is the implied type, just as it is in istype().
+        var inferredType = inferredPath ?? expr.Path;
+
+        if (inferredType is null) {
             return BadExpression(WarningCode.BadExpression, asType.Location, "Could not infer a type");
         }
 
-        return new AsTypeInferred(asType.Location, expr, inferredPath.Value);
+        return new AsTypeInferred(asType.Location, expr, inferredType.Value);
     }
 
     private DMExpression BuildImplicitIsType(DMASTImplicitIsType isType, DreamPath? inferredPath) {

@@ -5,6 +5,7 @@ using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Formats.Png.Chunks;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -17,6 +18,7 @@ namespace OpenDreamRuntime.Objects;
 
 public sealed class DreamIcon(DreamManager dreamManager, DreamResourceManager resourceManager) {
     private static readonly ArrayPool<Rgba32> PixelArrayPool = ArrayPool<Rgba32>.Shared;
+    private static readonly PngEncoder PngEncoder = new() { TextCompressionThreshold = 0 }; // Always encode the description in a zTXt chunk
 
     public int Width, Height;
     public readonly Dictionary<string, IconState> States = new();
@@ -147,7 +149,7 @@ public sealed class DreamIcon(DreamManager dreamManager, DreamResourceManager re
         var pngMetadata = dmiImage.Metadata.GetPngMetadata();
         pngMetadata.TextData.Add(pngTextData);
 
-        dmiImage.SaveAsPng(dmiImageStream);
+        dmiImage.SaveAsPng(dmiImageStream, PngEncoder);
 
         IconResource newResource = resourceManager.CreateIconResource(dmiImageStream.GetBuffer(), dmiImage, newDescription);
         _cachedDMI = newResource;
@@ -307,9 +309,6 @@ public class DreamIconOperationBlend : IDreamIconOperation {
         _type = type;
         _xOffset = xOffset;
         _yOffset = yOffset;
-
-        if (_type is not BlendType.Overlay and not BlendType.Underlay and not BlendType.Multiply and not BlendType.Add and not BlendType.Subtract)
-            throw new NotImplementedException($"\"{_type}\" blending is not implemented");
     }
 
     public virtual void OnApply(DreamIcon icon) { }
@@ -322,13 +321,13 @@ public class DreamIconOperationBlend : IDreamIconOperation {
         Rgba32 dst = pixels[dstPixelPosition];
 
         switch (_type) {
+            case BlendType.And: // Byond for reasons known only to God does And as a copy of Add.
             case BlendType.Add: {
                 pixels[dstPixelPosition].R = (byte)Math.Min(dst.R + src.R, byte.MaxValue);
                 pixels[dstPixelPosition].G = (byte)Math.Min(dst.G + src.G, byte.MaxValue);
                 pixels[dstPixelPosition].B = (byte)Math.Min(dst.B + src.B, byte.MaxValue);
 
-                // BYOND uses the smaller of the two alphas
-                pixels[dstPixelPosition].A = Math.Min(dst.A, src.A);
+                pixels[dstPixelPosition].A = (byte)Math.Round((dst.A * src.A)/255.0);
                 break;
             }
             case BlendType.Subtract: {
@@ -336,8 +335,7 @@ public class DreamIconOperationBlend : IDreamIconOperation {
                 pixels[dstPixelPosition].G = (byte)Math.Max(dst.G - src.G, byte.MinValue);
                 pixels[dstPixelPosition].B = (byte)Math.Max(dst.B - src.B, byte.MinValue);
 
-                // BYOND uses the smaller of the two alphas
-                pixels[dstPixelPosition].A = Math.Min(dst.A, src.A);
+                pixels[dstPixelPosition].A = (byte)Math.Round((dst.A * src.A)/255.0);
                 break;
             }
 
@@ -360,13 +358,11 @@ public class DreamIconOperationBlend : IDreamIconOperation {
                     break;
                 }
 
-                pixels[dstPixelPosition].R = (byte) (dst.R + (src.R - dst.R) * src.A / 255);
-                pixels[dstPixelPosition].G = (byte) (dst.G + (src.G - dst.G) * src.A / 255);
-                pixels[dstPixelPosition].B = (byte) (dst.B + (src.B - dst.B) * src.A / 255);
+                pixels[dstPixelPosition].R = (byte) Math.Round(dst.R + (src.R - dst.R) * src.A / 255.0);
+                pixels[dstPixelPosition].G = (byte) Math.Round(dst.G + (src.G - dst.G) * src.A / 255.0);
+                pixels[dstPixelPosition].B = (byte) Math.Round(dst.B + (src.B - dst.B) * src.A / 255.0);
 
-                byte highAlpha = Math.Max(dst.A, src.A);
-                byte lowAlpha = Math.Min(dst.A, src.A);
-                pixels[dstPixelPosition].A = (byte) (highAlpha + (highAlpha * lowAlpha / 255));
+                pixels[dstPixelPosition].A = (byte) Math.Round(dst.A + src.A - (dst.A * src.A)/255.0);
                 break;
             }
             case BlendType.Underlay: {
@@ -374,6 +370,16 @@ public class DreamIconOperationBlend : IDreamIconOperation {
                 (dst, src) = (src, dst);
                 goto case BlendType.Overlay;
             }
+            case BlendType.Or: {
+                pixels[dstPixelPosition].R = (byte)(dst.R | src.R);
+                pixels[dstPixelPosition].G = (byte)(dst.G | src.G);
+                pixels[dstPixelPosition].B = (byte)(dst.B | src.B);
+
+                pixels[dstPixelPosition].A = (byte) Math.Round(dst.A + src.A - (dst.A * src.A)/255.0);
+                break;
+            }
+            default:
+                throw new NotImplementedException($"Blend type {_type} not implemented");
         }
     }
 }

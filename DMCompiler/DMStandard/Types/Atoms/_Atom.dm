@@ -27,8 +27,8 @@
 	var/icon_w = 0 as opendream_unimplemented
 	var/icon_z = 0 as opendream_unimplemented
 
-	var/icon = null
-	var/icon_state = ""
+	var/icon = null as icon|null
+	var/icon_state = null as text|null
 	var/layer = 2.0
 	var/plane = 0
 	var/alpha = 255
@@ -62,6 +62,7 @@
 	var/mouse_drop_zone = FALSE
 	var/render_target
 	var/vis_flags as opendream_unimplemented
+	var/pixloc/pixloc as opendream_unimplemented
 
 	proc/Click(location, control, params)
 	proc/DblClick(location, control, params)

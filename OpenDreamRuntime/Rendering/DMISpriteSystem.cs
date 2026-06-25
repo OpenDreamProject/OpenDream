@@ -4,8 +4,8 @@ using Robust.Shared.GameStates;
 
 namespace OpenDreamRuntime.Rendering;
 
-public sealed class DMISpriteSystem : EntitySystem {
-    [Dependency] private readonly ServerAppearanceSystem _appearance = default!;
+public sealed partial class DMISpriteSystem : EntitySystem {
+    [Dependency] private ServerAppearanceSystem _appearance = default!;
 
     public override void Initialize() {
         SubscribeLocalEvent<DMISpriteComponent, ComponentGetState>(GetComponentState);

@@ -1,0 +1,44 @@
+// Used in the EnsureLocalCountIsValid test
+
+#define TEST_PROC(name) /proc/Test___##name()
+
+TEST_PROC(ProcWithNothing)
+    // ...
+
+TEST_PROC(ProcWithNoScope)
+    var/lorem
+    var/ipsum
+    var/dolor 
+    var/sit
+    var/amet
+    var/consectetur
+
+TEST_PROC(ProcWithOnlyScope)
+    do
+        var/lorem
+        var/ipsum
+        var/dolor 
+        var/sit
+        var/amet
+        var/consectetur
+    while(FALSE)
+
+TEST_PROC(ProcWithFullOuterScope)
+    var/lorem
+    do
+        var/ipsum
+        var/dolor 
+    while(FALSE)
+    var/sit
+    var/amet
+    var/consectetur // max
+
+TEST_PROC(ProcWithFullInnerScope)
+    var/lorem
+    var/ipsum
+    do
+        var/dolor
+        var/sit
+        var/amet // max
+    while(FALSE)
+    var/consectetur

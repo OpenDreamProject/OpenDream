@@ -3,8 +3,8 @@ using Robust.Shared.Player;
 
 namespace OpenDreamClient;
 
-internal sealed class DreamClientSystem : EntitySystem {
-    [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
+internal sealed partial class DreamClientSystem : EntitySystem {
+    [Dependency] private IDreamInterfaceManager _interfaceManager = default!;
 
     public override void Initialize() {
         SubscribeLocalEvent<LocalPlayerAttachedEvent>(OnPlayerAttached);

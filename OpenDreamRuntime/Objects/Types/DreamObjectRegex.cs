@@ -93,6 +93,7 @@ public sealed class DreamObjectRegex(DreamObjectDefinition objectDefinition) : D
                 }
 
                 SetVariable("group", new DreamValue(groupList));
+                groupList.DecRef();
             }
 
             if (IsGlobal) {

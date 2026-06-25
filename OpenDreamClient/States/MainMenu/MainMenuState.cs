@@ -12,13 +12,13 @@ using Robust.Shared.Utility;
 
 namespace OpenDreamClient.States.MainMenu;
 
-public sealed class MainMenuState : State {
-    [Dependency] private readonly IUserInterfaceManager _userInterfaceManager = default!;
-    [Dependency] private readonly IBaseClient _client = default!;
-    [Dependency] private readonly IClientNetManager _netManager = default!;
-    [Dependency] private readonly IResourceCache _resourceCache = default!;
-    [Dependency] private readonly IConfigurationManager _configurationManager = default!;
-    [Dependency] private readonly IGameController _controllerProxy = default!;
+public sealed partial class MainMenuState : State {
+    [Dependency] private IUserInterfaceManager _userInterfaceManager = default!;
+    [Dependency] private IBaseClient _client = default!;
+    [Dependency] private IClientNetManager _netManager = default!;
+    [Dependency] private IResourceCache _resourceCache = default!;
+    [Dependency] private IConfigurationManager _configurationManager = default!;
+    [Dependency] private IGameController _controllerProxy = default!;
 
     private MainMenuControl _mainMenuControl = default!;
     private bool _isConnecting;

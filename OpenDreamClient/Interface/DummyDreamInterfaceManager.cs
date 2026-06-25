@@ -9,7 +9,7 @@ namespace OpenDreamClient.Interface;
 /// <summary>
 /// Used in unit testing to run a headless client.
 /// </summary>
-public sealed class DummyDreamInterfaceManager : IDreamInterfaceManager {
+public sealed partial class DummyDreamInterfaceManager : IDreamInterfaceManager {
     public Dictionary<string, ControlWindow> Windows { get; } = new();
     public Dictionary<string, InterfaceMenu> Menus { get; } = new();
     public Dictionary<string, InterfaceMacroSet> MacroSets { get; } = new();
@@ -22,7 +22,7 @@ public sealed class DummyDreamInterfaceManager : IDreamInterfaceManager {
     public int IconSize => 32;
     public CursorHolder Cursors => null!;
 
-    [Dependency] private readonly IClientNetManager _netManager = default!;
+    [Dependency] private IClientNetManager _netManager = default!;
 
     public void Initialize() {
         _netManager.RegisterNetMessage<MsgLoadInterface>(_ => _netManager.ClientSendMessage(new MsgAckLoadInterface()));

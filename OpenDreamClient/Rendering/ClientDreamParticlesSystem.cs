@@ -9,13 +9,13 @@ using Robust.Shared.Timing;
 namespace OpenDreamClient.Rendering;
 
 [UsedImplicitly]
-public sealed class ClientDreamParticlesSystem : SharedDreamParticlesSystem {
-    [Dependency] private readonly ParticlesManager _particlesManager = default!;
-    [Dependency] private readonly IGameTiming _gameTiming = default!;
-    [Dependency] private readonly ClientAppearanceSystem _appearanceSystem = default!;
-    [Dependency] private readonly IDreamInterfaceManager _dreamInterfaceManager = default!;
-    [Dependency] private readonly IClyde _clyde = default!;
-    [Dependency] private readonly IRobustRandom _random = default!;
+public sealed partial class ClientDreamParticlesSystem : SharedDreamParticlesSystem {
+    [Dependency] private ParticlesManager _particlesManager = default!;
+    [Dependency] private IGameTiming _gameTiming = default!;
+    [Dependency] private ClientAppearanceSystem _appearanceSystem = default!;
+    [Dependency] private IDreamInterfaceManager _dreamInterfaceManager = default!;
+    [Dependency] private IClyde _clyde = default!;
+    [Dependency] private IRobustRandom _random = default!;
 
     private RenderTargetPool _renderTargetPool = default!;
 

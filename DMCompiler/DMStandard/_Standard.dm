@@ -82,6 +82,7 @@ proc/rand(L, H) as num
 proc/rand_seed(Seed) as null
 proc/range(Dist, Center) as /list|null // NOTE: Not sure if return types have BYOND parity
 proc/ref(Object) as text
+proc/refcount(var/Object) as num
 proc/replacetext(Haystack, Needle, Replacement, Start = 1, End = 0) as text|null
 proc/replacetext_char(Haystack, Needle, Replacement, Start = 1, End = 0) as text|null
 proc/replacetextEx(Haystack, Needle, Replacement, Start = 1, End = 0) as text|null
@@ -166,7 +167,11 @@ proc/winset(player, control_id, params)
 
 /proc/step(atom/movable/Ref as /atom/movable, var/Dir, var/Speed=0) as num
 	//TODO: Speed = step_size if Speed is 0
-	return Ref.Move(get_step(Ref, Dir), Dir)
+	var/NewLoc = get_step(Ref, Dir)
+	if (!NewLoc || NewLoc == Ref.loc)
+		return 0
+	
+	return Ref.Move(NewLoc, Dir)
 
 /proc/step_away(atom/movable/Ref as /atom/movable, /atom/Trg, Max=5, Speed=0) as num
     return Ref.Move(get_step_away(Ref, Trg, Max), turn(get_dir(Ref, Trg), 180))
@@ -227,9 +232,3 @@ proc/lentext(T) as num
 
 proc/winshow(player, window, show=1)
 	winset(player, window, "is-visible=[show ? "true" : "false"]")
-
-proc/refcount(var/Object) as num
-	// woah that's a lot of refs
-	// i wonder if it's true??
-	return 100
-	// (it's not)

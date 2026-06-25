@@ -127,6 +127,11 @@ public static class DMIParser {
         public bool Loop = true;
         public bool Rewind;
 
+        /// <summary>
+        /// The part of the image considered the tip when this is used as a custom cursor
+        /// </summary>
+        public Vector2i? Hotspot;
+
         // TODO: This can only contain either 1, 4, or 8 directions. Enforcing this could simplify some things.
         public readonly Dictionary<AtomDirection, ParsedDMIFrame[]> Directions = new();
 
@@ -379,10 +384,10 @@ public static class DMIParser {
                         // No need to care about this at the moment
                         break;
                     case "width":
-                        description.Width = int.Parse(value);
+                        description.Width = int.Parse(value, CultureInfo.InvariantCulture);
                         break;
                     case "height":
-                        description.Height = int.Parse(value);
+                        description.Height = int.Parse(value, CultureInfo.InvariantCulture);
                         break;
                     case "state":
                         string stateName = ParseString(value);
@@ -424,10 +429,10 @@ public static class DMIParser {
                         description.States.TryAdd(stateName, currentState);
                         break;
                     case "dirs":
-                        currentStateDirectionCount = int.Parse(value);
+                        currentStateDirectionCount = int.Parse(value, CultureInfo.InvariantCulture);
                         break;
                     case "frames":
-                        currentStateFrameCount = int.Parse(value);
+                        currentStateFrameCount = int.Parse(value, CultureInfo.InvariantCulture);
                         break;
                     case "delay":
                         string[] frameDelays = value.Split(",");
@@ -440,17 +445,30 @@ public static class DMIParser {
                         break;
                     case "loop":
                         if (currentState is null) break;
-                        currentState.Loop = (int.Parse(value) == 0);
+
+                        var loopValue = int.Parse(value, CultureInfo.InvariantCulture);
+                        currentState.Loop = (loopValue == 0);
                         break;
                     case "rewind":
                         if (currentState is null) break;
-                        currentState.Rewind = (int.Parse(value) == 1);
+
+                        var rewindValue = int.Parse(value, CultureInfo.InvariantCulture);
+                        currentState.Rewind = (rewindValue == 1);
                         break;
                     case "movement":
                         //TODO
                         break;
                     case "hotspot":
-                        //TODO
+                        if (currentState is null) break;
+                        var hotspotValues = value.Split(',');
+                        if (hotspotValues.Length != 3)
+                            throw new Exception($"Invalid hotspot value \"{value}\"");
+
+                        var hotspotX = int.Parse(hotspotValues[0], CultureInfo.InvariantCulture);
+                        var hotspotY = int.Parse(hotspotValues[1], CultureInfo.InvariantCulture);
+                        // TODO: 3rd value? Something to do with what frames the hotspot applies to apparently
+
+                        currentState.Hotspot = (hotspotX, hotspotY);
                         break;
                     default:
                         throw new Exception($"Invalid key \"{key}\" in DMI description");

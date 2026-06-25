@@ -214,6 +214,7 @@ var/global/list/move_trace = list()
 		MARK(LOC(1, 2), EXIT),
 		MARK(LOC(1, 2), UNCROSS),
 		MARK(local_area, EXIT),
+		MARK(local_area, UNCROSS),
 		MARK(antag, ENTER),
 		MARK(LOC(1, 2), EXITED),
 		MARK(LOC(1, 2), UNCROSSED),

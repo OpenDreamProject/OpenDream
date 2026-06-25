@@ -16,7 +16,7 @@
 	Exit(atom/movable/O, atom/newloc)
 		if (!..())
 			return FALSE
-		return TRUE // areas don't call Uncross for some reason?
+		return src.Uncross(O)
 
 	Exited(atom/movable/Obj, atom/newloc)
 		..()

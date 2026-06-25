@@ -56,7 +56,9 @@ internal sealed partial class ContextMenuPopup : Popup {
         // TODO: Even quite distant entities could have transformed bounding boxes that intersect with mapCoords. 10 tile radius is good for now...
         var entities = _lookupSystem.GetEntitiesInRange(mapCoords, 10f, LookupFlags.Uncontained | LookupFlags.Approximate);
         foreach (var uid in entities) {
-            if (_xformQuery.TryGetComponent(uid, out var transform) && !_entityManager.HasComponent<MapGridComponent>(transform.ParentUid)) // Not a child of another entity
+            if (!_xformQuery.TryGetComponent(uid, out var transform)) // Has a transform
+                continue;
+            if (!_entityManager.HasComponent<MapGridComponent>(transform.ParentUid)) // Not a child of another entity
                 continue;
             if (!_spriteQuery.TryGetComponent(uid, out var sprite)) // Has a sprite
                 continue;
@@ -64,7 +66,7 @@ internal sealed partial class ContextMenuPopup : Popup {
                 continue;
             if (!_spriteSystem.IsVisible(sprite, transform, GetSeeInvisible(), null)) // Not invisible
                 continue;
-            if (!IconTransformedBoundingBoxContainsPoint(transform!, sprite, mapCoords))
+            if (!IconTransformedBoundingBoxContainsPoint(transform, sprite, mapCoords)) // Check the transform's deformations
                 continue;
 
             var reference = new ClientObjectReference(_entityManager.GetNetEntity(uid));
@@ -103,33 +105,24 @@ internal sealed partial class ContextMenuPopup : Popup {
 
     // Determines if the given point falls inside the transformed bounding box of the given sprite's icon and its entity transform
     private bool IconTransformedBoundingBoxContainsPoint(TransformComponent transform, DMISpriteComponent sprite, MapCoordinates mapCoords) {
-        var worldPos = _transformSystem.GetWorldPosition(transform);
-
         // Find center of icon in case it's not the same size as a tile
-        if (!sprite.Icon.TryGetSizeInTiles(out var size))
+        var worldPos = _transformSystem.GetWorldPosition(transform);
+        Box2? worldAABB = null;
+        sprite.Icon.GetWorldAABB(worldPos, ref worldAABB);
+        if (!worldAABB.HasValue)
             return false;
 
-        if (!sprite.Icon.TryGetOffsetInTiles(out var offset))
-            return false;
-
-        var centerWorldPos = worldPos + offset.Value + (size.Value - new Vector2(1, 1)) * 0.5f;
-
-        // Get the icon's AABB centered at its worldcenter
-        Box2? iconAABB = null;
-        sprite.Icon.GetWorldAABB(centerWorldPos, ref iconAABB);
-        if (!iconAABB.HasValue)
-            return false;
+        var centerWorldPos = worldAABB.Value.Center;
 
         // Inverse transform on the point and check if it's in the icon's AABB
         var iconTransform = sprite.Icon.Appearance!.Transform;
         Matrix3x2 t = new(iconTransform[0], iconTransform[1], iconTransform[2], iconTransform[3], iconTransform[4], iconTransform[5]);
-        if (Matrix3x2.Invert(t, out var invT)) {
-            // Origin of transform is centerWorldPos so remove it before transforming, then put it back before checking
-            var xformedPoint = Vector2.Transform(mapCoords.Position - centerWorldPos, invT) + centerWorldPos;
-            return iconAABB.Value.Contains(xformedPoint);
-        }
+        if (!Matrix3x2.Invert(t, out var invT))
+            return false;
 
-        return false;
+        // Origin of transform is centerWorldPos so remove it before transforming, then put it back before checking
+        var xformedPoint = Vector2.Transform(mapCoords.Position - centerWorldPos, invT) + centerWorldPos;
+        return worldAABB.Value.Contains(xformedPoint);
     }
 
     public void SetActiveItem(ContextMenuItem item) {

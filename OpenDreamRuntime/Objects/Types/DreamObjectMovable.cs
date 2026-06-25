@@ -20,11 +20,30 @@ public class DreamObjectMovable : DreamObjectAtom {
     private readonly TransformComponent _transformComponent;
     private readonly MovableContentsList _contents;
     private string? _screenLoc;
-    private DreamObjectParticles? _particles;
 
     private string? ScreenLoc {
         get => _screenLoc;
         set => SetScreenLoc(value);
+    }
+
+    public DreamObjectParticles? Particles {
+        get;
+        set {
+            if(field == value)
+                return;
+
+            if(field is not null) {
+                field.Owner = null;
+                field.DecRef();
+            }
+
+            field = value;
+
+            if(field is not null) {
+                field.IncRef();
+                field.Owner = this;
+            }
+        }
     }
 
     public DreamObjectMovable(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
@@ -54,8 +73,7 @@ public class DreamObjectMovable : DreamObjectAtom {
     protected override void HandleDeletion() {
         SetLoc(null);
         WalkManager.StopWalks(this);
-        _particles?.Delete();
-        _particles = null;
+        Particles = null;
         AtomManager.DeleteMovableEntity(this);
 
         _contents.DecRef();
@@ -97,8 +115,8 @@ public class DreamObjectMovable : DreamObjectAtom {
                 value = new DreamValue(locs);
                 return true;
             case "particles":
-                _particles?.IncRef();
-                value = new(_particles);
+                Particles?.IncRef();
+                value = new(Particles);
                 return true;
             default:
                 return base.TryGetVar(varName, out value);
@@ -145,21 +163,9 @@ public class DreamObjectMovable : DreamObjectAtom {
                 ScreenLoc = screenLoc;
                 break;
             case "particles":
-                if (value.TryGetValueAsDreamObject<DreamObjectParticles>(out var particles)) {
-                    if (_particles == particles)
-                        break;
+                value.TryGetValueAsDreamObject<DreamObjectParticles>(out var particles);
 
-                    _particles?.Owner = null;
-                    particles.IncRef();
-                    _particles?.DecRef();
-                    _particles = particles;
-                    _particles.Owner = this;
-                } else {
-                    _particles?.Owner = null;
-                    _particles?.DecRef();
-                    _particles = null;
-                }
-
+                Particles = particles;
                 break;
             default:
                 base.SetVar(varName, value);

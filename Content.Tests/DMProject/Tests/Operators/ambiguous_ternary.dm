@@ -44,4 +44,4 @@ var/_f = new /datum(TRUE)
 	ASSERT( (FALSE?f():f()) == (f()) )
 
 	var/list/L = list(D)
-	ASSERT( (TRUE?(TRUE?L[1]:L[2]):()) == (L[1]) )
+	ASSERT( (TRUE?(TRUE?L[1]:L[2]):f()) == (L[1]) )

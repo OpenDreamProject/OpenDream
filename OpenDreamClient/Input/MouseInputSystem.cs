@@ -27,6 +27,7 @@ internal sealed partial class MouseInputSystem : SharedMouseInputSystem {
     [Dependency] private IConfigurationManager _configurationManager = default!;
     [Dependency] private IDreamInterfaceManager _dreamInterfaceManager = default!;
     [Dependency] private ClientAppearanceSystem _appearanceSystem = default!;
+    [Dependency] private DreamClientSystem _dreamClientSystem = default!;
     [Dependency] private IClyde _clyde = default!;
     [Dependency] private ILogManager _logManager = default!;
     private ISawmill _sawmill = default!;
@@ -144,6 +145,11 @@ internal sealed partial class MouseInputSystem : SharedMouseInputSystem {
     }
 
     public (ClientObjectReference Atom, Vector2i IconPosition)? GetTurfUnderMouse(MapCoordinates mapCoords, out uint? turfId) {
+        if (_dreamClientSystem.IsEyeMissing()) {
+            turfId = null;
+            return null;
+        }
+
         // Grid coordinates are half a meter off from entity coordinates
         mapCoords = new MapCoordinates(mapCoords.Position + new Vector2(0.5f), mapCoords.MapId);
 

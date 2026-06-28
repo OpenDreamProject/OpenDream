@@ -1,3 +1,4 @@
+
 using System.Threading.Tasks;
 using System.Web;
 using DMCompiler.Bytecode;
@@ -19,6 +20,7 @@ public sealed partial class DreamConnection {
     [Dependency] private DreamRefManager _refManager = default!;
     [Dependency] private DreamObjectTree _objectTree = default!;
     [Dependency] private DreamResourceManager _resourceManager = default!;
+    [Dependency] private IEntityManager _entityManager = default!;
     [Dependency] private IEntitySystemManager _entitySystemManager = default!;
     [Dependency] private ISharedPlayerManager _playerManager = default!;
 
@@ -50,11 +52,15 @@ public sealed partial class DreamConnection {
                 }
 
                 StatObj = new(value);
-                if (Eye != null && Eye == oldMob) {
-                    Eye = value;
+
+                // If eye is equivalent to old mob, and the new mob is different from old mob, set eye to new mob.
+                if (oldMob != null && Eye is DreamObjectMovable eyeMovable && eyeMovable.Entity == oldMob.Entity) {
+                    Eye = _mob;
                 }
 
                 if (_mob != null) {
+                    _playerManager.SetAttachedEntity(Session!, _mob.Entity);
+
                     // If the mob is already owned by another player, kick them out
                     _mob.Connection?.Mob = null;
 
@@ -66,14 +72,19 @@ public sealed partial class DreamConnection {
         }
     }
 
-    [ViewVariables] public DreamObjectMovable? Eye {
+    [ViewVariables] public DreamObjectAtom? Eye {
         get;
         set {
-            value?.IncRef();
-            field?.DecRef();
+            if (field != null) {
+                field.DecRef();
+            }
+
+            if (value != null) {
+                value.IncRef();
+            }
+
             field = value;
-            if (Session != null)
-                _playerManager.SetAttachedEntity(Session, field?.Entity);
+            UpdateMobEye();
         }
     }
 
@@ -567,5 +578,31 @@ public sealed partial class DreamConnection {
 
         converted = default;
         return false;
+    }
+
+    private void UpdateMobEye() {
+        var mobUid = Mob?.Entity ?? EntityUid.Invalid;
+        ClientObjectReference? eyeRef;
+        switch (Eye) {
+            case null:
+                eyeRef = null;
+                break;
+            default:
+                eyeRef = new(_entityManager.GetNetEntity(mobUid));
+                break;
+            case DreamObjectMovable:
+                var eyeEnt = _dreamManager.GetClientReference(Eye);
+                eyeRef = new(_entityManager.GetNetEntity(new(eyeEnt.Entity.Id)));
+                break;
+            case DreamObjectTurf turf:
+                eyeRef = new(new(turf.X,turf.Y),turf.Z);
+                break;
+        }
+
+        var msg = new MsgNotifyMobEyeUpdate() {
+            MobNetEntity = _entityManager.GetNetEntity(mobUid),
+            EyeRef = eyeRef
+        };
+        Session?.Channel.SendMessage(msg);
     }
 }

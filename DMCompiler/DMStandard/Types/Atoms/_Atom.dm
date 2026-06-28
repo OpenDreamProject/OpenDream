@@ -32,7 +32,7 @@
 	var/layer = 2.0
 	var/plane = 0
 	var/alpha = 255
-	var/color = null as text|null
+	var/color = null as /list|text|null
 	var/invisibility = 0
 	var/mouse_opacity = 1
 	var/infra_luminosity = 0 as opendream_unimplemented

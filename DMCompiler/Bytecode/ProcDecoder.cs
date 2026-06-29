@@ -63,6 +63,9 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
         }
     }
 
+    /// <summary>
+    /// Decode a compiled <see cref="DreamProcOpcode"/> into a <see cref="ProcInstruction"/>
+    /// </summary>
     public ProcInstruction DecodeInstruction() {
         int offset = Offset;
         DreamProcOpcode opcode = ReadOpcode();
@@ -73,12 +76,19 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
             : DecodeFixedInstruction(offset, opcode, metadata);
     }
 
+    /// <summary>
+    /// Disassembles compiled bytecode into a <see cref="ProcInstruction"/>
+    /// </summary>
+    /// <returns></returns>
     public IEnumerable<(int Offset, ProcInstruction Instruction)> Disassemble() {
         while (Remaining) {
             yield return (Offset, DecodeInstruction());
         }
     }
 
+    /// <summary>
+    /// Stringifies a <see cref="ProcInstruction"/> and its operands
+    /// </summary>
     public static string Format(ProcInstruction instruction, Func<int, string> getTypePath) {
         return instruction.Format(getTypePath);
     }

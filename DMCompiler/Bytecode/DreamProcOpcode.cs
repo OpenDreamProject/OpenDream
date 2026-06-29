@@ -1,4 +1,4 @@
-﻿namespace DMCompiler.Bytecode;
+namespace DMCompiler.Bytecode;
 
 // ReSharper disable MissingBlankLines
 public enum DreamProcOpcode : byte {
@@ -8,7 +8,7 @@ public enum DreamProcOpcode : byte {
     PushType = 0x2,
     [OpcodeMetadata(1, OpcodeArgType.String)]
     PushString = 0x3,
-    [OpcodeMetadata(0, OpcodeArgType.String, OpcodeArgType.FormatCount)]
+    [OpcodeMetadata(0, OpcodeArgType.FormatCount, OpcodeArgType.String)]
     FormatString = 0x4,
     [OpcodeMetadata(-2, OpcodeArgType.Label)]
     SwitchCaseRange = 0x5, //This could either shrink the stack by 2 or 3. Assume 2.

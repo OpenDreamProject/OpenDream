@@ -103,6 +103,8 @@ internal sealed class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
                 return arg is AnnotatedBytecodePickCount;
             case OpcodeArgType.ConcatCount:
                 return arg is AnnotatedBytecodeConcatCount;
+            case OpcodeArgType.ValueType:
+                return arg is AnnotatedBytecodeType;
             default:
                 throw new ArgumentOutOfRangeException(nameof(requiredArg), requiredArg, null);
         }

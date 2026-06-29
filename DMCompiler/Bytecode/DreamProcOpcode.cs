@@ -136,7 +136,7 @@ public enum DreamProcOpcode : byte {
     EnumerateAssoc = 0x43,
     [OpcodeMetadata(-2)]
     Link = 0x44,
-    [OpcodeMetadata(-3, OpcodeArgType.TypeId)]
+    [OpcodeMetadata(-3, OpcodeArgType.ValueType)]
     Prompt = 0x45,
     [OpcodeMetadata(-3)]
     Ftp = 0x46,

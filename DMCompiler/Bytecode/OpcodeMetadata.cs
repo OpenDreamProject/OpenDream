@@ -27,7 +27,7 @@ public readonly struct OpcodeMetadata(
     public readonly int StackDelta = stackDelta; // Net change in stack size caused by this opcode
     public readonly ProcOperandShape OperandShape = GetOperandShape(repeatedArgs);
     public readonly int JumpDestinationOperandIndex = Array.IndexOf(requiredArgs ?? [], OpcodeArgType.Label); // Cache the index of the jump label arg
-    public readonly bool VariableArgs = repeatedArgs != null; // Whether this opcode takes a variable number of arguments
+    public readonly bool VariableArgs = repeatedArgs is { Length: > 0 }; // Whether this opcode takes a variable number of arguments
 
     /// <summary>
     /// All opcodes with a variable argument length have a pattern to their argument types, which this method deduces and stores in metadata

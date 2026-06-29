@@ -1,4 +1,4 @@
-namespace DMCompiler.Bytecode;
+﻿namespace DMCompiler.Bytecode;
 
 // ReSharper disable MissingBlankLines
 public enum DreamProcOpcode : byte {
@@ -264,29 +264,29 @@ public enum DreamProcOpcode : byte {
     AssignNoPush = 0x85,
     [OpcodeMetadata(1, OpcodeArgType.Reference, OpcodeArgType.String)]
     PushRefAndDereferenceField = 0x86,
-    [OpcodeMetadata(true, 0, OpcodeArgType.Int)]
+    [OpcodeMetadata(0, OpcodeArgType.Int, RepeatedArgs = new[] { OpcodeArgType.Reference })]
     PushNRefs = 0x87,
-    [OpcodeMetadata(true, 0, OpcodeArgType.Int)]
+    [OpcodeMetadata(0, OpcodeArgType.Int, RepeatedArgs = new[] { OpcodeArgType.Float })]
     PushNFloats = 0x88,
-    [OpcodeMetadata(true, 0, OpcodeArgType.Int)]
+    [OpcodeMetadata(0, OpcodeArgType.Int, RepeatedArgs = new[] { OpcodeArgType.Resource })]
     PushNResources = 0x89,
     [OpcodeMetadata(2, OpcodeArgType.String, OpcodeArgType.Float)]
     PushStringFloat = 0x8A,
     [OpcodeMetadata(0, OpcodeArgType.Reference, OpcodeArgType.Label)]
     JumpIfReferenceFalse = 0x8B,
-    [OpcodeMetadata(true, 0, OpcodeArgType.Int)]
+    [OpcodeMetadata(0, OpcodeArgType.Int, RepeatedArgs = new[] { OpcodeArgType.String })]
     PushNStrings = 0x8C,
     [OpcodeMetadata(0, OpcodeArgType.Float, OpcodeArgType.Label)]
     SwitchOnFloat = 0x8D,
-    [OpcodeMetadata(true, 0, OpcodeArgType.Int)]
+    [OpcodeMetadata(0, OpcodeArgType.Int, RepeatedArgs = new[] { OpcodeArgType.String, OpcodeArgType.Float })]
     PushNOfStringFloats = 0x8E,
-    [OpcodeMetadata(true, 1, OpcodeArgType.Int)]
+    [OpcodeMetadata(1, OpcodeArgType.Int, RepeatedArgs = new[] { OpcodeArgType.Float })]
     CreateListNFloats = 0x8F,
-    [OpcodeMetadata(true, 1, OpcodeArgType.Int)]
+    [OpcodeMetadata(1, OpcodeArgType.Int, RepeatedArgs = new[] { OpcodeArgType.String })]
     CreateListNStrings = 0x90,
-    [OpcodeMetadata(true, 1, OpcodeArgType.Int)]
+    [OpcodeMetadata(1, OpcodeArgType.Int, RepeatedArgs = new[] { OpcodeArgType.Reference })]
     CreateListNRefs = 0x91,
-    [OpcodeMetadata(true, 1, OpcodeArgType.Int)]
+    [OpcodeMetadata(1, OpcodeArgType.Int, RepeatedArgs = new[] { OpcodeArgType.Resource })]
     CreateListNResources = 0x92,
     [OpcodeMetadata(0, OpcodeArgType.String, OpcodeArgType.Label)]
     SwitchOnString = 0x93,
@@ -303,7 +303,7 @@ public enum DreamProcOpcode : byte {
     IndexRefWithString = 0x99,
     [OpcodeMetadata(2, OpcodeArgType.Float, OpcodeArgType.Reference)]
     PushFloatAssign = 0x9A,
-    [OpcodeMetadata(true, 0, OpcodeArgType.Int)]
+    [OpcodeMetadata(0, OpcodeArgType.Int, RepeatedArgs = new[] { OpcodeArgType.Float, OpcodeArgType.Reference })]
     NPushFloatAssign = 0x9B,
     [OpcodeMetadata(0, OpcodeArgType.ArgType, OpcodeArgType.StackDelta)]
     Animate = 0x9C,

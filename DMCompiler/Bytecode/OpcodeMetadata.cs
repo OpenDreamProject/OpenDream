@@ -1,29 +1,48 @@
+using System.Runtime.InteropServices;
+
 namespace DMCompiler.Bytecode;
 
 /// <summary>
 /// Custom attribute for declaring <see cref="OpcodeMetadata"/> metadata for individual opcodes
 /// </summary>
 [AttributeUsage(AttributeTargets.Field)]
-internal sealed class OpcodeMetadataAttribute : Attribute {
-    public OpcodeMetadata Metadata;
+public sealed class OpcodeMetadataAttribute(int stackDelta = 0, params OpcodeArgType[] requiredArgs) : Attribute {
+    private int StackDelta { get; } = stackDelta;
+    private OpcodeArgType[] RequiredArgs { get; } = requiredArgs;
+    public OpcodeArgType[] RepeatedArgs { get; set; } = [];
 
-    public OpcodeMetadataAttribute(int stackDelta = 0, params OpcodeArgType[] requiredArgs) {
-        Metadata = new OpcodeMetadata(stackDelta, false, requiredArgs);
-    }
-
-    public OpcodeMetadataAttribute(bool variableArgs, int stackDelta,
-        params OpcodeArgType[] requiredArgs) {
-        Metadata = new OpcodeMetadata(stackDelta, variableArgs, requiredArgs);
-    }
+    public OpcodeMetadata Metadata => new(StackDelta, RequiredArgs, RepeatedArgs);
 }
 
 /// <summary>
 /// Miscellaneous metadata associated with individual <see cref="DreamProcOpcode"/> opcodes using the <see cref="OpcodeMetadataAttribute"/> attribute
 /// </summary>
-public struct OpcodeMetadata(int stackDelta = 0, bool variableArgs = false, params OpcodeArgType[] requiredArgs) {
+[StructLayout(LayoutKind.Auto)]
+public readonly struct OpcodeMetadata(
+    int stackDelta = 0,
+    OpcodeArgType[]? requiredArgs = null,
+    OpcodeArgType[]? repeatedArgs = null) {
+    public readonly OpcodeArgType[] RequiredArgs = requiredArgs ?? []; // The types of arguments this opcode requires
+    public readonly OpcodeArgType[] RepeatedArgs = repeatedArgs ?? []; // The repeated argument pattern after the count operand
     public readonly int StackDelta = stackDelta; // Net change in stack size caused by this opcode
-    public readonly OpcodeArgType[] RequiredArgs = requiredArgs; // The types of arguments this opcode requires
-    public readonly bool VariableArgs = variableArgs; // Whether this opcode takes a variable number of arguments
+    public readonly ProcOperandShape OperandShape = GetOperandShape(repeatedArgs);
+    public readonly int JumpDestinationOperandIndex = Array.IndexOf(requiredArgs ?? [], OpcodeArgType.Label); // Cache the index of the jump label arg
+    public readonly bool VariableArgs = repeatedArgs != null; // Whether this opcode takes a variable number of arguments
+
+    private static ProcOperandShape GetOperandShape(OpcodeArgType[]? repeatedArgs) {
+        if (repeatedArgs is null)
+            return ProcOperandShape.Fixed;
+
+        return repeatedArgs switch {
+            [OpcodeArgType.Float] => ProcOperandShape.RepeatedFloat,
+            [OpcodeArgType.String] => ProcOperandShape.RepeatedString,
+            [OpcodeArgType.Resource] => ProcOperandShape.RepeatedResource,
+            [OpcodeArgType.Reference] => ProcOperandShape.RepeatedReference,
+            [OpcodeArgType.String, OpcodeArgType.Float] => ProcOperandShape.RepeatedStringFloat,
+            [OpcodeArgType.Float, OpcodeArgType.Reference] => ProcOperandShape.RepeatedFloatReference,
+            _ => ProcOperandShape.Unsupported
+        };
+    }
 }
 
 /// <summary>
@@ -37,13 +56,41 @@ public static class OpcodeMetadataCache {
             var field = typeof(DreamProcOpcode).GetField(opcode.ToString());
             var attribute = Attribute.GetCustomAttribute(field!, typeof(OpcodeMetadataAttribute));
             var metadataAttribute = (OpcodeMetadataAttribute?)attribute;
-            MetadataCache[(byte)opcode] = metadataAttribute?.Metadata ?? new OpcodeMetadata();
+            OpcodeMetadata metadata = metadataAttribute?.Metadata ?? new OpcodeMetadata();
+            ValidateMetadata(opcode, metadata);
+            MetadataCache[(byte)opcode] = metadata;
         }
     }
 
     public static OpcodeMetadata GetMetadata(DreamProcOpcode opcode) {
         return MetadataCache[(byte)opcode];
     }
+
+    private static void ValidateMetadata(DreamProcOpcode opcode, OpcodeMetadata metadata) {
+        if (!metadata.VariableArgs) {
+            if (metadata.RepeatedArgs.Length != 0)
+                throw new InvalidOperationException($"{opcode} has repeated args but is not variable-arg");
+
+            return;
+        }
+
+        if (metadata.RequiredArgs is not [OpcodeArgType.Int])
+            throw new InvalidOperationException($"{opcode} variable-arg metadata must use an int count operand");
+
+        if (metadata.OperandShape == ProcOperandShape.Unsupported)
+            throw new InvalidOperationException($"{opcode} has unsupported repeated args");
+    }
+}
+
+public enum ProcOperandShape {
+    Fixed,
+    RepeatedFloat,
+    RepeatedString,
+    RepeatedResource,
+    RepeatedReference,
+    RepeatedStringFloat,
+    RepeatedFloatReference,
+    Unsupported,
 }
 
 public enum OpcodeArgType {
@@ -63,4 +110,5 @@ public enum OpcodeArgType {
     FormatCount,
     PickCount,
     ConcatCount,
+    ValueType,
 }

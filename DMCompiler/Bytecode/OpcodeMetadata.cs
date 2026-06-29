@@ -23,12 +23,16 @@ public readonly struct OpcodeMetadata(
     OpcodeArgType[]? requiredArgs = null,
     OpcodeArgType[]? repeatedArgs = null) {
     public readonly OpcodeArgType[] RequiredArgs = requiredArgs ?? []; // The types of arguments this opcode requires
-    public readonly OpcodeArgType[] RepeatedArgs = repeatedArgs ?? []; // The repeated argument pattern after the count operand
+    public readonly OpcodeArgType[] RepeatedArgs = repeatedArgs ?? []; // For variable-arg opcodes, the repeated argument pattern after the count operand
     public readonly int StackDelta = stackDelta; // Net change in stack size caused by this opcode
     public readonly ProcOperandShape OperandShape = GetOperandShape(repeatedArgs);
     public readonly int JumpDestinationOperandIndex = Array.IndexOf(requiredArgs ?? [], OpcodeArgType.Label); // Cache the index of the jump label arg
     public readonly bool VariableArgs = repeatedArgs != null; // Whether this opcode takes a variable number of arguments
 
+    /// <summary>
+    /// All opcodes with a variable argument length have a pattern to their argument types, which this method deduces and stores in metadata
+    /// </summary>
+    /// <remarks>The purpose of this is to optimize formatting and decoding by avoiding a bunch of argument typechecking during enumeration</remarks>
     private static ProcOperandShape GetOperandShape(OpcodeArgType[]? repeatedArgs) {
         if (repeatedArgs is null)
             return ProcOperandShape.Fixed;
@@ -82,6 +86,10 @@ public static class OpcodeMetadataCache {
     }
 }
 
+///<summary>
+/// Pattern of arguments for variable-arg <see cref="DreamProcOpcode"/> opcodes
+/// </summary>
+/// <remarks>Fixed indicates a fixed non-variable arg length</remarks>
 public enum ProcOperandShape {
     Fixed,
     RepeatedFloat,
@@ -93,6 +101,9 @@ public enum ProcOperandShape {
     Unsupported,
 }
 
+/// <summary>
+/// Every type of argument a <see cref="DreamProcOpcode"/> can have
+/// </summary>
 public enum OpcodeArgType {
     ArgType,
     StackDelta,

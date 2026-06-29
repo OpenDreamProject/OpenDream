@@ -83,6 +83,8 @@ internal sealed class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
                 return arg is AnnotatedBytecodeTypeId;
             case OpcodeArgType.ProcId:
                 return arg is AnnotatedBytecodeProcId;
+            case OpcodeArgType.EnumeratorId:
+                return arg is AnnotatedBytecodeEnumeratorId;
             case OpcodeArgType.FilterId:
                 return arg is AnnotatedBytecodeFilter;
             case OpcodeArgType.ListSize:

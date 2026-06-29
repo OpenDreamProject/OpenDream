@@ -1,7 +1,7 @@
-﻿using OpenDreamRuntime.Procs;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using DMCompiler.Bytecode;
 using DMCompiler.DM;
 using DMCompiler.Json;
 using JetBrains.Annotations;

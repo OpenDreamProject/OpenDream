@@ -557,7 +557,7 @@ internal static class DreamProcNativeRoot {
         if (start > text.Length || start == 0) return new DreamValue(0);
 
         if (start < 0) {
-            start = text.Length + start + 1; //1-indexed
+            start = Math.Max(text.Length + start + 1, 1); //1-indexed
         }
 
         if (end < 0) {

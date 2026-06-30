@@ -613,7 +613,15 @@ internal static class DreamProcNativeRoot {
         int start = bundle.GetArgument(2, "Start").MustGetValueAsInteger(); //1-indexed
         int end = bundle.GetArgument(3, "End").MustGetValueAsInteger(); //1-indexed
 
-        if (start <= 0 || start > text.Length || end < 0) return new DreamValue(0);
+        if (start > text.Length || start == 0) return new DreamValue(0);
+
+        if (start < 0) {
+            start = Math.Max(text.Length + start + 1, 1); //1-indexed
+        }
+
+        if (end < 0) {
+            end = text.Length + end + 1; //1-indexed
+        }
 
         if (end == 0 || end > text.Length + 1) {
             end = text.Length + 1;
@@ -624,11 +632,7 @@ internal static class DreamProcNativeRoot {
         }
 
         int needleIndex = text.IndexOf(needle, start - 1, end - start, StringComparison.InvariantCulture);
-        if (needleIndex != -1) {
-            return new DreamValue(needleIndex + 1); //1-indexed
-        } else {
-            return new DreamValue(0);
-        }
+        return new DreamValue(needleIndex + 1); //1-indexed
     }
 
     [DreamProc("findtextEx_char")]

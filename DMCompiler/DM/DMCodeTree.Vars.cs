@@ -53,7 +53,7 @@ internal partial class DMCodeTree {
                 }
             } else if (variable.IsConst) {
                 compiler.Emit(WarningCode.HardConstContext, value.Location, "Value of const var must be a constant");
-                return false;
+                return true;
             } else if (!IsValidRightHandSide(compiler, dmObject, value)) {
                 compiler.Emit(WarningCode.BadExpression, value.Location,
                     $"Invalid initial value for \"{variable.Name}\"");

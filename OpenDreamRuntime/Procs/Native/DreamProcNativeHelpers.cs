@@ -25,74 +25,77 @@ internal static partial class DreamProcNativeHelpers {
     ];
 
     /// <summary>
-    /// This is a helper proc for oview, view, orange, and range to do their strange iteration with.<br/>
-    /// BYOND has a very strange, kinda-spiralling iteration pattern for the above procs, <br/>
-    /// pretty much like this: <br/>
-    /// 13 15 17 19 24 <br/>
-    /// 12 03 05 08 23 <br/>
-    /// 11 02 00 07 22 <br/>
-    /// 10 01 04 06 21 <br/>
-    /// 09 14 16 18 20 <br/>
-    /// <br/>
-    /// This helper attempts to mimic this iteration pattern.
-    /// NOTE: THIS DOES NOT ITERATE OVER THE CENTRE. THAT'S THE PROC'S JOB.
+    /// This is a helper method for oview, view, orange, and range to do their strange iteration with.<br/>
+    /// BYOND has a very strange, kinda-spiralling iteration pattern for these procs,
+    /// which looks like this in a 3x3 case:
+    /// <code>
+    /// 13 15 17 19 24
+    /// 12 03 05 08 23
+    /// 11 02 00 07 22
+    /// 10 01 04 06 21
+    /// 09 14 16 18 20
+    /// </code>
     /// </summary>
     /// <remarks>
-    /// This proc tries to handle the rectangular case, but I am not totally confident that it's up to parity.
+    /// Does not iterate over the center.
     /// </remarks>
-    /// <returns>Turfs, in the correct, parity order for the above procs.</returns>
-    public static IEnumerable<DreamObjectTurf> MakeViewSpiral(DreamObjectAtom center, ViewRange distance) {
-        var mapMgr = IoCManager.Resolve<IDreamMapManager>();
-        var atomMgr = IoCManager.Resolve<AtomManager>();
-        var centerPos = atomMgr.GetAtomPosition(center);
+    /// <returns>Tuple representing X/Y coordinates.</returns>
+    private static IEnumerable<(int X, int Y)> DantomSpiral((int X, int Y) center, (int Width, int Height) range) {
+        int bottomRange = range.Height / 2;
+        int topRange = (range.Height - 1) / 2;
+        int leftRange = range.Width / 2;
+        int rightRange = (range.Width - 1) / 2;
 
-        int widthRange = (distance.Width - 1) >> 1; // TODO: Make rectangles work.
-        int heightRange = (distance.Height - 1) >> 1;
-        int donutCount = Math.Max(widthRange, heightRange);
-        for(int d = 1; d <= donutCount; d++) { // for each donut
-            int sideLength = d + d + 1;
-            //The left column
-            {
-                int leftColumnX = centerPos.X - d;
-                int startingLeftColumnY = centerPos.Y - d;
-                for (int i = 0; i < sideLength; ++i) {
-                    if (mapMgr.TryGetTurfAt((leftColumnX, startingLeftColumnY + i), centerPos.Z, out var turf)) {
-                        yield return turf;
-                    }
+        int donutCount = Math.Max(bottomRange, leftRange);
+        for(int donut = 1; donut <= donutCount; donut++) {
+            int columnBottom = center.Y - Math.Min(donut, bottomRange);
+            int columnTop = center.Y + Math.Min(donut, topRange);
+
+            // left column
+            if(donut <= leftRange) {
+                int posX = center.X - donut;
+                for(int posY = columnBottom; posY <= columnTop; posY++) {
+                    yield return (posX, posY);
                 }
             }
-            //The criss-cross-apple-sauce
-            {
-                int crissCrossLength = sideLength - 2;
-                int startingCrossX = centerPos.X - d + 1;
-                for(int i = 0; i < crissCrossLength; ++i) {
-                    //the criss
-                    if (mapMgr.TryGetTurfAt((startingCrossX+i, centerPos.Y - d), centerPos.Z, out var crissTurf)) {
-                        yield return crissTurf;
-                    }
-                    //the cross
-                    if (mapMgr.TryGetTurfAt((startingCrossX + i, centerPos.Y + d), centerPos.Z, out var crossTurf)) {
-                        yield return crossTurf;
-                    }
+
+            // the criss-cross-apple-sauce
+            if(donut <= bottomRange) {
+                int startingPosX = center.X - Math.Min(donut, leftRange + 1) + 1;
+                int endingPosX = center.X + Math.Min(donut, rightRange + 1) - 1;
+                for(int posX = startingPosX; posX <= endingPosX; posX++) {
+                    yield return (posX, center.Y - donut); // the criss
+
+                    if(donut > topRange) continue;
+
+                    yield return (posX, center.Y + donut); // the cross
                 }
             }
-            //The right column
-            {
-                int rightColumnX = centerPos.X + d;
-                int startingRightColumnY = centerPos.Y - d;
-                for (int i = 0; i < sideLength; ++i) {
-                    if (mapMgr.TryGetTurfAt((rightColumnX, startingRightColumnY + i), centerPos.Z, out var turf)) {
-                        yield return turf;
-                    }
+
+            // right column
+            if(donut <= rightRange) {
+                int posX = center.X + donut; // this is the only difference
+                for(int posY = columnBottom; posY <= columnTop; posY++) {
+                    yield return (posX, posY);
                 }
             }
         }
     }
 
-    /// <summary>
-    /// A variation of <see cref="MakeViewSpiral(OpenDreamRuntime.Objects.Types.DreamObjectAtom,OpenDreamShared.Dream.ViewRange)"/>
-    /// that works on the view algorithm's collection of tiles
-    /// </summary>
+    /// <seealso cref="DantomSpiral"/>
+    public static IEnumerable<DreamObjectTurf> MakeViewSpiral(DreamObjectAtom center, ViewRange distance) {
+        var mapMgr = IoCManager.Resolve<IDreamMapManager>();
+        var atomMgr = IoCManager.Resolve<AtomManager>();
+        var centerPos = atomMgr.GetAtomPosition(center);
+
+        foreach((int posX, int posY) in DantomSpiral((centerPos.X, centerPos.Y), (distance.Width, distance.Height))) {
+            if(mapMgr.TryGetTurfAt((posX, posY), centerPos.Z, out var turf)) {
+                yield return turf;
+            }
+        }
+    }
+
+    /// <seealso cref="DantomSpiral"/>
     public static IEnumerable<ViewAlgorithm.Tile?> MakeViewSpiral(ViewAlgorithm.Tile?[,] tiles, bool includeCenter) {
         var width = tiles.GetLength(0);
         var height = tiles.GetLength(1);
@@ -101,36 +104,8 @@ internal static partial class DreamProcNativeHelpers {
         if (includeCenter)
             yield return tiles[centerPos.X, centerPos.Y];
 
-        int widthRange = (width - 1) >> 1; // TODO: Make rectangles work.
-        int heightRange = (height - 1) >> 1;
-        int donutCount = Math.Max(widthRange, heightRange);
-        for(int d = 1; d <= donutCount; d++) { // for each donut
-            int sideLength = d + d + 1;
-
-            //The left column
-            int leftColumnX = centerPos.X - d;
-            int startingLeftColumnY = centerPos.Y - d;
-            for (int i = 0; i < sideLength; ++i) {
-                yield return tiles[leftColumnX, startingLeftColumnY + i];
-            }
-
-            //The criss-cross-apple-sauce
-            int crissCrossLength = sideLength - 2;
-            int startingCrossX = centerPos.X - d + 1;
-            for(int i = 0; i < crissCrossLength; ++i) {
-                //the criss
-                yield return tiles[startingCrossX + i, centerPos.Y - d];
-
-                //the cross
-                yield return tiles[startingCrossX + i, centerPos.Y + d];
-            }
-
-            //The right column
-            int rightColumnX = centerPos.X + d;
-            int startingRightColumnY = centerPos.Y - d;
-            for (int i = 0; i < sideLength; ++i) {
-                yield return tiles[rightColumnX, startingRightColumnY + i];
-            }
+        foreach((int posX, int posY) in DantomSpiral((centerPos.X, centerPos.Y), (width, height)))  {
+            yield return tiles[posX, posY];
         }
     }
 
@@ -199,6 +174,95 @@ internal static partial class DreamProcNativeHelpers {
         return tiles;
     }
 
+    public static DreamValue HandleRange(NativeProc.Bundle bundle, DreamObject? usr, bool includeCenter) {
+        (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, usr as DreamObjectAtom, bundle.Arguments);
+        if (center is null)
+            return new DreamValue(bundle.ObjectTree.CreateList());
+
+        HashSet<DreamObjectArea> seenAreas = [];
+        DreamList rangeList = bundle.ObjectTree.CreateList(range.Height * range.Width);
+
+        void AddToList(DreamValue value) {
+            if(value.TryGetValueAsDreamObject<DreamObjectAtom>(out var atomValue)) {
+                using var appearanceValue = atomValue.GetVariable("appearance");
+                using var appearance = appearanceValue.MustGetValueAsAppearance();
+                if(appearance.Invisibility >= 101)
+                    return;
+            }
+
+            rangeList.AddValue(value);
+            if(value.TryGetValueAsDreamObject<DreamObjectTurf>(out var turfValue) && !seenAreas.Contains(turfValue.Cell.Area)) {
+                var area = turfValue.Cell.Area;
+                rangeList.AddValue(new(area));
+                seenAreas.Add(area);
+            }
+        }
+
+        if(center is DreamObjectArea areaCenter) { // yeah you can do this
+            rangeList.AddValue(new(areaCenter)); // dodges the invisibility check
+            seenAreas.Add(areaCenter);
+            foreach(var turf in areaCenter.Turfs) {
+                AddToList(new(turf));
+                foreach(var content in turf.Contents.EnumerateValues()) {
+                    AddToList(content);
+                }
+            }
+
+            return new(rangeList);
+        }
+        else if(center is DreamObjectTurf turfCenter) {
+            if(includeCenter) { // if we're orange, we want to skip the else block too
+                AddToList(new(center));
+                foreach(DreamValue content in turfCenter.Contents.EnumerateValues()) {
+                    AddToList(content);
+                }
+            }
+        }
+        else { // we're getting the range of a container
+            // add our contents first
+            if(includeCenter) {
+                if(center.TryGetVariable("contents", out var centerContents) && centerContents.TryGetValueAsDreamList(out var centerContentsList)) {
+                    foreach(DreamValue content in centerContentsList.EnumerateValues()) {
+                        AddToList(content);
+                    }
+                }
+
+                centerContents.Dispose();
+            }
+
+            // the loc's contents will include us
+            if (center.TryGetVariable("loc", out DreamValue centerLoc)) {
+                if (centerLoc.TryGetValueAsDreamObject<DreamObjectAtom>(out var centerLocObject)) {
+                    AddToList(centerLoc);
+
+                    using var contents = centerLocObject.GetVariable("contents");
+                    if (contents.TryGetValueAsDreamList(out var locContentsList)) {
+                        foreach (DreamValue content in locContentsList.EnumerateValues()) {
+                            if(!includeCenter && content.TryGetValueAsDreamObject(out var dreamObject) && dreamObject == center)
+                                continue;
+                            AddToList(content);
+                        }
+                    }
+                }
+
+                centerLoc.Dispose();
+                if(centerLocObject is not DreamObjectTurf) {
+                    return new(rangeList);
+                }
+            }
+        }
+
+        // finally, add the surrounding turfs
+        foreach (var turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
+            AddToList(new DreamValue(turf));
+            foreach (DreamValue content in turf.Contents.EnumerateValues()) {
+                AddToList(content);
+            }
+        }
+
+        return new(rangeList);
+    }
+
     public static DreamValue HandleViewersHearers(NativeProc.Bundle bundle, DreamObject? usr, bool ignoreLight) {
         DreamValue? depthValue = null;
         DreamObjectAtom? center = null;
@@ -228,7 +292,7 @@ internal static partial class DreamProcNativeHelpers {
 
         var centerPos = bundle.AtomManager.GetAtomPosition(center);
         if (depthValue is null || !depthValue.Value.TryGetValueAsInteger(out var depth))
-            depth = bundle.DreamManager.WorldInstance.DefaultView.Range;
+            depth = bundle.DreamManager.WorldInstance.DefaultView.BiggestAxis;
 
         foreach (var mob in bundle.MapManager.GetMobsInRange(centerPos, depth)) {
             var (_, range) = ResolveViewArguments(bundle.DreamManager, mob, bundle.Arguments);
@@ -283,7 +347,7 @@ internal static partial class DreamProcNativeHelpers {
 
         var centerPos = bundle.AtomManager.GetAtomPosition(center);
         if (depthValue is null || !depthValue.Value.TryGetValueAsInteger(out var depth))
-            depth = bundle.DreamManager.WorldInstance.DefaultView.Range;
+            depth = bundle.DreamManager.WorldInstance.DefaultView.BiggestAxis;
 
         foreach (var atom in bundle.AtomManager.EnumerateAtoms(bundle.ObjectTree.Mob)) {
             var mob = (DreamObjectMob)atom;

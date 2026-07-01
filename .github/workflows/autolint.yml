@@ -1,0 +1,61 @@
+name: AutoLint
+on: issue_comment
+
+jobs:
+  pr_commented:
+    name: PR comment
+    # Runs ONLY if: it's a PR + contains the command + commenter is PR author OR a maintainer
+    if: >
+      github.event.issue.pull_request &&
+      contains(github.event.comment.body, '!autolint') &&
+      (
+        github.event.comment.user.login == github.event.issue.user.login ||
+        contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
+      )
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Fetch PR details using the pre-installed GitHub CLI
+      - name: Get PR branch
+        id: pr_data
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          HEAD_REF=$(gh pr view ${{ github.event.issue.number }} --repo ${{ github.repository }} --json headRefName -q ".headRefName")
+          HEAD_REPO_OWNER=$(gh pr view ${{ github.event.issue.number }} --repo ${{ github.repository }} --json headRepositoryOwner -q ".headRepositoryOwner.login")
+
+          echo "head_ref=$HEAD_REF" >> $GITHUB_OUTPUT
+          echo "head_repo=$HEAD_REPO_OWNER/${{ github.event.repository.name }}" >> $GITHUB_OUTPUT
+
+      # 2. Checkout the PR branch
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ steps.pr_data.outputs.head_repo }}
+          ref: ${{ steps.pr_data.outputs.head_ref }}
+          fetch-depth: 0 
+
+      - name: Setup submodule
+        run: git submodule update --init --recursive
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Setup Resharper
+        run: dotnet tool install -g JetBrains.ReSharper.GlobalTools
+
+      - name: Fetch origin master
+        run: git fetch origin master:origin/master
+
+      # 3. Run Linter (Added --no-run-if-empty for safety)
+      - name: Run Linter
+        run: git diff --diff-filter=ACMR --name-only origin/master...HEAD | xargs --no-run-if-empty jb cleanupcode
+
+      # 4. Push changes back to the PR
+      - name: Push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git diff-index --quiet HEAD || (git commit -m "Auto-lint changes" && git push origin HEAD:${{ steps.pr_data.outputs.head_ref }})

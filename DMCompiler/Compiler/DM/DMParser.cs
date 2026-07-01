@@ -1905,13 +1905,10 @@ namespace DMCompiler.Compiler.DM {
                 DMASTExpression? b = ExpressionTernary(isTernaryB: true);
                 RequireExpression(ref b);
 
-                if (b is DMASTVoid) b = new DMASTConstantNull(b.Location);
-
                 Consume(TokenType.DM_Colon, "Expected ':'");
                 Whitespace();
 
                 DMASTExpression? c = ExpressionTernary(isTernaryB);
-                if (c is DMASTVoid) c = new DMASTConstantNull(c.Location);
 
                 return new DMASTTernary(a.Location, a, b, c);
             }

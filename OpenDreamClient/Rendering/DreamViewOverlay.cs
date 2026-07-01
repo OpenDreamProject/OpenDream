@@ -197,8 +197,23 @@ internal sealed partial class DreamViewOverlay : Overlay {
     }
 
     //handles underlays, overlays, appearance flags, images. Adds them to the result list, so they can be sorted and drawn with DrawIcon()
-    private void ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, bool isScreen, ref int tieBreaker, List<RendererMetaData> result, sbyte seeVis, RendererMetaData? parentIcon = null, bool keepTogether = false, Vector3? turfCoords = null, ClientAppearanceSystem.Flick? flick = null) {
+    private void ProcessIconComponents(
+        DreamIcon icon,
+        Vector2 position,
+        EntityUid uid,
+        bool isScreen,
+        bool isVisChild, // DIRECT vis_contents child
+        ref int tieBreaker,
+        List<RendererMetaData> result,
+        sbyte seeVis,
+        RendererMetaData? parentIcon = null,
+        bool keepTogether = false,
+        Vector3? turfCoords = null,
+        ClientAppearanceSystem.Flick? flick = null
+    ) {
         if (icon.Appearance is null) //in the event that appearance hasn't loaded yet
+            return;
+        if ((isVisChild || (parentIcon?.IsVisContent ?? false)) && (icon.Appearance.VisFlags & VisFlags.Hide) != 0)
             return;
 
         result.EnsureCapacity(result.Count + icon.Underlays.Count + icon.Overlays.Count + 1);
@@ -211,6 +226,8 @@ internal sealed partial class DreamViewOverlay : Overlay {
         current.TieBreaker = tieBreaker;
         current.RenderSource = icon.Appearance.RenderSource;
         current.RenderTarget = icon.Appearance.RenderTarget;
+        current.VisFlags = icon.Appearance.VisFlags;
+        current.IsVisContent = parentIcon?.IsVisContent ?? false;
         current.AppearanceFlags = icon.Appearance.AppearanceFlags;
         current.BlendMode = icon.Appearance.BlendMode;
         current.Flick = flick;
@@ -223,8 +240,24 @@ internal sealed partial class DreamViewOverlay : Overlay {
         );
 
         if (parentIcon != null) {
-            current.ClickUid = parentIcon.ClickUid;
-            current.MouseOpacity = parentIcon.MouseOpacity;
+            if(isVisChild) {
+                current.IsVisContent = true;
+                var visFlags = current.VisFlags;
+                current.ClickUid = (visFlags & VisFlags.InheritId) != 0 ? parentIcon.ClickUid : current.ClickUid;
+                current.MouseOpacity = (visFlags & VisFlags.InheritId) != 0 ? parentIcon.MouseOpacity : icon.Appearance.MouseOpacity;
+
+                if((visFlags & (VisFlags.InheritIcon | VisFlags.InheritIconState | VisFlags.InheritDir)) != 0) {
+                    var usedIcon = (visFlags & VisFlags.InheritIcon) != 0 ? parentIcon.MainIcon! : current.MainIcon;
+                    var usedIconState = (visFlags & VisFlags.InheritIconState) != 0 ? parentIcon.MainIcon!.Appearance!.IconState : current.MainIcon.Appearance.IconState;
+                    var usedDir = (visFlags & VisFlags.InheritDir) != 0 ? parentIcon.MainIcon!.Appearance!.Direction : current.MainIcon.Appearance.Direction;
+
+                    current.TextureOverride = usedIcon.DMI?.GetState(usedIconState)?.GetFrames(usedDir).ElementAtOrDefault(usedIcon.GetAnimationFrame(usedIconState, usedDir));
+                }
+            } else {
+                current.ClickUid = parentIcon.ClickUid;
+                current.MouseOpacity = parentIcon.MouseOpacity;
+            }
+
             if ((icon.Appearance.AppearanceFlags & AppearanceFlags.ResetColor) != 0 || keepTogether) { //RESET_COLOR
                 current.ColorToApply = icon.Appearance.Color;
                 current.ColorMatrixToApply = icon.Appearance.ColorMatrix;
@@ -243,13 +276,16 @@ internal sealed partial class DreamViewOverlay : Overlay {
             else
                 current.TransformToApply = iconAppearanceTransformMatrix * parentIcon.TransformToApply;
 
-            if ((icon.Appearance.Plane < -10000)) //FLOAT_PLANE - Note: yes, this really is how it works. Yes it's dumb as shit.
-                current.Plane = parentIcon.Plane + (icon.Appearance.Plane + 32767);
+            var effectivePlane = (isVisChild && (current.VisFlags & VisFlags.InheritPlane) != 0) ? parentIcon.Plane : icon.Appearance.Plane;
+            var effectiveLayer = (isVisChild && (current.VisFlags & VisFlags.InheritLayer) != 0) ? parentIcon.Layer : icon.Appearance.Layer;
+
+            if ((effectivePlane < -10000)) //FLOAT_PLANE - Note: yes, this really is how it works. Yes it's dumb as shit.
+                current.Plane = parentIcon.Plane + (effectivePlane + 32767);
             else
-                current.Plane = icon.Appearance.Plane;
+                current.Plane = effectivePlane;
 
             //FLOAT_LAYER - if this icon's layer is negative, it's a float layer so set it's layer equal to the parent object and sort through the float_layer shit later
-            current.Layer = (icon.Appearance.Layer < 0) ? parentIcon.Layer : icon.Appearance.Layer;
+            current.Layer = (effectiveLayer < 0) ? parentIcon.Layer : effectiveLayer;
 
             if (current.BlendMode == BlendMode.Default)
                 current.BlendMode = parentIcon.BlendMode;
@@ -294,6 +330,35 @@ internal sealed partial class DreamViewOverlay : Overlay {
             result.Add(renderTargetPlaceholder);
         }
 
+        // vis_contents are split with VIS_UNDERLAY, so we need to do this early
+        var visContents = icon.Appearance.VisContents;
+        List<EntityUid>? underContents = null;
+        List<EntityUid>? overContents = null;
+        foreach(var visContent in visContents) {
+            EntityUid visContentEntity = _entityManager.GetEntity(visContent);
+            if (!_spriteQuery.TryGetComponent(visContentEntity, out var sprite))
+                continue;
+
+            var appearance = sprite.Icon.Appearance;
+            if(appearance is null || (appearance.VisFlags & VisFlags.Hide) != 0) // don't waste our time
+                continue;
+            if (!_spriteSystem.IsVisible(sprite, null, seeVis, null))
+                continue;
+
+            if((appearance.VisFlags & VisFlags.Underlay) == 0)
+                (overContents ??= new(visContents.Length)).Add(visContentEntity);
+            else
+                (underContents ??= new(visContents.Length)).Add(visContentEntity);
+        }
+
+        //underlay vis_contents are rendered first, before the underlays even
+        if(underContents is not null) {
+            foreach(var visContentEntity in underContents) {
+                var sprite = _spriteQuery.GetComponent(visContentEntity);
+                ProcessIconComponents(sprite.Icon, position, visContentEntity, false, true, ref tieBreaker, result, seeVis, current, keepTogether);
+            }
+        }
+
         //underlays - colour, alpha, and transform are inherited, but filters aren't
         //underlays are sorted in reverse order to overlays
         for(int underlayIndex = icon.Underlays.Count-1; underlayIndex >= 0; underlayIndex--) {
@@ -308,10 +373,10 @@ internal sealed partial class DreamViewOverlay : Overlay {
                             (underlay.Appearance.AppearanceFlags & AppearanceFlags.KeepApart) != 0;
 
             if (!keepTogether || keepApart) { //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
-                ProcessIconComponents(underlay, current.Position, uid, isScreen, ref tieBreaker, result, seeVis, current);
+                ProcessIconComponents(underlay, current.Position, uid, isScreen, false, ref tieBreaker, result, seeVis, current);
             } else {
                 current.KeepTogetherGroup ??= new();
-                ProcessIconComponents(underlay, current.Position, uid, isScreen, ref tieBreaker, current.KeepTogetherGroup, seeVis, current, keepTogether);
+                ProcessIconComponents(underlay, current.Position, uid, isScreen, false, ref tieBreaker, current.KeepTogetherGroup, seeVis, current, keepTogether);
             }
         }
 
@@ -330,10 +395,10 @@ internal sealed partial class DreamViewOverlay : Overlay {
                             (overlay.Appearance.AppearanceFlags & AppearanceFlags.KeepApart) != 0;
 
             if (!keepTogether || keepApart) { //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
-                ProcessIconComponents(overlay, current.Position, uid, isScreen, ref tieBreaker, result, seeVis, current);
+                ProcessIconComponents(overlay, current.Position, uid, isScreen, false, ref tieBreaker, result, seeVis, current);
             } else {
                 current.KeepTogetherGroup ??= new();
-                ProcessIconComponents(overlay, current.Position, uid, isScreen, ref tieBreaker, current.KeepTogetherGroup, seeVis, current, keepTogether);
+                ProcessIconComponents(overlay, current.Position, uid, isScreen, false, ref tieBreaker, current.KeepTogetherGroup, seeVis, current, keepTogether);
             }
         }
 
@@ -351,21 +416,16 @@ internal sealed partial class DreamViewOverlay : Overlay {
                     current.MainIcon = sprite.Icon;
                     current.Position += (sprite.Icon.Appearance.TotalPixelOffset / (float)IconSize);
                 } else
-                    ProcessIconComponents(sprite.Icon, current.Position, uid, isScreen, ref tieBreaker, result, seeVis, current);
+                    ProcessIconComponents(sprite.Icon, current.Position, uid, isScreen, false, ref tieBreaker, result, seeVis, current);
             }
         }
 
-        foreach (var visContent in icon.Appearance.VisContents) {
-            EntityUid visContentEntity = _entityManager.GetEntity(visContent);
-            if (!_spriteQuery.TryGetComponent(visContentEntity, out var sprite))
-                continue;
-            if (!_spriteSystem.IsVisible(sprite, null, seeVis, null))
-                continue;
-
-            ProcessIconComponents(sprite.Icon, position, visContentEntity, false, ref tieBreaker, result, seeVis, current, keepTogether);
-
-            // TODO: click uid should be set to current.uid again
-            // TODO: vis_flags
+        // overlay vis_contents are rendered last
+        if(overContents is not null) {
+            foreach(var visContentEntity in overContents) {
+                var sprite = _spriteQuery.GetComponent(visContentEntity);
+                ProcessIconComponents(sprite.Icon, position, visContentEntity, false, true, ref tieBreaker, result, seeVis, current, keepTogether);
+            }
         }
 
         //maptext is basically just an image of rendered text added as an overlay
@@ -453,7 +513,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
             // For now, just generate a buffer of 128 pixels around the main icon...
             Vector2i ktSize = (256, 256) + iconMetaData.MainIcon?.DMI?.IconSize ?? (0,0);
             iconMetaData.TextureOverride = ProcessKeepTogether(handle, iconMetaData, ktSize);
-            positionOffset -= ((ktSize/IconSize) - Vector2.One) * new Vector2(0.5f); //correct for KT group texture offset
+            iconMetaData.RenderPosOffset -= ((ktSize/IconSize) - Vector2.One) * new Vector2(0.5f); //correct for KT group texture offset
         }
 
         //Maptext
@@ -472,7 +532,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
         }
 
         var frame = iconMetaData.GetTexture(this, handle);
-        var pixelPosition = (iconMetaData.Position + positionOffset) * IconSize;
+        var pixelPosition = (iconMetaData.Position + (positionOffset + iconMetaData.RenderPosOffset)) * IconSize;
 
         //if frame is null, this doesn't require a draw, so return NOP
         if (frame == null)
@@ -648,7 +708,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
             tValue = 0;
             //pass the turf coords for client.images lookup
             Vector3 turfCoords = new Vector3(tileRef.X, tileRef.Y, (int) worldPos.MapId);
-            ProcessIconComponents(_appearanceSystem.GetTurfIcon((uint)tileRef.Tile.TypeId), worldPos.Position - Vector2.One, EntityUid.Invalid, false, ref tValue, _spriteContainer, seeVis, turfCoords: turfCoords, flick: flick);
+            ProcessIconComponents(_appearanceSystem.GetTurfIcon((uint)tileRef.Tile.TypeId), worldPos.Position - Vector2.One, EntityUid.Invalid, false, false, ref tValue, _spriteContainer, seeVis, turfCoords: turfCoords, flick: flick);
         }
 
         // Visible entities
@@ -679,7 +739,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
                 var flick = _appearanceSystem.GetMovableFlick(entity);
 
                 tValue = 0;
-                ProcessIconComponents(sprite.Icon, worldPos - new Vector2(0.5f), entity, false, ref tValue, _spriteContainer, seeVis, flick: flick);
+                ProcessIconComponents(sprite.Icon, worldPos - new Vector2(0.5f), entity, false, false, ref tValue, _spriteContainer, seeVis, flick: flick);
             }
         }
 
@@ -701,7 +761,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
                 for (int x = 0; x < sprite.ScreenLocation.RepeatX; x++) {
                     for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {
                         tValue = 0;
-                        ProcessIconComponents(sprite.Icon, position + iconSize * new Vector2(x, y), uid, true, ref tValue, _spriteContainer, seeVis);
+                        ProcessIconComponents(sprite.Icon, position + iconSize * new Vector2(x, y), uid, true, false, ref tValue, _spriteContainer, seeVis);
                     }
                 }
             }

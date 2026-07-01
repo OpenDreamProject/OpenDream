@@ -42,6 +42,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
     [ViewVariables] public readonly int Plane = MutableAppearance.Default.Plane;
     [ViewVariables] public readonly BlendMode BlendMode = MutableAppearance.Default.BlendMode;
     [ViewVariables] public readonly AppearanceFlags AppearanceFlags = MutableAppearance.Default.AppearanceFlags;
+    [ViewVariables] public readonly VisFlags VisFlags = MutableAppearance.Default.VisFlags;
     [ViewVariables] public readonly sbyte Invisibility = MutableAppearance.Default.Invisibility;
     [ViewVariables] public readonly bool Opacity = MutableAppearance.Default.Opacity;
     [ViewVariables] public readonly bool Override = MutableAppearance.Default.Override;
@@ -96,6 +97,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         RenderTarget = appearance.RenderTarget;
         BlendMode = appearance.BlendMode;
         AppearanceFlags = appearance.AppearanceFlags;
+        VisFlags = appearance.VisFlags;
         Invisibility = appearance.Invisibility;
         Opacity = appearance.Opacity;
         MouseOpacity = appearance.MouseOpacity;
@@ -169,6 +171,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         if (immutableAppearance.RenderTarget != RenderTarget) return false;
         if (immutableAppearance.BlendMode != BlendMode) return false;
         if (immutableAppearance.AppearanceFlags != AppearanceFlags) return false;
+        if (immutableAppearance.VisFlags != VisFlags) return false;
         if (immutableAppearance.Invisibility != Invisibility) return false;
         if (immutableAppearance.Opacity != Opacity) return false;
         if (immutableAppearance.MouseOpacity != MouseOpacity) return false;
@@ -253,6 +256,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         hashCode.Add(RenderTarget);
         hashCode.Add(BlendMode);
         hashCode.Add(AppearanceFlags);
+        hashCode.Add(VisFlags);
         hashCode.Add(Maptext);
         hashCode.Add(MaptextOffset);
         hashCode.Add(MaptextSize);
@@ -346,6 +350,9 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
                     break;
                 case IconAppearanceProperty.AppearanceFlags:
                     AppearanceFlags = (AppearanceFlags)buffer.ReadInt32();
+                    break;
+                case IconAppearanceProperty.VisFlags:
+                    VisFlags = (VisFlags)buffer.ReadInt32();
                     break;
                 case IconAppearanceProperty.Invisibility:
                     Invisibility = buffer.ReadSByte();
@@ -507,6 +514,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         result.RenderTarget = RenderTarget;
         result.BlendMode = BlendMode;
         result.AppearanceFlags = AppearanceFlags;
+        result.VisFlags = VisFlags;
         result.Invisibility = Invisibility;
         result.Opacity = Opacity;
         result.MouseOpacity = MouseOpacity;
@@ -627,6 +635,11 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         if (AppearanceFlags != MutableAppearance.Default.AppearanceFlags) {
             buffer.Write((byte)IconAppearanceProperty.AppearanceFlags);
             buffer.Write((int)AppearanceFlags);
+        }
+
+        if (VisFlags != MutableAppearance.Default.VisFlags) {
+            buffer.Write((byte)IconAppearanceProperty.VisFlags);
+            buffer.Write((int)VisFlags);
         }
 
         if (Invisibility != MutableAppearance.Default.Invisibility) {

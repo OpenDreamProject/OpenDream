@@ -1,3 +1,4 @@
+using System.Linq;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Resources;
@@ -74,6 +75,58 @@ namespace OpenDreamRuntime.Procs.Native {
 
             Blend(((DreamObjectIcon)src!).Icon, icon, (BlendType)functionValue, x, y);
             return DreamValue.Null;
+        }
+
+        [DreamProc("GetPixel")]
+        [DreamProcParameter("x", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("y", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("icon_state", Type = DreamValueTypeFlag.DreamObject | DreamValueTypeFlag.String, DefaultValue = null)]
+        [DreamProcParameter("dir", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+        [DreamProcParameter("frame", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+        [DreamProcParameter("moving", Type = DreamValueTypeFlag.Float, DefaultValue = -1)]
+        public static DreamValue NativeProc_GetPixel(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+            var srcDreamIcon = (DreamObjectIcon)src!;
+
+            //arg validation
+            int x = (int)bundle.GetArgument(0, "x").UnsafeGetValueAsFloat();
+            int y = (int)bundle.GetArgument(1, "y").UnsafeGetValueAsFloat();
+
+            //outside valid bounds returns null
+            if(x < 1 || x > srcDreamIcon.Icon.Width || y < 1 || y > srcDreamIcon.Icon.Height)
+                return DreamValue.Null;
+
+            if(!bundle.GetArgument(2, "icon_state").TryGetValueAsString(out string? iconState))
+                iconState = "";
+
+            var generatedDMI = srcDreamIcon.Icon.GenerateDMI();
+            if(!generatedDMI.DMI.States.TryGetValue(iconState, out var iconStateObject)){
+                if(iconState == string.Empty)
+                    iconStateObject = generatedDMI.DMI.States.First().Value;
+                else //invalid icon state causes BYOND to create error.log but it's empty
+                    return DreamValue.Null; //throw new ArgumentException($"Invalid icon_state {iconState} passed to /icon.GetPixel()");
+            }
+
+            AtomDirection dir = (AtomDirection)bundle.GetArgument(3, "dir").UnsafeGetValueAsFloat();
+            if(dir == AtomDirection.None)
+                dir = iconStateObject.Directions.Keys.First();
+            else if(!iconStateObject.Directions.ContainsKey(dir))
+                return DreamValue.Null;
+
+            int frame = Math.Max(1, bundle.GetArgument(4, "frame").MustGetValueAsInteger())-1;
+
+            if (iconStateObject.FrameCount < frame)
+                return DreamValue.Null;
+
+            DreamValue moving = bundle.GetArgument(5, "moving"); // TODO: implement movement states
+
+            var stateDirFrame = iconStateObject.Directions[dir][frame];
+
+            var pixel = generatedDMI.Texture[stateDirFrame.X+x-1,stateDirFrame.Y+(srcDreamIcon.Icon.Height-y)];
+            return pixel.A switch {
+                0 => DreamValue.Null,
+                255 => new DreamValue($"#{pixel.R:x2}{pixel.G:x2}{pixel.B:x2}"),
+                _ => new DreamValue($"#{pixel.R:x2}{pixel.G:x2}{pixel.B:x2}{pixel.A:x2}")
+            };
         }
 
         [DreamProc("Scale")]

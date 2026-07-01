@@ -8,8 +8,8 @@ using Robust.Client.UserInterface.Controls;
 
 namespace OpenDreamClient.Interface.Controls;
 
-internal sealed class ControlButton(ControlDescriptor controlDescriptor, ControlWindow window) : InterfaceControl(controlDescriptor, window) {
-    [Dependency] private readonly IResourceCache _resCache = default!;
+internal sealed partial class ControlButton(ControlDescriptor controlDescriptor, ControlWindow window) : InterfaceControl(controlDescriptor, window) {
+    [Dependency] private IResourceCache _resCache = default!;
     public const string StyleClassDMFButton = "DMFbutton";
 
     private Button _button;
@@ -71,7 +71,7 @@ internal sealed class ControlButton(ControlDescriptor controlDescriptor, Control
         }
 
         if (!string.IsNullOrEmpty(controlDescriptor.Command.Value)) {
-            _interfaceManager.RunCommand(controlDescriptor.Command.AsRaw());
+            InterfaceManager.RunCommand(controlDescriptor.Command.AsRaw());
         }
     }
 }

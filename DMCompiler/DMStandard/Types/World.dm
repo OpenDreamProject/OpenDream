@@ -14,7 +14,7 @@
 	var/timeofday
 	var/realtime
 	var/tick_lag = 1
-	var/cpu = 0 as opendream_unimplemented
+	var/cpu = 0
 	var/fps = 10
 	var/tick_usage
 	var/loop_checks = 0 as opendream_unimplemented

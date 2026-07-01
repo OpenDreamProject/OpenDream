@@ -7,9 +7,9 @@ using Robust.Client.UserInterface.Controls;
 
 namespace OpenDreamClient.Interface.Controls;
 
-public sealed class ControlWindow : InterfaceControl {
-    [Dependency] private readonly IClyde _clyde = default!;
-    [Dependency] private readonly IUserInterfaceManager _uiMgr = default!;
+public sealed partial class ControlWindow : InterfaceControl {
+    [Dependency] private IClyde _clyde = default!;
+    [Dependency] private IUserInterfaceManager _uiMgr = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.window");
 
@@ -20,7 +20,7 @@ public sealed class ControlWindow : InterfaceControl {
     public readonly List<InterfaceControl> ChildControls = new();
 
     public string Title => WindowDescriptor.Title.Value;
-    public InterfaceMacroSet Macro => _interfaceManager.MacroSets[WindowDescriptor.Macro.AsRaw()];
+    public InterfaceMacroSet Macro => InterfaceManager.MacroSets[WindowDescriptor.Macro.AsRaw()];
 
     private WindowDescriptor WindowDescriptor => (WindowDescriptor)ElementDescriptor;
 
@@ -43,7 +43,7 @@ public sealed class ControlWindow : InterfaceControl {
         // Don't call base.UpdateElementDescriptor();
 
         _menuContainer.RemoveAllChildren();
-        if (_interfaceManager.Menus.TryGetValue(WindowDescriptor.Menu.Value, out var menu)) {
+        if (InterfaceManager.Menus.TryGetValue(WindowDescriptor.Menu.Value, out var menu)) {
             _menuContainer.AddChild(menu.MenuBar);
             _menuContainer.Visible = true;
         } else {
@@ -87,7 +87,7 @@ public sealed class ControlWindow : InterfaceControl {
         window.Closing += _ => {
             // A window can have a command set to be run when it's closed
             if (!string.IsNullOrWhiteSpace(WindowDescriptor.OnClose.Value)) {
-                _interfaceManager.RunCommand(WindowDescriptor.OnClose.Value);
+                InterfaceManager.RunCommand(WindowDescriptor.OnClose.Value);
             }
 
             _myWindow = (null, _myWindow.clydeWindow);
@@ -370,6 +370,6 @@ public sealed class ControlWindow : InterfaceControl {
             return;
 
         onStatusCommand = onStatusCommand.Replace("[[*]]", new DMFPropertyString(status).AsArg());
-        _interfaceManager.RunCommand(onStatusCommand);
+        InterfaceManager.RunCommand(onStatusCommand);
     }
 }

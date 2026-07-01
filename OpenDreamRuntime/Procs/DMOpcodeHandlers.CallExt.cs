@@ -1,5 +1,5 @@
 using System.Runtime.InteropServices;
-using DMCompiler.Bytecode;
+using JetBrains.Annotations;
 using Api = OpenDreamRuntime.ByondApi.ByondApi;
 
 namespace OpenDreamRuntime.Procs;
@@ -8,16 +8,16 @@ internal static partial class DMOpcodeHandlers {
     private static ProcStatus CallExt(
         DMProcState state,
         DreamValue source,
-        (DMCallArgumentsType Type, int StackSize) argumentsInfo) {
+        DMProcState.DMStackArgumentInfo argumentsInfo) {
         if(!source.TryGetValueAsString(out var dllName))
             throw new Exception($"{source} is not a valid DLL");
 
-        var popProc = state.Pop();
+        using var popProc = state.Pop();
         if(!popProc.TryGetValueAsString(out var procName)) {
             throw new Exception($"{popProc} is not a valid proc name");
         }
 
-        DreamProcArguments arguments = state.PopProcArguments(null, argumentsInfo.Type, argumentsInfo.StackSize);
+        DreamProcArguments arguments = state.PopProcArguments(null, argumentsInfo);
 
         // If we're on linux, we use a .so instead of a .dll
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && dllName.EndsWith(".dll")) {
@@ -35,7 +35,7 @@ internal static partial class DMOpcodeHandlers {
         DMProcState state,
         string dllName,
         string procName,
-        DreamProcArguments arguments) {
+        [HandlesResourceDisposal] DreamProcArguments arguments) {
         // TODO: Don't allocate string copy
         // TODO: Handle stdcall (do we care?)
         var entryPoint = (delegate* unmanaged[Cdecl]<uint, ByondApi.CByondValue*, ByondApi.CByondValue>)
@@ -49,9 +49,9 @@ internal static partial class DMOpcodeHandlers {
             args[i] = Api.ValueToByondApi(arg);
         }
 
-        var result = Api.DoCall(entryPoint, args);
-
-        state.Push(Api.ValueFromDreamApi(result));
+        using var result = Api.ValueFromDreamApi(Api.DoCall(entryPoint, args));
+        state.Push(result);
+        arguments.Dispose();
         return ProcStatus.Continue;
     }
 
@@ -59,7 +59,7 @@ internal static partial class DMOpcodeHandlers {
         DMProcState state,
         string dllName,
         string procName,
-        DreamProcArguments arguments) {
+        [HandlesResourceDisposal] DreamProcArguments arguments) {
         var entryPoint = DllHelper.ResolveDllTarget(state.Proc.DreamResourceManager, dllName, procName);
 
         Span<nint> argV = stackalloc nint[arguments.Count];
@@ -67,6 +67,7 @@ internal static partial class DMOpcodeHandlers {
         try {
             for (var i = 0; i < argV.Length; i++) {
                 var arg = arguments.GetArgument(i).Stringify();
+
                 argV[i] = Marshal.StringToCoTaskMemUTF8(arg);
             }
 
@@ -88,6 +89,7 @@ internal static partial class DMOpcodeHandlers {
             state.Push(new DreamValue(retString));
             return ProcStatus.Continue;
         } finally {
+            arguments.Dispose();
             foreach (var arg in argV) {
                 if (arg != 0)
                     Marshal.ZeroFreeCoTaskMemUTF8(arg);

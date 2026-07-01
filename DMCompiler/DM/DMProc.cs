@@ -92,6 +92,7 @@ internal sealed class DMProc {
 
     private readonly List<string> _localVariableNames = new();
     private int _localVariableIdCounter;
+    private int _localVariableHighestId;
 
     private readonly List<SourceInfoJson> _sourceInfo = new();
     private string? _lastSourceFile;
@@ -146,7 +147,13 @@ internal sealed class DMProc {
     private int AllocLocalVariable(string name) {
         _localVariableNames.Add(name);
         WriteLocalVariable(name);
-        return _localVariableIdCounter++;
+
+        int variableId = _localVariableIdCounter++;
+        if(_localVariableIdCounter > _localVariableHighestId) {
+            _localVariableHighestId = _localVariableIdCounter;
+        }
+
+        return variableId;
     }
 
     private void DeallocLocalVariables(int amount) {
@@ -228,6 +235,7 @@ internal sealed class DMProc {
             OwningTypeId = _dmObject.Id,
             Name = Name,
             Attributes = Attributes,
+            MaxVariableId = _localVariableHighestId,
             MaxStackSize = AnnotatedBytecode.GetMaxStackSize(),
             Bytecode = serializer.Serialize(AnnotatedBytecode.GetAnnotatedBytecode()),
             Arguments = arguments,
@@ -594,18 +602,18 @@ internal sealed class DMProc {
         WriteEnumeratorId(_enumeratorIdCounter++);
     }
 
-    public void Enumerate(DMReference reference) {
+    public void Enumerate(DMReference reference, Location location) {
         if (_loopStack?.TryPeek(out var peek) ?? false) {
             WriteOpcode(DreamProcOpcode.Enumerate);
             WriteEnumeratorId(_enumeratorIdCounter - 1);
             WriteReference(reference);
             WriteLabel($"{peek}_end");
         } else {
-            _compiler.ForcedError(Location, "Cannot peek empty loop stack");
+            _compiler.Emit(WarningCode.BadFlowStatement, location, "Cannot enumerate; not in a loop");
         }
     }
 
-    public void EnumerateAssoc(DMReference assocRef, DMReference outputRef) {
+    public void EnumerateAssoc(DMReference assocRef, DMReference outputRef, Location location) {
         if (_loopStack?.TryPeek(out var peek) ?? false) {
             WriteOpcode(DreamProcOpcode.EnumerateAssoc);
             WriteEnumeratorId(_enumeratorIdCounter - 1);
@@ -613,17 +621,17 @@ internal sealed class DMProc {
             WriteReference(outputRef);
             WriteLabel($"{peek}_end");
         } else {
-            _compiler.ForcedError(Location, "Cannot peek empty loop stack");
+            _compiler.Emit(WarningCode.BadFlowStatement, location, "Cannot enumerate; not in a loop");
         }
     }
 
-    public void EnumerateNoAssign() {
+    public void EnumerateNoAssign(Location location) {
         if (_loopStack?.TryPeek(out var peek) ?? false) {
             WriteOpcode(DreamProcOpcode.EnumerateNoAssign);
             WriteEnumeratorId(_enumeratorIdCounter - 1);
             WriteLabel($"{peek}_end");
         } else {
-            _compiler.ForcedError(Location, "Cannot peek empty loop stack");
+            _compiler.Emit(WarningCode.BadFlowStatement, location, "Cannot enumerate; not in a loop");
         }
     }
 
@@ -752,7 +760,7 @@ internal sealed class DMProc {
         WriteLabel(jumpTo);
     }
 
-    public void Break(DMASTIdentifier? label = null) {
+    public void Break(Location location, DMASTIdentifier? label = null) {
         if (label is not null) {
             var codeLabel = (GetCodeLabel(label.Identifier, _scopes.Peek())?.LabelName ?? label.Identifier + "_codelabel");
             if (!LabelExists(codeLabel)) {
@@ -763,19 +771,19 @@ internal sealed class DMProc {
         } else if (_loopStack?.TryPeek(out var peek) ?? false) {
             Jump(peek + "_end");
         } else {
-            _compiler.ForcedError(Location, "Cannot peek empty loop stack");
+            _compiler.Emit(WarningCode.BadFlowStatement, location, "Cannot break; not in a loop");
         }
     }
 
-    public void BreakIfFalse() {
+    public void BreakIfFalse(Location location) {
         if (_loopStack?.TryPeek(out var peek) ?? false) {
             JumpIfFalse($"{peek}_end");
         } else {
-            _compiler.ForcedError(Location, "Cannot peek empty loop stack");
+            _compiler.Emit(WarningCode.BadFlowStatement, location, "Cannot break; not in a loop");
         }
     }
 
-    public void Continue(DMASTIdentifier? label = null) {
+    public void Continue(Location location, DMASTIdentifier? label = null) {
         // TODO: Clean up this godawful label handling
         if (label is not null) {
             // Also, labelled loops always need the label declared first, so stick it like this way
@@ -804,7 +812,7 @@ internal sealed class DMProc {
             if (_loopStack?.TryPeek(out var peek) ?? false) {
                 Jump(peek + "_continue");
             } else {
-                _compiler.ForcedError(Location, "Cannot peek empty loop stack");
+                _compiler.Emit(WarningCode.BadFlowStatement, location, "Cannot continue; not in a loop");
             }
         }
     }

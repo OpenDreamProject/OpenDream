@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Threading.Tasks;
 using DMCompiler.Json;
+using JetBrains.Annotations;
 using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs;
@@ -14,12 +15,13 @@ using Robust.Server.GameStates;
 using Robust.Shared.Map;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Manager.Exceptions;
+using Robust.Shared.Utility;
 using MethodImplAttribute = System.Runtime.CompilerServices.MethodImplAttribute;
 using MethodImplOptions = System.Runtime.CompilerServices.MethodImplOptions;
 
 namespace OpenDreamRuntime.Objects;
 
-public sealed class DreamObjectTree {
+public sealed partial class DreamObjectTree {
     public TreeEntry[] Types { get; private set; }
     public List<DreamProc> Procs { get; } = new();
     public List<string> Strings { get; private set; } //TODO: Store this somewhere else
@@ -56,18 +58,18 @@ public sealed class DreamObjectTree {
     private FrozenDictionary<string, TreeEntry> _pathToType = FrozenDictionary<string, TreeEntry>.Empty;
     private FrozenDictionary<string, int> _globalProcIds = FrozenDictionary<string, int>.Empty;
 
-    [Dependency] private readonly AtomManager _atomManager = default!;
-    [Dependency] private readonly DreamManager _dreamManager = default!;
-    [Dependency] private readonly DreamRefManager _refManager = default!;
-    [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
-    [Dependency] private readonly IMapManager _mapManager = default!;
-    [Dependency] private readonly IDreamDebugManager _dreamDebugManager = default!;
-    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-    [Dependency] private readonly IEntityManager _entityManager = default!;
-    [Dependency] private readonly DreamResourceManager _dreamResourceManager = default!;
-    [Dependency] private readonly WalkManager _walkManager = default!;
-    [Dependency] private readonly ISerializationManager _serializationManager = default!;
-    [Dependency] private readonly ProcScheduler _procScheduler = default!;
+    [Dependency] private AtomManager _atomManager = default!;
+    [Dependency] private DreamManager _dreamManager = default!;
+    [Dependency] private DreamRefManager _refManager = default!;
+    [Dependency] private IDreamMapManager _dreamMapManager = default!;
+    [Dependency] private IMapManager _mapManager = default!;
+    [Dependency] private IDreamDebugManager _dreamDebugManager = default!;
+    [Dependency] private IEntitySystemManager _entitySystemManager = default!;
+    [Dependency] private IEntityManager _entityManager = default!;
+    [Dependency] private DreamResourceManager _dreamResourceManager = default!;
+    [Dependency] private WalkManager _walkManager = default!;
+    [Dependency] private ISerializationManager _serializationManager = default!;
+    [Dependency] private ProcScheduler _procScheduler = default!;
     private ServerAppearanceSystem? _appearanceSystem;
     private TransformSystem? _transformSystem;
     private PvsOverrideSystem? _pvsOverrideSystem;
@@ -220,6 +222,7 @@ public sealed class DreamObjectTree {
         return new DreamAssocList(AssocList.ObjectDefinition, size);
     }
 
+    [MustDisposeResource]
     public DreamValue GetDreamValueFromJsonElement(object? value) {
         if (value == null) return DreamValue.Null;
 
@@ -264,10 +267,14 @@ public sealed class DreamObjectTree {
                                         !listValue.TryGetProperty("value", out var jsonValue))
                                         throw new Exception("List value was missing a key or value property");
 
-                                    list.SetValue(GetDreamValueFromJsonElement(jsonKey),
-                                        GetDreamValueFromJsonElement(jsonValue), allowGrowth: true);
+                                    using var listKey = GetDreamValueFromJsonElement(jsonKey);
+                                    using var dreamValue = GetDreamValueFromJsonElement(jsonValue);
+
+                                    list.SetValue(listKey, dreamValue, allowGrowth: true);
                                 } else {
-                                    list.AddValue(GetDreamValueFromJsonElement(listValue));
+                                    using var dreamValue = GetDreamValueFromJsonElement(listValue);
+
+                                    list.AddValue(dreamValue);
                                 }
                             }
                         }
@@ -285,8 +292,10 @@ public sealed class DreamObjectTree {
                                     throw new Exception("AList value was missing a key or value property");
                                 }
 
-                                aList.SetValue(GetDreamValueFromJsonElement(jsonKey),
-                                    GetDreamValueFromJsonElement(jsonValue));
+                                using var listKey = GetDreamValueFromJsonElement(jsonKey);
+                                using var dreamValue = GetDreamValueFromJsonElement(jsonValue);
+
+                                aList.SetValue(listKey, dreamValue);
                             }
                         }
 
@@ -434,8 +443,8 @@ public sealed class DreamObjectTree {
 
     private void LoadVariablesFromJson(DreamObjectDefinition objectDefinition, DreamTypeJson jsonObject) {
         if (jsonObject.Variables != null) {
-            foreach (KeyValuePair<string, object> jsonVariable in jsonObject.Variables) {
-                DreamValue value = GetDreamValueFromJsonElement(jsonVariable.Value);
+            foreach (var jsonVariable in jsonObject.Variables) {
+                using var value = GetDreamValueFromJsonElement(jsonVariable.Value);
 
                 objectDefinition.SetVariableDefinition(jsonVariable.Key, value);
             }
@@ -577,6 +586,31 @@ public sealed class TreeEntry {
         Name = (lastSlash != -1) ? path.Substring(lastSlash + 1) : path;
         Path = path;
         Id = id;
+    }
+
+    public bool TryGetTypeVar(string field, out DreamValue value) {
+        switch(field) {
+            case "parent_type":
+                if(ParentEntry == ObjectDefinition.ObjectTree.Root)
+                    value = DreamValue.Null;
+                else
+                    value = new(ParentEntry);
+                return true;
+            case "type":
+                value = new(this);
+                return true;
+            case "vars":
+                // Unimplemented
+                value = DreamValue.Null;
+                return false;
+            default:
+                var success =
+                    (ObjectDefinition.Variables.TryGetValue(field, out value)) ||
+                    (ObjectDefinition.GlobalVariables.TryGetValue(field, out var globalIndex)) && ObjectDefinition.DreamManager.Globals.TryGetValue(globalIndex, out value);
+
+                value.IncRef(); // globals
+                return success;
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

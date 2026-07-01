@@ -2,12 +2,13 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using DMCompiler.DM;
+using JetBrains.Annotations;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Resources;
 using Dependency = Robust.Shared.IoC.DependencyAttribute;
 
 namespace OpenDreamRuntime.Procs {
-    public sealed class AsyncNativeProc(
+    public sealed partial class AsyncNativeProc(
         int id,
         TreeEntry owningType,
         string name,
@@ -18,18 +19,18 @@ namespace OpenDreamRuntime.Procs {
         /// <summary>
         /// ProcState specifically for running native procs, not DM procs
         /// </summary>
-        public sealed class AsyncNativeProcState : ProcState {
+        public sealed partial class AsyncNativeProcState : ProcState {
             public static readonly Stack<AsyncNativeProcState> Pool = new();
 
-            #if TOOLS
+#if TOOLS
             public override (string SourceFile, int Line) TracyLocationId => ("Async Native Proc", 0);
-            #endif
+#endif
 
             // IoC dependencies instead of proc fields because _proc can be null
-            [Dependency] public readonly DreamManager DreamManager = default!;
-            [Dependency] public readonly DreamResourceManager ResourceManager = default!;
-            [Dependency] public readonly DreamObjectTree ObjectTree = default!;
-            [Dependency] public readonly ProcScheduler ProcScheduler = default!;
+            [Dependency] public DreamManager DreamManager = default!;
+            [Dependency] public DreamResourceManager ResourceManager = default!;
+            [Dependency] public DreamObjectTree ObjectTree = default!;
+            [Dependency] public ProcScheduler ProcScheduler = default!;
 
             private readonly DreamValue[] _arguments = new DreamValue[128];
 
@@ -49,15 +50,19 @@ namespace OpenDreamRuntime.Procs {
                 IoCManager.InjectDependencies(this);
             }
 
-            public void Initialize(AsyncNativeProc? proc, Func<AsyncNativeProcState, Task<DreamValue>> taskFunc, DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
+            public void Initialize(AsyncNativeProc? proc, Func<AsyncNativeProcState, Task<DreamValue>> taskFunc, DreamThread thread, DreamObject? src, DreamObject? usr, [HandlesResourceDisposal] DreamProcArguments arguments) {
                 base.Initialize(thread, true);
+
+                arguments.Values.CopyTo(_arguments);
+                foreach (var arg in _arguments)
+                    arg.IncRef();
 
                 _proc = proc;
                 _taskFunc = taskFunc;
                 Instance = src;
                 Usr = usr;
-                arguments.Values.CopyTo(_arguments);
                 ArgumentCount = arguments.Count;
+                arguments.Dispose();
             }
 
             // Used to avoid reentrant resumptions in our proc
@@ -66,7 +71,7 @@ namespace OpenDreamRuntime.Procs {
                     return;
                 }
 
-                Thread.Resume();
+                Thread.Resume().Dispose();
             }
 
             public Task<DreamValue> Call(DreamProc proc, DreamObject? src, DreamObject? usr, params DreamValue[] arguments) {
@@ -101,6 +106,9 @@ namespace OpenDreamRuntime.Procs {
 
             public override void Dispose() {
                 base.Dispose();
+
+                for (int i = 0; i < ArgumentCount; i++)
+                    _arguments[i].Dispose();
 
                 Instance = null!;
                 Usr = null!;
@@ -188,7 +196,7 @@ namespace OpenDreamRuntime.Procs {
 
         private readonly Dictionary<string, DreamValue>? _defaultArgumentValues = defaultArgumentValues;
 
-        public override ProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
+        public override ProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, [HandlesResourceDisposal] DreamProcArguments arguments) {
             if (!AsyncNativeProcState.Pool.TryPop(out var state)) {
                 state = new AsyncNativeProcState();
             }

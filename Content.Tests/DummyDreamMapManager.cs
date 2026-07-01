@@ -26,16 +26,11 @@ public sealed class DummyDreamMapManager : IDreamMapManager {
 
     public void SetTurf(DreamObjectTurf turf, DreamObjectDefinition type, DreamProcArguments creationArguments) { }
 
+    public void SetTurfAppearance(DreamObjectTurf turf, ImmutableAppearance appearance) { }
+
     public void SetTurfAppearance(DreamObjectTurf turf, MutableAppearance appearance) { }
 
     public void SetAreaAppearance(DreamObjectArea area, MutableAppearance appearance) { }
-
-    public void SetArea(DreamObjectTurf turf, DreamObjectArea area) { }
-
-    public bool TryGetCellFromTransform(TransformComponent transform, [NotNullWhen(true)] out IDreamMapManager.Cell? cell) {
-        cell = null;
-        return false;
-    }
 
     public bool TryGetCellAt(Vector2i pos, int z, [NotNullWhen(true)] out IDreamMapManager.Cell? cell) {
         cell = null;
@@ -59,7 +54,7 @@ public sealed class DummyDreamMapManager : IDreamMapManager {
         yield break;
     }
 
-    public IEnumerable<AtomDirection> CalculateSteps((int X, int Y, int Z) loc, (int X, int Y, int Z) dest, int distance) {
+    public IEnumerable<AtomDirection> CalculateSteps((int X, int Y, int Z) loc, (int X, int Y, int Z) dest, int targetDistance, int maxSteps) {
         yield break;
     }
 }

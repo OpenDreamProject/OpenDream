@@ -30,6 +30,7 @@ namespace OpenDreamRuntime.Procs.Native {
             int start = bundle.GetArgument(0, "Start").MustGetValueAsInteger(); //1-indexed
             int end = bundle.GetArgument(1, "End").MustGetValueAsInteger(); //1-indexed
             IDreamList list = (IDreamList)src!;
+
             if (list is DreamList) {
                 DreamList listCopy = (DreamList)list.CreateCopy(start, end);
                 return new DreamValue(listCopy);

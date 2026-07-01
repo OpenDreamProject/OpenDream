@@ -34,6 +34,7 @@
 	var/connection
 	var/computer_id = 0
 	var/tick_lag = 0 as opendream_unimplemented
+	var/authenticate = TRUE as opendream_unimplemented // TODO: auth.mode CVar
 
 	var/timezone
 
@@ -63,14 +64,14 @@
 				break
 
 		if (mob == null) // No existing mob, create a default one
-			mob = new world.mob(locate(1,1,1)) // TODO: Find nearest non-dense turf
-
-		eye = mob
-		statobj = mob
+			var/mob/initial_mob = new world.mob()
+			
+			eye = initial_mob
+			statobj = initial_mob
+			mob = initial_mob
 		return mob
 
 	proc/Del()
-		set opendream_unimplemented = TRUE
 
 	proc/Topic(href, list/href_list, datum/hsrc)
 		if (hsrc != null)

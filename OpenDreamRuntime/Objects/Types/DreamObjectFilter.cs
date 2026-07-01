@@ -11,16 +11,9 @@ public sealed class DreamObjectFilter(DreamObjectDefinition objectDefinition) : 
 
     public DreamFilter Filter;
 
-    protected override void HandleDeletion(bool possiblyThreaded) {
-        // SAFETY: Attachment dictionary is not threadsafe, no reason to change this.
-        if (possiblyThreaded) {
-            EnterIntoDelQueue();
-            return;
-        }
-
-        base.HandleDeletion(possiblyThreaded);
-
+    protected override void HandleDeletion() {
         FilterAttachedTo.Remove(Filter);
+        base.HandleDeletion();
     }
 
     // TODO: Variable getting
@@ -79,7 +72,7 @@ public sealed class DreamObjectFilter(DreamObjectDefinition objectDefinition) : 
                 if (!key.TryGetValueAsString(out var keyStr))
                     continue;
 
-                var value = list.GetValue(key);
+                using var value = list.GetValue(key);
                 if (value.IsNull)
                     continue;
 

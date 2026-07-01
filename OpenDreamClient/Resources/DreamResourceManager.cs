@@ -30,16 +30,16 @@ public interface IDreamResourceManager {
     public bool EnsureCacheFile(string filename, int timeoutSeconds = 5);
 }
 
-internal sealed class DreamResourceManager : IDreamResourceManager {
+internal sealed partial class DreamResourceManager : IDreamResourceManager {
     private readonly Dictionary<int, LoadingResourceEntry> _loadingResources = new();
     private readonly Dictionary<int, DreamResource> _resourceCache = new();
     private readonly Dictionary<string, PendingResourceLookup> _pendingResourceLookups = new();
     private readonly Dictionary<string, int> _resourcePathToIdCache = new(); //note this can contain both \ref[]s and paths
 
-    [Dependency] private readonly IResourceManager _resourceManager = default!;
-    [Dependency] private readonly IClientNetManager _netManager = default!;
-    [Dependency] private readonly IDynamicTypeFactory _typeFactory = default!;
-    [Dependency] private readonly IConfigurationManager _cfg = default!;
+    [Dependency] private IResourceManager _resourceManager = default!;
+    [Dependency] private IClientNetManager _netManager = default!;
+    [Dependency] private IDynamicTypeFactory _typeFactory = default!;
+    [Dependency] private IConfigurationManager _cfg = default!;
 
     private ResPath _cacheDirectory;
 
@@ -98,7 +98,7 @@ internal sealed class DreamResourceManager : IDreamResourceManager {
     }
 
     private byte[] GetFileHash(ResPath path) {
-        var stream = _resourceManager.UserData.OpenRead(path);
+        using var stream = _resourceManager.UserData.OpenRead(path);
         Span<byte> filebytes = new(new byte[stream.Length]);
         stream.ReadToEnd(filebytes);
         return CryptoGenericHashBlake2B.Hash(32, filebytes, ReadOnlySpan<byte>.Empty);

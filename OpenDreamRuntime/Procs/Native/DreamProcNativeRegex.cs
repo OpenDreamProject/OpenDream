@@ -70,13 +70,13 @@ namespace OpenDreamRuntime.Procs.Native {
                     // TODO: src is the regex string
                     // TODO: We need to add this to our current thread instead of spawning a new one
                     // TODO: This call needs to immediately die upon sleeping
-                    var result = proc.Spawn(null, new(args));
+                    using var result = proc.Spawn(null, new(args));
 
                     var replacement = result.Stringify();
                     currentHaystack = regex.Regex.Replace(currentHaystack, replacement, 1, currentStart);
                     currentStart = match.Index + Math.Max(replacement.Length, 1);
 
-                    if (!regex.IsGlobal){
+                    if (!regex.IsGlobal) {
                         regex.SetVariable("next", new DreamValue(currentStart + 1));
                         break;
                     }
@@ -122,8 +122,9 @@ namespace OpenDreamRuntime.Procs.Native {
 
         private static int GetNext(DreamObject regexInstance, DreamValue startParam, bool isGlobal, string haystackString) {
             if (startParam.IsNull) {
-                if (isGlobal && regexInstance.GetVariable("text").TryGetValueAsString(out string? lastHaystack) && lastHaystack == haystackString) {
-                    DreamValue nextVar = regexInstance.GetVariable("next");
+                using var textVar = regexInstance.GetVariable("text");
+                if (isGlobal && textVar.TryGetValueAsString(out string? lastHaystack) && lastHaystack == haystackString) {
+                    using var nextVar = regexInstance.GetVariable("next");
 
                     return (!nextVar.IsNull) ? nextVar.GetValueAsInteger() : 1;
                 } else {

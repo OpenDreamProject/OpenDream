@@ -39,6 +39,12 @@ public sealed class DreamObjectArea : DreamObjectAtom {
         AtomManager.SetAtomAppearance(this, AtomManager.GetAppearanceFromDefinition(ObjectDefinition));
     }
 
+    protected override void HandleDeletion() {
+        _contents.DecRef();
+        _contents.Delete();
+        base.HandleDeletion();
+    }
+
     /// <summary>
     /// Forces us to find the up-to-date "lowest" turf on next coordinate var access
     /// </summary>
@@ -58,6 +64,7 @@ public sealed class DreamObjectArea : DreamObjectAtom {
                 value = new(Z);
                 return true;
             case "contents":
+                _contents.IncRef();
                 value = new(_contents);
                 return true;
             default:

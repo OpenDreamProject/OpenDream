@@ -14,13 +14,13 @@ using SpaceWizards.Sodium;
 
 namespace OpenDreamRuntime;
 
-public sealed class DreamConnection {
-    [Dependency] private readonly DreamManager _dreamManager = default!;
-    [Dependency] private readonly DreamRefManager _refManager = default!;
-    [Dependency] private readonly DreamObjectTree _objectTree = default!;
-    [Dependency] private readonly DreamResourceManager _resourceManager = default!;
-    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-    [Dependency] private readonly ISharedPlayerManager _playerManager = default!;
+public sealed partial class DreamConnection {
+    [Dependency] private DreamManager _dreamManager = default!;
+    [Dependency] private DreamRefManager _refManager = default!;
+    [Dependency] private DreamObjectTree _objectTree = default!;
+    [Dependency] private DreamResourceManager _resourceManager = default!;
+    [Dependency] private IEntitySystemManager _entitySystemManager = default!;
+    [Dependency] private ISharedPlayerManager _playerManager = default!;
 
     private readonly ServerScreenOverlaySystem? _screenOverlaySystem;
     private readonly ServerClientImagesSystem? _clientImagesSystem;
@@ -32,42 +32,33 @@ public sealed class DreamConnection {
 
     [ViewVariables] public ICommonSession? Session { get; private set; }
     [ViewVariables] public DreamObjectClient? Client { get; private set; }
-    [ViewVariables] public string Key { get; private set; }
+    [ViewVariables] public string Key { get; }
 
     [ViewVariables] public DreamObjectMob? Mob {
         get => _mob;
         set {
-            if (_mob != value) {
-                var oldMob = _mob;
-                _mob = value;
+            if (_mob == value)
+                return;
 
-                if (oldMob != null) {
-                    oldMob.Key = null;
-                    oldMob.SpawnProc("Logout");
-                    oldMob.Connection = null;
-                }
+            var oldMob = _mob;
+            var oldConnection = value?.Connection;
+            SetClientMob(value);
 
-                StatObj = new(value);
-                if (Eye != null && Eye == oldMob) {
-                    Eye = value;
-                }
-
-                if (_mob != null) {
-                    // If the mob is already owned by another player, kick them out
-                    if (_mob.Connection != null)
-                        _mob.Connection.Mob = null;
-
-                    _mob.Connection = this;
-                    _mob.Key = Key;
-                    _mob.SpawnProc("Login", usr: _mob);
-                }
+            if(oldConnection is not null) {
+                oldConnection.Client?.Delete(); // TODO: This should tell you why you disconnected
+                _mob!.SpawnProc("Logout").Dispose();
             }
+
+            oldMob?.SpawnProc("Logout").Dispose();
+            _mob?.SpawnProc("Login", usr: _mob).Dispose();
         }
     }
 
     [ViewVariables] public DreamObjectMovable? Eye {
         get;
         set {
+            value?.IncRef();
+            field?.DecRef();
             field = value;
             if (Session != null)
                 _playerManager.SetAttachedEntity(Session, field?.Entity);
@@ -122,18 +113,49 @@ public sealed class DreamConnection {
         _verbSystem?.RemoveConnectionFromRepeatingVerbs(this);
         Session = null;
 
-        if (_mob != null) {
-            // Don't null out the ckey here
-            _mob.SpawnProc("Logout");
-
-            if (_mob != null) { // Logout() may have removed our mob
-                _mob.Connection = null;
-                _mob = null;
-            }
-        }
-
+        // The client still has a reference to the mob when deleted, so we do this first
+        Client.DecRef();
         Client.Delete();
         Client = null;
+
+        if(Mob is not null) {
+            var oldMob = Mob;
+            SetClientMob(null, true);
+            oldMob.SpawnProc("Logout").Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Sets the <see cref="Mob">connection's mob</see> without any side effects.
+    /// </summary>
+    private void SetClientMob(DreamObjectMob? newMob, bool preserveKey = false) {
+        if(newMob == _mob)
+            return;
+
+        var oldMob = _mob;
+        _mob = newMob;
+        newMob?.IncRef();
+        oldMob?.DecRef();
+
+        if (oldMob is not null) {
+            if(!preserveKey)
+                oldMob.Key = null;
+            oldMob.Connection = null;
+        }
+
+        StatObj = new(newMob);
+        if (Eye is not null && Eye == oldMob) {
+            Eye = newMob;
+        }
+
+        if (newMob is not null) {
+            // If the mob is already owned by another player, kick them out
+            newMob.Connection?.SetClientMob(null);
+
+            newMob.Connection = this;
+            if(!preserveKey)
+                newMob.Key = Key;
+        }
     }
 
     public void UpdateStat() {
@@ -157,7 +179,7 @@ public sealed class DreamConnection {
             } finally {
                 _currentlyUpdatingStat = false;
             }
-        });
+        }).Dispose();
     }
 
     public void SendClientInfoUpdate() {
@@ -222,6 +244,7 @@ public sealed class DreamConnection {
             sound.SetVariableValue("file", string.IsNullOrEmpty(soundData.File) ? DreamValue.Null : new DreamValue(soundData.File));
 
             allSounds.AddValue(new DreamValue(sound));
+            sound.DecRef();
         }
 
         promptEvent.Invoke(new DreamValue(allSounds));
@@ -229,34 +252,31 @@ public sealed class DreamConnection {
     }
 
     public void HandleMsgTopic(MsgTopic pTopic) {
-        DreamList hrefList = DreamProcNativeRoot.Params2List(_objectTree, HttpUtility.UrlDecode(pTopic.Query));
-        DreamValue srcRefValue = hrefList.GetValue(new DreamValue("src"));
-        DreamValue src = DreamValue.Null;
+        var hrefList = DreamProcNativeRoot.Params2List(_objectTree, HttpUtility.UrlDecode(pTopic.Query));
+        using var srcRefValue = hrefList.GetValue(new DreamValue("src"));
+        var src = DreamValue.Null;
 
         if (srcRefValue.TryGetValueAsString(out var srcRef)) {
             src = _refManager.LocateRef(srcRef);
         }
 
-        Client?.SpawnProc("Topic", usr: Mob, new(pTopic.Query), new(hrefList), src);
+        Client?.SpawnProc("Topic", usr: Mob, new(pTopic.Query), new(hrefList), src).Dispose();
+        src.Dispose();
+        hrefList.DecRef();
     }
 
     public void OutputDreamValue(DreamValue value) {
-        if (value.TryGetValueAsDreamObject<DreamObjectSound>(out var outputObject)) {
-            ushort channel = (ushort)outputObject.GetVariable("channel").GetValueAsInteger();
-            ushort volume = (ushort)outputObject.GetVariable("volume").GetValueAsInteger();
-            float offset = outputObject.GetVariable("offset").UnsafeGetValueAsFloat();
-            byte repeat = (byte)Math.Clamp(outputObject.GetVariable("repeat").UnsafeGetValueAsFloat(), 0, 2);
-            DreamValue file = outputObject.GetVariable("file");
-
+        if (value.TryGetValueAsDreamObject<DreamObjectSound>(out var sound)) {
             var msg = new MsgSound {
                 SoundData = new SoundData {
-                    Channel = channel,
-                    Volume = volume,
-                    Offset = offset,
-                    Repeat = repeat
+                    Channel = sound.Channel,
+                    Volume = sound.Volume,
+                    Offset = sound.Offset,
+                    Repeat = sound.Repeat
                 }
             };
 
+            var file = sound.File;
             if (!file.TryGetValueAsDreamResource(out var soundResource)) {
                 if (file.TryGetValueAsString(out var soundPath)) {
                     soundResource = _resourceManager.LoadResource(soundPath);
@@ -284,7 +304,7 @@ public sealed class DreamConnection {
 
         // Prune any remaining formatting
         var message = value.Stringify();
-        message = StringFormatEncoder.RemoveFormatting(message);
+        message = StringFormatDecoder.RemoveFormatting(message);
 
         OutputControl(message, null);
     }
@@ -324,6 +344,8 @@ public sealed class DreamConnection {
 
     public async Task<DreamValue> PromptList(DreamValueType types, IDreamList list, string title, string message, DreamValue defaultValue) {
         DreamValue[] listValues = list.CopyToArray();
+        foreach (var value in listValues)
+            value.IncRef();
 
         List<string> promptValues = new(listValues.Length);
         foreach (var value in listValues) {
@@ -357,12 +379,26 @@ public sealed class DreamConnection {
         // The client returns the index of the selected item, this needs turned back into the DreamValue.
         var selectedIndex = await task;
         if (selectedIndex.TryGetValueAsInteger(out int index) && index < listValues.Length) {
-            return listValues[index];
+            var selected = listValues[index];
+
+            selected.IncRef();
+            foreach (var value in listValues)
+                value.DecRef();
+
+            return selected;
         }
 
         // Client returned an invalid value.
         // Return the first value in the list, or null if cancellable
-        return msg.CanCancel ? DreamValue.Null : listValues[0];
+        if (msg.CanCancel) {
+            return DreamValue.Null;
+        } else {
+            listValues[0].IncRef();
+            foreach (var value in listValues)
+                value.DecRef();
+
+            return listValues[0];
+        }
     }
 
     public Task<DreamValue> WinExists(string controlId) {

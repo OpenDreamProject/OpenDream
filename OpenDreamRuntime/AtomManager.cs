@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using JetBrains.Annotations;
 using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
@@ -13,7 +14,7 @@ using Dependency = Robust.Shared.IoC.DependencyAttribute;
 
 namespace OpenDreamRuntime;
 
-public sealed class AtomManager {
+public sealed partial class AtomManager {
     public int AtomCount {
         get {
             ReadOnlySpan<RefType> atomTypes = [
@@ -32,12 +33,12 @@ public sealed class AtomManager {
         }
     }
 
-    [Dependency] private readonly IEntityManager _entityManager = default!;
-    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-    [Dependency] private readonly DreamObjectTree _objectTree = default!;
-    [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
-    [Dependency] private readonly DreamResourceManager _resourceManager = default!;
-    [Dependency] private readonly DreamRefManager _refManager = default!;
+    [Dependency] private IEntityManager _entityManager = default!;
+    [Dependency] private IEntitySystemManager _entitySystemManager = default!;
+    [Dependency] private DreamObjectTree _objectTree = default!;
+    [Dependency] private IDreamMapManager _dreamMapManager = default!;
+    [Dependency] private DreamResourceManager _resourceManager = default!;
+    [Dependency] private DreamRefManager _refManager = default!;
 
     private readonly Dictionary<EntityUid, DreamObjectMovable> _entityToAtom = new();
     private readonly Dictionary<DreamObjectDefinition, MutableAppearance> _definitionAppearanceCache = new();
@@ -271,7 +272,7 @@ public sealed class AtomManager {
             case "transform":
                 float[] transformArray = value.TryGetValueAsDreamObject<DreamObjectMatrix>(out var transform)
                     ? DreamObjectMatrix.MatrixToTransformFloatArray(transform)
-                    : DreamObjectMatrix.IdentityMatrixArray;
+                    : MutableAppearance.Default.Transform;
 
                 appearance.Transform = transformArray;
                 break;
@@ -344,10 +345,12 @@ public sealed class AtomManager {
     }
 
     //TODO THIS IS A SUPER NASTY HACK
+    [MustDisposeResource]
     public DreamValue GetAppearanceVar(MutableAppearance appearance, string varName) {
         return GetAppearanceVar(new ImmutableAppearance(appearance, null), varName);
     }
 
+    [MustDisposeResource]
     public DreamValue GetAppearanceVar(ImmutableAppearance appearance, string varName) {
         switch (varName) {
             case "name":
@@ -540,7 +543,6 @@ public sealed class AtomManager {
         MutableAppearance appearance;
         EntityUid targetEntity;
         DMISpriteComponent? targetComponent = null;
-        NetEntity ent = NetEntity.Invalid;
         uint? turfId = null;
 
         if (atom is DreamObjectMovable movable) {
@@ -570,7 +572,6 @@ public sealed class AtomManager {
         animate(appearance);
 
         if(targetComponent is not null) {
-            ent = _entityManager.GetNetEntity(targetEntity);
             // Don't send the updated appearance to clients, they will animate it
             DMISpriteSystem?.SetSpriteAppearance(new(targetEntity, targetComponent), appearance, dirty: false);
         } else if (atom is DreamObjectTurf turf) {
@@ -581,7 +582,7 @@ public sealed class AtomManager {
             //fuck knows, this will trigger a bunch of turf updates to? idek
         }
 
-        AppearanceSystem?.Animate(ent, appearance, duration, easing, loop, flags, delay, chainAnim, turfId);
+        AppearanceSystem?.Animate(targetEntity, appearance, duration, easing, loop, flags, delay, chainAnim, turfId);
     }
 
     public bool TryCreateAppearanceFrom(DreamValue value, [NotNullWhen(true)] out MutableAppearance? appearance) {
@@ -616,6 +617,7 @@ public sealed class AtomManager {
         return false;
     }
 
+    // TODO: This should probably return an ImmutableAppearance so they don't have to be sent through ServerAppearanceSystem.AddAppearance()
     public MutableAppearance GetAppearanceFromDefinition(DreamObjectDefinition def) {
         if (_definitionAppearanceCache.TryGetValue(def, out var appearance))
             return appearance;
@@ -692,6 +694,34 @@ public sealed class AtomManager {
         }
 
         _definitionAppearanceCache.Add(def, appearance);
+        nameVar.Dispose();
+        descVar.Dispose();
+        iconVar.Dispose();
+        stateVar.Dispose();
+        colorVar.Dispose();
+        alphaVar.Dispose();
+        glideSizeVar.Dispose();
+        dirVar.Dispose();
+        invisibilityVar.Dispose();
+        opacityVar.Dispose();
+        mouseVar.Dispose();
+        xVar.Dispose();
+        yVar.Dispose();
+        layerVar.Dispose();
+        planeVar.Dispose();
+        renderSourceVar.Dispose();
+        renderTargetVar.Dispose();
+        blendModeVar.Dispose();
+        appearanceFlagsVar.Dispose();
+        maptextVar.Dispose();
+        maptextWidthVar.Dispose();
+        maptextHeightVar.Dispose();
+        maptextXVar.Dispose();
+        maptextYVar.Dispose();
+        mouseOverPointer.Dispose();
+        mouseDragPointer.Dispose();
+        mouseDropPointer.Dispose();
+        mouseDropZone.Dispose();
         return appearance;
     }
 

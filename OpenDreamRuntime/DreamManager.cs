@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.IO;
+﻿using System.IO;
 using System.Text.Json;
 using DMCompiler.Bytecode;
 using DMCompiler.Json;
@@ -31,8 +30,6 @@ public sealed partial class DreamManager {
     public List<string> GlobalNames { get; private set; } = new();
     public HashSet<DreamObject> Clients { get; } = new();
 
-    public readonly ConcurrentBag<DreamObject> DelQueue = new();
-    public readonly HashSet<uint> RefDeleteQueue = new();
     public Random Random { get; set; } = new();
     public DreamProc ImageConstructor, ImageFactoryProc;
     public int ListPoolThreshold, ListPoolSize;
@@ -49,16 +46,16 @@ public sealed partial class DreamManager {
 
     private ISawmill _sawmill = default!;
 
-    [Dependency] private readonly AtomManager _atomManager = default!;
-    [Dependency] private readonly DreamRefManager _refManager = default!;
-    [Dependency] private readonly IPlayerManager _playerManager = default!;
-    [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
-    [Dependency] private readonly ProcScheduler _procScheduler = default!;
-    [Dependency] private readonly DreamResourceManager _dreamResourceManager = default!;
-    [Dependency] private readonly ITaskManager _taskManager = default!;
-    [Dependency] private readonly IGameTiming _gameTiming = default!;
-    [Dependency] private readonly DreamObjectTree _objectTree = default!;
-    [Dependency] private readonly IEntityManager _entityManager = default!;
+    [Dependency] private AtomManager _atomManager = default!;
+    [Dependency] private DreamRefManager _refManager = default!;
+    [Dependency] private IPlayerManager _playerManager = default!;
+    [Dependency] private IDreamMapManager _dreamMapManager = default!;
+    [Dependency] private ProcScheduler _procScheduler = default!;
+    [Dependency] private DreamResourceManager _dreamResourceManager = default!;
+    [Dependency] private ITaskManager _taskManager = default!;
+    [Dependency] private IGameTiming _gameTiming = default!;
+    [Dependency] private DreamObjectTree _objectTree = default!;
+    [Dependency] private IEntityManager _entityManager = default!;
 
     //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
     public void PreInitialize(string? jsonPath) {
@@ -84,20 +81,22 @@ public sealed partial class DreamManager {
             CurrentTickStart = Environment.TickCount64;
 
             // Call global <init> with waitfor=FALSE
-            _objectTree.GlobalInitProc?.Spawn(WorldInstance, new());
+            _objectTree.GlobalInitProc?.Spawn(WorldInstance, new()).Dispose();
 
             // Call New() on all /area and /turf that exist, each with waitfor=FALSE separately. If <global init> created any /area, call New a SECOND TIME
             // new() up /objs and /mobs from compiled-in maps [order: (1,1) then (2,1) then (1,2) then (2,2)]
             _dreamMapManager.InitializeAtoms();
 
             // Call world.New()
-            WorldInstance.SpawnProc("New");
+            WorldInstance.SpawnProc("New").Dispose();
         }
     }
 
     public void Shutdown() {
-        // TODO: Respect not calling parent and aborting shutdown
+        WorldInstance.DecRef();
         WorldInstance.Delete();
+        WorldInstance = null!;
+
         ShutdownConnectionManager();
         Initialized = false;
         IsShutDown = true;
@@ -118,16 +117,13 @@ public sealed partial class DreamManager {
                 _dreamMapManager.UpdateTiles();
             }
 
-            using (Profiler.BeginZone("ByondApi Thread Syncs"))
-                ByondApi.ByondApi.ExecuteThreadSyncs();
+            using (Profiler.BeginZone("ByondApi Thread Syncs & Temp Refs"))
+                ByondApi.ByondApi.Update();
 
             using (Profiler.BeginZone("Disk IO", color: (uint)Color.LightPink.ToArgb()))
                 DreamObjectSavefile.FlushAllUpdates();
 
             WorldInstance.Cpu = WorldInstance.TickUsage;
-
-            using (Profiler.BeginZone("Deletion Queue", color: (uint)Color.LightPink.ToArgb()))
-                ProcessDelQueue();
         }
 
         Profiler.EmitFrameMark();
@@ -156,8 +152,6 @@ public sealed partial class DreamManager {
         var resources = json.Resources ?? Array.Empty<string>();
         _dreamResourceManager.Initialize(rootPath, resources, json.Interface);
 
-        DelQueue.Clear();
-        RefDeleteQueue.Clear();
         _refManager.Initialize();
         _objectTree.LoadJson(json);
         DreamProcNative.SetupNativeProcs(_objectTree);
@@ -175,8 +169,10 @@ public sealed partial class DreamManager {
             GlobalNames = jsonGlobals.Names;
 
             for (int i = 0; i < jsonGlobals.GlobalCount; i++) {
-                object globalValue = jsonGlobals.Globals.GetValueOrDefault(i, null);
-                Globals[i] = _objectTree.GetDreamValueFromJsonElement(globalValue);
+                var globalJson = jsonGlobals.Globals.GetValueOrDefault(i, null);
+                using var globalValue = _objectTree.GetDreamValueFromJsonElement(globalJson);
+
+                SetGlobal(i, globalValue);
             }
         }
 
@@ -185,7 +181,8 @@ public sealed partial class DreamManager {
     }
 
     public void WriteWorldLog(string message, LogLevel level = LogLevel.Info, string sawmill = "world.log") {
-        if (!WorldInstance.GetVariable("log").TryGetValueAsDreamResource(out var logRsc)) {
+        using var worldLog = WorldInstance.GetVariable("log");
+        if (!worldLog.TryGetValueAsDreamResource(out var logRsc)) {
             logRsc = new ConsoleOutputResource();
             WorldInstance.SetVariableValue("log", new DreamValue(logRsc));
             _sawmill.Log(LogLevel.Error, $"Failed to write to the world log, falling back to console output. Original log message follows: [{LogMessage.LogLevelToName(level)}] world.log: {message}");
@@ -245,11 +242,13 @@ public sealed partial class DreamManager {
         obj.Line = new DreamValue(line);
         obj.File = new DreamValue(file);
         if (!inWorldError) // if an error occurs in /world/Error(), don't call it again
-            WorldInstance.SpawnProc("Error", usr: null, new DreamValue(obj));
+            WorldInstance.SpawnProc("Error", usr: null, new DreamValue(obj)).Dispose();
         else {
             _sawmill.Error("CRITICAL: An error occurred in /world/Error()");
             WriteWorldLog(msg);
         }
+
+        obj.DecRef();
     }
 
     public void OptionalException<T>(WarningCode code, string exceptionText) where T : Exception {
@@ -259,17 +258,9 @@ public sealed partial class DreamManager {
         }
     }
 
-    private void ProcessDelQueue() {
-        lock (RefDeleteQueue) {
-            foreach (var refId in RefDeleteQueue) {
-                _refManager.DeleteRef(refId);
-            }
-
-            RefDeleteQueue.Clear();
-        }
-
-        while (DelQueue.TryTake(out var obj)) {
-            obj.Delete();
-        }
+    public void SetGlobal(int id, DreamValue value) {
+        value.IncRef();
+        Globals[id].Dispose();
+        Globals[id] = value;
     }
 }

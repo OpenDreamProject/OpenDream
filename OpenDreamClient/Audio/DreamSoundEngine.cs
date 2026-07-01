@@ -7,15 +7,15 @@ using Robust.Shared.Network;
 
 namespace OpenDreamClient.Audio;
 
-public sealed class DreamSoundEngine : IDreamSoundEngine {
+public sealed partial class DreamSoundEngine : IDreamSoundEngine {
     private const int SoundChannelLimit = 1024;
 
-    [Dependency] private readonly IDreamResourceManager _resourceManager = default!;
-    [Dependency] private readonly ILogManager _logManager = default!;
-    [Dependency] private readonly INetManager _netManager = default!;
-    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-    [Dependency] private readonly IEntityManager _entityManager = default!;
-    [Dependency] private readonly IAudioManager _audioManager = default!;
+    [Dependency] private IDreamResourceManager _resourceManager = default!;
+    [Dependency] private ILogManager _logManager = default!;
+    [Dependency] private INetManager _netManager = default!;
+    [Dependency] private IEntitySystemManager _entitySystemManager = default!;
+    [Dependency] private IEntityManager _entityManager = default!;
+    [Dependency] private IAudioManager _audioManager = default!;
     private AudioSystem? _audioSystem;
 
     private ISawmill _sawmill = default!;

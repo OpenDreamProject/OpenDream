@@ -166,7 +166,7 @@ namespace DMCompiler.Compiler.DM {
                 if (Current().Type != TokenType.EndOfFile) {
                     Token skipFrom = Current();
                     LocateNextTopLevel();
-                    Warning($"Error recovery had to skip to {Current().Location}", token: skipFrom);
+                    Emit(WarningCode.ErrorRecoveryActivated, $"Error recovery had to skip to {Current().Location} due to bad token {skipFrom.PrintableText} at {skipFrom.Location}");
                 }
             }
 
@@ -2761,7 +2761,7 @@ namespace DMCompiler.Compiler.DM {
                         if (callParameters.Length is < 1)
                             Emit(WarningCode.InvalidArgumentCount, callLoc,
                                 "Expected at least 1 argument for animate()");
-                        
+
                         return new DMASTAnimate(identifier.Location, callParameters);
                     }
                     default:

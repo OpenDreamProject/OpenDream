@@ -30,7 +30,7 @@ internal partial class DMCodeTree {
             return true;
         }
 
-        protected void SetVariableValue(DMCompiler compiler, DMObject dmObject, DMVariable variable, DMExpression value, bool isOverride) {
+        protected bool TrySetVariableValue(DMCompiler compiler, DMObject dmObject, DMVariable variable, DMExpression value, bool isOverride) {
             // Typechecking
             if (!variable.ValType.MatchesType(compiler, value.ValType) && !variable.ValType.IsUnimplemented && !variable.ValType.Type.HasFlag(DMValueType.NoConstFold)) {
                 if (value is Null && !isOverride) {
@@ -44,17 +44,20 @@ internal partial class DMCodeTree {
             if (value.TryAsConstant(compiler, out var constant)) {
                 variable.Value = constant;
 
+                // Overrides that are defined out of order need an opportunity for the parent to perform runtime initializations
+                if (isOverride && IsFirstPass && !dmObject.IsRuntimeInitialized(variable.Name)) return false;
+
                 // We want to continue with putting this in the init proc if a base type initializes it to another value
                 if (!isOverride || !dmObject.IsRuntimeInitialized(variable.Name)) {
-                    return;
+                    return true;
                 }
             } else if (variable.IsConst) {
                 compiler.Emit(WarningCode.HardConstContext, value.Location, "Value of const var must be a constant");
-                return;
+                return true;
             } else if (!IsValidRightHandSide(compiler, dmObject, value)) {
                 compiler.Emit(WarningCode.BadExpression, value.Location,
                     $"Invalid initial value for \"{variable.Name}\"");
-                return;
+                return true;
             }
 
             var initLoc = value.Location;
@@ -63,6 +66,7 @@ internal partial class DMCodeTree {
 
             variable.Value = new Null(Location.Internal);
             dmObject.InitializationProcAssignments.Add((variable.Name, assign));
+            return true;
         }
 
         /// <returns>Whether the given value can be used as an instance variable's initial value</returns>
@@ -148,6 +152,7 @@ internal partial class DMCodeTree {
             compiler.GlobalInitProc.DebugSource(value.Location);
             value.EmitPushValue(new(compiler, dmObject, compiler.GlobalInitProc));
             compiler.GlobalInitProc.Assign(DMReference.CreateGlobal(globalId));
+            compiler.GlobalInitProc.Pop();
             return true;
         }
 
@@ -159,8 +164,7 @@ internal partial class DMCodeTree {
             dmObject.AddVariable(variable);
             _defined = true;
 
-            SetVariableValue(compiler, dmObject, variable, value, false);
-            return true;
+            return TrySetVariableValue(compiler, dmObject, variable, value, false);
         }
 
         private bool CheckCantDefine(DMCompiler compiler, DMObject dmObject) {
@@ -258,10 +262,9 @@ internal partial class DMCodeTree {
                     "var \"tag\" cannot be set to a value at compile-time");
 
             dmObject.VariableOverrides[variable.Name] = variable;
-            _finished = true;
+            _finished = TrySetVariableValue(compiler, dmObject, variable, value, true);
 
-            SetVariableValue(compiler, dmObject, variable, value, true);
-            return true;
+            return _finished;
         }
 
         public override string ToString() {
@@ -298,6 +301,7 @@ internal partial class DMCodeTree {
                 compiler.GlobalInitProc.DebugSource(value.Location);
                 value.EmitPushValue(new(compiler, dmObject, compiler.GlobalInitProc));
                 compiler.GlobalInitProc.Assign(DMReference.CreateGlobal(globalId));
+                compiler.GlobalInitProc.Pop();
             }
 
             return true;

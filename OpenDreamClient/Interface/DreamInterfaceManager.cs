@@ -1,28 +1,29 @@
-﻿using System.IO;
-using System.Text;
-using System.Globalization;
-using OpenDreamShared.Network.Messages;
-using OpenDreamClient.Interface.Controls;
-using OpenDreamShared.Interface.Descriptors;
-using OpenDreamShared.Interface.DMF;
+﻿using OpenDreamClient.Interface.Controls;
 using OpenDreamClient.Interface.Prompts;
 using OpenDreamClient.Resources;
 using OpenDreamClient.Resources.ResourceTypes;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Interface.Descriptors;
+using OpenDreamShared.Interface.DMF;
+using OpenDreamShared.Network.Messages;
 using Robust.Client;
 using Robust.Client.Graphics;
 using Robust.Client.Input;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.ContentPack;
+using Robust.Shared.Map;
 using Robust.Shared.Network;
 using Robust.Shared.Random;
 using Robust.Shared.Serialization.Manager;
+using Robust.Shared.Serialization.Markdown.Mapping;
 using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 using SixLabors.ImageSharp;
+using System.Globalization;
+using System.IO;
 using System.Linq;
-using Robust.Shared.Map;
+using System.Text;
 
 namespace OpenDreamClient.Interface;
 
@@ -203,7 +204,25 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
                 browser.SetFileSource(null);
             }
         } else if (pBrowse.HtmlSource != null) {
-            var htmlFileName = $"browse_{pBrowse.Window}_{_random.Next()}"; // TODO: Possible collisions and explicit file names
+            Dictionary<string, string>? options = null;
+
+            if (pBrowse.Options is not null) {
+                DMFParser? parser = ParseDmfParams(pBrowse.Options, out var checkParserErrors);
+                if (parser is not null) {
+                    Dictionary<string, string> attributes = parser.AttributesValues();
+                    if (!checkParserErrors()) {
+                        options = attributes;
+                    }
+                }
+            }
+
+            string htmlFileName;
+            if (options?.TryGetValue("file", out var fileName) ?? false) {
+                htmlFileName = fileName;
+            } else {
+                // TODO: Possible collisions
+                htmlFileName = $"browse_{pBrowse.Window}_{_random.Next()}";
+            }
             ControlBrowser? outputBrowser = referencedElement as ControlBrowser;
 
             if (outputBrowser == null) {
@@ -219,8 +238,32 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
                         break;
                     }
                 } else if (pBrowse.Window != null) {
+                    WindowDescriptor? descriptor = null;
+                    (int x, int y) size = (480, 480);
+
+                    // Handle using options to set the initial properties of the window
+                    if (options != null) {
+                        var mappingElement = new MappingDataNode {
+                            { "id", pBrowse.Window }
+                        };
+
+                        foreach (var attribute in options) {
+                            mappingElement.Add(attribute.Key, attribute.Value);
+                        }
+
+                        descriptor = (WindowDescriptor?)_serializationManager.Read(typeof(WindowDescriptor), mappingElement);
+
+                        if (descriptor?.Size.X == 0 || descriptor?.Size.Y == 0) {
+                            descriptor.Size.X = size.x;
+                            descriptor.Size.Y = size.y;
+                        } else if (descriptor != null) {
+                            size.x = descriptor.Size.X;
+                            size.y = descriptor.Size.Y;
+                        }
+                    }
+
                     // Creating a new popup
-                    var popup = new BrowsePopup(pBrowse.Window, pBrowse.Size, _clyde.MainWindow);
+                    var popup = new BrowsePopup(pBrowse.Window, size, _clyde.MainWindow, descriptor);
                     popup.Closed += () => { Windows.Remove(pBrowse.Window); };
 
                     outputBrowser = popup.Browser;
@@ -264,7 +307,7 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
             MsgPromptResponse response = new() {
                 PromptId = message.PromptId,
                 Type = DreamValueType.Text,
-                Value = WinGet(message.ControlId, message.QueryValue, forceSnowflake:true)
+                Value = WinGet(message.ControlId, message.QueryValue, forceSnowflake: true)
             };
 
             _netManager.ClientSendMessage(response);
@@ -366,7 +409,7 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
             } else if (Menus.TryGetValue(windowId, out var menu)) {
                 if (menu.MenuElementsById.TryGetValue(elementId, out var menuElement))
                     return menuElement;
-            } else if(MacroSets.TryGetValue(windowId, out var macroSet)) {
+            } else if (MacroSets.TryGetValue(windowId, out var macroSet)) {
                 if (macroSet.Macros.TryGetValue(elementId, out var macroElement))
                     return macroElement;
             }
@@ -516,7 +559,7 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
                                 var result = HandleEmbeddedWinget(null, currentArg.ToString(), out var hadWinget);
 
                                 // 64x64 or 64,64 gets split into two "64 64" args
-                                if (hadWinget && result.Split(['x', ',']) is {Length: 2} wingetSplit &&
+                                if (hadWinget && result.Split(['x', ',']) is { Length: 2 } wingetSplit &&
                                     float.TryParse(wingetSplit[0], out _) && float.TryParse(wingetSplit[1], out _)) {
                                     args.Add(wingetSplit[0]);
                                     args.Add(wingetSplit[1]);
@@ -535,7 +578,7 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
                             var result = HandleEmbeddedWinget(null, currentArg.ToString(), out var hadWinget);
 
                             // 64x64 or 64,64 gets split into two "64 64" args
-                            if (hadWinget && result.Split(['x', ',']) is {Length: 2} wingetSplit &&
+                            if (hadWinget && result.Split(['x', ',']) is { Length: 2 } wingetSplit &&
                                 float.TryParse(wingetSplit[0], out _) && float.TryParse(wingetSplit[1], out _)) {
                                 args.Add(wingetSplit[0]);
                                 args.Add(wingetSplit[1]);
@@ -554,7 +597,7 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
                         var result = HandleEmbeddedWinget(null, arg, out var hadWinget);
 
                         // 64x64 or 64,64 gets split into two "64 64" args
-                        if (hadWinget && result.Split(['x', ',']) is {Length: 2} wingetSplit &&
+                        if (hadWinget && result.Split(['x', ',']) is { Length: 2 } wingetSplit &&
                             float.TryParse(wingetSplit[0], out _) && float.TryParse(wingetSplit[1], out _)) {
                             args.Add(wingetSplit[0]);
                             args.Add(wingetSplit[1]);
@@ -614,35 +657,36 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
 
         string result = value;
         int startPos = result.IndexOf("[[", StringComparison.Ordinal);
-        while(startPos > -1){
+        while (startPos > -1) {
             int endPos = result.IndexOf("]]", startPos, StringComparison.Ordinal);
-            if(endPos == -1)
+            if (endPos == -1)
                 break;
-            string inner = result.Substring(startPos+2, endPos-startPos-2);
+            string inner = result.Substring(startPos + 2, endPos - startPos - 2);
             string[] elementSplit = inner.Split('.');
             string innerControlId = controlId ?? "";
-            if(elementSplit.Length > 1){
-                innerControlId = (string.IsNullOrEmpty(innerControlId) ? "" : innerControlId+".")+string.Join(".", elementSplit[..^1]);
+            if (elementSplit.Length > 1) {
+                innerControlId = (string.IsNullOrEmpty(innerControlId) ? "" : innerControlId + ".") + string.Join(".", elementSplit[..^1]);
                 inner = elementSplit[^1];
             }
 
             string innerResult = WinGet(innerControlId, inner);
             hadWinget = true;
-            result = result.Substring(0, startPos) + innerResult + result.Substring(endPos+2);
+            result = result.Substring(0, startPos) + innerResult + result.Substring(endPos + 2);
             startPos = result.IndexOf("[[", StringComparison.Ordinal);
         }
 
         return result;
     }
 
-    public void WinSet(string? controlId, string winsetParams) {
+    private DMFParser? ParseDmfParams(string dmfParams, out Func<bool> checkErrors) {
+        checkErrors = null!;
         DMFParser parser;
-        try{
-            var lexer = new DMFLexer(winsetParams);
+        try {
+            var lexer = new DMFLexer(dmfParams);
             parser = new DMFParser(lexer, _serializationManager);
         } catch (Exception e) {
             _sawmill.Error($"Error parsing winset: {e}");
-            return;
+            return null;
         }
 
         bool CheckParserErrors() {
@@ -656,10 +700,21 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
             return true;
         }
 
+        checkErrors = CheckParserErrors;
+        return parser;
+    }
+
+    public void WinSet(string? controlId, string winsetParams) {
+        DMFParser? parser = ParseDmfParams(winsetParams, out var checkParserErrors);
+
+        if (parser == null) {
+            return;
+        }
+
         if (string.IsNullOrEmpty(controlId)) {
             List<DMFWinSet> winSets = parser.GlobalWinSet();
 
-            if (CheckParserErrors())
+            if (checkParserErrors())
                 return;
 
             // id=abc overrides the elements of other winsets without an element
@@ -678,26 +733,26 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
                         _sawmill.Error($"Invalid global winset \"{winsetParams}\"");
                     }
                 } else {
-                    if(winSet.TrueStatements is not null) {
+                    if (winSet.TrueStatements is not null) {
                         InterfaceElement? conditionalElement = FindElementWithId(elementId);
-                        if(conditionalElement is null)
+                        if (conditionalElement is null)
                             _sawmill.Error($"Invalid element on ternary condition \"{elementId}\"");
                         else
-                            if(conditionalElement.TryGetProperty(winSet.Attribute, out var conditionalCheckValue) && conditionalCheckValue.Equals(winSet.Value)) {
-                                foreach(DMFWinSet statement in winSet.TrueStatements) {
+                            if (conditionalElement.TryGetProperty(winSet.Attribute, out var conditionalCheckValue) && conditionalCheckValue.Equals(winSet.Value)) {
+                                foreach (DMFWinSet statement in winSet.TrueStatements) {
                                     string statementElementId = statement.Element ?? elementId;
                                     InterfaceElement? statementElement = FindElementWithId(statementElementId);
-                                    if(statementElement is not null) {
+                                    if (statementElement is not null) {
                                         statementElement.SetProperty(statement.Attribute, HandleEmbeddedWinget(statementElementId, statement.Value, out _), manualWinset: true);
                                     } else {
                                         _sawmill.Error($"Invalid element on ternary \"{statementElementId}\"");
                                     }
                                 }
-                            } else if (winSet.FalseStatements is not null){
-                                foreach(DMFWinSet statement in winSet.FalseStatements) {
+                            } else if (winSet.FalseStatements is not null) {
+                                foreach (DMFWinSet statement in winSet.FalseStatements) {
                                     string statementElementId = statement.Element ?? elementId;
                                     InterfaceElement? statementElement = FindElementWithId(statementElementId);
-                                    if(statementElement is not null) {
+                                    if (statementElement is not null) {
                                         statementElement.SetProperty(statement.Attribute, HandleEmbeddedWinget(statementElementId, statement.Value, out _), manualWinset: true);
                                     } else {
                                         _sawmill.Error($"Invalid element on ternary \"{statementElementId}\"");
@@ -719,7 +774,7 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
             InterfaceElement? element = FindElementWithId(controlId);
             var attributes = parser.AttributesValues();
 
-            if (CheckParserErrors())
+            if (checkParserErrors())
                 return;
 
             if (element == null && attributes.TryGetValue("parent", out var parentId)) {
@@ -750,16 +805,16 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
             //parse "as blah" from query if it's there
             string[] querySplit = query.Split(" as ");
             IDMFProperty propResult;
-            if(querySplit.Length != 2) //must be "thing as blah" or "thing". Anything else is invalid.
-                if(element.TryGetProperty(query, out propResult!)){
+            if (querySplit.Length != 2) //must be "thing as blah" or "thing". Anything else is invalid.
+                if (element.TryGetProperty(query, out propResult!)) {
                     result = forceJson ? propResult.AsJson() : forceSnowflake ? propResult.AsSnowflake() : propResult.AsRaw();
                     return true;
                 } else {
                     result = "";
                     return false;
                 }
-            else{
-                if(!element.TryGetProperty(querySplit[0], out propResult!)) {
+            else {
+                if (!element.TryGetProperty(querySplit[0], out propResult!)) {
                     result = "";
                     return false;
                 }
@@ -772,7 +827,7 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
                     return true;
                 }
 
-                switch(querySplit[1]){
+                switch (querySplit[1]) {
                     case "arg":
                         result = propResult.AsArg();
                         break;
@@ -812,12 +867,12 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
             }
 
             var multiQuery = queryValue.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            if(multiQuery.Length > 1) {
+            if (multiQuery.Length > 1) {
                 var result = "";
-                foreach(var query in multiQuery) {
+                foreach (var query in multiQuery) {
                     if (!ParseAndTryGet(element, query, out var queryResult))
                         _sawmill.Error($"Could not winget property {query} on {element.Id}");
-                    result += query+"="+queryResult + ";";
+                    result += query + "=" + queryResult + ";";
                 }
 
                 return result.TrimEnd(';');
@@ -930,7 +985,7 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
     private void Reset() {
         _uiManager.MainViewport.Visible = false;
         //close windows if they're open, and clear all child ui elements
-        foreach (var window in Windows.Values){
+        foreach (var window in Windows.Values) {
             window.CloseChildWindow();
             window.UIElement.RemoveAllChildren();
         }

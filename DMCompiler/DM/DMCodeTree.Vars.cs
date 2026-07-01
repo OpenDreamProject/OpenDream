@@ -57,7 +57,7 @@ internal partial class DMCodeTree {
             } else if (!IsValidRightHandSide(compiler, dmObject, value)) {
                 compiler.Emit(WarningCode.BadExpression, value.Location,
                     $"Invalid initial value for \"{variable.Name}\"");
-                return false;
+                return true;
             }
 
             var initLoc = value.Location;

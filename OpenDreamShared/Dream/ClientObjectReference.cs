@@ -13,11 +13,13 @@ namespace OpenDreamShared.Dream;
 [Serializable, NetSerializable]
 public struct ClientObjectReference : IEquatable<ClientObjectReference> {
     public enum RefType {
+        Null,
         Client,
         Turf,
         Entity
     }
 
+    public static readonly ClientObjectReference Null = new() { Type = RefType.Null };
     public static readonly ClientObjectReference Client = new() { Type = RefType.Client };
 
     public RefType Type;

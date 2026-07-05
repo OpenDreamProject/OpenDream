@@ -59,13 +59,11 @@ public sealed partial class DreamConnection {
     [ViewVariables] public DreamObjectAtom? Eye {
         get;
         set {
-            if (field != null) {
-                field.DecRef();
-            }
+            if (value is not (DreamObjectMovable or DreamObjectTurf or null))
+                throw new Exception($"Cannot set eye to non-movable, non-turf {value}");
 
-            if (value != null) {
-                value.IncRef();
-            }
+            value?.IncRef();
+            field?.DecRef();
 
             field = value;
             UpdateMobEye();
@@ -163,6 +161,8 @@ public sealed partial class DreamConnection {
             if(!preserveKey)
                 newMob.Key = Key;
         }
+
+        UpdateMobEye();
     }
 
     public void UpdateStat() {
@@ -595,28 +595,16 @@ public sealed partial class DreamConnection {
     }
 
     private void UpdateMobEye() {
-        var mobUid = Mob?.Entity ?? EntityUid.Invalid;
-        ClientObjectReference? eyeRef;
-        switch (Eye) {
-            case null:
-                eyeRef = null;
-                break;
-            default:
-                eyeRef = new(_entityManager.GetNetEntity(mobUid));
-                break;
-            case DreamObjectMovable:
-                var eyeEnt = _dreamManager.GetClientReference(Eye);
-                eyeRef = new(_entityManager.GetNetEntity(new(eyeEnt.Entity.Id)));
-                break;
-            case DreamObjectTurf turf:
-                eyeRef = new(new(turf.X,turf.Y),turf.Z);
-                break;
-        }
+        // TODO: This should be set to the eye, since it determines the range of visible objects in PVS
+        _playerManager.SetAttachedEntity(Session!, Mob?.Entity);
 
-        var msg = new MsgNotifyMobEyeUpdate() {
+        var mobUid = Mob?.Entity ?? EntityUid.Invalid;
+        var eyeRef = Eye is not null ? _dreamManager.GetClientReference(Eye) : ClientObjectReference.Null;
+        var msg = new MsgNotifyMobEyeUpdate {
             MobNetEntity = _entityManager.GetNetEntity(mobUid),
             EyeRef = eyeRef
         };
+
         Session?.Channel.SendMessage(msg);
     }
 }

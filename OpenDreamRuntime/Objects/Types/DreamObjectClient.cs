@@ -138,19 +138,7 @@ public sealed class DreamObjectClient : DreamObject {
                 break;
             case "eye": {
                 value.TryGetValueAsDreamObject<DreamObjectAtom>(out var newEye);
-                switch (newEye) {
-                    case DreamObjectMovable movable:
-                        Connection.Eye = movable;
-                        break;
-                    case DreamObjectTurf turf:
-                        Connection.Eye = turf;
-                        break;
-                    case null:
-                        Connection.Eye = null;
-                        break;
-                    default:
-                        throw new Exception($"Cannot set eye to non-movable, non-turf {value}");
-                }
+                Connection.Eye = newEye;
                 break;
             }
             case "view": {

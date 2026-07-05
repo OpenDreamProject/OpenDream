@@ -203,12 +203,12 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
 
     public void GetWorldAABB(Vector2 worldPos, ref Box2? aabb) {
         if (DMI != null && Appearance != null) {
-            Vector2 size = DMI.IconSize / (float)interfaceManager.IconSize;
-            Vector2 pixelOffset = Appearance.TotalPixelOffset / (float)interfaceManager.IconSize;
+            var size = DMI.IconSize / (float)interfaceManager.IconSize;
+            var pixelOffset = Appearance.TotalPixelOffset / (float)interfaceManager.IconSize;
 
             worldPos += pixelOffset;
 
-            Box2 thisAABB = Box2.CenteredAround(worldPos, size);
+            var thisAABB = Box2.CenteredAround(worldPos, size);
             aabb = aabb?.Union(thisAABB) ?? thisAABB;
         }
 

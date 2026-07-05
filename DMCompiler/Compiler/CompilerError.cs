@@ -14,6 +14,7 @@ public enum WarningCode {
     InvalidVarDefinition = 14,
     MissingBody = 15,
     BadLabel = 19,
+    BadFlowStatement = 20,
     InvalidReference = 50,
     BadArgument = 100,
     InvalidArgumentKey = 101,
@@ -40,6 +41,7 @@ public enum WarningCode {
     ErrorDirective = 1200,
     WarningDirective = 1201,
     MiscapitalizedDirective = 1300,
+    ErrorRecoveryActivated = 1999, // Error recovery kicked in, should probably be a non-fatal error since it means a chunk of code was so malformed we couldn't compile it
 
     // 2000 - 2999 are reserved for compiler configuration of actual behaviour.
     SoftReservedKeyword = 2000, // For keywords that SHOULD be reserved, but don't have to be. 'null' and 'defined', for instance
@@ -114,6 +116,7 @@ public struct CompilerEmission {
         {WarningCode.InvalidVarDefinition, ErrorLevel.Error},
         {WarningCode.MissingBody, ErrorLevel.Error},
         {WarningCode.BadLabel, ErrorLevel.Error},
+        {WarningCode.BadFlowStatement, ErrorLevel.Error},
         {WarningCode.InvalidReference, ErrorLevel.Error},
         {WarningCode.BadArgument, ErrorLevel.Error},
         {WarningCode.InvalidArgumentKey, ErrorLevel.Error},
@@ -139,6 +142,7 @@ public struct CompilerEmission {
         {WarningCode.ErrorDirective, ErrorLevel.Error},
         {WarningCode.WarningDirective, ErrorLevel.Warning},
         {WarningCode.MiscapitalizedDirective, ErrorLevel.Warning},
+        {WarningCode.ErrorRecoveryActivated, ErrorLevel.Error},
 
         //2000-2999
         {WarningCode.SoftReservedKeyword, ErrorLevel.Error},
@@ -211,4 +215,25 @@ public struct CompilerEmission {
         ErrorLevel.Error => $"Error OD{(int)Code:d4} at {Location.ToString()}: {Message}",
         _ => ""
     };
+
+    /// <summary>
+    /// Write to the console with coloured formatting.
+    /// </summary>
+    public void WriteConsole() {
+        ConsoleColor? usedColor = Level switch {
+            ErrorLevel.Notice => ConsoleColor.Cyan,
+            ErrorLevel.Warning => ConsoleColor.Yellow,
+            ErrorLevel.Error => ConsoleColor.Red,
+            _ => null
+        };
+        
+        if (usedColor is null) {
+            return;
+        }
+        
+        Console.ForegroundColor = usedColor.Value;
+        Console.Write($"{Level.ToString()} OD{(int)Code:d4}");
+        Console.ResetColor();
+        Console.WriteLine($" at {Location.ToString()}: {Message}");
+    }
 }

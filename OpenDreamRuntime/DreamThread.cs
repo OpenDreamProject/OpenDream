@@ -155,6 +155,7 @@ namespace OpenDreamRuntime {
         public DreamObject? Usr;
         public int ArgumentCount;
         public abstract DreamProc? Proc { get; }
+        public ProcState? Caller { get; set; }
 
         protected void Initialize(DreamThread thread, bool waitFor) {
             Thread = thread;
@@ -393,6 +394,7 @@ namespace OpenDreamRuntime {
                 _stack.Push(_current);
             }
 
+            state.Caller = _current;
             _current = state;
         }
 

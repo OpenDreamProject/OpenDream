@@ -61,6 +61,7 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
             case DMReference.Type.ListIndex: return DMReference.ListIndex;
             case DMReference.Type.Caller: return DMReference.Caller;
             case DMReference.Type.Callee: return DMReference.Callee;
+            case DMReference.Type.NoRef: return new DMReference { RefType = DMReference.Type.NoRef };
             default: throw new Exception($"Invalid reference type {refType}");
         }
     }
@@ -287,7 +288,10 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
                     or DreamProcOpcode.SwitchCase
                     or DreamProcOpcode.SwitchCaseRange
                     or DreamProcOpcode.Jump
-                    or DreamProcOpcode.JumpIfFalse, int jumpPosition):
+                    or DreamProcOpcode.JumpIfFalse
+                    or DreamProcOpcode.JumpIfNull
+                    or DreamProcOpcode.JumpIfNullNoPop
+                    or DreamProcOpcode.TryNoValue, int jumpPosition):
                 text.AppendFormat("0x{0:x}", jumpPosition);
                 break;
 
@@ -307,6 +311,34 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
                     or DreamProcOpcode.JumpIfTrueReference
                     or DreamProcOpcode.JumpIfReferenceFalse, DMReference reference, int jumpPosition):
                 text.Append(reference.ToString());
+                text.AppendFormat(" 0x{0:x}", jumpPosition);
+                break;
+
+            case (DreamProcOpcode.Try, int jumpPosition, DMReference reference):
+                text.AppendFormat("0x{0:x}", jumpPosition);
+                text.Append(' ');
+                text.Append(reference.ToString());
+                break;
+
+            case (DreamProcOpcode.Enumerate, int enumeratorId, DMReference reference, int jumpPosition):
+                text.Append(enumeratorId);
+                text.Append(' ');
+                text.Append(reference.ToString());
+                text.AppendFormat(" 0x{0:x}", jumpPosition);
+                break;
+
+            case (DreamProcOpcode.EnumerateAssoc, int enumeratorId, DMReference assocReference,
+                DMReference outputReference, int jumpPosition):
+                text.Append(enumeratorId);
+                text.Append(' ');
+                text.Append(assocReference.ToString());
+                text.Append(' ');
+                text.Append(outputReference.ToString());
+                text.AppendFormat(" 0x{0:x}", jumpPosition);
+                break;
+
+            case (DreamProcOpcode.EnumerateNoAssign, int enumeratorId, int jumpPosition):
+                text.Append(enumeratorId);
                 text.AppendFormat(" 0x{0:x}", jumpPosition);
                 break;
 
@@ -426,6 +458,8 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
                     or DreamProcOpcode.SwitchCaseRange
                     or DreamProcOpcode.Jump
                     or DreamProcOpcode.JumpIfFalse
+                    or DreamProcOpcode.JumpIfNull
+                    or DreamProcOpcode.JumpIfNullNoPop
                     or DreamProcOpcode.TryNoValue, int jumpPosition):
                 return jumpPosition;
             case (DreamProcOpcode.JumpIfFalseReference
@@ -437,9 +471,11 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
                 return jumpPosition;
             case (DreamProcOpcode.Try, int jumpPosition, DMReference):
                 return jumpPosition;
-            case (DreamProcOpcode.Enumerate, DMReference, int jumpPosition):
+            case (DreamProcOpcode.Enumerate, int, DMReference, int jumpPosition):
                 return jumpPosition;
-            case (DreamProcOpcode.EnumerateAssoc, DMReference, DMReference, DMReference, int jumpPosition):
+            case (DreamProcOpcode.EnumerateAssoc, int, DMReference, DMReference, int jumpPosition):
+                return jumpPosition;
+            case (DreamProcOpcode.EnumerateNoAssign, int, int jumpPosition):
                 return jumpPosition;
             default:
                 return null;

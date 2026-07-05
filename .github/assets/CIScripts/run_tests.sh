@@ -48,18 +48,21 @@ while read -r file; do
 
 	echo "Running $relative"
 	touch $basedir/errors.log
-	if ! DreamDaemon $basedir/environment.dmb -once -close -trusted -verbose -invisible; then
-		echo "TEST FAILED: BYOND CRASHED!"
-		echo "TEST FAILED: $relative" >> summary.log
+	if ! DreamDaemon $basedir/environment.dmb -once -close -trusted -verbose -invisible -log errors.log ; then
+		echo "TEST FAILED:$file:BYOND crashed"
+		echo "CRASHED: $relative" >> summary.log
 		byondcrashes=$((byondcrashes+1))
 		sed -i '/^[[:space:]]*$/d' $basedir/errors.log
 		cat $basedir/errors.log
 		rm $basedir/errors.log
 		testsfailed=$((testsfailed + 1))
-		continue		
+		continue
 	fi
-	if [ -s "$basedir/errors.log" ]; then
-		if [[ $first_line == "// RUNTIME ERROR"* || $first_line == "//RUNTIME ERROR"* ]]	then #expected runtime error, should compile but then fail to run
+	sed -i '1,3d; /^[[:space:]]*$/d' $basedir/errors.log
+	if [ -s $basedir/errors.log ]
+	then
+		if [[ $first_line == "// RUNTIME ERROR"* || $first_line == "//RUNTIME ERROR"* ]]
+		then #expected runtime error, should compile but then fail to run
 			echo "Expected runtime error, test passed"
 			rm $basedir/errors.log
 			testspassed=$((testspassed + 1))
@@ -68,15 +71,25 @@ while read -r file; do
 			echo "Errors detected!"
 			sed -i '/^[[:space:]]*$/d' $basedir/errors.log
 			cat $basedir/errors.log
-			echo "TEST FAILED: $relative"
+			echo "TEST FAILED:$file:Unexpected runtime error"
 			rm $basedir/errors.log
-			echo "TEST FAILED: $relative" >> summary.log
+			echo "Failed: $relative" >> summary.log
 			testsfailed=$((testsfailed + 1))
 			continue
 		fi
 	else
-		echo "Test passed: $relative"
-		testspassed=$((testspassed + 1))
+		if [[ $first_line == "// RUNTIME ERROR"* || $first_line == "//RUNTIME ERROR"* ]]
+		then #expected runtime error, should compile but then fail to run
+			echo "TEST FAILED:$file:Expected runtime error, but none found!"
+			rm $basedir/errors.log
+			echo "Failed: $relative" >> summary.log
+			testsfailed=$((testsfailed + 1))
+			continue
+		else	
+			echo "Test passed: $relative"
+			testspassed=$((testspassed + 1))
+			rm $basedir/errors.log
+		fi
 	fi
 done < test_file_diffs
 

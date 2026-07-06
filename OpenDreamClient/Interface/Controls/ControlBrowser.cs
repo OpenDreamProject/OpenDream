@@ -139,26 +139,28 @@ internal sealed partial class ControlBrowser : InterfaceControl {
             if (newUri is {Scheme: "http", Host: "127.0.0.1"}) {
                 Stream stream;
                 HttpStatusCode status;
-                var path = new ResPath(newUri.AbsolutePath);
-                if (!_dreamResource.EnsureCacheFile(newUri.AbsolutePath)) {
+                var resource = new ResPath(newUri.AbsolutePath);
+                var path = HttpUtility.UrlDecode(resource.CanonPath); // files are saved in decoded form
+
+                if (!_dreamResource.EnsureCacheFile(path)) {
                     stream = Stream.Null;
                     status = HttpStatusCode.NotFound;
                 } else {
                     try {
                         stream = _resourceManager.UserData.OpenRead(
-                            _dreamResource.GetCacheFilePath(newUri.AbsolutePath));
+                            _dreamResource.GetCacheFilePath(path));
                         status = HttpStatusCode.OK;
                     } catch (FileNotFoundException) {
                         stream = Stream.Null;
                         status = HttpStatusCode.NotFound;
                     } catch (Exception e) {
-                        _sawmill.Error($"Exception while loading file from {newUri}:\n{e}");
+                        _sawmill.Error($"Exception while loading file from {path}:\n{e}");
                         stream = Stream.Null;
                         status = HttpStatusCode.InternalServerError;
                     }
                 }
 
-                var mimeType = FileExtensionMimeTypes.GetValueOrDefault(path.Extension, "application/octet-stream");
+                var mimeType = FileExtensionMimeTypes.GetValueOrDefault(resource.Extension, "application/octet-stream");
                 context.DoRespondStream(stream, mimeType, status);
             }
         } catch (Exception e) {

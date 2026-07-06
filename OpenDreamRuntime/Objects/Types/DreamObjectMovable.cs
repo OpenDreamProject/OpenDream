@@ -33,16 +33,16 @@ public class DreamObjectMovable : DreamObjectAtom {
                 return;
 
             if(field is not null) {
-                field.Owner = null;
                 field.DecRef();
+                field.RemoveOwner(this);
+            }
+
+            if(value is not null) {
+                value.AddOwner(this);
+                value.IncRef();
             }
 
             field = value;
-
-            if(field is not null) {
-                field.IncRef();
-                field.Owner = this;
-            }
         }
     }
 

@@ -13,6 +13,7 @@ namespace OpenDreamShared.Rendering;
 [RegisterComponent, NetworkedComponent, AutoGenerateComponentState(true, fieldDeltas: true)]
 public sealed partial class DreamParticlesComponent : Component {
     [ViewVariables(VVAccess.ReadOnly), AutoNetworkedField] public ParticleData Data;
+
     [Serializable, NetSerializable]
     public sealed class ParticleData {
         [ViewVariables(VVAccess.ReadWrite)] public int Width;

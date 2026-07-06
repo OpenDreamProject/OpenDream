@@ -43,7 +43,6 @@ public class DreamObjectMovable : DreamObjectAtom {
                 value.AddOwner(this);
                 value.IncRef();
             }
-
         }
     }
 

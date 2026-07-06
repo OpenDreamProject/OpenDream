@@ -57,7 +57,7 @@ public sealed class DreamObjectParticles : DreamObject {
     }
 
     private void MarkDirty() {
-        foreach((var movable, var component) in _owners) {
+        foreach(var (movable, component) in _owners) {
             EntityManager.Dirty(movable.Entity, component);
         }
     }

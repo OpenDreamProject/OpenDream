@@ -37,12 +37,13 @@ public class DreamObjectMovable : DreamObjectAtom {
                 field.RemoveOwner(this);
             }
 
+            field = value;
+
             if(value is not null) {
                 value.AddOwner(this);
                 value.IncRef();
             }
 
-            field = value;
         }
     }
 

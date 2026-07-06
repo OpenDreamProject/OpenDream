@@ -229,7 +229,7 @@ internal sealed partial class DreamResourceManager : IDreamResourceManager {
         EnsureCacheDirectory();
 
         // in BYOND when filename is a path everything except the filename at the end gets ignored - meaning all resource files end up directly in the cache folder
-        var path = _cacheDirectory / new ResPath(Uri.EscapeDataString(filename)).Filename;
+        var path = _cacheDirectory / new ResPath(filename).Filename;
         _resourceManager.UserData.WriteAllText(path, data);
         return new ResPath(filename);
     }
@@ -238,7 +238,7 @@ internal sealed partial class DreamResourceManager : IDreamResourceManager {
         EnsureCacheDirectory();
 
         // in BYOND when filename is a path everything except the filename at the end gets ignored - meaning all resource files end up directly in the cache folder
-        var path = _cacheDirectory / new ResPath(Uri.EscapeDataString(filename)).Filename;
+        var path = _cacheDirectory / new ResPath(filename).Filename;
         _resourceManager.UserData.WriteAllBytes(path, data);
         return new ResPath(filename);
     }

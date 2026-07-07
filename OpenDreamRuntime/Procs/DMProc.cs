@@ -38,7 +38,7 @@ public sealed class DMProc : DreamProc {
     private readonly int _maxStackSize;
 
     public DMProc(int id, TreeEntry owningType, ProcDefinitionJson json, string? name, DreamManager dreamManager, DreamRefManager refManager, AtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, DreamObjectTree objectTree, ProcScheduler procScheduler, ServerVerbSystem? verbSystem)
-        : base(id, owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbSrc, json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility, json.IsVerb) {
+        : base(id, owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbSrc, json.VerbRange, json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility, json.IsVerb) {
         Bytecode = json.Bytecode ?? [];
         LocalNames = json.Locals ?? [];
         SourceInfo = json.SourceInfo;

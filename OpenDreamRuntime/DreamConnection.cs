@@ -37,32 +37,20 @@ public sealed partial class DreamConnection {
     [ViewVariables] public DreamObjectMob? Mob {
         get => _mob;
         set {
-            if (_mob != value) {
-                var oldMob = _mob;
-                value?.IncRef();
-                _mob?.DecRef();
-                _mob = value;
+            if (_mob == value)
+                return;
 
-                if (oldMob != null) {
-                    oldMob.Key = null;
-                    oldMob.Connection = null;
-                    oldMob.SpawnProc("Logout").Dispose();
-                }
+            var oldMob = _mob;
+            var oldConnection = value?.Connection;
+            SetClientMob(value);
 
-                StatObj = new(value);
-                if (Eye != null && Eye == oldMob) {
-                    Eye = value;
-                }
-
-                if (_mob != null) {
-                    // If the mob is already owned by another player, kick them out
-                    _mob.Connection?.Mob = null;
-
-                    _mob.Connection = this;
-                    _mob.Key = Key;
-                    _mob.SpawnProc("Login", usr: _mob).Dispose();
-                }
+            if(oldConnection is not null) {
+                oldConnection.Client?.Delete(); // TODO: This should tell you why you disconnected
+                _mob!.SpawnProc("Logout").Dispose();
             }
+
+            oldMob?.SpawnProc("Logout").Dispose();
+            _mob?.SpawnProc("Login", usr: _mob).Dispose();
         }
     }
 
@@ -125,19 +113,49 @@ public sealed partial class DreamConnection {
         _verbSystem?.RemoveConnectionFromRepeatingVerbs(this);
         Session = null;
 
-        if (_mob != null) {
-            // Don't null out the ckey here
-            _mob.SpawnProc("Logout").Dispose();
-
-            if (_mob != null) { // Logout() may have removed our mob
-                _mob.Connection = null;
-                _mob = null;
-            }
-        }
-
+        // The client still has a reference to the mob when deleted, so we do this first
         Client.DecRef();
         Client.Delete();
         Client = null;
+
+        if(Mob is not null) {
+            var oldMob = Mob;
+            SetClientMob(null, true);
+            oldMob.SpawnProc("Logout").Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Sets the <see cref="Mob">connection's mob</see> without any side effects.
+    /// </summary>
+    private void SetClientMob(DreamObjectMob? newMob, bool preserveKey = false) {
+        if(newMob == _mob)
+            return;
+
+        var oldMob = _mob;
+        _mob = newMob;
+        newMob?.IncRef();
+        oldMob?.DecRef();
+
+        if (oldMob is not null) {
+            if(!preserveKey)
+                oldMob.Key = null;
+            oldMob.Connection = null;
+        }
+
+        StatObj = new(newMob);
+        if (Eye is not null && Eye == oldMob) {
+            Eye = newMob;
+        }
+
+        if (newMob is not null) {
+            // If the mob is already owned by another player, kick them out
+            newMob.Connection?.SetClientMob(null);
+
+            newMob.Connection = this;
+            if(!preserveKey)
+                newMob.Key = Key;
+        }
     }
 
     public void UpdateStat() {

@@ -688,7 +688,7 @@ namespace OpenDreamRuntime.Procs {
                 throw new Exception("Invalid var for initial() call: " + key);
             }
 
-            DreamObjectDefinition objectDefinition;
+            TreeEntry treeEntry;
             if (owner.TryGetValueAsDreamObject(out var dreamObject)) {
                 switch (dreamObject) {
                     // Calling initial() on a null value just returns null
@@ -697,30 +697,23 @@ namespace OpenDreamRuntime.Procs {
                         return ProcStatus.Continue;
                     // initial(object.vars.foo) should act like initial(object.foo)
                     case DreamListVars varsList:
-                        objectDefinition = varsList.DreamObject.ObjectDefinition;
+                        treeEntry = varsList.DreamObject.ObjectDefinition.TreeEntry;
                         break;
                     default:
-                        objectDefinition = dreamObject.ObjectDefinition;
+                        treeEntry = dreamObject.ObjectDefinition.TreeEntry;
                         break;
                 }
             } else if (owner.TryGetValueAsType(out var ownerType)) {
-                objectDefinition = ownerType.ObjectDefinition;
+                treeEntry = ownerType;
             } else {
                 state.DreamManager.OptionalException<ArgumentException>(DMCompiler.Compiler.WarningCode.InitialVarOnPrimitiveException, "Initial() attempted to get the initial value of a variable on a primitive.");
                 state.Push(DreamValue.Null);
                 return ProcStatus.Continue;
             }
 
-            var result = property switch {
-                // parent_type and type aren't actual vars and need special treatment
-                "parent_type" =>
-                    (objectDefinition.Parent?.TreeEntry == null ||
-                     objectDefinition.Parent.TreeEntry == state.Proc.ObjectTree.Root)
-                        ? DreamValue.Null
-                        : new DreamValue(objectDefinition.Parent.TreeEntry),
-                "type" => new DreamValue(objectDefinition.TreeEntry),
-                _ => objectDefinition.Variables.TryGetValue(property, out var val) ? val : DreamValue.Null
-            };
+            if (!treeEntry.TryGetTypeVar(property, out DreamValue result)) {
+                result = DreamValue.Null;
+            }
 
             state.Push(result);
             return ProcStatus.Continue;
@@ -2439,9 +2432,13 @@ namespace OpenDreamRuntime.Procs {
                 int pickedIndex = state.DreamManager.Random.Next(0, count);
                 var possibleValues = state.PopCount(count);
 
-                state.Push(possibleValues[pickedIndex]);
-                foreach (var value in possibleValues)
-                    value.Dispose();
+                // the way we're going about this is very important
+                using var value = possibleValues[pickedIndex];
+                value.IncRef();
+
+                foreach (var dropped in possibleValues)
+                    dropped.Dispose();
+                state.Push(value);
             }
 
             return ProcStatus.Continue;

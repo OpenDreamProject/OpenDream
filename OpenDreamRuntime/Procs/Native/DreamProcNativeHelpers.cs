@@ -174,13 +174,9 @@ internal static partial class DreamProcNativeHelpers {
         return tiles;
     }
 
-    public static DreamValue HandleRange(NativeProc.Bundle bundle, DreamObject? usr, bool includeCenter) {
-        (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, usr as DreamObjectAtom, bundle.Arguments);
-        if (center is null)
-            return new DreamValue(bundle.ObjectTree.CreateList());
-
+    public static DreamList HandleRange(DreamObjectAtom center, ViewRange range, bool includeCenter) {
         HashSet<DreamObjectArea> seenAreas = [];
-        DreamList rangeList = bundle.ObjectTree.CreateList(range.Height * range.Width);
+        DreamList rangeList = center.ObjectDefinition.ObjectTree.CreateList(range.Height * range.Width);
 
         void AddToList(DreamValue value) {
             if(value.TryGetValueAsDreamObject<DreamObjectAtom>(out var atomValue)) {
@@ -208,7 +204,7 @@ internal static partial class DreamProcNativeHelpers {
                 }
             }
 
-            return new(rangeList);
+            return rangeList;
         }
         else if(center is DreamObjectTurf turfCenter) {
             if(includeCenter) { // if we're orange, we want to skip the else block too
@@ -247,7 +243,7 @@ internal static partial class DreamProcNativeHelpers {
 
                 centerLoc.Dispose();
                 if(centerLocObject is not DreamObjectTurf) {
-                    return new(rangeList);
+                    return rangeList;
                 }
             }
         }
@@ -260,7 +256,7 @@ internal static partial class DreamProcNativeHelpers {
             }
         }
 
-        return new(rangeList);
+        return rangeList;
     }
 
     public static DreamValue HandleViewersHearers(NativeProc.Bundle bundle, DreamObject? usr, bool ignoreLight) {

@@ -1817,7 +1817,11 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("Dist", Type = DreamValueTypeFlag.Float, DefaultValue = 5)]
     [DreamProcParameter("Center", Type = DreamValueTypeFlag.DreamObject)]
     public static DreamValue NativeProc_orange(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-        return DreamProcNativeHelpers.HandleRange(bundle, usr, false);
+        (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, usr as DreamObjectAtom, bundle.Arguments);
+        if (center is null)
+            return new DreamValue(bundle.ObjectTree.CreateList());
+
+        return new(DreamProcNativeHelpers.HandleRange(center, range, false));
     }
 
     [DreamProc("oview")]
@@ -1963,7 +1967,11 @@ internal static class DreamProcNativeRoot {
     [DreamProcParameter("Dist", Type = DreamValueTypeFlag.Float, DefaultValue = 5)]
     [DreamProcParameter("Center", Type = DreamValueTypeFlag.DreamObject)]
     public static DreamValue NativeProc_range(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-        return DreamProcNativeHelpers.HandleRange(bundle, usr, true);
+        (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, usr as DreamObjectAtom, bundle.Arguments);
+        if (center is null)
+            return new DreamValue(bundle.ObjectTree.CreateList());
+
+        return new(DreamProcNativeHelpers.HandleRange(center, range, true));
     }
 
     [DreamProc("ref")]

@@ -22,7 +22,11 @@ public sealed class DreamObjectParticles : DreamObject {
 
     protected override void HandleDeletion() {
         foreach(var owner in _owners.Keys) {
-            RemoveOwner(owner);
+            if(owner.Particles != this)
+                // This should never happen, but leaving things in an invalid state would be even worse
+                RemoveOwner(owner);
+            else
+                owner.Particles = null; // calls RemoveOwner
         }
 
         _icons = null!;
@@ -361,5 +365,7 @@ public sealed class DreamObjectParticles : DreamObject {
         }
 
         base.SetVar(varName, value); //all calls should set the internal vars, so GetVar() can just be default also
-     }
+    }
+
+    private static void ThrowButKeepGoing(Exception e) => throw e;
 }

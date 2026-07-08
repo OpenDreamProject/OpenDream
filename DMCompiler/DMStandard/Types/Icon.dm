@@ -9,8 +9,7 @@
 	proc/Crop(x1, y1, x2, y2)
 		set opendream_unimplemented = TRUE
 
-	proc/DrawBox(rgb, x1, y1, x2 = x1, y2 = y1)
-		set opendream_unimplemented = TRUE
+	proc/DrawBox(rgb as color|null, x1 as num, y1 as num, x2 = x1 as num|null, y2 = y1 as num|null)
 
 	proc/Flip(dir)
 		set opendream_unimplemented = TRUE

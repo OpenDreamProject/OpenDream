@@ -77,6 +77,35 @@ namespace OpenDreamRuntime.Procs.Native {
             return DreamValue.Null;
         }
 
+        [DreamProc("DrawBox")]
+        [DreamProcParameter("rgb", Type = DreamValueTypeFlag.String)]
+        [DreamProcParameter("x1", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("y1", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("x2", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("y2", Type = DreamValueTypeFlag.Float)]
+        public static DreamValue NativeProc_DrawBox(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+            var srcDreamIcon = ((DreamObjectIcon)src!).Icon;
+
+            var rgbValue = bundle.GetArgument(0, "rgb");
+            if(!rgbValue.TryGetValueAsString(out var rgbStr) || !ColorHelpers.TryParseColor(rgbStr, out var rgb))
+                if(rgbValue.IsNull)
+                    rgb = Color.Transparent;
+                else
+                    throw new ArgumentException($"invalid rgb value {rgbStr}");
+
+            int x1 = (int)bundle.GetArgument(1, "x1").UnsafeGetValueAsFloat();
+            int y1 = (int)bundle.GetArgument(2, "y1").UnsafeGetValueAsFloat();
+
+            if(!bundle.GetArgument(3, "x2").TryGetValueAsInteger(out var x2))
+                x2 = x1;
+            if(!bundle.GetArgument(4, "y2").TryGetValueAsInteger(out var y2))
+                y2 = y1;
+
+            srcDreamIcon.ApplyOperation(new DreamIconOperationDrawBox(rgb, new(x1, y1), new(x2, y2)));
+
+            return DreamValue.Null;
+        }
+
         [DreamProc("GetPixel")]
         [DreamProcParameter("x", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("y", Type = DreamValueTypeFlag.Float)]

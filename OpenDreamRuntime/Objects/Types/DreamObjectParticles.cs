@@ -366,6 +366,4 @@ public sealed class DreamObjectParticles : DreamObject {
 
         base.SetVar(varName, value); //all calls should set the internal vars, so GetVar() can just be default also
     }
-
-    private static void ThrowButKeepGoing(Exception e) => throw e;
 }

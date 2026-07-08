@@ -302,16 +302,10 @@ public interface IDreamIconOperation {
     public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, AtomDirection dir, UIBox2i bounds);
 }
 
-public sealed class DreamIconOperationDrawBox : IDreamIconOperation {
-    private Rgba32 _color;
-    private Vector2i _bottomLeft;
-    private Vector2i _topRight;
-
-    public DreamIconOperationDrawBox(Color rgb, Vector2i startPixel, Vector2i endPixel) {
-        _color = new(rgb.RByte, rgb.GByte, rgb.BByte, rgb.AByte);
-        _bottomLeft = Vector2i.ComponentMin(startPixel, endPixel) - 1;
-        _topRight = Vector2i.ComponentMax(startPixel, endPixel);
-    }
+public sealed class DreamIconOperationDrawBox(Color rgb, Vector2i startPixel, Vector2i endPixel) : IDreamIconOperation {
+    private readonly Rgba32 _color = new(rgb.RByte, rgb.GByte, rgb.BByte, rgb.AByte);
+    private readonly Vector2i _bottomLeft = Vector2i.ComponentMin(startPixel, endPixel) - 1;
+    private readonly Vector2i _topRight = Vector2i.ComponentMax(startPixel, endPixel);
 
     public void OnApply(DreamIcon icon) { }
 

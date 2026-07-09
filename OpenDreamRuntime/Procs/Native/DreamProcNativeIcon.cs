@@ -88,7 +88,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             var rgbValue = bundle.GetArgument(0, "rgb");
             if(!rgbValue.TryGetValueAsString(out var rgbStr) || !ColorHelpers.TryParseColor(rgbStr, out var rgb))
-                if(rgbValue.IsNull)
+                if(string.IsNullOrEmpty(rgbStr))
                     rgb = Color.Transparent;
                 else
                     throw new ArgumentException($"invalid rgb value {rgbStr}");

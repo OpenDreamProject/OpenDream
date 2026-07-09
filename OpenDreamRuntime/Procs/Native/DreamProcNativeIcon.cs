@@ -91,7 +91,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 if(string.IsNullOrEmpty(rgbStr))
                     rgb = Color.Transparent;
                 else
-                    throw new ArgumentException($"invalid rgb value {rgbStr}");
+                    throw new ArgumentException($"invalid rgb value {rgbValue}");
 
             int x1 = (int)bundle.GetArgument(1, "x1").UnsafeGetValueAsFloat();
             int y1 = (int)bundle.GetArgument(2, "y1").UnsafeGetValueAsFloat();

@@ -11,8 +11,7 @@
 
 	proc/DrawBox(rgb as color|null, x1 as num, y1 as num, x2 = x1 as num|null, y2 = y1 as num|null)
 
-	proc/Flip(dir)
-		set opendream_unimplemented = TRUE
+	proc/Flip(dir as num)
 
 	proc/GetPixel(x, y, icon_state, dir = 0, frame = 0, moving = -1)
 

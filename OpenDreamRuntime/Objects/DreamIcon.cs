@@ -302,8 +302,7 @@ public interface IDreamIconOperation {
     public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, AtomDirection dir, UIBox2i bounds);
 }
 
-[Virtual]
-public class DreamIconOperationBlend : IDreamIconOperation {
+public abstract class DreamIconOperationBlend : IDreamIconOperation {
     // With the same values as the ICON_* defines in DMStandard
     public enum BlendType {
         Add = 0,
@@ -507,6 +506,39 @@ public sealed class DreamIconOperationDrawBox(Color rgb, Vector2i startPixel, Ve
                 int dstPixelPosition = (y * imageSpan) + x;
 
                 pixels[dstPixelPosition].FromRgba32(_color);
+            }
+        }
+    }
+}
+
+public sealed class DreamIconOperationFlip(bool flipVertical, bool flipHorizontal) : IDreamIconOperation {
+    public void OnApply(DreamIcon icon) { }
+
+    public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, AtomDirection dir, UIBox2i bounds) {
+        //copy step
+        Rgba32[] referencePixels = new Rgba32[bounds.Width * bounds.Height];
+        int i = 0;
+        for (int y = bounds.Top; y < bounds.Bottom; y++) {
+            for (int x = bounds.Left; x < bounds.Right; x++) {
+                int dstPixelPosition = (y * imageSpan) + x;
+
+                referencePixels[i++] = pixels[dstPixelPosition];
+            }
+        }
+
+        // flip step
+        for (int y = bounds.Top; y < bounds.Bottom; y++) {
+            var relativeY = y - bounds.Top;
+            int verticalIndex = !flipVertical ? relativeY : (bounds.Height - 1) - relativeY;
+
+            for (int x = bounds.Left; x < bounds.Right; x++) {
+                var relativeX = x - bounds.Left;
+                int horizontalIndex = !flipHorizontal ? relativeX : (bounds.Width - 1) - relativeX;
+                
+
+                int dstPixelPosition = (y * imageSpan) + x;
+                int refPixelPosition = verticalIndex * bounds.Width + horizontalIndex;
+                pixels[dstPixelPosition] = referencePixels[refPixelPosition];
             }
         }
     }

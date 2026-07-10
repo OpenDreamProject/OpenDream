@@ -103,6 +103,32 @@ namespace OpenDreamRuntime.Procs.Native {
             return DreamValue.Null;
         }
 
+        [DreamProc("Flip")]
+        [DreamProcParameter("dir", Type = DreamValueTypeFlag.Float, DefaultValue = null)]
+        public static DreamValue NativeProc_Flip(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+            var srcDreamIcon = ((DreamObjectIcon)src!).Icon;
+
+            AtomDirection dir = (AtomDirection)bundle.GetArgument(0, "dir").MustGetValueAsInteger();
+            if(!dir.Cardinals().IsValid())
+                return DreamValue.Null;
+
+            bool flipVertical = (dir & (AtomDirection.North | AtomDirection.South)) != 0;
+            bool flipHorizontal = (dir & (AtomDirection.East | AtomDirection.West)) != 0;
+
+            if(flipVertical && flipHorizontal) {
+                if(srcDreamIcon.Width != srcDreamIcon.Height)
+                    return DreamValue.Null;
+
+                // For some odd reason, BYOND refuses to work on the icon
+                // if dir == NORTHWEST || dir == SOUTHEAST
+                // Not replicating that behaviour cause it seems like a bug,
+                // but here is where you would check this
+            }
+
+            srcDreamIcon.ApplyOperation(new DreamIconOperationFlip(flipVertical, flipHorizontal));
+            return DreamValue.Null;
+        }
+
         [DreamProc("GetPixel")]
         [DreamProcParameter("x", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("y", Type = DreamValueTypeFlag.Float)]

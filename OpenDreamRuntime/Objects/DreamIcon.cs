@@ -285,8 +285,50 @@ public sealed class DreamIcon(DreamManager dreamManager, DreamResourceManager re
 }
 
 public interface IDreamIconOperation {
+    /// <summary>
+    /// Called before icon operations are processed.
+    /// </summary>
+    /// <param name="icon">The icon that's being operated on.</param>
     public void OnApply(DreamIcon icon);
+
+    /// <summary>
+    /// For every frame, in every direction, do this.
+    /// </summary>
+    /// <param name="pixels">A span of every pixel in the image sequence.</param>
+    /// <param name="imageSpan">The width of the entire image sequence, in pixels.</param>
+    /// <param name="frame">The index of the current frame.</param>
+    /// <param name="dir">The current direction of the frame.</param>
+    /// <param name="bounds">The width and height of a given frame.</param>
     public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, AtomDirection dir, UIBox2i bounds);
+}
+
+public sealed class DreamIconOperationDrawBox(Color rgb, Vector2i startPixel, Vector2i endPixel) : IDreamIconOperation {
+    private readonly Rgba32 _color = new(rgb.RByte, rgb.GByte, rgb.BByte, rgb.AByte);
+    private readonly Vector2i _bottomLeft = Vector2i.ComponentMin(startPixel, endPixel) - 1;
+    private readonly Vector2i _topRight = Vector2i.ComponentMax(startPixel, endPixel);
+
+    public void OnApply(DreamIcon icon) { }
+
+    public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, AtomDirection dir, UIBox2i bounds) {
+        // FIXME: This stuff can definitely be calculated once/ahead of time but we can't guarantee this in OnApply
+        var workingBounds = new UIBox2i(
+            Math.Max(_bottomLeft.X, bounds.Left), // left
+            Math.Max(bounds.Bottom - (_topRight.Y - bounds.Top), bounds.Top), // top
+            Math.Min(_topRight.X, bounds.Right), // right
+            Math.Min(bounds.Bottom - (_bottomLeft.Y - bounds.Top), bounds.Bottom) // bottom
+        );
+
+        var endPosY = Math.Min(bounds.Bottom, workingBounds.Bottom);
+        var endPosX = Math.Min(bounds.Right, workingBounds.Right);
+
+        for (int y = workingBounds.Top; y < endPosY; y++) {
+            for (int x = workingBounds.Left; x < endPosX; x++) {
+                int dstPixelPosition = (y * imageSpan) + x;
+
+                pixels[dstPixelPosition].FromRgba32(_color);
+            }
+        }
+    }
 }
 
 [Virtual]

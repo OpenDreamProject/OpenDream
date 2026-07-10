@@ -26,10 +26,9 @@
 	proc/MapColors(...)
 		set opendream_unimplemented = TRUE
 
-	proc/Scale(width, height)
+	proc/Scale(width as num, height as num)
 
-	proc/SetIntensity(r, g = r, b = r)
-		set opendream_unimplemented = TRUE
+	proc/SetIntensity(r as num, g = r as num|null, b = r as num|null)
 
 	proc/Shift(dir, offset, wrap = 0)
 		set opendream_unimplemented = TRUE

@@ -511,3 +511,21 @@ public sealed class DreamIconOperationDrawBox(Color rgb, Vector2i startPixel, Ve
         }
     }
 }
+
+public sealed class DreamIconOperationSetIntensity(float intensityR, float intensityG, float intensityB) : IDreamIconOperation {
+    public void OnApply(DreamIcon icon) { }
+
+    public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, AtomDirection dir, UIBox2i bounds) {
+        for (int y = bounds.Top; y < bounds.Bottom; y++) {
+            for (int x = bounds.Left; x < bounds.Right; x++) {
+                int dstPixelPosition = (y * imageSpan) + x;
+
+                // Assumes that RGB are positive floats
+                ref var pixelData = ref pixels[dstPixelPosition];
+                pixelData.R = (byte)Math.Max(MathF.Round(pixelData.R * intensityR), byte.MaxValue);
+                pixelData.G = (byte)Math.Max(MathF.Round(pixelData.G * intensityG), byte.MaxValue);
+                pixelData.B = (byte)Math.Max(MathF.Round(pixelData.B * intensityB), byte.MaxValue);
+            }
+        }
+    }
+}

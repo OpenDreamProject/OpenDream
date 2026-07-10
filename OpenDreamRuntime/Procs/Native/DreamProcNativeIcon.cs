@@ -173,6 +173,28 @@ namespace OpenDreamRuntime.Procs.Native {
             return DreamValue.Null;
         }
 
+        [DreamProc("SetIntensity")]
+        [DreamProcParameter("r", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("g", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("b", Type = DreamValueTypeFlag.Float)]
+        public static DreamValue NativeProc_SetIntensity(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+            var srcDreamIcon = ((DreamObjectIcon)src!).Icon;
+
+            var rValue = bundle.GetArgument(0, "r");
+            var gValue = bundle.GetArgument(1, "g");
+            var bValue = bundle.GetArgument(2, "b");
+
+            var r = rValue.UnsafeGetValueAsFloat();
+            var g = !gValue.IsNull ? gValue.UnsafeGetValueAsFloat() : r;
+            var b = !bValue.IsNull ? bValue.UnsafeGetValueAsFloat() : r;
+
+            if(r < 0 || g < 0 || b < 0)
+                return DreamValue.Null;
+
+            srcDreamIcon.ApplyOperation(new DreamIconOperationSetIntensity(r, g, b));
+            return DreamValue.Null;
+        }
+
         [DreamProc("Turn")]
         [DreamProcParameter("angle", Type = DreamValueTypeFlag.Float)]
         public static DreamValue NativeProc_Turn(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {

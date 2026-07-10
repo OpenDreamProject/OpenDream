@@ -33,8 +33,7 @@
 	proc/Shift(dir, offset, wrap = 0)
 		set opendream_unimplemented = TRUE
 
-	proc/SwapColor(old_rgb, new_rgb)
-		set opendream_unimplemented = TRUE
+	proc/SwapColor(old_rgb as color|null, new_rgb as color|null)
 
 	proc/Turn(angle)
 		set opendream_unimplemented = TRUE

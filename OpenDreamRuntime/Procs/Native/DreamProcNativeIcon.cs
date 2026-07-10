@@ -87,11 +87,8 @@ namespace OpenDreamRuntime.Procs.Native {
             var srcDreamIcon = ((DreamObjectIcon)src!).Icon;
 
             var rgbValue = bundle.GetArgument(0, "rgb");
-            if(!rgbValue.TryGetValueAsString(out var rgbStr) || !ColorHelpers.TryParseColor(rgbStr, out var rgb))
-                if(string.IsNullOrEmpty(rgbStr))
-                    rgb = Color.Transparent;
-                else
-                    throw new ArgumentException($"invalid rgb value {rgbValue}");
+            if(!DreamProcNativeHelpers.TryParseColor(rgbValue, out var rgb))
+                throw new ArgumentException($"invalid rgb value {rgbValue}");
 
             int x1 = (int)bundle.GetArgument(1, "x1").UnsafeGetValueAsFloat();
             int y1 = (int)bundle.GetArgument(2, "y1").UnsafeGetValueAsFloat();
@@ -192,6 +189,34 @@ namespace OpenDreamRuntime.Procs.Native {
                 return DreamValue.Null;
 
             srcDreamIcon.ApplyOperation(new DreamIconOperationSetIntensity(r, g, b));
+            return DreamValue.Null;
+        }
+
+        [DreamProc("SwapColor")]
+        [DreamProcParameter("old_rgba", Type = DreamValueTypeFlag.String)]
+        [DreamProcParameter("new_rgba", Type = DreamValueTypeFlag.String)]
+        public static DreamValue NativeProc_SwapColor(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+            var srcDreamIcon = ((DreamObjectIcon)src!).Icon;
+
+            // FIXME: BYOND doesn't allow named arguments for this
+            var oldRgbValue = bundle.GetArgument(0, "old_rgba");
+            if(!DreamProcNativeHelpers.TryParseColor(oldRgbValue, out var oldColor))
+                throw new ArgumentException($"invalid search color {oldRgbValue}");
+
+            var newRgbValue = bundle.GetArgument(1, "new_rgba");
+            if(!DreamProcNativeHelpers.TryParseColor(newRgbValue, out var newColor))
+                throw new ArgumentException($"invalid replace color {newRgbValue}");
+
+            // We need to parse the color string to make sure the alpha component isn't there
+            bool considerAlpha = false;
+            oldRgbValue.TryGetValueAsString(out var oldRgbString);
+            if(string.IsNullOrWhiteSpace(oldRgbString) || oldRgbString == ColorHelpers.Transparent)
+                considerAlpha = true;
+            else if(oldRgbString.StartsWith('#') && (oldRgbString.Length == 5 || oldRgbString.Length == 9)) {
+                considerAlpha = true;
+            }
+
+            srcDreamIcon.ApplyOperation(new DreamIconOperationSwapColor(oldColor, newColor, considerAlpha));
             return DreamValue.Null;
         }
 

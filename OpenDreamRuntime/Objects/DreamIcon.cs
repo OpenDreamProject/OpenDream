@@ -529,3 +529,33 @@ public sealed class DreamIconOperationSetIntensity(float intensityR, float inten
         }
     }
 }
+
+public sealed class DreamIconOperationSwapColor(Color oldColor, Color newColor, bool considerAlpha) : IDreamIconOperation {
+    private readonly Rgba32 _searchValue = new(oldColor.RByte, oldColor.GByte, oldColor.BByte, oldColor.AByte);
+    private readonly Rgba32 _replaceValue = new(newColor.RByte, newColor.GByte, newColor.BByte, newColor.AByte);
+
+    public void OnApply(DreamIcon icon) { }
+
+    public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, AtomDirection dir, UIBox2i bounds) {
+        for (int y = bounds.Top; y < bounds.Bottom; y++) {
+            for (int x = bounds.Left; x < bounds.Right; x++) {
+                int dstPixelPosition = (y * imageSpan) + x;
+
+                ref var pixelData = ref pixels[dstPixelPosition];
+                if(pixelData.Rgb == _searchValue.Rgb && (!considerAlpha || pixelData.A == _searchValue.A)) {
+                    if(_replaceValue.A == byte.MinValue) {
+                        pixelData.Rgba = default;
+                    }
+                    else {
+                        pixelData.R = _replaceValue.R;
+                        pixelData.G = _replaceValue.G;
+                        pixelData.B = _replaceValue.B;
+                        if(considerAlpha) {
+                            pixelData.A = _replaceValue.A;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -4,12 +4,15 @@ using System.Collections.Generic;
 namespace OpenDreamShared.Dream;
 
 public static class ColorHelpers {
+    public static readonly string Transparent = "transparent";
+
     public static readonly Dictionary<string, Color> Colors = new() {
         {"black", new Color(00, 00, 00)},
         {"silver", new Color(192, 192, 192)},
         {"gray", new Color(128, 128, 128)},
         {"grey", new Color(128, 128, 128)},
         {"white", new Color(255, 255, 255)},
+        {Transparent, Color.Transparent},
         {"maroon", new Color(128, 0, 0)},
         {"red", new Color(255, 0, 0)},
         {"purple", new Color(128, 0, 128)},

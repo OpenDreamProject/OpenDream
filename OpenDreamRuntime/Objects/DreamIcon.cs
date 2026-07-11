@@ -543,46 +543,7 @@ public sealed class DreamIconOperationFlip(bool flipVertical, bool flipHorizonta
     }
 }
 
-public abstract class DreamIconOperationMapColors : IDreamIconOperation {
-    protected abstract Rgba32 BuildModifiedPixel(Rgba32 pixel);
-
-    public void OnApply(DreamIcon icon) { }
-
-    public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, AtomDirection dir, UIBox2i bounds) {
-        for (int y = bounds.Top; y < bounds.Bottom; y++) {
-            for (int x = bounds.Left; x < bounds.Right; x++) {
-                int dstPixelPosition = (y * imageSpan) + x;
-
-                pixels[dstPixelPosition] = BuildModifiedPixel(pixels[dstPixelPosition]);
-            }
-        }
-    }
-}
-
-public sealed class DreamIconOperationMapColorsRgba(Color colorR, Color colorG, Color colorB, Color colorA, Color color0, bool calculateTransparency) : DreamIconOperationMapColors {
-    private Color CreateColorComponent(Color component, byte strength) => new(
-            (component.R * strength) / byte.MaxValue,
-            (component.G * strength) / byte.MaxValue,
-            (component.B * strength) / byte.MaxValue,
-            calculateTransparency ? (component.A * strength) / byte.MaxValue : 0);
-
-    protected override Rgba32 BuildModifiedPixel(Rgba32 pixel) {
-        Color rNew = CreateColorComponent(colorR, pixel.R);
-        Color gNew = CreateColorComponent(colorG, pixel.G);
-        Color bNew = CreateColorComponent(colorB, pixel.B);
-        Color aNew = CreateColorComponent(colorA, pixel.A);
-
-        var finalPixel = pixel;
-        finalPixel.R = (byte)Math.Min(rNew.RByte + gNew.RByte + bNew.RByte + aNew.RByte + color0.RByte, byte.MaxValue);
-        finalPixel.G = (byte)Math.Min(rNew.GByte + gNew.GByte + bNew.GByte + aNew.GByte + color0.GByte, byte.MaxValue);
-        finalPixel.B = (byte)Math.Min(rNew.BByte + gNew.BByte + bNew.BByte + aNew.BByte + color0.BByte, byte.MaxValue);
-        if(calculateTransparency)
-            finalPixel.A = (byte)Math.Min(rNew.AByte + gNew.AByte + bNew.AByte + aNew.AByte + color0.AByte, byte.MaxValue);
-        return finalPixel;
-    }
-}
-
-public sealed class DreamIconOperationMapColorsMatrix(Matrix4x4 colorMatrix, Vector4 vec0) : DreamIconOperationMapColors {
+public sealed class DreamIconOperationMapColors(Matrix4x4 colorMatrix, Vector4 vec0, bool calculateTransparency) : IDreamIconOperation {
     private readonly Vector4 _maxBytes = new(byte.MaxValue);
     private readonly Vector4 _vecR = colorMatrix[0];
     private readonly Vector4 _vecG = colorMatrix[1];
@@ -591,16 +552,29 @@ public sealed class DreamIconOperationMapColorsMatrix(Matrix4x4 colorMatrix, Vec
 
     private static Vector4 GenerateColor(Vector4 vec, byte strength) => vec * strength / byte.MaxValue;
 
-    protected override Rgba32 BuildModifiedPixel(Rgba32 pixel) {
-        Vector4 finalVec = new(0);
+    public void OnApply(DreamIcon icon) { }
 
-        finalVec += GenerateColor(_vecR, pixel.R);
-        finalVec += GenerateColor(_vecG, pixel.G);
-        finalVec += GenerateColor(_vecB, pixel.B);
-        finalVec += GenerateColor(_vecA, pixel.A);
-        finalVec += vec0;
+    public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, AtomDirection dir, UIBox2i bounds) {
+        for (int y = bounds.Top; y < bounds.Bottom; y++) {
+            for (int x = bounds.Left; x < bounds.Right; x++) {
+                int dstPixelPosition = (y * imageSpan) + x;
+                var pixelData = pixels[dstPixelPosition];
 
-        return new(Vector4.Clamp(finalVec, Vector4.Zero, _maxBytes));
+                Vector4 finalVec = new(0);
+
+                finalVec += GenerateColor(_vecR, pixelData.R);
+                finalVec += GenerateColor(_vecG, pixelData.G);
+                finalVec += GenerateColor(_vecB, pixelData.B);
+                finalVec += GenerateColor(_vecA, pixelData.A);
+                finalVec += vec0;
+
+                Rgba32 finalPixel = new(Vector4.Clamp(finalVec, Vector4.Zero, _maxBytes));
+                if(!calculateTransparency)
+                    finalPixel.A = pixelData.A;
+
+                pixels[dstPixelPosition] = finalPixel;
+            }
+        }
     }
 }
 

@@ -403,12 +403,16 @@ internal static partial class DreamProcNativeHelpers {
     }
 
     public static bool TryParseColor(DreamValue value, out Color color) {
-        if(!value.TryGetValueAsString(out var str) || !ColorHelpers.TryParseColor(str, out var maybeColor)) {
-            if(string.IsNullOrEmpty(str)) {
-                color = Color.Transparent;
-                return true;
-            }
+        value.TryGetValueAsString(out var str);
+        return TryParseColor(str, out color);
+    }
 
+    public static bool TryParseColor(string? value, out Color color) {
+        if(string.IsNullOrEmpty(value)) {
+            value = ColorHelpers.Transparent;
+        }
+
+        if(!ColorHelpers.TryParseColor(value, out var maybeColor)) {
             color = default;
             return false;
         }

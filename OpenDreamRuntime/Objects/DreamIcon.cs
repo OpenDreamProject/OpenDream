@@ -544,6 +544,67 @@ public sealed class DreamIconOperationFlip(bool flipVertical, bool flipHorizonta
     }
 }
 
+public abstract class DreamIconOperationMapColors : IDreamIconOperation {
+    protected abstract Rgba32 BuildModifiedPixel(Rgba32 pixel);
+
+    public void OnApply(DreamIcon icon) { }
+
+    public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, AtomDirection dir, UIBox2i bounds) {
+        for (int y = bounds.Top; y < bounds.Bottom; y++) {
+            for (int x = bounds.Left; x < bounds.Right; x++) {
+                int dstPixelPosition = (y * imageSpan) + x;
+
+                pixels[dstPixelPosition] = BuildModifiedPixel(pixels[dstPixelPosition]);
+            }
+        }
+    }
+}
+
+public sealed class DreamIconOperationMapColorsRGBA(Color colorR, Color colorG, Color colorB, Color colorA, Color color0, bool calculateTransparency) : DreamIconOperationMapColors {
+    private Color CreateColorComponent(Color component, byte strength) => new(
+            (component.R * strength) / byte.MaxValue,
+            (component.G * strength) / byte.MaxValue,
+            (component.B * strength) / byte.MaxValue,
+            calculateTransparency ? (component.A * strength) / byte.MaxValue : 0);
+
+    protected override Rgba32 BuildModifiedPixel(Rgba32 pixel) {
+        Color rNew = CreateColorComponent(colorR, pixel.R);
+        Color gNew = CreateColorComponent(colorG, pixel.G);
+        Color bNew = CreateColorComponent(colorB, pixel.B);
+        Color aNew = CreateColorComponent(colorA, pixel.A);
+
+        var finalPixel = pixel;
+        finalPixel.R = (byte)Math.Min(rNew.RByte + gNew.RByte + bNew.RByte + aNew.RByte + color0.RByte, byte.MaxValue);
+        finalPixel.G = (byte)Math.Min(rNew.GByte + gNew.GByte + bNew.GByte + aNew.GByte + color0.GByte, byte.MaxValue);
+        finalPixel.B = (byte)Math.Min(rNew.BByte + gNew.BByte + bNew.BByte + aNew.BByte + color0.BByte, byte.MaxValue);
+        if(calculateTransparency)
+            finalPixel.A = (byte)Math.Min(rNew.AByte + gNew.AByte + bNew.AByte + aNew.AByte + color0.AByte, byte.MaxValue);
+        return finalPixel;
+    }
+}
+
+public sealed class DreamIconOperationMapColorsMatrix(Matrix4x4 colorMatrix, Vector4 vec0) : DreamIconOperationMapColors {
+    private readonly Vector4 MaxBytes = new(byte.MaxValue);
+    private readonly Vector4 vecR = colorMatrix[0];
+    private readonly Vector4 vecG = colorMatrix[1];
+    private readonly Vector4 vecB = colorMatrix[2];
+    private readonly Vector4 vecA = colorMatrix[3];
+
+    private static Vector4 GenerateColor(Vector4 vec, byte strength) => vec * strength / byte.MaxValue;
+
+    protected override Rgba32 BuildModifiedPixel(Rgba32 pixel) {
+        Vector4 finalVec = new(0);
+
+        finalVec += GenerateColor(vecR, pixel.R);
+        finalVec += GenerateColor(vecG, pixel.G);
+        finalVec += GenerateColor(vecB, pixel.B);
+        finalVec += GenerateColor(vecA, pixel.A);
+        finalVec += vec0;
+
+        return new(Vector4.Clamp(finalVec, Vector4.Zero, MaxBytes));
+    }
+}
+
 public sealed class DreamIconOperationSetIntensity(float intensityR, float intensityG, float intensityB) : IDreamIconOperation {
     public void OnApply(DreamIcon icon) { }
 

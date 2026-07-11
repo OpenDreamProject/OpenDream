@@ -1,3 +1,4 @@
+using System.Diagnostics.Contracts;
 using System.Linq;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
@@ -181,6 +182,169 @@ namespace OpenDreamRuntime.Procs.Native {
             };
         }
 
+        [DreamProc("MapColors")]
+        public static DreamValue NativeProc_MapColors(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+            var srcDreamIcon = ((DreamObjectIcon)src!).Icon;
+
+            return bundle.GetArgument(0, "") switch {
+                var rValue when rValue.TryGetValueAsString(out var _) => HandleMapColorsRGBA(bundle, srcDreamIcon),
+                var rRValue when rRValue.TryGetValueAsFloatCoerceNull(out var _) => HandleMapColorsComponent(bundle, srcDreamIcon),
+                _ => throw new ArgumentException("Could not determine MapColors form from first argument"),
+            };
+        }
+
+        private static DreamValue HandleMapColorsRGBA(NativeProc.Bundle bundle, DreamIcon icon) {
+            bool calculateTransparency = false;
+            Color colorR;
+            Color colorG;
+            Color colorB;
+            Color colorA;
+            Color color0;
+
+            [Pure]
+            static bool TryParseRGB(DreamValue value, out Color color, out bool considerTransparency) {
+                if(!value.TryGetValueAsString(out var str)) {
+                    color = default;
+                    considerTransparency = false;
+                    return false;
+                }
+
+                if(!ColorHelpers.TryParseColor(str, out color)) {
+                    considerTransparency = false;
+                    return false;
+                }
+
+                considerTransparency = ColorHelpers.IncludesTransparency(str);
+                return true;
+            }
+
+            switch(bundle.Arguments.Length) {
+                case 3 or 4: { // RGB form
+                    if(!DreamProcNativeHelpers.TryParseColor(bundle.GetArgument(0, ""), out colorR))
+                        goto default;
+
+                    if(!DreamProcNativeHelpers.TryParseColor(bundle.GetArgument(1, ""), out colorG))
+                        goto default;
+
+                    if(!DreamProcNativeHelpers.TryParseColor(bundle.GetArgument(2, ""), out colorB))
+                        goto default;
+
+                    colorA = default;
+
+                    if(!DreamProcNativeHelpers.TryParseColor(bundle.GetArgument(3, ""), out color0))
+                        color0 = default;
+
+                    break;
+                }
+
+                case 5: { // RGBA form
+                    // doing something weird to simplify this step because structs and refs and stuff
+                    const int expectedColors = 5;
+                    var colors = new Color[expectedColors];
+
+                    bool wipeTransparency = false;
+                    for(int i = 0; i < expectedColors; i++) {
+                        if(!TryParseRGB(bundle.GetArgument(i, ""), out var c, out bool hasAlpha))
+                            goto default;
+
+                        colors[i] = c;
+                        wipeTransparency |= !hasAlpha;
+                    }
+
+                    if(wipeTransparency) {
+                        for(int i = 0; i < 5; i++) {
+                            ref var color = ref colors[i];
+                            if(color.A <= 0) continue;
+                            color.A = 1;
+                        }
+                    }
+
+                    calculateTransparency = wipeTransparency; // if we wiped them, that means we're going to calculate them
+                    colorR = colors[0];
+                    colorG = colors[1];
+                    colorB = colors[2];
+                    colorA = colors[3];
+                    color0 = colors[4];
+
+                    break;
+                }
+
+                default: {
+                    throw new ArgumentException("Malformed arguments for RGB or RGBA MapColors");
+                }
+            }
+
+            icon.ApplyOperation(new DreamIconOperationMapColorsRGBA(colorR, colorG, colorB, colorA, color0, calculateTransparency));
+            return DreamValue.Null;
+        }
+
+        private static DreamValue HandleMapColorsComponent(NativeProc.Bundle bundle, DreamIcon icon) {
+            Matrix4x4 colorMatrix; // the RGBA set
+            Vector4 row0;
+
+            [Pure]
+            static bool TryBuildColorMatrix(int expectedRows, int rowLength, NativeProc.Bundle bundle, out Matrix4x4 matrix) {
+                Matrix4x4 newMatrix = new();
+
+                for(int row = 0; row < expectedRows; row++) {
+                    Vector4 values = new(0);
+
+                    for(int i = 0; i < rowLength; i++) {
+                        if(!bundle.GetArgument(rowLength * row + i, "").TryGetValueAsFloatCoerceNull(out var value)) {
+                            matrix = default;
+                            return false;
+                        }
+
+                        values[i] = value;
+                    }
+
+                    newMatrix[row] = values;
+                }
+
+                matrix = newMatrix;
+                return true;
+            }
+
+            switch(bundle.Arguments.Length) {
+                case 9 or 12: { // Alpha omitted
+                    const int expectedRows = 3;
+                    const int rowLength = 3;
+
+                    if(!TryBuildColorMatrix(expectedRows, rowLength, bundle, out colorMatrix))
+                        goto default;
+
+                    colorMatrix[3] = new(0, 0, 0, 1); // alpha components
+
+                    row0 = new(0);
+                    for(int i = 0; i < rowLength; i++) {
+                        row0[i] = bundle.GetArgument(rowLength * (expectedRows) + i, "").UnsafeGetValueAsFloat();
+                    }
+
+                    break;
+                }
+
+                case 16 or 20: { // Alpha included
+                    const int expectedRows = 4;
+                    const int rowLength = 4;
+
+                    if(!TryBuildColorMatrix(expectedRows, rowLength, bundle, out colorMatrix))
+                        goto default;
+
+                    row0 = new(0);
+                    for(int i = 0; i < rowLength; i++) {
+                        row0[i] = bundle.GetArgument(rowLength * (expectedRows) + i, "").UnsafeGetValueAsFloat();
+                    }
+
+                    break;
+                }
+
+                default: throw new ArgumentException("Malformed arguments for component MapColors");
+            }
+
+            icon.ApplyOperation(new DreamIconOperationMapColorsMatrix(colorMatrix, row0));
+            return DreamValue.Null;
+        }
+
         [DreamProc("Scale")]
         [DreamProcParameter("width", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("height", Type = DreamValueTypeFlag.Float)]
@@ -267,13 +431,8 @@ namespace OpenDreamRuntime.Procs.Native {
                 throw new ArgumentException($"invalid replace color {newRgbValue}");
 
             // We need to parse the color string to make sure the alpha component isn't there
-            bool considerAlpha = false;
             oldRgbValue.TryGetValueAsString(out var oldRgbString);
-            if(string.IsNullOrWhiteSpace(oldRgbString) || oldRgbString == ColorHelpers.Transparent)
-                considerAlpha = true;
-            else if(oldRgbString.StartsWith('#') && (oldRgbString.Length == 5 || oldRgbString.Length == 9)) {
-                considerAlpha = true;
-            }
+            bool considerAlpha = string.IsNullOrWhiteSpace(oldRgbString) || ColorHelpers.IncludesTransparency(oldRgbString);
 
             srcDreamIcon.ApplyOperation(new DreamIconOperationSwapColor(oldColor, newColor, considerAlpha));
             return DreamValue.Null;

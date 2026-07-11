@@ -23,7 +23,6 @@
 	proc/Insert(new_icon, icon_state, dir, frame, moving, delay)
 
 	proc/MapColors(...)
-		set opendream_unimplemented = TRUE
 
 	proc/Scale(width as num, height as num)
 

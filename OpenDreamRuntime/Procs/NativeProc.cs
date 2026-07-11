@@ -52,6 +52,7 @@ public sealed unsafe class NativeProc : DreamProc {
         public readonly NativeProc Proc = proc;
 
         // NOTE: Deliberately not using DreamProcArguments here, tis slow.
+        // FIXME: Null arguments at the end of the list should be discarded
         public readonly ReadOnlySpan<DreamValue> Arguments = arguments.Values;
 
         public DreamManager DreamManager => Proc._dreamManager;

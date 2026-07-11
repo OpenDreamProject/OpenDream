@@ -534,7 +534,7 @@ public sealed class DreamIconOperationFlip(bool flipVertical, bool flipHorizonta
             for (int x = bounds.Left; x < bounds.Right; x++) {
                 var relativeX = x - bounds.Left;
                 int horizontalIndex = !flipHorizontal ? relativeX : (bounds.Width - 1) - relativeX;
-                
+
 
                 int dstPixelPosition = (y * imageSpan) + x;
                 int refPixelPosition = verticalIndex * bounds.Width + horizontalIndex;
@@ -561,6 +561,69 @@ public sealed class DreamIconOperationSetIntensity(float intensityR, float inten
         }
     }
 }
+
+public sealed class DreamIconOperationShift(Vector2i shift, bool wrap) : IDreamIconOperation {
+
+    public void OnApply(DreamIcon icon) { }
+
+    public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, AtomDirection dir, UIBox2i bounds) {
+        //copy step
+        Rgba32[] referencePixels = new Rgba32[bounds.Width * bounds.Height];
+        int i = 0;
+        for (int y = bounds.Top; y < bounds.Bottom; y++) {
+            for (int x = bounds.Left; x < bounds.Right; x++) {
+                int dstPixelPosition = (y * imageSpan) + x;
+
+                referencePixels[i++] = pixels[dstPixelPosition];
+            }
+        }
+
+        // shift step
+        int shiftY = wrap ? shift.Y % bounds.Height : Math.Clamp(shift.Y, -bounds.Height, bounds.Height);
+        int shiftX = wrap ? shift.X % bounds.Width : Math.Clamp(shift.X, -bounds.Width, bounds.Width);
+
+        for (int y = bounds.Top; y < bounds.Bottom; y++) {
+            bool wrappingY = false;
+            var relativeY = y - bounds.Top + shiftY; // this one is backwards because icons are top to bottom in RT
+            if(relativeY < bounds.Top) {
+                relativeY += bounds.Height;
+                wrappingY = true;
+            }
+            else if (relativeY >= bounds.Bottom) {
+                relativeY -= bounds.Height;
+                wrappingY = true;
+            }
+
+            for (int x = bounds.Left; x < bounds.Right; x++) {
+                bool wrappingX = false;
+                var relativeX = x - bounds.Left - shiftX;
+                if(relativeX < bounds.Left) {
+                    relativeX += bounds.Width;
+                    wrappingX = true;
+                }
+                else if (relativeX >= bounds.Right) {
+                    relativeX -= bounds.Width;
+                    wrappingX = true;
+                }
+
+                Rgba32 pickedColor;
+
+                if(!wrap && (wrappingY || wrappingX)) {
+                    pickedColor = default; // transparent
+                }
+                else {
+                    int refPixelPosition = relativeY * bounds.Width + relativeX;
+                    pickedColor = referencePixels[refPixelPosition];
+                }
+
+
+                int dstPixelPosition = (y * imageSpan) + x;
+                pixels[dstPixelPosition] = pickedColor;
+            }
+        }
+    }
+}
+
 
 public sealed class DreamIconOperationSwapColor(Color oldColor, Color newColor, bool considerAlpha) : IDreamIconOperation {
     private readonly Rgba32 _searchValue = new(oldColor.RByte, oldColor.GByte, oldColor.BByte, oldColor.AByte);

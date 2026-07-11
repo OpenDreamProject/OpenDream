@@ -218,6 +218,39 @@ namespace OpenDreamRuntime.Procs.Native {
             return DreamValue.Null;
         }
 
+        [DreamProc("Shift")]
+        [DreamProcParameter("dir", Type = DreamValueTypeFlag.Float, DefaultValue = null)]
+        [DreamProcParameter("offset", Type = DreamValueTypeFlag.Float, DefaultValue = null)]
+        [DreamProcParameter("wrap", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+        public static DreamValue NativeProc_Shift(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+            var srcDreamIcon = ((DreamObjectIcon)src!).Icon;
+
+            AtomDirection dir = (AtomDirection)bundle.GetArgument(0, "dir").UnsafeGetValueAsFloat();
+            if(!dir.Cardinals().IsValid())
+                return DreamValue.Null;
+
+            int offset = (int)bundle.GetArgument(1, "offset").UnsafeGetValueAsFloat();
+            if(offset == 0)
+                return DreamValue.Null;
+
+            // This is genuinely how BYOND checks this parameter
+            bool wrap = (int)bundle.GetArgument(2, "wrap").UnsafeGetValueAsFloat() != 0;
+
+            Vector2i shiftVector = new();
+            if((dir & AtomDirection.North) != 0)
+                shiftVector.Y += offset;
+            if((dir & AtomDirection.South) != 0)
+                shiftVector.Y -= offset;
+            if((dir & AtomDirection.East) != 0)
+                shiftVector.X += offset;
+            if((dir & AtomDirection.West) != 0)
+                shiftVector.X -= offset;
+
+
+            srcDreamIcon.ApplyOperation(new DreamIconOperationShift(shiftVector, wrap));
+            return DreamValue.Null;
+        }
+
         [DreamProc("SwapColor")]
         [DreamProcParameter("old_rgba", Type = DreamValueTypeFlag.String)]
         [DreamProcParameter("new_rgba", Type = DreamValueTypeFlag.String)]

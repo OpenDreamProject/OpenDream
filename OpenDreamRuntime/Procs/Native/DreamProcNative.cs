@@ -180,6 +180,7 @@ internal static class DreamProcNative {
         objectTree.SetNativeProc(objectTree.Icon, DreamProcNativeIcon.NativeProc_GetPixel);
         objectTree.SetNativeProc(objectTree.Icon, DreamProcNativeIcon.NativeProc_Scale);
         objectTree.SetNativeProc(objectTree.Icon, DreamProcNativeIcon.NativeProc_SetIntensity);
+        objectTree.SetNativeProc(objectTree.Icon, DreamProcNativeIcon.NativeProc_Shift);
         objectTree.SetNativeProc(objectTree.Icon, DreamProcNativeIcon.NativeProc_SwapColor);
         objectTree.SetNativeProc(objectTree.Icon, DreamProcNativeIcon.NativeProc_Turn);
 

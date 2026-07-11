@@ -29,8 +29,7 @@
 
 	proc/SetIntensity(r as num, g = r as num|null, b = r as num|null)
 
-	proc/Shift(dir, offset, wrap = 0)
-		set opendream_unimplemented = TRUE
+	proc/Shift(dir as num, offset as num, wrap = 0 as num|null)
 
 	proc/SwapColor(old_rgb as color|null, new_rgb as color|null)
 

@@ -187,13 +187,13 @@ namespace OpenDreamRuntime.Procs.Native {
             var srcDreamIcon = ((DreamObjectIcon)src!).Icon;
 
             return bundle.GetArgument(0, "") switch {
-                var rValue when rValue.TryGetValueAsString(out var _) => HandleMapColorsRGBA(bundle, srcDreamIcon),
-                var rRValue when rRValue.TryGetValueAsFloatCoerceNull(out var _) => HandleMapColorsComponent(bundle, srcDreamIcon),
+                var rValue when rValue.TryGetValueAsString(out var _) => HandleMapColors_Rgba(bundle, srcDreamIcon),
+                var rRValue when rRValue.TryGetValueAsFloatCoerceNull(out var _) => HandleMapColors_Component(bundle, srcDreamIcon),
                 _ => throw new ArgumentException("Could not determine MapColors form from first argument"),
             };
         }
 
-        private static DreamValue HandleMapColorsRGBA(NativeProc.Bundle bundle, DreamIcon icon) {
+        private static DreamValue HandleMapColors_Rgba(NativeProc.Bundle bundle, DreamIcon icon) {
             bool calculateTransparency = false;
             Color colorR;
             Color colorG;
@@ -274,11 +274,11 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
             }
 
-            icon.ApplyOperation(new DreamIconOperationMapColorsRGBA(colorR, colorG, colorB, colorA, color0, calculateTransparency));
+            icon.ApplyOperation(new DreamIconOperationMapColorsRgba(colorR, colorG, colorB, colorA, color0, calculateTransparency));
             return DreamValue.Null;
         }
 
-        private static DreamValue HandleMapColorsComponent(NativeProc.Bundle bundle, DreamIcon icon) {
+        private static DreamValue HandleMapColors_Component(NativeProc.Bundle bundle, DreamIcon icon) {
             Matrix4x4 colorMatrix; // the RGBA set
             Vector4 row0;
 
@@ -409,7 +409,6 @@ namespace OpenDreamRuntime.Procs.Native {
                 shiftVector.X += offset;
             if((dir & AtomDirection.West) != 0)
                 shiftVector.X -= offset;
-
 
             srcDreamIcon.ApplyOperation(new DreamIconOperationShift(shiftVector, wrap));
             return DreamValue.Null;

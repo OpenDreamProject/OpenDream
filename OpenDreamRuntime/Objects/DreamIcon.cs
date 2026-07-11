@@ -535,7 +535,6 @@ public sealed class DreamIconOperationFlip(bool flipVertical, bool flipHorizonta
                 var relativeX = x - bounds.Left;
                 int horizontalIndex = !flipHorizontal ? relativeX : (bounds.Width - 1) - relativeX;
 
-
                 int dstPixelPosition = (y * imageSpan) + x;
                 int refPixelPosition = verticalIndex * bounds.Width + horizontalIndex;
                 pixels[dstPixelPosition] = referencePixels[refPixelPosition];
@@ -560,7 +559,7 @@ public abstract class DreamIconOperationMapColors : IDreamIconOperation {
     }
 }
 
-public sealed class DreamIconOperationMapColorsRGBA(Color colorR, Color colorG, Color colorB, Color colorA, Color color0, bool calculateTransparency) : DreamIconOperationMapColors {
+public sealed class DreamIconOperationMapColorsRgba(Color colorR, Color colorG, Color colorB, Color colorA, Color color0, bool calculateTransparency) : DreamIconOperationMapColors {
     private Color CreateColorComponent(Color component, byte strength) => new(
             (component.R * strength) / byte.MaxValue,
             (component.G * strength) / byte.MaxValue,
@@ -584,24 +583,24 @@ public sealed class DreamIconOperationMapColorsRGBA(Color colorR, Color colorG, 
 }
 
 public sealed class DreamIconOperationMapColorsMatrix(Matrix4x4 colorMatrix, Vector4 vec0) : DreamIconOperationMapColors {
-    private readonly Vector4 MaxBytes = new(byte.MaxValue);
-    private readonly Vector4 vecR = colorMatrix[0];
-    private readonly Vector4 vecG = colorMatrix[1];
-    private readonly Vector4 vecB = colorMatrix[2];
-    private readonly Vector4 vecA = colorMatrix[3];
+    private readonly Vector4 _maxBytes = new(byte.MaxValue);
+    private readonly Vector4 _vecR = colorMatrix[0];
+    private readonly Vector4 _vecG = colorMatrix[1];
+    private readonly Vector4 _vecB = colorMatrix[2];
+    private readonly Vector4 _vecA = colorMatrix[3];
 
     private static Vector4 GenerateColor(Vector4 vec, byte strength) => vec * strength / byte.MaxValue;
 
     protected override Rgba32 BuildModifiedPixel(Rgba32 pixel) {
         Vector4 finalVec = new(0);
 
-        finalVec += GenerateColor(vecR, pixel.R);
-        finalVec += GenerateColor(vecG, pixel.G);
-        finalVec += GenerateColor(vecB, pixel.B);
-        finalVec += GenerateColor(vecA, pixel.A);
+        finalVec += GenerateColor(_vecR, pixel.R);
+        finalVec += GenerateColor(_vecG, pixel.G);
+        finalVec += GenerateColor(_vecB, pixel.B);
+        finalVec += GenerateColor(_vecA, pixel.A);
         finalVec += vec0;
 
-        return new(Vector4.Clamp(finalVec, Vector4.Zero, MaxBytes));
+        return new(Vector4.Clamp(finalVec, Vector4.Zero, _maxBytes));
     }
 }
 
@@ -624,7 +623,6 @@ public sealed class DreamIconOperationSetIntensity(float intensityR, float inten
 }
 
 public sealed class DreamIconOperationShift(Vector2i shift, bool wrap) : IDreamIconOperation {
-
     public void OnApply(DreamIcon icon) { }
 
     public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, AtomDirection dir, UIBox2i bounds) {
@@ -677,14 +675,12 @@ public sealed class DreamIconOperationShift(Vector2i shift, bool wrap) : IDreamI
                     pickedColor = referencePixels[refPixelPosition];
                 }
 
-
                 int dstPixelPosition = (y * imageSpan) + x;
                 pixels[dstPixelPosition] = pickedColor;
             }
         }
     }
 }
-
 
 public sealed class DreamIconOperationSwapColor(Color oldColor, Color newColor, bool considerAlpha) : IDreamIconOperation {
     private readonly Rgba32 _searchValue = new(oldColor.RByte, oldColor.GByte, oldColor.BByte, oldColor.AByte);
@@ -696,20 +692,17 @@ public sealed class DreamIconOperationSwapColor(Color oldColor, Color newColor, 
         for (int y = bounds.Top; y < bounds.Bottom; y++) {
             for (int x = bounds.Left; x < bounds.Right; x++) {
                 int dstPixelPosition = (y * imageSpan) + x;
-
                 ref var pixelData = ref pixels[dstPixelPosition];
-                if(pixelData.Rgb == _searchValue.Rgb && (!considerAlpha || pixelData.A == _searchValue.A)) {
-                    if(_replaceValue.A == byte.MinValue) {
-                        pixelData.Rgba = default;
-                    }
-                    else {
-                        pixelData.R = _replaceValue.R;
-                        pixelData.G = _replaceValue.G;
-                        pixelData.B = _replaceValue.B;
-                        if(considerAlpha) {
-                            pixelData.A = _replaceValue.A;
-                        }
-                    }
+
+                if(pixelData.Rgb != _searchValue.Rgb || (considerAlpha && pixelData.A != _searchValue.A))
+                    continue;
+
+
+                pixelData.R = _replaceValue.R;
+                pixelData.G = _replaceValue.G;
+                pixelData.B = _replaceValue.B;
+                if(considerAlpha) {
+                    pixelData.A = _replaceValue.A;
                 }
             }
         }

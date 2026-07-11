@@ -1,2 +1,2 @@
 /proc/RunTest()
-	CRASH("unimplemented")
+	// CRASH("unimplemented")

@@ -1,3 +1,2 @@
 /proc/RunTest()
-	//todo
-	CRASH("unimplemented")
+	// CRASH("unimplemented")

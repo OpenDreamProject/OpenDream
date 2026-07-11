@@ -697,7 +697,6 @@ public sealed class DreamIconOperationSwapColor(Color oldColor, Color newColor, 
                 if(pixelData.Rgb != _searchValue.Rgb || (considerAlpha && pixelData.A != _searchValue.A))
                     continue;
 
-
                 pixelData.R = _replaceValue.R;
                 pixelData.G = _replaceValue.G;
                 pixelData.B = _replaceValue.B;

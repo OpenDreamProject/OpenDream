@@ -406,17 +406,14 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("SwapColor")]
-        [DreamProcParameter("old_rgba", Type = DreamValueTypeFlag.String)]
-        [DreamProcParameter("new_rgba", Type = DreamValueTypeFlag.String)]
         public static DreamValue NativeProc_SwapColor(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             var srcDreamIcon = ((DreamObjectIcon)src!).Icon;
 
-            // FIXME: BYOND doesn't allow named arguments for this
-            var oldRgbValue = bundle.GetArgument(0, "old_rgba");
+            var oldRgbValue = bundle.GetArgument(0, "");
             if(!DreamProcNativeHelpers.TryParseColor(oldRgbValue, out var oldColor))
                 throw new ArgumentException($"invalid search color {oldRgbValue}");
 
-            var newRgbValue = bundle.GetArgument(1, "new_rgba");
+            var newRgbValue = bundle.GetArgument(1, "");
             if(!DreamProcNativeHelpers.TryParseColor(newRgbValue, out var newColor))
                 throw new ArgumentException($"invalid replace color {newRgbValue}");
 

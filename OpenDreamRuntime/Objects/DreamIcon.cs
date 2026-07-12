@@ -568,6 +568,7 @@ public sealed class DreamIconOperationMapColors(Matrix4x4 colorMatrix, Vector4 v
                 finalVec += GenerateColor(_vecA, pixelData.A);
                 finalVec += vec0;
 
+                // Noting that MapColors preserves pixel color even if the pixel becomes transparent (this is probably a BYOND bug)
                 Rgba32 finalPixel = new(Vector4.Clamp(finalVec, Vector4.Zero, _maxBytes));
                 if(!calculateTransparency)
                     finalPixel.A = pixelData.A;
@@ -657,8 +658,9 @@ public sealed class DreamIconOperationShift(Vector2i shift, bool wrap) : IDreamI
 }
 
 public sealed class DreamIconOperationSwapColor(Color oldColor, Color newColor, bool considerAlpha) : IDreamIconOperation {
+    private readonly bool onlyTransparency = oldColor.A <= 0;
     private readonly Rgba32 _searchValue = new(oldColor.RByte, oldColor.GByte, oldColor.BByte, oldColor.AByte);
-    private readonly Rgba32 _replaceValue = new(newColor.RByte, newColor.GByte, newColor.BByte, newColor.AByte);
+    private readonly Rgba32 _replaceValue = newColor.A > 0 ? new(newColor.RByte, newColor.GByte, newColor.BByte, newColor.AByte) : default;
 
     public void OnApply(DreamIcon icon) { }
 
@@ -668,13 +670,17 @@ public sealed class DreamIconOperationSwapColor(Color oldColor, Color newColor, 
                 int dstPixelPosition = (y * imageSpan) + x;
                 ref var pixelData = ref pixels[dstPixelPosition];
 
-                if(pixelData.Rgb != _searchValue.Rgb || (considerAlpha && pixelData.A != _searchValue.A))
+                if(onlyTransparency) {
+                    if(pixelData.A != 0)
+                        continue;
+                }
+                else if(pixelData.Rgb != _searchValue.Rgb || (considerAlpha && pixelData.A != _searchValue.A))
                     continue;
 
                 pixelData.R = _replaceValue.R;
                 pixelData.G = _replaceValue.G;
                 pixelData.B = _replaceValue.B;
-                if(considerAlpha) {
+                if(considerAlpha || _replaceValue.A == 0) {
                     pixelData.A = _replaceValue.A;
                 }
             }

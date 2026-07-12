@@ -23,3 +23,12 @@
 	TEST_OPERATION(GET_ICON("dark"), null)
 	TEST_OPERATION(GET_ICON("dim"), 0.5)
 	TEST_OPERATION(GET_ICON("dim"), 0.5, 0.5)
+	TEST_OPERATION(GET_ICON("dim"), 0.5, null, 0.5)
+
+	TEST_OPERATION(base_icon, r=1)
+	TEST_OPERATION(GET_ICON("full-green"), g=1)
+	TEST_OPERATION(GET_ICON("full-blue"), b=1)
+
+	TEST_OPERATION(base_icon, -1, 1, 1)
+	TEST_OPERATION(base_icon, 1, -1, 1)
+	TEST_OPERATION(base_icon, 1, -1, -1)

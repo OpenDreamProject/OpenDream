@@ -588,9 +588,9 @@ public sealed class DreamIconOperationSetIntensity(float intensityR, float inten
 
                 // Assumes that RGB are positive floats
                 ref var pixelData = ref pixels[dstPixelPosition];
-                pixelData.R = (byte)Math.Max(MathF.Round(pixelData.R * intensityR), byte.MaxValue);
-                pixelData.G = (byte)Math.Max(MathF.Round(pixelData.G * intensityG), byte.MaxValue);
-                pixelData.B = (byte)Math.Max(MathF.Round(pixelData.B * intensityB), byte.MaxValue);
+                pixelData.R = (byte)Math.Min(MathF.Round(pixelData.R * intensityR), byte.MaxValue);
+                pixelData.G = (byte)Math.Min(MathF.Round(pixelData.G * intensityG), byte.MaxValue);
+                pixelData.B = (byte)Math.Min(MathF.Round(pixelData.B * intensityB), byte.MaxValue);
             }
         }
     }

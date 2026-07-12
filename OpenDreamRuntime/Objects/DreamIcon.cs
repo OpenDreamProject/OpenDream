@@ -691,7 +691,7 @@ public sealed class DreamIconOperationSwapColor(Color oldColor, Color newColor, 
 public sealed class DreamIconOperationTurn(float angle) : IDreamIconOperation {
     // TODO: Figure out the rotation algorithm which is going to be a PITA while respecting clean room design
     // For now this is just gonna rotate in 90 degree intervals
-    private int _degrees = 0;
+    private int _degrees;
 
     public void OnApply(DreamIcon icon) {
         _degrees = (int)Math.Round((angle % 360) / 90, MidpointRounding.AwayFromZero) * 90;

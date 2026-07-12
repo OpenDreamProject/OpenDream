@@ -61,7 +61,13 @@ public sealed class DreamObjectIcon : DreamObject {
         return newIcon;
     }
 
-    public void Turn(float angle) {
-        //TODO: actually rotate the icon clockwise x degrees
+    public void Turn(DreamValue angle) {
+        if(Icon.Width != Icon.Height)
+            return;
+
+        if (!angle.TryGetValueAsFloat(out var degrees) || degrees == 0)
+            return;
+
+        Icon.ApplyOperation(new DreamIconOperationTurn(degrees));
     }
 }

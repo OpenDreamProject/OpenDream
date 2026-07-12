@@ -492,10 +492,10 @@ public sealed class DreamIconOperationDrawBox(Color rgb, Vector2i startPixel, Ve
     public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, AtomDirection dir, UIBox2i bounds) {
         // FIXME: This stuff can definitely be calculated once/ahead of time but we can't guarantee this in OnApply
         var workingBounds = new UIBox2i(
-            Math.Max(_bottomLeft.X, bounds.Left), // left
-            Math.Max(bounds.Bottom - (_topRight.Y - bounds.Top), bounds.Top), // top
-            Math.Min(_topRight.X, bounds.Right), // right
-            Math.Min(bounds.Bottom - (_bottomLeft.Y - bounds.Top), bounds.Bottom) // bottom
+            Math.Max(_bottomLeft.X, bounds.Left),
+            Math.Max(bounds.Bottom - (_topRight.Y - bounds.Top), bounds.Top),
+            Math.Min(_topRight.X, bounds.Right),
+            Math.Min(bounds.Bottom - (_bottomLeft.Y - bounds.Top), bounds.Bottom)
         );
 
         var endPosY = Math.Min(bounds.Bottom, workingBounds.Bottom);
@@ -683,6 +683,45 @@ public sealed class DreamIconOperationSwapColor(Color oldColor, Color newColor, 
                 if(considerAlpha || _replaceValue.A == 0) {
                     pixelData.A = _replaceValue.A;
                 }
+            }
+        }
+    }
+}
+
+public sealed class DreamIconOperationTurn(float angle) : IDreamIconOperation {
+    // TODO: Figure out the rotation algorithm which is going to be a PITA while respecting clean room design
+    // For now this is just gonna rotate in 90 degree intervals
+    private int _degrees = 0;
+
+    public void OnApply(DreamIcon icon) {
+        _degrees = (int)Math.Round((angle % 360) / 90, MidpointRounding.AwayFromZero) * 90;
+        if(_degrees < 0)
+            _degrees += 360;
+    }
+
+    public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, AtomDirection dir, UIBox2i bounds) {
+        // I'm not gonna lie I just looked this up and translated it from JS, far from a math buff
+        int size = bounds.Width;
+        var copy = new Rgba32[size, size];
+        for (int y = bounds.Top; y < bounds.Bottom; y++) {
+            for (int x = bounds.Left; x < bounds.Right; x++) {
+                int dstPixelPosition = (y * imageSpan) + x;
+
+                copy[y, x] = pixels[dstPixelPosition];
+            }
+        }
+
+        // We assume bounds is a square
+        for (int y = bounds.Top; y < bounds.Bottom; y++) {
+            for (int x = bounds.Left; x < bounds.Right; x++) {
+                int dstPixelPosition = (y * imageSpan) + x;
+
+                pixels[dstPixelPosition] = _degrees switch {
+                    90 => copy[size - 1 - x, y],
+                    180 => copy[size - 1 - y, size - 1 - x],
+                    270 => copy[x, size - 1 - y],
+                    _ => copy[y, x]
+                };
             }
         }
     }

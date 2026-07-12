@@ -430,17 +430,8 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("angle", Type = DreamValueTypeFlag.Float)]
         public static DreamValue NativeProc_Turn(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamValue angleArg = bundle.GetArgument(0, "angle");
-            if (!angleArg.TryGetValueAsFloat(out float angle)) {
-                return new DreamValue(src!); // Defaults to input on invalid angle
-            }
-
-            _NativeProc_TurnInternal((DreamObjectIcon)src!, angle);
+            ((DreamObjectIcon)src!).Turn(angleArg);
             return DreamValue.Null;
-        }
-
-        /// <summary> Turns a given icon a given amount of degrees clockwise. </summary>
-        public static void _NativeProc_TurnInternal(DreamObjectIcon src, float angle) {
-            src.Turn(angle);
         }
     }
 }

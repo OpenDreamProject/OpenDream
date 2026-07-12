@@ -32,8 +32,7 @@
 
 	proc/SwapColor(old_rgb as color|null, new_rgb as color|null)
 
-	proc/Turn(angle)
-		set opendream_unimplemented = TRUE
+	proc/Turn(angle as num)
 
 	proc/Width()
 

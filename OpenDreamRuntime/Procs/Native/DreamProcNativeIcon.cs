@@ -190,7 +190,7 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         private static DreamValue HandleMapColors_Rgba(NativeProc.Bundle bundle, DreamIcon icon) {
-            bool calculateTransparency = false;
+            bool calculateTransparency;
             Matrix4x4 colorMatrix;
             Vector4 row0;
 
@@ -226,12 +226,14 @@ namespace OpenDreamRuntime.Procs.Native {
                     if(!DreamProcNativeHelpers.TryParseColor(bundle.GetArgument(3, ""), out var color0))
                         color0 = default;
 
-                    colorMatrix = new();
-                    colorMatrix[0] = colorR.RGBA;
-                    colorMatrix[1] = colorG.RGBA;
-                    colorMatrix[2] = colorB.RGBA;
-                    colorMatrix[3] = new(0, 0, 0, 1);
+                    colorMatrix = new() {
+                        X = colorR.RGBA,
+                        Y = colorG.RGBA,
+                        Z = colorB.RGBA,
+                        W = new Vector4(0, 0, 0, 1),
+                    };
                     row0 = color0.RGBA;
+                    calculateTransparency = false;
 
                     break;
                 }
@@ -247,11 +249,12 @@ namespace OpenDreamRuntime.Procs.Native {
                         colors[i] = c;
                     }
 
-                    colorMatrix = new();
-                    colorMatrix[0] = colors[0].RGBA;
-                    colorMatrix[1] = colors[1].RGBA;
-                    colorMatrix[2] = colors[2].RGBA;
-                    colorMatrix[3] = colors[3].RGBA;
+                    colorMatrix = new() {
+                        X = colors[0].RGBA,
+                        Y = colors[1].RGBA,
+                        Z = colors[2].RGBA,
+                        W = colors[3].RGBA,
+                    };
                     row0 = colors[4].RGBA;
                     calculateTransparency = true;
 

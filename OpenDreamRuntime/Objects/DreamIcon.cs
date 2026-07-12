@@ -658,7 +658,7 @@ public sealed class DreamIconOperationShift(Vector2i shift, bool wrap) : IDreamI
 }
 
 public sealed class DreamIconOperationSwapColor(Color oldColor, Color newColor, bool considerAlpha) : IDreamIconOperation {
-    private readonly bool onlyTransparency = oldColor.A <= 0;
+    private readonly bool _onlyTransparency = oldColor.A <= 0;
     private readonly Rgba32 _searchValue = new(oldColor.RByte, oldColor.GByte, oldColor.BByte, oldColor.AByte);
     private readonly Rgba32 _replaceValue = newColor.A > 0 ? new(newColor.RByte, newColor.GByte, newColor.BByte, newColor.AByte) : default;
 
@@ -670,7 +670,7 @@ public sealed class DreamIconOperationSwapColor(Color oldColor, Color newColor, 
                 int dstPixelPosition = (y * imageSpan) + x;
                 ref var pixelData = ref pixels[dstPixelPosition];
 
-                if(onlyTransparency) {
+                if(_onlyTransparency) {
                     if(pixelData.A != 0)
                         continue;
                 }

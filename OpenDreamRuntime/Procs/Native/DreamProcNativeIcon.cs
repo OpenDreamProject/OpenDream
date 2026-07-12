@@ -110,9 +110,7 @@ namespace OpenDreamRuntime.Procs.Native {
             var srcDreamIcon = ((DreamObjectIcon)src!).Icon;
 
             AtomDirection dir = (AtomDirection)bundle.GetArgument(0, "dir").MustGetValueAsInteger();
-            if(!dir.Cardinals().IsValid())
-                return DreamValue.Null;
-            if((dir & (AtomDirection.Up | AtomDirection.Down)) != 0)
+            if(!dir.IsValid() || dir.Cardinals() != dir)
                 return DreamValue.Null;
             if((dir & (AtomDirection.Northwest)) == AtomDirection.Northwest || (dir & (AtomDirection.Southeast)) == AtomDirection.Southeast) // ???
                 return DreamValue.Null;
@@ -381,7 +379,7 @@ namespace OpenDreamRuntime.Procs.Native {
             var srcDreamIcon = ((DreamObjectIcon)src!).Icon;
 
             AtomDirection dir = (AtomDirection)bundle.GetArgument(0, "dir").UnsafeGetValueAsFloat();
-            if(!dir.Cardinals().IsValid())
+            if(!dir.IsValid() || dir.Cardinals() != dir)
                 return DreamValue.Null;
 
             int offset = (int)bundle.GetArgument(1, "offset").UnsafeGetValueAsFloat();

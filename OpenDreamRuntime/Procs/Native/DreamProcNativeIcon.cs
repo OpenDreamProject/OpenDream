@@ -78,6 +78,16 @@ namespace OpenDreamRuntime.Procs.Native {
             return DreamValue.Null;
         }
 
+        [DreamProc("Crop")]
+        [DreamProcParameter("x1", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("y1", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("x2", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("y2", Type = DreamValueTypeFlag.Float)]
+        public static DreamValue NativeProc_Crop(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+            // TODO
+            return DreamValue.Null;
+        }
+
         [DreamProc("DrawBox")]
         [DreamProcParameter("rgb", Type = DreamValueTypeFlag.String)]
         [DreamProcParameter("x1", Type = DreamValueTypeFlag.Float)]

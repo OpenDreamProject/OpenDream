@@ -6,7 +6,7 @@
 
 	proc/Blend(icon, function = ICON_ADD, x = 1, y = 1)
 
-	proc/Crop(x1, y1, x2, y2)
+	proc/Crop(x1 as num, y1 as num, x2 as num, y2 as num)
 		set opendream_unimplemented = TRUE
 
 	proc/DrawBox(rgb as color|null, x1 as num, y1 as num, x2 = x1 as num|null, y2 = y1 as num|null)

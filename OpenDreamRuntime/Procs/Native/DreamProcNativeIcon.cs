@@ -212,7 +212,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 return true;
             }
 
-            switch(bundle.Arguments.Length) {
+            switch(bundle.Arguments.TrimEnd(DreamValue.Null).Length) {
                 case 3 or 4: { // RGB form
                     if(!DreamProcNativeHelpers.TryParseColor(bundle.GetArgument(0, ""), out var colorR))
                         goto default;
@@ -297,7 +297,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 return true;
             }
 
-            switch(bundle.Arguments.Length) {
+            switch(bundle.Arguments.TrimEnd(DreamValue.Null).Length) {
                 case 9 or 12: { // Alpha omitted
                     const int expectedRows = 3;
                     const int rowLength = 3;

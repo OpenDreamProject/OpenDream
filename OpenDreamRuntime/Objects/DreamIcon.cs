@@ -622,8 +622,7 @@ public sealed class DreamIconOperationShift(Vector2i shift, bool wrap) : IDreamI
             if(relativeY < bounds.Top) {
                 relativeY += bounds.Height;
                 wrappingY = true;
-            }
-            else if (relativeY >= bounds.Bottom) {
+            } else if (relativeY >= bounds.Bottom) {
                 relativeY -= bounds.Height;
                 wrappingY = true;
             }
@@ -634,8 +633,7 @@ public sealed class DreamIconOperationShift(Vector2i shift, bool wrap) : IDreamI
                 if(relativeX < bounds.Left) {
                     relativeX += bounds.Width;
                     wrappingX = true;
-                }
-                else if (relativeX >= bounds.Right) {
+                } else if (relativeX >= bounds.Right) {
                     relativeX -= bounds.Width;
                     wrappingX = true;
                 }
@@ -644,8 +642,7 @@ public sealed class DreamIconOperationShift(Vector2i shift, bool wrap) : IDreamI
 
                 if(!wrap && (wrappingY || wrappingX)) {
                     pickedColor = default; // transparent
-                }
-                else {
+                } else {
                     int refPixelPosition = relativeY * bounds.Width + relativeX;
                     pickedColor = referencePixels[refPixelPosition];
                 }
@@ -673,8 +670,7 @@ public sealed class DreamIconOperationSwapColor(Color oldColor, Color newColor, 
                 if(_onlyTransparency) {
                     if(pixelData.A != 0)
                         continue;
-                }
-                else if(pixelData.Rgb != _searchValue.Rgb || (considerAlpha && pixelData.A != _searchValue.A))
+                } else if(pixelData.Rgb != _searchValue.Rgb || (considerAlpha && pixelData.A != _searchValue.A))
                     continue;
 
                 pixelData.R = _replaceValue.R;

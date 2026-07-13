@@ -20,3 +20,13 @@ public enum AtomDirection : byte {
     Southwest = South | West,
     Northwest = North | West
 }
+
+public static class AtomDirectionExtensions {
+    public static bool IsValid(this AtomDirection dir) =>
+        dir != AtomDirection.None
+        && (dir & (AtomDirection.North | AtomDirection.South)) != (AtomDirection.North | AtomDirection.South)
+        && (dir & (AtomDirection.East | AtomDirection.West)) != (AtomDirection.East | AtomDirection.West)
+        && (dir & (AtomDirection.Up | AtomDirection.Down)) != (AtomDirection.Up | AtomDirection.Down);
+
+    public static AtomDirection Cardinals(this AtomDirection dir) => dir & (AtomDirection.Northeast | AtomDirection.Southwest);
+}

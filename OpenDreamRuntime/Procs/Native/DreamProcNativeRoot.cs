@@ -2854,18 +2854,16 @@ internal static class DreamProcNativeRoot {
         DreamValue dirArg = bundle.GetArgument(0, "dir");
         DreamValue angleArg = bundle.GetArgument(1, "angle");
 
+        if (dirArg.TryGetValueAsDreamObject<DreamObjectIcon>(out var icon)) {
+            DreamObjectIcon clonedIcon = icon.Clone();
+
+            icon.Turn(angleArg);
+            return new(clonedIcon);
+        }
+
         // Handle an invalid angle, defaults to 0
         if (!angleArg.TryGetValueAsFloat(out float angle)) {
             angle = 0;
-        }
-
-        // If Dir is actually an icon, call /icon.Turn
-        if (dirArg.TryGetValueAsDreamObject<DreamObjectIcon>(out var icon)) {
-            // Clone icon here since it's specified to return a new one
-            DreamObjectIcon clonedIcon = icon.Clone();
-
-            DreamProcNativeIcon._NativeProc_TurnInternal(clonedIcon, angle);
-            return new(clonedIcon);
         }
 
         // If Dir is actually a matrix, call /matrix.Turn

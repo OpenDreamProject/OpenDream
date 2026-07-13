@@ -402,6 +402,25 @@ internal static partial class DreamProcNativeHelpers {
         return true;
     }
 
+    public static bool TryParseColor(DreamValue value, out Color color) {
+        value.TryGetValueAsString(out var str);
+        return TryParseColor(str, out color);
+    }
+
+    public static bool TryParseColor(string? value, out Color color) {
+        if(string.IsNullOrEmpty(value)) {
+            value = ColorHelpers.Transparent;
+        }
+
+        if(!ColorHelpers.TryParseColor(value, out var maybeColor)) {
+            color = default;
+            return false;
+        }
+
+        color = maybeColor;
+        return true;
+    }
+
     /// <summary>
     /// Takes in a DreamList and tries to interpret it as representing a color matrix, for use in filters and /atom.color.
     /// </summary>

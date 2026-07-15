@@ -316,6 +316,63 @@ internal static partial class DreamProcNativeHelpers {
         return new DreamValue(view);
     }
 
+    public static DreamValue HandleReplaceText(DreamValue haystackValue, DreamValue needleValue, DreamValue replacementValue, int start, int end, bool exact) {
+        // TODO: byte support if/when we support working with bytes
+
+        if(needleValue.TryGetValueAsDreamObject<DreamObjectRegex>(out var regexObject)) {
+            // Equivalent to regex.Replace according to spec
+            return DreamProcNativeRegex.RegexReplace(regexObject, haystackValue, replacementValue, start, end);
+        }
+
+        if(!haystackValue.TryGetValueAsString(out var haystack))
+            return DreamValue.Null;
+
+        if(start == 0)
+            return new(haystack);
+
+        if(start < 0)// Negative wrap-around
+            start = Math.Max(start + haystack.Length + 1, 1);
+        if(end <= 0)// Zero or negative wrap-around
+            end = Math.Max(end + haystack.Length + 1, start);
+
+        var replacement = replacementValue.Stringify();
+
+        needleValue.TryGetValueAsString(out var needle);
+        if(string.IsNullOrEmpty(needle)) {
+            if(replacement.Length == 0) {
+                return new DreamValue(haystack);
+            }
+
+            if(start == 1) {
+                start = 2;
+            }
+
+            end = Math.Min(end, haystack.Length);
+
+            StringBuilder result = new();
+            for(int i = 0; i < haystack.Length; i++) {
+                result.Append(haystack[i]);
+                if (i >= start - 2 && i < end - 1)
+                    result.Append(replacement);
+            }
+
+            return new DreamValue(result.ToString());
+        }
+
+        // TODO: replacetext automatically upper/lowercases matches, but how? To what extent?
+        string before = haystack[..(start - 1)];
+        string after = haystack[(end - 1)..];
+        string textSub = haystack.Substring(start - 1, end - start);
+        string replaced = textSub.Replace(needle, replacement, exact ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase);
+
+        StringBuilder newTextBuilder = new();
+        newTextBuilder.Append(before);
+        newTextBuilder.Append(replaced);
+        newTextBuilder.Append(after);
+
+        return new DreamValue(newTextBuilder.ToString());
+    }
+
     /// <summary>
     /// Determines whether the first parameter is "visible" to the second parameter, according to BYOND's various rules on visibility.
     /// </summary>
@@ -342,6 +399,25 @@ internal static partial class DreamProcNativeHelpers {
                 return false;
             }
         }
+        return true;
+    }
+
+    public static bool TryParseColor(DreamValue value, out Color color) {
+        value.TryGetValueAsString(out var str);
+        return TryParseColor(str, out color);
+    }
+
+    public static bool TryParseColor(string? value, out Color color) {
+        if(string.IsNullOrEmpty(value)) {
+            value = ColorHelpers.Transparent;
+        }
+
+        if(!ColorHelpers.TryParseColor(value, out var maybeColor)) {
+            color = default;
+            return false;
+        }
+
+        color = maybeColor;
         return true;
     }
 

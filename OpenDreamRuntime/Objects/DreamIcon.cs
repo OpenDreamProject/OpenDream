@@ -285,12 +285,24 @@ public sealed class DreamIcon(DreamManager dreamManager, DreamResourceManager re
 }
 
 public interface IDreamIconOperation {
+    /// <summary>
+    /// Called before icon operations are processed.
+    /// </summary>
+    /// <param name="icon">The icon that's being operated on.</param>
     public void OnApply(DreamIcon icon);
+
+    /// <summary>
+    /// For every frame, in every direction, do this.
+    /// </summary>
+    /// <param name="pixels">A span of every pixel in the image sequence.</param>
+    /// <param name="imageSpan">The width of the entire image sequence, in pixels.</param>
+    /// <param name="frame">The index of the current frame.</param>
+    /// <param name="dir">The current direction of the frame.</param>
+    /// <param name="bounds">The width and height of a given frame.</param>
     public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, AtomDirection dir, UIBox2i bounds);
 }
 
-[Virtual]
-public class DreamIconOperationBlend : IDreamIconOperation {
+public abstract class DreamIconOperationBlend : IDreamIconOperation {
     // With the same values as the ICON_* defines in DMStandard
     public enum BlendType {
         Add = 0,
@@ -465,6 +477,247 @@ public sealed class DreamIconOperationBlendColor(DreamIconOperationBlend.BlendTy
                 int dstPixelPosition = (y * imageSpan) + x;
 
                 BlendPixel(pixels, dstPixelPosition, _color);
+            }
+        }
+    }
+}
+
+public sealed class DreamIconOperationDrawBox(Color rgb, Vector2i startPixel, Vector2i endPixel) : IDreamIconOperation {
+    private readonly Rgba32 _color = new(rgb.RByte, rgb.GByte, rgb.BByte, rgb.AByte);
+    private readonly Vector2i _bottomLeft = Vector2i.ComponentMin(startPixel, endPixel) - 1;
+    private readonly Vector2i _topRight = Vector2i.ComponentMax(startPixel, endPixel);
+
+    public void OnApply(DreamIcon icon) { }
+
+    public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, AtomDirection dir, UIBox2i bounds) {
+        // FIXME: This stuff can definitely be calculated once/ahead of time but we can't guarantee this in OnApply
+        var workingBounds = new UIBox2i(
+            Math.Max(_bottomLeft.X, bounds.Left),
+            Math.Max(bounds.Bottom - (_topRight.Y - bounds.Top), bounds.Top),
+            Math.Min(_topRight.X, bounds.Right),
+            Math.Min(bounds.Bottom - (_bottomLeft.Y - bounds.Top), bounds.Bottom)
+        );
+
+        var endPosY = Math.Min(bounds.Bottom, workingBounds.Bottom);
+        var endPosX = Math.Min(bounds.Right, workingBounds.Right);
+
+        for (int y = workingBounds.Top; y < endPosY; y++) {
+            for (int x = workingBounds.Left; x < endPosX; x++) {
+                int dstPixelPosition = (y * imageSpan) + x;
+
+                pixels[dstPixelPosition].FromRgba32(_color);
+            }
+        }
+    }
+}
+
+public sealed class DreamIconOperationFlip(bool flipVertical, bool flipHorizontal) : IDreamIconOperation {
+    public void OnApply(DreamIcon icon) { }
+
+    public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, AtomDirection dir, UIBox2i bounds) {
+        //copy step
+        Rgba32[] referencePixels = new Rgba32[bounds.Width * bounds.Height];
+        int i = 0;
+        for (int y = bounds.Top; y < bounds.Bottom; y++) {
+            for (int x = bounds.Left; x < bounds.Right; x++) {
+                int dstPixelPosition = (y * imageSpan) + x;
+
+                referencePixels[i++] = pixels[dstPixelPosition];
+            }
+        }
+
+        // flip step
+        for (int y = bounds.Top; y < bounds.Bottom; y++) {
+            var relativeY = y - bounds.Top;
+            int verticalIndex = !flipVertical ? relativeY : (bounds.Height - 1) - relativeY;
+
+            for (int x = bounds.Left; x < bounds.Right; x++) {
+                var relativeX = x - bounds.Left;
+                int horizontalIndex = !flipHorizontal ? relativeX : (bounds.Width - 1) - relativeX;
+
+                int dstPixelPosition = (y * imageSpan) + x;
+                int refPixelPosition = verticalIndex * bounds.Width + horizontalIndex;
+                pixels[dstPixelPosition] = referencePixels[refPixelPosition];
+            }
+        }
+    }
+}
+
+public sealed class DreamIconOperationMapColors(Matrix4x4 colorMatrix, Vector4 vec0, bool calculateTransparency) : IDreamIconOperation {
+    private readonly Vector4 _maxBytes = new(byte.MaxValue);
+    private readonly Vector4 _vecR = colorMatrix[0];
+    private readonly Vector4 _vecG = colorMatrix[1];
+    private readonly Vector4 _vecB = colorMatrix[2];
+    private readonly Vector4 _vecA = colorMatrix[3];
+
+    private static Vector4 GenerateColor(Vector4 vec, byte strength) => vec * strength / byte.MaxValue;
+
+    public void OnApply(DreamIcon icon) { }
+
+    public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, AtomDirection dir, UIBox2i bounds) {
+        for (int y = bounds.Top; y < bounds.Bottom; y++) {
+            for (int x = bounds.Left; x < bounds.Right; x++) {
+                int dstPixelPosition = (y * imageSpan) + x;
+                var pixelData = pixels[dstPixelPosition];
+
+                Vector4 finalVec = new(0);
+
+                finalVec += GenerateColor(_vecR, pixelData.R);
+                finalVec += GenerateColor(_vecG, pixelData.G);
+                finalVec += GenerateColor(_vecB, pixelData.B);
+                finalVec += GenerateColor(_vecA, pixelData.A);
+                finalVec += vec0;
+
+                // Noting that MapColors preserves pixel color even if the pixel becomes transparent (this is probably a BYOND bug)
+                Rgba32 finalPixel = new(Vector4.Clamp(finalVec, Vector4.Zero, _maxBytes));
+                if(!calculateTransparency)
+                    finalPixel.A = pixelData.A;
+
+                pixels[dstPixelPosition] = finalPixel;
+            }
+        }
+    }
+}
+
+public sealed class DreamIconOperationSetIntensity(float intensityR, float intensityG, float intensityB) : IDreamIconOperation {
+    public void OnApply(DreamIcon icon) { }
+
+    public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, AtomDirection dir, UIBox2i bounds) {
+        for (int y = bounds.Top; y < bounds.Bottom; y++) {
+            for (int x = bounds.Left; x < bounds.Right; x++) {
+                int dstPixelPosition = (y * imageSpan) + x;
+
+                // Assumes that RGB are positive floats
+                ref var pixelData = ref pixels[dstPixelPosition];
+                pixelData.R = (byte)Math.Min(MathF.Round(pixelData.R * intensityR), byte.MaxValue);
+                pixelData.G = (byte)Math.Min(MathF.Round(pixelData.G * intensityG), byte.MaxValue);
+                pixelData.B = (byte)Math.Min(MathF.Round(pixelData.B * intensityB), byte.MaxValue);
+            }
+        }
+    }
+}
+
+public sealed class DreamIconOperationShift(Vector2i shift, bool wrap) : IDreamIconOperation {
+    public void OnApply(DreamIcon icon) { }
+
+    public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, AtomDirection dir, UIBox2i bounds) {
+        //copy step
+        Rgba32[] referencePixels = new Rgba32[bounds.Width * bounds.Height];
+        int i = 0;
+        for (int y = bounds.Top; y < bounds.Bottom; y++) {
+            for (int x = bounds.Left; x < bounds.Right; x++) {
+                int dstPixelPosition = (y * imageSpan) + x;
+
+                referencePixels[i++] = pixels[dstPixelPosition];
+            }
+        }
+
+        // shift step
+        int shiftY = wrap ? shift.Y % bounds.Height : Math.Clamp(shift.Y, -bounds.Height, bounds.Height);
+        int shiftX = wrap ? shift.X % bounds.Width : Math.Clamp(shift.X, -bounds.Width, bounds.Width);
+
+        for (int y = bounds.Top; y < bounds.Bottom; y++) {
+            bool wrappingY = false;
+            var relativeY = y - bounds.Top + shiftY; // this one is backwards because icons are top to bottom in RT
+            if(relativeY < bounds.Top) {
+                relativeY += bounds.Height;
+                wrappingY = true;
+            } else if (relativeY >= bounds.Bottom) {
+                relativeY -= bounds.Height;
+                wrappingY = true;
+            }
+
+            for (int x = bounds.Left; x < bounds.Right; x++) {
+                bool wrappingX = false;
+                var relativeX = x - bounds.Left - shiftX;
+                if(relativeX < bounds.Left) {
+                    relativeX += bounds.Width;
+                    wrappingX = true;
+                } else if (relativeX >= bounds.Right) {
+                    relativeX -= bounds.Width;
+                    wrappingX = true;
+                }
+
+                Rgba32 pickedColor;
+
+                if(!wrap && (wrappingY || wrappingX)) {
+                    pickedColor = default; // transparent
+                } else {
+                    int refPixelPosition = relativeY * bounds.Width + relativeX;
+                    pickedColor = referencePixels[refPixelPosition];
+                }
+
+                int dstPixelPosition = (y * imageSpan) + x;
+                pixels[dstPixelPosition] = pickedColor;
+            }
+        }
+    }
+}
+
+public sealed class DreamIconOperationSwapColor(Color oldColor, Color newColor, bool considerAlpha) : IDreamIconOperation {
+    private readonly bool _onlyTransparency = oldColor.A <= 0;
+    private readonly Rgba32 _searchValue = new(oldColor.RByte, oldColor.GByte, oldColor.BByte, oldColor.AByte);
+    private readonly Rgba32 _replaceValue = newColor.A > 0 ? new(newColor.RByte, newColor.GByte, newColor.BByte, newColor.AByte) : default;
+
+    public void OnApply(DreamIcon icon) { }
+
+    public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, AtomDirection dir, UIBox2i bounds) {
+        for (int y = bounds.Top; y < bounds.Bottom; y++) {
+            for (int x = bounds.Left; x < bounds.Right; x++) {
+                int dstPixelPosition = (y * imageSpan) + x;
+                ref var pixelData = ref pixels[dstPixelPosition];
+
+                if(_onlyTransparency) {
+                    if(pixelData.A != 0)
+                        continue;
+                } else if(pixelData.Rgb != _searchValue.Rgb || (considerAlpha && pixelData.A != _searchValue.A))
+                    continue;
+
+                pixelData.R = _replaceValue.R;
+                pixelData.G = _replaceValue.G;
+                pixelData.B = _replaceValue.B;
+                if(considerAlpha || _replaceValue.A == 0) {
+                    pixelData.A = _replaceValue.A;
+                }
+            }
+        }
+    }
+}
+
+public sealed class DreamIconOperationTurn(float angle) : IDreamIconOperation {
+    // TODO: Figure out the rotation algorithm which is going to be a PITA while respecting clean room design
+    // For now this is just gonna rotate in 90 degree intervals
+    private int _degrees;
+
+    public void OnApply(DreamIcon icon) {
+        _degrees = (int)Math.Round((angle % 360) / 90, MidpointRounding.AwayFromZero) * 90;
+        if(_degrees < 0)
+            _degrees += 360;
+    }
+
+    public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, AtomDirection dir, UIBox2i bounds) {
+        // I'm not gonna lie I just looked this up and translated it from JS, far from a math buff
+        int size = bounds.Width;
+        var copy = new Rgba32[size, size];
+        for (int y = bounds.Top; y < bounds.Bottom; y++) {
+            for (int x = bounds.Left; x < bounds.Right; x++) {
+                int dstPixelPosition = (y * imageSpan) + x;
+
+                copy[y, x] = pixels[dstPixelPosition];
+            }
+        }
+
+        // We assume bounds is a square
+        for (int y = bounds.Top; y < bounds.Bottom; y++) {
+            for (int x = bounds.Left; x < bounds.Right; x++) {
+                int dstPixelPosition = (y * imageSpan) + x;
+
+                pixels[dstPixelPosition] = _degrees switch {
+                    90 => copy[size - 1 - x, y],
+                    180 => copy[size - 1 - y, size - 1 - x],
+                    270 => copy[x, size - 1 - y],
+                    _ => copy[y, x]
+                };
             }
         }
     }

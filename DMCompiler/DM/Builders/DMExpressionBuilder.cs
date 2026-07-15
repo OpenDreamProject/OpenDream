@@ -748,6 +748,10 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
             var path = owner.Path.AddToPath("proc/" + referencedProc.Name);
             return new ConstantProcReference(location, path, referencedProc);
         } else { // A::B
+            var variable = owner.GetVariable(bIdentifier);
+            if (variable != null)
+                return new ScopeReference(ObjectTree, location, expression, bIdentifier, variable);
+
             var globalVarId = owner.GetGlobalVariableId(bIdentifier);
             if (globalVarId != null) {
                 // B is a static var.
@@ -756,11 +760,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
                 return new GlobalField(location, globalVar.Type, globalVarId.Value, globalVar.ValType);
             }
 
-            var variable = owner.GetVariable(bIdentifier);
-            if (variable == null)
-                return UnknownIdentifier(location, bIdentifier);
-
-            return new ScopeReference(ObjectTree, location, expression, bIdentifier, variable);
+            return UnknownIdentifier(location, bIdentifier);
         }
     }
 

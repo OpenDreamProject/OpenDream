@@ -4,7 +4,11 @@
 // An undocumented proc
 // Doesn't evaluate DM as you might expect, but instead DMScript
 /proc/eval(script)
-	set opendream_unsupported = "eval() is officialy deprecated"
+	set opendream_unsupported = "eval() is officially deprecated"
+
+/proc/ispointer(Value)
+	set opendream_unimplemented = TRUE
+	return FALSE
 
 /proc/load_resource(File)
 	set opendream_unimplemented = TRUE

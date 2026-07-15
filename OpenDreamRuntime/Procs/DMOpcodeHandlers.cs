@@ -2432,9 +2432,13 @@ namespace OpenDreamRuntime.Procs {
                 int pickedIndex = state.DreamManager.Random.Next(0, count);
                 var possibleValues = state.PopCount(count);
 
-                state.Push(possibleValues[pickedIndex]);
-                foreach (var value in possibleValues)
-                    value.Dispose();
+                // the way we're going about this is very important
+                using var value = possibleValues[pickedIndex];
+                value.IncRef();
+
+                foreach (var dropped in possibleValues)
+                    dropped.Dispose();
+                state.Push(value);
             }
 
             return ProcStatus.Continue;

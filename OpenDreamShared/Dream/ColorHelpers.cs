@@ -1,15 +1,19 @@
 using Robust.Shared.Maths;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 
 namespace OpenDreamShared.Dream;
 
 public static class ColorHelpers {
+    public const string Transparent = "transparent";
+
     public static readonly Dictionary<string, Color> Colors = new() {
         {"black", new Color(00, 00, 00)},
         {"silver", new Color(192, 192, 192)},
         {"gray", new Color(128, 128, 128)},
         {"grey", new Color(128, 128, 128)},
         {"white", new Color(255, 255, 255)},
+        {Transparent, default}, // NOT equivalent to Color.Transparent, this matters!
         {"maroon", new Color(128, 0, 0)},
         {"red", new Color(255, 0, 0)},
         {"purple", new Color(128, 0, 128)},
@@ -27,8 +31,9 @@ public static class ColorHelpers {
         {"cyan", new Color(0, 255, 255)}
     };
 
+    [Pure]
     public static bool TryParseColor(string color, out Color colorOut, string defaultAlpha = "ff") {
-        if (color.StartsWith("#")) {
+        if (color.StartsWith('#')) {
             if (color.Length == 4 || color.Length == 5) { //4-bit color; repeat each digit
                 string alphaComponent = (color.Length == 5) ? new string(color[4], 2) : defaultAlpha;
 
@@ -43,5 +48,13 @@ public static class ColorHelpers {
         }
 
         return Colors.TryGetValue(color.ToLower(), out colorOut);
+    }
+
+    [Pure]
+    public static bool IncludesTransparency(string color) {
+        if(color == Transparent)
+            return true;
+
+        return color.StartsWith('#') && color.Length is 5 or 9;
     }
 }

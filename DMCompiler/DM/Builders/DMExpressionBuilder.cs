@@ -474,9 +474,6 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
 
                 result = BuildIdentifier(declIdentifier, inferredPath);
                 break;
-            case DMASTVoid:
-                result = BadExpression(WarningCode.BadExpression, expression.Location, "Attempt to use a void expression");
-                break;
             default:
                 throw new ArgumentException($"Invalid expression {expression}", nameof(expression));
         }

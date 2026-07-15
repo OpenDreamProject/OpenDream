@@ -2243,7 +2243,8 @@ namespace DMCompiler.Compiler.DM {
                 ConsumeRightParenthesis();
 
                 if (inner is null) {
-                    inner = new DMASTVoid(loc);
+                    Emit(WarningCode.BadExpression, loc, "Attempt to use a void expression");
+                    return new DMASTInvalidExpression(loc);
                 } else {
                     inner = new DMASTExpressionWrapped(loc, inner);
                 }

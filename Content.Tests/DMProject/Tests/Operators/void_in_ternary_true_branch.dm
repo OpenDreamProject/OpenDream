@@ -3,4 +3,4 @@
 /proc/RunTest()
 	var/L = list()
 
-	var/result = TRUE ? L : ()
+	var/result = TRUE ? () : L

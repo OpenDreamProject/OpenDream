@@ -68,7 +68,7 @@ public sealed partial class WindowDescriptor : ControlDescriptor {
     [DataField("alpha")]
     public DMFPropertyNum Alpha = new(255);
     [DataField("statusbar")]
-    public DMFPropertyBool StatusBar = new(false);
+    public DMFPropertyBool StatusBar = new(true);
     [DataField("transparent-color")]
     public DMFPropertyColor TransparentColor = new(Color.Transparent);
     [DataField("can-close")]

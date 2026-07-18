@@ -1,9 +1,9 @@
-﻿using System.Security.Cryptography;
-using System.Text;
-using OpenDreamRuntime.Procs.Native;
+﻿using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -55,8 +55,14 @@ public sealed class DreamObjectClient : DreamObject {
                 value = Connection.StatObj;
                 return true;
             case "eye":
-                Connection.Eye?.IncRef();
-                value = new(Connection.Eye);
+                if (Connection.Eye == null) {
+                    value = DreamValue.Null;
+                    return true;
+                }
+
+                var eyeObj = Connection.Eye;
+                eyeObj?.IncRef();
+                value = new(eyeObj);
                 return true;
             case "view":
                 // Number if square & centerable, string representation otherwise
@@ -132,13 +138,7 @@ public sealed class DreamObjectClient : DreamObject {
                 break;
             case "eye": {
                 value.TryGetValueAsDreamObject<DreamObjectAtom>(out var newEye);
-                if (newEye is not (DreamObjectMovable or null)) {
-                    throw new Exception($"Cannot set eye to non-movable {value}"); // TODO: You can set it to a turf
-                }
-
-                newEye?.IncRef();
-                Connection.Eye?.DecRef();
-                Connection.Eye = newEye as DreamObjectMovable;
+                Connection.Eye = newEye;
                 break;
             }
             case "view": {

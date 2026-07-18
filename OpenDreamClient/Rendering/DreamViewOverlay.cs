@@ -1,20 +1,20 @@
-﻿using System.Linq;
-using OpenDreamClient.Interface;
+﻿using OpenDreamClient.Interface;
+using OpenDreamClient.Rendering.Particles;
+using OpenDreamShared.Dream;
+using OpenDreamShared.Rendering;
+using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Client.Player;
-using Robust.Shared.Map;
-using OpenDreamShared.Dream;
-using Robust.Shared.Console;
-using Robust.Shared.Prototypes;
-using OpenDreamShared.Rendering;
-using OpenDreamClient.Rendering.Particles;
-using Robust.Client.GameObjects;
-using Robust.Shared.Map.Components;
-using Robust.Shared.Profiling;
-using Matrix3x2 = System.Numerics.Matrix3x2;
 using Robust.Client.ResourceManagement;
 using Robust.Client.UserInterface.RichText;
+using Robust.Shared.Console;
 using Robust.Shared.Enums;
+using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
+using Robust.Shared.Profiling;
+using Robust.Shared.Prototypes;
+using System.Linq;
+using Matrix3x2 = System.Numerics.Matrix3x2;
 
 namespace OpenDreamClient.Rendering;
 
@@ -60,6 +60,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
     private readonly ClientScreenOverlaySystem _screenOverlaySystem;
     private readonly ClientImagesSystem _imagesSystem;
     private readonly DMISpriteSystem _spriteSystem;
+    private readonly DreamClientSystem _dreamClientSystem;
 
     private readonly EntityQuery<DMISpriteComponent> _spriteQuery;
     private readonly EntityQuery<TransformComponent> _xformQuery;
@@ -102,6 +103,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
         _screenOverlaySystem = _entitySystemManager.GetEntitySystem<ClientScreenOverlaySystem>();
         _imagesSystem = _entitySystemManager.GetEntitySystem<ClientImagesSystem>();
         _spriteSystem = _entitySystemManager.GetEntitySystem<DMISpriteSystem>();
+        _dreamClientSystem = _entitySystemManager.GetEntitySystem<DreamClientSystem>();
 
         _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
         _xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
@@ -132,15 +134,21 @@ internal sealed partial class DreamViewOverlay : Overlay {
     protected override void Draw(in OverlayDrawArgs args) {
         using var _ = _prof.Group("Dream View Overlay");
 
-        EntityUid? eye = _playerManager.LocalSession?.AttachedEntity;
-        if (eye == null)
+        var eyeRef = _dreamClientSystem.EyeRef;
+        if (eyeRef.Type == ClientObjectReference.RefType.Entity && !eyeRef.Entity.IsValid()) {
             return;
+        }
+
+        EntityUid mob = _dreamClientSystem.MobUid;
+        if (!mob.IsValid()) {
+            return;
+        }
 
         //Main drawing of sprites happens here
         try {
             var viewportSize = (Vector2i)(args.Viewport.Size / args.Viewport.RenderScale);
 
-            DrawAll(args, eye.Value, viewportSize);
+            DrawAll(args, mob, viewportSize);
         } catch (Exception e) {
             _sawmill.Error($"Error occurred while rendering frame. Error details:\n{e.Message}\n{e.StackTrace}");
         }
@@ -157,41 +165,77 @@ internal sealed partial class DreamViewOverlay : Overlay {
             _rendererMetaDataRental.Push(_rendererMetaDataToReturn.Pop());
     }
 
-    private void DrawAll(OverlayDrawArgs args, EntityUid eye, Vector2i viewportSize) {
-        if (!_xformQuery.TryGetComponent(eye, out var eyeTransform))
+    private void DrawAll(OverlayDrawArgs args, EntityUid mob, Vector2i viewportSize) {
+        DreamMobSightComponent? mobSight;
+        Box2 worldAABB = args.WorldAABB;
+        sbyte seeVis;
+
+        EntitiesInView.Clear();
+
+        var eye = args.Viewport.Eye as DreamClientEye;
+        if (eye == null || eye.IsNullEye) {
+            _mobSightQuery.TryGetComponent(mob, out mobSight);
+            seeVis = mobSight?.SeeInvisibility ?? 127;
+            DrawNullEyeSprites(args, viewportSize, seeVis);
+            return;
+        }
+
+        if (!eye.TryGetEyeCoords(out MapCoordinates? eyeCoords))
             return;
 
-        var eyeCoords = _transformSystem.GetMapCoordinates(eye, eyeTransform);
-        if (!_mapManager.TryFindGridAt(eyeCoords, out var gridUid, out var grid))
+        DreamMobSightComponent? eyeSight = eye.GetSight(mob);
+
+        MapId mapId = eyeCoords.Value.MapId;
+
+        if (!_mapManager.TryFindGridAt(eyeCoords.Value, out var gridUid, out var grid))
             return;
 
-        _mobSightQuery.TryGetComponent(eye, out var mobSight);
-        var seeVis = mobSight?.SeeInvisibility ?? 127;
-        var sight = mobSight?.Sight ?? 0;
+        _mobSightQuery.TryGetComponent(mob, out mobSight);
+        seeVis = mobSight?.SeeInvisibility ?? 127;
+        var sight = eyeSight?.Sight ?? 0;
 
         var worldHandle = args.WorldHandle;
-        var worldAABB = args.WorldAABB;
 
         using (_prof.Group("lookup")) {
             //TODO use a sprite tree.
             //the scaling is to attempt to prevent pop-in, by getting sprites that are *just* offscreen
-            _lookupSystem.GetEntitiesIntersecting(args.MapId, worldAABB.Scale(1.2f), EntitiesInView, MapLookupFlags);
+            _lookupSystem.GetEntitiesIntersecting(mapId, worldAABB.Scale(1.2f), EntitiesInView, MapLookupFlags);
         }
 
-        var eyeTile = _mapSystem.GetTileRef(gridUid, grid, eyeCoords);
+        var eyeTile = _mapSystem.GetTileRef(gridUid, grid, eyeCoords.Value);
         var tiles = CalculateTileVisibility(gridUid, grid, eyeTile, seeVis);
 
         RefreshRenderTargets(args.WorldHandle, viewportSize);
 
         CollectVisibleSprites(tiles, gridUid, grid, eyeTile, seeVis, sight, worldAABB);
         ClearPlanes();
-        ProcessSprites(worldHandle, viewportSize, worldAABB);
+        ProcessSprites(worldHandle, viewportSize);
 
         //Final draw
         DrawPlanes(worldHandle, worldAABB);
 
         //At this point all the sprites have been rendered to the base target, now we just draw it to the viewport!
         worldHandle.DrawTexture(
+            MouseMapRenderEnabled ? _mouseMapRenderTarget!.Texture : _baseRenderTarget!.Texture,
+            args.WorldAABB.BottomLeft);
+    }
+
+    // Only draw sprites in screen space and also on non-negative planes
+    private void DrawNullEyeSprites(OverlayDrawArgs args, Vector2i viewportSize, sbyte seeVis) {
+        RefreshRenderTargets(args.WorldHandle, viewportSize);
+
+        if (ScreenOverlayEnabled) {
+            CollectScreenSpaceSprites(seeVis, args.WorldAABB);
+        }
+
+        ClearPlanes();
+        ProcessSprites(args.WorldHandle, viewportSize, true);
+
+        //Final draw
+        DrawPlanes(args.WorldHandle, args.WorldAABB);
+
+        //At this point all the sprites have been rendered to the base target, now we just draw it to the viewport!
+        args.WorldHandle.DrawTexture(
             MouseMapRenderEnabled ? _mouseMapRenderTarget!.Texture : _baseRenderTarget!.Texture,
             args.WorldAABB.BottomLeft);
     }
@@ -543,11 +587,14 @@ internal sealed partial class DreamViewOverlay : Overlay {
         return plane;
     }
 
-    private void ProcessSprites(DrawingHandleWorld handle, Vector2i viewportSize, Box2 worldAABB) {
+    private void ProcessSprites(DrawingHandleWorld handle, Vector2i viewportSize, bool skipNegativePlanes = false) {
         using var _ = _prof.Group("process sprites / draw render targets");
 
         //all sprites with render targets get handled first - these are ordered by sprites.Sort(), so we can just iterate normally
         foreach (var sprite in _spriteContainer) {
+            if (skipNegativePlanes && sprite.Plane < 0)
+                continue;
+
             var plane = GetPlane(sprite.Plane, viewportSize);
 
             if (!string.IsNullOrEmpty(sprite.RenderTarget)) {
@@ -685,30 +732,33 @@ internal sealed partial class DreamViewOverlay : Overlay {
 
         // Screen objects
         if (ScreenOverlayEnabled) {
-            using var _ = _prof.Group("screen objects");
-
-            foreach (EntityUid uid in _screenOverlaySystem.ScreenObjects) {
-                if (!_entityManager.TryGetComponent(uid, out DMISpriteComponent? sprite) || sprite.ScreenLocation == null)
-                    continue;
-                if (!_spriteSystem.IsVisible(sprite, null, seeVis, null))
-                    continue;
-                if (sprite.ScreenLocation.MapControl != null) // Don't render screen objects meant for other map controls
-                    continue;
-
-                Vector2i dmiIconSize = sprite.Icon.DMI?.IconSize ?? new(IconSize, IconSize);
-                Vector2 position = sprite.ScreenLocation.GetViewPosition(worldAABB.BottomLeft, _interfaceManager.View, IconSize, dmiIconSize);
-                Vector2 iconSize = sprite.Icon.DMI == null ? Vector2.Zero : sprite.Icon.DMI.IconSize / (float)IconSize;
-                for (int x = 0; x < sprite.ScreenLocation.RepeatX; x++) {
-                    for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {
-                        tValue = 0;
-                        ProcessIconComponents(sprite.Icon, position + iconSize * new Vector2(x, y), uid, true, ref tValue, _spriteContainer, seeVis);
-                    }
-                }
-            }
+            CollectScreenSpaceSprites(seeVis, worldAABB);
         }
 
         using (_prof.Group("sort sprites")) {
             _spriteContainer.Sort();
+        }
+    }
+
+    private void CollectScreenSpaceSprites(sbyte seeVis, Box2 worldAABB) {
+        using var _ = _prof.Group("screen objects");
+        foreach (EntityUid uid in _screenOverlaySystem.ScreenObjects) {
+            if (!_entityManager.TryGetComponent(uid, out DMISpriteComponent? sprite) || sprite.ScreenLocation == null)
+                continue;
+            if (!_spriteSystem.IsVisible(sprite, null, seeVis, null))
+                continue;
+            if (sprite.ScreenLocation.MapControl != null) // Don't render screen objects meant for other map controls
+                continue;
+
+            Vector2i dmiIconSize = sprite.Icon.DMI?.IconSize ?? new(IconSize, IconSize);
+            Vector2 position = sprite.ScreenLocation.GetViewPosition(worldAABB.BottomLeft, _interfaceManager.View, IconSize, dmiIconSize);
+            Vector2 iconSize = sprite.Icon.DMI == null ? Vector2.Zero : sprite.Icon.DMI.IconSize / (float)IconSize;
+            for (int x = 0; x < sprite.ScreenLocation.RepeatX; x++) {
+                for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {
+                    int tValue = 0;
+                    ProcessIconComponents(sprite.Icon, position + iconSize * new Vector2(x, y), uid, true, ref tValue, _spriteContainer, seeVis);
+                }
+            }
         }
     }
 

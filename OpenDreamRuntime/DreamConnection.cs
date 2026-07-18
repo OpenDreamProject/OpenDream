@@ -1,3 +1,4 @@
+
 using System.Threading.Tasks;
 using System.Web;
 using DMCompiler.Bytecode;
@@ -19,6 +20,7 @@ public sealed partial class DreamConnection {
     [Dependency] private DreamRefManager _refManager = default!;
     [Dependency] private DreamObjectTree _objectTree = default!;
     [Dependency] private DreamResourceManager _resourceManager = default!;
+    [Dependency] private IEntityManager _entityManager = default!;
     [Dependency] private IEntitySystemManager _entitySystemManager = default!;
     [Dependency] private ISharedPlayerManager _playerManager = default!;
 
@@ -54,14 +56,17 @@ public sealed partial class DreamConnection {
         }
     }
 
-    [ViewVariables] public DreamObjectMovable? Eye {
+    [ViewVariables] public DreamObjectAtom? Eye {
         get;
         set {
+            if (value is not (DreamObjectMovable or DreamObjectTurf or null))
+                throw new Exception($"Cannot set eye to non-movable, non-turf {value}");
+
             value?.IncRef();
             field?.DecRef();
+
             field = value;
-            if (Session != null)
-                _playerManager.SetAttachedEntity(Session, field?.Entity);
+            UpdateMobEye();
         }
     }
 
@@ -156,6 +161,8 @@ public sealed partial class DreamConnection {
             if(!preserveKey)
                 newMob.Key = Key;
         }
+
+        UpdateMobEye();
     }
 
     public void UpdateStat() {
@@ -585,5 +592,19 @@ public sealed partial class DreamConnection {
 
         converted = default;
         return false;
+    }
+
+    private void UpdateMobEye() {
+        // TODO: This should be set to the eye, since it determines the range of visible objects in PVS
+        _playerManager.SetAttachedEntity(Session!, Mob?.Entity);
+
+        var mobUid = Mob?.Entity ?? EntityUid.Invalid;
+        var eyeRef = Eye is not null ? _dreamManager.GetClientReference(Eye) : ClientObjectReference.Null;
+        var msg = new MsgNotifyMobEyeUpdate {
+            MobNetEntity = _entityManager.GetNetEntity(mobUid),
+            EyeRef = eyeRef
+        };
+
+        Session?.Channel.SendMessage(msg);
     }
 }

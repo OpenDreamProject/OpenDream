@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading.Tasks;
 using OpenDreamClient.Interface;
 using OpenDreamClient.Rendering;
@@ -13,10 +14,10 @@ namespace OpenDreamClient;
 
 public sealed partial class ClientVerbSystem : VerbSystem {
     [Dependency] private IDreamInterfaceManager _interfaceManager = default!;
-    [Dependency] private IPlayerManager _playerManager = default!;
     [Dependency] private IEntityManager _entityManager = default!;
     [Dependency] private ITaskManager _taskManager = default!;
     [Dependency] private IOverlayManager _overlayManager = default!;
+    [Dependency] private DreamClientSystem _dreamClientSystem = default!;
     [Dependency] private TransformSystem _transformSystem = default!;
 
     private EntityQuery<DMISpriteComponent> _spriteQuery;
@@ -80,10 +81,18 @@ public sealed partial class ClientVerbSystem : VerbSystem {
     /// <returns>The ID, src, and information of every executable verb</returns>
     public IEnumerable<(int Id, ClientObjectReference Src, VerbInfo VerbInfo)> GetExecutableVerbs(bool ignoreHiddenAttr = false) {
         sbyte? seeInvisibility = null;
-        if (_playerManager.LocalEntity != null) {
-            _sightQuery.TryGetComponent(_playerManager.LocalEntity.Value, out var mobSight);
+
+        EntityUid mob = _dreamClientSystem.MobUid;
+
+        var viewOverlay = _overlayManager.GetOverlay<DreamViewOverlay>();
+        var entitiesToCheck = viewOverlay.EntitiesInView.AsEnumerable();
+
+        if (mob.IsValid()) {
+            _sightQuery.TryGetComponent(mob, out var mobSight);
 
             seeInvisibility = mobSight?.SeeInvisibility;
+
+            entitiesToCheck = entitiesToCheck.Prepend(mob);
         }
 
         // First, the verbs attached to our client
@@ -98,9 +107,8 @@ public sealed partial class ClientVerbSystem : VerbSystem {
             }
         }
 
-        // Then, the verbs on objects around us
-        var viewOverlay = _overlayManager.GetOverlay<DreamViewOverlay>();
-        foreach (var entity in viewOverlay.EntitiesInView) {
+        // Then, the verbs on our mob (if it is valid) and the objects around us
+        foreach (var entity in entitiesToCheck) {
             if (!_spriteQuery.TryGetComponent(entity, out var sprite))
                 continue;
             if (sprite.Icon.Appearance is not { } appearance)
@@ -117,12 +125,12 @@ public sealed partial class ClientVerbSystem : VerbSystem {
                 // Check the verb's "set src" allows us to execute this
                 switch (verb.Accessibility) {
                     case VerbAccessibility.Usr:
-                        if (entity != _playerManager.LocalEntity)
+                        if (entity != mob)
                             continue;
 
                         break;
                     case VerbAccessibility.InUsr:
-                        if (_transformSystem.GetParentUid(entity) != _playerManager.LocalEntity)
+                        if (_transformSystem.GetParentUid(entity) != mob)
                             continue;
 
                         break;

@@ -192,8 +192,10 @@ public enum DreamProcOpcode : byte {
     ModulusModulus = 0x60,
     [OpcodeMetadata(0, OpcodeArgType.Reference)]
     ModulusModulusReference = 0x61,
-    //0x62
-    //0x63
+    [OpcodeMetadata(1, OpcodeArgType.Reference)]
+    PreIncrement = 0x62,
+    [OpcodeMetadata(1, OpcodeArgType.Reference)]
+    PreDecrement = 0x63,
     [OpcodeMetadata(0, OpcodeArgType.Label)]
     JumpIfNull = 0x64,
     [OpcodeMetadata(0, OpcodeArgType.Label)]
@@ -307,10 +309,6 @@ public enum DreamProcOpcode : byte {
     NPushFloatAssign = 0x9B,
     [OpcodeMetadata(0, OpcodeArgType.ArgType, OpcodeArgType.StackDelta)]
     Animate = 0x9C,
-    [OpcodeMetadata(1, OpcodeArgType.Reference)]
-    PreIncrement = 0x9D,
-    [OpcodeMetadata(1, OpcodeArgType.Reference)]
-    PreDecrement = 0x9E,
 }
 // ReSharper restore MissingBlankLines
 

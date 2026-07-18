@@ -294,6 +294,8 @@ public sealed class DMProcState : ProcState {
         {DreamProcOpcode.PickWeighted, DMOpcodeHandlers.PickWeighted},
         {DreamProcOpcode.Increment, DMOpcodeHandlers.Increment},
         {DreamProcOpcode.Decrement, DMOpcodeHandlers.Decrement},
+        {DreamProcOpcode.PreIncrement, DMOpcodeHandlers.PreIncrement},
+        {DreamProcOpcode.PreDecrement, DMOpcodeHandlers.PreDecrement},
         {DreamProcOpcode.CompareEquivalent, DMOpcodeHandlers.CompareEquivalent},
         {DreamProcOpcode.CompareNotEquivalent, DMOpcodeHandlers.CompareNotEquivalent},
         {DreamProcOpcode.Throw, DMOpcodeHandlers.Throw},

@@ -927,24 +927,30 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus Increment(DMProcState state) {
-            var reference = state.ReadReference();
-            using var value = state.GetReferenceValue(reference, peek: true);
+            return IncrementDecrement(state, 1, returnPrevious: true);
+        }
 
-            //If it's not a number, it turns into 1
-            state.AssignReference(reference, new(value.UnsafeGetValueAsFloat() + 1));
-
-            state.Push(value);
-            return ProcStatus.Continue;
+        public static ProcStatus PreIncrement(DMProcState state) {
+            return IncrementDecrement(state, 1, returnPrevious: false);
         }
 
         public static ProcStatus Decrement(DMProcState state) {
+            return IncrementDecrement(state, -1, returnPrevious: true);
+        }
+
+        public static ProcStatus PreDecrement(DMProcState state) {
+            return IncrementDecrement(state, -1, returnPrevious: false);
+        }
+
+        private static ProcStatus IncrementDecrement(DMProcState state, float adjustment, bool returnPrevious) {
             var reference = state.ReadReference();
             using var value = state.GetReferenceValue(reference, peek: true);
+            DreamValue result = new(value.UnsafeGetValueAsFloat() + adjustment);
 
-            //If it's not a number, it turns into -1
-            state.AssignReference(reference, new(value.UnsafeGetValueAsFloat() - 1));
+            // BYOND coerces every non-number including null to 0 for ++ and --
+            state.AssignReference(reference, result);
 
-            state.Push(value);
+            state.Push(returnPrevious ? value : result);
             return ProcStatus.Continue;
         }
 

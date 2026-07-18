@@ -85,8 +85,7 @@ internal abstract class AssignmentUnaryOp(Location location, DMExpression expr) 
 // ++x
 internal sealed class PreIncrement(Location location, DMExpression expr) : AssignmentUnaryOp(location, expr) {
     protected override void EmitOp(DMProc proc, DMReference reference) {
-        proc.PushFloat(1);
-        proc.Append(reference);
+        proc.PreIncrement(reference);
     }
 }
 
@@ -100,8 +99,7 @@ internal sealed class PostIncrement(Location location, DMExpression expr) : Assi
 // --x
 internal sealed class PreDecrement(Location location, DMExpression expr) : AssignmentUnaryOp(location, expr) {
     protected override void EmitOp(DMProc proc, DMReference reference) {
-        proc.PushFloat(1);
-        proc.Remove(reference);
+        proc.PreDecrement(reference);
     }
 }
 

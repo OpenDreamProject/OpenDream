@@ -965,33 +965,18 @@ namespace OpenDreamRuntime.Procs {
                 state.Push(new DreamValue(first.MustGetValueAsInteger() & second.MustGetValueAsInteger()));
             } else if (first.TryGetValueAsDreamList(out var list)) {
                 DreamList newList = state.Proc.ObjectTree.CreateList();
+                Dictionary<DreamValue, DreamValue> associativeValues = list.GetAssociativeValues();
+                var retainedValues = new HashSet<DreamValue>();
+                second.TryGetValueAsDreamList(out DreamList? secondList);
 
-                if (second.TryGetValueAsDreamList(out var secondList)) {
-                    int len = list.GetLength();
+                foreach (DreamValue value in list.EnumerateValues()) {
+                    bool retained = secondList?.ContainsValue(value) ?? value == second;
+                    if (!retained || !retainedValues.Add(value))
+                        continue;
 
-                    for (int i = 1; i <= len; i++) {
-                        using var value = list.GetValue(new DreamValue(i));
-
-                        if (secondList.ContainsValue(value)) {
-                            using var associativeValue = list.GetValue(value);
-
-                            newList.AddValue(value);
-                            if (!associativeValue.IsNull) newList.SetValue(value, associativeValue);
-                        }
-                    }
-                } else {
-                    int len = list.GetLength();
-
-                    for (int i = 1; i <= len; i++) {
-                        using var value = list.GetValue(new DreamValue(i));
-
-                        if (value == second) {
-                            using var associativeValue = list.GetValue(value);
-
-                            newList.AddValue(value);
-                            if (!associativeValue.IsNull) newList.SetValue(value, associativeValue);
-                        }
-                    }
+                    newList.AddValue(value);
+                    if (associativeValues.TryGetValue(value, out DreamValue associatedValue))
+                        newList.SetValue(value, associatedValue);
                 }
 
                 state.Push(new DreamValue(newList));
@@ -3023,23 +3008,34 @@ namespace OpenDreamRuntime.Procs {
         private static DreamValue BitXorValues(DreamObjectTree objectTree, DreamValue first, DreamValue second) {
             if (first.TryGetValueAsDreamList(out var list)) {
                 DreamList newList = objectTree.CreateList();
-                List<DreamValue> values;
+                Dictionary<DreamValue, DreamValue> firstAssociations = list.GetAssociativeValues();
 
-                if (second.TryGetValueAsDreamList(out var secondList)) {
-                    values = secondList.GetValues();
-                } else {
-                    values = new List<DreamValue> { second };
+                void AddValue(DreamValue value, Dictionary<DreamValue, DreamValue>? associations) {
+                    newList.AddValue(value);
+                    if (associations?.TryGetValue(value, out DreamValue associatedValue) is true)
+                        newList.SetValue(value, associatedValue);
                 }
 
-                foreach (DreamValue value in values) {
-                    bool inFirstList = list.ContainsValue(value);
-                    bool inSecondList = secondList.ContainsValue(value);
+                if (second.TryGetValueAsDreamList(out var secondList)) {
+                    Dictionary<DreamValue, DreamValue> secondAssociations = secondList.GetAssociativeValues();
+                    foreach (DreamValue value in list.EnumerateValues()) {
+                        if (!secondList.ContainsValue(value))
+                            AddValue(value, firstAssociations);
+                    }
 
-                    if (inFirstList ^ inSecondList) {
-                        newList.AddValue(value);
+                    foreach (DreamValue value in secondList.EnumerateValues()) {
+                        if (!list.ContainsValue(value))
+                            AddValue(value, secondAssociations);
+                    }
+                } else {
+                    bool secondInList = list.ContainsValue(second);
+                    foreach (DreamValue value in list.EnumerateValues()) {
+                        if (value != second)
+                            AddValue(value, firstAssociations);
+                    }
 
-                        using var associatedValue = inFirstList ? list.GetValue(value) : secondList.GetValue(value);
-                        if (!associatedValue.IsNull) newList.SetValue(value, associatedValue);
+                    if (!secondInList) {
+                        newList.AddValue(second);
                     }
                 }
 

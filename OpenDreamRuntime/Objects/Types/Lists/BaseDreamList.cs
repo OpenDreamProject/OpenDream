@@ -36,7 +36,7 @@ public abstract class BaseDreamList(DreamObjectDefinition objectDefinition) : Dr
 
     public abstract void AddValue(DreamValue value);
     public abstract void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false);
-    public abstract  void RemoveValue(DreamValue value);
+    public abstract void RemoveValue(DreamValue value);
     public abstract int FindValue(DreamValue value, int start = 1, int end = 0);
     public abstract DreamValue GetValue(DreamValue key);
     public abstract bool ContainsValue(DreamValue value);
@@ -61,8 +61,11 @@ public abstract class BaseDreamList(DreamObjectDefinition objectDefinition) : Dr
 
     public virtual bool IsAssociative { get => false; }
     public virtual bool ContainsKey(DreamValue key) => false;
-    public abstract IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateAssocValues();
-    public abstract Dictionary<DreamValue, DreamValue> GetAssociativeValues();
+    public virtual IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateAssocValues() => [];
+    public virtual Dictionary<DreamValue, DreamValue> GetAssociativeValues() => [];
+
+    public DreamValue[] CopyToArray() => [.. EnumerateValues()];
+    public virtual Dictionary<DreamValue, DreamValue> CopyAssocValues() => new(EnumerateAssocValues());
 
     #endregion List Operations
 

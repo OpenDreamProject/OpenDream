@@ -1,4 +1,5 @@
 using System.Linq;
+using JetBrains.Annotations;
 using OpenDreamRuntime.Procs;
 
 namespace OpenDreamRuntime.Objects.Types;
@@ -38,6 +39,7 @@ public abstract class BaseDreamList(DreamObjectDefinition objectDefinition) : Dr
     public abstract void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false);
     public abstract void RemoveValue(DreamValue value);
     public abstract int FindValue(DreamValue value, int start = 1, int end = 0);
+    [MustDisposeResource]
     public abstract DreamValue GetValue(DreamValue key);
     public abstract bool ContainsValue(DreamValue value);
     public abstract int GetLength();
@@ -79,7 +81,8 @@ public abstract class BaseDreamList(DreamObjectDefinition objectDefinition) : Dr
         SetValue(index, value);
     }
 
-    public sealed override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
+    // TODO: the following operators should be sealed, but alists have special behaviours
+    public override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
         DreamList listCopy = (DreamList)CreateCopy();
 
         if (b.TryGetValueAsDreamList(out var bList)) {
@@ -98,7 +101,7 @@ public abstract class BaseDreamList(DreamObjectDefinition objectDefinition) : Dr
         return new DreamValue(listCopy);
     }
 
-    public sealed override DreamValue OperatorSubtract(DreamValue b, DMProcState state) {
+    public override DreamValue OperatorSubtract(DreamValue b, DMProcState state) {
         DreamList listCopy = (DreamList)CreateCopy();
 
         if (b.TryGetValueAsDreamList(out var bList)) {
@@ -112,7 +115,7 @@ public abstract class BaseDreamList(DreamObjectDefinition objectDefinition) : Dr
         return new DreamValue(listCopy);
     }
 
-    public sealed override DreamValue OperatorOr(DreamValue b, DMProcState state) {
+    public override DreamValue OperatorOr(DreamValue b, DMProcState state) {
         DreamList list;
 
         if (b.TryGetValueAsDreamList(out var bList)) {  // List | List
@@ -125,15 +128,18 @@ public abstract class BaseDreamList(DreamObjectDefinition objectDefinition) : Dr
         return new DreamValue(list);
     }
 
-    public sealed override DreamValue OperatorAppend(DreamValue b) {
+    public override DreamValue OperatorAppend(DreamValue b) {
         if (b.TryGetValueAsDreamList(out var bList)) {
             var values = bList.GetValues();
             var valueCount = values.Count; // Some lists return a reference to their internal values list which could change with each loop
-            var assocValues = bList.GetAssociativeValues();
+
+            var assocValues = GetAssociativeValues();
+            var bAssocValues = bList.GetAssociativeValues();
             for (int i = 0; i < valueCount; i++) {
                 var value = values[i];
                 AddValue(value); // Always add the value
-                if (assocValues.TryGetValue(value, out var aValue) is true) { // Ensure the associated value is correct
+
+                if (bAssocValues.TryGetValue(value, out var aValue) is true) { // Ensure the associated value is correct
                     assocValues[value] = aValue;
                     aValue.IncRef();
                 }
@@ -146,9 +152,9 @@ public abstract class BaseDreamList(DreamObjectDefinition objectDefinition) : Dr
         return new(this);
     }
 
-    public sealed override DreamValue OperatorRemove(DreamValue b) {
+    public override DreamValue OperatorRemove(DreamValue b) {
         if (b.TryGetValueAsDreamList(out var bList)) {
-            DreamValue[] values = bList.EnumerateValues().ToArray();
+            DreamValue[] values = bList.CopyToArray();
 
             foreach (DreamValue value in values) {
                 RemoveValue(value);
@@ -161,7 +167,7 @@ public abstract class BaseDreamList(DreamObjectDefinition objectDefinition) : Dr
         return new(this);
     }
 
-    public sealed override DreamValue OperatorCombine(DreamValue b) {
+    public override DreamValue OperatorCombine(DreamValue b) {
         if (b.TryGetValueAsDreamList(out var bList)) {
             var assocValues = bList.GetAssociativeValues();
             foreach (DreamValue value in bList.EnumerateValues()) {
@@ -181,7 +187,7 @@ public abstract class BaseDreamList(DreamObjectDefinition objectDefinition) : Dr
         return new(this);
     }
 
-    public sealed override DreamValue OperatorMask(DreamValue b) {
+    public override DreamValue OperatorMask(DreamValue b) {
         if (b.TryGetValueAsDreamList(out var bList)) {
             for (int i = 1; i <= GetLength(); i++) {
                 using var value = GetValue(new DreamValue(i));
@@ -206,9 +212,10 @@ public abstract class BaseDreamList(DreamObjectDefinition objectDefinition) : Dr
         return new(this);
     }
 
-    public sealed override DreamValue OperatorEquivalent(DreamValue b) {
+    public override DreamValue OperatorEquivalent(DreamValue b) {
         if (!b.TryGetValueAsDreamList(out var secondList))
             return DreamValue.False;
+
         if (GetLength() != secondList.GetLength())
             return DreamValue.False;
 

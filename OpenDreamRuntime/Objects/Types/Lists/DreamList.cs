@@ -108,7 +108,7 @@ public class DreamList : BaseDreamList {
         base.HandleDeletion();
     }
 
-    public override IDreamList CreateCopy(int start = 1, int end = 0) {
+    public override BaseDreamList CreateCopy(int start = 1, int end = 0) {
         if (start == 0) ++start; //start being 0 and start being 1 are equivalent
 
         var values = GetValues();

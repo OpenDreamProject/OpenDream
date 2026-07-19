@@ -121,7 +121,7 @@ public sealed class DreamObjectParticles : DreamObject {
                 break;
             case "icon": //list or icon
                 _icons.Clear();
-                if (value.TryGetValueAsIDreamList(out var iconList)) {
+                if (value.TryGetValueAsBaseDreamList(out var iconList)) {
                     foreach (DreamValue iconValue in iconList.EnumerateValues()) {
                         if (!DreamResourceManager.TryLoadIcon(iconValue, out var iconRsc))
                             continue;
@@ -149,7 +149,7 @@ public sealed class DreamObjectParticles : DreamObject {
                 break;
             case "icon_state": //list or string
                 _iconStates.Clear();
-                if (value.TryGetValueAsIDreamList(out var iconStateList)) {
+                if (value.TryGetValueAsBaseDreamList(out var iconStateList)) {
                     foreach (DreamValue iconValue in iconStateList.EnumerateValues()) {
                         if (!iconValue.TryGetValueAsString(out var iconState))
                             continue;

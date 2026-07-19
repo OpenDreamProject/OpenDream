@@ -864,7 +864,7 @@ public sealed class DMProcState : ProcState {
                 GetIndexReferenceValues(reference, out var index, out var indexing, peek);
 
                 try {
-                    if (indexing.TryGetValueAsIDreamList(out var dreamList)) {
+                    if (indexing.TryGetValueAsBaseDreamList(out var dreamList)) {
                         dreamList.SetValue(index, value);
                     } else if (indexing.TryGetValueAsDreamObject<DreamObject>(out var dreamObject)) {
                         dreamObject.OperatorIndexAssign(index, this, value);

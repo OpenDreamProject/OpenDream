@@ -315,9 +315,9 @@ public struct DreamValue : IDisposable, IEquatable<DreamValue> {
     }
 
     // TODO: Replace GetValueAsDreamList with GetValueAsIDreamList if possible. IDreamList isn't complete enough yet.
-    public readonly bool TryGetValueAsIDreamList([NotNullWhen(true)] out IDreamList? list) {
-        if (_refValue is IDreamList idl) {
-            list = idl;
+    public readonly bool TryGetValueAsBaseDreamList([NotNullWhen(true)] out BaseDreamList? list) {
+        if (_refValue is BaseDreamList bdl) {
+            list = bdl;
             return true;
         }
 
@@ -325,9 +325,9 @@ public struct DreamValue : IDisposable, IEquatable<DreamValue> {
         return false;
     }
 
-    public IDreamList MustGetValueAsIDreamList() {
-        if (_refValue is IDreamList idl)
-            return idl;
+    public BaseDreamList MustGetValueAsBaseDreamList() {
+        if (_refValue is BaseDreamList bdl)
+            return bdl;
 
         ThrowInvalidCastList();
         return null!;

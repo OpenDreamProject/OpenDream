@@ -119,7 +119,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         private static IDreamValueEnumerator GetContentsEnumerator(AtomManager atomManager, DreamValue value, TreeEntry? filterType) {
-            if (!value.TryGetValueAsIDreamList(out var list)) {
+            if (!value.TryGetValueAsBaseDreamList(out var list)) {
                 if (value.TryGetValueAsDreamObject(out var dreamObject)) {
                     if (dreamObject == null)
                         return new DreamValueArrayEnumerator([], null);
@@ -731,7 +731,7 @@ namespace OpenDreamRuntime.Procs {
             using var value = state.Pop();
 
             if (listValue.TryGetValueAsDreamObject(out var listObject) && listObject != null) {
-                IDreamList list;
+                BaseDreamList? list;
                 switch (listObject) {
                     case DreamObjectAtom or DreamObjectWorld:
                         using (var contents = listObject.GetVariable("contents"))
@@ -741,11 +741,11 @@ namespace OpenDreamRuntime.Procs {
                     case DreamObjectSavefile savefile:
                         list = new SavefileDirList(state.Proc.ObjectTree.List.ObjectDefinition, savefile);
                         break;
-                    case IDreamList dreamList:
+                    case BaseDreamList dreamList:
                         list = dreamList;
                         break;
                     default:
-                        list = (IDreamList?)null;
+                        list = null;
                         break;
                 }
 

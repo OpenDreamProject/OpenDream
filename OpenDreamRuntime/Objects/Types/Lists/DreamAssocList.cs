@@ -102,7 +102,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : B
         value.IncRef();
     }
 
-    public override IDreamList CreateCopy(int start = 1, int end = 0) {
+    public override BaseDreamList CreateCopy(int start = 1, int end = 0) {
         if (start != 1 || end != 0) {
             throw new Exception("list index out of bounds");
         }
@@ -136,7 +136,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : B
     public override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
         var listCopy = (DreamAssocList)CreateCopy();
 
-        if (b.TryGetValueAsIDreamList(out var bList)) {
+        if (b.TryGetValueAsBaseDreamList(out var bList)) {
             foreach (var pair in bList.EnumerateAssocValues()) {
                 if (listCopy.ContainsKey(pair.Key)) {
                     continue;
@@ -154,8 +154,8 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : B
     public override DreamValue OperatorSubtract(DreamValue b, DMProcState state) {
         DreamAssocList listCopy;
 
-        if (b.TryGetValueAsIDreamList(out var bList)) {
-            if (bList == this) {
+        if (b.TryGetValueAsBaseDreamList(out var bList)) {
+            if (bList.Equals(this)) {
                 return new DreamValue(ObjectTree.CreateAssocList());
             }
 
@@ -180,7 +180,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : B
     }
 
     public override DreamValue OperatorAppend(DreamValue b) {
-        if (b.TryGetValueAsIDreamList(out var bList)) {
+        if (b.TryGetValueAsBaseDreamList(out var bList)) {
             foreach (var pair in bList.EnumerateAssocValues()) {
                 if (ContainsKey(pair.Key)) {
                     continue;
@@ -197,8 +197,8 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : B
     }
 
     public override DreamValue OperatorRemove(DreamValue b) {
-        if (b.TryGetValueAsIDreamList(out var bList)) {
-            if (bList == this) {
+        if (b.TryGetValueAsBaseDreamList(out var bList)) {
+            if (bList.Equals(this)) {
                 Cut();
             } else {
                 foreach (var value in bList.EnumerateValues()) {
@@ -214,8 +214,8 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : B
     }
 
     public override DreamValue OperatorMask(DreamValue b) {
-        if (b.TryGetValueAsIDreamList(out var bList)) {
-            if (bList != this) {
+        if (b.TryGetValueAsBaseDreamList(out var bList)) {
+            if (bList.Equals(this)) {
                 foreach (var value in CopyToArray()) {
                     if (!bList.ContainsValue(value)) {
                         RemoveValue(value);
@@ -237,11 +237,11 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : B
     }
 
     public override DreamValue OperatorEquivalent(DreamValue b) {
-        if (!b.TryGetValueAsIDreamList(out var secondList)) {
+        if (!b.TryGetValueAsBaseDreamList(out var secondList)) {
             return DreamValue.False;
         }
 
-        if (secondList == this) {
+        if (secondList.Equals(this)) {
             return DreamValue.True;
         }
 

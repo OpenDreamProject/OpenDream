@@ -933,7 +933,7 @@ public static unsafe partial class ByondApi {
                 var objectDef = treeEntry.ObjectDefinition;
 
                 using var arglistVal = ValueFromDreamApi(*cArglist);
-                if (!arglistVal.TryGetValueAsIDreamList(out var arglist))
+                if (!arglistVal.TryGetValueAsBaseDreamList(out var arglist))
                     return SetLastError("cArglist argument was not a list");
 
                 // Copy the arglist's values to a new array to ensure no shenanigans

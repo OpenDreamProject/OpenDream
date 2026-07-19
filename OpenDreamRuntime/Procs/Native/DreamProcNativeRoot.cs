@@ -1257,7 +1257,7 @@ internal static class DreamProcNativeRoot {
             writer.WriteStringValue(type.Path);
         else if (value.TryGetValueAsProc(out var proc))
             writer.WriteStringValue(proc.ToString());
-        else if (value.TryGetValueAsIDreamList(out var list)) {
+        else if (value.TryGetValueAsBaseDreamList(out var list)) {
             if (list.IsAssociative) {
                 writer.WriteStartObject();
 
@@ -1355,7 +1355,7 @@ internal static class DreamProcNativeRoot {
     public static DreamValue _length(DreamValue value, bool countBytes) {
         if (value.TryGetValueAsString(out var str)) {
             return new DreamValue(countBytes ? str.Length : str.EnumerateRunes().Count());
-        } else if (value.TryGetValueAsIDreamList(out var list)) {
+        } else if (value.TryGetValueAsBaseDreamList(out var list)) {
             return new DreamValue(list.GetLength());
         } else if (value.TryGetValueAsDreamResource(out var resource)) {
             return new DreamValue(resource.ResourceData?.Length ?? 0);
@@ -1397,7 +1397,7 @@ internal static class DreamProcNativeRoot {
     [DreamProc("list2params")]
     [DreamProcParameter("List")]
     public static DreamValue NativeProc_list2params(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-        if (!bundle.GetArgument(0, "List").TryGetValueAsIDreamList(out var list))
+        if (!bundle.GetArgument(0, "List").TryGetValueAsBaseDreamList(out var list))
             return new DreamValue(string.Empty);
 
         return new DreamValue(List2Params(list));
@@ -1869,7 +1869,7 @@ internal static class DreamProcNativeRoot {
         return DreamProcNativeHelpers.HandleOviewersOhearers(bundle, usr, false);
     }
 
-    private static string List2Params(IDreamList list) {
+    private static string List2Params(BaseDreamList list) {
         StringBuilder paramBuilder = new StringBuilder();
 
         foreach (DreamValue entry in list.EnumerateValues()) {
@@ -3050,7 +3050,7 @@ internal static class DreamProcNativeRoot {
         var cutCount = 0; // number of values cut from the list
         var min = argMin.UnsafeGetValueAsFloat();
 
-        if (argList.TryGetValueAsIDreamList(out var list)) {
+        if (argList.TryGetValueAsBaseDreamList(out var list)) {
             if (!list.IsAssociative) {
                 cutCount = list.GetLength();
                 list.Cut();
@@ -3104,7 +3104,7 @@ internal static class DreamProcNativeRoot {
 
         float sum = 0; // Default return is 0 for invalid args
 
-        if (argA.TryGetValueAsIDreamList(out var listA) && listA.IsAssociative && argB.TryGetValueAsIDreamList(out var listB) && listB.IsAssociative) {
+        if (argA.TryGetValueAsBaseDreamList(out var listA) && listA.IsAssociative && argB.TryGetValueAsBaseDreamList(out var listB) && listB.IsAssociative) {
             var aValues = listA.GetAssociativeValues();
             var bValues = listB.GetAssociativeValues();
 
@@ -3131,7 +3131,7 @@ internal static class DreamProcNativeRoot {
 
         float product = 1; // Default return is 1 for invalid args
 
-        if (arg.TryGetValueAsIDreamList(out var list) && list.IsAssociative) {
+        if (arg.TryGetValueAsBaseDreamList(out var list) && list.IsAssociative) {
             var assocValues = list.GetAssociativeValues();
             foreach (var (_,value) in assocValues) {
                 if(value.TryGetValueAsFloat(out var valFloat)) product *= valFloat;
@@ -3150,7 +3150,7 @@ internal static class DreamProcNativeRoot {
 
         float sum = 0; // Default return is 0 for invalid args
 
-        if (arg.TryGetValueAsIDreamList(out var list) && list.IsAssociative) {
+        if (arg.TryGetValueAsBaseDreamList(out var list) && list.IsAssociative) {
             var assocValues = list.GetAssociativeValues();
             foreach (var (_,value) in assocValues) {
                 if(value.TryGetValueAsFloat(out var valFloat)) sum += valFloat;
@@ -3390,7 +3390,7 @@ internal static class DreamProcNativeRoot {
         }
 
         if (!winsetParams.TryGetValueAsString(out var winsetParamsStr)) {
-            if (winsetParams.TryGetValueAsIDreamList(out var winsetParamsList)) {
+            if (winsetParams.TryGetValueAsBaseDreamList(out var winsetParamsList)) {
                 winsetParamsStr = List2Params(winsetParamsList);
             } else {
                 throw new ArgumentException($"Invalid \"params\" argument {winsetParams}");

@@ -4,7 +4,7 @@ using OpenDreamRuntime.Procs;
 
 namespace OpenDreamRuntime.Objects.Types;
 
-public abstract class BaseDreamList(DreamObjectDefinition objectDefinition) : DreamObject(objectDefinition), IDreamList {
+public abstract class BaseDreamList(DreamObjectDefinition objectDefinition) : DreamObject(objectDefinition) {
     public sealed override bool ShouldCallNew => false;
 
     protected sealed override bool TryGetVar(string varName, out DreamValue value) {
@@ -47,7 +47,7 @@ public abstract class BaseDreamList(DreamObjectDefinition objectDefinition) : Dr
     [Obsolete($"Prefer {nameof(EnumerateValues)} instead")]
     public abstract List<DreamValue> GetValues();
 
-    public abstract IDreamList CreateCopy(int start = 1, int end = 0);
+    public abstract BaseDreamList CreateCopy(int start = 1, int end = 0);
     public virtual void Cut(int start = 1, int end = 0) => throw new NotSupportedException($"{GetType()} does not support Cut");
     public virtual void Resize(int size) => throw new NotSupportedException($"{GetType()} cannot be resized");
     public virtual void Insert(int index, DreamValue value) => throw new NotSupportedException($"{GetType()} does not support Insert");

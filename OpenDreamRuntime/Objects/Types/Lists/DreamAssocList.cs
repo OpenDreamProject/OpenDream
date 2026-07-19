@@ -215,7 +215,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : B
 
     public override DreamValue OperatorMask(DreamValue b) {
         if (b.TryGetValueAsBaseDreamList(out var bList)) {
-            if (bList.Equals(this)) {
+            if (!bList.Equals(this)) {
                 foreach (var value in CopyToArray()) {
                     if (!bList.ContainsValue(value)) {
                         RemoveValue(value);

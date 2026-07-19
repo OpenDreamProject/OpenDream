@@ -1885,6 +1885,10 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus Log(DMProcState state) {
             float baseValue = state.UnsafePopAsFloat();
             float value = state.UnsafePopAsFloat();
+
+            if (value <= 0 || float.IsNaN(value) || baseValue <= 0 || baseValue == 1 || float.IsNaN(baseValue))
+                throw new Exception($"log({baseValue},{value}) is not computable");
+
             float result = SharedOperations.Log(value, baseValue);
 
             state.Push(new DreamValue(result));
@@ -1894,6 +1898,9 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus LogE(DMProcState state) {
             float y = state.UnsafePopAsFloat();
             float result = SharedOperations.Log(y);
+
+            if (y <= 0 || float.IsNaN(y))
+                throw new Exception($"log({y}) is not computable");
 
             state.Push(new DreamValue(result));
             return ProcStatus.Continue;
@@ -1991,7 +1998,10 @@ namespace OpenDreamRuntime.Procs {
                 return ProcStatus.Continue;
             }
 
-            var dir = d.IsNull ? 0 : d.MustGetValueAsInteger();
+            if (!d.TryGetValueAsInteger(out int dir) && !d.IsNull) {
+                state.Push(DreamValue.Null);
+                return ProcStatus.Continue;
+            }
 
             state.Push(new(DreamProcNativeHelpers.GetStep(state.Proc.AtomManager, state.Proc.DreamMapManager, loc, (AtomDirection)dir)));
             return ProcStatus.Continue;
@@ -2211,9 +2221,6 @@ namespace OpenDreamRuntime.Procs {
                     // A non-number time arg results in the animation happening instantly
                     time = 0f;
                 }
-
-                if (!Enum.IsDefined(typeof(AnimationEasing), easing & ~((int)AnimationEasing.EaseIn | (int)AnimationEasing.EaseOut)))
-                    throw new ArgumentOutOfRangeException("easing", easing, $"Invalid easing value in animate(): {easing}");
 
                 var flags = (AnimationFlags)flagsInt;
                 if ((flags & (AnimationFlags.AnimationParallel | AnimationFlags.AnimationContinue)) != 0)
@@ -3068,11 +3075,12 @@ namespace OpenDreamRuntime.Procs {
 
         private static DreamValue CalculateGradient(List<DreamValue> gradientValues, DreamValue colorSpaceValue, DreamValue indexValue) {
             if (gradientValues.Count == 1) {
-                if (!gradientValues[0].TryGetValueAsDreamList(out var gradientList))
-                    throw new Exception("Invalid gradient() values; expected either a list or at least 2 values");
-
-                gradientValues = gradientList.GetValues();
+                if (gradientValues[0].TryGetValueAsDreamList(out var gradientList))
+                    gradientValues = gradientList.GetValues();
             }
+
+            if (gradientValues.Count == 0)
+                throw new Exception("bad gradient");
 
             if (!indexValue.TryGetValueAsFloat(out float index))
                 throw new FormatException("Failed to parse index as float");

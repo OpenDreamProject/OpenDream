@@ -111,6 +111,7 @@ public class DreamList : BaseDreamList {
     /// <summary>
     /// Returns the list of array values. Doesn't include the associative values indexable by some of these.
     /// </summary>
+    [Obsolete($"Prefer {nameof(EnumerateValues)} instead")]
     public override List<DreamValue> GetValues() {
         return _values;
     }

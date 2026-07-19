@@ -39,18 +39,16 @@ public abstract class BaseDreamList(DreamObjectDefinition objectDefinition) : Dr
     public abstract void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false);
     public abstract void RemoveValue(DreamValue value);
     public abstract int FindValue(DreamValue value, int start = 1, int end = 0);
-    [MustDisposeResource]
-    public abstract DreamValue GetValue(DreamValue key);
+    [MustDisposeResource] public abstract DreamValue GetValue(DreamValue key);
     public abstract bool ContainsValue(DreamValue value);
     public abstract int GetLength();
     public abstract IEnumerable<DreamValue> EnumerateValues();
-    [Obsolete($"Prefer {nameof(EnumerateValues)} instead")]
-    public abstract List<DreamValue> GetValues();
+    [Obsolete($"Prefer {nameof(EnumerateValues)} instead")] public virtual List<DreamValue> GetValues() => [.. EnumerateValues()];
 
     public virtual BaseDreamList CreateCopy(int start = 1, int end = 0) {
         if (start == 0) ++start; //start being 0 and start being 1 are equivalent
 
-        var values = GetValues();
+        var values = EnumerateValues().ToList();
         if (end > values.Count + 1 || start > values.Count + 1) throw new Exception("list index out of bounds");
         if (end == 0) end = values.Count + 1;
         if (end <= start)
@@ -65,7 +63,7 @@ public abstract class BaseDreamList(DreamObjectDefinition objectDefinition) : Dr
     public virtual void Resize(int size) => throw new NotSupportedException($"{GetType()} cannot be resized");
     public virtual void Insert(int index, DreamValue value) => throw new NotSupportedException($"{GetType()} does not support Insert");
     public virtual void Swap(int index1, int index2) => throw new NotSupportedException($"{GetType()} does not support Swap");
-    public DreamList Union(BaseDreamList other) {
+    public virtual BaseDreamList Union(BaseDreamList other) {
         DreamList newList = new(ObjectDefinition, EnumerateValues().Union(other.EnumerateValues()).ToList(), null);
         foreach ((DreamValue key, DreamValue value) in other.GetAssociativeValues()) {
             newList.SetValue(key, value);
@@ -74,7 +72,7 @@ public abstract class BaseDreamList(DreamObjectDefinition objectDefinition) : Dr
         return newList;
     }
 
-    public virtual bool IsAssociative { get => false; }
+    public virtual bool IsAssociative => false;
     public virtual bool ContainsKey(DreamValue key) => false;
     public virtual IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateAssocValues() => [];
     public virtual Dictionary<DreamValue, DreamValue> GetAssociativeValues() => [];
@@ -101,7 +99,7 @@ public abstract class BaseDreamList(DreamObjectDefinition objectDefinition) : Dr
         if (b.TryGetValueAsDreamList(out var bList)) {
             var bAssocValues = bList.GetAssociativeValues();
             foreach (DreamValue value in bList.EnumerateValues()) {
-                if (bAssocValues?.TryGetValue(value, out var assocValue) is true) {
+                if (bAssocValues.TryGetValue(value, out var assocValue)) {
                     listCopy.SetValue(value, assocValue);
                 } else {
                     listCopy.AddValue(value);
@@ -129,12 +127,12 @@ public abstract class BaseDreamList(DreamObjectDefinition objectDefinition) : Dr
     }
 
     public override DreamValue OperatorOr(DreamValue b, DMProcState state) {
-        DreamList list;
+        BaseDreamList list;
 
         if (b.TryGetValueAsDreamList(out var bList)) {  // List | List
             list = Union(bList);
         } else {                                        // List | x
-            list = (DreamList)CreateCopy();
+            list = CreateCopy();
             list.AddValue(b);
         }
 
@@ -143,7 +141,7 @@ public abstract class BaseDreamList(DreamObjectDefinition objectDefinition) : Dr
 
     public override DreamValue OperatorAppend(DreamValue b) {
         if (b.TryGetValueAsDreamList(out var bList)) {
-            var values = bList.GetValues();
+            var values = bList.EnumerateValues().ToList();
             var valueCount = values.Count; // Some lists return a reference to their internal values list which could change with each loop
 
             var assocValues = GetAssociativeValues();
@@ -152,7 +150,7 @@ public abstract class BaseDreamList(DreamObjectDefinition objectDefinition) : Dr
                 var value = values[i];
                 AddValue(value); // Always add the value
 
-                if (bAssocValues.TryGetValue(value, out var aValue) is true) { // Ensure the associated value is correct
+                if (bAssocValues.TryGetValue(value, out var aValue)) { // Ensure the associated value is correct
                     assocValues[value] = aValue;
                     aValue.IncRef();
                 }
@@ -187,7 +185,7 @@ public abstract class BaseDreamList(DreamObjectDefinition objectDefinition) : Dr
                 if (ContainsValue(value))
                     continue;
 
-                if (assocValues.TryGetValue(value, out var associatedValue) is true)
+                if (assocValues.TryGetValue(value, out var associatedValue))
                     SetValue(value, associatedValue);
                 else
                     AddValue(value);
@@ -232,8 +230,8 @@ public abstract class BaseDreamList(DreamObjectDefinition objectDefinition) : Dr
         if (GetLength() != secondList.GetLength())
             return DreamValue.False;
 
-        var firstValues = GetValues();
-        var secondValues = secondList.GetValues();
+        var firstValues = EnumerateValues().ToList();
+        var secondValues = secondList.EnumerateValues().ToList();
 
         var firstListAssoc = GetAssociativeValues();
         var secondListAssoc = secondList.GetAssociativeValues();

@@ -14,10 +14,6 @@ public sealed class ClientImagesList(DreamObjectTree objectTree, ServerClientIma
         return value;
     }
 
-    public override List<DreamValue> GetValues() {
-        return _imageObjects;
-    }
-
     public override IEnumerable<DreamValue> EnumerateValues() {
         return _imageObjects;
     }

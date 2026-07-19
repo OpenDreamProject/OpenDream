@@ -76,10 +76,6 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : B
         _values.Clear();
     }
 
-    public override List<DreamValue> GetValues() {
-        return _values.Keys.ToList();
-    }
-
     public override Dictionary<DreamValue, DreamValue> GetAssociativeValues() {
         return _values;
     }

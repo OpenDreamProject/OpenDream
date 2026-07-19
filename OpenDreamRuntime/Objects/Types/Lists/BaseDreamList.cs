@@ -47,7 +47,20 @@ public abstract class BaseDreamList(DreamObjectDefinition objectDefinition) : Dr
     [Obsolete($"Prefer {nameof(EnumerateValues)} instead")]
     public abstract List<DreamValue> GetValues();
 
-    public abstract BaseDreamList CreateCopy(int start = 1, int end = 0);
+    public virtual BaseDreamList CreateCopy(int start = 1, int end = 0) {
+        if (start == 0) ++start; //start being 0 and start being 1 are equivalent
+
+        var values = GetValues();
+        if (end > values.Count + 1 || start > values.Count + 1) throw new Exception("list index out of bounds");
+        if (end == 0) end = values.Count + 1;
+        if (end <= start)
+            return new DreamList(ObjectDefinition, 0);
+
+        List<DreamValue> copyValues = values.GetRange(start - 1, end - start);
+        return new DreamList(ObjectDefinition, copyValues, new(GetAssociativeValues()));
+    }
+
+
     public virtual void Cut(int start = 1, int end = 0) => throw new NotSupportedException($"{GetType()} does not support Cut");
     public virtual void Resize(int size) => throw new NotSupportedException($"{GetType()} cannot be resized");
     public virtual void Insert(int index, DreamValue value) => throw new NotSupportedException($"{GetType()} does not support Insert");

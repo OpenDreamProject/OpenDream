@@ -1140,6 +1140,20 @@ namespace OpenDreamRuntime.Procs {
             using var second = state.Pop();
             DreamReference reference = state.ReadReference();
             using var first = state.GetReferenceValue(reference, peek: true);
+
+            if (first.TryGetValueAsDreamList(out DreamList? firstList)) {
+                using var replacement = BitXorAssignmentValues(state.Proc.ObjectTree, firstList, second);
+                DreamList replacementList = replacement.MustGetValueAsDreamList();
+                ReplaceListContents(firstList, replacementList);
+
+                // BYOND mutates and returns the existing list object
+                firstList.IncRef();
+                using var inPlaceResult = new DreamValue(firstList);
+                state.PopReference(reference);
+                state.Push(inPlaceResult);
+                return ProcStatus.Continue;
+            }
+
             using var result = BitXorValues(state.Proc.ObjectTree, first, second);
 
             state.AssignReference(reference, result);
@@ -3053,6 +3067,45 @@ namespace OpenDreamRuntime.Procs {
                     return new DreamValue(first.MustGetValueAsInteger());
                 default:
                     throw new Exception($"Invalid xor operation on {first} and {second}");
+            }
+        }
+
+        [MustDisposeResource]
+        private static DreamValue BitXorAssignmentValues(DreamObjectTree objectTree, DreamList first, DreamValue second) {
+            if (second.TryGetValueAsDreamList(out _))
+                return BitXorValues(objectTree, new DreamValue(first), second);
+
+            DreamList replacement = objectTree.CreateList();
+            Dictionary<DreamValue, DreamValue> associations = first.GetAssociativeValues();
+            bool removed = false;
+
+            // compound list XOR toggles one occurrence
+            // BYOND removes the first match and leaves later duplicates in place
+            foreach (DreamValue value in first.EnumerateValues()) {
+                if (!removed && value == second) {
+                    removed = true;
+                    continue;
+                }
+
+                replacement.AddValue(value);
+                if (associations.TryGetValue(value, out DreamValue associatedValue))
+                    replacement.SetValue(value, associatedValue);
+            }
+
+            if (!removed)
+                replacement.AddValue(second);
+
+            return new DreamValue(replacement);
+        }
+
+        private static void ReplaceListContents(DreamList target, DreamList replacement) {
+            Dictionary<DreamValue, DreamValue> replacementAssociations = replacement.GetAssociativeValues();
+            target.Cut();
+
+            foreach (DreamValue value in replacement.EnumerateValues()) {
+                target.AddValue(value);
+                if (replacementAssociations.TryGetValue(value, out DreamValue associatedValue))
+                    target.SetValue(value, associatedValue);
             }
         }
 

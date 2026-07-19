@@ -58,12 +58,7 @@ public abstract class BaseDreamList(DreamObjectDefinition objectDefinition) : Dr
         return new DreamList(ObjectDefinition, copyValues, new(GetAssociativeValues()));
     }
 
-
-    public virtual void Cut(int start = 1, int end = 0) => throw new NotSupportedException($"{GetType()} does not support Cut");
-    public virtual void Resize(int size) => throw new NotSupportedException($"{GetType()} cannot be resized");
-    public virtual void Insert(int index, DreamValue value) => throw new NotSupportedException($"{GetType()} does not support Insert");
-    public virtual void Swap(int index1, int index2) => throw new NotSupportedException($"{GetType()} does not support Swap");
-    public virtual BaseDreamList Union(BaseDreamList other) {
+    public virtual BaseDreamList CreateUnion(BaseDreamList other) {
         DreamList newList = new(ObjectDefinition, EnumerateValues().Union(other.EnumerateValues()).ToList(), null);
         foreach ((DreamValue key, DreamValue value) in other.GetAssociativeValues()) {
             newList.SetValue(key, value);
@@ -71,6 +66,11 @@ public abstract class BaseDreamList(DreamObjectDefinition objectDefinition) : Dr
 
         return newList;
     }
+
+    public virtual void Cut(int start = 1, int end = 0) => throw new NotSupportedException($"{GetType()} does not support Cut");
+    public virtual void Resize(int size) => throw new NotSupportedException($"{GetType()} cannot be resized");
+    public virtual void Insert(int index, DreamValue value) => throw new NotSupportedException($"{GetType()} does not support Insert");
+    public virtual void Swap(int index1, int index2) => throw new NotSupportedException($"{GetType()} does not support Swap");
 
     public virtual bool IsAssociative => false;
     public virtual bool ContainsKey(DreamValue key) => false;
@@ -130,7 +130,7 @@ public abstract class BaseDreamList(DreamObjectDefinition objectDefinition) : Dr
         BaseDreamList list;
 
         if (b.TryGetValueAsDreamList(out var bList)) {  // List | List
-            list = Union(bList);
+            list = CreateUnion(bList);
         } else {                                        // List | x
             list = CreateCopy();
             list.AddValue(b);

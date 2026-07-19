@@ -69,7 +69,10 @@ public class DreamList : DreamObject, IDreamList {
             int dimensions = args.Count;
             for (int argIndex = 0; argIndex < dimensions; argIndex++) {
                 DreamValue arg = args.GetArgument(argIndex);
-                arg.TryGetValueAsInteger(out size);
+
+                // BYOND coerces negative/non-num values to zero for multidimensional lists
+                if (!arg.TryGetValueAsInteger(out size) || size < 0)
+                    size = 0;
 
                 DreamList[] newLists = new DreamList[size * lists.Length];
 

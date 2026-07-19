@@ -66,8 +66,17 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus CreateMultidimensionalList(DMProcState state) {
             var dimensionCount = state.ReadInt();
-            var list = state.Proc.ObjectTree.CreateList();
             var dimensionSizes = state.PopCount(dimensionCount);
+
+            // BYOND's one-dimensional list produces null when its runtime size is negative
+            // This is different from multidimensional lists, where the negative dimensions become zero
+            if (dimensionCount == 1 && dimensionSizes[0].TryGetValueAsInteger(out int size) && size < 0) {
+                dimensionSizes[0].Dispose();
+                state.Push(DreamValue.Null);
+                return ProcStatus.Continue;
+            }
+
+            var list = state.Proc.ObjectTree.CreateList();
 
             // Same as new /list(1, 2, 3)
             using (var listInitArgs = new DreamProcArguments(dimensionSizes)) // Needs disposed of before we modify the stack again with Push()

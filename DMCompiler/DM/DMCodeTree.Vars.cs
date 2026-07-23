@@ -36,7 +36,7 @@ internal partial class DMCodeTree {
                 if (value is Null && !isOverride) {
                     compiler.Emit(WarningCode.ImplicitNullType, value.Location, $"{dmObject.Path}.{variable.Name}: Variable is null but not explicitly typed as nullable, append \"|null\" to \"as\". Implicitly treating as nullable.");
                     variable.ValType |= DMValueType.Null;
-                } else if (!variable.ValType.IsAnything) {
+                } else if (compiler.Settings.SkipAnythingTypeCheck && !variable.ValType.IsAnything || !compiler.Settings.SkipAnythingTypeCheck) {
                     compiler.Emit(WarningCode.InvalidVarType, value.Location, $"{dmObject.Path}.{variable.Name}: Invalid var value type {value.ValType}, expected {variable.ValType}");
                 }
             }

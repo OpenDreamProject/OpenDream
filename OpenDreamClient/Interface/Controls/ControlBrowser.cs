@@ -240,8 +240,15 @@ internal sealed partial class ControlBrowser : InterfaceControl {
             jsonBuilder.Append('"');
             jsonBuilder.Append(HttpUtility.JavaScriptStringEncode(wingetting));
             jsonBuilder.Append("\": ");
+
             var result = InterfaceManager.WinGet(elementId, wingetting, forceJson: forceJson);
-            jsonBuilder.Append(result);
+            if (forceJson) {
+                jsonBuilder.Append(result);
+            } else {
+                jsonBuilder.Append('"');
+                jsonBuilder.Append(HttpUtility.JavaScriptStringEncode(result));
+                jsonBuilder.Append('"');
+            }
         }
 
         jsonBuilder.Append(" }");

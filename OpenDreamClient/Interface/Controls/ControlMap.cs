@@ -1,11 +1,11 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using OpenDreamClient.Input;
 using OpenDreamClient.Interface.Controls.UI;
+using OpenDreamClient.Interface.Css;
 using OpenDreamShared.Interface.Descriptors;
 using OpenDreamShared.Interface.DMF;
 using OpenDreamClient.Rendering;
 using OpenDreamShared.Dream;
-using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Input;
@@ -39,6 +39,9 @@ public sealed partial class ControlMap(ControlDescriptor controlDescriptor, Cont
         };
 
         UpdateViewRange(InterfaceManager.View);
+
+        var cssRulesets = new CssParser(new CssLexer(MapDescriptor.Style.AsRaw())).Stylesheet();
+        Logger.Info($"{cssRulesets.Count} rulesets parsed");
     }
 
     public void UpdateViewRange(ViewRange view) {

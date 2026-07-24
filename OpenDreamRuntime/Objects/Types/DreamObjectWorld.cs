@@ -232,8 +232,8 @@ public sealed partial class DreamObjectWorld : DreamObject {
 
             case "view":
                 // Number if square & centerable, string representation otherwise
-                if (DefaultView.IsSquare && DefaultView.IsCenterable) {
-                    value = new DreamValue(DefaultView.Range);
+                if (DefaultView.CanSquareRange) {
+                    value = new DreamValue(DefaultView.SquareRange.Value);
                 } else {
                     value = new DreamValue(DefaultView.ToString());
                 }

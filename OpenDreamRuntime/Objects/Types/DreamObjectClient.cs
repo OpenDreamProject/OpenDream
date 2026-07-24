@@ -60,8 +60,8 @@ public sealed class DreamObjectClient : DreamObject {
                 return true;
             case "view":
                 // Number if square & centerable, string representation otherwise
-                if (View is { IsSquare: true, IsCenterable: true }) {
-                    value = new DreamValue(View.Range);
+                if (View.CanSquareRange) {
+                    value = new DreamValue(View.SquareRange.Value);
                 } else {
                     value = new DreamValue(View.ToString());
                 }

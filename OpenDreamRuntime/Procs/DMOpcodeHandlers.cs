@@ -66,8 +66,17 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus CreateMultidimensionalList(DMProcState state) {
             var dimensionCount = state.ReadInt();
-            var list = state.Proc.ObjectTree.CreateList();
             var dimensionSizes = state.PopCount(dimensionCount);
+
+            // BYOND's one-dimensional list produces null when its runtime size is negative
+            // This is different from multidimensional lists, where the negative dimensions become zero
+            if (dimensionCount == 1 && dimensionSizes[0].TryGetValueAsInteger(out int size) && size < 0) {
+                dimensionSizes[0].Dispose();
+                state.Push(DreamValue.Null);
+                return ProcStatus.Continue;
+            }
+
+            var list = state.Proc.ObjectTree.CreateList();
 
             // Same as new /list(1, 2, 3)
             using (var listInitArgs = new DreamProcArguments(dimensionSizes)) // Needs disposed of before we modify the stack again with Push()
@@ -956,33 +965,18 @@ namespace OpenDreamRuntime.Procs {
                 state.Push(new DreamValue(first.MustGetValueAsInteger() & second.MustGetValueAsInteger()));
             } else if (first.TryGetValueAsDreamList(out var list)) {
                 DreamList newList = state.Proc.ObjectTree.CreateList();
+                Dictionary<DreamValue, DreamValue> associativeValues = list.GetAssociativeValues();
+                var retainedValues = new HashSet<DreamValue>();
+                second.TryGetValueAsDreamList(out DreamList? secondList);
 
-                if (second.TryGetValueAsDreamList(out var secondList)) {
-                    int len = list.GetLength();
+                foreach (DreamValue value in list.EnumerateValues()) {
+                    bool retained = secondList?.ContainsValue(value) ?? value == second;
+                    if (!retained || !retainedValues.Add(value))
+                        continue;
 
-                    for (int i = 1; i <= len; i++) {
-                        using var value = list.GetValue(new DreamValue(i));
-
-                        if (secondList.ContainsValue(value)) {
-                            using var associativeValue = list.GetValue(value);
-
-                            newList.AddValue(value);
-                            if (!associativeValue.IsNull) newList.SetValue(value, associativeValue);
-                        }
-                    }
-                } else {
-                    int len = list.GetLength();
-
-                    for (int i = 1; i <= len; i++) {
-                        using var value = list.GetValue(new DreamValue(i));
-
-                        if (value == second) {
-                            using var associativeValue = list.GetValue(value);
-
-                            newList.AddValue(value);
-                            if (!associativeValue.IsNull) newList.SetValue(value, associativeValue);
-                        }
-                    }
+                    newList.AddValue(value);
+                    if (associativeValues.TryGetValue(value, out DreamValue associatedValue))
+                        newList.SetValue(value, associatedValue);
                 }
 
                 state.Push(new DreamValue(newList));
@@ -1146,6 +1140,20 @@ namespace OpenDreamRuntime.Procs {
             using var second = state.Pop();
             DreamReference reference = state.ReadReference();
             using var first = state.GetReferenceValue(reference, peek: true);
+
+            if (first.TryGetValueAsDreamList(out DreamList? firstList)) {
+                using var replacement = BitXorAssignmentValues(state.Proc.ObjectTree, firstList, second);
+                DreamList replacementList = replacement.MustGetValueAsDreamList();
+                ReplaceListContents(firstList, replacementList);
+
+                // BYOND mutates and returns the existing list object
+                firstList.IncRef();
+                using var inPlaceResult = new DreamValue(firstList);
+                state.PopReference(reference);
+                state.Push(inPlaceResult);
+                return ProcStatus.Continue;
+            }
+
             using var result = BitXorValues(state.Proc.ObjectTree, first, second);
 
             state.AssignReference(reference, result);
@@ -1885,6 +1893,10 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus Log(DMProcState state) {
             float baseValue = state.UnsafePopAsFloat();
             float value = state.UnsafePopAsFloat();
+
+            if (value <= 0 || float.IsNaN(value) || baseValue <= 0 || baseValue == 1 || float.IsNaN(baseValue))
+                throw new Exception($"log({baseValue},{value}) is not computable");
+
             float result = SharedOperations.Log(value, baseValue);
 
             state.Push(new DreamValue(result));
@@ -1894,6 +1906,9 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus LogE(DMProcState state) {
             float y = state.UnsafePopAsFloat();
             float result = SharedOperations.Log(y);
+
+            if (y <= 0 || float.IsNaN(y))
+                throw new Exception($"log({y}) is not computable");
 
             state.Push(new DreamValue(result));
             return ProcStatus.Continue;
@@ -1991,7 +2006,10 @@ namespace OpenDreamRuntime.Procs {
                 return ProcStatus.Continue;
             }
 
-            var dir = d.IsNull ? 0 : d.MustGetValueAsInteger();
+            if (!d.TryGetValueAsInteger(out int dir) && !d.IsNull) {
+                state.Push(DreamValue.Null);
+                return ProcStatus.Continue;
+            }
 
             state.Push(new(DreamProcNativeHelpers.GetStep(state.Proc.AtomManager, state.Proc.DreamMapManager, loc, (AtomDirection)dir)));
             return ProcStatus.Continue;
@@ -2211,9 +2229,6 @@ namespace OpenDreamRuntime.Procs {
                     // A non-number time arg results in the animation happening instantly
                     time = 0f;
                 }
-
-                if (!Enum.IsDefined(typeof(AnimationEasing), easing & ~((int)AnimationEasing.EaseIn | (int)AnimationEasing.EaseOut)))
-                    throw new ArgumentOutOfRangeException("easing", easing, $"Invalid easing value in animate(): {easing}");
 
                 var flags = (AnimationFlags)flagsInt;
                 if ((flags & (AnimationFlags.AnimationParallel | AnimationFlags.AnimationContinue)) != 0)
@@ -3007,23 +3022,34 @@ namespace OpenDreamRuntime.Procs {
         private static DreamValue BitXorValues(DreamObjectTree objectTree, DreamValue first, DreamValue second) {
             if (first.TryGetValueAsDreamList(out var list)) {
                 DreamList newList = objectTree.CreateList();
-                List<DreamValue> values;
+                Dictionary<DreamValue, DreamValue> firstAssociations = list.GetAssociativeValues();
 
-                if (second.TryGetValueAsDreamList(out var secondList)) {
-                    values = secondList.GetValues();
-                } else {
-                    values = new List<DreamValue> { second };
+                void AddValue(DreamValue value, Dictionary<DreamValue, DreamValue>? associations) {
+                    newList.AddValue(value);
+                    if (associations?.TryGetValue(value, out DreamValue associatedValue) is true)
+                        newList.SetValue(value, associatedValue);
                 }
 
-                foreach (DreamValue value in values) {
-                    bool inFirstList = list.ContainsValue(value);
-                    bool inSecondList = secondList.ContainsValue(value);
+                if (second.TryGetValueAsDreamList(out var secondList)) {
+                    Dictionary<DreamValue, DreamValue> secondAssociations = secondList.GetAssociativeValues();
+                    foreach (DreamValue value in list.EnumerateValues()) {
+                        if (!secondList.ContainsValue(value))
+                            AddValue(value, firstAssociations);
+                    }
 
-                    if (inFirstList ^ inSecondList) {
-                        newList.AddValue(value);
+                    foreach (DreamValue value in secondList.EnumerateValues()) {
+                        if (!list.ContainsValue(value))
+                            AddValue(value, secondAssociations);
+                    }
+                } else {
+                    bool secondInList = list.ContainsValue(second);
+                    foreach (DreamValue value in list.EnumerateValues()) {
+                        if (value != second)
+                            AddValue(value, firstAssociations);
+                    }
 
-                        using var associatedValue = inFirstList ? list.GetValue(value) : secondList.GetValue(value);
-                        if (!associatedValue.IsNull) newList.SetValue(value, associatedValue);
+                    if (!secondInList) {
+                        newList.AddValue(second);
                     }
                 }
 
@@ -3041,6 +3067,45 @@ namespace OpenDreamRuntime.Procs {
                     return new DreamValue(first.MustGetValueAsInteger());
                 default:
                     throw new Exception($"Invalid xor operation on {first} and {second}");
+            }
+        }
+
+        [MustDisposeResource]
+        private static DreamValue BitXorAssignmentValues(DreamObjectTree objectTree, DreamList first, DreamValue second) {
+            if (second.TryGetValueAsDreamList(out _))
+                return BitXorValues(objectTree, new DreamValue(first), second);
+
+            DreamList replacement = objectTree.CreateList();
+            Dictionary<DreamValue, DreamValue> associations = first.GetAssociativeValues();
+            bool removed = false;
+
+            // compound list XOR toggles one occurrence
+            // BYOND removes the first match and leaves later duplicates in place
+            foreach (DreamValue value in first.EnumerateValues()) {
+                if (!removed && value == second) {
+                    removed = true;
+                    continue;
+                }
+
+                replacement.AddValue(value);
+                if (associations.TryGetValue(value, out DreamValue associatedValue))
+                    replacement.SetValue(value, associatedValue);
+            }
+
+            if (!removed)
+                replacement.AddValue(second);
+
+            return new DreamValue(replacement);
+        }
+
+        private static void ReplaceListContents(DreamList target, DreamList replacement) {
+            Dictionary<DreamValue, DreamValue> replacementAssociations = replacement.GetAssociativeValues();
+            target.Cut();
+
+            foreach (DreamValue value in replacement.EnumerateValues()) {
+                target.AddValue(value);
+                if (replacementAssociations.TryGetValue(value, out DreamValue associatedValue))
+                    target.SetValue(value, associatedValue);
             }
         }
 
@@ -3068,11 +3133,12 @@ namespace OpenDreamRuntime.Procs {
 
         private static DreamValue CalculateGradient(List<DreamValue> gradientValues, DreamValue colorSpaceValue, DreamValue indexValue) {
             if (gradientValues.Count == 1) {
-                if (!gradientValues[0].TryGetValueAsDreamList(out var gradientList))
-                    throw new Exception("Invalid gradient() values; expected either a list or at least 2 values");
-
-                gradientValues = gradientList.GetValues();
+                if (gradientValues[0].TryGetValueAsDreamList(out var gradientList))
+                    gradientValues = gradientList.GetValues();
             }
+
+            if (gradientValues.Count == 0)
+                throw new Exception("bad gradient");
 
             if (!indexValue.TryGetValueAsFloat(out float index))
                 throw new FormatException("Failed to parse index as float");

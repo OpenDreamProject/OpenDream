@@ -548,7 +548,9 @@ public sealed partial class AtomManager {
         if (atom is DreamObjectMovable movable) {
             targetEntity = movable.Entity;
             targetComponent = movable.SpriteComponent;
-            appearance = MustGetAppearance(atom).ToMutable();
+            appearance = TryGetAppearance(atom, out ImmutableAppearance? movableAppearance)
+                ? movableAppearance.ToMutable()
+                : MutableAppearance.GetCopy(GetAppearanceFromDefinition(atom.ObjectDefinition));
         } else if (atom is DreamObjectImage { IsMutableAppearance: false } image) {
             targetEntity = image.Entity;
             targetComponent = image.SpriteComponent;

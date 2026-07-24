@@ -69,7 +69,10 @@ public class DreamList : DreamObject, IDreamList {
             int dimensions = args.Count;
             for (int argIndex = 0; argIndex < dimensions; argIndex++) {
                 DreamValue arg = args.GetArgument(argIndex);
-                arg.TryGetValueAsInteger(out size);
+
+                // BYOND coerces negative/non-num values to zero for multidimensional lists
+                if (!arg.TryGetValueAsInteger(out size) || size < 0)
+                    size = 0;
 
                 DreamList[] newLists = new DreamList[size * lists.Length];
 
@@ -324,8 +327,13 @@ public class DreamList : DreamObject, IDreamList {
 
     public DreamList Union(DreamList other) {
         DreamList newList = new DreamList(ObjectDefinition, _values.Union(other.GetValues()).ToList(), null);
-        foreach ((DreamValue key, DreamValue value) in other.GetAssociativeValues()) {
-            newList.SetValue(key, value);
+        Dictionary<DreamValue, DreamValue> otherAssociations = other.GetAssociativeValues();
+        foreach (DreamValue value in newList.EnumerateValues()) {
+            // Existing left pairs win, only values newly contributed by the right list use its association
+            if (_associativeValues?.TryGetValue(value, out DreamValue leftAssociatedValue) is true)
+                newList.SetValue(value, leftAssociatedValue);
+            else if (otherAssociations.TryGetValue(value, out DreamValue rightAssociatedValue))
+                newList.SetValue(value, rightAssociatedValue);
         }
 
         return newList;
@@ -479,11 +487,12 @@ public class DreamList : DreamObject, IDreamList {
     }
 
     public override DreamValue OperatorMask(DreamValue b) {
+        var retainedValues = new HashSet<DreamValue>();
         if (b.TryGetValueAsDreamList(out var bList)) {
             for (int i = 1; i <= GetLength(); i++) {
                 using var value = GetValue(new DreamValue(i));
 
-                if (!bList.ContainsValue(value)) {
+                if (!bList.ContainsValue(value) || !retainedValues.Add(value)) {
                     Cut(i, i + 1);
                     i--;
                 }
@@ -492,7 +501,7 @@ public class DreamList : DreamObject, IDreamList {
             for (int i = 1; i <= GetLength(); i++) {
                 using var value = GetValue(new DreamValue(i));
 
-                if (value != b) {
+                if (value != b || !retainedValues.Add(value)) {
                     Cut(i, i + 1);
                     i--;
                 }

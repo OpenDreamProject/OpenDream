@@ -23,6 +23,7 @@ namespace OpenDreamRuntime {
         [Dependency] private IConfigurationManager _config = default!;
 
         private readonly Dictionary<NetUserId, DreamConnection> _connections = new();
+        private readonly Dictionary<string, NetUserId> _guestIds = new();
 
         public IEnumerable<DreamConnection> Connections => _connections.Values;
 
@@ -47,6 +48,7 @@ namespace OpenDreamRuntime {
         private ulong _topicsProcessed;
 
         private void InitializeConnectionManager() {
+            _netManager.AssignUserIdCallback = AssignGuestIdTask;
             _playerManager.PlayerStatusChanged += OnPlayerStatusChanged;
 
             _netManager.RegisterNetMessage<MsgUpdateStatPanels>();
@@ -89,6 +91,22 @@ namespace OpenDreamRuntime {
             _worldTopicSocket.Listen();
             _worldTopicCancellationToken = new CancellationTokenSource();
             _worldTopicListener = WorldTopicListener(_worldTopicCancellationToken.Token);
+        }
+
+        /// <summary>
+        /// Ensure guests keep the same UserId upon rejoining, since DM games identify players by username
+        /// </summary>
+        /// <remarks>
+        /// This does mean someone could hijack a guest's session by joining with their name.
+        /// In the long term we'll want to replace usernames with user IDs DM-side.
+        /// </remarks>
+        private Task<NetUserId?> AssignGuestIdTask(string username) {
+            if (!_guestIds.TryGetValue(username, out var userId)) {
+                userId = new(Guid.NewGuid());
+                _guestIds.Add(username, userId);
+            }
+
+            return Task.FromResult<NetUserId?>(userId);
         }
 
         private void ShutdownConnectionManager() {

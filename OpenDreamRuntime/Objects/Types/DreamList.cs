@@ -323,7 +323,7 @@ public class DreamList : DreamObject, IDreamList {
     }
 
     public DreamList Union(DreamList other) {
-        DreamList newList = new DreamList(ObjectDefinition, _values.Union(other.GetValues()).ToList(), null);
+        DreamList newList = new DreamList(ObjectDefinition, _values.Union(other.EnumerateValues()).ToList(), IsAssociative ? new(_associativeValues!) : null);
         foreach ((DreamValue key, DreamValue value) in other.GetAssociativeValues()) {
             newList.SetValue(key, value);
         }

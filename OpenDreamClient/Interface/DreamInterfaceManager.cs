@@ -22,6 +22,7 @@ using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 using SixLabors.ImageSharp;
 using System.Linq;
+using System.Web;
 using Robust.Shared.Map;
 
 namespace OpenDreamClient.Interface;
@@ -831,28 +832,26 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
         var elementIds = controlId.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
         if (elementIds.Length == 0) {
-            switch (queryValue) {
+            var queryResult = queryValue switch {
                 // The server will actually never query this because it can predict the answer to be "true"
                 // But also have it here in case a local winget ever wants it
-                case "hwmode":
-                    return "true";
-                case "windows":
-                    return string.Join(';',
-                        Windows.Where(pair => !((WindowDescriptor)pair.Value.ElementDescriptor).IsPane.Value).Select(pair => pair.Key));
-                case "panes":
-                    return string.Join(';',
-                        Windows.Where(pair => ((WindowDescriptor)pair.Value.ElementDescriptor).IsPane.Value).Select(pair => pair.Key));
-                case "menus":
-                    return string.Join(';', Menus.Keys);
-                case "macros":
-                    return string.Join(';', MacroSets.Keys);
-                case "url":
-                    return _netManager.ServerChannel?.RemoteEndPoint.ToString() ?? string.Empty; // TODO: Port should be 0 "if connected to a local .dmb file"
-                case "dpi":
-                    return (_clyde.DefaultWindowScale.X.ToString(CultureInfo.InvariantCulture));
-                default:
-                    _sawmill.Error($"Special winget \"{queryValue}\" is not implemented");
-                    return string.Empty;
+                "hwmode" => "true",
+                "windows" => string.Join(';',
+                        Windows.Where(pair => !pair.Value.WindowDescriptor.IsPane.Value).Select(pair => pair.Key)),
+                "panes" => string.Join(';',
+                        Windows.Where(pair => pair.Value.WindowDescriptor.IsPane.Value).Select(pair => pair.Key)),
+                "menus" => string.Join(';', Menus.Keys),
+                "macros" => string.Join(';', MacroSets.Keys),
+                "url" => _netManager.ServerChannel?.RemoteEndPoint.ToString() ?? string.Empty, // TODO: Port should be 0 "if connected to a local .dmb file"
+                "dpi" => (_clyde.DefaultWindowScale.X.ToString(CultureInfo.InvariantCulture)),
+                _ => null
+            };
+
+            if (queryResult is null) {
+                _sawmill.Error($"Special winget \"{queryValue}\" is not implemented");
+                return string.Empty;
+            } else {
+                return forceJson ? $"\"{HttpUtility.JavaScriptStringEncode(queryResult)}\"" : queryResult;
             }
         } else if (elementIds.Length == 1) {
             return GetProperty(elementIds[0]);

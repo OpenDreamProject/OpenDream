@@ -2882,49 +2882,32 @@ namespace OpenDreamRuntime.Procs {
 
                     switch (second.Type) {
                         case DreamValue.DreamValueType.DreamObject: return firstValue == second.MustGetValueAsDreamObject();
-                        case DreamValue.DreamValueType.Appearance:
-                        case DreamValue.DreamValueType.DreamProc:
-                        case DreamValue.DreamValueType.DreamType:
-                        case DreamValue.DreamValueType.String:
-                        case DreamValue.DreamValueType.Float: return false;
+                        default: return false;
                     }
-
-                    break;
                 }
                 case DreamValue.DreamValueType.Float: {
                     float firstValue = first.MustGetValueAsFloat();
 
                     switch (second.Type) {
                         case DreamValue.DreamValueType.Float: return firstValue == second.MustGetValueAsFloat();
-                        case DreamValue.DreamValueType.DreamType:
-                        case DreamValue.DreamValueType.DreamObject:
-                        case DreamValue.DreamValueType.String: return false;
+                        default: return false;
                     }
-
-                    break;
                 }
                 case DreamValue.DreamValueType.String: {
                     string firstValue = first.MustGetValueAsString();
 
                     switch (second.Type) {
                         case DreamValue.DreamValueType.String: return firstValue == second.MustGetValueAsString();
-                        case DreamValue.DreamValueType.DreamObject:
-                        case DreamValue.DreamValueType.Float: return false;
+                        default: return false;
                     }
-
-                    break;
                 }
                 case DreamValue.DreamValueType.DreamType: {
                     var firstValue = first.MustGetValueAsType();
 
                     switch (second.Type) {
                         case DreamValue.DreamValueType.DreamType: return firstValue.Equals(second.MustGetValueAsType());
-                        case DreamValue.DreamValueType.Float:
-                        case DreamValue.DreamValueType.DreamObject:
-                        case DreamValue.DreamValueType.String: return false;
+                        default: return false;
                     }
-
-                    break;
                 }
                 case DreamValue.DreamValueType.DreamProc: {
                     if (second.Type != DreamValue.DreamValueType.DreamProc)

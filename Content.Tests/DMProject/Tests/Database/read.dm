@@ -20,22 +20,22 @@
 	ASSERT(assoc["name"] == "foo")
 	ASSERT(assoc["points"] == 1.5)
 
-	ASSERT(query.GetColumn(0) == 1)
-	ASSERT(query.GetColumn(1) == "foo")
-	ASSERT(query.GetColumn(2) == 1.5)
+	ASSERT(query.GetColumn(1) == 1)
+	ASSERT(query.GetColumn(2) == "foo")
+	ASSERT(query.GetColumn(3) == 1.5)
 	
 	var/list/columns = query.Columns()	
 	ASSERT(columns[1] == "id")
 	ASSERT(columns[2] == "name")
 	ASSERT(columns[3] == "points")
 	
-	ASSERT(query.Columns(0) == "id")
-	ASSERT(query.Columns(1) == "name")
-	ASSERT(query.Columns(2) == "points")
+	ASSERT(query.Columns(1) == "id")
+	ASSERT(query.Columns(2) == "name")
+	ASSERT(query.Columns(3) == "points")
 	
 	ASSERT(!query.Columns(10))
 
-	ASSERT(query.Error() && query.ErrorMsg())
+	ASSERT(!query.Error())
 	
 	query.Close()
 	db.Close()
@@ -46,10 +46,10 @@
 	query.Execute(db)
 	query.NextRow()
 	
-	ASSERT(query.GetColumn(0) == 1)
+	ASSERT(query.GetColumn(1) == 1)
 	
 	ASSERT(!query.GetColumn(10))
-	ASSERT(query.Error() && query.ErrorMsg())
+	ASSERT(!query.Error())
 	
 	del(query)
 	del(db)

@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\DMCompiler\DMCompiler.csproj" />
     <ProjectReference Include="..\OpenDreamShared\OpenDreamShared.csproj" />
-    <ProjectReference Include="..\OpenDreamRuntime\OpenDreamRuntime.csproj" />
   </ItemGroup>
 </Project>

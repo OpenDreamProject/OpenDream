@@ -434,10 +434,9 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus FormatString(DMProcState state) {
+            int interpCount = state.ReadInt();
             string unformattedString = state.ReadString();
             StringBuilder formattedString = new StringBuilder();
-
-            int interpCount = state.ReadInt();
 
             FormatSuffix? postPrefix = null; // Prefix that needs the effects of a suffix
 

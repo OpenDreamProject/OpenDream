@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using DMCompiler.Bytecode;
 using DMCompiler.DM;
@@ -51,23 +52,36 @@ internal sealed class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
         _args = args;
     }
 
+    [Conditional("DEBUG")]
     private void ValidateArgs(OpcodeMetadata metadata, List<IAnnotatedBytecode> args) {
         if (metadata.VariableArgs) {
-            if (args[0] is not AnnotatedBytecodeInteger) {
-                throw new Exception("Variable arg instructions must have a sizing operand (integer) as their first arg");
+            Debug.Assert(args.Count != 0 && args[0] is AnnotatedBytecodeInteger,
+                "Variable arg instructions must have a sizing operand (integer) as their first arg");
+            Debug.Assert(metadata.RequiredArgs is [OpcodeArgType.Int],
+                "Variable arg instructions must declare exactly one required sizing operand");
+            Debug.Assert(metadata.RepeatedArgs.Length != 0,
+                "Variable arg instructions must declare at least one repeated operand type");
+
+            int repeatedArgCount = args.Count - 1;
+            if (args.Count == 0 || metadata.RepeatedArgs.Length == 0) return;
+
+            Debug.Assert(repeatedArgCount % metadata.RepeatedArgs.Length == 0,
+                $"Variable arg instruction expected repeated groups of {metadata.RepeatedArgs.Length}, got {repeatedArgCount}");
+
+            for (int i = 0; i < repeatedArgCount; i++) {
+                var expected = metadata.RepeatedArgs[i % metadata.RepeatedArgs.Length];
+                var arg = args[i + 1];
+                Debug.Assert(MatchArgs(expected, arg), $"Expected variable arg {i} to be {expected}, got {arg.GetType()}");
             }
 
             return;
         }
 
-        if (metadata.RequiredArgs.Length != args.Count) {
-            throw new Exception($"Expected {metadata.RequiredArgs.Length} args, got {args.Count}");
-        }
+        Debug.Assert(metadata.RequiredArgs.Length == args.Count, $"Expected {metadata.RequiredArgs.Length} args, got {args.Count}");
 
-        for (int i = 0; i < metadata.RequiredArgs.Length; i++) {
-            if (!MatchArgs(metadata.RequiredArgs[i], args[i])) {
-                throw new Exception($"Expected arg {i} to be {metadata.RequiredArgs[i]}, got {args[i].GetType()}");
-            }
+        int count = Math.Min(metadata.RequiredArgs.Length, args.Count);
+        for (int i = 0; i < count; i++) {
+            Debug.Assert(MatchArgs(metadata.RequiredArgs[i], args[i]), $"Expected arg {i} to be {metadata.RequiredArgs[i]}, got {args[i].GetType()}");
         }
     }
 
@@ -83,6 +97,8 @@ internal sealed class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
                 return arg is AnnotatedBytecodeTypeId;
             case OpcodeArgType.ProcId:
                 return arg is AnnotatedBytecodeProcId;
+            case OpcodeArgType.EnumeratorId:
+                return arg is AnnotatedBytecodeEnumeratorId;
             case OpcodeArgType.FilterId:
                 return arg is AnnotatedBytecodeFilter;
             case OpcodeArgType.ListSize:
@@ -103,8 +119,11 @@ internal sealed class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
                 return arg is AnnotatedBytecodePickCount;
             case OpcodeArgType.ConcatCount:
                 return arg is AnnotatedBytecodeConcatCount;
+            case OpcodeArgType.ValueType:
+                return arg is AnnotatedBytecodeType;
             default:
-                throw new ArgumentOutOfRangeException(nameof(requiredArg), requiredArg, null);
+                Debug.Fail($"Unexpected opcode argument type {requiredArg}");
+                return false;
         }
     }
 

@@ -115,6 +115,8 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
             case DreamProcOpcode.Combine:
             case DreamProcOpcode.Increment:
             case DreamProcOpcode.Decrement:
+            case DreamProcOpcode.PreIncrement:
+            case DreamProcOpcode.PreDecrement:
             case DreamProcOpcode.Mask:
             case DreamProcOpcode.MultiplyReference:
             case DreamProcOpcode.DivideReference:

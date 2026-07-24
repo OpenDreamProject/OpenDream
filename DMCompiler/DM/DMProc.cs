@@ -1016,8 +1016,18 @@ internal sealed class DMProc {
         WriteReference(reference);
     }
 
+    public void PreIncrement(DMReference reference) {
+        WriteOpcode(DreamProcOpcode.PreIncrement);
+        WriteReference(reference);
+    }
+
     public void Increment(DMReference reference) {
         WriteOpcode(DreamProcOpcode.Increment);
+        WriteReference(reference);
+    }
+
+    public void PreDecrement(DMReference reference) {
+        WriteOpcode(DreamProcOpcode.PreDecrement);
         WriteReference(reference);
     }
 

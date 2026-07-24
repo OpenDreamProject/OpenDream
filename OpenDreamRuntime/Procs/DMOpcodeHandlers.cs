@@ -927,24 +927,30 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus Increment(DMProcState state) {
-            var reference = state.ReadReference();
-            using var value = state.GetReferenceValue(reference, peek: true);
+            return IncrementDecrement(state, 1, returnPrevious: true);
+        }
 
-            //If it's not a number, it turns into 1
-            state.AssignReference(reference, new(value.UnsafeGetValueAsFloat() + 1));
-
-            state.Push(value);
-            return ProcStatus.Continue;
+        public static ProcStatus PreIncrement(DMProcState state) {
+            return IncrementDecrement(state, 1, returnPrevious: false);
         }
 
         public static ProcStatus Decrement(DMProcState state) {
+            return IncrementDecrement(state, -1, returnPrevious: true);
+        }
+
+        public static ProcStatus PreDecrement(DMProcState state) {
+            return IncrementDecrement(state, -1, returnPrevious: false);
+        }
+
+        private static ProcStatus IncrementDecrement(DMProcState state, float adjustment, bool returnPrevious) {
             var reference = state.ReadReference();
             using var value = state.GetReferenceValue(reference, peek: true);
+            DreamValue result = new(value.UnsafeGetValueAsFloat() + adjustment);
 
-            //If it's not a number, it turns into -1
-            state.AssignReference(reference, new(value.UnsafeGetValueAsFloat() - 1));
+            // BYOND coerces every non-number including null to 0 for ++ and --
+            state.AssignReference(reference, result);
 
-            state.Push(value);
+            state.Push(returnPrevious ? value : result);
             return ProcStatus.Continue;
         }
 
@@ -1482,6 +1488,11 @@ namespace OpenDreamRuntime.Procs {
             using var second = state.Pop();
             using var first = state.Pop();
 
+            if (TryGetReferenceComparisonResult(first, second, out DreamValue referenceResult)) {
+                state.Push(referenceResult);
+                return ProcStatus.Continue;
+            }
+
             state.Push(new DreamValue(IsGreaterThan(first, second) ? 1 : 0));
             return ProcStatus.Continue;
         }
@@ -1491,7 +1502,9 @@ namespace OpenDreamRuntime.Procs {
             using var first = state.Pop();
             DreamValue result;
 
-            if (first.TryGetValueAsFloat(out float lhs) && lhs == 0.0 && second.IsNull) result = new DreamValue(1);
+            if (TryGetReferenceComparisonResult(first, second, out DreamValue referenceResult))
+                result = referenceResult;
+            else if (first.TryGetValueAsFloat(out float lhs) && lhs == 0.0 && second.IsNull) result = new DreamValue(1);
             else if (first.IsNull && second.TryGetValueAsFloat(out float rhs) && rhs == 0.0) result = new DreamValue(1);
             else if (first.IsNull && second.TryGetValueAsString(out var s) && s == "") result = new DreamValue(1);
             else result = new DreamValue((IsEqual(first, second) || IsGreaterThan(first, second)) ? 1 : 0);
@@ -1504,6 +1517,11 @@ namespace OpenDreamRuntime.Procs {
             using var second = state.Pop();
             using var first = state.Pop();
 
+            if (TryGetReferenceComparisonResult(first, second, out DreamValue referenceResult)) {
+                state.Push(referenceResult);
+                return ProcStatus.Continue;
+            }
+
             state.Push(new DreamValue(IsLessThan(first, second) ? 1 : 0));
             return ProcStatus.Continue;
         }
@@ -1513,7 +1531,9 @@ namespace OpenDreamRuntime.Procs {
             using var first = state.Pop();
             DreamValue result;
 
-            if (first.TryGetValueAsFloat(out float lhs) && lhs == 0.0 && second.IsNull) result = new DreamValue(1);
+            if (TryGetReferenceComparisonResult(first, second, out DreamValue referenceResult))
+                result = referenceResult;
+            else if (first.TryGetValueAsFloat(out float lhs) && lhs == 0.0 && second.IsNull) result = new DreamValue(1);
             else if (first.IsNull && second.TryGetValueAsFloat(out float rhs) && rhs == 0.0) result = new DreamValue(1);
             else if (first.IsNull && second.TryGetValueAsString(out var s) && s == "") result = new DreamValue(1);
             else result = new DreamValue((IsEqual(first, second) || IsLessThan(first, second)) ? 1 : 0);
@@ -2961,6 +2981,26 @@ namespace OpenDreamRuntime.Procs {
 
             // Behaviour is otherwise equivalent (pun intended) to ==
             return IsEqual(first, second);
+        }
+
+        private static bool TryGetReferenceComparisonResult(DreamValue first, DreamValue second,
+            out DreamValue result) {
+            // BYOND leaves the left operand untouched whenever the right operand is reference-like regardless of the left operand's runtime representation
+            // The reverse is a runtime error: reference <op> null
+            if (!second.IsNull && IsReferenceComparisonType(second.Type)) {
+                result = first;
+                return true;
+            }
+
+            result = default;
+            return false;
+        }
+
+        private static bool IsReferenceComparisonType(DreamValue.DreamValueType type) {
+            return type is DreamValue.DreamValueType.DreamObject or
+                DreamValue.DreamValueType.DreamProc or
+                DreamValue.DreamValueType.DreamResource or
+                DreamValue.DreamValueType.DreamType;
         }
 
         private static bool IsGreaterThan(DreamValue first, DreamValue second) {

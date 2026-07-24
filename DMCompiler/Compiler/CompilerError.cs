@@ -48,6 +48,7 @@ public enum WarningCode {
     ScopeOperandNamedType = 2001, // Scope operator is used on a var named type or parent_type, maybe unintentionally
     DuplicateVariable = 2100,
     DuplicateProcDefinition = 2101,
+    TypeProcConflict = 2102, // A proc override whose path was already declared as a type
     PointlessParentCall = 2205,
     PointlessBuiltinCall = 2206, // For pointless calls to issaved() or initial()
     SuspiciousMatrixCall = 2207, // Calling matrix() with seemingly the wrong arguments
@@ -149,6 +150,7 @@ public struct CompilerEmission {
         {WarningCode.ScopeOperandNamedType, ErrorLevel.Warning},
         {WarningCode.DuplicateVariable, ErrorLevel.Warning},
         {WarningCode.DuplicateProcDefinition, ErrorLevel.Error},
+        {WarningCode.TypeProcConflict, ErrorLevel.Error},
         {WarningCode.PointlessParentCall, ErrorLevel.Warning},
         {WarningCode.PointlessBuiltinCall, ErrorLevel.Warning},
         {WarningCode.SuspiciousMatrixCall, ErrorLevel.Warning},

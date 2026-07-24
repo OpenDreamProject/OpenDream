@@ -127,7 +127,16 @@ internal partial class DMCodeTree {
     }
 
     public void AddProc(DreamPath owner, DMASTProcDefinition procDef) {
-        var node = GetDMObjectNode(owner);
+        var node = GetDMObjectNode(owner, procDef.Location);
+
+        // An override is written without a "proc" keyword, giving it the exact same path as a type would have.
+        // BYOND resolves that path to whatever was declared first, so a type already sitting there is a conflict.
+        // Note that the reverse order is fine; declaring the type after the override compiles in BYOND.
+        if (procDef.IsOverride && TryGetTypeNode(owner.AddToPath(procDef.Name), out var conflictingType)) {
+            _compiler.Emit(WarningCode.TypeProcConflict, procDef.Location,
+                $"Cannot define proc \"{procDef.Name}()\": {conflictingType.Path} is already defined as a type at {conflictingType.Location}");
+        }
+
         var procNode = new ProcNode(this, owner, procDef);
 
         if (procDef is { Name: "New", IsOverride: false })

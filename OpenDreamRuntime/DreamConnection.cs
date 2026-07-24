@@ -1,6 +1,3 @@
-using System.Threading.Tasks;
-using System.Web;
-using DMCompiler.Bytecode;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.Native;
@@ -11,6 +8,8 @@ using OpenDreamShared.Network.Messages;
 using Robust.Shared.Enums;
 using Robust.Shared.Player;
 using SpaceWizards.Sodium;
+using System.Threading.Tasks;
+using System.Web;
 
 namespace OpenDreamRuntime;
 
@@ -34,7 +33,8 @@ public sealed partial class DreamConnection {
     [ViewVariables] public DreamObjectClient? Client { get; private set; }
     [ViewVariables] public string Key { get; }
 
-    [ViewVariables] public DreamObjectMob? Mob {
+    [ViewVariables]
+    public DreamObjectMob? Mob {
         get => _mob;
         set {
             if (_mob == value)
@@ -54,7 +54,8 @@ public sealed partial class DreamConnection {
         }
     }
 
-    [ViewVariables] public DreamObjectMovable? Eye {
+    [ViewVariables]
+    public DreamObjectMovable? Eye {
         get;
         set {
             value?.IncRef();
@@ -466,7 +467,7 @@ public sealed partial class DreamConnection {
     }
 
     public void HandleBrowseResourceRequest(string filename) {
-        if(_permittedBrowseRscFiles.TryGetValue(filename, out var dreamResource)) {
+        if (_permittedBrowseRscFiles.TryGetValue(filename, out var dreamResource)) {
             var msg = new MsgBrowseResourceResponse() {
                 Filename = filename,
                 Data = dreamResource.ResourceData!, //honestly if this is null, something mega fucked up has happened and we should error hard
@@ -480,7 +481,8 @@ public sealed partial class DreamConnection {
 
     public void Browse(string? body, string? options) {
         string? window = null;
-        Vector2i size = (480, 480);
+
+        List<string> unhandledOptions = new List<string>();
 
         if (options != null) {
             foreach (string option in options.Split(',', ';', '&')) {
@@ -493,19 +495,17 @@ public sealed partial class DreamConnection {
 
                     if (key == "window") {
                         window = value;
-                    } else if (key == "size") {
-                        string[] sizeSeparated = value.Split("x", 2);
-
-                        size = (int.Parse(sizeSeparated[0]), int.Parse(sizeSeparated[1]));
+                    } else {
+                        unhandledOptions.Add(optionTrimmed);
                     }
                 }
             }
         }
 
         var msg = new MsgBrowse() {
-            Size = size,
             Window = window,
-            HtmlSource = body
+            HtmlSource = body,
+            Options = string.Join(';', unhandledOptions)
         };
 
         Session?.Channel.SendMessage(msg);

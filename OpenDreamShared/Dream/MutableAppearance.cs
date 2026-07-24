@@ -40,6 +40,7 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
     [ViewVariables] public int Plane = -32767;
     [ViewVariables] public BlendMode BlendMode = BlendMode.Default;
     [ViewVariables] public AppearanceFlags AppearanceFlags = AppearanceFlags.None;
+    [ViewVariables] public VisFlags VisFlags = VisFlags.None;
     [ViewVariables] public sbyte Invisibility;
     [ViewVariables] public bool Opacity;
     [ViewVariables] public bool Override;
@@ -134,6 +135,7 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         RenderTarget = appearance.RenderTarget;
         BlendMode = appearance.BlendMode;
         AppearanceFlags = appearance.AppearanceFlags;
+        VisFlags = appearance.VisFlags;
         Invisibility = appearance.Invisibility;
         Opacity = appearance.Opacity;
         MouseOpacity = appearance.MouseOpacity;
@@ -189,6 +191,7 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         if (appearance.RenderTarget != RenderTarget) return false;
         if (appearance.BlendMode != BlendMode) return false;
         if (appearance.AppearanceFlags != AppearanceFlags) return false;
+        if (appearance.VisFlags != VisFlags) return false;
         if (appearance.Invisibility != Invisibility) return false;
         if (appearance.Opacity != Opacity) return false;
         if (appearance.MouseOpacity != MouseOpacity) return false;
@@ -291,6 +294,7 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         hashCode.Add(RenderTarget);
         hashCode.Add(BlendMode);
         hashCode.Add(AppearanceFlags);
+        hashCode.Add(VisFlags);
         hashCode.Add(Maptext);
         hashCode.Add(MaptextOffset);
         hashCode.Add(MaptextSize);
@@ -382,6 +386,19 @@ public enum AppearanceFlags {
     TileMover = 2048
 }
 
+[Flags]
+public enum VisFlags {
+    None = 0,
+    InheritIcon = 1,
+    InheritIconState = 2,
+    InheritDir = 4,
+    InheritLayer = 8,
+    InheritPlane = 16,
+    InheritId = 32,
+    Underlay = 64,
+    Hide = 128,
+}
+
 [Flags] //kinda, but only EASE_IN and EASE_OUT are used as bitflags, everything else is an enum
 public enum AnimationEasing {
     Linear = 0,
@@ -437,6 +454,7 @@ public enum IconAppearanceProperty : byte {
         Plane,
         BlendMode,
         AppearanceFlags,
+        VisFlags,
         Invisibility,
         Opacity,
         Override,

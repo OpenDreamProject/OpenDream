@@ -398,12 +398,12 @@ namespace DMCompiler.Compiler.DM {
                 if (expression) return null;
             }
 
-            string? pathElement = PathElement();
+            string? pathElement = PathElementSkippingEmpty();
             if (pathElement != null) {
                 List<string> pathElements = [pathElement];
                 bool operatorFlag = false;
                 while (pathElement != null && Check(TokenType.DM_Slash)) {
-                    pathElement = PathElement();
+                    pathElement = PathElementSkippingEmpty();
 
                     if (pathElement != null) {
                         if(pathElement == "operator") {
@@ -445,6 +445,32 @@ namespace DMCompiler.Compiler.DM {
 
                 return null;
             }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Reads the next path element, ignoring any empty ones (the "//" in "/datum//foo").
+        /// BYOND accepts these; they can only come from macro expansion because "//" is a comment in source.
+        /// </summary>
+        /// <returns>The next path element, or null if there isn't one. Slashes read by a failed attempt are given back.</returns>
+        private string? PathElementSkippingEmpty() {
+            string? pathElement = PathElement();
+            if (pathElement != null || Current().Type != TokenType.DM_Slash)
+                return pathElement;
+
+            List<Token> skippedSlashes = new();
+            do {
+                skippedSlashes.Add(Current());
+                Advance();
+
+                pathElement = PathElement();
+                if (pathElement != null)
+                    return pathElement;
+            } while (Current().Type == TokenType.DM_Slash);
+
+            for (int i = skippedSlashes.Count - 1; i >= 0; i--)
+                ReuseToken(skippedSlashes[i]);
 
             return null;
         }

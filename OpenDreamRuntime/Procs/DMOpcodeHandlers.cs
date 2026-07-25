@@ -16,6 +16,7 @@ using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Shared.Random;
 using FormatSuffix = DMCompiler.Bytecode.StringFormatEncoder.FormatSuffix;
+using BlendType = OpenDreamRuntime.Objects.DreamIconOperationBlend.BlendType;
 
 namespace OpenDreamRuntime.Procs {
     internal static partial class DMOpcodeHandlers {
@@ -840,7 +841,7 @@ namespace OpenDreamRuntime.Procs {
             if (first.IsNull) {
                 output = second;
             } else if (first.TryGetValueAsDreamResource(out _) || first.TryGetValueAsDreamObject<DreamObjectIcon>(out _)) {
-                output = IconOperationAdd(state, first, second);
+                output = IconOperation(state, BlendType.Add, first, second);
             } else if (first.TryGetValueAsType(out _) || first.TryGetValueAsProc(out _)) {
                 output = default; // Always errors
             } else if (second.IsNull) {
@@ -897,7 +898,7 @@ namespace OpenDreamRuntime.Procs {
 
             DreamValue result;
             if (first.TryGetValueAsDreamResource(out _) || first.TryGetValueAsDreamObject<DreamObjectIcon>(out _)) {
-                result = IconOperationAdd(state, first, second);
+                result = IconOperation(state, BlendType.Add, first, second);
             } else if (first.TryGetValueAsDreamObject(out var firstObj)) {
                 if (firstObj != null) {
                     state.PopReference(reference);
@@ -1364,22 +1365,23 @@ namespace OpenDreamRuntime.Procs {
             var reference = state.ReadReference();
             using var second = state.Pop();
             using var first = state.GetReferenceValue(reference, peek: true);
+            DreamValue result;
 
             if (first.TryGetValueAsFloat(out var firstFloat) || first.IsNull) {
                 var secondFloat = second.UnsafeGetValueAsFloat(); // Non-numbers are always treated as 0 here
 
-                DreamValue result = new DreamValue(firstFloat * secondFloat);
-                state.AssignReference(reference, result);
-                state.Push(result);
+                result = new DreamValue(firstFloat * secondFloat);
+            } else if (first.TryGetValueAsDreamResource(out _) || first.TryGetValueAsDreamObject<DreamObjectIcon>(out _)) {
+                result = IconOperation(state, BlendType.Multiply, first, second);
             } else if (first.TryGetValueAsDreamObject<DreamObject>(out var firstDreamObject)) {
-                using var result = firstDreamObject.OperatorMultiplyRef(second, state);
-
-                state.AssignReference(reference, result);
-                state.Push(result);
+                result = firstDreamObject.OperatorMultiplyRef(second, state);
             } else {
                 throw new Exception($"Invalid multiply operation on {first} and {second}");
             }
 
+            state.AssignReference(reference, result);
+            state.Push(result);
+            result.Dispose();
             return ProcStatus.Continue;
         }
 
@@ -3203,8 +3205,8 @@ namespace OpenDreamRuntime.Procs {
             return new DreamValue(returnVal.ToHex().ToLower());
         }
 
-        private static DreamValue IconOperationAdd(DMProcState state, DreamValue icon, DreamValue blend) {
-            // Create a new /icon and ICON_ADD blend it
+        private static DreamValue IconOperation(DMProcState state, BlendType blendType, DreamValue icon, DreamValue blend) {
+            // Create a new /icon and blend it
             // Note that BYOND creates something other than an /icon, but it behaves the same as one in most reasonable interactions
             var iconObj = state.Proc.ObjectTree.CreateObject<DreamObjectIcon>(state.Proc.ObjectTree.Icon);
             if (!state.Proc.DreamResourceManager.TryLoadIcon(icon, out var from)) {
@@ -3213,7 +3215,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             iconObj.Icon.InsertStates(from, DreamValue.Null, DreamValue.Null, DreamValue.Null);
-            DreamProcNativeIcon.Blend(iconObj.Icon, blend, DreamIconOperationBlend.BlendType.Add, 0, 0);
+            DreamProcNativeIcon.Blend(iconObj.Icon, blend, blendType, 0, 0);
             return new DreamValue(iconObj);
         }
 

@@ -31,6 +31,13 @@ public class DreamObject {
 
     public virtual bool ShouldCallNew => true;
 
+    /// <summary>
+    ///     Whether this object gets deleted once nothing references it anymore.
+    ///     Objects that opt out are still reference counted, they just never die of their own accord;
+    ///     an explicit del() still deletes them.
+    /// </summary>
+    public virtual bool ShouldGarbageCollect => true;
+
     // Shortcuts to IoC dependencies & entity systems
     protected DreamManager DreamManager => ObjectDefinition.DreamManager;
     protected DreamRefManager DreamRefManager => ObjectDefinition.DreamRefManager;
@@ -141,7 +148,7 @@ public class DreamObject {
             return;
 
         RefCount--;
-        if (RefCount == 0)
+        if (RefCount == 0 && ShouldGarbageCollect)
             Delete();
     }
 

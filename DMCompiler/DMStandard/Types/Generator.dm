@@ -5,6 +5,7 @@
 	var/_binobj as opendream_unimplemented
 
 /generator/proc/Rand()
+/generator/proc/Turn(angle)
 
 /*
 Generator Theory

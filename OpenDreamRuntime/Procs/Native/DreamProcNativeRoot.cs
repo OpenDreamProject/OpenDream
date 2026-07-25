@@ -3207,6 +3207,19 @@ internal static class DreamProcNativeRoot {
         return DreamProcNativeHelpers.HandleViewersHearers(bundle, usr, false);
     }
 
+    [DreamProc("vector")]
+    [DreamProcParameter("x")]
+    [DreamProcParameter("y")]
+    [DreamProcParameter("z")]
+    public static DreamValue NativeProc_vector(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        // Only the arguments actually given get passed along; a third one makes the vector 3D even when it's null
+        var argumentCount = Math.Min(bundle.Arguments.Length, 3);
+        var vector = bundle.ObjectTree.CreateObject<DreamObjectVector>(bundle.ObjectTree.Vector);
+
+        vector.InitSpawn(new DreamProcArguments(bundle.Arguments[..argumentCount]));
+        return new DreamValue(vector);
+    }
+
     [DreamProc("walk")]
     [DreamProcParameter("Ref", Type = DreamValueTypeFlag.DreamObject)]
     [DreamProcParameter("Dir", Type = DreamValueTypeFlag.Float)]

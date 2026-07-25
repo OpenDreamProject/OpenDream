@@ -11,3 +11,4 @@
     ASSERT(A.x == -1)
     ASSERT(A.y == -1)
     ASSERT(A.z == -4)
+    ASSERT(A.len == 3) // Combining with a 3D vector makes it 3D

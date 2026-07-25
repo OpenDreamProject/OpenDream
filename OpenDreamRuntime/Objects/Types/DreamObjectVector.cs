@@ -150,6 +150,7 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
             IncRef();
             return new DreamValue(this);
         } else if (b.TryGetValueAsDreamObject<DreamObjectVector>(out var right)) {
+            Is3D = Is3D || right.Is3D; // Must come before touching Z, which does nothing while we're 2D
             X *= right.X;
             Y *= right.Y;
             Z *= right.Z;
@@ -199,6 +200,8 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
         } else if (b.TryGetValueAsDreamObject<DreamObjectVector>(out var right)) {
             if (right.X == 0 || right.Y == 0 || (Is3D && right.Z == 0))
                 throw new DivideByZeroException("Cannot divide vector by zero vector component");
+
+            Is3D = Is3D || right.Is3D; // Must come before touching Z, which does nothing while we're 2D
             X /= right.X;
             Y /= right.Y;
             Z = right.Z == 0 ? 0 : Z / right.Z;
@@ -211,10 +214,10 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
 
     public override DreamValue OperatorAppend(DreamValue b) {
         if (b.TryGetValueAsDreamObject<DreamObjectVector>(out var right)) {
+            Is3D = Is3D || right.Is3D; // Must come before touching Z, which does nothing while we're 2D
             X += right.X;
             Y += right.Y;
             Z += right.Z;
-            Is3D = Is3D || right.Is3D;
 
             IncRef();
             return new DreamValue(this);
@@ -225,10 +228,10 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
 
     public override DreamValue OperatorRemove(DreamValue b) {
         if (b.TryGetValueAsDreamObject<DreamObjectVector>(out var right)) {
+            Is3D = Is3D || right.Is3D; // Must come before touching Z, which does nothing while we're 2D
             X -= right.X;
             Y -= right.Y;
             Z -= right.Z;
-            Is3D = Is3D || right.Is3D;
 
             IncRef();
             return new DreamValue(this);
@@ -301,9 +304,12 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
     /// Attempt to create a <see cref="DreamObjectVector"/> from a DreamValue<br/>
     /// A vector can be created from a list containing 2 or 3 numbers
     /// </summary>
+    /// <remarks>The caller owns a reference to the returned vector and is responsible for releasing it</remarks>
     public static bool TryCreateFromValue(DreamValue value, DreamObjectTree tree, [NotNullWhen(true)] out DreamObjectVector? vector) {
-        if (value.TryGetValueAsDreamObject(out vector))
+        if (value.TryGetValueAsDreamObject(out vector)) {
+            vector.IncRef(); // The value we were given keeps its own reference
             return true;
+        }
 
         if (value.TryGetValueAsDreamList(out var list)) {
             var length = list.GetLength();

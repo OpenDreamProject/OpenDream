@@ -117,6 +117,7 @@ internal static class DreamProcNative {
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_trunc);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_turn);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_typesof);
+        objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_vector);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_uppertext);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_url_decode);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_url_encode);
@@ -214,6 +215,7 @@ internal static class DreamProcNative {
         objectTree.SetNativeProc(objectTree.DatabaseQuery, DreamProcNativeDatabaseQuery.NativeProc_RowsAffected);
 
         objectTree.SetNativeProc(objectTree.Generator, DreamProcNativeGenerator.NativeProc_Rand);
+        objectTree.SetNativeProc(objectTree.Generator, DreamProcNativeGenerator.NativeProc_Turn);
 
         SetOverridableNativeProc(objectTree, objectTree.World, DreamProcNativeWorld.NativeProc_Error);
         SetOverridableNativeProc(objectTree, objectTree.World, DreamProcNativeWorld.NativeProc_Reboot);

@@ -87,6 +87,8 @@ public sealed partial class DreamRefManager {
             RefType.DreamObjectFilter,
             RefType.DreamObjectMovable,
             RefType.DreamObjectList,
+            RefType.DreamObjectAssocList,
+            RefType.DreamObjectSpecialList,
             RefType.DreamObjectListArgs,
             RefType.DreamObjectCallee,
         ];
@@ -160,7 +162,9 @@ public sealed partial class DreamRefManager {
                 DreamObjectMovable => CreateRef(RefType.DreamObjectMovable, dreamObject),
                 DreamObjectCallee callee => CreateRef(RefType.DreamObjectCallee, callee),
                 ProcArgsList argsList => CreateRef(RefType.DreamObjectListArgs, argsList),
+                DreamAssocList assocList => CreateRef(RefType.DreamObjectAssocList, assocList),
                 DreamList list when list.GetType() == typeof(DreamList) => CreateRef(RefType.DreamObjectList, list),
+                DreamList list => CreateRef(RefType.DreamObjectSpecialList, list),
                 _ => CreateRef(RefType.DreamObjectDatum, dreamObject)
             };
         }
@@ -382,6 +386,8 @@ public enum RefType : uint {
     DreamResourceIcon = 0xC000000,
     DreamObjectImage = 0xD000000,
     DreamObjectList = 0xF000000,
+    DreamObjectAssocList = 0x5500000,
+    DreamObjectSpecialList = 0x1A00000, // placeholder refid is of world.contents
     DreamObjectListArgs = 0x10000000,
     DreamObjectDatum = 0x21000000,
     String = 0x6000000,

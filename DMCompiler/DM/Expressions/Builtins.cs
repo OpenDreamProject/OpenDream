@@ -989,7 +989,7 @@ internal sealed class Log(Location location, DMExpression expr, DMExpression? ba
             return false;
         }
 
-        if (baseConstant is not Number {Value: var baseValue} || baseValue <= 0 || baseValue == 1) {
+        if (baseConstant is not Number {Value: var baseValue} || baseValue <= 0 || baseValue.Equals(1f)) {
             baseValue = 10;
             compiler.Emit(WarningCode.BadArgument, baseExpr.Location,
                 "Invalid base, must be a number greater than 0 and not equal to 1");

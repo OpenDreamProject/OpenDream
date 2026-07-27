@@ -70,7 +70,7 @@ namespace OpenDreamRuntime.Procs {
 
             // BYOND's one-dimensional list produces null when its runtime size is negative
             // This is different from multidimensional lists, where the negative dimensions become zero
-            if (dimensionCount == 1 && dimensionSizes[0].TryGetValueAsInteger(out int size) && size < 0) {
+            if (dimensionCount == 1 && dimensionSizes[0].UnsafeGetValueAsFloat() < 0) {
                 dimensionSizes[0].Dispose();
                 state.Push(DreamValue.Null);
                 return ProcStatus.Continue;

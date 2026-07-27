@@ -2987,20 +2987,13 @@ namespace OpenDreamRuntime.Procs {
             out DreamValue result) {
             // BYOND leaves the left operand untouched whenever the right operand is reference-like regardless of the left operand's runtime representation
             // The reverse is a runtime error: reference <op> null
-            if (!second.IsNull && IsReferenceComparisonType(second.Type)) {
+            if (!second.IsNull && second.Type != DreamValue.DreamValueType.Float && second.Type != DreamValue.DreamValueType.String) {
                 result = first;
                 return true;
             }
 
             result = default;
             return false;
-        }
-
-        private static bool IsReferenceComparisonType(DreamValue.DreamValueType type) {
-            return type is DreamValue.DreamValueType.DreamObject or
-                DreamValue.DreamValueType.DreamProc or
-                DreamValue.DreamValueType.DreamResource or
-                DreamValue.DreamValueType.DreamType;
         }
 
         private static bool IsGreaterThan(DreamValue first, DreamValue second) {

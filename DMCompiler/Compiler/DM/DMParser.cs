@@ -2755,6 +2755,14 @@ namespace DMCompiler.Compiler.DM {
 
                         return new DMASTRgb(identifier.Location, callParameters);
                     }
+                    case "image": {
+                        if (callParameters.Length < 1)
+                            Emit(WarningCode.InvalidArgumentCount, callLoc,
+                                "Expected at least 1 argument for image()");
+
+                        return new DMASTProcCall(callLoc,
+                            new DMASTCallableProcIdentifier(callLoc, identifier.Identifier), callParameters);
+                    }
                     case "animate": {
                         if (callParameters.Length is < 1)
                             Emit(WarningCode.InvalidArgumentCount, callLoc,

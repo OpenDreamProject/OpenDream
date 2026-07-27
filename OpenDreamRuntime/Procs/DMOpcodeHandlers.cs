@@ -1894,7 +1894,7 @@ namespace OpenDreamRuntime.Procs {
             float baseValue = state.UnsafePopAsFloat();
             float value = state.UnsafePopAsFloat();
 
-            if (value <= 0 || float.IsNaN(value) || baseValue <= 0 || baseValue == 1 || float.IsNaN(baseValue))
+            if (value <= 0 || float.IsNaN(value) || baseValue <= 0 || baseValue.Equals(1f) || float.IsNaN(baseValue))
                 throw new Exception($"log({baseValue},{value}) is not computable");
 
             float result = SharedOperations.Log(value, baseValue);

@@ -2760,8 +2760,7 @@ namespace DMCompiler.Compiler.DM {
                             Emit(WarningCode.InvalidArgumentCount, callLoc,
                                 "Expected at least 1 argument for image()");
 
-                        return new DMASTProcCall(callLoc,
-                            new DMASTCallableProcIdentifier(callLoc, identifier.Identifier), callParameters);
+                        goto default;
                     }
                     case "animate": {
                         if (callParameters.Length is < 1)

@@ -397,7 +397,7 @@ public enum RefType : uint {
     DreamObjectList = 0xF000000,
     DreamObjectListArgs = 0x10000000,
     DreamObjectAssocList = 0x5500000,
-    DreamObjectSpecialList = 0x1A00000, // placeholder refid is of world.contents
+    DreamObjectSpecialList = 0x1A000000, // placeholder refid is of world.contents
     DreamObjectDatum = 0x21000000,
     DreamObjectSavefile = 0x23000000,
     String = 0x6000000,
@@ -407,6 +407,6 @@ public enum RefType : uint {
     Proc = 0x26000000,
     Number = 0x2A000000,
     DreamObjectFilter = 0x53000000,
-    DreamObjectVector = 0x5700000,
+    DreamObjectVector = 0x57000000,
     DreamObjectCallee = 0x58000000,
 }

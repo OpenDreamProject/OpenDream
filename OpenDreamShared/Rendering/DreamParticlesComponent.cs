@@ -10,7 +10,7 @@ using Robust.Shared.ViewVariables;
 
 namespace OpenDreamShared.Rendering;
 
-[RegisterComponent, NetworkedComponent, AutoGenerateComponentState(true, fieldDeltas: true)]
+[RegisterComponent, NetworkedComponent, AutoGenerateComponentState(true)]
 public sealed partial class DreamParticlesComponent : Component {
     [ViewVariables(VVAccess.ReadOnly), AutoNetworkedField] public ParticleData Data;
 

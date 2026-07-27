@@ -77,8 +77,7 @@ public sealed class DreamObjectParticles : DreamObject {
 
             newVec = new Vector3(boundX, boundY, boundZ);
             return true;
-        }
-        else if (value.TryGetValueAsDreamObject<DreamObjectVector>(out var vectorVector /*lol*/)) {
+        } else if (value.TryGetValueAsDreamObject<DreamObjectVector>(out var vectorVector /*lol*/)) {
             newVec = vectorVector.AsVector3;
             return true;
         }

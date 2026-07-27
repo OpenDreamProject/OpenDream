@@ -88,6 +88,12 @@ public static partial class ByondApi {
             case ByondValueType.Client:
             case ByondValueType.Image:
             case ByondValueType.List:
+            case ByondValueType.AssocList:
+            case ByondValueType.WorldContentsList:
+            case ByondValueType.ArgsList:
+            case ByondValueType.Filter:
+            case ByondValueType.Vector:
+            case ByondValueType.Callee:
             case ByondValueType.Datum:
             case ByondValueType.String:
             case ByondValueType.Resource:
@@ -132,6 +138,12 @@ public static partial class ByondApi {
                     RefType.DreamObjectClient => ByondValueType.Client,
                     RefType.DreamObjectImage => ByondValueType.Image,
                     RefType.DreamObjectList => ByondValueType.List,
+                    RefType.DreamObjectAssocList => ByondValueType.AssocList,
+                    RefType.DreamObjectListArgs => ByondValueType.ArgsList,
+                    RefType.DreamObjectSpecialList => ByondValueType.WorldContentsList, // fine for now...
+                    RefType.DreamObjectFilter => ByondValueType.Filter,
+                    RefType.DreamObjectVector => ByondValueType.Vector,
+                    RefType.DreamObjectCallee => ByondValueType.Callee,
                     RefType.DreamObjectDatum => ByondValueType.Datum,
                     RefType.String => ByondValueType.String,
                     RefType.DreamResource => ByondValueType.Resource,

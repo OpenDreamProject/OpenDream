@@ -392,9 +392,9 @@ public enum RefType : uint {
     DreamResourceIcon = 0xC000000,
     DreamObjectImage = 0xD000000,
     DreamObjectList = 0xF000000,
+    DreamObjectListArgs = 0x10000000,
     DreamObjectAssocList = 0x5500000,
     DreamObjectSpecialList = 0x1A00000, // placeholder refid is of world.contents
-    DreamObjectListArgs = 0x10000000,
     DreamObjectDatum = 0x21000000,
     String = 0x6000000,
     DreamType = 0x9000000, //in byond type is from 0x8 to 0xb, but fuck that

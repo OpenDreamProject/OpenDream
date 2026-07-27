@@ -94,6 +94,7 @@ public static partial class ByondApi {
             case ByondValueType.Filter:
             case ByondValueType.Vector:
             case ByondValueType.Callee:
+            case ByondValueType.Savefile:
             case ByondValueType.Datum:
             case ByondValueType.String:
             case ByondValueType.Resource:
@@ -145,6 +146,7 @@ public static partial class ByondApi {
                     RefType.DreamObjectVector => ByondValueType.Vector,
                     RefType.DreamObjectCallee => ByondValueType.Callee,
                     RefType.DreamObjectDatum => ByondValueType.Datum,
+                    RefType.DreamObjectSavefile => ByondValueType.Savefile,
                     RefType.String => ByondValueType.String,
                     RefType.DreamResource => ByondValueType.Resource,
                     RefType.DreamType => ByondValueType.ObjTypePath, // just assume objtypepath for now?

@@ -92,6 +92,7 @@ public sealed partial class DreamRefManager {
             RefType.DreamObjectListArgs,
             RefType.DreamObjectCallee,
             RefType.DreamObjectVector,
+            RefType.DreamObjectSavefile,
         ];
 
         foreach (var type in bucketTypes) {
@@ -163,6 +164,7 @@ public sealed partial class DreamRefManager {
                 DreamObjectMovable => CreateRef(RefType.DreamObjectMovable, dreamObject),
                 DreamObjectCallee callee => CreateRef(RefType.DreamObjectCallee, callee),
                 DreamObjectVector vector => CreateRef(RefType.DreamObjectVector, vector),
+                DreamObjectSavefile savefile => CreateRef(RefType.DreamObjectSavefile, savefile),
                 ProcArgsList argsList => CreateRef(RefType.DreamObjectListArgs, argsList),
                 DreamAssocList assocList => CreateRef(RefType.DreamObjectAssocList, assocList),
                 DreamList list when list.GetType() == typeof(DreamList) => CreateRef(RefType.DreamObjectList, list),
@@ -228,6 +230,7 @@ public sealed partial class DreamRefManager {
             case RefType.DreamObjectMovable:
             case RefType.DreamObjectCallee:
             case RefType.DreamObjectVector:
+            case RefType.DreamObjectSavefile:
                 return new(GetFromBucket(@ref));
 
             case RefType.String:
@@ -396,6 +399,7 @@ public enum RefType : uint {
     DreamObjectAssocList = 0x5500000,
     DreamObjectSpecialList = 0x1A00000, // placeholder refid is of world.contents
     DreamObjectDatum = 0x21000000,
+    DreamObjectSavefile = 0x23000000,
     String = 0x6000000,
     DreamType = 0x9000000, //in byond type is from 0x8 to 0xb, but fuck that
     DreamResource = 0x27000000, //Equivalent to file

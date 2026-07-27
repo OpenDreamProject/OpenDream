@@ -1362,6 +1362,8 @@ public sealed class ClientImagesList(DreamObjectTree objectTree, ServerClientIma
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
         throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
+
+    public override bool ContainsValue(DreamValue value) => _imageObjects.Contains(value);
 }
 
 // world.contents list

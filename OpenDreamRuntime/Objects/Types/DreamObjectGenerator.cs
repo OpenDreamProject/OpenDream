@@ -19,8 +19,9 @@ public sealed class DreamObjectGenerator(DreamObjectDefinition objectDefinition)
             case "num":
             case "circle":
             case "sphere": {
-                var low = a.UnsafeGetValueAsFloat();
-                var high = (b.Type == DreamValue.DreamValueType.Float) ? b.UnsafeGetValueAsFloat() : 1f;
+                var left = a.UnsafeGetValueAsFloat();
+                var right = (b.Type == DreamValue.DreamValueType.Float) ? b.UnsafeGetValueAsFloat() : 1f;
+                var (low, high) = left <= right ? (left, right) : (right, left);
 
                 Generator = typeStr switch {
                     "num" => new GeneratorNum(low, high, distribution),

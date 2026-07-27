@@ -71,22 +71,18 @@ public sealed class DreamObjectParticles : DreamObject {
         switch (varName) {
             case "width": //num
                 _particlesData.Width = (int)value.UnsafeGetValueAsFloat();
-                MarkDirty();
                 break;
             case "height": //num
                 _particlesData.Height = (int)value.UnsafeGetValueAsFloat();
-                MarkDirty();
                 break;
             case "count": //num
                 if (!value.TryGetValueAsInteger(out var count))
                     break;
 
                 _particlesData.Count = count;
-                MarkDirty();
                 break;
             case "spawning": //num
                 _particlesData.Spawning = value.UnsafeGetValueAsFloat();
-                MarkDirty();
                 break;
             case "bound1": //list or vector
                 if (value.TryGetValueAsDreamList(out var bound1List) && bound1List.GetLength() >= 3) {
@@ -98,7 +94,6 @@ public sealed class DreamObjectParticles : DreamObject {
                     var boundZ = boundZValue.UnsafeGetValueAsFloat();
 
                     _particlesData.Bound1 = new Vector3(boundX, boundY, boundZ);
-                    MarkDirty();
                 } //else if vector
 
                 break;
@@ -112,7 +107,6 @@ public sealed class DreamObjectParticles : DreamObject {
                     var boundZ = boundZValue.UnsafeGetValueAsFloat();
 
                     _particlesData.Bound2 = new Vector3(boundX, boundY, boundZ);
-                    MarkDirty();
                 } //else if vector
 
                 break;
@@ -126,7 +120,6 @@ public sealed class DreamObjectParticles : DreamObject {
                     var gravityZ = gravityZValue.UnsafeGetValueAsFloat();
 
                     _particlesData.Gravity = new Vector3(gravityX, gravityY, gravityZ);
-                    MarkDirty();
                 } //else if vector
 
                 break;
@@ -144,7 +137,6 @@ public sealed class DreamObjectParticles : DreamObject {
                     }
 
                     _particlesData.Gradient = grad;
-                    MarkDirty();
                 }
 
                 break;
@@ -152,7 +144,6 @@ public sealed class DreamObjectParticles : DreamObject {
                 if (value.TryGetValueAsDreamObject<DreamObjectMatrix>(out var matrix)) {
                     float[] m = DreamObjectMatrix.MatrixToTransformFloatArray(matrix);
                     _particlesData.Transform = new(m[0], m[1], m[2], m[3], m[4], m[5]);
-                    MarkDirty();
                 }
 
                 break;
@@ -183,7 +174,6 @@ public sealed class DreamObjectParticles : DreamObject {
                 }
 
                 _particlesData.TextureList = immutableAppearances.ToArray();
-                MarkDirty();
                 break;
             case "icon_state": //list or string
                 _iconStates.Clear();
@@ -208,162 +198,129 @@ public sealed class DreamObjectParticles : DreamObject {
                 }
 
                 _particlesData.TextureList = immutableAppearances.ToArray();
-                MarkDirty();
                 break;
             case "lifespan": //num or generator
                 if (value.TryGetValueAsFloat(out float floatValue)) {
                     _particlesData.Lifespan = new GeneratorNum(floatValue);
-                    MarkDirty();
                 } else if (value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var generator)) {
                     _particlesData.Lifespan = generator.RequireType<IGeneratorNum>();
-                    MarkDirty();
                 }
 
                 break;
             case "fadein": //num or generator
                 if (value.TryGetValueAsInteger(out int intValue)) {
                     _particlesData.FadeIn = new GeneratorNum(intValue);
-                    MarkDirty();
                 } else if (value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var generator)) {
                     _particlesData.FadeIn = generator.RequireType<IGeneratorNum>();
-                    MarkDirty();
                 }
 
                 break;
             case "fade": //num or generator
                 if (value.TryGetValueAsInteger(out intValue)) {
                     _particlesData.FadeOut = new GeneratorNum(intValue);
-                    MarkDirty();
                 } else if (value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var generator)) {
                     _particlesData.FadeOut = generator.RequireType<IGeneratorNum>();
-                    MarkDirty();
                 }
 
                 break;
             case "position": //num, list, vector, or generator
                 if (value.TryGetValueAsFloat(out floatValue)) {
                     _particlesData.SpawnPosition = new GeneratorNum(floatValue);
-                    MarkDirty();
                 } else if (value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var generator)) {
                     _particlesData.SpawnPosition = generator.RequireType<IGeneratorVector>();
-                    MarkDirty();
                 } else if (DreamObjectVector.TryCreateFromValue(value, ObjectTree, out var vector)) {
                     _particlesData.SpawnPosition = new GeneratorVector2(vector.AsVector2);
-                    MarkDirty();
                     vector.DecRef();
                 } else {
                     _particlesData.SpawnPosition = new GeneratorVector2(Vector2.Zero);
-                    MarkDirty();
                 }
 
                 break;
             case "velocity": //num, list, vector, or generator
                 if (value.TryGetValueAsFloat(out floatValue)) {
                     _particlesData.SpawnVelocity = new GeneratorNum(floatValue);
-                    MarkDirty();
                 } else if (value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var generator)) {
                     _particlesData.SpawnVelocity = generator.RequireType<IGeneratorVector>();
-                    MarkDirty();
                 } else if (DreamObjectVector.TryCreateFromValue(value, ObjectTree, out var vector)) {
                     _particlesData.SpawnVelocity = new GeneratorVector2(vector.AsVector2);
-                    MarkDirty();
                     vector.DecRef();
                 } else {
                     _particlesData.SpawnVelocity = new GeneratorVector2(Vector2.Zero);
-                    MarkDirty();
                 }
 
                 break;
             case "scale": //num, list, vector, or generator
                 if (value.TryGetValueAsFloat(out floatValue)) {
                     _particlesData.Scale = new GeneratorNum(floatValue);
-                    MarkDirty();
                 } else if (value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var generator)) {
                     _particlesData.Scale = generator.RequireType<IGeneratorVector>();
-                    MarkDirty();
                 } else if (DreamObjectVector.TryCreateFromValue(value, ObjectTree, out var vector)) {
                     _particlesData.Scale = new GeneratorVector2(vector.AsVector2);
-                    MarkDirty();
                     vector.DecRef();
                 } else {
                     _particlesData.Scale = new GeneratorVector2(Vector2.One);
-                    MarkDirty();
                 }
 
                 break;
             case "grow": //num, list, vector, or generator
                 if (value.TryGetValueAsFloat(out floatValue)) {
                     _particlesData.Growth = new GeneratorNum(floatValue);
-                    MarkDirty();
                 } else if (value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var generator)) {
                     _particlesData.Growth = generator.RequireType<IGeneratorVector>();
-                    MarkDirty();
                 } else if (DreamObjectVector.TryCreateFromValue(value, ObjectTree, out var vector)) {
                     _particlesData.Growth = new GeneratorVector2(vector.AsVector2);
-                    MarkDirty();
                     vector.DecRef();
                 } else {
                     _particlesData.Growth = new GeneratorVector2(Vector2.Zero);
-                    MarkDirty();
                 }
 
                 break;
             case "rotation": //num or generator
                 if (value.TryGetValueAsFloat(out floatValue)) {
                     _particlesData.Rotation = new GeneratorNum(floatValue);
-                    MarkDirty();
                 } else if (value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var generator)) {
                     _particlesData.Rotation = generator.RequireType<IGeneratorNum>();
-                    MarkDirty();
                 }
 
                 break;
             case "spin": //num or generator
                 if (value.TryGetValueAsFloat(out floatValue)) {
                     _particlesData.Spin = new GeneratorNum(floatValue);
-                    MarkDirty();
                 } else if (value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var generator)) {
                     _particlesData.Spin = generator.RequireType<IGeneratorNum>();
-                    MarkDirty();
                 }
 
                 break;
             case "friction": //num, vector, or generator
                 if (value.TryGetValueAsFloat(out floatValue)) {
                     _particlesData.Friction = new GeneratorNum(floatValue);
-                    MarkDirty();
                 } else if (value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var generator)) {
                     _particlesData.Friction = generator.RequireType<IGeneratorVector>();
-                    MarkDirty();
                 } else if (DreamObjectVector.TryCreateFromValue(value, ObjectTree, out var vector)) {
                     _particlesData.Friction = new GeneratorVector2(vector.AsVector2);
-                    MarkDirty();
                     vector.DecRef();
                 } else {
                     _particlesData.Friction = new GeneratorVector2(Vector2.Zero);
-                    MarkDirty();
                 }
 
                 break;
             case "drift": //num, vector, or generator
                 if (value.TryGetValueAsFloat(out floatValue)) {
                     _particlesData.Drift = new GeneratorNum(floatValue);
-                    MarkDirty();
                 } else if (value.TryGetValueAsDreamObject<DreamObjectGenerator>(out var generator)) {
                     _particlesData.Drift = generator.RequireType<IGeneratorVector>();
-                    MarkDirty();
                 } else if (DreamObjectVector.TryCreateFromValue(value, ObjectTree, out var vector)) {
                     _particlesData.Drift = new GeneratorVector2(vector.AsVector2);
-                    MarkDirty();
                     vector.DecRef();
                 } else {
                     _particlesData.Drift = new GeneratorVector2(Vector2.Zero);
-                    MarkDirty();
                 }
 
                 break;
         }
 
+        //doing this here is fine 99% of the time since we're usually going to be changing particle vars
+        MarkDirty(); //but this is a potentially redundant call
         base.SetVar(varName, value); //all calls should set the internal vars, so GetVar() can just be default also
     }
 }

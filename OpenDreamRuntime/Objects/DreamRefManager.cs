@@ -91,6 +91,7 @@ public sealed partial class DreamRefManager {
             RefType.DreamObjectSpecialList,
             RefType.DreamObjectListArgs,
             RefType.DreamObjectCallee,
+            RefType.DreamObjectVector,
         ];
 
         foreach (var type in bucketTypes) {
@@ -161,6 +162,7 @@ public sealed partial class DreamRefManager {
                 DreamObjectFilter filter => CreateRef(RefType.DreamObjectFilter, filter),
                 DreamObjectMovable => CreateRef(RefType.DreamObjectMovable, dreamObject),
                 DreamObjectCallee callee => CreateRef(RefType.DreamObjectCallee, callee),
+                DreamObjectVector vector => CreateRef(RefType.DreamObjectVector, vector),
                 ProcArgsList argsList => CreateRef(RefType.DreamObjectListArgs, argsList),
                 DreamAssocList assocList => CreateRef(RefType.DreamObjectAssocList, assocList),
                 DreamList list when list.GetType() == typeof(DreamList) => CreateRef(RefType.DreamObjectList, list),
@@ -218,10 +220,14 @@ public sealed partial class DreamRefManager {
             case RefType.DreamObjectImage:
             case RefType.DreamObjectFilter:
             case RefType.DreamObjectList:
+            case RefType.DreamObjectListArgs:
+            case RefType.DreamObjectAssocList:
+            case RefType.DreamObjectSpecialList:
             case RefType.DreamObjectMob:
             case RefType.DreamObjectTurf:
             case RefType.DreamObjectMovable:
             case RefType.DreamObjectCallee:
+            case RefType.DreamObjectVector:
                 return new(GetFromBucket(@ref));
 
             case RefType.String:
@@ -397,5 +403,6 @@ public enum RefType : uint {
     Proc = 0x26000000,
     Number = 0x2A000000,
     DreamObjectFilter = 0x53000000,
+    DreamObjectVector = 0x5700000,
     DreamObjectCallee = 0x58000000,
 }

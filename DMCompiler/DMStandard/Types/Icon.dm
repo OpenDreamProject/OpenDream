@@ -6,14 +6,12 @@
 
 	proc/Blend(icon, function = ICON_ADD, x = 1, y = 1)
 
-	proc/Crop(x1, y1, x2, y2)
+	proc/Crop(x1 as num, y1 as num, x2 as num, y2 as num)
 		set opendream_unimplemented = TRUE
 
-	proc/DrawBox(rgb, x1, y1, x2 = x1, y2 = y1)
-		set opendream_unimplemented = TRUE
+	proc/DrawBox(rgb as color|null, x1 as num, y1 as num, x2 = x1 as num|null, y2 = y1 as num|null)
 
-	proc/Flip(dir)
-		set opendream_unimplemented = TRUE
+	proc/Flip(dir as num)
 
 	proc/GetPixel(x, y, icon_state, dir = 0, frame = 0, moving = -1)
 
@@ -25,21 +23,16 @@
 	proc/Insert(new_icon, icon_state, dir, frame, moving, delay)
 
 	proc/MapColors(...)
-		set opendream_unimplemented = TRUE
 
-	proc/Scale(width, height)
+	proc/Scale(width as num, height as num)
 
-	proc/SetIntensity(r, g = r, b = r)
-		set opendream_unimplemented = TRUE
+	proc/SetIntensity(r as num, g = r as num|null, b = r as num|null)
 
-	proc/Shift(dir, offset, wrap = 0)
-		set opendream_unimplemented = TRUE
+	proc/Shift(dir as num, offset as num, wrap = 0 as num|null)
 
-	proc/SwapColor(old_rgb, new_rgb)
-		set opendream_unimplemented = TRUE
+	proc/SwapColor(old_rgb as color|null, new_rgb as color|null)
 
-	proc/Turn(angle)
-		set opendream_unimplemented = TRUE
+	proc/Turn(angle as num)
 
 	proc/Width()
 

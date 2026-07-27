@@ -66,6 +66,27 @@ public sealed class DreamObjectParticles : DreamObject {
         }
     }
 
+    private bool TryConvertVector(DreamValue value, out Vector3 newVec) {
+        if (value.TryGetValueAsIDreamList(out var vectorList) && vectorList.GetLength() >= 3) {
+            using var boundXValue = vectorList.GetValue(new(1));
+            using var boundYValue = vectorList.GetValue(new(2));
+            using var boundZValue = vectorList.GetValue(new(3));
+            var boundX = boundXValue.UnsafeGetValueAsFloat();
+            var boundY = boundYValue.UnsafeGetValueAsFloat();
+            var boundZ = boundZValue.UnsafeGetValueAsFloat();
+
+            newVec = new Vector3(boundX, boundY, boundZ);
+            return true;
+        }
+        else if (value.TryGetValueAsDreamObject<DreamObjectVector>(out var vectorVector /*lol*/)) {
+            newVec = vectorVector.AsVector3;
+            return true;
+        }
+
+        newVec = default;
+        return false;
+    }
+
     protected override void SetVar(string varName, DreamValue value) {
         //good news, these only update on assignment, so we don't need to track the generator, list, or matrix objects
         switch (varName) {
@@ -85,42 +106,18 @@ public sealed class DreamObjectParticles : DreamObject {
                 _particlesData.Spawning = value.UnsafeGetValueAsFloat();
                 break;
             case "bound1": //list or vector
-                if (value.TryGetValueAsDreamList(out var bound1List) && bound1List.GetLength() >= 3) {
-                    using var boundXValue = bound1List.GetValue(new(1));
-                    using var boundYValue = bound1List.GetValue(new(2));
-                    using var boundZValue = bound1List.GetValue(new(3));
-                    var boundX = boundXValue.UnsafeGetValueAsFloat();
-                    var boundY = boundYValue.UnsafeGetValueAsFloat();
-                    var boundZ = boundZValue.UnsafeGetValueAsFloat();
-
-                    _particlesData.Bound1 = new Vector3(boundX, boundY, boundZ);
-                } //else if vector
+                if(TryConvertVector(value, out var bound1Vec))
+                    _particlesData.Bound1 = bound1Vec;
 
                 break;
             case "bound2": //list or vector
-                if (value.TryGetValueAsDreamList(out var bound2List) && bound2List.GetLength() >= 3) {
-                    using var boundXValue = bound2List.GetValue(new(1));
-                    using var boundYValue = bound2List.GetValue(new(2));
-                    using var boundZValue = bound2List.GetValue(new(3));
-                    var boundX = boundXValue.UnsafeGetValueAsFloat();
-                    var boundY = boundYValue.UnsafeGetValueAsFloat();
-                    var boundZ = boundZValue.UnsafeGetValueAsFloat();
-
-                    _particlesData.Bound2 = new Vector3(boundX, boundY, boundZ);
-                } //else if vector
+                if(TryConvertVector(value, out var bound2Vec))
+                    _particlesData.Bound2 = bound2Vec;
 
                 break;
             case "gravity": //list or vector
-                if (value.TryGetValueAsDreamList(out var gravityList) && gravityList.GetLength() >= 3) {
-                    using var gravityXValue = gravityList.GetValue(new(1));
-                    using var gravityYValue = gravityList.GetValue(new(2));
-                    using var gravityZValue = gravityList.GetValue(new(3));
-                    var gravityX = gravityXValue.UnsafeGetValueAsFloat();
-                    var gravityY = gravityYValue.UnsafeGetValueAsFloat();
-                    var gravityZ = gravityZValue.UnsafeGetValueAsFloat();
-
-                    _particlesData.Gravity = new Vector3(gravityX, gravityY, gravityZ);
-                } //else if vector
+                if(TryConvertVector(value, out var gravityVec))
+                    _particlesData.Gravity = gravityVec;
 
                 break;
             case "gradient": //color gradient list

@@ -487,23 +487,33 @@ public class DreamList : DreamObject, IDreamList {
     }
 
     public override DreamValue OperatorMask(DreamValue b) {
-        var retainedValues = new HashSet<DreamValue>();
         if (b.TryGetValueAsDreamList(out var bList)) {
+            var remainingValues = new Dictionary<DreamValue, int>(bList.GetLength());
+            foreach (DreamValue value in bList.EnumerateValues()) {
+                remainingValues.TryGetValue(value, out int count);
+                remainingValues[value] = count + 1;
+            }
+
             for (int i = 1; i <= GetLength(); i++) {
                 using var value = GetValue(new DreamValue(i));
 
-                if (!bList.ContainsValue(value) || !retainedValues.Add(value)) {
+                if (!remainingValues.TryGetValue(value, out int count) || count == 0) {
                     Cut(i, i + 1);
                     i--;
+                } else {
+                    remainingValues[value] = count - 1;
                 }
             }
         } else {
+            bool scalarAvailable = true;
             for (int i = 1; i <= GetLength(); i++) {
                 using var value = GetValue(new DreamValue(i));
 
-                if (value != b || !retainedValues.Add(value)) {
+                if (!scalarAvailable || value != b) {
                     Cut(i, i + 1);
                     i--;
+                } else {
+                    scalarAvailable = false;
                 }
             }
         }

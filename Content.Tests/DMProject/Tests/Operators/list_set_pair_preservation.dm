@@ -113,6 +113,12 @@
 	ASSERT(xor_assign_assoc_scalar_present.len == 1)
 	ASSERT(xor_assign_assoc_scalar_present["a"] == 10)
 	ASSERT(!("b" in xor_assign_assoc_scalar_present))
+	
+	var/list/repeating_num = list(1, 1, 1)
+	ASSERT((list(1, 1, 1) & list(1, 1)) ~= list(1, 1))
+	var/repeating_num_result = (repeating_num &= list(1, 1))
+	ASSERT(repeating_num_result == repeating_num)
+	ASSERT(repeating_num ~= list(1, 1))
 
 	var/list/xor_assign_assoc_scalar_missing = list("a" = 10, "b" = 20)
 	var/list/xor_assign_assoc_scalar_missing_original = xor_assign_assoc_scalar_missing

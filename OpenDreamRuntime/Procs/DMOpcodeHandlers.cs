@@ -966,12 +966,34 @@ namespace OpenDreamRuntime.Procs {
             } else if (first.TryGetValueAsDreamList(out var list)) {
                 DreamList newList = state.Proc.ObjectTree.CreateList();
                 Dictionary<DreamValue, DreamValue> associativeValues = list.GetAssociativeValues();
-                var retainedValues = new HashSet<DreamValue>();
                 second.TryGetValueAsDreamList(out DreamList? secondList);
+                Dictionary<DreamValue, int>? remainingValues = null;
+                bool scalarAvailable = true;
+
+                if (secondList != null) {
+                    remainingValues = new Dictionary<DreamValue, int>(secondList.GetLength());
+                    foreach (DreamValue value in secondList.EnumerateValues()) {
+                        remainingValues.TryGetValue(value, out int count);
+                        remainingValues[value] = count + 1;
+                    }
+                }
+
+                // BYOND intersection retains min(left count, right count) occurrences in left-list order
+                // associative values come from the retained left pair
 
                 foreach (DreamValue value in list.EnumerateValues()) {
-                    bool retained = secondList?.ContainsValue(value) ?? value == second;
-                    if (!retained || !retainedValues.Add(value))
+                    bool retained;
+                    if (remainingValues != null) {
+                        retained = remainingValues.TryGetValue(value, out int count) && count > 0;
+                        if (retained)
+                            remainingValues[value] = count - 1;
+                    } else {
+                        retained = scalarAvailable && value == second;
+                        if (retained)
+                            scalarAvailable = false;
+                    }
+
+                    if (!retained)
                         continue;
 
                     newList.AddValue(value);

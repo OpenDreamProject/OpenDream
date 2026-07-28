@@ -1209,8 +1209,8 @@ internal sealed class DMProc {
 
         ResizeStack(-(formatCount - 1)); //Shrinks by the amount of formats in the string, grows 1
         WriteOpcode(DreamProcOpcode.FormatString);
-        WriteString(value);
         WriteFormatCount(formatCount);
+        WriteString(value);
     }
 
     public void IsInList() {

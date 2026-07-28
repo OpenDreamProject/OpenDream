@@ -6,7 +6,7 @@ namespace DMCompiler.Bytecode;
 // Dummy class-as-namespace because C# just kinda be like this
 public static class OpcodeVerifier {
     /// <summary>
-    /// Calculates a hash of all the <c>DreamProcOpcode</c>s for warning on incompatibilities.
+    /// Calculates a hash of all the <c>DreamProcOpcode</c>s and their bytecode metadata for warning on incompatibilities.
     /// </summary>
     /// <returns>A MD5 hash string</returns>
     public static string GetOpcodesHash() {
@@ -17,9 +17,23 @@ public static class OpcodeVerifier {
             byte[] nameBytes = Encoding.ASCII.GetBytes(value.ToString()!);
             opcodesBytes.AddRange(nameBytes);
             opcodesBytes.Add((byte)value);
+
+            var metadata = OpcodeMetadataCache.GetMetadata((DreamProcOpcode)value);
+            opcodesBytes.AddRange(BitConverter.GetBytes(metadata.StackDelta));
+            opcodesBytes.Add((byte)(metadata.VariableArgs ? 1 : 0));
+            AddArgTypes(opcodesBytes, metadata.RequiredArgs);
+            AddArgTypes(opcodesBytes, metadata.RepeatedArgs);
         }
 
         byte[] hashBytes = MD5.HashData(opcodesBytes.ToArray());
         return BitConverter.ToString(hashBytes).Replace("-", "");
+    }
+
+    private static void AddArgTypes(List<byte> opcodesBytes, OpcodeArgType[] argTypes) {
+        opcodesBytes.AddRange(BitConverter.GetBytes(argTypes.Length));
+
+        foreach (OpcodeArgType argType in argTypes) {
+            opcodesBytes.Add((byte)argType);
+        }
     }
 }

@@ -102,7 +102,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
     /// <param name="type">The type to write</param>
     /// <param name="location">The location of the type in the source code</param>
     public void WriteType(DMValueType type, Location location) {
-        ValidateArgument(location, OpcodeArgType.TypeId);
+        ValidateArgument(location, OpcodeArgType.ValueType);
 
         _annotatedBytecode[^1].AddArg(compiler, new AnnotatedBytecodeType(type, location));
     }

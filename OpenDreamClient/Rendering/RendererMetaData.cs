@@ -13,9 +13,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public EntityUid ClickUid; //the UID of the object clicks on this should be passed to (ie, for overlays)
     public bool IsScreen;
     public int TieBreaker; //Used for biasing render order (ie, for overlays)
-    public Color ColorToApply;
     public ColorMatrix ColorMatrixToApply;
-    public float AlphaToApply;
     public Matrix3x2 TransformToApply;
     public string? RenderSource;
     public string? RenderTarget;
@@ -46,9 +44,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         ClickUid = EntityUid.Invalid;
         IsScreen = false;
         TieBreaker = 0;
-        ColorToApply = Color.White;
         ColorMatrixToApply = ColorMatrix.Identity;
-        AlphaToApply = 1.0f;
         TransformToApply = Matrix3x2.Identity;
         RenderSource = "";
         RenderTarget = "";

@@ -108,8 +108,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
         }
 
         var canSkipFullRender = Appearance?.Filters.Length is 0 or null &&
-                                    iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity) &&
-                                    iconMetaData.AlphaToApply.Equals(1.0f);
+                                    iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity);
 
         if (frame == null) {
             CachedTexture = null;

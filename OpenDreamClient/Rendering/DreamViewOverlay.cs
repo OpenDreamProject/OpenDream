@@ -379,9 +379,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
             maptext.RenderTarget = null;
             maptext.MouseOpacity = current.MouseOpacity;
             maptext.TransformToApply = current.TransformToApply;
-            maptext.ColorToApply = current.ColorToApply;
             maptext.ColorMatrixToApply = current.ColorMatrixToApply;
-            maptext.AlphaToApply = current.AlphaToApply;
             maptext.BlendMode = current.BlendMode;
 
             maptext.AppearanceFlags = current.AppearanceFlags;
@@ -480,10 +478,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
 
         handle.SetTransform(CalculateDrawingMatrix(iconMetaData.TransformToApply, pixelPosition, frame.Size, renderTargetSize));
 
-        Color colorToApply = iconMetaData.ColorToApply;
-        colorToApply.A *= iconMetaData.AlphaToApply;
-
-        handle.DrawTextureRect(frame, Box2.FromDimensions(Vector2.Zero, frame.Size), colorToApply);
+        handle.DrawTextureRect(frame, Box2.FromDimensions(Vector2.Zero, frame.Size), iconMetaData.ColorMatrixToApply.AsRgbaColor());
 
         if (iconMetaData.Particles is not null) {
             handle.UseShader(GetBlendAndColorShader(iconMetaData, ignoreColor: true));
@@ -726,13 +721,11 @@ internal sealed partial class DreamViewOverlay : Overlay {
     private Texture ProcessKeepTogether(DrawingHandleWorld handle, RendererMetaData iconMetaData, Vector2i size) {
         //store the parent's transform, color, blend, and alpha - then clear them for drawing to the render target
         Matrix3x2 ktParentTransform = iconMetaData.TransformToApply;
-        Color ktParentColor = iconMetaData.ColorToApply;
-        float ktParentAlpha = iconMetaData.AlphaToApply;
+        ColorMatrix ktColorMatrix = iconMetaData.ColorMatrixToApply;
         BlendMode ktParentBlendMode = iconMetaData.BlendMode;
 
         iconMetaData.TransformToApply = Matrix3x2.Identity;
-        iconMetaData.ColorToApply = Color.White;
-        iconMetaData.AlphaToApply = 1f;
+        iconMetaData.ColorMatrixToApply = ColorMatrix.Identity;
         iconMetaData.BlendMode = BlendMode.Default;
 
         List<RendererMetaData> ktItems = new List<RendererMetaData>(iconMetaData.KeepTogetherGroup!.Count + 1) {
@@ -764,8 +757,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
 
         //now restore the original color, alpha, blend, and transform so they can be applied to the render target as a whole
         iconMetaData.TransformToApply = ktParentTransform;
-        iconMetaData.ColorToApply = ktParentColor;
-        iconMetaData.AlphaToApply = ktParentAlpha;
+        iconMetaData.ColorMatrixToApply = ktColorMatrix;
         iconMetaData.BlendMode = ktParentBlendMode;
 
         _renderTargetPool.ReturnAtEndOfFrame(ktTexture);

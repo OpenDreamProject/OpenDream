@@ -16,6 +16,7 @@ using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Shared.Random;
 using FormatSuffix = DMCompiler.Bytecode.StringFormatEncoder.FormatSuffix;
+using BlendType = OpenDreamRuntime.Objects.DreamIconOperationBlend.BlendType;
 
 namespace OpenDreamRuntime.Procs {
     internal static partial class DMOpcodeHandlers {
@@ -688,7 +689,7 @@ namespace OpenDreamRuntime.Procs {
                 throw new Exception("Invalid var for initial() call: " + key);
             }
 
-            DreamObjectDefinition objectDefinition;
+            TreeEntry treeEntry;
             if (owner.TryGetValueAsDreamObject(out var dreamObject)) {
                 switch (dreamObject) {
                     // Calling initial() on a null value just returns null
@@ -697,30 +698,23 @@ namespace OpenDreamRuntime.Procs {
                         return ProcStatus.Continue;
                     // initial(object.vars.foo) should act like initial(object.foo)
                     case DreamListVars varsList:
-                        objectDefinition = varsList.DreamObject.ObjectDefinition;
+                        treeEntry = varsList.DreamObject.ObjectDefinition.TreeEntry;
                         break;
                     default:
-                        objectDefinition = dreamObject.ObjectDefinition;
+                        treeEntry = dreamObject.ObjectDefinition.TreeEntry;
                         break;
                 }
             } else if (owner.TryGetValueAsType(out var ownerType)) {
-                objectDefinition = ownerType.ObjectDefinition;
+                treeEntry = ownerType;
             } else {
                 state.DreamManager.OptionalException<ArgumentException>(DMCompiler.Compiler.WarningCode.InitialVarOnPrimitiveException, "Initial() attempted to get the initial value of a variable on a primitive.");
                 state.Push(DreamValue.Null);
                 return ProcStatus.Continue;
             }
 
-            var result = property switch {
-                // parent_type and type aren't actual vars and need special treatment
-                "parent_type" =>
-                    (objectDefinition.Parent?.TreeEntry == null ||
-                     objectDefinition.Parent.TreeEntry == state.Proc.ObjectTree.Root)
-                        ? DreamValue.Null
-                        : new DreamValue(objectDefinition.Parent.TreeEntry),
-                "type" => new DreamValue(objectDefinition.TreeEntry),
-                _ => objectDefinition.Variables.TryGetValue(property, out var val) ? val : DreamValue.Null
-            };
+            if (!treeEntry.TryGetTypeVar(property, out DreamValue result)) {
+                result = DreamValue.Null;
+            }
 
             state.Push(result);
             return ProcStatus.Continue;
@@ -847,7 +841,7 @@ namespace OpenDreamRuntime.Procs {
             if (first.IsNull) {
                 output = second;
             } else if (first.TryGetValueAsDreamResource(out _) || first.TryGetValueAsDreamObject<DreamObjectIcon>(out _)) {
-                output = IconOperationAdd(state, first, second);
+                output = IconOperation(state, BlendType.Add, first, second);
             } else if (first.TryGetValueAsType(out _) || first.TryGetValueAsProc(out _)) {
                 output = default; // Always errors
             } else if (second.IsNull) {
@@ -904,7 +898,7 @@ namespace OpenDreamRuntime.Procs {
 
             DreamValue result;
             if (first.TryGetValueAsDreamResource(out _) || first.TryGetValueAsDreamObject<DreamObjectIcon>(out _)) {
-                result = IconOperationAdd(state, first, second);
+                result = IconOperation(state, BlendType.Add, first, second);
             } else if (first.TryGetValueAsDreamObject(out var firstObj)) {
                 if (firstObj != null) {
                     state.PopReference(reference);
@@ -1371,22 +1365,23 @@ namespace OpenDreamRuntime.Procs {
             var reference = state.ReadReference();
             using var second = state.Pop();
             using var first = state.GetReferenceValue(reference, peek: true);
+            DreamValue result;
 
             if (first.TryGetValueAsFloat(out var firstFloat) || first.IsNull) {
                 var secondFloat = second.UnsafeGetValueAsFloat(); // Non-numbers are always treated as 0 here
 
-                DreamValue result = new DreamValue(firstFloat * secondFloat);
-                state.AssignReference(reference, result);
-                state.Push(result);
+                result = new DreamValue(firstFloat * secondFloat);
+            } else if (first.TryGetValueAsDreamResource(out _) || first.TryGetValueAsDreamObject<DreamObjectIcon>(out _)) {
+                result = IconOperation(state, BlendType.Multiply, first, second);
             } else if (first.TryGetValueAsDreamObject<DreamObject>(out var firstDreamObject)) {
-                using var result = firstDreamObject.OperatorMultiplyRef(second, state);
-
-                state.AssignReference(reference, result);
-                state.Push(result);
+                result = firstDreamObject.OperatorMultiplyRef(second, state);
             } else {
                 throw new Exception($"Invalid multiply operation on {first} and {second}");
             }
 
+            state.AssignReference(reference, result);
+            state.Push(result);
+            result.Dispose();
             return ProcStatus.Continue;
         }
 
@@ -2439,9 +2434,13 @@ namespace OpenDreamRuntime.Procs {
                 int pickedIndex = state.DreamManager.Random.Next(0, count);
                 var possibleValues = state.PopCount(count);
 
-                state.Push(possibleValues[pickedIndex]);
-                foreach (var value in possibleValues)
-                    value.Dispose();
+                // the way we're going about this is very important
+                using var value = possibleValues[pickedIndex];
+                value.IncRef();
+
+                foreach (var dropped in possibleValues)
+                    dropped.Dispose();
+                state.Push(value);
             }
 
             return ProcStatus.Continue;
@@ -3206,8 +3205,8 @@ namespace OpenDreamRuntime.Procs {
             return new DreamValue(returnVal.ToHex().ToLower());
         }
 
-        private static DreamValue IconOperationAdd(DMProcState state, DreamValue icon, DreamValue blend) {
-            // Create a new /icon and ICON_ADD blend it
+        private static DreamValue IconOperation(DMProcState state, BlendType blendType, DreamValue icon, DreamValue blend) {
+            // Create a new /icon and blend it
             // Note that BYOND creates something other than an /icon, but it behaves the same as one in most reasonable interactions
             var iconObj = state.Proc.ObjectTree.CreateObject<DreamObjectIcon>(state.Proc.ObjectTree.Icon);
             if (!state.Proc.DreamResourceManager.TryLoadIcon(icon, out var from)) {
@@ -3216,7 +3215,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             iconObj.Icon.InsertStates(from, DreamValue.Null, DreamValue.Null, DreamValue.Null);
-            DreamProcNativeIcon.Blend(iconObj.Icon, blend, DreamIconOperationBlend.BlendType.Add, 0, 0);
+            DreamProcNativeIcon.Blend(iconObj.Icon, blend, blendType, 0, 0);
             return new DreamValue(iconObj);
         }
 

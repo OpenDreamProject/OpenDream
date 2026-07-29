@@ -86,8 +86,8 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     }
 
     public void RemoveValue(DreamValue value) {
-        _values.Remove(value);
-        value.DecRef();
+        if(_values.Remove(value))
+            value.DecRef();
     }
 
     public IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateAssocValues() {
@@ -135,6 +135,29 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         }
 
         return 0;
+    }
+
+    protected override bool TryGetVar(string varName, out DreamValue value) {
+        if (varName == "len") {
+            value = new(GetLength());
+            return true;
+        }
+
+        return base.TryGetVar(varName, out value);
+    }
+
+    protected override void SetVar(string varName, DreamValue value) {
+        if (varName == "len") {
+            // Non-nums become 0 which is parity w/ BYOND
+            if (value.TryGetValueAsInteger(out var newLen) && newLen != 0) {
+                throw new Exception("length of strict associative list can only be set to 0");
+            }
+
+            // alists specifically will always either runtime or get set to 0 and cut
+            Cut();
+        } else {
+            base.SetVar(varName, value);
+        }
     }
 
     public void Insert(int index, DreamValue value) {

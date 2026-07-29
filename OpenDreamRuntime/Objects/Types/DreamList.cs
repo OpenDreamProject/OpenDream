@@ -233,7 +233,9 @@ public class DreamList : DreamObject, IDreamList {
 
     //Does not include associations
     public virtual bool ContainsValue(DreamValue value) {
-        for (int i = 0; i < _values.Count; i++) {
+        var count = _values.Count;
+
+        for (int i = 0; i < count; i++) {
             if (_values[i].Equals(value))
                 return true;
         }
@@ -1360,6 +1362,8 @@ public sealed class ClientImagesList(DreamObjectTree objectTree, ServerClientIma
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
         throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
+
+    public override bool ContainsValue(DreamValue value) => _imageObjects.Contains(value);
 }
 
 // world.contents list

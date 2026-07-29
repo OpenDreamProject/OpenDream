@@ -27,12 +27,12 @@
 	var/icon_w = 0 as opendream_unimplemented
 	var/icon_z = 0 as opendream_unimplemented
 
-	var/icon = null
-	var/icon_state = ""
+	var/icon = null as icon|null
+	var/icon_state = null as text|null
 	var/layer = 2.0
 	var/plane = 0
 	var/alpha = 255
-	var/color = "#FFFFFF"
+	var/color = null as /list|text|null
 	var/invisibility = 0
 	var/mouse_opacity = 1
 	var/infra_luminosity = 0 as opendream_unimplemented

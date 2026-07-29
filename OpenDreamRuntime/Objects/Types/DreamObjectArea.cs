@@ -3,6 +3,9 @@
 namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectArea : DreamObjectAtom {
+    // Areas are reference counted, but BYOND never garbage collects them
+    public override bool ShouldGarbageCollect => false;
+
     public int X {
         get {
             UpdateCoordinateCache();

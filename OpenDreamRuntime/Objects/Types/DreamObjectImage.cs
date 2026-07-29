@@ -217,8 +217,8 @@ public sealed class DreamObjectImage : DreamObject {
 
                 if (valueList != null) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue underlayValue in valueList.EnumerateValues()) {
-                        _underlays.AddValue(underlayValue);
+                    foreach (DreamValue visContentValue in valueList.EnumerateValues()) {
+                        _visContents.AddValue(visContentValue);
                     }
                 } else if (!value.IsNull) {
                     _visContents.AddValue(value);

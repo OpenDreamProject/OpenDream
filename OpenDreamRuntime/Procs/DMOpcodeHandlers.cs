@@ -2262,7 +2262,7 @@ namespace OpenDreamRuntime.Procs {
                                     }
 
                                     ColorMatrix.Multiply(ref objCMatrix, ref cMatrix, out var resultMatrix);
-                                    animateValue = new DreamValue(new DreamList(state.Proc.ObjectTree.List.ObjectDefinition, resultMatrix.GetValues().Select(x => new DreamValue(x)).ToList(), null));
+                                    animateValue = new DreamValue(new DreamList(state.Proc.ObjectTree.List.ObjectDefinition, [.. resultMatrix.EnumerateValues().Select(x => new DreamValue(x))], null));
                                     break;
                                 }
                                 case "pixel_x":

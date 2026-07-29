@@ -245,7 +245,7 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         // The R G B A values need to be bounded [0,1] for a color conversion to work;
         // anything higher implies trying to render "superblue" or something.
         float diagonalSum = 0f;
-        foreach (float diagonalValue in matrix.GetDiagonal()) {
+        foreach (float diagonalValue in matrix.EnumerateDiagonal()) {
             if (diagonalValue < 0 || diagonalValue > 1)
                 return false;
             diagonalSum += diagonalValue;
@@ -253,14 +253,14 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
 
         // and then all of the other values need to be zero, including the offset vector.
         float sum = 0f;
-        foreach (float value in matrix.GetValues()) {
+        foreach (float value in matrix.EnumerateValues()) {
             if (value < 0f) // To avoid situations like negatives and positives cancelling out this checksum.
                 return false;
             sum += value;
         }
 
         if (sum - diagonalSum == 0) // PREEETTY sure I can trust the floating-point math here. Not 100% though
-            maybeColor = new Color(matrix.c11, matrix.c22, matrix.c33, matrix.c44);
+            maybeColor = new Color(matrix.rr, matrix.gg, matrix.bb, matrix.aa);
         return maybeColor is not null;
     }
 

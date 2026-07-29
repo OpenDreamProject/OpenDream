@@ -605,7 +605,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         if (!ColorMatrix.Equals(MutableAppearance.Default.ColorMatrix)) {
             buffer.Write((byte)IconAppearanceProperty.ColorMatrix);
 
-            foreach (var value in ColorMatrix.GetValues())
+            foreach (var value in ColorMatrix.EnumerateValues())
                 buffer.Write(value);
         }
 

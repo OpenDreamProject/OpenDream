@@ -384,7 +384,7 @@ public sealed partial class AtomManager {
             case "color":
                 if(!appearance.ColorMatrix.Equals(ColorMatrix.Identity)) {
                     var matrixList = _objectTree.CreateList(20);
-                    foreach (float entry in appearance.ColorMatrix.GetValues())
+                    foreach (float entry in appearance.ColorMatrix.EnumerateValues())
                         matrixList.AddValue(new DreamValue(entry));
                     return new DreamValue(matrixList);
                 }

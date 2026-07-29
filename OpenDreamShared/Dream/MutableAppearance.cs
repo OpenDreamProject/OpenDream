@@ -33,8 +33,6 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
     [ViewVariables] public bool InheritsDirection = true; // Inherits direction when used as an overlay
     [ViewVariables] public Vector2i PixelOffset;  // pixel_x and pixel_y
     [ViewVariables] public Vector2i PixelOffset2; // pixel_w and pixel_z
-    [ViewVariables] public Color Color = Color.White;
-    [ViewVariables] public byte Alpha = 255;
     [ViewVariables] public float GlideSize;
     [ViewVariables] public float Layer = -1f;
     [ViewVariables] public int Plane = -32767;
@@ -124,8 +122,6 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         InheritsDirection = appearance.InheritsDirection;
         PixelOffset = appearance.PixelOffset;
         PixelOffset2 = appearance.PixelOffset2;
-        Color = appearance.Color;
-        Alpha = appearance.Alpha;
         GlideSize = appearance.GlideSize;
         ColorMatrix = appearance.ColorMatrix;
         Layer = appearance.Layer;
@@ -179,8 +175,6 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         if (appearance.InheritsDirection != InheritsDirection) return false;
         if (appearance.PixelOffset != PixelOffset) return false;
         if (appearance.PixelOffset2 != PixelOffset2) return false;
-        if (appearance.Color != Color) return false;
-        if (appearance.Alpha != Alpha) return false;
         if (!appearance.GlideSize.Equals(GlideSize)) return false;
         if (!appearance.ColorMatrix.Equals(ColorMatrix)) return false;
         if (!appearance.Layer.Equals(Layer)) return false;
@@ -246,14 +240,12 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         hashCode.Add(InheritsDirection);
         hashCode.Add(PixelOffset);
         hashCode.Add(PixelOffset2);
-        hashCode.Add(Color);
         hashCode.Add(ColorMatrix);
         hashCode.Add(Layer);
         hashCode.Add(Invisibility);
         hashCode.Add(Opacity);
         hashCode.Add(Override);
         hashCode.Add(MouseOpacity);
-        hashCode.Add(Alpha);
         hashCode.Add(GlideSize);
         hashCode.Add(Plane);
         hashCode.Add(RenderSource);

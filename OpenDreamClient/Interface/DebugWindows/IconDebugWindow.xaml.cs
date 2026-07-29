@@ -51,8 +51,7 @@ internal sealed partial class IconDebugWindow : OSWindow {
         AddPropertyIfNotDefault("Inherits Direction", appearance.InheritsDirection, MutableAppearance.Default.InheritsDirection);
         AddPropertyIfNotDefault("Pixel Offset X/Y", appearance.PixelOffset, MutableAppearance.Default.PixelOffset);
         AddPropertyIfNotDefault("Pixel Offset W/Z", appearance.PixelOffset2, MutableAppearance.Default.PixelOffset2);
-        AddPropertyIfNotDefault("Color", appearance.Color, MutableAppearance.Default.Color);
-        AddPropertyIfNotDefault("Alpha", appearance.Alpha, MutableAppearance.Default.Alpha);
+        // No color matrix?
         AddPropertyIfNotDefault("Glide Size", appearance.GlideSize, MutableAppearance.Default.GlideSize);
         AddPropertyIfNotDefault("Layer", appearance.Layer, MutableAppearance.Default.Layer);
         AddPropertyIfNotDefault("Plane", appearance.Plane, MutableAppearance.Default.Plane);

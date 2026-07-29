@@ -35,8 +35,8 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
     [ViewVariables] public readonly bool InheritsDirection = MutableAppearance.Default.InheritsDirection; // Inherits direction when used as an overlay
     [ViewVariables] public readonly Vector2i PixelOffset = MutableAppearance.Default.PixelOffset;  // pixel_x and pixel_y
     [ViewVariables] public readonly Vector2i PixelOffset2 = MutableAppearance.Default.PixelOffset2; // pixel_w and pixel_z
-    [ViewVariables] public readonly Color Color = MutableAppearance.Default.Color;
-    [ViewVariables] public readonly byte Alpha = MutableAppearance.Default.Alpha;
+    [ViewVariables] public readonly Color Color = Color.White;
+    [ViewVariables] public readonly byte Alpha = 255;
     [ViewVariables] public readonly float GlideSize = MutableAppearance.Default.GlideSize;
     [ViewVariables] public readonly float Layer = MutableAppearance.Default.Layer;
     [ViewVariables] public readonly int Plane = MutableAppearance.Default.Plane;
@@ -86,8 +86,6 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         InheritsDirection = appearance.InheritsDirection;
         PixelOffset = appearance.PixelOffset;
         PixelOffset2 = appearance.PixelOffset2;
-        Color = appearance.Color;
-        Alpha = appearance.Alpha;
         GlideSize = appearance.GlideSize;
         ColorMatrix = appearance.ColorMatrix;
         Layer = appearance.Layer;
@@ -497,8 +495,6 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         result.InheritsDirection = InheritsDirection;
         result.PixelOffset = PixelOffset;
         result.PixelOffset2 = PixelOffset2;
-        result.Color = Color;
-        result.Alpha = Alpha;
         result.GlideSize = GlideSize;
         result.ColorMatrix = ColorMatrix;
         result.Layer = Layer;
@@ -582,19 +578,6 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
             buffer.Write((byte)IconAppearanceProperty.PixelOffset2);
             buffer.WriteVariableInt32(PixelOffset2.X);
             buffer.WriteVariableInt32(PixelOffset2.Y);
-        }
-
-        if (Color != MutableAppearance.Default.Color) {
-            buffer.Write((byte)IconAppearanceProperty.Color);
-            buffer.Write(Color.RByte);
-            buffer.Write(Color.GByte);
-            buffer.Write(Color.BByte);
-            buffer.Write(Color.AByte);
-        }
-
-        if (Alpha != MutableAppearance.Default.Alpha) {
-            buffer.Write((byte)IconAppearanceProperty.Alpha);
-            buffer.Write(Alpha);
         }
 
         if (!GlideSize.Equals(MutableAppearance.Default.GlideSize)) {

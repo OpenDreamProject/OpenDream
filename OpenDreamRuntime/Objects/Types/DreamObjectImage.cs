@@ -11,7 +11,7 @@ public sealed class DreamObjectImage : DreamObject {
     private DreamObject? _loc;
     private DreamList _overlays;
     private DreamList _underlays;
-    private DreamList _visContents;
+    private readonly DreamList _visContents;
     private readonly DreamList _filters;
     public readonly bool IsMutableAppearance;
     public MutableAppearance? MutableAppearance;

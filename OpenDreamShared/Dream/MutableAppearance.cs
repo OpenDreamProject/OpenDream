@@ -291,11 +291,14 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
     /// Parses the given colour string and sets this appearance to use it.
     /// </summary>
     public void SetColor(string colorString) {
-        if (!ColorHelpers.TryParseColor(colorString, out var newColor) || newColor == Color.White) {
-            ColorMatrix = ColorMatrix.Identity;
+        if(!ColorHelpers.TryParseColor(colorString, out var newColor) || newColor == Color.White) {
+            newColor = Color.White;
         }
 
-        ColorMatrix = new(newColor);
+        // Setting color via string preserves alpha if unspecified
+        var alphaToUse = ColorHelpers.IncludesTransparency(colorString) ? newColor.A : ColorMatrix.aa;
+
+        ColorMatrix = new(newColor) { aa = alphaToUse };
     }
 
     /// <summary>
@@ -306,7 +309,7 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
     }
 
     /// <inheritdoc cref="SetAlpha(float)"/>
-    public void SetAlpha(byte alpha) => SetAlpha((float)alpha / byte.MaxValue);
+    public void SetAlpha(int alpha) => SetAlpha((float)alpha / byte.MaxValue);
 
     /// <summary>
     /// Sets the alpha value of the ColorMatrix.

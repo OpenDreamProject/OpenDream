@@ -253,8 +253,8 @@ public sealed partial class AtomManager {
                 appearance.AppearanceFlags = (AppearanceFlags) flagsVar;
                 break;
             case "alpha":
-                float floatAlpha = value.UnsafeGetValueAsFloat();
-                appearance.SetAlpha(floatAlpha);
+                var intAlpha = (int)value.UnsafeGetValueAsFloat();
+                appearance.SetAlpha(intAlpha);
                 break;
             case "glide_size":
                 value.TryGetValueAsFloat(out float glideSize);
@@ -408,7 +408,7 @@ public sealed partial class AtomManager {
             case "alpha": {
                 if(!ColorMatrix.TryRepresentAsRGBAColor(appearance.ColorMatrix, out var maybeColor))
                     return new(255);
-                return new(maybeColor.Value.AByte);
+                return new((byte)Math.Round(maybeColor.Value.A * byte.MaxValue)); // AByte doesn't round!!!!!
             }
             case "glide_size":
                 return new(appearance.GlideSize);

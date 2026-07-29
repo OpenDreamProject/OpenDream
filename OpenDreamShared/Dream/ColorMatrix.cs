@@ -276,8 +276,8 @@ public struct ColorMatrix(
     /// <param name="right">The right operand of the multiplication.</param>
     /// <param name="result">A new instance that is the result of the multiplication</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
     public static void Multiply(ref readonly ColorMatrix left, ref readonly ColorMatrix right, out ColorMatrix result) {
-        // @formatter:off
         float
             l_rr = left.rr,
             l_rg = left.rg,
@@ -331,7 +331,6 @@ public struct ColorMatrix(
             ab = l_ar * r_rb + l_ag * r_gb + l_ab * r_bb + l_aa * r_ab,
             aa = l_ar * r_ra + l_ag * r_ga + l_ab * r_ba + l_aa * r_aa
         };
-        // @formatter:on
     }
 
     /// <summary>

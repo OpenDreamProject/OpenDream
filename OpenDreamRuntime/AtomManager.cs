@@ -223,6 +223,7 @@ public sealed partial class AtomManager {
                     appearance.SetColor(in matrix);
                 }
                 // otherwise we just ignore it
+
                 break;
             case "layer":
                 value.TryGetValueAsFloat(out appearance.Layer);
@@ -379,7 +380,7 @@ public sealed partial class AtomManager {
             case "pixel_z":
                 return new(appearance.PixelOffset2.Y);
             case "color": {
-                if(ColorMatrix.TryRepresentAsRGBAColor(appearance.ColorMatrix, out var maybeColor)) {
+                if(ColorMatrix.TryRepresentAsRgbaColor(appearance.ColorMatrix, out var maybeColor)) {
                     Color color = maybeColor.Value.WithAlpha(1f);
                     if(color == Color.White)
                         return DreamValue.Null;
@@ -406,7 +407,7 @@ public sealed partial class AtomManager {
             case "appearance_flags":
                 return new((int) appearance.AppearanceFlags);
             case "alpha": {
-                if(!ColorMatrix.TryRepresentAsRGBAColor(appearance.ColorMatrix, out var maybeColor))
+                if(!ColorMatrix.TryRepresentAsRgbaColor(appearance.ColorMatrix, out var maybeColor))
                     return new(255);
                 return new((byte)Math.Round(maybeColor.Value.A * byte.MaxValue)); // AByte doesn't round!!!!!
             }

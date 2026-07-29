@@ -24,6 +24,8 @@ public struct ColorMatrix(
     float m31, float m32, float m33, float m34,
     float m41, float m42, float m43, float m44,
     float m51, float m52, float m53, float m54) {
+    // @formatter:off
+
     /// <summary>Red -> Red</summary>
     public float rr = m11;
     /// <summary>Red -> Green</summary>
@@ -68,6 +70,8 @@ public struct ColorMatrix(
     public float cb = m53;
     /// <summary>Additional Alpha.</summary>
     public float ca = m54;
+
+    // @formatter:on
 
     public ColorMatrix(in ColorMatrix cloned)
         //I have never, ever missed the "pointer to member access" goofball operator from C++
@@ -210,7 +214,7 @@ public struct ColorMatrix(
     // This method pretty much only exists as a placeholder,
     // all of its uses probably have a more correct alternative
     public readonly Color AsRgbaColor()
-        => TryRepresentAsRGBAColor(in this, out var maybeColor) ? maybeColor.Value : Color.White;
+        => TryRepresentAsRgbaColor(in this, out var maybeColor) ? maybeColor.Value : Color.White;
 
     /// <summary>
     /// Fastest possible comparison between two color matrices.
@@ -273,6 +277,7 @@ public struct ColorMatrix(
     /// <param name="result">A new instance that is the result of the multiplication</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Multiply(ref readonly ColorMatrix left, ref readonly ColorMatrix right, out ColorMatrix result) {
+        // @formatter:off
         float
             l_rr = left.rr,
             l_rg = left.rg,
@@ -326,6 +331,7 @@ public struct ColorMatrix(
             ab = l_ar * r_rb + l_ag * r_gb + l_ab * r_bb + l_aa * r_ab,
             aa = l_ar * r_ra + l_ag * r_ga + l_ab * r_ba + l_aa * r_aa
         };
+        // @formatter:on
     }
 
     /// <summary>
@@ -366,7 +372,7 @@ public struct ColorMatrix(
     /// then it is coerced into one internally before being saved onto some appearance. <br/>
     /// This does the linear algebra madness necessary to determine whether this is the case or not.
     /// </summary>
-    public static bool TryRepresentAsRGBAColor(in ColorMatrix matrix, [NotNullWhen(true)] out Color? maybeColor) {
+    public static bool TryRepresentAsRgbaColor(in ColorMatrix matrix, [NotNullWhen(true)] out Color? maybeColor) {
         maybeColor = null;
 
         // The R G B A values need to be bounded [0,1] for a color conversion to work;

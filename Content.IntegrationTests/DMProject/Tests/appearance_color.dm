@@ -1,4 +1,5 @@
-﻿#define COLOR_ASSERT(bool) assert((bool), "Assertion Failed: [#bool]")
+﻿// atom.color has some peculiar handling, notably being tied to atom.alpha and color matrices
+#define COLOR_ASSERT(bool) assert((bool), "Assertion Failed: [#bool]")
 
 /datum/unit_test/appearance_color
 	var/list/runtimes = list()

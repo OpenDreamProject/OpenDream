@@ -72,7 +72,7 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
     /// </summary>
     /// <remarks>
     /// The reason we don't just take the slow path and always use this filter is not just for optimization,<br/>
-    /// it's also for parity! See <see cref="ColorMatrix.TryRepresentAsRGBAColor"/> for more.
+    /// it's also for parity! See <see cref="ColorMatrix.TryRepresentAsRgbaColor"/> for more.
     /// </remarks>
     [ViewVariables] public ColorMatrix ColorMatrix = ColorMatrix.Identity;
 

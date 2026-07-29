@@ -368,8 +368,14 @@ internal class Program {
             } else {
                 Console.WriteLine("Selected type does not have an init proc");
             }
-        } else if (_selectedType.Procs.TryGetValue(name, out DMProc? proc)) {
-            Console.WriteLine(proc.Decompile());
+        } else if (_selectedType.Procs.TryGetValue(name, out DMProc[]? procs)) {
+            if (procs.Length > 1) {
+                Console.WriteLine($"Notice: Found {procs.Length} definitions of {name}(); decompiling all in source order.");
+            }
+
+            foreach (DMProc proc in procs) {
+                Console.WriteLine(proc.Decompile());
+            }
         } else {
             Console.WriteLine("No procs named \"" + name + "\"");
         }
@@ -401,7 +407,7 @@ internal class Program {
             foreach (int procId in CompiledJson.GlobalProcs) {
                 var proc = Procs[procId];
 
-                globalType.Procs.Add(proc.Name, proc);
+                globalType.Procs.Add(proc.Name, [proc]);
             }
         }
     }

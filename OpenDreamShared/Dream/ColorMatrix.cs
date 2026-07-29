@@ -360,6 +360,12 @@ public struct ColorMatrix(
                 );
     }
 
+    /// <summary>
+    /// This is a helper used for both optimization and parity. <br/>
+    /// In BYOND, if a color matrix is representable as an RGBA color string, <br/>
+    /// then it is coerced into one internally before being saved onto some appearance. <br/>
+    /// This does the linear algebra madness necessary to determine whether this is the case or not.
+    /// </summary>
     public static bool TryRepresentAsRGBAColor(in ColorMatrix matrix, [NotNullWhen(true)] out Color? maybeColor) {
         maybeColor = null;
 

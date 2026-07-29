@@ -214,18 +214,15 @@ public sealed partial class AtomManager {
                 value.TryGetValueAsInteger(out appearance.PixelOffset2.Y);
                 break;
             case "color":
-                if(value.TryGetValueAsDreamList(out var list)) {
-                    if(DreamProcNativeHelpers.TryParseColorMatrix(list, out var matrix)) {
-                        appearance.SetColor(in matrix);
-                        break;
-                    }
-
-                    throw new ArgumentException($"Cannot set appearance's color to {value}");
+                if(value.TryGetValueAsString(out var colorString)) {
+                    appearance.SetColor(colorString);
                 }
-
-                value.TryGetValueAsString(out var colorString);
-                colorString ??= "white";
-                appearance.SetColor(colorString);
+                else if(value.TryGetValueAsIDreamList(out var colorList)) {
+                    if(!DreamProcNativeHelpers.TryParseColorMatrix(colorList, out var matrix))
+                        matrix = ColorMatrix.Identity;
+                    appearance.SetColor(in matrix);
+                }
+                // otherwise we just ignore it
                 break;
             case "layer":
                 value.TryGetValueAsFloat(out appearance.Layer);
@@ -256,8 +253,8 @@ public sealed partial class AtomManager {
                 appearance.AppearanceFlags = (AppearanceFlags) flagsVar;
                 break;
             case "alpha":
-                value.TryGetValueAsFloat(out float floatAlpha);
-                appearance.Alpha = (byte) Math.Clamp(floatAlpha, 0, 255);
+                float floatAlpha = value.UnsafeGetValueAsFloat();
+                appearance.SetAlpha(floatAlpha);
                 break;
             case "glide_size":
                 value.TryGetValueAsFloat(out float glideSize);
@@ -381,19 +378,19 @@ public sealed partial class AtomManager {
                 return new(appearance.PixelOffset2.X);
             case "pixel_z":
                 return new(appearance.PixelOffset2.Y);
-            case "color":
-                if(!appearance.ColorMatrix.Equals(ColorMatrix.Identity)) {
-                    var matrixList = _objectTree.CreateList(20);
-                    foreach (float entry in appearance.ColorMatrix.EnumerateValues())
-                        matrixList.AddValue(new DreamValue(entry));
-                    return new DreamValue(matrixList);
+            case "color": {
+                if(ColorMatrix.TryRepresentAsRGBAColor(appearance.ColorMatrix, out var maybeColor)) {
+                    Color color = maybeColor.Value.WithAlpha(1f);
+                    if(color == Color.White)
+                        return DreamValue.Null;
+                    return new DreamValue(color.ToHexNoAlpha().ToLower()); // BYOND strips alpha component
                 }
 
-                if (appearance.Color == Color.White) {
-                    return DreamValue.Null;
-                }
-
-                return new DreamValue(appearance.Color.ToHexNoAlpha().ToLower()); // BYOND quirk, does not return the alpha channel for some reason.
+                var matrixList = _objectTree.CreateList(20);
+                foreach (float entry in appearance.ColorMatrix.EnumerateValues())
+                    matrixList.AddValue(new DreamValue(entry));
+                return new DreamValue(matrixList);
+            }
             case "layer":
                 return new(appearance.Layer);
             case "invisibility":
@@ -408,8 +405,11 @@ public sealed partial class AtomManager {
                 return new((int) appearance.BlendMode);
             case "appearance_flags":
                 return new((int) appearance.AppearanceFlags);
-            case "alpha":
-                return new(appearance.Alpha);
+            case "alpha": {
+                if(!ColorMatrix.TryRepresentAsRGBAColor(appearance.ColorMatrix, out var maybeColor))
+                    return new(255);
+                return new(maybeColor.Value.AByte);
+            }
             case "glide_size":
                 return new(appearance.GlideSize);
             case "render_source":

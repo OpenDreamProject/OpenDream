@@ -233,37 +233,6 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
         return true;
     }
 
-    /// <summary>
-    /// This is a helper used for both optimization and parity. <br/>
-    /// In BYOND, if a color matrix is representable as an RGBA color string, <br/>
-    /// then it is coerced into one internally before being saved onto some appearance. <br/>
-    /// This does the linear algebra madness necessary to determine whether this is the case or not.
-    /// </summary>
-    private static bool TryRepresentMatrixAsRgbaColor(in ColorMatrix matrix, [NotNullWhen(true)] out Color? maybeColor) {
-        maybeColor = null;
-
-        // The R G B A values need to be bounded [0,1] for a color conversion to work;
-        // anything higher implies trying to render "superblue" or something.
-        float diagonalSum = 0f;
-        foreach (float diagonalValue in matrix.EnumerateDiagonal()) {
-            if (diagonalValue < 0 || diagonalValue > 1)
-                return false;
-            diagonalSum += diagonalValue;
-        }
-
-        // and then all of the other values need to be zero, including the offset vector.
-        float sum = 0f;
-        foreach (float value in matrix.EnumerateValues()) {
-            if (value < 0f) // To avoid situations like negatives and positives cancelling out this checksum.
-                return false;
-            sum += value;
-        }
-
-        if (sum - diagonalSum == 0) // PREEETTY sure I can trust the floating-point math here. Not 100% though
-            maybeColor = new Color(matrix.rr, matrix.gg, matrix.bb, matrix.aa);
-        return maybeColor is not null;
-    }
-
     //it is *ESSENTIAL* that this matches the hashcode of the equivelant ImmutableAppearance. There's a debug assert and everything.
     [SuppressMessage("ReSharper", "NonReadonlyMemberInGetHashCode")]
     public override int GetHashCode() {
@@ -329,31 +298,33 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
     /// <summary>
     /// Parses the given colour string and sets this appearance to use it.
     /// </summary>
-    /// <exception cref="ArgumentException">Thrown if color is not valid.</exception>
-    public void SetColor(string color) {
-        // TODO: the BYOND compiler enforces valid colors *unless* it's a map edit, in which case an empty string is allowed
-        ColorMatrix = ColorMatrix.Identity; // reset our color matrix if we had one
-
-        if (!ColorHelpers.TryParseColor(color, out Color)) {
-            Color = Color.White;
+    public void SetColor(string colorString) {
+        if (!ColorHelpers.TryParseColor(colorString, out var newColor) || newColor == Color.White) {
+            ColorMatrix = ColorMatrix.Identity;
         }
 
-        Alpha = (byte)(Color.A * 255);
+        ColorMatrix = new(newColor);
     }
 
     /// <summary>
     /// Sets the 'color' attribute to a color matrix, which will be used on the icon later on by a shader.
     /// </summary>
     public void SetColor(in ColorMatrix matrix) {
-        if (TryRepresentMatrixAsRgbaColor(matrix, out var matrixColor)) {
-            Color = matrixColor.Value;
-            ColorMatrix = ColorMatrix.Identity;
-            return;
-        }
-
-        Color = Color.White;
         ColorMatrix = matrix;
     }
+
+    /// <inheritdoc cref="SetAlpha(float)"/>
+    public void SetAlpha(byte alpha) => SetAlpha((float)alpha / byte.MaxValue);
+
+    /// <summary>
+    /// Sets the alpha value of the ColorMatrix.
+    /// </summary>
+    /// <param name="alpha">The new alpha</param>
+    /// <remarks>Seems to *always* clamp the new alpha value</remarks>
+    public void SetAlpha(float alpha) {
+        ColorMatrix.aa = Math.Clamp(alpha, 0, 1);
+    }
+
 }
 
 public enum BlendMode {

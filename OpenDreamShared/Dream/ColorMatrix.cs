@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using JetBrains.Annotations;
+using System.Diagnostics.CodeAnalysis;
 
 namespace OpenDreamShared.Dream;
 
@@ -341,5 +342,30 @@ public struct ColorMatrix(
                     ((1-factor) * left.cb) + (factor * right.cb),
                     ((1-factor) * left.ca) + (factor * right.ca)
                 );
+    }
+
+    public static bool TryRepresentAsRGBAColor(in ColorMatrix matrix, [NotNullWhen(true)] out Color? maybeColor) {
+        maybeColor = null;
+
+        // The R G B A values need to be bounded [0,1] for a color conversion to work;
+        // anything higher implies trying to render "superblue" or something.
+        float diagonalSum = 0f;
+        foreach (float diagonalValue in matrix.EnumerateDiagonal()) {
+            if (diagonalValue < 0 || diagonalValue > 1)
+                return false;
+            diagonalSum += diagonalValue;
+        }
+
+        // and then all of the other values need to be zero, including the offset vector.
+        float sum = 0f;
+        foreach (float value in matrix.EnumerateValues()) {
+            if (value < 0f) // To avoid situations like negatives and positives cancelling out this checksum.
+                return false;
+            sum += value;
+        }
+
+        if (sum - diagonalSum == 0) // PREEETTY sure I can trust the floating-point math here. Not 100% though
+            maybeColor = new Color(matrix.rr, matrix.gg, matrix.bb, matrix.aa);
+        return maybeColor is not null;
     }
 }

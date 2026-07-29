@@ -226,17 +226,14 @@ internal sealed partial class DreamViewOverlay : Overlay {
             current.ClickUid = parentIcon.ClickUid;
             current.MouseOpacity = parentIcon.MouseOpacity;
             if ((icon.Appearance.AppearanceFlags & AppearanceFlags.ResetColor) != 0 || keepTogether) { //RESET_COLOR
-                current.ColorToApply = icon.Appearance.Color;
                 current.ColorMatrixToApply = icon.Appearance.ColorMatrix;
             } else {
-                current.ColorToApply = parentIcon.ColorToApply * icon.Appearance.Color;
                 ColorMatrix.Multiply(in parentIcon.ColorMatrixToApply, in icon.Appearance.ColorMatrix, out current.ColorMatrixToApply);
             }
 
-            if ((icon.Appearance.AppearanceFlags & AppearanceFlags.ResetAlpha) != 0 || keepTogether) //RESET_ALPHA
-                current.AlphaToApply = icon.Appearance.Alpha / 255.0f;
-            else
-                current.AlphaToApply = parentIcon.AlphaToApply * (icon.Appearance.Alpha / 255.0f);
+            current.ColorMatrixToApply.aa = icon.Appearance.ColorMatrix.aa;
+            if ((icon.Appearance.AppearanceFlags & AppearanceFlags.ResetAlpha) == 0 && !keepTogether) //RESET_ALPHA
+                current.ColorMatrixToApply.aa *= parentIcon.ColorMatrixToApply.aa;
 
             if ((icon.Appearance.AppearanceFlags & AppearanceFlags.ResetTransform) != 0 || keepTogether) //RESET_TRANSFORM
                 current.TransformToApply = iconAppearanceTransformMatrix;
@@ -254,9 +251,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
             if (current.BlendMode == BlendMode.Default)
                 current.BlendMode = parentIcon.BlendMode;
         } else {
-            current.ColorToApply = icon.Appearance.Color;
             current.ColorMatrixToApply = icon.Appearance.ColorMatrix;
-            current.AlphaToApply = icon.Appearance.Alpha / 255.0f;
             current.TransformToApply = iconAppearanceTransformMatrix;
             current.Plane = icon.Appearance.Plane;
             current.Layer = Math.Max(0, icon.Appearance.Layer); //float layers are invalid for icons with no parent

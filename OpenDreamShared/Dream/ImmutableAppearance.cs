@@ -35,8 +35,6 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
     [ViewVariables] public readonly bool InheritsDirection = MutableAppearance.Default.InheritsDirection; // Inherits direction when used as an overlay
     [ViewVariables] public readonly Vector2i PixelOffset = MutableAppearance.Default.PixelOffset;  // pixel_x and pixel_y
     [ViewVariables] public readonly Vector2i PixelOffset2 = MutableAppearance.Default.PixelOffset2; // pixel_w and pixel_z
-    [ViewVariables] public readonly Color Color = Color.White;
-    [ViewVariables] public readonly byte Alpha = 255;
     [ViewVariables] public readonly float GlideSize = MutableAppearance.Default.GlideSize;
     [ViewVariables] public readonly float Layer = MutableAppearance.Default.Layer;
     [ViewVariables] public readonly int Plane = MutableAppearance.Default.Plane;
@@ -157,8 +155,6 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         if (immutableAppearance.InheritsDirection != InheritsDirection) return false;
         if (immutableAppearance.PixelOffset != PixelOffset) return false;
         if (immutableAppearance.PixelOffset2 != PixelOffset2) return false;
-        if (immutableAppearance.Color != Color) return false;
-        if (immutableAppearance.Alpha != Alpha) return false;
         if (!immutableAppearance.GlideSize.Equals(GlideSize)) return false;
         if (!immutableAppearance.ColorMatrix.Equals(ColorMatrix)) return false;
         if (!immutableAppearance.Layer.Equals(Layer)) return false;
@@ -237,14 +233,12 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
         hashCode.Add(InheritsDirection);
         hashCode.Add(PixelOffset);
         hashCode.Add(PixelOffset2);
-        hashCode.Add(Color);
         hashCode.Add(ColorMatrix);
         hashCode.Add(Layer);
         hashCode.Add(Invisibility);
         hashCode.Add(Opacity);
         hashCode.Add(Override);
         hashCode.Add(MouseOpacity);
-        hashCode.Add(Alpha);
         hashCode.Add(GlideSize);
         hashCode.Add(Plane);
         hashCode.Add(RenderSource);
@@ -323,12 +317,6 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
                     break;
                 case IconAppearanceProperty.PixelOffset2:
                     PixelOffset2 = (buffer.ReadVariableInt32(), buffer.ReadVariableInt32());
-                    break;
-                case IconAppearanceProperty.Color:
-                    Color = new Color(buffer.ReadByte(), buffer.ReadByte(), buffer.ReadByte(), buffer.ReadByte());
-                    break;
-                case IconAppearanceProperty.Alpha:
-                    Alpha = buffer.ReadByte();
                     break;
                 case IconAppearanceProperty.GlideSize:
                     GlideSize = buffer.ReadFloat();

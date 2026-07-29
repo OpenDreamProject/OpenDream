@@ -80,6 +80,17 @@ public struct ColorMatrix(
             cloned.cr, cloned.cg, cloned.cb, cloned.ca) {}
 
     /// <summary>
+    /// Constructs a ColorMatrix where the diagonal (main color) values are assigned to RGBA format
+    /// </summary>
+    public ColorMatrix(float r, float g, float b, float a = 1)
+        : this(
+                r, 0, 0, 0,
+                0, g, 0, 0,
+                0, 0, b, 0,
+                0, 0, 0, a,
+                0, 0, 0, 0) {}
+
+    /// <summary>
     /// Constructs a ColorMatrix that is equivalent to the given color, during transformations.
     /// </summary>
     /// <remarks>Note: This constructor assumes that floats are zero-initialized.</remarks>
@@ -195,6 +206,11 @@ public struct ColorMatrix(
 
     public readonly Vector4 GetOffsetVector()
         => new (cr, cg, cb, ca);
+
+    // This method pretty much only exists as a placeholder,
+    // all of its uses probably have a more correct alternative
+    public readonly Color AsRgbaColor()
+        => TryRepresentAsRGBAColor(in this, out var maybeColor) ? maybeColor.Value : Color.White;
 
     /// <summary>
     /// Fastest possible comparison between two color matrices.

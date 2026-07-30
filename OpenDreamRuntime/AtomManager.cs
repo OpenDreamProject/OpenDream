@@ -218,7 +218,9 @@ public sealed partial class AtomManager {
                     appearance.SetColor(colorString);
                 }
                 else if (value.IsNull) {
-                    appearance.SetColor(ColorMatrix.Identity);
+                    var trix = ColorMatrix.Identity; // yummers
+                    trix.aa = appearance.ColorMatrix.aa;
+                    appearance.SetColor(trix);
                 }
                 else if(value.TryGetValueAsIDreamList(out var colorList)) {
                     if(!DreamProcNativeHelpers.TryParseColorMatrix(colorList, out var matrix))

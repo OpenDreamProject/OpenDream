@@ -15,12 +15,29 @@
 	var/mob/M = new
 	COLOR_ASSERT(isnull(M.color))
 	COLOR_ASSERT(M.alpha == 255)
-	M.color = "#ffffffff"
+
+	M.color = "#ffffff"
 	COLOR_ASSERT(isnull(M.color))
 	COLOR_ASSERT(M.alpha == 255)
+
 	M.color = "transparent"
 	COLOR_ASSERT(M.color == "#000000")
 	COLOR_ASSERT(M.alpha == 0)
+
+	// RGBA should trim the alpha component and assign it to atom.alpha
+	M.color = "#ff0000c8"
+	COLOR_ASSERT(M.color == "#ff0000")
+	COLOR_ASSERT(M.alpha == 200)
+
+	// Assigning a non-list instance should just do nothing
+	M.color = /datum
+	COLOR_ASSERT(M.color == "#ff0000")
+	COLOR_ASSERT(M.alpha == 200)
+
+	// Null should be allowed and be equivalent to "#ffffff"
+	M.color = null
+	COLOR_ASSERT(isnull(M.color))
+	COLOR_ASSERT(M.alpha == 200)
 
 	var/list/identity_matrix = list(
 		1, 0, 0, 0,

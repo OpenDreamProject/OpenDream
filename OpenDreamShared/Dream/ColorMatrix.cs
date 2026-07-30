@@ -268,6 +268,7 @@ public struct ColorMatrix(
 
         return hashCode.ToHashCode();
     }
+
     /// <summary>
     /// If the matrix can be compressed into an RGBA color value.
     /// </summary>

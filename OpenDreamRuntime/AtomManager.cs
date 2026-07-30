@@ -217,13 +217,16 @@ public sealed partial class AtomManager {
                 if(value.TryGetValueAsString(out var colorString)) {
                     appearance.SetColor(colorString);
                 }
+                else if (value.IsNull) {
+                    appearance.SetColor(ColorMatrix.Identity);
+                }
                 else if(value.TryGetValueAsIDreamList(out var colorList)) {
                     if(!DreamProcNativeHelpers.TryParseColorMatrix(colorList, out var matrix))
                         matrix = ColorMatrix.Identity;
                     appearance.SetColor(in matrix);
                 }
-                // otherwise we just ignore it
 
+                // otherwise we just ignore it (or throw an optional exception?)
                 break;
             case "layer":
                 value.TryGetValueAsFloat(out appearance.Layer);

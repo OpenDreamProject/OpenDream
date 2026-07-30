@@ -71,7 +71,6 @@ public sealed class MutableAppearance : IEquatable<MutableAppearance>, IDisposab
     /// So, this exists as a way for the appearance to remember whether it's coloured by .color, specifically.
     /// </summary>
     /// <remarks>
-    /// The reason we don't just take the slow path and always use this filter is not just for optimization,<br/>
     /// it's also for parity! See <see cref="ColorMatrix.TryRepresentAsRgbaColor"/> for more.
     /// </remarks>
     [ViewVariables] public ColorMatrix ColorMatrix = ColorMatrix.Identity;

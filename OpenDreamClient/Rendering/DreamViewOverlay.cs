@@ -228,7 +228,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
             if ((icon.Appearance.AppearanceFlags & AppearanceFlags.ResetColor) != 0 || keepTogether) { //RESET_COLOR
                 current.ColorMatrixToApply = icon.Appearance.ColorMatrix;
             } else {
-                ColorMatrix.Multiply(in parentIcon.ColorMatrixToApply, in icon.Appearance.ColorMatrix, out current.ColorMatrixToApply);
+                ColorMatrix.Multiply(in icon.Appearance.ColorMatrix, in parentIcon.ColorMatrixToApply, out current.ColorMatrixToApply);
             }
 
             current.ColorMatrixToApply.aa = icon.Appearance.ColorMatrix.aa;
@@ -424,7 +424,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
             colorMatrix = iconMetaData.ColorMatrixToApply;
 
         var blendAndColor = _blendModeInstances[blendMode];
-        if (!iconMetaData.IsPlaneMaster && colorMatrix.Equals(ColorMatrix.Identity)) // We can get away with no duplication
+        if (!iconMetaData.IsPlaneMaster && colorMatrix.CanCompress()) // We can get away with no duplication
             return blendAndColor;
 
         // RT's batching is a little broken and so we must duplicate the shader if we modify its parameters

@@ -239,7 +239,7 @@ public struct ColorMatrix(
                cr.Equals(other.cr) && cg.Equals(other.cg) && cb.Equals(other.cb) && ca.Equals(other.ca);
     }
 
-    public override int GetHashCode() {
+    public readonly override int GetHashCode() {
         HashCode hashCode = new HashCode();
         hashCode.Add(rr);
         hashCode.Add(rg);
@@ -267,6 +267,30 @@ public struct ColorMatrix(
         hashCode.Add(ca);
 
         return hashCode.ToHashCode();
+    }
+    /// <summary>
+    /// If the matrix can be compressed into an RGBA color value.
+    /// </summary>
+    [Pure]
+    public readonly bool CanCompress() {
+        // The R G B A values need to be bounded [0,1] for a color conversion to work;
+        // anything higher implies trying to render "superblue" or something.
+        float diagonalSum = 0f;
+        foreach (float diagonalValue in EnumerateDiagonal()) {
+            if (diagonalValue < 0 || diagonalValue > 1)
+                return false;
+            diagonalSum += diagonalValue;
+        }
+
+        // and then all of the other values need to be zero, including the offset vector.
+        float sum = 0f;
+        foreach (float value in EnumerateValues()) {
+            if (value < 0f) // To avoid situations like negatives and positives cancelling out this checksum.
+                return false;
+            sum += value;
+        }
+
+        return sum - diagonalSum == 0; // PREEETTY sure I can trust the floating-point math here. Not 100% though
     }
 
     /// <summary>
@@ -314,22 +338,22 @@ public struct ColorMatrix(
             r_aa = right.aa;
 
         result = new() {
-            rr = l_rr * r_rr + l_rg * r_gr + l_rb * r_br + l_ra * r_ar,
-            rg = l_rr * r_rg + l_rg * r_gg + l_rb * r_bg + l_ra * r_ag,
-            rb = l_rr * r_rb + l_rg * r_gb + l_rb * r_bb + l_ra * r_ab,
-            ra = l_rr * r_ra + l_rg * r_ga + l_rb * r_ba + l_ra * r_aa,
-            gr = l_gr * r_rr + l_gg * r_gr + l_gb * r_br + l_ga * r_ar,
-            gg = l_gr * r_rg + l_gg * r_gg + l_gb * r_bg + l_ga * r_ag,
-            gb = l_gr * r_rb + l_gg * r_gb + l_gb * r_bb + l_ga * r_ab,
-            ga = l_gr * r_ra + l_gg * r_ga + l_gb * r_ba + l_ga * r_aa,
-            br = l_br * r_rr + l_bg * r_gr + l_bb * r_br + l_ba * r_ar,
-            bg = l_br * r_rg + l_bg * r_gg + l_bb * r_bg + l_ba * r_ag,
-            bb = l_br * r_rb + l_bg * r_gb + l_bb * r_bb + l_ba * r_ab,
-            ba = l_br * r_ra + l_bg * r_ga + l_bb * r_ba + l_ba * r_aa,
-            ar = l_ar * r_rr + l_ag * r_gr + l_ab * r_br + l_aa * r_ar,
-            ag = l_ar * r_rg + l_ag * r_gg + l_ab * r_bg + l_aa * r_ag,
-            ab = l_ar * r_rb + l_ag * r_gb + l_ab * r_bb + l_aa * r_ab,
-            aa = l_ar * r_ra + l_ag * r_ga + l_ab * r_ba + l_aa * r_aa
+            rr = (l_rr * r_rr) + (l_rg * r_gr) + (l_rb * r_br) + (l_ra * r_ar),
+            rg = (l_rr * r_rg) + (l_rg * r_gg) + (l_rb * r_bg) + (l_ra * r_ag),
+            rb = (l_rr * r_rb) + (l_rg * r_gb) + (l_rb * r_bb) + (l_ra * r_ab),
+            ra = (l_rr * r_ra) + (l_rg * r_ga) + (l_rb * r_ba) + (l_ra * r_aa),
+            gr = (l_gr * r_rr) + (l_gg * r_gr) + (l_gb * r_br) + (l_ga * r_ar),
+            gg = (l_gr * r_rg) + (l_gg * r_gg) + (l_gb * r_bg) + (l_ga * r_ag),
+            gb = (l_gr * r_rb) + (l_gg * r_gb) + (l_gb * r_bb) + (l_ga * r_ab),
+            ga = (l_gr * r_ra) + (l_gg * r_ga) + (l_gb * r_ba) + (l_ga * r_aa),
+            br = (l_br * r_rr) + (l_bg * r_gr) + (l_bb * r_br) + (l_ba * r_ar),
+            bg = (l_br * r_rg) + (l_bg * r_gg) + (l_bb * r_bg) + (l_ba * r_ag),
+            bb = (l_br * r_rb) + (l_bg * r_gb) + (l_bb * r_bb) + (l_ba * r_ab),
+            ba = (l_br * r_ra) + (l_bg * r_ga) + (l_bb * r_ba) + (l_ba * r_aa),
+            ar = (l_ar * r_rr) + (l_ag * r_gr) + (l_ab * r_br) + (l_aa * r_ar),
+            ag = (l_ar * r_rg) + (l_ag * r_gg) + (l_ab * r_bg) + (l_aa * r_ag),
+            ab = (l_ar * r_rb) + (l_ag * r_gb) + (l_ab * r_bb) + (l_aa * r_ab),
+            aa = (l_ar * r_ra) + (l_ag * r_ga) + (l_ab * r_ba) + (l_aa * r_aa),
         };
     }
 
@@ -373,26 +397,9 @@ public struct ColorMatrix(
     /// </summary>
     public static bool TryRepresentAsRgbaColor(in ColorMatrix matrix, [NotNullWhen(true)] out Color? maybeColor) {
         maybeColor = null;
-
-        // The R G B A values need to be bounded [0,1] for a color conversion to work;
-        // anything higher implies trying to render "superblue" or something.
-        float diagonalSum = 0f;
-        foreach (float diagonalValue in matrix.EnumerateDiagonal()) {
-            if (diagonalValue < 0 || diagonalValue > 1)
-                return false;
-            diagonalSum += diagonalValue;
-        }
-
-        // and then all of the other values need to be zero, including the offset vector.
-        float sum = 0f;
-        foreach (float value in matrix.EnumerateValues()) {
-            if (value < 0f) // To avoid situations like negatives and positives cancelling out this checksum.
-                return false;
-            sum += value;
-        }
-
-        if (sum - diagonalSum == 0) // PREEETTY sure I can trust the floating-point math here. Not 100% though
+        if(matrix.CanCompress())
             maybeColor = new Color(matrix.rr, matrix.gg, matrix.bb, matrix.aa);
+
         return maybeColor is not null;
     }
 }

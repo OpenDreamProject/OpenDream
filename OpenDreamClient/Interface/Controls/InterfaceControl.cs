@@ -31,6 +31,7 @@ public abstract class InterfaceControl : InterfaceElement {
 
         Window = window;
         UIElement = CreateUIElement();
+        UIElement.Name = ElementDescriptor.Id.AsRaw();
 
         SetProperty("size", ControlDescriptor.Size.AsRaw());
         SetProperty("pos", ControlDescriptor.Pos.AsRaw());

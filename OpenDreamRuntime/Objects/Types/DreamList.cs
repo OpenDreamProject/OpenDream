@@ -977,7 +977,7 @@ public sealed class DreamOverlaysList(DreamObjectDefinition listDef, DreamObject
     }
 }
 
-// atom.vis_contents list
+// atom or image vis_contents list
 // Operates on an object's appearance
 public sealed class DreamVisContentsList : DreamList {
     private readonly PvsOverrideSystem? _pvsOverrideSystem;

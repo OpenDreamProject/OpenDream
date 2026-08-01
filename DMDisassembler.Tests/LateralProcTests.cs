@@ -40,6 +40,8 @@ public sealed class LateralProcTests {
             Task<string> errorTask = process.StandardError.ReadToEndAsync();
             await process.StandardInput.WriteLineAsync("select /datum/disassembler_test");
             await process.StandardInput.WriteLineAsync("decompile target");
+            await process.StandardInput.WriteLineAsync("decompile single");
+            await process.StandardInput.WriteLineAsync("decompile missing");
             await process.StandardInput.WriteLineAsync("quit");
             process.StandardInput.Close();
 
@@ -57,6 +59,8 @@ public sealed class LateralProcTests {
             Assert.That(process.ExitCode, Is.Zero, error);
 
             const string notice = "Notice: Found 3 definitions of target(); decompiling all in source order.";
+            const string completion = "Finished decompiling all 3 definitions of target().";
+            const string missing = "No procs named \"missing\"";
             string[] definitions = output.Split(Environment.NewLine)
                 .Select(line => line.Trim())
                 .Where(line => line.StartsWith("ReturnFloat", StringComparison.Ordinal))
@@ -68,6 +72,18 @@ public sealed class LateralProcTests {
                 "ReturnFloat 2",
                 "ReturnFloat 3"
             }), output);
+            Assert.That(output, Does.Contain(completion));
+            Assert.That(output.Split(notice, StringSplitOptions.None), Has.Length.EqualTo(2), output);
+            Assert.That(output.Split(completion, StringSplitOptions.None), Has.Length.EqualTo(2), output);
+            Assert.That(output.IndexOf(notice, StringComparison.Ordinal),
+                Is.LessThan(output.IndexOf("ReturnFloat 1", StringComparison.Ordinal)), output);
+            Assert.That(output.IndexOf(completion, StringComparison.Ordinal),
+                Is.GreaterThan(output.LastIndexOf("ReturnFloat 3", StringComparison.Ordinal))
+                    .And.LessThan(output.IndexOf("ReturnFloat 4", StringComparison.Ordinal)), output);
+            Assert.That(output.IndexOf(missing, StringComparison.Ordinal),
+                Is.GreaterThan(output.IndexOf("ReturnFloat 4", StringComparison.Ordinal)), output);
+            Assert.That(output, Does.Not.Contain("definitions of single()"));
+            Assert.That(output, Does.Not.Contain("definitions of missing()"));
         } finally {
             File.Delete(jsonFile);
         }

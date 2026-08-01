@@ -376,6 +376,10 @@ internal class Program {
             foreach (DMProc proc in procs) {
                 Console.WriteLine(proc.Decompile());
             }
+
+            if (procs.Length > 1) {
+                Console.WriteLine($"Finished decompiling all {procs.Length} definitions of {name}().");
+            }
         } else {
             Console.WriteLine("No procs named \"" + name + "\"");
         }

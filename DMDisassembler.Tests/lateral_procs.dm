@@ -6,3 +6,6 @@
 
 /datum/disassembler_test/target()
     return 3
+
+/datum/disassembler_test/proc/single()
+    return 4

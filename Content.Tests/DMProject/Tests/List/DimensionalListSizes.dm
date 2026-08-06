@@ -1,5 +1,3 @@
-// NOBYOND
-// TODO: Remove "NOBYOND" once https://www.byond.com/forum/post/2989691 is addressed. This code was manually validated but triggers a refcounting bug in BYOND
 
 var/global/dimension_events = 0
 var/global/first_dimension_calls = 0

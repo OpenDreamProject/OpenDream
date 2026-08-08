@@ -44,7 +44,6 @@ internal sealed partial class DreamViewOverlay : Overlay {
     [Dependency] private IEntityManager _entityManager = default!;
     [Dependency] private ParticlesManager _particlesManager = default!;
     [Dependency] private IEntitySystemManager _entitySystemManager = default!;
-    [Dependency] private IMapManager _mapManager = default!;
     [Dependency] private IClyde _clyde = default!;
     [Dependency] private IPrototypeManager _protoManager = default!;
     [Dependency] private ProfManager _prof = default!;
@@ -162,7 +161,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
             return;
 
         var eyeCoords = _transformSystem.GetMapCoordinates(eye, eyeTransform);
-        if (!_mapManager.TryFindGridAt(eyeCoords, out var gridUid, out var grid))
+        if (!_mapSystem.TryFindGridAt(eyeCoords, out var gridUid, out var grid))
             return;
 
         _mobSightQuery.TryGetComponent(eye, out var mobSight);

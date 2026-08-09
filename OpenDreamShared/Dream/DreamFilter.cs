@@ -44,9 +44,7 @@ public partial record DreamFilter {
 
     public static IEnumerable<Type> AllTypes => FilterTypes.Values;
 
-    public static Type? GetType(string filterType) {
-        return FilterTypes.TryGetValue(filterType, out var type) ? type : null;
-    }
+    public static Type? GetType(string filterType) => FilterTypes.GetValueOrDefault(filterType);
 
     /// <summary>
     /// Calculate the size of the texture necessary to render this filter

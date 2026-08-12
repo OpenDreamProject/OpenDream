@@ -19,6 +19,7 @@ using Robust.Shared.Utility;
 using MethodImplAttribute = System.Runtime.CompilerServices.MethodImplAttribute;
 using MethodImplOptions = System.Runtime.CompilerServices.MethodImplOptions;
 
+
 namespace OpenDreamRuntime.Objects;
 
 public sealed partial class DreamObjectTree {
@@ -107,7 +108,7 @@ public sealed partial class DreamObjectTree {
 
     public TreeEntry GetTreeEntry(string path) {
         if (!_pathToType.TryGetValue(path, out TreeEntry? type)) {
-            throw new Exception($"Object '{path}' does not exist");
+            throw new DMException($"Object '{path}' does not exist");
         }
 
         return type;
@@ -184,9 +185,9 @@ public sealed partial class DreamObjectTree {
         if (type.ObjectDefinition.IsSubtypeOf(Particles))
             return new DreamObjectParticles(type.ObjectDefinition);
         if (type.ObjectDefinition.IsSubtypeOf(Client))
-            throw new Exception("Cannot create objects of type /client");
+            throw new DMException("Cannot create objects of type /client");
         if (type.ObjectDefinition.IsSubtypeOf(Turf))
-            throw new Exception("New turfs must be created by the map manager");
+            throw new DMException("New turfs must be created by the map manager");
         if (type.ObjectDefinition.IsSubtypeOf(Exception))
             return new DreamObjectException(type.ObjectDefinition);
         if (type.ObjectDefinition.IsSubtypeOf(Callee))

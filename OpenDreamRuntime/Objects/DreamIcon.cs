@@ -1,4 +1,4 @@
-﻿using System.Buffers;
+using System.Buffers;
 using System.IO;
 using System.Linq;
 using OpenDreamRuntime.Resources;
@@ -405,7 +405,7 @@ public sealed class DreamIconOperationBlendImage : DreamIconOperationBlend {
         var resourceManager = IoCManager.Resolve<DreamResourceManager>();
 
         if (!resourceManager.TryLoadIcon(blending, out var blendingIcon)) {
-            throw new Exception($"Value {blending} is not a valid icon to blend");
+            throw new DMException($"Value {blending} is not a valid icon to blend");
         }
 
         _blending = blendingIcon.Texture;

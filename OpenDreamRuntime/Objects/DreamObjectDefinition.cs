@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Procs;
@@ -153,7 +153,7 @@ public sealed class DreamObjectDefinition {
         if (TryGetProc(procName, out DreamProc? proc)) {
             return proc;
         } else {
-            throw new Exception("Object type '" + Type + "' does not have a proc named '" + procName + "'");
+            throw new DMException("Object type '" + Type + "' does not have a proc named '" + procName + "'");
         }
     }
 

@@ -40,7 +40,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             var resourceManager = IoCManager.Resolve<DreamResourceManager>();
             if (!resourceManager.TryLoadIcon(newIcon, out var iconRsc))
-                throw new Exception($"Cannot insert {newIcon}");
+                throw new DMException($"Cannot insert {newIcon}");
 
             ((DreamObjectIcon)src!).Icon.InsertStates(iconRsc, iconState, dir, frame); // TODO: moving & delay
             return DreamValue.Null;
@@ -49,7 +49,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static void Blend(DreamIcon icon, DreamValue blend, BlendType function, int x, int y) {
             if (blend.TryGetValueAsString(out var colorStr)) {
                 if (!ColorHelpers.TryParseColor(colorStr, out var color))
-                    throw new Exception($"Invalid color {colorStr}");
+                    throw new DMException($"Invalid color {colorStr}");
 
                 icon.ApplyOperation(new DreamIconOperationBlendColor(function, x, y, color));
             } else {
@@ -72,7 +72,7 @@ namespace OpenDreamRuntime.Procs.Native {
             bundle.GetArgument(3, "y").TryGetValueAsInteger(out var y);
 
             if (!function.TryGetValueAsInteger(out var functionValue))
-                throw new Exception($"Invalid 'function' argument {function}");
+                throw new DMException($"Invalid 'function' argument {function}");
 
             Blend(((DreamObjectIcon)src!).Icon, icon, (BlendType)functionValue, x, y);
             return DreamValue.Null;

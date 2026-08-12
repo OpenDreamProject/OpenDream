@@ -1,4 +1,4 @@
-﻿using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
 
@@ -17,7 +17,7 @@ internal static class DreamProcNativeMatrix {
         }
 
         // On invalid input, throw runtime
-        throw new Exception($"Invalid matrix for addition: {possibleMatrix.ToString()}");
+        throw new DMException($"Invalid matrix for addition: {possibleMatrix.ToString()}");
     }
 
     [DreamProc("Invert")]
@@ -82,7 +82,7 @@ internal static class DreamProcNativeMatrix {
         }
 
         // On invalid input, throw runtime
-        throw new Exception($"Invalid matrix for subtraction: {possibleMatrix.ToString()}");
+        throw new DMException($"Invalid matrix for subtraction: {possibleMatrix.ToString()}");
     }
 
 

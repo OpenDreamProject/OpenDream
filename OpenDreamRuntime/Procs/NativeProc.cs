@@ -31,7 +31,7 @@ public sealed unsafe class NativeProc : DreamProc {
                     int intValue => new(intValue),
                     float floatValue => new(floatValue),
                     string stringValue => new(stringValue),
-                    _ => throw new DMException($"Invalid default value {parameterAttribute.DefaultValue}")
+                    _ => throw new Exception($"Invalid default value {parameterAttribute.DefaultValue}")
                 };
 
                 defaultArgumentValues.Add(parameterAttribute.Name, defaultValue);

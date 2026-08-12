@@ -1,9 +1,9 @@
-﻿using System.IO;
+using System.IO;
 // ReSharper disable once RedundantUsingDirective
 using System.Runtime.CompilerServices;
 using System.Text;
 using OpenDreamShared.Dream;
-
+using OpenDreamShared;
 namespace OpenDreamRuntime.Resources;
 
 [Virtual]
@@ -77,7 +77,7 @@ public class DreamResource(int id, string? filePath, string? resourcePath) {
         if (value.IsNull) {
             text = string.Empty;
         } else if (!value.TryGetValueAsString(out text)) {
-            throw new Exception($"Invalid output operation '{ResourcePath}' << {value}");
+            throw new DMException($"Invalid output operation '{ResourcePath}' << {value}");
         }
 
         // Prune any remaining formatting

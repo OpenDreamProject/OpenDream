@@ -7,6 +7,7 @@ using DMCompiler;
 using JetBrains.Annotations;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Resources;
+using OpenDreamShared;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -155,7 +156,7 @@ public sealed class DreamObjectSavefile : DreamObject {
         switch (varName) {
             case "cd":
                 if (!value.TryGetValueAsString(out var cdTo))
-                    throw new Exception($"Cannot change directory to {value}");
+                    throw new DMException($"Cannot change directory to {value}");
 
                 CurrentPath = cdTo;
                 break;
@@ -185,20 +186,20 @@ public sealed class DreamObjectSavefile : DreamObject {
 
                 break;
             default:
-                throw new Exception($"Cannot set var \"{varName}\" on savefiles");
+                throw new DMException($"Cannot set var \"{varName}\" on savefiles");
         }
     }
 
     public override DreamValue OperatorIndex(DreamValue index, DMProcState state) {
         if (!index.TryGetValueAsString(out var entryName))
-            throw new Exception($"Invalid savefile index {index}");
+            throw new DMException($"Invalid savefile index {index}");
 
         return GetSavefileValue(entryName);
     }
 
     public override void OperatorIndexAssign(DreamValue index, DMProcState state, DreamValue value) {
         if (!index.TryGetValueAsString(out var entryName))
-            throw new Exception($"Invalid savefile index {index}");
+            throw new DMException($"Invalid savefile index {index}");
 
         if (entryName == ".") {
             SetSavefileValue(null, value);

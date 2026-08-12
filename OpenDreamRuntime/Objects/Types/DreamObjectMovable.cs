@@ -2,6 +2,7 @@ using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
 using Robust.Shared.Map;
+using OpenDreamShared;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -138,7 +139,7 @@ public class DreamObjectMovable : DreamObjectAtom {
             }
             case "loc": {
                 if (!value.TryGetValueAsDreamObject<DreamObjectAtom>(out var newLoc) && !value.IsNull)
-                    throw new Exception($"Invalid loc {value}");
+                    throw new DMException($"Invalid loc {value}");
 
                 SetLoc(newLoc);
                 break;

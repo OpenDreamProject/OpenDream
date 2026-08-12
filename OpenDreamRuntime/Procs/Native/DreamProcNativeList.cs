@@ -1,7 +1,8 @@
-﻿using System.Text;
+using System.Text;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
+using OpenDreamShared;
 
 namespace OpenDreamRuntime.Procs.Native {
     internal static class DreamProcNativeList {
@@ -76,7 +77,7 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamList list = (DreamList)src!;
 
             if (index <= 0) index = list.GetLength() + 1;
-            if (bundle.Arguments.Length < 2) throw new Exception("No value given to insert");
+            if (bundle.Arguments.Length < 2) throw new DMException("No value given to insert");
 
             for (var i = 1; i < bundle.Arguments.Length; i++) {
                 var item = bundle.Arguments[i];
@@ -185,7 +186,7 @@ namespace OpenDreamRuntime.Procs.Native {
             int end = bundle.GetArgument(1, "End").MustGetValueAsInteger(); //1-indexed
             IDreamList list = (IDreamList)src!;
             if (list is DreamAssocList) {
-                throw new Exception("special list may not be spliced");
+                throw new DMException("special list may not be spliced");
             }
 
             list.Cut(startIndex, end);

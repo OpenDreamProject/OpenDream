@@ -1,9 +1,10 @@
-﻿using System.Security.Cryptography;
+using System.Security.Cryptography;
 using System.Text;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
+using OpenDreamShared;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -133,7 +134,7 @@ public sealed class DreamObjectClient : DreamObject {
             case "eye": {
                 value.TryGetValueAsDreamObject<DreamObjectAtom>(out var newEye);
                 if (newEye is not (DreamObjectMovable or null)) {
-                    throw new Exception($"Cannot set eye to non-movable {value}"); // TODO: You can set it to a turf
+                    throw new DMException($"Cannot set eye to non-movable {value}"); // TODO: You can set it to a turf
                 }
 
                 newEye?.IncRef();

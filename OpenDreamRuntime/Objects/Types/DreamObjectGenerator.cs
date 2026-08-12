@@ -1,5 +1,7 @@
 using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
+using OpenDreamShared;
+
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -9,7 +11,7 @@ public sealed class DreamObjectGenerator(DreamObjectDefinition objectDefinition)
     public override void Initialize(DreamProcArguments args) {
         var type = args.GetArgument(0);
         if (!type.TryGetValueAsString(out var typeStr))
-            throw new Exception($"Invalid generator type {type}");
+            throw new DMException($"Invalid generator type {type}");
 
         var a = args.GetArgument(1);
         var b = args.GetArgument(2);
@@ -69,7 +71,7 @@ public sealed class DreamObjectGenerator(DreamObjectDefinition objectDefinition)
                 }
             }
             default:
-                throw new Exception($"Invalid generator type {type}");
+                throw new DMException($"Invalid generator type {type}");
         }
     }
 
@@ -90,4 +92,3 @@ public sealed class DreamObjectGenerator(DreamObjectDefinition objectDefinition)
         };
     }
 }
-

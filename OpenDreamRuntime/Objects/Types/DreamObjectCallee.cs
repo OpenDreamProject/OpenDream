@@ -1,6 +1,7 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Bytecode;
 using OpenDreamRuntime.Procs;
+using OpenDreamShared;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -22,7 +23,7 @@ public sealed class DreamObjectCallee(DreamObjectDefinition objectDefinition) : 
     protected override bool TryGetVar(string varName, out DreamValue value) {
         // TODO: This ProcState check doesn't match byond behavior?
         if (Expired)
-            throw new Exception("This callee has expired");
+            throw new DMException("This callee has expired");
 
         switch (varName) {
             case "proc":
@@ -78,7 +79,7 @@ public sealed class DreamObjectCallee(DreamObjectDefinition objectDefinition) : 
     }
 
     protected override void SetVar(string varName, DreamValue value) {
-        throw new Exception($"Cannot set var {varName} on /callee");
+        throw new DMException($"Cannot set var {varName} on /callee");
     }
 
     public override string GetDisplayName(StringFormatEncoder.FormatSuffix? suffix = null) {

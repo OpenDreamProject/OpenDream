@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using JetBrains.Annotations;
 using Api = OpenDreamRuntime.ByondApi.ByondApi;
+using OpenDreamShared;
 
 namespace OpenDreamRuntime.Procs;
 
@@ -10,11 +11,11 @@ internal static partial class DMOpcodeHandlers {
         DreamValue source,
         DMProcState.DMStackArgumentInfo argumentsInfo) {
         if(!source.TryGetValueAsString(out var dllName))
-            throw new Exception($"{source} is not a valid DLL");
+            throw new DMException($"{source} is not a valid DLL");
 
         using var popProc = state.Pop();
         if(!popProc.TryGetValueAsString(out var procName)) {
-            throw new Exception($"{popProc} is not a valid proc name");
+            throw new DMException($"{popProc} is not a valid proc name");
         }
 
         DreamProcArguments arguments = state.PopProcArguments(null, argumentsInfo);

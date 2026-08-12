@@ -1,6 +1,7 @@
 using System.Linq;
 using JetBrains.Annotations;
 using OpenDreamRuntime.Procs;
+using OpenDreamShared;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -62,11 +63,11 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
 
     public void Cut(int start = 1, int end = 0) {
         if (start != 1 && start != 0) {
-            throw new Exception($"Cut() was called with non-default start value of {start}.");
+            throw new DMException($"Cut() was called with non-default start value of {start}.");
         }
 
         if (end != 0) {
-            throw new Exception($"Cut() was called with non-default end value of {end}.");
+            throw new DMException($"Cut() was called with non-default end value of {end}.");
         }
 
         foreach (var value in _values) {
@@ -116,7 +117,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
 
     public IDreamList CreateCopy(int start = 1, int end = 0) {
         if (start != 1 || end != 0) {
-            throw new Exception("list index out of bounds");
+            throw new DMException("list index out of bounds");
         }
 
         var copyValues = new Dictionary<DreamValue, DreamValue>(_values);
@@ -150,7 +151,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         if (varName == "len") {
             // Non-nums become 0 which is parity w/ BYOND
             if (value.TryGetValueAsInteger(out var newLen) && newLen != 0) {
-                throw new Exception("length of strict associative list can only be set to 0");
+                throw new DMException("length of strict associative list can only be set to 0");
             }
 
             // alists specifically will always either runtime or get set to 0 and cut
@@ -161,11 +162,11 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     }
 
     public void Insert(int index, DreamValue value) {
-        throw new Exception("insert not allowed for this list");
+        throw new DMException("insert not allowed for this list");
     }
 
     public void Swap(int index1, int index2) {
-        throw new Exception("swap not allowed for this list");
+        throw new DMException("swap not allowed for this list");
     }
 
     public bool ContainsValue(DreamValue value) {
@@ -302,5 +303,3 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         return DreamValue.True;
     }
 }
-
-

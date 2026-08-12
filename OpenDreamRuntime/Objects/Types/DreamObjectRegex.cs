@@ -1,6 +1,7 @@
-﻿using System.Text;
+using System.Text;
 using System.Text.RegularExpressions;
 using OpenDreamRuntime.Procs;
+using OpenDreamShared;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -76,7 +77,7 @@ public sealed class DreamObjectRegex(DreamObjectDefinition objectDefinition) : D
 
             Regex = new Regex(newPatternBuilder.ToString(), options);
         } else {
-            throw new Exception("Invalid regex pattern " + pattern);
+            throw new DMException("Invalid regex pattern " + pattern);
         }
     }
 

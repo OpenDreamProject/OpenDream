@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using OpenDreamRuntime.Objects.Types;
 using System.Text;
 using OpenDreamRuntime.Map;
+using OpenDreamShared;
 
 namespace OpenDreamRuntime.Procs.Native;
 
@@ -160,7 +161,7 @@ internal static partial class DreamProcNativeHelpers {
             } else if (arg.TryGetValueAsString(out var distString)) {
                 range = new ViewRange(distString);
             } else if (!arg.IsNull) { // null range arg is handled by DefaultView above
-                throw new Exception($"Invalid argument: {arg}");
+                throw new DMException($"Invalid argument: {arg}");
             }
         }
 
@@ -514,7 +515,7 @@ internal static partial class DreamProcNativeHelpers {
             return null;
 
         if (radix < 2 || radix > 36)
-            throw new Exception($"Invalid radix: {radix}");
+            throw new DMException($"Invalid radix: {radix}");
 
         bool negative = value[0] == '-';
         if (negative || value[0] == '+')

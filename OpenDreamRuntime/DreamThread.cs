@@ -8,7 +8,7 @@ using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamShared.Dream;
-
+using OpenDreamShared;
 namespace OpenDreamRuntime {
     public enum ProcStatus {
         Continue,
@@ -91,7 +91,7 @@ namespace OpenDreamRuntime {
                     Logger.GetSawmill("opendream.dmproc").Warning("The 'hidden' field on verbs will always return null.");
                     return DreamValue.Null;
                 default:
-                    throw new Exception($"Cannot get field \"{field}\" from {OwningType}.{Name}()");
+                    throw new DMException($"Cannot get field \"{field}\" from {OwningType}.{Name}()");
             }
         }
 
@@ -493,9 +493,17 @@ namespace OpenDreamRuntime {
             AppendStackTrace(ErrorMessageBuilder);
             ErrorMessageBuilder.AppendLine();
 
-            ErrorMessageBuilder.AppendLine("=C# StackTrace=");
-            ErrorMessageBuilder.AppendLine(exception.ToString());
-            ErrorMessageBuilder.AppendLine();
+            #if DEBUG
+                    ErrorMessageBuilder.AppendLine("=C# StackTrace=");
+                    ErrorMessageBuilder.AppendLine(exception.ToString());
+                    ErrorMessageBuilder.AppendLine();
+            #else
+                    if (exception is not DMException) {
+                        ErrorMessageBuilder.AppendLine("=C# StackTrace=");
+                        ErrorMessageBuilder.AppendLine(exception.ToString());
+                        ErrorMessageBuilder.AppendLine();
+                    }
+            #endif
 
             var msg = ErrorMessageBuilder.ToString();
 
@@ -545,3 +553,4 @@ namespace OpenDreamRuntime {
         }
     }
 }
+

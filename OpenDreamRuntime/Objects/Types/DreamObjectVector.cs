@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using OpenDreamRuntime.Procs;
+using OpenDreamShared;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -85,7 +86,7 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
         }
 
         // TODO: Allow pixloc as an arg
-        throw new Exception($"Bad vector arguments {args.ToString()}");
+        throw new DMException($"Bad vector arguments {args.ToString()}");
     }
 
     #region Operators
@@ -261,20 +262,20 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
                 return true;
             default:
                 // Hide the base vars
-                throw new Exception($"Invalid vector variable \"{varName}\"");
+                throw new DMException($"Invalid vector variable \"{varName}\"");
         }
     }
 
     protected override void SetVar(string varName, DreamValue value) {
         switch (varName) {
             case "type":
-                throw new Exception("Cannot set type var");
+                throw new DMException("Cannot set type var");
             case "len":
                 var newLen = value.UnsafeGetValueAsFloat();
 
                 // Something like 2.3 actually isn't valid here; it doesn't cast to an int
                 if (!newLen.Equals(2f) && !newLen.Equals(3f)) {
-                    throw new Exception($"Invalid vector len {value}");
+                    throw new DMException($"Invalid vector len {value}");
                 }
 
                 Is3D = newLen.Equals(3f);
@@ -293,7 +294,7 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
                 break;
             default:
                 // Hide the base vars
-                throw new Exception($"Invalid vector variable \"{varName}\"");
+                throw new DMException($"Invalid vector variable \"{varName}\"");
         }
     }
 

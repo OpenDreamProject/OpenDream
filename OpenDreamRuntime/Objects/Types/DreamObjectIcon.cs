@@ -1,4 +1,5 @@
-﻿using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Procs;
+using OpenDreamShared;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -25,7 +26,7 @@ public sealed class DreamObjectIcon : DreamObject {
                 Icon.CopyFrom(iconObj.Icon);
             } else {
                 if (!DreamResourceManager.TryLoadIcon(icon, out var iconRsc))
-                    throw new Exception($"Cannot create an icon from {icon}");
+                    throw new DMException($"Cannot create an icon from {icon}");
 
                 Icon.InsertStates(iconRsc, state, dir, frame, isConstructor: true);
             }

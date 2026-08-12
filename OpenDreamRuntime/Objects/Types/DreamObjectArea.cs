@@ -1,4 +1,5 @@
-﻿using OpenDreamShared.Dream;
+using OpenDreamShared.Dream;
+using OpenDreamShared;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -80,7 +81,7 @@ public sealed class DreamObjectArea : DreamObjectAtom {
             case "x":
             case "y":
             case "z":
-                throw new Exception($"Cannot set coordinate var '{varName}' on an area");
+                throw new DMException($"Cannot set coordinate var '{varName}' on an area");
             case "contents":
                 // TODO
                 break;

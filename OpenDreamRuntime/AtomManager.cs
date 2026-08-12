@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using OpenDreamRuntime.Map;
@@ -11,7 +11,7 @@ using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Shared.Map;
 using Dependency = Robust.Shared.IoC.DependencyAttribute;
-
+using OpenDreamShared;
 namespace OpenDreamRuntime;
 
 public sealed partial class AtomManager {
@@ -330,12 +330,12 @@ public sealed partial class AtomManager {
                 value.TryGetValueAsInteger(out appearance.MouseOverPointer);
                 break;
             case "appearance":
-                throw new Exception("Cannot assign the appearance var on an appearance");
+                throw new DMException("Cannot assign the appearance var on an appearance");
 
             // These should be handled by the DreamObject if being accessed through that
             case "overlays":
             case "underlays":
-                throw new Exception($"Cannot assign the {varName} var on an appearance");
+                throw new DMException($"Cannot assign the {varName} var on an appearance");
 
             // TODO: filters
             //       It's handled separately by whatever is calling SetAppearanceVar currently
@@ -483,7 +483,7 @@ public sealed partial class AtomManager {
             DreamObjectTurf turf => turf.Appearance,
             DreamObjectMovable movable => movable.SpriteComponent.Appearance!,
             DreamObjectImage image => image.IsMutableAppearance ? AppearanceSystem!.AddAppearance(image.MutableAppearance!, registerAppearance: false) : image.SpriteComponent!.Appearance!,
-            _ => throw new Exception($"Cannot get appearance of {atom}")
+            _ => throw new DMException($"Cannot get appearance of {atom}")
         };
     }
 
@@ -764,6 +764,7 @@ public sealed partial class AtomManager {
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static (int X, int Y, int) ThrowCantGetPosition(DreamObjectAtom atom) {
-        throw new Exception($"Cannot get the position of {atom}");
+        throw new DMException($"Cannot get the position of {atom}");
     }
 }
+

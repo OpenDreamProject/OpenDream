@@ -5,6 +5,7 @@ using JetBrains.Annotations;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Resources;
 using OpenDreamRuntime.Map;
+using OpenDreamShared;
 
 namespace OpenDreamRuntime.Procs;
 
@@ -30,7 +31,7 @@ public sealed unsafe class NativeProc : DreamProc {
                     int intValue => new(intValue),
                     float floatValue => new(floatValue),
                     string stringValue => new(stringValue),
-                    _ => throw new Exception($"Invalid default value {parameterAttribute.DefaultValue}")
+                    _ => throw new DMException($"Invalid default value {parameterAttribute.DefaultValue}")
                 };
 
                 defaultArgumentValues.Add(parameterAttribute.Name, defaultValue);

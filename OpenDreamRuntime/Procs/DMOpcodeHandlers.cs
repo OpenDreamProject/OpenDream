@@ -2882,7 +2882,8 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.Float: {
                     float firstValue = first.MustGetValueAsFloat();
 
-                    return firstValue.Equals(second.MustGetValueAsFloat());
+                    // ReSharper disable once CompareOfFloatsByEqualityOperator
+                    return firstValue == second.MustGetValueAsFloat();
                 }
                 case DreamValue.DreamValueType.String: {
                     string firstValue = first.MustGetValueAsString();

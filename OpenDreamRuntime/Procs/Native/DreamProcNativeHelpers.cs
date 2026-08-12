@@ -4,7 +4,6 @@ using System.Text.RegularExpressions;
 using OpenDreamRuntime.Objects.Types;
 using System.Text;
 using OpenDreamRuntime.Map;
-using OpenDreamShared;
 
 namespace OpenDreamRuntime.Procs.Native;
 

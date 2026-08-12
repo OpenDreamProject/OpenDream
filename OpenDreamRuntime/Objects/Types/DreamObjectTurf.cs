@@ -1,7 +1,6 @@
 using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
-using OpenDreamShared;
 
 namespace OpenDreamRuntime.Objects.Types;
 

@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using OpenDreamRuntime.Procs;
-using OpenDreamShared;
 
 namespace OpenDreamRuntime.Objects.Types;
 

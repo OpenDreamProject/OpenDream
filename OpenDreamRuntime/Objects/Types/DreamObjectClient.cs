@@ -4,7 +4,6 @@ using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
-using OpenDreamShared;
 
 namespace OpenDreamRuntime.Objects.Types;
 

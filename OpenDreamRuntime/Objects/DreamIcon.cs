@@ -13,7 +13,6 @@ using Color = Robust.Shared.Maths.Color;
 using ParsedDMIDescription = OpenDreamShared.Resources.DMIParser.ParsedDMIDescription;
 using ParsedDMIState = OpenDreamShared.Resources.DMIParser.ParsedDMIState;
 using ParsedDMIFrame = OpenDreamShared.Resources.DMIParser.ParsedDMIFrame;
-using OpenDreamShared;
 
 namespace OpenDreamRuntime.Objects;
 

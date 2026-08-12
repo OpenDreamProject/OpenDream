@@ -18,7 +18,6 @@ using Robust.Shared.Serialization.Manager.Exceptions;
 using Robust.Shared.Utility;
 using MethodImplAttribute = System.Runtime.CompilerServices.MethodImplAttribute;
 using MethodImplOptions = System.Runtime.CompilerServices.MethodImplOptions;
-using OpenDreamShared;
 
 
 namespace OpenDreamRuntime.Objects;

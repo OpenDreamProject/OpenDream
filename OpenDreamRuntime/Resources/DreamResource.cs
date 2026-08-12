@@ -3,7 +3,6 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 using OpenDreamShared.Dream;
-using OpenDreamShared;
 namespace OpenDreamRuntime.Resources;
 
 [Virtual]

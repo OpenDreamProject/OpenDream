@@ -2,7 +2,6 @@ using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
 using Robust.Shared.Map;
-using OpenDreamShared;
 
 namespace OpenDreamRuntime.Objects.Types;
 

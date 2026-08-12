@@ -1,7 +1,6 @@
 using System.Linq;
 using JetBrains.Annotations;
 using OpenDreamRuntime.Procs;
-using OpenDreamShared;
 
 namespace OpenDreamRuntime.Objects.Types;
 

@@ -6,7 +6,6 @@ using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using BlendType = OpenDreamRuntime.Objects.DreamIconOperationBlend.BlendType;
 using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
-using OpenDreamShared;
 
 namespace OpenDreamRuntime.Procs.Native {
     internal static class DreamProcNativeIcon {

@@ -2,7 +2,6 @@ using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamShared.Dream;
 using Robust.Shared.Random;
-using OpenDreamShared;
 
 namespace OpenDreamRuntime.Procs.Native;
 

@@ -17,7 +17,6 @@ using OpenDreamShared.Dream;
 using Robust.Shared.Random;
 using FormatSuffix = DMCompiler.Bytecode.StringFormatEncoder.FormatSuffix;
 using BlendType = OpenDreamRuntime.Objects.DreamIconOperationBlend.BlendType;
-using OpenDreamShared;
 
 namespace OpenDreamRuntime.Procs {
     internal static partial class DMOpcodeHandlers {

@@ -2,7 +2,6 @@ using System.Text;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
-using OpenDreamShared;
 
 namespace OpenDreamRuntime.Procs.Native {
     internal static class DreamProcNativeList {

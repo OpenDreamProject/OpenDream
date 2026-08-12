@@ -1,7 +1,6 @@
 using System.Runtime.InteropServices;
 using JetBrains.Annotations;
 using Api = OpenDreamRuntime.ByondApi.ByondApi;
-using OpenDreamShared;
 
 namespace OpenDreamRuntime.Procs;
 

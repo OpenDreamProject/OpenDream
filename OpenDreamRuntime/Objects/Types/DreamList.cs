@@ -8,7 +8,6 @@ using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
 using Robust.Server.GameStates;
 using Dependency = Robust.Shared.IoC.DependencyAttribute;
-using OpenDreamShared;
 namespace OpenDreamRuntime.Objects.Types;
 
 [Virtual]
@@ -1773,4 +1772,3 @@ public sealed class SavefileDirList(DreamObjectDefinition listDef, DreamObjectSa
         throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }
-

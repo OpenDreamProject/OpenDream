@@ -5,7 +5,6 @@ using JetBrains.Annotations;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Resources;
 using OpenDreamRuntime.Map;
-using OpenDreamShared;
 
 namespace OpenDreamRuntime.Procs;
 

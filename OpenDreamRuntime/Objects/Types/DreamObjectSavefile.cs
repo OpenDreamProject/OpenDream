@@ -7,7 +7,6 @@ using DMCompiler;
 using JetBrains.Annotations;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Resources;
-using OpenDreamShared;
 
 namespace OpenDreamRuntime.Objects.Types;
 

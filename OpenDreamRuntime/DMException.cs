@@ -1,5 +1,3 @@
-using System;
-
 namespace OpenDreamRuntime;
 
 /// <summary>
@@ -7,6 +5,4 @@ namespace OpenDreamRuntime;
 /// Unlike regular <see cref="Exception"/> instances, this exception is handled
 /// as a runtime error originating from DM code.
 /// </summary>
-public sealed class DMException : Exception {
-    public DMException(string message) : base(message) { }
-}
+public sealed class DMException(string message) : Exception(message);

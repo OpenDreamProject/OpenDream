@@ -2891,83 +2891,43 @@ namespace OpenDreamRuntime.Procs {
 
         #region Helpers
 
-        [SuppressMessage("ReSharper", "CompareOfFloatsByEqualityOperator")]
         public static bool IsEqual(DreamValue first, DreamValue second) {
-            // null should only ever be equal to null
-            if (first.IsNull) return second.IsNull;
-            if (second.IsNull) return false; // If this were ever true the above condition would have handled it
+            if (first.Type != second.Type)
+                return false;
 
-            // Now we don't have to worry about null for the rest of this method
             switch (first.Type) {
                 case DreamValue.DreamValueType.DreamObject: {
                     DreamObject? firstValue = first.MustGetValueAsDreamObject();
 
-                    switch (second.Type) {
-                        case DreamValue.DreamValueType.DreamObject: return firstValue == second.MustGetValueAsDreamObject();
-                        case DreamValue.DreamValueType.Appearance:
-                        case DreamValue.DreamValueType.DreamProc:
-                        case DreamValue.DreamValueType.DreamType:
-                        case DreamValue.DreamValueType.String:
-                        case DreamValue.DreamValueType.Float: return false;
-                    }
-
-                    break;
+                    return firstValue == second.MustGetValueAsDreamObject();
                 }
                 case DreamValue.DreamValueType.Float: {
                     float firstValue = first.MustGetValueAsFloat();
 
-                    switch (second.Type) {
-                        case DreamValue.DreamValueType.Float: return firstValue == second.MustGetValueAsFloat();
-                        case DreamValue.DreamValueType.DreamType:
-                        case DreamValue.DreamValueType.DreamObject:
-                        case DreamValue.DreamValueType.String: return false;
-                    }
-
-                    break;
+                    // ReSharper disable once CompareOfFloatsByEqualityOperator
+                    return firstValue == second.MustGetValueAsFloat();
                 }
                 case DreamValue.DreamValueType.String: {
                     string firstValue = first.MustGetValueAsString();
 
-                    switch (second.Type) {
-                        case DreamValue.DreamValueType.String: return firstValue == second.MustGetValueAsString();
-                        case DreamValue.DreamValueType.DreamObject:
-                        case DreamValue.DreamValueType.Float: return false;
-                    }
-
-                    break;
+                    return firstValue == second.MustGetValueAsString();
                 }
                 case DreamValue.DreamValueType.DreamType: {
                     var firstValue = first.MustGetValueAsType();
 
-                    switch (second.Type) {
-                        case DreamValue.DreamValueType.DreamType: return firstValue.Equals(second.MustGetValueAsType());
-                        case DreamValue.DreamValueType.Float:
-                        case DreamValue.DreamValueType.DreamObject:
-                        case DreamValue.DreamValueType.String: return false;
-                    }
-
-                    break;
+                    return firstValue.Equals(second.MustGetValueAsType());
                 }
-                case DreamValue.DreamValueType.DreamProc: {
-                    if (second.Type != DreamValue.DreamValueType.DreamProc)
-                        return false;
-
+                case DreamValue.DreamValueType.DreamProc:
                     return first.MustGetValueAsProc() == second.MustGetValueAsProc();
-                }
                 case DreamValue.DreamValueType.DreamResource: {
                     DreamResource firstValue = first.MustGetValueAsDreamResource();
 
-                    switch (second.Type) {
-                        case DreamValue.DreamValueType.DreamResource: return firstValue.ResourcePath == second.MustGetValueAsDreamResource().ResourcePath;
-                        default: return false;
-                    }
+                    return firstValue.ResourcePath == second.MustGetValueAsDreamResource().ResourcePath;
                 }
                 case DreamValue.DreamValueType.Appearance: {
-                    if (!second.TryGetValueAsAppearance(out var secondValue))
-                        return false;
-
                     MutableAppearance firstValue = first.MustGetValueAsAppearance();
-                    return firstValue.Equals(secondValue);
+
+                    return firstValue.Equals(second.MustGetValueAsAppearance());
                 }
             }
 

@@ -184,7 +184,7 @@ public sealed class DreamIcon(DreamManager dreamManager, DreamResourceManager re
             foreach (var copyStateName in icon.DMI.States.Keys) {
                 InsertState(icon, copyStateName, copyStateName,
                     copyingAllDirs ? null : copyingDirection, copyingAllFrames ? null : copyingFrame,
-                    forceSouth: false);
+                    forceSouth: isConstructor);
             }
         } else {
             InsertState(icon, isConstructor ? string.Empty : copyingState!, copyingState!,

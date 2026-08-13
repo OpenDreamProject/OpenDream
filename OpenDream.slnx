@@ -40,11 +40,8 @@
   <Project Path="OpenDreamServer/OpenDreamServer.csproj" />
   <Project Path="OpenDreamShared/OpenDreamShared.csproj" />
   <Folder Name="/RobustToolbox/.github/workflows/">
-    <File Path="RobustToolbox/.github/workflows/benchmarks.yml" />
     <File Path="RobustToolbox/.github/workflows/build-all-configurations.yml" />
-    <File Path="RobustToolbox/.github/workflows/build-docfx.yml" />
     <File Path="RobustToolbox/.github/workflows/build-test.yml" />
-    <File Path="RobustToolbox/.github/workflows/codeql-analysis.yml" />
     <File Path="RobustToolbox/.github/workflows/publish-client.yml" />
     <File Path="RobustToolbox/.github/workflows/test-content.yml" />
   </Folder>
@@ -68,8 +65,10 @@
     <File Path="RobustToolbox/Imports/WebView.props" />
   </Folder>
   <Folder Name="/RobustToolbox/MSBuild/">
+    <File Path="RobustToolbox/MSBuild/MacOSAppBundle.targets" />
     <File Path="RobustToolbox/MSBuild/Robust.Analyzers.targets" />
     <File Path="RobustToolbox/MSBuild/Robust.CompNetworkGenerator.targets" />
+    <File Path="RobustToolbox/MSBuild/Robust.EntitySystemSubscriptionsGenerator.targets" />
     <File Path="RobustToolbox/MSBuild/Robust.Configurations.props" />
     <File Path="RobustToolbox/MSBuild/Robust.DefineConstants.targets" />
     <File Path="RobustToolbox/MSBuild/Robust.Engine.props" />
@@ -80,6 +79,7 @@
     <File Path="RobustToolbox/MSBuild/Robust.Properties.targets" />
     <File Path="RobustToolbox/MSBuild/Robust.Trimming.targets" />
     <File Path="RobustToolbox/MSBuild/XamlIL.targets" />
+    <File Path="RobustToolbox/MSBuild/WebView.targets" />
   </Folder>
   <Folder Name="/RobustToolbox/NetSerializer/">
     <Project Path="RobustToolbox/NetSerializer/NetSerializer/NetSerializer.csproj">
@@ -114,6 +114,10 @@
       <BuildType Solution="Tools|*" Project="Release" />
     </Project>
     <Project Path="RobustToolbox/Robust.Shared.CompNetworkGenerator/Robust.Shared.CompNetworkGenerator.csproj">
+      <BuildType Solution="DebugOpt|*" Project="Debug" />
+      <BuildType Solution="Tools|*" Project="Release" />
+    </Project>
+    <Project Path="RobustToolbox/Robust.Shared.EntitySystemSubscriptionsGenerator/Robust.Shared.EntitySystemSubscriptionsGenerator.csproj">
       <BuildType Solution="DebugOpt|*" Project="Debug" />
       <BuildType Solution="Tools|*" Project="Release" />
     </Project>

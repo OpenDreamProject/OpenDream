@@ -42,7 +42,7 @@ public abstract class InterfaceControl : InterfaceElement {
     protected abstract Control CreateUIElement();
 
     protected override void UpdateElementDescriptor() {
-        UIElement.Name = ControlDescriptor.Name.Value;
+        UIElement.Name = ControlDescriptor.Id.Value;
 
         //transparent is default because it's white with 0 alpha, and DMF color can't have none-255 alpha
         StyleBox? styleBox = (ControlDescriptor.BackgroundColor.Value != Color.Transparent)

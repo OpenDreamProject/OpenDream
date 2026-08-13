@@ -115,8 +115,7 @@ public sealed partial class WindowDescriptor : ControlDescriptor {
             return null;
 
         if (elementTypeValue.Value == "MAIN") {
-            attributes.Remove("name");
-            attributes["name"] = new ValueDataNode(Name.Value);
+            attributes.Remove("id"); // Ignore the ID given to the MAIN element
 
             // Read the attributes into this descriptor
             serializationManager.Read(attributes, notNullableOverride: true, instanceProvider: () => this);

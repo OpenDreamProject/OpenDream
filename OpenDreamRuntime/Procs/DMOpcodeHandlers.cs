@@ -3155,7 +3155,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (gradientValues.Count == 0)
-                throw new Exception("bad gradient");
+                throw new DMException("bad gradient");
 
             if (!indexValue.TryGetValueAsFloat(out float index))
                 throw new FormatException("Failed to parse index as float");

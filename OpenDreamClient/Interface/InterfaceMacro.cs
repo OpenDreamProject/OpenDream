@@ -254,7 +254,7 @@ public sealed class InterfaceMacro : InterfaceElement {
         ParsedKeybind parsedKeybind;
 
         try {
-            parsedKeybind = ParsedKeybind.Parse(ElementDescriptor.Name.AsRaw());
+            parsedKeybind = ParsedKeybind.Parse(descriptor.Name.AsRaw());
         } catch (Exception e) {
             Logger.GetSawmill("opendream.macro").Warning($"Invalid keybind for macro {Id}: {e.Message}");
             return;

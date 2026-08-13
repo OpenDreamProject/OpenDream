@@ -45,12 +45,10 @@ public sealed class InterfaceMenu : InterfaceElement {
         if (string.IsNullOrEmpty(elementDescriptor.Category.Value)) {
             element = new(elementDescriptor, this);
         } else {
-            if (!MenuElementsById.TryGetValue(elementDescriptor.Category.Value, out var parentMenu) &&
-                !MenuElementsByName.TryGetValue(elementDescriptor.Category.Value, out parentMenu)) {
+            if (!MenuElementsById.TryGetValue(elementDescriptor.Category.Value, out var parentMenu)) {
                 //if category is set but the parent element doesn't exist, create it
                 var parentMenuDescriptor = new MenuElementDescriptor {
-                    Id = elementDescriptor.Category,
-                    Name = elementDescriptor.Category
+                    Id = elementDescriptor.Category
                 };
 
                 parentMenu = new(parentMenuDescriptor, this);
@@ -63,7 +61,7 @@ public sealed class InterfaceMenu : InterfaceElement {
         }
 
         MenuElementsById.Add(element.Id.AsRaw(), element);
-        MenuElementsByName[element.ElementDescriptor.Name.AsRaw()] = element;
+        MenuElementsByName[element.MenuElementDescriptor.Name.AsRaw()] = element;
         CreateMenu(); // Update the menu to include the new child
     }
 
@@ -78,7 +76,7 @@ public sealed class InterfaceMenu : InterfaceElement {
                 continue;
 
             MenuBar.Menu menu = new() {
-                Title = menuElement.ElementDescriptor.Name.AsRaw()
+                Title = menuElement.MenuElementDescriptor.Name.AsRaw()
             };
 
             // TODO: Character after '&' becomes a selection shortcut
@@ -94,12 +92,12 @@ public sealed class InterfaceMenu : InterfaceElement {
     public sealed class MenuElement(MenuElementDescriptor data, InterfaceMenu menu) : InterfaceElement(data) {
         public readonly List<MenuElement> Children = new();
 
-        private MenuElementDescriptor MenuElementDescriptor => (MenuElementDescriptor) ElementDescriptor;
+        public MenuElementDescriptor MenuElementDescriptor => (MenuElementDescriptor) ElementDescriptor;
         public DMFPropertyString Category => MenuElementDescriptor.Category;
         public DMFPropertyString Command => MenuElementDescriptor.Command;
 
         public MenuBar.MenuEntry CreateMenuEntry() {
-            string text = ElementDescriptor.Name.AsRaw();
+            string text = MenuElementDescriptor.Name.AsRaw();
             text = text.Replace("&", string.Empty); // TODO: Character after '&' becomes a selection shortcut
 
             if(Children.Count > 0) {

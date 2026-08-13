@@ -1,4 +1,4 @@
-﻿using System.Buffers;
+using System.Buffers;
 using System.IO;
 using System.Linq;
 using OpenDreamRuntime.Resources;
@@ -184,7 +184,7 @@ public sealed class DreamIcon(DreamManager dreamManager, DreamResourceManager re
             foreach (var copyStateName in icon.DMI.States.Keys) {
                 InsertState(icon, copyStateName, copyStateName,
                     copyingAllDirs ? null : copyingDirection, copyingAllFrames ? null : copyingFrame,
-                    forceSouth: false);
+                    forceSouth: isConstructor);
             }
         } else {
             InsertState(icon, isConstructor ? string.Empty : copyingState!, copyingState!,
@@ -405,7 +405,7 @@ public sealed class DreamIconOperationBlendImage : DreamIconOperationBlend {
         var resourceManager = IoCManager.Resolve<DreamResourceManager>();
 
         if (!resourceManager.TryLoadIcon(blending, out var blendingIcon)) {
-            throw new Exception($"Value {blending} is not a valid icon to blend");
+            throw new DMException($"Value {blending} is not a valid icon to blend");
         }
 
         _blending = blendingIcon.Texture;

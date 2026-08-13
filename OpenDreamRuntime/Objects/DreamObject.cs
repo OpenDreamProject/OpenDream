@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using OpenDreamRuntime.Procs;
 using System.Globalization;
 using System.Runtime.CompilerServices;
@@ -30,6 +30,13 @@ public class DreamObject {
     public int RefCount = 1; // Starts at 1 because the code creating us is considered to hold a ref to us now
 
     public virtual bool ShouldCallNew => true;
+
+    /// <summary>
+    ///     Whether this object gets deleted once nothing references it anymore.
+    ///     Objects that opt out are still reference counted, they just never die of their own accord;
+    ///     an explicit del() still deletes them.
+    /// </summary>
+    public virtual bool ShouldGarbageCollect => true;
 
     // Shortcuts to IoC dependencies & entity systems
     protected DreamManager DreamManager => ObjectDefinition.DreamManager;
@@ -141,7 +148,7 @@ public class DreamObject {
             return;
 
         RefCount--;
-        if (RefCount == 0)
+        if (RefCount == 0 && ShouldGarbageCollect)
             Delete();
     }
 
@@ -237,7 +244,7 @@ public class DreamObject {
             case "type":
             case "parent_type":
             case "vars":
-                throw new Exception($"Cannot set var \"{varName}\"");
+                throw new DMException($"Cannot set var \"{varName}\"");
             case "tag":
                 value.TryGetValueAsString(out var newTag);
 
@@ -245,9 +252,9 @@ public class DreamObject {
                 break;
             default:
                 if (ObjectDefinition.ConstVariables is not null && ObjectDefinition.ConstVariables.Contains(varName))
-                    throw new Exception($"Cannot set const var \"{varName}\" on {ObjectDefinition.Type}");
+                    throw new DMException($"Cannot set const var \"{varName}\" on {ObjectDefinition.Type}");
                 if (!ObjectDefinition.Variables.ContainsKey(varName))
-                    throw new Exception($"Cannot set var \"{varName}\" on {ObjectDefinition.Type}");
+                    throw new DMException($"Cannot set var \"{varName}\" on {ObjectDefinition.Type}");
 
                 SetVariableValue(varName, value);
                 break;

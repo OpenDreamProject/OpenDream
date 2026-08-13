@@ -1,4 +1,5 @@
-﻿using Robust.Client.Graphics;
+﻿using JetBrains.Annotations;
+using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Input;
@@ -10,11 +11,21 @@ namespace OpenDreamClient.Interface.Controls.UI;
 /// Equivalent to BYOND's CHILD control.
 /// </summary>
 /// <remarks>Do not add children directly! Use <see cref="Left"/> and <see cref="Right"/>.</remarks>
+[UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
 public sealed class Splitter : Container {
-    public float SplitterWidth {
-        get => _splitterWidth;
+    public bool ShowSplitter {
+        get;
         set {
-            _splitterWidth = value;
+            field = value;
+            _drag.Visible = field;
+            InvalidateMeasure();
+        }
+    }
+
+    public float SplitterWidth {
+        get;
+        set {
+            field = value;
             InvalidateMeasure();
         }
     }
@@ -54,17 +65,17 @@ public sealed class Splitter : Container {
     }
 
     public float SplitterPercentage {
-        get => _splitterPercentage;
+        get;
         set {
-            _splitterPercentage = Math.Clamp(value, 0.1f, 0.9f);
+            field = value;
             InvalidateMeasure();
         }
-    }
+    } = 0.5f;
 
     public bool Vertical {
-        get => _vertical;
+        get;
         set {
-            _vertical = value;
+            field = value;
             _drag.DefaultCursorShape = value ? CursorShape.HResize : CursorShape.VResize;
             InvalidateMeasure();
         }
@@ -77,9 +88,6 @@ public sealed class Splitter : Container {
 
     private readonly DragControl _drag = new();
 
-    private float _splitterWidth = 5f;
-    private float _splitterPercentage = 0.5f;
-    private bool _vertical;
     private bool _dragging;
     private Control? _left, _right;
 
@@ -141,6 +149,8 @@ public sealed class Splitter : Container {
     }
 
     private (UIBox2 LeftBox, UIBox2 DragBox, UIBox2 RightBox) CalculateSpace(Vector2 available) {
+        var splitterWidth = ShowSplitter ? SplitterWidth : 0f;
+
         if (_left != null && _right == null)
             return (UIBox2.FromDimensions(Vector2.Zero, available), default, default);
         if (_left == null && _right != null)
@@ -149,20 +159,22 @@ public sealed class Splitter : Container {
             return (default, default, default);
 
         var leftSize = Vertical
-            ? available with { X = available.X * SplitterPercentage - SplitterWidth/2 }
-            : available with { Y = available.Y * SplitterPercentage - SplitterWidth/2 };
+            ? available with { X = available.X * SplitterPercentage - splitterWidth/2 }
+            : available with { Y = available.Y * SplitterPercentage - splitterWidth/2 };
         var rightSize = Vertical
-            ? available with { X = available.X * (1f - SplitterPercentage) - SplitterWidth/2 }
-            : available with { Y = available.Y * (1f - SplitterPercentage) - SplitterWidth/2 };
-        var dragSize = Vertical
-            ? available with { X = SplitterWidth }
-            : available with { Y = SplitterWidth };
+            ? available with { X = available.X * (1f - SplitterPercentage) - splitterWidth/2 }
+            : available with { Y = available.Y * (1f - SplitterPercentage) - splitterWidth/2 };
+        var dragSize = ShowSplitter
+            ? Vertical
+                ? available with { X = splitterWidth }
+                : available with { Y = splitterWidth }
+            : Vector2.Zero;
         var dragPos = Vertical
             ? leftSize with { Y = 0f }
             : leftSize with { X = 0f };
         var rightPos = Vertical
-            ? new Vector2(leftSize.X + SplitterWidth, 0f)
-            : new Vector2(0f, leftSize.Y + SplitterWidth);
+            ? new Vector2(leftSize.X + splitterWidth, 0f)
+            : new Vector2(0f, leftSize.Y + splitterWidth);
 
         return (
             UIBox2.FromDimensions(Vector2.Zero, leftSize),

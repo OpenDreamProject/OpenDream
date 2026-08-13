@@ -20,7 +20,10 @@ public sealed class SetupCompileDm {
     [OneTimeSetUp]
     public void Compile() {
         DMCompiler.DMCompiler compiler = new();
-        List<string> files = [DmEnvironment, .. Directory.EnumerateFiles(TestFilesDirectory, "*.dm")];
+        List<string> files = [
+            DmEnvironment,
+            .. Directory.EnumerateFiles(TestFilesDirectory, "*.dm").Order(StringComparer.Ordinal),
+        ];
         bool successfulCompile = compiler.Compile(new() {
             Files = files,
             DumpPreprocessor = true,

@@ -294,6 +294,8 @@ public sealed class DMProcState : ProcState {
         {DreamProcOpcode.PickWeighted, DMOpcodeHandlers.PickWeighted},
         {DreamProcOpcode.Increment, DMOpcodeHandlers.Increment},
         {DreamProcOpcode.Decrement, DMOpcodeHandlers.Decrement},
+        {DreamProcOpcode.PreIncrement, DMOpcodeHandlers.PreIncrement},
+        {DreamProcOpcode.PreDecrement, DMOpcodeHandlers.PreDecrement},
         {DreamProcOpcode.CompareEquivalent, DMOpcodeHandlers.CompareEquivalent},
         {DreamProcOpcode.CompareNotEquivalent, DMOpcodeHandlers.CompareNotEquivalent},
         {DreamProcOpcode.Throw, DMOpcodeHandlers.Throw},
@@ -788,7 +790,7 @@ public sealed class DMProcState : ProcState {
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowInvalidReferenceType(DMReference.Type type) {
-        throw new Exception($"Invalid reference type {type}");
+        throw new DMException($"Invalid reference type {type}");
     }
 
     public DMStackArgumentInfo ReadProcArguments() {
@@ -888,27 +890,27 @@ public sealed class DMProcState : ProcState {
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowCannotAssignReferenceType(DreamReference reference) {
-        throw new Exception($"Cannot assign to reference type {reference.Type}");
+        throw new DMException($"Cannot assign to reference type {reference.Type}");
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowCannotAssignListIndex(DreamValue index, DreamValue indexing) {
-        throw new Exception($"Cannot assign to index {index} of {indexing}");
+        throw new DMException($"Cannot assign to index {index} of {indexing}");
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private void ThrowCannotAssignFieldOn(DreamReference reference, DreamValue owner) {
-        throw new Exception($"Cannot assign field \"{ResolveString(reference.Value)}\" on {owner}");
+        throw new DMException($"Cannot assign field \"{ResolveString(reference.Value)}\" on {owner}");
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowCannotAssignSrcTo(DreamValue value) {
-        throw new Exception($"Cannot assign src to {value}");
+        throw new DMException($"Cannot assign src to {value}");
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowCannotAssignUsrTo(DreamValue value) {
-        throw new Exception($"Cannot assign usr to {value}");
+        throw new DMException($"Cannot assign usr to {value}");
     }
 
     [MustDisposeResource]
@@ -995,17 +997,17 @@ public sealed class DMProcState : ProcState {
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowCannotGetValueOfReferenceType(DreamReference reference) {
-        throw new Exception($"Cannot get value of reference type {reference.Type}");
+        throw new DMException($"Cannot get value of reference type {reference.Type}");
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowCannotGetFieldSrcGlobalProc(string fieldName) {
-        throw new Exception($"Cannot get field src.{fieldName} in global proc");
+        throw new DMException($"Cannot get field src.{fieldName} in global proc");
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private void ThrowTypeHasNoField(string fieldName) {
-        throw new Exception($"Type {Instance!.ObjectDefinition.Type} has no field called \"{fieldName}\"");
+        throw new DMException($"Type {Instance!.ObjectDefinition.Type} has no field called \"{fieldName}\"");
     }
 
     public void PopReference(DreamReference reference) {
@@ -1038,7 +1040,7 @@ public sealed class DMProcState : ProcState {
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowPopInvalidType(DMReference.Type type) {
-        throw new Exception($"Cannot pop stack values of reference type {type}");
+        throw new DMException($"Cannot pop stack values of reference type {type}");
     }
 
     [MustDisposeResource]
@@ -1065,17 +1067,17 @@ public sealed class DMProcState : ProcState {
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowCannotGetFieldFromOwner(DreamValue owner, string field) {
-        throw new Exception($"Cannot get field \"{field}\" from {owner}");
+        throw new DMException($"Cannot get field \"{field}\" from {owner}");
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowInvalidAppearanceVar(string field) {
-        throw new Exception($"Invalid appearance var \"{field}\"");
+        throw new DMException($"Invalid appearance var \"{field}\"");
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowTypeHasNoField(string field, DreamObject ownerObj) {
-        throw new Exception($"Type {ownerObj.ObjectDefinition.Type} has no field called \"{field}\"");
+        throw new DMException($"Type {ownerObj.ObjectDefinition.Type} has no field called \"{field}\"");
     }
 
     [MustDisposeResource]
@@ -1102,12 +1104,12 @@ public sealed class DMProcState : ProcState {
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowCannotGetIndex(DreamValue indexing, DreamValue index) {
-        throw new Exception($"Cannot get index {index} of {indexing}");
+        throw new DMException($"Cannot get index {index} of {indexing}");
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowAttemptedToIndexString(DreamValue index) {
-        throw new Exception($"Attempted to index string with {index}");
+        throw new DMException($"Attempted to index string with {index}");
     }
 
     #endregion References
@@ -1237,7 +1239,7 @@ public sealed class DMProcState : ProcState {
                     return new DreamProcArguments(_state.GetArguments());
                 case DMCallArgumentsType.FromStackKeyed: {
                     if (proc == null)
-                        throw new Exception("Cannot use named arguments here");
+                        throw new DMException("Cannot use named arguments here");
 
                     // new /mutable_appearance(...) always uses /image/New()'s arguments, despite any overrides
                     if (proc.OwningType == _state.Proc.ObjectTree.MutableAppearance && proc.Name == "New")
@@ -1268,7 +1270,7 @@ public sealed class DMProcState : ProcState {
                             string argumentName = key.MustGetValueAsString();
                             int argumentIndex = proc.ArgumentNames.IndexOf(argumentName);
                             if (argumentIndex == -1)
-                                throw new Exception($"{proc} has no argument named \"{argumentName}\"");
+                                throw new DMException($"{proc} has no argument named \"{argumentName}\"");
 
                             arguments[argumentIndex] = value;
                         }
@@ -1278,7 +1280,7 @@ public sealed class DMProcState : ProcState {
                 }
                 case DMCallArgumentsType.FromArgumentList: {
                     if (proc == null)
-                        throw new Exception("Cannot use an arglist here");
+                        throw new DMException("Cannot use an arglist here");
                     if (!_values[0].TryGetValueAsDreamList(out var argList))
                         return new DreamProcArguments(); // Using a non-list gives you no arguments
 
@@ -1298,11 +1300,11 @@ public sealed class DMProcState : ProcState {
 
                         if (argList.ContainsKey(value)) { //Named argument
                             if (!value.TryGetValueAsString(out var argumentName))
-                                throw new Exception("List contains a non-string key, and cannot be used as an arglist");
+                                throw new DMException("List contains a non-string key, and cannot be used as an arglist");
 
                             int argumentIndex = proc.ArgumentNames.IndexOf(argumentName);
                             if (argumentIndex == -1)
-                                throw new Exception($"{proc} has no argument named \"{argumentName}\"");
+                                throw new DMException($"{proc} has no argument named \"{argumentName}\"");
 
                             arguments[argumentIndex] = argList.GetValue(value);
                         } else { //Ordered argument
@@ -1326,7 +1328,7 @@ public sealed class DMProcState : ProcState {
                     return procArgs;
                 }
                 default:
-                    throw new Exception($"Invalid arguments type {_info.Type}");
+                    throw new DMException($"Invalid arguments type {_info.Type}");
             }
         }
 

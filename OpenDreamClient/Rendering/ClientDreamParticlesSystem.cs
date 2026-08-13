@@ -40,13 +40,14 @@ public sealed partial class ClientDreamParticlesSystem : SharedDreamParticlesSys
         _particlesManager.DestroyParticleSystem(uid);
     }
 
-    private ParticleSystemArgs GetParticleSystemArgs(DreamParticlesComponent component) {
+    private ParticleSystemArgs GetParticleSystemArgs(DreamParticlesComponent comp) {
+        DreamParticlesComponent.ParticleData data = comp.Data;
         Func<Texture?> textureFunc;
-        if (component.TextureList.Length == 0)
+        if (data.TextureList.Length == 0)
             textureFunc = () => Texture.White;
         else {
-            List<DreamIcon> icons = new(component.TextureList.Length);
-            foreach (var appearance in component.TextureList) {
+            List<DreamIcon> icons = new(data.TextureList.Length);
+            foreach (var appearance in data.TextureList) {
                 DreamIcon icon = new(_renderTargetPool, _dreamInterfaceManager, _gameTiming, _clyde, _appearanceSystem);
                 icon.SetAppearance(appearance.MustGetId());
                 icons.Add(icon);
@@ -57,30 +58,30 @@ public sealed partial class ClientDreamParticlesSystem : SharedDreamParticlesSys
         }
 
         var perTick = (1f / 10f); // "Tick" refers to a BYOND standard tick of 0.1s. --DM Reference
-        var result = new ParticleSystemArgs(textureFunc, new Vector2i(component.Width, component.Height), (uint)component.Count, component.Spawning / perTick) {
-            Lifespan = () => (component.Lifespan?.Generate(_random) ?? 1f) * perTick,
-            Fadein = () => (component.FadeIn?.Generate(_random) ?? 0f) * perTick,
-            Fadeout = () => (component.FadeOut?.Generate(_random) ?? 0f) * perTick,
-            Color = component.Gradient.Length > 0
+        var result = new ParticleSystemArgs(textureFunc, new Vector2i(data.Width, data.Height), (uint)data.Count, data.Spawning / perTick) {
+            Lifespan = () => (data.Lifespan?.Generate(_random) ?? 1f) * perTick,
+            Fadein = () => (data.FadeIn?.Generate(_random) ?? 0f) * perTick,
+            Fadeout = () => (data.FadeOut?.Generate(_random) ?? 0f) * perTick,
+            Color = data.Gradient.Length > 0
                 ? lifetime => {
-                    var colorIndex = (int)(lifetime * component.Gradient.Length);
-                    colorIndex = Math.Clamp(colorIndex, 0, component.Gradient.Length - 1);
-                    return component.Gradient[colorIndex];
+                    var colorIndex = (int)(lifetime * data.Gradient.Length);
+                    colorIndex = Math.Clamp(colorIndex, 0, data.Gradient.Length - 1);
+                    return data.Gradient[colorIndex];
                 }
                 : _ => Color.White,
             Acceleration = (_, velocity) => { // TODO: Acceleration needs to only update every tick
-                var drift = (component.Drift?.GenerateVector3(_random) ?? Vector3.Zero);
-                var friction = (component.Friction?.GenerateVector3(_random) ?? Vector3.Zero); // TODO: Only calculated once per particle
+                var drift = (data.Drift?.GenerateVector3(_random) ?? Vector3.Zero);
+                var friction = (data.Friction?.GenerateVector3(_random) ?? Vector3.Zero); // TODO: Only calculated once per particle
 
                 return drift - (velocity * friction);
             },
-            SpawnPosition = () => component.SpawnPosition?.GenerateVector3(_random) ?? Vector3.Zero,
-            SpawnVelocity = () => component.SpawnVelocity?.GenerateVector3(_random) ?? Vector3.Zero,
+            SpawnPosition = () => data.SpawnPosition?.GenerateVector3(_random) ?? Vector3.Zero,
+            SpawnVelocity = () => data.SpawnVelocity?.GenerateVector3(_random) ?? Vector3.Zero,
             Transform = _ => { // TODO: Needs to only be performed every tick
-                var scale = component.Scale.GenerateVector2(_random);
-                var rotation = component.Rotation?.Generate(_random) ?? 0f;
-                var growth = component.Growth?.GenerateVector2(_random) ?? Vector2.Zero;
-                var spin = component.Spin?.Generate(_random) ?? 0f;
+                var scale = data.Scale.GenerateVector2(_random);
+                var rotation = data.Rotation?.Generate(_random) ?? 0f;
+                var growth = data.Growth?.GenerateVector2(_random) ?? Vector2.Zero;
+                var spin = data.Spin?.Generate(_random) ?? 0f;
                 return Matrix3x2.CreateScale(scale.X + growth.X, scale.Y + growth.Y) *
                        Matrix3x2.CreateRotation(rotation + spin);
             },

@@ -45,10 +45,12 @@ public sealed class InterfaceMenu : InterfaceElement {
         if (string.IsNullOrEmpty(elementDescriptor.Category.Value)) {
             element = new(elementDescriptor, this);
         } else {
-            if (!MenuElementsById.TryGetValue(elementDescriptor.Category.Value, out var parentMenu)) {
+            if (!MenuElementsById.TryGetValue(elementDescriptor.Category.Value, out var parentMenu) &&
+                !MenuElementsByName.TryGetValue(elementDescriptor.Category.Value, out parentMenu)) {
                 //if category is set but the parent element doesn't exist, create it
                 var parentMenuDescriptor = new MenuElementDescriptor {
-                    Id = elementDescriptor.Category
+                    Id = elementDescriptor.Category,
+                    Name = elementDescriptor.Category
                 };
 
                 parentMenu = new(parentMenuDescriptor, this);

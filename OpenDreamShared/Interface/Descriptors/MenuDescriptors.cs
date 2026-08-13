@@ -38,8 +38,8 @@ public sealed partial class MenuDescriptor : ElementDescriptor {
 
 public sealed partial class MenuElementDescriptor : ElementDescriptor {
     [DataField("name")]
-    public DMFPropertyString Name { get; private set; }
-    
+    public DMFPropertyString Name { get; set; }
+
     [DataField("command")]
     public DMFPropertyString Command { get; private set; }
 

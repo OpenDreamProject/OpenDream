@@ -222,7 +222,7 @@ public class DreamObjectMovable : DreamObjectAtom {
                     IncRef();
                 break;
             case null:
-                TransformSystem.SetParent(Entity, MapManager.GetMapEntityId(MapId.Nullspace));
+                TransformSystem.SetParent(Entity, MapManager.GetMapOrInvalid(MapId.Nullspace));
                 if (oldLoc is not null)
                     DecRef();
                 break;

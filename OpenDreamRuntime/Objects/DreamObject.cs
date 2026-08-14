@@ -44,7 +44,7 @@ public class DreamObject {
     protected DreamObjectTree ObjectTree => ObjectDefinition.ObjectTree;
     protected AtomManager AtomManager => ObjectDefinition.AtomManager;
     protected IDreamMapManager DreamMapManager => ObjectDefinition.DreamMapManager;
-    protected IMapManager MapManager => ObjectDefinition.MapManager;
+    protected SharedMapSystem MapManager => ObjectDefinition.MapManager;
     protected DreamResourceManager DreamResourceManager => ObjectDefinition.DreamResourceManager;
     protected WalkManager WalkManager => ObjectDefinition.WalkManager;
     protected IEntityManager EntityManager => ObjectDefinition.EntityManager;

@@ -491,12 +491,15 @@ public sealed class DreamIconOperationDrawBox(Color rgb, Vector2i startPixel, Ve
 
     public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, AtomDirection dir, UIBox2i bounds) {
         // FIXME: This stuff can definitely be calculated once/ahead of time but we can't guarantee this in OnApply
-        var workingBounds = new UIBox2i(
-            Math.Max(_bottomLeft.X, bounds.Left),
-            Math.Max(bounds.Bottom - (_topRight.Y - bounds.Top), bounds.Top),
-            Math.Min(_topRight.X, bounds.Right),
-            Math.Min(bounds.Bottom - (_bottomLeft.Y - bounds.Top), bounds.Bottom)
-        );
+        var left = Math.Max(_bottomLeft.X, bounds.Left);
+        var top = Math.Max(bounds.Bottom - (_topRight.Y - bounds.Top), bounds.Top);
+        var right = Math.Min(_topRight.X, bounds.Right);
+        var bottom = Math.Min(bounds.Bottom - (_bottomLeft.Y - bounds.Top), bounds.Bottom);
+
+        if (left > right || top > bottom)
+            return; // The box is entirely outside this frame's bounds; nothing to draw
+
+        var workingBounds = new UIBox2i(left, top, right, bottom);
 
         var endPosY = Math.Min(bounds.Bottom, workingBounds.Bottom);
         var endPosX = Math.Min(bounds.Right, workingBounds.Right);

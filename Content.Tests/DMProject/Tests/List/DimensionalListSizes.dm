@@ -28,7 +28,9 @@ var/global/second_dimension_calls = 0
 	return 3
 
 /proc/RunTest()
-	ASSERT(isnull(make_one_dimension(-1)))
+	var/list/neg_size = make_one_dimension(-1)
+	ASSERT(islist(neg_size))
+	ASSERT(neg_size.len == 0)
 
 	var/list/negative_fraction = make_one_dimension(-0.5)
 	var/list/positive_fraction = make_one_dimension(1.5)

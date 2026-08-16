@@ -33,7 +33,8 @@ public sealed class LateralProcTests {
             startInfo.ArgumentList.Add(disassembler);
             startInfo.ArgumentList.Add(jsonFile);
 
-            using var process = new Process { StartInfo = startInfo };
+            using var process = new Process();
+            process.StartInfo = startInfo;
             Assert.That(process.Start(), Is.True);
 
             Task<string> outputTask = process.StandardOutput.ReadToEndAsync();
@@ -73,8 +74,8 @@ public sealed class LateralProcTests {
                 "ReturnFloat 3"
             }), output);
             Assert.That(output, Does.Contain(completion));
-            Assert.That(output.Split(notice, StringSplitOptions.None), Has.Length.EqualTo(2), output);
-            Assert.That(output.Split(completion, StringSplitOptions.None), Has.Length.EqualTo(2), output);
+            Assert.That(output.Split(notice), Has.Length.EqualTo(2), output);
+            Assert.That(output.Split(completion), Has.Length.EqualTo(2), output);
             Assert.That(output.IndexOf(notice, StringComparison.Ordinal),
                 Is.LessThan(output.IndexOf("ReturnFloat 1", StringComparison.Ordinal)), output);
             Assert.That(output.IndexOf(completion, StringComparison.Ordinal),

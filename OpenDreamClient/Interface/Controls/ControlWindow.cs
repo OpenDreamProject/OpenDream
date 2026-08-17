@@ -22,7 +22,7 @@ public sealed partial class ControlWindow : InterfaceControl {
     public string Title => WindowDescriptor.Title.Value;
     public InterfaceMacroSet Macro => InterfaceManager.MacroSets[WindowDescriptor.Macro.AsRaw()];
 
-    private WindowDescriptor WindowDescriptor => (WindowDescriptor)ElementDescriptor;
+    public WindowDescriptor WindowDescriptor => (WindowDescriptor)ElementDescriptor;
 
     private PanelContainer _menuContainer = default!;
     private LayoutContainer _canvas = default!;

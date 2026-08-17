@@ -87,8 +87,12 @@ public sealed partial class DreamRefManager {
             RefType.DreamObjectFilter,
             RefType.DreamObjectMovable,
             RefType.DreamObjectList,
+            RefType.DreamObjectAssocList,
+            RefType.DreamObjectSpecialList,
             RefType.DreamObjectListArgs,
             RefType.DreamObjectCallee,
+            RefType.DreamObjectVector,
+            RefType.DreamObjectSavefile,
         ];
 
         foreach (var type in bucketTypes) {
@@ -159,8 +163,12 @@ public sealed partial class DreamRefManager {
                 DreamObjectFilter filter => CreateRef(RefType.DreamObjectFilter, filter),
                 DreamObjectMovable => CreateRef(RefType.DreamObjectMovable, dreamObject),
                 DreamObjectCallee callee => CreateRef(RefType.DreamObjectCallee, callee),
+                DreamObjectVector vector => CreateRef(RefType.DreamObjectVector, vector),
+                DreamObjectSavefile savefile => CreateRef(RefType.DreamObjectSavefile, savefile),
                 ProcArgsList argsList => CreateRef(RefType.DreamObjectListArgs, argsList),
+                DreamAssocList assocList => CreateRef(RefType.DreamObjectAssocList, assocList),
                 DreamList list when list.GetType() == typeof(DreamList) => CreateRef(RefType.DreamObjectList, list),
+                DreamList list => CreateRef(RefType.DreamObjectSpecialList, list),
                 _ => CreateRef(RefType.DreamObjectDatum, dreamObject)
             };
         }
@@ -214,10 +222,15 @@ public sealed partial class DreamRefManager {
             case RefType.DreamObjectImage:
             case RefType.DreamObjectFilter:
             case RefType.DreamObjectList:
+            case RefType.DreamObjectListArgs:
+            case RefType.DreamObjectAssocList:
+            case RefType.DreamObjectSpecialList:
             case RefType.DreamObjectMob:
             case RefType.DreamObjectTurf:
             case RefType.DreamObjectMovable:
             case RefType.DreamObjectCallee:
+            case RefType.DreamObjectVector:
+            case RefType.DreamObjectSavefile:
                 return new(GetFromBucket(@ref));
 
             case RefType.String:
@@ -383,7 +396,9 @@ public enum RefType : uint {
     DreamObjectImage = 0xD000000,
     DreamObjectList = 0xF000000,
     DreamObjectListArgs = 0x10000000,
+    DreamObjectSpecialList = 0x1A000000, // placeholder refid is of world.contents
     DreamObjectDatum = 0x21000000,
+    DreamObjectSavefile = 0x23000000,
     String = 0x6000000,
     DreamType = 0x9000000, //in byond type is from 0x8 to 0xb, but fuck that
     DreamResource = 0x27000000, //Equivalent to file
@@ -391,5 +406,7 @@ public enum RefType : uint {
     Proc = 0x26000000,
     Number = 0x2A000000,
     DreamObjectFilter = 0x53000000,
+    DreamObjectAssocList = 0x55000000,
+    DreamObjectVector = 0x57000000,
     DreamObjectCallee = 0x58000000,
 }

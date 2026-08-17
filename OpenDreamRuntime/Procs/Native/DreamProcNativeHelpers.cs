@@ -135,7 +135,7 @@ internal static partial class DreamProcNativeHelpers {
             } else if (arg.TryGetValueAsString(out var distString)) {
                 range = new ViewRange(distString);
             } else if (!arg.IsNull) { // null range arg is handled by DefaultView above
-                throw new Exception($"Invalid argument: {arg}");
+                throw new DMException($"Invalid argument: {arg}");
             }
         }
 
@@ -462,6 +462,25 @@ internal static partial class DreamProcNativeHelpers {
         return true;
     }
 
+    public static bool TryParseColor(DreamValue value, out Color color) {
+        value.TryGetValueAsString(out var str);
+        return TryParseColor(str, out color);
+    }
+
+    public static bool TryParseColor(string? value, out Color color) {
+        if(string.IsNullOrEmpty(value)) {
+            value = ColorHelpers.Transparent;
+        }
+
+        if(!ColorHelpers.TryParseColor(value, out var maybeColor)) {
+            color = default;
+            return false;
+        }
+
+        color = maybeColor;
+        return true;
+    }
+
     /// <summary>
     /// Takes in a DreamList and tries to interpret it as representing a color matrix, for use in filters and /atom.color.
     /// </summary>
@@ -555,7 +574,7 @@ internal static partial class DreamProcNativeHelpers {
             return null;
 
         if (radix < 2 || radix > 36)
-            throw new Exception($"Invalid radix: {radix}");
+            throw new DMException($"Invalid radix: {radix}");
 
         bool negative = value[0] == '-';
         if (negative || value[0] == '+')

@@ -14,6 +14,15 @@ internal class DMProc(ProcDefinitionJson json) {
         public readonly string Text = text;
     }
 
+    public int MaxVariableId = json.MaxVariableId;
+    public int MaxStackSize = json.MaxStackSize;
+    public List<ProcArgumentJson>? Arguments = json.Arguments;
+    public List<LocalVariableJson>? Locals = json.Locals;
+    public bool IsVerb = json.IsVerb;
+    public string? VerbName = json.VerbName;
+    public string? VerbCategory = json.VerbCategory;
+    public string? VerbDesc = json.VerbDesc;
+    public sbyte Invisibility = json.Invisibility;
     public string Name = json.Name;
     public int OwningTypeId = json.OwningTypeId;
     public byte[] Bytecode = json.Bytecode ?? Array.Empty<byte>();
@@ -24,6 +33,33 @@ internal class DMProc(ProcDefinitionJson json) {
         List<DecompiledOpcode> decompiled = GetDecompiledOpcodes(out var labeledPositions);
 
         StringBuilder result = new StringBuilder();
+
+        result.AppendLine($"Max stack size: {MaxStackSize}");
+        result.AppendLine($"Max variable ID: {MaxVariableId}");
+
+        if (Arguments is { Count: > 0 }) {
+            result.AppendLine("Arguments:");
+            foreach (var argument in Arguments) {
+                result.AppendLine($"\t{argument.Name}: {argument.Type}");
+            }
+        }
+
+        if (Locals is { Count: > 0 }) {
+            result.AppendLine("Locals:");
+            foreach (var local in Locals) {
+                result.AppendLine($"\tOffset: {local.Offset}, Remove: {local.Remove}, Add: {local.Add}");
+            }
+        }
+
+        if (IsVerb) {
+            result.AppendLine("Verb:");
+            result.AppendLine($"\tName: {VerbName}");
+            result.AppendLine($"\tCategory: {VerbCategory}");
+            result.AppendLine($"\tDescription: {VerbDesc}");
+            result.AppendLine($"\tInvisibility: {Invisibility}");
+        }
+
+        result.AppendLine();
         foreach (DecompiledOpcode decompiledOpcode in decompiled) {
             if (labeledPositions.Contains(decompiledOpcode.Position)) {
                 result.AppendFormat("0x{0:x}", decompiledOpcode.Position);

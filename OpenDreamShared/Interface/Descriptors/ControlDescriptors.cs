@@ -68,7 +68,7 @@ public sealed partial class WindowDescriptor : ControlDescriptor {
     [DataField("alpha")]
     public DMFPropertyNum Alpha = new(255);
     [DataField("statusbar")]
-    public DMFPropertyBool StatusBar = new(false);
+    public DMFPropertyBool StatusBar = new(true);
     [DataField("transparent-color")]
     public DMFPropertyColor TransparentColor = new(Color.Transparent);
     [DataField("can-close")]
@@ -115,8 +115,7 @@ public sealed partial class WindowDescriptor : ControlDescriptor {
             return null;
 
         if (elementTypeValue.Value == "MAIN") {
-            attributes.Remove("name");
-            attributes["name"] = new ValueDataNode(Name.Value);
+            attributes.Remove("id"); // Ignore the ID given to the MAIN element
 
             // Read the attributes into this descriptor
             serializationManager.Read(attributes, notNullableOverride: true, instanceProvider: () => this);

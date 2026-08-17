@@ -1,4 +1,4 @@
-﻿using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamShared.Dream;
 using Robust.Shared.Random;
@@ -24,7 +24,7 @@ internal static class DreamProcNativeGenerator {
                 return new DreamValue(resultObj);
             }
             default:
-                throw new Exception($"Invalid generator for Rand: {genObj}");
+                throw new DMException($"Invalid generator for Rand: {genObj}");
         }
     }
 }

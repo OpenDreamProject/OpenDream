@@ -30,8 +30,6 @@ public abstract class DMASTExpression(Location location) : DMASTNode(location) {
 /// <remarks>Emit an error code before creating!</remarks>
 public sealed class DMASTInvalidExpression(Location location) : DMASTExpression(location);
 
-public sealed class DMASTVoid(Location location) : DMASTExpression(location);
-
 public sealed class DMASTIdentifier(Location location, string identifier) : DMASTExpression(location) {
     public readonly string Identifier = identifier;
 }

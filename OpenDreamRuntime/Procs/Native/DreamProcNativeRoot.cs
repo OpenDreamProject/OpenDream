@@ -1820,15 +1820,8 @@ internal static class DreamProcNativeRoot {
         (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, usr as DreamObjectAtom, bundle.Arguments);
         if (center is null)
             return new DreamValue(bundle.ObjectTree.CreateList());
-        DreamList rangeList = bundle.ObjectTree.CreateList(range.Height * range.Width);
-        foreach (var turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
-            rangeList.AddValue(new DreamValue(turf));
-            foreach (DreamValue content in turf.Contents.EnumerateValues()) {
-                rangeList.AddValue(content);
-            }
-        }
 
-        return new DreamValue(rangeList);
+        return new(DreamProcNativeHelpers.HandleRange(center, range, false));
     }
 
     [DreamProc("oview")]
@@ -1978,44 +1971,7 @@ internal static class DreamProcNativeRoot {
         if (center is null)
             return new DreamValue(bundle.ObjectTree.CreateList());
 
-        DreamList rangeList = bundle.ObjectTree.CreateList(range.Height * range.Width);
-
-        //Have to include centre
-        rangeList.AddValue(new DreamValue(center));
-
-        if(center.TryGetVariable("contents", out var centerContents) && centerContents.TryGetValueAsDreamList(out var centerContentsList)) {
-            foreach(DreamValue content in centerContentsList.EnumerateValues()) {
-                rangeList.AddValue(content);
-            }
-        }
-
-        centerContents.Dispose();
-
-        // If it's not a /turf, we have to include its loc and the loc's contents
-        if (center is not DreamObjectTurf && center.TryGetVariable("loc",out DreamValue centerLoc)) {
-            if (centerLoc.TryGetValueAsDreamObject<DreamObjectAtom>(out var centerLocObject)) {
-                rangeList.AddValue(centerLoc);
-
-                using var contents = centerLocObject.GetVariable("contents");
-                if (contents.TryGetValueAsDreamList(out var locContentsList)) {
-                    foreach (DreamValue content in locContentsList.EnumerateValues()) {
-                        rangeList.AddValue(content);
-                    }
-                }
-            }
-
-            centerLoc.Dispose();
-        }
-
-        //And then everything else
-        foreach (var turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
-            rangeList.AddValue(new DreamValue(turf));
-            foreach (DreamValue content in turf.Contents.EnumerateValues()) {
-                rangeList.AddValue(content);
-            }
-        }
-
-        return new DreamValue(rangeList);
+        return new(DreamProcNativeHelpers.HandleRange(center, range, true));
     }
 
     [DreamProc("ref")]

@@ -205,16 +205,14 @@ internal static partial class DreamProcNativeHelpers {
             }
 
             return rangeList;
-        }
-        else if(center is DreamObjectTurf turfCenter) {
+        } else if(center is DreamObjectTurf turfCenter) {
             if(includeCenter) { // if we're orange, we want to skip the else block too
                 AddToList(new(center));
                 foreach(DreamValue content in turfCenter.Contents.EnumerateValues()) {
                     AddToList(content);
                 }
             }
-        }
-        else { // we're getting the range of a container
+        } else { // we're getting the range of a container
             // add our contents first
             if(includeCenter) {
                 if(center.TryGetVariable("contents", out var centerContents) && centerContents.TryGetValueAsDreamList(out var centerContentsList)) {

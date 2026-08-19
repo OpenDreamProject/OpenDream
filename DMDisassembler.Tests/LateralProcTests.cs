@@ -62,23 +62,27 @@ public sealed class LateralProcTests {
             const string notice = "Notice: Found 3 definitions of target(); decompiling all in source order.";
             const string completion = "Finished decompiling all 3 definitions of target().";
             const string missing = "No procs named \"missing\"";
-            string[] definitions = output.Split(Environment.NewLine)
+            int noticeIndex = output.IndexOf(notice, StringComparison.Ordinal);
+            int completionIndex = output.IndexOf(completion, StringComparison.Ordinal);
+            Assert.That(noticeIndex, Is.GreaterThanOrEqualTo(0), output);
+            Assert.That(completionIndex, Is.GreaterThan(noticeIndex), output);
+
+            string targetOutput = output[noticeIndex..completionIndex];
+            string[] definitions = targetOutput.Split('\n')
                 .Select(line => line.Trim())
                 .Where(line => line.StartsWith("ReturnFloat", StringComparison.Ordinal))
                 .ToArray();
 
-            Assert.That(output, Does.Contain(notice));
             Assert.That(definitions, Is.EqualTo(new[] {
                 "ReturnFloat 1",
                 "ReturnFloat 2",
                 "ReturnFloat 3"
             }), output);
-            Assert.That(output, Does.Contain(completion));
             Assert.That(output.Split(notice), Has.Length.EqualTo(2), output);
             Assert.That(output.Split(completion), Has.Length.EqualTo(2), output);
-            Assert.That(output.IndexOf(notice, StringComparison.Ordinal),
+            Assert.That(noticeIndex,
                 Is.LessThan(output.IndexOf("ReturnFloat 1", StringComparison.Ordinal)), output);
-            Assert.That(output.IndexOf(completion, StringComparison.Ordinal),
+            Assert.That(completionIndex,
                 Is.GreaterThan(output.LastIndexOf("ReturnFloat 3", StringComparison.Ordinal))
                     .And.LessThan(output.IndexOf("ReturnFloat 4", StringComparison.Ordinal)), output);
             Assert.That(output.IndexOf(missing, StringComparison.Ordinal),

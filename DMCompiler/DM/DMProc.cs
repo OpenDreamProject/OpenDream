@@ -342,35 +342,25 @@ internal sealed class DMProc {
                         break;
                     }
 
-                    DMASTExpression? rangeExpression = null; // defaults to world.view
-                    DMASTIdentifier? centerIdentifier = null; // defaults to usr
+                    DMASTExpression? rangeExpression = null;
 
+                    // BYOND allows you to set usr even though it's redundant so we have to handle that
                     if(parameters.Length == 2) {
-                        if(parameters.FirstOrDefault()?.Value is DMASTIdentifier firstIdent) {
-                            centerIdentifier = firstIdent;
+                        if(parameters.FirstOrDefault(exp => exp.Value is DMASTIdentifier { Identifier: "usr"})?.Value is DMASTIdentifier usrIdent) {
+                            rangeExpression = parameters.FirstOrDefault(exp => !exp.Value.Equals(usrIdent))?.Value;
+                            _compiler.Emit(WarningCode.MalformedSetStatement, usrIdent.Location, "Specifying usr is redundant");
                         }
-                        else if(parameters.LastOrDefault()?.Value is DMASTIdentifier lastIdent) {
-                            centerIdentifier = lastIdent;
+                        else {
+                            _compiler.Emit(WarningCode.InvalidSetStatement, callable.Location, "Bad range arguments for src setting");
                         }
-
-                        rangeExpression = parameters.First(exp => !exp.Value.Equals(centerIdentifier)).Value;
                     }
                     else {
                         var theExpression = parameters.FirstOrDefault()?.Value;
-                        if(theExpression is DMASTIdentifier onlyIdent) {
-                            centerIdentifier = onlyIdent;
+                        if(theExpression is DMASTIdentifier { Identifier: "usr"}) {
+                            _compiler.Emit(WarningCode.MalformedSetStatement, theExpression.Location, "Specifying usr is redundant");
                         }
                         else {
                             rangeExpression = theExpression;
-                        }
-                    }
-
-                    if(centerIdentifier is not null) {
-                        if(centerIdentifier.Identifier is "src") {
-                            _compiler.Emit(WarningCode.MalformedSetStatement, centerIdentifier.Location, "Center will always be usr");
-                        }
-                        else if(centerIdentifier.Identifier is not "usr") {
-                            _compiler.Emit(WarningCode.InvalidSetStatement, centerIdentifier.Location, "Center can only be usr or src");
                         }
                     }
 

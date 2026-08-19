@@ -363,6 +363,7 @@ internal sealed class DMProc {
                     }
 
                     if(callType is "view" or "oview") {
+                        _compiler.UnimplementedWarning(callable.Location, "src = view() is unimplemented and defaults to src = range()");
                         if (statementSet.WasInKeyword)
                             VerbSrc = callType == "view" ? VerbSrcEnum.InView : VerbSrcEnum.InOView;
                         else

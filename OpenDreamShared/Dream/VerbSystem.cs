@@ -155,6 +155,13 @@ public static class VerbAccessibilityExtensions {
             or VerbSystem.VerbAccessibility.ORange
             or VerbSystem.VerbAccessibility.InORange;
 
+    public static bool IsRange(this VerbSystem.VerbAccessibility accessibility) =>
+        accessibility
+            is VerbSystem.VerbAccessibility.ORange
+            or VerbSystem.VerbAccessibility.InORange
+            or VerbSystem.VerbAccessibility.Range
+            or VerbSystem.VerbAccessibility.InRange;
+
     public static bool IsView(this VerbSystem.VerbAccessibility accessibility) =>
         accessibility
             is VerbSystem.VerbAccessibility.OView

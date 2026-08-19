@@ -336,7 +336,7 @@ internal sealed class DMProc {
                     _compiler.UnimplementedWarning(statementSet.Location,
                         "'set src = world.contents' is unimplemented");
                     break;
-                case DMASTProcCall {Callable: DMASTCallableProcIdentifier {Identifier: { } callType and ("view" or "oview" or "range" or "orange")} callable, Parameters: {} parameters}:
+                case DMASTProcCall {Callable: DMASTCallableProcIdentifier {Identifier: { } callType and ("view" or "oview" or "range" or "orange")} callable, Parameters: var parameters}:
                     if(parameters.Length > 2) {
                         _compiler.Emit(WarningCode.BadArgument, callable.Location, "Cannot specify more than one argument");
                         break;

@@ -151,12 +151,14 @@ public sealed partial class ClientVerbSystem : VerbSystem {
                     case VerbAccessibility.InRange:
                     case VerbAccessibility.ORange:
                     case VerbAccessibility.InORange: {
-                        if(_playerManager.LocalEntity is not EntityUid usrUid)
+                        if(_playerManager.LocalEntity is not null)
                             continue;
                         if(verb.Range < 0)
                             continue;
 
+                        var usrUid = _playerManager.LocalEntity;
                         var srcUid = entity;
+
                         if(!_xformQuery.TryGetComponent(usrUid, out var usrXform) || !_xformQuery.TryGetComponent(srcUid, out var srcXform))
                             continue;
 

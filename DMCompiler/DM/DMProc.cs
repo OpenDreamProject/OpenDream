@@ -356,12 +356,12 @@ internal sealed class DMProc {
                         rangeExpression = parameters.First(exp => !exp.Value.Equals(centerIdentifier)).Value;
                     }
                     else {
-                        var the_expression = parameters.FirstOrDefault()?.Value;
-                        if(the_expression is DMASTIdentifier onlyIdent) {
+                        var theExpression = parameters.FirstOrDefault()?.Value;
+                        if(theExpression is DMASTIdentifier onlyIdent) {
                             centerIdentifier = onlyIdent;
                         }
                         else {
-                            rangeExpression = the_expression;
+                            rangeExpression = theExpression;
                         }
                     }
 

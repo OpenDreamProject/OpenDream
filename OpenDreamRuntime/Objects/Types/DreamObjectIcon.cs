@@ -1,4 +1,4 @@
-﻿using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Procs;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -21,11 +21,15 @@ public sealed class DreamObjectIcon : DreamObject {
 
         if (!icon.IsNull) {
             if (icon.TryGetValueAsDreamObject<DreamObjectIcon>(out var iconObj)) {
-                // Copy the DreamIcon rather than create the entire DMI from it
-                Icon.CopyFrom(iconObj.Icon);
+                // Copy directly only when no constructor selectors were supplied; otherwise filter the source DMI.
+                if (state.IsNull && dir.IsNull && frame.IsNull && moving.IsNull) {
+                    Icon.CopyFrom(iconObj.Icon);
+                } else {
+                    Icon.InsertStates(iconObj.Icon.GenerateDMI(), state, dir, frame, isConstructor: true);
+                }
             } else {
                 if (!DreamResourceManager.TryLoadIcon(icon, out var iconRsc))
-                    throw new Exception($"Cannot create an icon from {icon}");
+                    throw new DMException($"Cannot create an icon from {icon}");
 
                 Icon.InsertStates(iconRsc, state, dir, frame, isConstructor: true);
             }

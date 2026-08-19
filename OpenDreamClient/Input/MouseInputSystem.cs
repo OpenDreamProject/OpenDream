@@ -20,7 +20,7 @@ namespace OpenDreamClient.Input;
 internal sealed partial class MouseInputSystem : SharedMouseInputSystem {
     [Dependency] private IInputManager _inputManager = default!;
     [Dependency] private IUserInterfaceManager _userInterfaceManager = default!;
-    [Dependency] private IMapManager _mapManager = default!;
+    [Dependency] private SharedMapSystem _mapManager = default!;
     [Dependency] private IOverlayManager _overlayManager = default!;
     [Dependency] private IEntityManager _entityManager = default!;
     [Dependency] private MapSystem _mapSystem = default!;

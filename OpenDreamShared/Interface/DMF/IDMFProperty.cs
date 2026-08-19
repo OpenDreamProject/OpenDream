@@ -418,9 +418,9 @@ public struct DMFPropertyColor : IDMFProperty {
         if (stringValue.Equals("none", StringComparison.OrdinalIgnoreCase) || string.IsNullOrEmpty(stringValue)) {
             Value = Color.Transparent;
         } else {
-            var deserializedColor = Color.TryFromName(stringValue, out var color)
+            Color? deserializedColor = Color.TryFromName(stringValue, out var color)
                     ? color :
-                    Color.TryFromHex(stringValue);
+                    Color.TryFromHex(stringValue, out var hexColor) ? hexColor : null;
 
             if (deserializedColor is null)
                 throw new Exception($"Value {stringValue} was not a valid DMF color value!");

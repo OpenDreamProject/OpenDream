@@ -138,7 +138,7 @@ public class DreamObjectMovable : DreamObjectAtom {
             }
             case "loc": {
                 if (!value.TryGetValueAsDreamObject<DreamObjectAtom>(out var newLoc) && !value.IsNull)
-                    throw new Exception($"Invalid loc {value}");
+                    throw new DMException($"Invalid loc {value}");
 
                 SetLoc(newLoc);
                 break;
@@ -222,7 +222,7 @@ public class DreamObjectMovable : DreamObjectAtom {
                     IncRef();
                 break;
             case null:
-                TransformSystem.SetParent(Entity, MapManager.GetMapEntityId(MapId.Nullspace));
+                TransformSystem.SetParent(Entity, MapManager.GetMapOrInvalid(MapId.Nullspace));
                 if (oldLoc is not null)
                     DecRef();
                 break;

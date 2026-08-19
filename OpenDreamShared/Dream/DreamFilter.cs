@@ -1,6 +1,7 @@
 using Robust.Shared.Serialization;
 using Robust.Shared.ViewVariables;
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using Robust.Shared.Maths;
 using Robust.Shared.Serialization.Manager.Attributes;
@@ -23,26 +24,27 @@ public partial record DreamFilter {
     [ViewVariables(VVAccess.ReadOnly), DataField("name")]
     public string? FilterName;
 
-    public static Type? GetType(string filterType) {
-        return filterType switch {
-            "alpha" => typeof(DreamFilterAlpha),
-            "angular_blur" => typeof(DreamFilterAngularBlur),
-            "bloom" => typeof(DreamFilterBloom),
-            "blur" => typeof(DreamFilterBlur),
-            "color" => typeof(DreamFilterColor),
-            "displace" => typeof(DreamFilterDisplace),
-            "drop_shadow" => typeof(DreamFilterDropShadow),
-            "layer" => typeof(DreamFilterLayer),
-            "motion_blur" => typeof(DreamFilterMotionBlur),
-            "outline" => typeof(DreamFilterOutline),
-            "radial_blur" => typeof(DreamFilterRadialBlur),
-            "rays" => typeof(DreamFilterRays),
-            "ripple" => typeof(DreamFilterRipple),
-            "wave" => typeof(DreamFilterWave),
-            "greyscale" => typeof(DreamFilterGreyscale),
-            _ => null
-        };
-    }
+    private static readonly Dictionary<string, Type> FilterTypes = new() {
+        ["alpha"] = typeof(DreamFilterAlpha),
+        ["angular_blur"] = typeof(DreamFilterAngularBlur),
+        ["bloom"] = typeof(DreamFilterBloom),
+        ["blur"] = typeof(DreamFilterBlur),
+        ["color"] = typeof(DreamFilterColor),
+        ["displace"] = typeof(DreamFilterDisplace),
+        ["drop_shadow"] = typeof(DreamFilterDropShadow),
+        ["layer"] = typeof(DreamFilterLayer),
+        ["motion_blur"] = typeof(DreamFilterMotionBlur),
+        ["outline"] = typeof(DreamFilterOutline),
+        ["radial_blur"] = typeof(DreamFilterRadialBlur),
+        ["rays"] = typeof(DreamFilterRays),
+        ["ripple"] = typeof(DreamFilterRipple),
+        ["wave"] = typeof(DreamFilterWave),
+        ["greyscale"] = typeof(DreamFilterGreyscale),
+    };
+
+    public static IEnumerable<Type> AllTypes => FilterTypes.Values;
+
+    public static Type? GetType(string filterType) => FilterTypes.GetValueOrDefault(filterType);
 
     /// <summary>
     /// Calculate the size of the texture necessary to render this filter

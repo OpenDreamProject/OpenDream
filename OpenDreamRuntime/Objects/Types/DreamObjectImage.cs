@@ -11,6 +11,7 @@ public sealed class DreamObjectImage : DreamObject {
     private DreamObject? _loc;
     private DreamList _overlays;
     private DreamList _underlays;
+    private readonly DreamList _visContents;
     private readonly DreamList _filters;
     public readonly bool IsMutableAppearance;
     public MutableAppearance? MutableAppearance;
@@ -31,11 +32,13 @@ public sealed class DreamObjectImage : DreamObject {
             // /mutable_appearance.overlays and /mutable_appearance.underlays are normal lists
             _overlays = ObjectTree.CreateList();
             _underlays = ObjectTree.CreateList();
+            _visContents = ObjectTree.CreateList();
             _filters = ObjectTree.CreateList();
             IsMutableAppearance = true;
         } else {
             _overlays = new DreamOverlaysList(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
             _underlays = new DreamOverlaysList(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
+            _visContents = new DreamVisContentsList(ObjectTree.List.ObjectDefinition, PvsOverrideSystem, this);
             _filters = new DreamFilterList(ObjectTree.List.ObjectDefinition, this);
             IsMutableAppearance = false;
             Entity = EntityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace)); //spawning an entity in nullspace means it never actually gets sent to any clients until it's placed on the map, or it gets a PVS override
@@ -96,6 +99,10 @@ public sealed class DreamObjectImage : DreamObject {
             case "underlays":
                 _underlays.IncRef();
                 value = new(_underlays);
+                return true;
+            case "vis_contents":
+                _visContents.IncRef();
+                value = new(_visContents);
                 return true;
             case "filters":
                 _filters.IncRef();
@@ -203,6 +210,22 @@ public sealed class DreamObjectImage : DreamObject {
 
                 break;
             }
+            case "vis_contents": {
+                value.TryGetValueAsDreamList(out var valueList);
+
+                _visContents.Cut();
+
+                if (valueList != null) {
+                    // TODO: This should postpone UpdateAppearance until after everything is added
+                    foreach (DreamValue visContentValue in valueList.EnumerateValues()) {
+                        _visContents.AddValue(visContentValue);
+                    }
+                } else if (!value.IsNull) {
+                    _visContents.AddValue(value);
+                }
+
+                break;
+            }
             case "filters": {
                 value.TryGetValueAsDreamList(out var valueList);
 
@@ -271,6 +294,7 @@ public sealed class DreamObjectImage : DreamObject {
         MutableAppearance?.Dispose();
         _overlays.DecRef();
         _underlays.DecRef();
+        _visContents.DecRef();
         _filters.DecRef();
         base.HandleDeletion();
     }

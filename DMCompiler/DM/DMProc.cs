@@ -336,13 +336,45 @@ internal sealed class DMProc {
                     _compiler.UnimplementedWarning(statementSet.Location,
                         "'set src = world.contents' is unimplemented");
                     break;
-                case DMASTProcCall {Callable: DMASTCallableProcIdentifier {Identifier: { } callType and ("view" or "oview" or "range" or "orange")} callable, Parameters: DMASTCallParameter[] {} parameters}:
+                case DMASTProcCall {Callable: DMASTCallableProcIdentifier {Identifier: { } callType and ("view" or "oview" or "range" or "orange")} callable, Parameters: {} parameters}:
                     if(parameters.Length > 2) {
                         _compiler.Emit(WarningCode.BadArgument, callable.Location, "Cannot specify more than one argument");
                         break;
                     }
 
-                    if(parameters.FirstOrDefault()?.Value is DMASTExpression rangeExpression) { // world.view otherwise
+                    DMASTExpression? rangeExpression = null; // defaults to world.view
+                    DMASTIdentifier? centerIdentifier = null; // defaults to usr
+
+                    if(parameters.Length == 2) {
+                        if(parameters.FirstOrDefault()?.Value is DMASTIdentifier firstIdent) {
+                            centerIdentifier = firstIdent;
+                        }
+                        else if(parameters.LastOrDefault()?.Value is DMASTIdentifier lastIdent) {
+                            centerIdentifier = lastIdent;
+                        }
+
+                        rangeExpression = parameters.First(exp => !exp.Value.Equals(centerIdentifier)).Value;
+                    }
+                    else {
+                        var the_expression = parameters.FirstOrDefault()?.Value;
+                        if(the_expression is DMASTIdentifier onlyIdent) {
+                            centerIdentifier = onlyIdent;
+                        }
+                        else {
+                            rangeExpression = the_expression;
+                        }
+                    }
+
+                    if(centerIdentifier is not null) {
+                        if(centerIdentifier.Identifier is "src") {
+                            _compiler.Emit(WarningCode.MalformedSetStatement, centerIdentifier.Location, "Center will always be usr");
+                        }
+                        else if(centerIdentifier.Identifier is not "usr") {
+                            _compiler.Emit(WarningCode.InvalidSetStatement, centerIdentifier.Location, "Center can only be usr or src");
+                        }
+                    }
+
+                    if(rangeExpression is not null) { // world.view otherwise
                         if (!exprBuilder.TryConstant(rangeExpression, out var rangeConstant)) {
                             _compiler.Emit(WarningCode.BadArgument, rangeExpression.Location, "Range must be a constant value");
                             break;

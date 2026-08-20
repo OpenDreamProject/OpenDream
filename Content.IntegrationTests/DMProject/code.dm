@@ -3,6 +3,11 @@
 /turf/border
 /mob/test
 
+var/global/list/areas_by_type = list()
+/area/New()
+	areas_by_type[type] = src
+	
+
 //The actual tests
 //NOTE: Tests placed in the IntegrationTests suite
 // should actually require a normal server in order to work.
@@ -26,6 +31,9 @@
 	throw EXCEPTION("You must override RunTest()")
 
 /world/New()
+	// prepare areas
+	for(var/area_subtype in typesof(/area) - /area)
+		new area_subtype()
 	for(var/subtype in typesof(/datum/unit_test))
 		if(subtype == /datum/unit_test) //skip the base class
 			continue

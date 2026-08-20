@@ -386,6 +386,10 @@ namespace DMCompiler.Compiler.DM {
             bool hasPathTypeToken = true;
 
             if (Check(TokenType.DM_Slash)) {
+                // Ignore consecutive slashes (e.g "//datum/foo").
+                // BYOND accepts these; they can only come from macro expansion because "//" is a comment in source.
+                while (Check(TokenType.DM_Slash)) { }
+
                 // Check if they did "/.whatever/" instead of ".whatever/"
                 pathType = Check(TokenType.DM_Period) ? DreamPath.PathType.UpwardSearch : DreamPath.PathType.Absolute;
             } else if (Check(TokenType.DM_Colon)) {
@@ -398,12 +402,14 @@ namespace DMCompiler.Compiler.DM {
                 if (expression) return null;
             }
 
-            string? pathElement = PathElementSkippingEmpty();
+            string? pathElement = PathElement();
             if (pathElement != null) {
                 List<string> pathElements = [pathElement];
                 bool operatorFlag = false;
                 while (pathElement != null && Check(TokenType.DM_Slash)) {
-                    pathElement = PathElementSkippingEmpty();
+                    while (Check(TokenType.DM_Slash)) { }
+
+                    pathElement = PathElement();
 
                     if (pathElement != null) {
                         if(pathElement == "operator") {
@@ -442,35 +448,7 @@ namespace DMCompiler.Compiler.DM {
                 return new DMASTPath(firstToken.Location, new DreamPath(pathType, pathElements.ToArray()), operatorFlag);
             } else if (hasPathTypeToken) {
                 if (expression) ReuseToken(firstToken);
-
-                return null;
             }
-
-            return null;
-        }
-
-        /// <summary>
-        /// Reads the next path element, ignoring any empty ones (the "//" in "/datum//foo").
-        /// BYOND accepts these; they can only come from macro expansion because "//" is a comment in source.
-        /// </summary>
-        /// <returns>The next path element, or null if there isn't one. Slashes read by a failed attempt are given back.</returns>
-        private string? PathElementSkippingEmpty() {
-            string? pathElement = PathElement();
-            if (pathElement != null || Current().Type != TokenType.DM_Slash)
-                return pathElement;
-
-            List<Token> skippedSlashes = new();
-            do {
-                skippedSlashes.Add(Current());
-                Advance();
-
-                pathElement = PathElement();
-                if (pathElement != null)
-                    return pathElement;
-            } while (Current().Type == TokenType.DM_Slash);
-
-            for (int i = skippedSlashes.Count - 1; i >= 0; i--)
-                ReuseToken(skippedSlashes[i]);
 
             return null;
         }

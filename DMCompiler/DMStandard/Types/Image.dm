@@ -45,7 +45,7 @@
 	var/list/underlays = null
 	var/list/verbs as opendream_unimplemented
 	var/visibility = 1 as opendream_unimplemented
-	var/vis_flags = 0 as opendream_unimplemented
+	var/vis_flags = 0
 
 	var/bound_width as opendream_unimplemented
 	var/bound_height as opendream_unimplemented

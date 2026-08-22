@@ -58,6 +58,7 @@ internal sealed partial class IconDebugWindow : OSWindow {
         AddPropertyIfNotDefault("Plane", appearance.Plane, MutableAppearance.Default.Plane);
         AddPropertyIfNotDefault("Blend Mode", appearance.BlendMode, MutableAppearance.Default.BlendMode);
         AddPropertyIfNotDefault("Appearance Flags", appearance.AppearanceFlags, MutableAppearance.Default.AppearanceFlags);
+        AddPropertyIfNotDefault("Vis Flags", appearance.VisFlags, MutableAppearance.Default.VisFlags);
         AddPropertyIfNotDefault("Invisibility", appearance.Invisibility, MutableAppearance.Default.Invisibility);
         AddPropertyIfNotDefault("Opacity", appearance.Opacity, MutableAppearance.Default.Opacity);
         AddPropertyIfNotDefault("Override", appearance.Override, MutableAppearance.Default.Override);

@@ -225,17 +225,14 @@ internal sealed partial class DreamViewOverlay : Overlay {
             current.ClickUid = parentIcon.ClickUid;
             current.MouseOpacity = parentIcon.MouseOpacity;
             if ((icon.Appearance.AppearanceFlags & AppearanceFlags.ResetColor) != 0 || keepTogether) { //RESET_COLOR
-                current.ColorToApply = icon.Appearance.Color;
                 current.ColorMatrixToApply = icon.Appearance.ColorMatrix;
             } else {
-                current.ColorToApply = parentIcon.ColorToApply * icon.Appearance.Color;
-                ColorMatrix.Multiply(in parentIcon.ColorMatrixToApply, in icon.Appearance.ColorMatrix, out current.ColorMatrixToApply);
+                ColorMatrix.Multiply(in icon.Appearance.ColorMatrix, in parentIcon.ColorMatrixToApply, out current.ColorMatrixToApply);
             }
 
-            if ((icon.Appearance.AppearanceFlags & AppearanceFlags.ResetAlpha) != 0 || keepTogether) //RESET_ALPHA
-                current.AlphaToApply = icon.Appearance.Alpha / 255.0f;
-            else
-                current.AlphaToApply = parentIcon.AlphaToApply * (icon.Appearance.Alpha / 255.0f);
+            current.ColorMatrixToApply.aa = icon.Appearance.ColorMatrix.aa;
+            if ((icon.Appearance.AppearanceFlags & AppearanceFlags.ResetAlpha) == 0 && !keepTogether) //RESET_ALPHA
+                current.ColorMatrixToApply.aa *= parentIcon.ColorMatrixToApply.aa;
 
             if ((icon.Appearance.AppearanceFlags & AppearanceFlags.ResetTransform) != 0 || keepTogether) //RESET_TRANSFORM
                 current.TransformToApply = iconAppearanceTransformMatrix;
@@ -253,9 +250,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
             if (current.BlendMode == BlendMode.Default)
                 current.BlendMode = parentIcon.BlendMode;
         } else {
-            current.ColorToApply = icon.Appearance.Color;
             current.ColorMatrixToApply = icon.Appearance.ColorMatrix;
-            current.AlphaToApply = icon.Appearance.Alpha / 255.0f;
             current.TransformToApply = iconAppearanceTransformMatrix;
             current.Plane = icon.Appearance.Plane;
             current.Layer = Math.Max(0, icon.Appearance.Layer); //float layers are invalid for icons with no parent
@@ -383,9 +378,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
             maptext.RenderTarget = null;
             maptext.MouseOpacity = current.MouseOpacity;
             maptext.TransformToApply = current.TransformToApply;
-            maptext.ColorToApply = current.ColorToApply;
             maptext.ColorMatrixToApply = current.ColorMatrixToApply;
-            maptext.AlphaToApply = current.AlphaToApply;
             maptext.BlendMode = current.BlendMode;
 
             maptext.AppearanceFlags = current.AppearanceFlags;
@@ -430,7 +423,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
             colorMatrix = iconMetaData.ColorMatrixToApply;
 
         var blendAndColor = _blendModeInstances[blendMode];
-        if (!iconMetaData.IsPlaneMaster && colorMatrix.Equals(ColorMatrix.Identity)) // We can get away with no duplication
+        if (!iconMetaData.IsPlaneMaster && colorMatrix.CanCompress()) // We can get away with no duplication
             return blendAndColor;
 
         // RT's batching is a little broken and so we must duplicate the shader if we modify its parameters
@@ -484,10 +477,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
 
         handle.SetTransform(CalculateDrawingMatrix(iconMetaData.TransformToApply, pixelPosition, frame.Size, renderTargetSize));
 
-        Color colorToApply = iconMetaData.ColorToApply;
-        colorToApply.A *= iconMetaData.AlphaToApply;
-
-        handle.DrawTextureRect(frame, Box2.FromDimensions(Vector2.Zero, frame.Size), colorToApply);
+        handle.DrawTextureRect(frame, Box2.FromDimensions(Vector2.Zero, frame.Size), iconMetaData.ColorMatrixToApply.AsRgbaColor());
 
         if (iconMetaData.Particles is not null) {
             handle.UseShader(GetBlendAndColorShader(iconMetaData, ignoreColor: true));
@@ -730,13 +720,11 @@ internal sealed partial class DreamViewOverlay : Overlay {
     private Texture ProcessKeepTogether(DrawingHandleWorld handle, RendererMetaData iconMetaData, Vector2i size) {
         //store the parent's transform, color, blend, and alpha - then clear them for drawing to the render target
         Matrix3x2 ktParentTransform = iconMetaData.TransformToApply;
-        Color ktParentColor = iconMetaData.ColorToApply;
-        float ktParentAlpha = iconMetaData.AlphaToApply;
+        ColorMatrix ktColorMatrix = iconMetaData.ColorMatrixToApply;
         BlendMode ktParentBlendMode = iconMetaData.BlendMode;
 
         iconMetaData.TransformToApply = Matrix3x2.Identity;
-        iconMetaData.ColorToApply = Color.White;
-        iconMetaData.AlphaToApply = 1f;
+        iconMetaData.ColorMatrixToApply = ColorMatrix.Identity;
         iconMetaData.BlendMode = BlendMode.Default;
 
         List<RendererMetaData> ktItems = new List<RendererMetaData>(iconMetaData.KeepTogetherGroup!.Count + 1) {
@@ -768,8 +756,7 @@ internal sealed partial class DreamViewOverlay : Overlay {
 
         //now restore the original color, alpha, blend, and transform so they can be applied to the render target as a whole
         iconMetaData.TransformToApply = ktParentTransform;
-        iconMetaData.ColorToApply = ktParentColor;
-        iconMetaData.AlphaToApply = ktParentAlpha;
+        iconMetaData.ColorMatrixToApply = ktColorMatrix;
         iconMetaData.BlendMode = ktParentBlendMode;
 
         _renderTargetPool.ReturnAtEndOfFrame(ktTexture);

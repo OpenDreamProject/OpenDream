@@ -2,7 +2,7 @@
 	name = "hello"
 	desc = "this is a thing"
 
-/datum/unit_test/atom_appearance/RunTest()
+/datum/unit_test/appearance_copy/RunTest()
 	var/obj/thingtocopy/T = new()
 	var/obj/otherthing = new()
 	otherthing.appearance = T.appearance

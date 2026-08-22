@@ -213,18 +213,21 @@ public sealed partial class AtomManager {
                 value.TryGetValueAsInteger(out appearance.PixelOffset2.Y);
                 break;
             case "color":
-                if(value.TryGetValueAsDreamList(out var list)) {
-                    if(DreamProcNativeHelpers.TryParseColorMatrix(list, out var matrix)) {
-                        appearance.SetColor(in matrix);
-                        break;
-                    }
-
-                    throw new ArgumentException($"Cannot set appearance's color to {value}");
+                if(value.TryGetValueAsString(out var colorString)) {
+                    appearance.SetColor(colorString);
+                }
+                else if (value.IsNull) {
+                    var trix = ColorMatrix.Identity; // yummers
+                    trix.aa = appearance.ColorMatrix.aa;
+                    appearance.SetColor(trix);
+                }
+                else if(value.TryGetValueAsIDreamList(out var colorList)) {
+                    if(!DreamProcNativeHelpers.TryParseColorMatrix(colorList, out var matrix))
+                        matrix = ColorMatrix.Identity;
+                    appearance.SetColor(in matrix);
                 }
 
-                value.TryGetValueAsString(out var colorString);
-                colorString ??= "white";
-                appearance.SetColor(colorString);
+                // otherwise we just ignore it (or throw an optional exception?)
                 break;
             case "layer":
                 value.TryGetValueAsFloat(out appearance.Layer);
@@ -255,8 +258,8 @@ public sealed partial class AtomManager {
                 appearance.AppearanceFlags = (AppearanceFlags) flagsVar;
                 break;
             case "alpha":
-                value.TryGetValueAsFloat(out float floatAlpha);
-                appearance.Alpha = (byte) Math.Clamp(floatAlpha, 0, 255);
+                var intAlpha = (int)value.UnsafeGetValueAsFloat();
+                appearance.SetAlpha(intAlpha);
                 break;
             case "glide_size":
                 value.TryGetValueAsFloat(out float glideSize);
@@ -380,19 +383,19 @@ public sealed partial class AtomManager {
                 return new(appearance.PixelOffset2.X);
             case "pixel_z":
                 return new(appearance.PixelOffset2.Y);
-            case "color":
-                if(!appearance.ColorMatrix.Equals(ColorMatrix.Identity)) {
-                    var matrixList = _objectTree.CreateList(20);
-                    foreach (float entry in appearance.ColorMatrix.GetValues())
-                        matrixList.AddValue(new DreamValue(entry));
-                    return new DreamValue(matrixList);
+            case "color": {
+                if(ColorMatrix.TryRepresentAsRgbaColor(appearance.ColorMatrix, out var maybeColor)) {
+                    Color color = maybeColor.Value.WithAlpha(1f);
+                    if(color == Color.White)
+                        return DreamValue.Null;
+                    return new DreamValue(color.ToHexNoAlpha().ToLower()); // BYOND strips alpha component
                 }
 
-                if (appearance.Color == Color.White) {
-                    return DreamValue.Null;
-                }
-
-                return new DreamValue(appearance.Color.ToHexNoAlpha().ToLower()); // BYOND quirk, does not return the alpha channel for some reason.
+                var matrixList = _objectTree.CreateList(20);
+                foreach (float entry in appearance.ColorMatrix.EnumerateValues())
+                    matrixList.AddValue(new DreamValue(entry));
+                return new DreamValue(matrixList);
+            }
             case "layer":
                 return new(appearance.Layer);
             case "invisibility":
@@ -407,8 +410,11 @@ public sealed partial class AtomManager {
                 return new((int) appearance.BlendMode);
             case "appearance_flags":
                 return new((int) appearance.AppearanceFlags);
-            case "alpha":
-                return new(appearance.Alpha);
+            case "alpha": {
+                if(!ColorMatrix.TryRepresentAsRgbaColor(appearance.ColorMatrix, out var maybeColor))
+                    return new(255);
+                return new((byte)Math.Round(maybeColor.Value.A * byte.MaxValue)); // AByte doesn't round!!!!!
+            }
             case "glide_size":
                 return new(appearance.GlideSize);
             case "render_source":

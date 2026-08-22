@@ -33,6 +33,7 @@
   <Project Path="Content.Tests/Content.Tests.csproj" />
   <Project Path="DMCompiler/DMCompiler.csproj" />
   <Project Path="DMDisassembler/DMDisassembler.csproj" />
+  <Project Path="DMDisassembler.Tests/DMDisassembler.Tests.csproj" />
   <Project Path="OpenDreamClient/OpenDreamClient.csproj" />
   <Project Path="OpenDreamPackageTool/OpenDreamPackageTool.csproj" />
   <Project Path="OpenDreamPackaging/OpenDreamPackaging.csproj" />

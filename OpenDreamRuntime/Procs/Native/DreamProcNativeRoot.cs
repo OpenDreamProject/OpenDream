@@ -1359,7 +1359,7 @@ internal static class DreamProcNativeRoot {
             return new DreamValue(list.GetLength());
         } else if (value.TryGetValueAsDreamResource(out var resource)) {
             return new DreamValue(resource.ResourceData?.Length ?? 0);
-        } else if (value.Type is DreamValueType.Float or DreamValueType.DreamObject or DreamValueType.DreamType) {
+        } else if (value.Type is DreamValueType.Float or DreamValueType.DreamObject or DreamValueType.DreamType or DreamValueType.DreamProc) {
             return new DreamValue(0);
         }
 

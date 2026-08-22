@@ -17,7 +17,7 @@ internal sealed class DMVariable {
     /// </remarks>
     public readonly bool IsConst;
 
-    private bool CanConstFold => (IsConst || ValType.Type.HasFlag(DMValueType.CompiletimeReadonly)) &&
+    private bool CanConstFold => (IsConst || ValType.IsCompileTimeReadOnly) &&
                                  !ValType.Type.HasFlag(DMValueType.NoConstFold);
 
     public DMVariable(DreamPath? type, string name, bool isGlobal, bool isConst, bool isFinal, bool isTmp, DMComplexValueType? valType = null) {

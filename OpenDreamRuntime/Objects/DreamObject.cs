@@ -496,6 +496,18 @@ public class DreamObject {
         throw new InvalidOperationException($"Division cannot be done between {this} and {b}");
     }
 
+    // **
+    [MustDisposeResource]
+    public virtual DreamValue OperatorPower(DreamValue b, DMProcState state) {
+        throw new InvalidOperationException($"Power cannot be done between {this} and {b}");
+    }
+
+    // - (unary)
+    [MustDisposeResource]
+    public virtual DreamValue OperatorNegate(DMProcState state) {
+        return new DreamValue(0); // BYOND evaluates most objects as 0 here
+    }
+
     // |
     [MustDisposeResource]
     public virtual DreamValue OperatorOr(DreamValue b, DMProcState state) {

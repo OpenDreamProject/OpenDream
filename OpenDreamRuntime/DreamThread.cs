@@ -38,11 +38,12 @@ namespace OpenDreamRuntime {
         public readonly string? VerbDesc;
         public readonly string? VerbCategory = string.Empty;
         public readonly VerbSrc? VerbSrc;
+        public readonly int? VerbRange;
         public readonly sbyte Invisibility;
 
         private readonly string? _verbName;
 
-        protected DreamProc(int id, TreeEntry owningType, string name, DreamProc? superProc, ProcAttributes attributes, List<string>? argumentNames, List<DreamValueType>? argumentTypes, VerbSrc? verbSrc, string? verbName, string? verbCategory, string? verbDesc, sbyte invisibility, bool isVerb = false) {
+        protected DreamProc(int id, TreeEntry owningType, string name, DreamProc? superProc, ProcAttributes attributes, List<string>? argumentNames, List<DreamValueType>? argumentTypes, VerbSrc? verbSrc, int? verbRange, string? verbName, string? verbCategory, string? verbDesc, sbyte invisibility, bool isVerb = false) {
             Id = id;
             OwningType = owningType;
             Name = name;
@@ -51,8 +52,9 @@ namespace OpenDreamRuntime {
             Attributes = attributes;
             ArgumentNames = argumentNames;
             ArgumentTypes = argumentTypes;
-
             VerbSrc = verbSrc;
+            VerbRange = verbRange;
+
             _verbName = verbName;
             if (verbCategory is not null) {
                 // (de)serialization meme to reduce JSON size

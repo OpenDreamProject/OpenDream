@@ -75,6 +75,7 @@ internal sealed class DMProc {
     public readonly Dictionary<string, int> GlobalVariables = new();
 
     public VerbSrc? VerbSrc;
+    public int? VerbRange;
     public string? VerbName;
     public string? VerbCategory = string.Empty;
     public string? VerbDesc;
@@ -244,6 +245,7 @@ internal sealed class DMProc {
 
             IsVerb = IsVerb,
             VerbSrc = VerbSrc,
+            VerbRange = VerbRange,
             VerbName = VerbName,
             VerbDesc = VerbDesc,
             Invisibility = Invisibility,
@@ -290,6 +292,7 @@ internal sealed class DMProc {
 
     public void ProcessSetStatement(DMASTProcStatementSet statementSet) {
         var attribute = statementSet.Attribute.ToLower();
+        var exprBuilder = new DMExpressionBuilder(new ExpressionContext(_compiler, _dmObject, this));
 
         if(attribute == "src") {
             // TODO: Would be much better if the parser was just more strict with the expression
@@ -333,20 +336,68 @@ internal sealed class DMProc {
                     _compiler.UnimplementedWarning(statementSet.Location,
                         "'set src = world.contents' is unimplemented");
                     break;
-                case DMASTProcCall {Callable: DMASTCallableProcIdentifier {Identifier: { } viewType and ("view" or "oview")}}:
-                    // TODO: Ranges
-                    if (statementSet.WasInKeyword)
-                        VerbSrc = viewType == "view" ? VerbSrcEnum.InView : VerbSrcEnum.InOView;
-                    else
-                        VerbSrc = viewType == "view" ? VerbSrcEnum.View : VerbSrcEnum.OView;
-                    break;
-                // range() and orange() are undocumented, but they work
-                case DMASTProcCall {Callable: DMASTCallableProcIdentifier {Identifier: { } viewType and ("range" or "orange")}}:
-                    // TODO: Ranges
-                    if (statementSet.WasInKeyword)
-                        VerbSrc = viewType == "range" ? VerbSrcEnum.InRange : VerbSrcEnum.InORange;
-                    else
-                        VerbSrc = viewType == "range" ? VerbSrcEnum.Range : VerbSrcEnum.ORange;
+                case DMASTProcCall {Callable: DMASTCallableProcIdentifier {Identifier: { } callType and ("view" or "oview" or "range" or "orange")} callable, Parameters: var parameters}:
+                    if(parameters.Length > 2) {
+                        _compiler.Emit(WarningCode.BadArgument, callable.Location, "Cannot specify more than one argument");
+                        break;
+                    }
+
+                    DMASTExpression? rangeExpression = null;
+
+                    // BYOND allows you to set usr even though it's redundant so we have to handle that
+                    if(parameters.Length == 2) {
+                        if(parameters.FirstOrDefault(exp => exp.Value is DMASTIdentifier { Identifier: "usr"})?.Value is DMASTIdentifier usrIdent) {
+                            rangeExpression = parameters.FirstOrDefault(exp => !exp.Value.Equals(usrIdent))?.Value;
+                            _compiler.Emit(WarningCode.MalformedSetStatement, usrIdent.Location, "Specifying usr is redundant");
+                        }
+                        else {
+                            _compiler.Emit(WarningCode.InvalidSetStatement, callable.Location, "Bad range arguments for src setting");
+                        }
+                    }
+                    else {
+                        var theExpression = parameters.FirstOrDefault()?.Value;
+                        if(theExpression is DMASTIdentifier { Identifier: "usr"}) {
+                            _compiler.Emit(WarningCode.MalformedSetStatement, theExpression.Location, "Specifying usr is redundant");
+                        }
+                        else {
+                            rangeExpression = theExpression;
+                        }
+                    }
+
+                    if(rangeExpression is not null) { // world.view otherwise
+                        if (!exprBuilder.TryConstant(rangeExpression, out var rangeConstant)) {
+                            _compiler.Emit(WarningCode.BadArgument, rangeExpression.Location, "Range must be a constant value");
+                            break;
+                        }
+
+                        if (rangeConstant is not Number {Value: var range}) {
+                            if(rangeConstant is Null)
+                                range = 0;
+                            else {
+                                _compiler.Emit(WarningCode.MalformedSetStatement, rangeExpression.Location, "Non-num ranges make this verb inaccessible");
+                                range = -1;
+                            }
+                        }
+                        else if (range <= -1)
+                            _compiler.Emit(WarningCode.MalformedSetStatement, rangeExpression.Location, "Negative ranges make this verb inaccessible");
+
+                        VerbRange = (int)MathF.Ceiling(range);
+                    }
+
+                    if(callType is "view" or "oview") {
+                        _compiler.UnimplementedWarning(callable.Location, "src = view() is unimplemented and defaults to src = range()");
+                        if (statementSet.WasInKeyword)
+                            VerbSrc = callType == "view" ? VerbSrcEnum.InView : VerbSrcEnum.InOView;
+                        else
+                            VerbSrc = callType == "view" ? VerbSrcEnum.View : VerbSrcEnum.OView;
+                    }
+                    else {
+                        if (statementSet.WasInKeyword)
+                            VerbSrc = callType == "range" ? VerbSrcEnum.InRange : VerbSrcEnum.InORange;
+                        else
+                            VerbSrc = callType == "range" ? VerbSrcEnum.Range : VerbSrcEnum.ORange;
+                    }
+
                     break;
                 default:
                     _compiler.Emit(WarningCode.BadExpression, statementSet.Value.Location, "Invalid verb src");
@@ -356,7 +407,6 @@ internal sealed class DMProc {
             return;
         }
 
-        var exprBuilder = new DMExpressionBuilder(new ExpressionContext(_compiler, _dmObject, this));
         if (!exprBuilder.TryConstant(statementSet.Value, out var constant)) { // If this set statement's rhs is not constant
             bool didError = _compiler.Emit(WarningCode.InvalidSetStatement, statementSet.Location, $"'{attribute}' attribute should be a constant");
             if (didError) // if this is an error

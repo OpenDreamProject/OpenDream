@@ -49,6 +49,12 @@ public class VerbSystem : EntitySystem {
         public VerbAccessibility Accessibility;
 
         /// <summary>
+        /// Range, in turfs, that the client must be within for this verb to be accessible.
+        /// This only applies when accessibility is one of the range types (range/view)
+        /// </summary>
+        public int Range;
+
+        /// <summary>
         /// The arguments of this verb
         /// </summary>
         public VerbArg[] Arguments;
@@ -139,4 +145,27 @@ public class VerbSystem : EntitySystem {
         public ClientObjectReference Src = src;
         public int VerbId = verbId;
     }
+}
+
+public static class VerbAccessibilityExtensions {
+    public static bool IsO(this VerbSystem.VerbAccessibility accessibility) =>
+        accessibility
+            is VerbSystem.VerbAccessibility.OView
+            or VerbSystem.VerbAccessibility.InOView
+            or VerbSystem.VerbAccessibility.ORange
+            or VerbSystem.VerbAccessibility.InORange;
+
+    public static bool IsRange(this VerbSystem.VerbAccessibility accessibility) =>
+        accessibility
+            is VerbSystem.VerbAccessibility.ORange
+            or VerbSystem.VerbAccessibility.InORange
+            or VerbSystem.VerbAccessibility.Range
+            or VerbSystem.VerbAccessibility.InRange;
+
+    public static bool IsView(this VerbSystem.VerbAccessibility accessibility) =>
+        accessibility
+            is VerbSystem.VerbAccessibility.OView
+            or VerbSystem.VerbAccessibility.InOView
+            or VerbSystem.VerbAccessibility.View
+            or VerbSystem.VerbAccessibility.InView;
 }

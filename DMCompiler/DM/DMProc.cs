@@ -349,17 +349,14 @@ internal sealed class DMProc {
                         if(parameters.FirstOrDefault(exp => exp.Value is DMASTIdentifier { Identifier: "usr"})?.Value is DMASTIdentifier usrIdent) {
                             rangeExpression = parameters.FirstOrDefault(exp => !exp.Value.Equals(usrIdent))?.Value;
                             _compiler.Emit(WarningCode.MalformedSetStatement, usrIdent.Location, "Specifying usr is redundant");
-                        }
-                        else {
+                        } else {
                             _compiler.Emit(WarningCode.InvalidSetStatement, callable.Location, "Bad range arguments for src setting");
                         }
-                    }
-                    else {
+                    } else {
                         var theExpression = parameters.FirstOrDefault()?.Value;
                         if(theExpression is DMASTIdentifier { Identifier: "usr"}) {
                             _compiler.Emit(WarningCode.MalformedSetStatement, theExpression.Location, "Specifying usr is redundant");
-                        }
-                        else {
+                        } else {
                             rangeExpression = theExpression;
                         }
                     }
@@ -377,8 +374,7 @@ internal sealed class DMProc {
                                 _compiler.Emit(WarningCode.MalformedSetStatement, rangeExpression.Location, "Non-num ranges make this verb inaccessible");
                                 range = -1;
                             }
-                        }
-                        else if (range <= -1)
+                        } else if (range <= -1)
                             _compiler.Emit(WarningCode.MalformedSetStatement, rangeExpression.Location, "Negative ranges make this verb inaccessible");
 
                         VerbRange = (int)MathF.Ceiling(range);
@@ -390,8 +386,7 @@ internal sealed class DMProc {
                             VerbSrc = callType == "view" ? VerbSrcEnum.InView : VerbSrcEnum.InOView;
                         else
                             VerbSrc = callType == "view" ? VerbSrcEnum.View : VerbSrcEnum.OView;
-                    }
-                    else {
+                    } else {
                         if (statementSet.WasInKeyword)
                             VerbSrc = callType == "range" ? VerbSrcEnum.InRange : VerbSrcEnum.InORange;
                         else

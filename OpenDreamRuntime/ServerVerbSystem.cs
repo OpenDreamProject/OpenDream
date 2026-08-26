@@ -286,8 +286,7 @@ public sealed partial class ServerVerbSystem : VerbSystem {
                 DreamList viewCollection;
                 if(verbAccessibility.IsRange()) {
                     viewCollection = DreamProcNativeHelpers.HandleRange(connection.Mob, new(verbInfo.Range), !verbAccessibility.IsO());
-                }
-                else { // TODO implement view
+                } else { // TODO implement view
                     viewCollection = DreamProcNativeHelpers.HandleRange(connection.Mob, new(verbInfo.Range), !verbAccessibility.IsO());
                 }
 

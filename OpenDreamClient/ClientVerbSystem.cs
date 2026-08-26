@@ -170,13 +170,11 @@ public sealed partial class ClientVerbSystem : VerbSystem {
 
                             if(usrPos != srcPos && (Math.Abs(usrPos.X - srcPos.X) > verb.Range || Math.Abs(usrPos.Y - srcPos.Y) > verb.Range))
                                 continue;
-                        }
-                        else {
+                        } else {
                             if(srcXform.ParentUid == usrUid) {
                                 if(verb.Accessibility.IsO())
                                     continue;
-                            }
-                            else if(usrXform.ParentUid != srcUid)
+                            } else if(usrXform.ParentUid != srcUid)
                                 continue;
                         }
 

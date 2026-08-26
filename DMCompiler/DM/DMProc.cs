@@ -338,7 +338,7 @@ internal sealed class DMProc {
                     break;
                 case DMASTProcCall {Callable: DMASTCallableProcIdentifier {Identifier: { } callType and ("view" or "oview" or "range" or "orange")} callable, Parameters: var parameters}:
                     if(parameters.Length > 2) {
-                        _compiler.Emit(WarningCode.BadArgument, callable.Location, "Cannot specify more than one argument");
+                        _compiler.Emit(WarningCode.BadArgument, callable.Location, "Cannot specify more than two arguments");
                         break;
                     }
 

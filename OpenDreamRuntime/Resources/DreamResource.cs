@@ -54,7 +54,7 @@ public class DreamResource(int id, string? filePath, string? resourcePath) {
     public virtual string? ReadAsString() {
         if (ResourceData == null) return null;
 
-        string resourceString = Encoding.ASCII.GetString(ResourceData);
+        string resourceString = Encoding.UTF8.GetString(ResourceData);
 
         resourceString = resourceString.Replace("\r\n", "\n");
         return resourceString;

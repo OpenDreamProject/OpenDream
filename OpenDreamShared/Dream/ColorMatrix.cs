@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using JetBrains.Annotations;
+using System.Diagnostics.CodeAnalysis;
 
 namespace OpenDreamShared.Dream;
 
@@ -23,86 +24,134 @@ public struct ColorMatrix(
     float m31, float m32, float m33, float m34,
     float m41, float m42, float m43, float m44,
     float m51, float m52, float m53, float m54) {
-    public float c11 = m11;
-    public float c12 = m12;
-    public float c13 = m13;
-    public float c14 = m14;
+    // @formatter:off
 
-    public float c21 = m21;
-    public float c22 = m22;
-    public float c23 = m23;
-    public float c24 = m24;
+    /// <summary>Red -> Red</summary>
+    public float rr = m11;
+    /// <summary>Red -> Green</summary>
+    public float rg = m12;
+    /// <summary>Red -> Blue</summary>
+    public float rb = m13;
+    /// <summary>Red -> Alpha</summary>
+    public float ra = m14;
 
-    public float c31 = m31;
-    public float c32 = m32;
-    public float c33 = m33;
-    public float c34 = m34;
+    /// <summary>Green -> Red</summary>
+    public float gr = m21;
+    /// <summary>Green -> Green</summary>
+    public float gg = m22;
+    /// <summary>Green -> Blue</summary>
+    public float gb = m23;
+    /// <summary>Green -> Alpha</summary>
+    public float ga = m24;
 
-    public float c41 = m41;
-    public float c42 = m42;
-    public float c43 = m43;
-    public float c44 = m44;
+    /// <summary>Blue -> Red</summary>
+    public float br = m31;
+    /// <summary>Blue -> Green</summary>
+    public float bg = m32;
+    /// <summary>Blue -> Blue</summary>
+    public float bb = m33;
+    /// <summary>Blue -> Alpha</summary>
+    public float ba = m34;
 
-    public float c51 = m51;
-    public float c52 = m52;
-    public float c53 = m53;
-    public float c54 = m54;
+    /// <summary>Alpha -> Red</summary>
+    public float ar = m41;
+    /// <summary>Alpha -> Green</summary>
+    public float ag = m42;
+    /// <summary>Alpha -> Blue</summary>
+    public float ab = m43;
+    /// <summary>Alpha -> Alpha</summary>
+    public float aa = m44;
 
-    public ColorMatrix(in ColorMatrix cloned) : this(cloned.c11, cloned.c12, cloned.c13, cloned.c14, cloned.c21, cloned.c22, cloned.c23, cloned.c24, cloned.c31, cloned.c32, cloned.c33, cloned.c34, cloned.c41, cloned.c42, cloned.c43, cloned.c44, cloned.c51, cloned.c52, cloned.c53, cloned.c54) {
+    /// <summary>Additional Red.</summary>
+    public float cr = m51;
+    /// <summary>Additional Green.</summary>
+    public float cg = m52;
+    /// <summary>Additional Blue.</summary>
+    public float cb = m53;
+    /// <summary>Additional Alpha.</summary>
+    public float ca = m54;
+
+    // @formatter:on
+
+    public ColorMatrix(in ColorMatrix cloned)
         //I have never, ever missed the "pointer to member access" goofball operator from C++
         //until this exact, debilitating moment
-    }
+        : this(
+            cloned.rr, cloned.rg, cloned.rb, cloned.ra,
+            cloned.gr, cloned.gg, cloned.gb, cloned.ga,
+            cloned.br, cloned.bg, cloned.bb, cloned.ba,
+            cloned.ar, cloned.ag, cloned.ab, cloned.aa,
+            cloned.cr, cloned.cg, cloned.cb, cloned.ca) {}
+
+    /// <summary>
+    /// Constructs a ColorMatrix where the diagonal (main color) values are assigned to RGBA format
+    /// </summary>
+    public ColorMatrix(float r, float g, float b, float a = 1)
+        : this(
+                r, 0, 0, 0,
+                0, g, 0, 0,
+                0, 0, b, 0,
+                0, 0, 0, a,
+                0, 0, 0, 0) {}
 
     /// <summary>
     /// Constructs a ColorMatrix that is equivalent to the given color, during transformations.
     /// </summary>
     /// <remarks>Note: This constructor assumes that floats are zero-initialized.</remarks>
     /// <param name="basicColor"></param>
-    public ColorMatrix(in Color basicColor) : this(basicColor.R, 0, 0, 0, 0, basicColor.G, 0, 0, 0, 0, basicColor.B, 0, 0, 0, 0, basicColor.A, 0, 0, 0, 0) {
-    }
+    public ColorMatrix(in Color basicColor)
+        : this(
+            basicColor.R, 0, 0, 0,
+            0, basicColor.G, 0, 0,
+            0, 0, basicColor.B, 0,
+            0, 0, 0, basicColor.A,
+            0, 0, 0, 0) {}
 
-    public static ColorMatrix Identity =>
-        new (1F, 0F, 0F, 0F,
-             0F, 1F, 0F, 0F,
-             0F, 0F, 1F, 0F,
-             0F, 0F, 0F, 1F,
-             0F, 0F, 0F, 0F);
+    /// <summary>
+    /// The identity matrix. The equivalent would be <see cref="Color.White"/>.
+    /// </summary>
+    /// <seealso cref="Color"/>
+    public static ColorMatrix Identity
+        => new(
+            1F, 0F, 0F, 0F,
+            0F, 1F, 0F, 0F,
+            0F, 0F, 1F, 0F,
+            0F, 0F, 0F, 1F,
+            0F, 0F, 0F, 0F);
 
-    public void SetRow(int row, in Color color) {
-        SetRow(row, color.R, color.G, color.B, color.A);
-    }
+    public void SetRow(int row, in Color color) => SetRow(row, color.R, color.G, color.B, color.A);
 
     public void SetRow(int row, float r, float g, float b, float a) {
         switch(row) {
             case 0:
-                c11 = r;
-                c12 = g;
-                c13 = b;
-                c14 = a;
+                rr = r;
+                rg = g;
+                rb = b;
+                ra = a;
                 break;
             case 1:
-                c21 = r;
-                c22 = g;
-                c23 = b;
-                c24 = a;
+                gr = r;
+                gg = g;
+                gb = b;
+                ga = a;
                 break;
             case 2:
-                c31 = r;
-                c32 = g;
-                c33 = b;
-                c34 = a;
+                br = r;
+                bg = g;
+                bb = b;
+                ba = a;
                 break;
             case 3:
-                c41 = r;
-                c42 = g;
-                c43 = b;
-                c44 = a;
+                ar = r;
+                ag = g;
+                ab = b;
+                aa = a;
                 break;
             case 4:
-                c51 = r;
-                c52 = g;
-                c53 = b;
-                c54 = a;
+                cr = r;
+                cg = g;
+                cb = b;
+                ca = a;
                 break;
             default:
                 //Should be an UnreachableException but it's verbotten or something by the sandboxer
@@ -113,58 +162,59 @@ public struct ColorMatrix(
     /// <summary>
     /// Gets the diagonal values in this matrix. Used for detecting whether this matrix is convertible into a Color.
     /// </summary>
-    /// <returns></returns>
     [Pure]
-    public IEnumerable<float> GetDiagonal() {
-        yield return c11;
-        yield return c22;
-        yield return c33;
-        yield return c44;
+    public readonly IEnumerable<float> EnumerateDiagonal() {
+        yield return rr;
+        yield return gg;
+        yield return bb;
+        yield return aa;
     }
 
     /// <summary>
     /// Returns all of the values in this struct, in order.
     /// </summary>
     [Pure]
-    public IEnumerable<float> GetValues() {
-        yield return c11;
-        yield return c12;
-        yield return c13;
-        yield return c14;
+    public readonly IEnumerable<float> EnumerateValues() {
+        yield return rr;
+        yield return rg;
+        yield return rb;
+        yield return ra;
 
-        yield return c21;
-        yield return c22;
-        yield return c23;
-        yield return c24;
+        yield return gr;
+        yield return gg;
+        yield return gb;
+        yield return ga;
 
-        yield return c31;
-        yield return c32;
-        yield return c33;
-        yield return c34;
+        yield return br;
+        yield return bg;
+        yield return bb;
+        yield return ba;
 
-        yield return c41;
-        yield return c42;
-        yield return c43;
-        yield return c44;
+        yield return ar;
+        yield return ag;
+        yield return ab;
+        yield return aa;
 
-        yield return c51;
-        yield return c52;
-        yield return c53;
-        yield return c54;
+        yield return cr;
+        yield return cg;
+        yield return cb;
+        yield return ca;
     }
 
-    public Matrix4x4 GetMatrix4() {
-        return new Matrix4x4(
-            c11, c12, c13, c14,
-            c21, c22, c23, c24,
-            c31, c32, c33, c34,
-            c41, c42, c43, c44
-        );
-    }
+    public readonly Matrix4x4 GetMatrix4()
+        => new(
+            rr, rg, rb, ra,
+            gr, gg, gb, ga,
+            br, bg, bb, ba,
+            ar, ag, ab, aa);
 
-    public Vector4 GetOffsetVector() {
-        return new Vector4(c51, c52, c53, c54);
-    }
+    public readonly Vector4 GetOffsetVector()
+        => new (cr, cg, cb, ca);
+
+    // This method pretty much only exists as a placeholder,
+    // all of its uses probably have a more correct alternative
+    public readonly Color AsRgbaColor()
+        => TryRepresentAsRgbaColor(in this, out var maybeColor) ? maybeColor.Value : Color.White;
 
     /// <summary>
     /// Fastest possible comparison between two color matrices.
@@ -177,46 +227,71 @@ public struct ColorMatrix(
     /// the argument in that interface lacks an 'in' modifier and one cannot be provided!
     /// </remarks>
     [Pure]
-    public bool Equals(in ColorMatrix other) {
+    public readonly bool Equals(in ColorMatrix other) {
         //there is currently no kosher, "safe" C# way
         //of doing a fast-path pointer compare here.
         //(ReferenceEquals actually boxes structs just like default Equals)
         //so this pretty much MUST be a long elementwise compare on all elements.
-        return c11.Equals(other.c11) && c12.Equals(other.c12) && c13.Equals(other.c13) && c14.Equals(other.c14) &&
-               c21.Equals(other.c21) && c22.Equals(other.c22) && c23.Equals(other.c23) && c24.Equals(other.c24) &&
-               c31.Equals(other.c31) && c32.Equals(other.c32) && c33.Equals(other.c33) && c34.Equals(other.c34) &&
-               c41.Equals(other.c41) && c42.Equals(other.c42) && c43.Equals(other.c43) && c44.Equals(other.c44) &&
-               c51.Equals(other.c51) && c52.Equals(other.c52) && c53.Equals(other.c53) && c54.Equals(other.c54);
+        return rr.Equals(other.rr) && rg.Equals(other.rg) && rb.Equals(other.rb) && ra.Equals(other.ra) &&
+               gr.Equals(other.gr) && gg.Equals(other.gg) && gb.Equals(other.gb) && ga.Equals(other.ga) &&
+               br.Equals(other.br) && bg.Equals(other.bg) && bb.Equals(other.bb) && ba.Equals(other.ba) &&
+               ar.Equals(other.ar) && ag.Equals(other.ag) && ab.Equals(other.ab) && aa.Equals(other.aa) &&
+               cr.Equals(other.cr) && cg.Equals(other.cg) && cb.Equals(other.cb) && ca.Equals(other.ca);
     }
 
-    public override int GetHashCode() {
+    public readonly override int GetHashCode() {
         HashCode hashCode = new HashCode();
-        hashCode.Add(c11);
-        hashCode.Add(c12);
-        hashCode.Add(c13);
-        hashCode.Add(c14);
+        hashCode.Add(rr);
+        hashCode.Add(rg);
+        hashCode.Add(rb);
+        hashCode.Add(ra);
 
-        hashCode.Add(c21);
-        hashCode.Add(c22);
-        hashCode.Add(c23);
-        hashCode.Add(c24);
+        hashCode.Add(gr);
+        hashCode.Add(gg);
+        hashCode.Add(gb);
+        hashCode.Add(ga);
 
-        hashCode.Add(c31);
-        hashCode.Add(c32);
-        hashCode.Add(c33);
-        hashCode.Add(c34);
+        hashCode.Add(br);
+        hashCode.Add(bg);
+        hashCode.Add(bb);
+        hashCode.Add(ba);
 
-        hashCode.Add(c41);
-        hashCode.Add(c42);
-        hashCode.Add(c43);
-        hashCode.Add(c44);
+        hashCode.Add(ar);
+        hashCode.Add(ag);
+        hashCode.Add(ab);
+        hashCode.Add(aa);
 
-        hashCode.Add(c51);
-        hashCode.Add(c52);
-        hashCode.Add(c53);
-        hashCode.Add(c54);
+        hashCode.Add(cr);
+        hashCode.Add(cg);
+        hashCode.Add(cb);
+        hashCode.Add(ca);
 
         return hashCode.ToHashCode();
+    }
+
+    /// <summary>
+    /// If the matrix can be compressed into an RGBA color value.
+    /// </summary>
+    [Pure]
+    public readonly bool CanCompress() {
+        // The R G B A values need to be bounded [0,1] for a color conversion to work;
+        // anything higher implies trying to render "superblue" or something.
+        float diagonalSum = 0f;
+        foreach (float diagonalValue in EnumerateDiagonal()) {
+            if (diagonalValue < 0 || diagonalValue > 1)
+                return false;
+            diagonalSum += diagonalValue;
+        }
+
+        // and then all of the other values need to be zero, including the offset vector.
+        float sum = 0f;
+        foreach (float value in EnumerateValues()) {
+            if (value < 0f) // To avoid situations like negatives and positives cancelling out this checksum.
+                return false;
+            sum += value;
+        }
+
+        return sum - diagonalSum == 0; // PREEETTY sure I can trust the floating-point math here. Not 100% though
     }
 
     /// <summary>
@@ -226,57 +301,60 @@ public struct ColorMatrix(
     /// <param name="right">The right operand of the multiplication.</param>
     /// <param name="result">A new instance that is the result of the multiplication</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
     public static void Multiply(ref readonly ColorMatrix left, ref readonly ColorMatrix right, out ColorMatrix result) {
-        float lM11 = left.c11,
-            lM12 = left.c12,
-            lM13 = left.c13,
-            lM14 = left.c14,
-            lM21 = left.c21,
-            lM22 = left.c22,
-            lM23 = left.c23,
-            lM24 = left.c24,
-            lM31 = left.c31,
-            lM32 = left.c32,
-            lM33 = left.c33,
-            lM34 = left.c34,
-            lM41 = left.c41,
-            lM42 = left.c42,
-            lM43 = left.c43,
-            lM44 = left.c44,
-            rM11 = right.c11,
-            rM12 = right.c12,
-            rM13 = right.c13,
-            rM14 = right.c14,
-            rM21 = right.c21,
-            rM22 = right.c22,
-            rM23 = right.c23,
-            rM24 = right.c24,
-            rM31 = right.c31,
-            rM32 = right.c32,
-            rM33 = right.c33,
-            rM34 = right.c34,
-            rM41 = right.c41,
-            rM42 = right.c42,
-            rM43 = right.c43,
-            rM44 = right.c44;
+        float
+            l_rr = left.rr,
+            l_rg = left.rg,
+            l_rb = left.rb,
+            l_ra = left.ra,
+            l_gr = left.gr,
+            l_gg = left.gg,
+            l_gb = left.gb,
+            l_ga = left.ga,
+            l_br = left.br,
+            l_bg = left.bg,
+            l_bb = left.bb,
+            l_ba = left.ba,
+            l_ar = left.ar,
+            l_ag = left.ag,
+            l_ab = left.ab,
+            l_aa = left.aa;
+        float
+            r_rr = right.rr,
+            r_rg = right.rg,
+            r_rb = right.rb,
+            r_ra = right.ra,
+            r_gr = right.gr,
+            r_gg = right.gg,
+            r_gb = right.gb,
+            r_ga = right.ga,
+            r_br = right.br,
+            r_bg = right.bg,
+            r_bb = right.bb,
+            r_ba = right.ba,
+            r_ar = right.ar,
+            r_ag = right.ag,
+            r_ab = right.ab,
+            r_aa = right.aa;
 
         result = new() {
-            c11 = lM11 * rM11 + lM12 * rM21 + lM13 * rM31 + lM14 * rM41,
-            c12 = lM11 * rM12 + lM12 * rM22 + lM13 * rM32 + lM14 * rM42,
-            c13 = lM11 * rM13 + lM12 * rM23 + lM13 * rM33 + lM14 * rM43,
-            c14 = lM11 * rM14 + lM12 * rM24 + lM13 * rM34 + lM14 * rM44,
-            c21 = lM21 * rM11 + lM22 * rM21 + lM23 * rM31 + lM24 * rM41,
-            c22 = lM21 * rM12 + lM22 * rM22 + lM23 * rM32 + lM24 * rM42,
-            c23 = lM21 * rM13 + lM22 * rM23 + lM23 * rM33 + lM24 * rM43,
-            c24 = lM21 * rM14 + lM22 * rM24 + lM23 * rM34 + lM24 * rM44,
-            c31 = lM31 * rM11 + lM32 * rM21 + lM33 * rM31 + lM34 * rM41,
-            c32 = lM31 * rM12 + lM32 * rM22 + lM33 * rM32 + lM34 * rM42,
-            c33 = lM31 * rM13 + lM32 * rM23 + lM33 * rM33 + lM34 * rM43,
-            c34 = lM31 * rM14 + lM32 * rM24 + lM33 * rM34 + lM34 * rM44,
-            c41 = lM41 * rM11 + lM42 * rM21 + lM43 * rM31 + lM44 * rM41,
-            c42 = lM41 * rM12 + lM42 * rM22 + lM43 * rM32 + lM44 * rM42,
-            c43 = lM41 * rM13 + lM42 * rM23 + lM43 * rM33 + lM44 * rM43,
-            c44 = lM41 * rM14 + lM42 * rM24 + lM43 * rM34 + lM44 * rM44
+            rr = (l_rr * r_rr) + (l_rg * r_gr) + (l_rb * r_br) + (l_ra * r_ar),
+            rg = (l_rr * r_rg) + (l_rg * r_gg) + (l_rb * r_bg) + (l_ra * r_ag),
+            rb = (l_rr * r_rb) + (l_rg * r_gb) + (l_rb * r_bb) + (l_ra * r_ab),
+            ra = (l_rr * r_ra) + (l_rg * r_ga) + (l_rb * r_ba) + (l_ra * r_aa),
+            gr = (l_gr * r_rr) + (l_gg * r_gr) + (l_gb * r_br) + (l_ga * r_ar),
+            gg = (l_gr * r_rg) + (l_gg * r_gg) + (l_gb * r_bg) + (l_ga * r_ag),
+            gb = (l_gr * r_rb) + (l_gg * r_gb) + (l_gb * r_bb) + (l_ga * r_ab),
+            ga = (l_gr * r_ra) + (l_gg * r_ga) + (l_gb * r_ba) + (l_ga * r_aa),
+            br = (l_br * r_rr) + (l_bg * r_gr) + (l_bb * r_br) + (l_ba * r_ar),
+            bg = (l_br * r_rg) + (l_bg * r_gg) + (l_bb * r_bg) + (l_ba * r_ag),
+            bb = (l_br * r_rb) + (l_bg * r_gb) + (l_bb * r_bb) + (l_ba * r_ab),
+            ba = (l_br * r_ra) + (l_bg * r_ga) + (l_bb * r_ba) + (l_ba * r_aa),
+            ar = (l_ar * r_rr) + (l_ag * r_gr) + (l_ab * r_br) + (l_aa * r_ar),
+            ag = (l_ar * r_rg) + (l_ag * r_gg) + (l_ab * r_bg) + (l_aa * r_ag),
+            ab = (l_ar * r_rb) + (l_ag * r_gb) + (l_ab * r_bb) + (l_aa * r_ab),
+            aa = (l_ar * r_ra) + (l_ag * r_ga) + (l_ab * r_ba) + (l_aa * r_aa),
         };
     }
 
@@ -289,26 +367,40 @@ public struct ColorMatrix(
     /// <param name="result">A new instance that is the result of the interpolation</param>
     public static void Interpolate(ref readonly ColorMatrix left, ref readonly ColorMatrix right, float factor, out ColorMatrix result) {
         result = new ColorMatrix(
-                    ((1-factor) * left.c11) + (factor * right.c11),
-                    ((1-factor) * left.c12) + (factor * right.c12),
-                    ((1-factor) * left.c13) + (factor * right.c13),
-                    ((1-factor) * left.c14) + (factor * right.c14),
-                    ((1-factor) * left.c21) + (factor * right.c21),
-                    ((1-factor) * left.c22) + (factor * right.c22),
-                    ((1-factor) * left.c23) + (factor * right.c23),
-                    ((1-factor) * left.c24) + (factor * right.c24),
-                    ((1-factor) * left.c31) + (factor * right.c31),
-                    ((1-factor) * left.c32) + (factor * right.c32),
-                    ((1-factor) * left.c33) + (factor * right.c33),
-                    ((1-factor) * left.c34) + (factor * right.c34),
-                    ((1-factor) * left.c41) + (factor * right.c41),
-                    ((1-factor) * left.c42) + (factor * right.c42),
-                    ((1-factor) * left.c43) + (factor * right.c43),
-                    ((1-factor) * left.c44) + (factor * right.c44),
-                    ((1-factor) * left.c51) + (factor * right.c51),
-                    ((1-factor) * left.c52) + (factor * right.c52),
-                    ((1-factor) * left.c53) + (factor * right.c53),
-                    ((1-factor) * left.c54) + (factor * right.c54)
+                    ((1-factor) * left.rr) + (factor * right.rr),
+                    ((1-factor) * left.rg) + (factor * right.rg),
+                    ((1-factor) * left.rb) + (factor * right.rb),
+                    ((1-factor) * left.ra) + (factor * right.ra),
+                    ((1-factor) * left.gr) + (factor * right.gr),
+                    ((1-factor) * left.gg) + (factor * right.gg),
+                    ((1-factor) * left.gb) + (factor * right.gb),
+                    ((1-factor) * left.ga) + (factor * right.ga),
+                    ((1-factor) * left.br) + (factor * right.br),
+                    ((1-factor) * left.bg) + (factor * right.bg),
+                    ((1-factor) * left.bb) + (factor * right.bb),
+                    ((1-factor) * left.ba) + (factor * right.ba),
+                    ((1-factor) * left.ar) + (factor * right.ar),
+                    ((1-factor) * left.ag) + (factor * right.ag),
+                    ((1-factor) * left.ab) + (factor * right.ab),
+                    ((1-factor) * left.aa) + (factor * right.aa),
+                    ((1-factor) * left.cr) + (factor * right.cr),
+                    ((1-factor) * left.cg) + (factor * right.cg),
+                    ((1-factor) * left.cb) + (factor * right.cb),
+                    ((1-factor) * left.ca) + (factor * right.ca)
                 );
+    }
+
+    /// <summary>
+    /// This is a helper used for both optimization and parity. <br/>
+    /// In BYOND, if a color matrix is representable as an RGBA color string, <br/>
+    /// then it is coerced into one internally before being saved onto some appearance. <br/>
+    /// This does the linear algebra madness necessary to determine whether this is the case or not.
+    /// </summary>
+    public static bool TryRepresentAsRgbaColor(in ColorMatrix matrix, [NotNullWhen(true)] out Color? maybeColor) {
+        maybeColor = null;
+        if(matrix.CanCompress())
+            maybeColor = new Color(matrix.rr, matrix.gg, matrix.bb, matrix.aa);
+
+        return maybeColor is not null;
     }
 }

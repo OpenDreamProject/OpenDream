@@ -107,9 +107,9 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
             frame = textureOverride;
         }
 
-        var canSkipFullRender = Appearance?.Filters.Length is 0 or null &&
-                                    iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity) &&
-                                    iconMetaData.AlphaToApply.Equals(1.0f);
+        var canSkipFullRender = Appearance?.Filters.Length is 0 or null && // this sucks
+                                    iconMetaData.ColorMatrixToApply.CanCompress()
+                                    && iconMetaData.ColorMatrixToApply.aa.Equals(1.0f);
 
         if (frame == null) {
             CachedTexture = null;
@@ -351,8 +351,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
 
             //smooth animation properties
             /*
-            alpha
-            color
+            alpha/color
             glide_size
             infra_luminosity
             layer
@@ -361,19 +360,6 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
             pixel_x, pixel_y, pixel_w, pixel_z
             transform
             */
-
-            if (endAppearance.Alpha != _appearance.Alpha) {
-                _animatedAppearance.Alpha = (byte)Math.Clamp(((1-factor) * _appearance.Alpha) + (factor * endAppearance.Alpha), 0, 255);
-            }
-
-            if (endAppearance.Color != _appearance.Color) {
-                _animatedAppearance.Color = Color.FromSrgb(new Color(
-                    Math.Clamp(((1-factor) * _appearance.Color.R) + (factor * endAppearance.Color.R), 0, 1),
-                    Math.Clamp(((1-factor) * _appearance.Color.G) + (factor * endAppearance.Color.G), 0, 1),
-                    Math.Clamp(((1-factor) * _appearance.Color.B) + (factor * endAppearance.Color.B), 0, 1),
-                    Math.Clamp(((1-factor) * _appearance.Color.A) + (factor * endAppearance.Color.A), 0, 1)
-                ));
-            }
 
             if (!endAppearance.ColorMatrix.Equals(_appearance.ColorMatrix)){
                 ColorMatrix.Interpolate(in _appearance.ColorMatrix, in endAppearance.ColorMatrix, factor, out _animatedAppearance.ColorMatrix);

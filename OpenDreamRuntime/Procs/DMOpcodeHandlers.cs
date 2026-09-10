@@ -902,8 +902,16 @@ namespace OpenDreamRuntime.Procs {
                 result = IconOperation(state, BlendType.Add, first, second);
             } else if (first.TryGetValueAsDreamObject(out var firstObj)) {
                 if (firstObj != null) {
-                    state.PopReference(reference);
-                    return firstObj.OperatorAppend(second);
+                    var opResult = firstObj.OperatorAppend(second);
+
+                    // Most types append to themselves in-place, but the ones producing a new
+                    // object (such as /generator) need that object assigned back to the reference
+                    if (opResult.TryGetValueAsDreamObject(out var opResultObj) && ReferenceEquals(opResultObj, firstObj))
+                        state.PopReference(reference);
+                    else
+                        state.AssignReference(reference, opResult);
+
+                    return opResult;
                 }
 
                 result = second;
@@ -1415,6 +1423,14 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus Negate(DMProcState state) {
             using var first = state.Pop();
+
+            if (first.TryGetValueAsDreamObject<DreamObject>(out var firstDreamObject)) {
+                using var result = firstDreamObject.OperatorNegate(state);
+
+                state.Push(result);
+                return ProcStatus.Continue;
+            }
+
             float value = first.UnsafeGetValueAsFloat();
 
             state.Push(new DreamValue(-value));
@@ -1424,6 +1440,13 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus Power(DMProcState state) {
             using var second = state.Pop();
             using var first = state.Pop();
+
+            if (first.TryGetValueAsDreamObject<DreamObject>(out var firstDreamObject)) {
+                using var result = firstDreamObject.OperatorPower(second, state);
+
+                state.Push(result);
+                return ProcStatus.Continue;
+            }
 
             if (!first.TryGetValueAsFloat(out var floatFirst) && !first.IsNull)
                 throw new DMException($"Invalid power operation on {first} and {second}");
@@ -1442,9 +1465,15 @@ namespace OpenDreamRuntime.Procs {
             DreamValue result;
             switch (first.Type) {
                 case DreamValue.DreamValueType.DreamObject when !first.IsNull: {
-                    using var opResult = first.MustGetValueAsDreamObject()!.OperatorRemove(second);
+                    var firstObj = first.MustGetValueAsDreamObject()!;
+                    using var opResult = firstObj.OperatorRemove(second);
 
-                    state.PopReference(reference);
+                    // Same as Append; types producing a new object need it assigned back
+                    if (opResult.TryGetValueAsDreamObject(out var opResultObj) && ReferenceEquals(opResultObj, firstObj))
+                        state.PopReference(reference);
+                    else
+                        state.AssignReference(reference, opResult);
+
                     state.Push(opResult);
                     return ProcStatus.Continue;
                 }

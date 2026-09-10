@@ -20,3 +20,4 @@
 	ASSERT(A.x == 12)
 	ASSERT(A.y == 12)
 	ASSERT(A.z == 0)
+	ASSERT(A.len == 3) // Combining with a 3D vector makes it 3D

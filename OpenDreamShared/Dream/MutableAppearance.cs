@@ -396,7 +396,7 @@ public enum VisFlags {
     InheritPlane = 16,
     InheritId = 32,
     Underlay = 64,
-    Hide = 128,
+    Hide = 128
 }
 
 [Flags] //kinda, but only EASE_IN and EASE_OUT are used as bitflags, everything else is an enum

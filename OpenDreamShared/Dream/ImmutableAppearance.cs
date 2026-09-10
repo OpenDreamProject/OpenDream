@@ -352,7 +352,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
                     AppearanceFlags = (AppearanceFlags)buffer.ReadInt32();
                     break;
                 case IconAppearanceProperty.VisFlags:
-                    VisFlags = (VisFlags)buffer.ReadInt32();
+                    VisFlags = (VisFlags)buffer.ReadByte();
                     break;
                 case IconAppearanceProperty.Invisibility:
                     Invisibility = buffer.ReadSByte();
@@ -639,7 +639,7 @@ public sealed class ImmutableAppearance : IEquatable<ImmutableAppearance> {
 
         if (VisFlags != MutableAppearance.Default.VisFlags) {
             buffer.Write((byte)IconAppearanceProperty.VisFlags);
-            buffer.Write((int)VisFlags);
+            buffer.Write((byte)VisFlags);
         }
 
         if (Invisibility != MutableAppearance.Default.Invisibility) {

@@ -34,17 +34,9 @@ public partial class ElementDescriptor {
     [DataField("id")]
     protected DMFPropertyString _id;
 
-    [DataField("name")]
-    protected DMFPropertyString _name;
-
     public DMFPropertyString Id {
         get => string.IsNullOrEmpty(_id.Value) ? _id = new DMFPropertyString(Guid.NewGuid().ToString()) : _id; //ensure unique ID for all elements. Empty ID elements aren't addressible anyway.
         init => _id = value;
-    }
-
-    public DMFPropertyString Name {
-        get => new(_name.Value);
-        init => _name = value;
     }
 
     public DMFPropertyString Type {
@@ -71,6 +63,6 @@ public partial class ElementDescriptor {
     }
 
     public override string ToString() {
-        return $"{GetType().Name}(Type={Type},Name={Name})";
+        return $"{GetType().Name}(Type={Type},Id={Id})";
     }
 }

@@ -18,7 +18,6 @@ namespace OpenDreamRuntime.Map;
 public sealed partial class DreamMapManager : IDreamMapManager {
     [Dependency] private DreamManager _dreamManager = default!;
     [Dependency] private AtomManager _atomManager = default!;
-    [Dependency] private IMapManager _mapManager = default!;
     [Dependency] private DreamObjectTree _objectTree = default!;
     [Dependency] private IEntitySystemManager _entitySystemManager = default!;
 
@@ -350,7 +349,7 @@ public sealed partial class DreamMapManager : IDreamMapManager {
                 MapId mapId = new(z);
                 _mapSystem.CreateMap(mapId);
 
-                var grid = _mapManager.CreateGridEntity(mapId);
+                var grid = _mapSystem.CreateGridEntity(mapId);
                 Level level = new Level(z, grid, defaultTurfDef, DefaultArea, Size);
                 _levels.Add(level);
 

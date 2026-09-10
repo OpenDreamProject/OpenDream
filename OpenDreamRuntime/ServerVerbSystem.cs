@@ -3,6 +3,7 @@ using System.Linq;
 using DMCompiler.DM;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
+using OpenDreamRuntime.Procs.Native;
 using OpenDreamShared.Dream;
 using Robust.Server.Player;
 using Robust.Shared.Enums;
@@ -95,7 +96,8 @@ public sealed partial class ServerVerbSystem : VerbSystem {
             HiddenAttribute = (verb.Attributes & ProcAttributes.Hidden) == ProcAttributes.Hidden,
             ShowInPopupAttribute = (verb.Attributes & ProcAttributes.HidePopupMenu) == 0,
             Accessibility = verbAccessibility.Value,
-            Arguments = verbArguments
+            Arguments = verbArguments,
+            Range = verb.VerbRange ?? 0
         };
 
         verb.VerbId = _verbs.Count;
@@ -244,19 +246,54 @@ public sealed partial class ServerVerbSystem : VerbSystem {
         }
 
         var verbInfo = _verbs[verb.VerbId.Value];
+        var verbAccessibility = verbInfo.Accessibility;
 
         // Check that "set src = ..." allows execution in this instance
-        switch (verbInfo.Accessibility) {
-            case VerbAccessibility.Usr:
+        switch (verbAccessibility) {
+            case VerbAccessibility.Usr: {
                 return src == connection.Mob;
-            case VerbAccessibility.InUsr:
+            }
+            case VerbAccessibility.InUsr: {
                 if (src is not DreamObjectMovable srcMovable)
                     return false;
 
                 return srcMovable.Loc == connection.Mob;
-            default:
-                // TODO: All the other kinds
+            }
+            case VerbAccessibility.UsrLoc: {
+                return connection.Mob?.Loc == src;
+            }
+            case VerbAccessibility.UsrGroup: {
+                // TODO implement mob.group
                 return true;
+            }
+            case VerbAccessibility.InWorld: {
+                return true;
+            }
+            case VerbAccessibility.View:
+            case VerbAccessibility.InView:
+            case VerbAccessibility.OView:
+            case VerbAccessibility.InOView:
+            case VerbAccessibility.Range:
+            case VerbAccessibility.InRange:
+            case VerbAccessibility.ORange:
+            case VerbAccessibility.InORange: {
+                if (src is not DreamObjectAtom srcAtom || connection.Mob is null)
+                    return false;
+
+                if (verbInfo.Range < 0)
+                    return false;
+
+                DreamList viewCollection;
+                if(verbAccessibility.IsRange()) {
+                    viewCollection = DreamProcNativeHelpers.HandleRange(connection.Mob, new(verbInfo.Range), !verbAccessibility.IsO());
+                } else { // TODO implement view
+                    viewCollection = DreamProcNativeHelpers.HandleRange(connection.Mob, new(verbInfo.Range), !verbAccessibility.IsO());
+                }
+
+                return viewCollection.ContainsValue(new(srcAtom));
+            }
+            default:
+                throw new NotImplementedException($"{Enum.GetName(verbInfo.Accessibility)} is not implemented on the runtime");
         }
     }
 }

@@ -38,6 +38,9 @@ public sealed partial class MacroSetDescriptor : ElementDescriptor {
 
 [UsedImplicitly]
 public sealed partial class MacroDescriptor : ElementDescriptor {
+    [DataField("name")]
+    public DMFPropertyString Name { get; private set; }
+
     [DataField("command")]
     public string Command { get; private set; } = default!;
 }

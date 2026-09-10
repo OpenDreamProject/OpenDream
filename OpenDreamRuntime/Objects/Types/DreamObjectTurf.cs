@@ -1,4 +1,4 @@
-﻿using OpenDreamRuntime.Map;
+using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
 
@@ -30,7 +30,7 @@ public sealed class DreamObjectTurf : DreamObjectAtom {
 
     public void SetTurfType(DreamObjectDefinition objectDefinition) {
         if (!objectDefinition.IsSubtypeOf(ObjectTree.Turf))
-            throw new Exception($"Cannot set turf's type to {objectDefinition.Type}");
+            throw new DMException($"Cannot set turf's type to {objectDefinition.Type}");
 
         ObjectDefinition = objectDefinition;
 

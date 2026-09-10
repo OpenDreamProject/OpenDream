@@ -15,7 +15,7 @@ namespace OpenDreamRuntime.Procs {
         List<string> argumentNames,
         Dictionary<string, DreamValue> defaultArgumentValues,
         Func<AsyncNativeProc.AsyncNativeProcState, Task<DreamValue>> taskFunc)
-        : DreamProc(id, owningType, name, null, ProcAttributes.None, argumentNames, null, null, null, null, null, 0) {
+        : DreamProc(id, owningType, name, null, ProcAttributes.None, argumentNames, null, null, null, null, null, null, 0) {
         /// <summary>
         /// ProcState specifically for running native procs, not DM procs
         /// </summary>

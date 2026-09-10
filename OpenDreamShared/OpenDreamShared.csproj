@@ -15,6 +15,9 @@
     <PackageReference Include="JetBrains.Annotations" />
     <PackageReference Include="YamlDotNet" />
   </ItemGroup>
+  <ItemGroup>
+    <Using Include="System.Linq" />
+  </ItemGroup>
   <Import Project="..\RobustToolbox\Imports\Shared.props" />
 
   <Import Project="..\RobustToolbox\MSBuild\Robust.Properties.targets" />

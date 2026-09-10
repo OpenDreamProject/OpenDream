@@ -252,7 +252,7 @@ public static class HtmlParser {
                     break;
                 case "color":
                     if (!Color.TryFromName(attributeTextValue, out var color))
-                        color = Color.TryFromHex(attributeTextValue) ?? Color.Black;
+                        color = Color.TryFromHex(attributeTextValue, out var parsedColor) ? parsedColor : Color.Black;
 
                     parameter = new(color);
                     break;

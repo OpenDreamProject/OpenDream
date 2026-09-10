@@ -1,4 +1,4 @@
-﻿using System.Security.Cryptography;
+using System.Security.Cryptography;
 using System.Text;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
@@ -60,8 +60,8 @@ public sealed class DreamObjectClient : DreamObject {
                 return true;
             case "view":
                 // Number if square & centerable, string representation otherwise
-                if (View is { IsSquare: true, IsCenterable: true }) {
-                    value = new DreamValue(View.Range);
+                if (View.CanSquareRange) {
+                    value = new DreamValue(View.SquareRange.Value);
                 } else {
                     value = new DreamValue(View.ToString());
                 }
@@ -133,7 +133,7 @@ public sealed class DreamObjectClient : DreamObject {
             case "eye": {
                 value.TryGetValueAsDreamObject<DreamObjectAtom>(out var newEye);
                 if (newEye is not (DreamObjectMovable or null)) {
-                    throw new Exception($"Cannot set eye to non-movable {value}"); // TODO: You can set it to a turf
+                    throw new DMException($"Cannot set eye to non-movable {value}"); // TODO: You can set it to a turf
                 }
 
                 newEye?.IncRef();

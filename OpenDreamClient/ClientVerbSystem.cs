@@ -19,6 +19,7 @@ public sealed partial class ClientVerbSystem : VerbSystem {
     [Dependency] private IOverlayManager _overlayManager = default!;
     [Dependency] private TransformSystem _transformSystem = default!;
 
+    private EntityQuery<TransformComponent> _xformQuery;
     private EntityQuery<DMISpriteComponent> _spriteQuery;
     private EntityQuery<DreamMobSightComponent> _sightQuery;
 
@@ -28,6 +29,7 @@ public sealed partial class ClientVerbSystem : VerbSystem {
     public override void Initialize() {
         _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
         _sightQuery = _entityManager.GetEntityQuery<DreamMobSightComponent>();
+        _xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
 
         SubscribeNetworkEvent<AllVerbsEvent>(OnAllVerbsEvent);
         SubscribeNetworkEvent<RegisterVerbEvent>(OnRegisterVerbEvent);
@@ -112,23 +114,79 @@ public sealed partial class ClientVerbSystem : VerbSystem {
                 if (verb.IsHidden(ignoreHiddenAttr, seeInvisibility!.Value))
                     continue;
 
-                var src = new ClientObjectReference(_entityManager.GetNetEntity(entity));
-
                 // Check the verb's "set src" allows us to execute this
                 switch (verb.Accessibility) {
-                    case VerbAccessibility.Usr:
+                    case VerbAccessibility.Usr: {
                         if (entity != _playerManager.LocalEntity)
                             continue;
 
                         break;
-                    case VerbAccessibility.InUsr:
+                    }
+                    case VerbAccessibility.InUsr: {
                         if (_transformSystem.GetParentUid(entity) != _playerManager.LocalEntity)
                             continue;
 
                         break;
-                    // TODO: All the other kinds
+                    }
+                    case VerbAccessibility.UsrLoc: {
+                        if (_playerManager.LocalEntity is null)
+                            continue;
+                        if (_transformSystem.GetParentUid(_playerManager.LocalEntity.Value) != entity)
+                            continue;
+
+                        break;
+                    }
+                    case VerbAccessibility.UsrGroup: {
+                        // TODO implement mob.group
+                        break;
+                    }
+                    case VerbAccessibility.InWorld: {
+                        break;
+                    }
+                    case VerbAccessibility.View:
+                    case VerbAccessibility.InView:
+                    case VerbAccessibility.OView:
+                    case VerbAccessibility.InOView:
+                    case VerbAccessibility.Range:
+                    case VerbAccessibility.InRange:
+                    case VerbAccessibility.ORange:
+                    case VerbAccessibility.InORange: {
+                        if(_playerManager.LocalEntity is not null)
+                            continue;
+                        if(verb.Range < 0)
+                            continue;
+
+                        var usrUid = _playerManager.LocalEntity;
+                        var srcUid = entity;
+
+                        if(!_xformQuery.TryGetComponent(usrUid, out var usrXform) || !_xformQuery.TryGetComponent(srcUid, out var srcXform))
+                            continue;
+
+                        if(usrXform.GridUid != srcXform.GridUid)
+                            continue;
+                        if(usrXform.ParentUid == srcXform.ParentUid) {
+                            var usrPos = _transformSystem.GetWorldPosition(usrXform);
+                            var srcPos = _transformSystem.GetWorldPosition(srcXform);
+
+                            if(usrPos != srcPos && (Math.Abs(usrPos.X - srcPos.X) > verb.Range || Math.Abs(usrPos.Y - srcPos.Y) > verb.Range))
+                                continue;
+                        } else {
+                            if(srcXform.ParentUid == usrUid) {
+                                if(verb.Accessibility.IsO())
+                                    continue;
+                            } else if(usrXform.ParentUid != srcUid)
+                                continue;
+                        }
+
+                        if(verb.Accessibility.IsView()) {
+                            // TODO
+                        }
+
+                        break;
+                    }
                 }
 
+                var src = new ClientObjectReference(_entityManager.GetNetEntity(entity));
                 yield return (verbId, src, verb);
             }
         }

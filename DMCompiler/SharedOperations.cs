@@ -150,6 +150,10 @@ public static class SharedOperations {
         byte aValue = a is null ? (byte)255 : (byte)Math.Clamp((int)a, 0, 255);
         Color color;
 
+        // BYOND treats an unknown numeric color space as RGB
+        if (!Enum.IsDefined(space))
+            space = ColorSpace.RGB;
+
         switch (space) {
             case ColorSpace.RGB: {
                 byte r = (byte)Math.Clamp(color1.Value, 0, 255);

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using Robust.Shared.Maths;
 
 namespace OpenDreamShared.Dream;
@@ -9,20 +10,23 @@ namespace OpenDreamShared.Dream;
 /// </summary>
 public readonly struct ViewRange {
     public readonly int Width, Height;
-    public bool IsSquare => (Width == Height);
+    public int BiggestAxis => Math.Max(Width, Height);
 
     public int CenterX => Width / 2;
     public int CenterY => Height / 2;
     public Vector2i Center => (CenterX, CenterY);
 
-    //View can be centered in both directions?
+    public bool IsSquare => Width == Height;
     public bool IsCenterable => (Width % 2 == 1) && (Height % 2 == 1);
 
+    [MemberNotNullWhen(true, nameof(SquareRange))]
+    public bool CanSquareRange => IsSquare && IsCenterable;
+
     /// <summary>
-    /// The distance this ViewRange covers in every direction if <see cref="IsSquare"/> and
-    /// <see cref="IsCenterable"/> are true
+    /// The distance this ViewRange covers in every direction
+    /// if <see cref="CanSquareRange"/> is true
     /// </summary>
-    public int Range => (IsSquare && IsCenterable) ? (Width - 1) / 2 : 0;
+    public int? SquareRange => CanSquareRange ? (Width - 1) / 2 : null;
 
     public ViewRange(int range) {
         // A square covering "range" cells in each direction

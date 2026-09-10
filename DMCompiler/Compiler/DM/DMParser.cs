@@ -386,6 +386,10 @@ namespace DMCompiler.Compiler.DM {
             bool hasPathTypeToken = true;
 
             if (Check(TokenType.DM_Slash)) {
+                // Ignore consecutive slashes (e.g "//datum/foo").
+                // BYOND accepts these; they can only come from macro expansion because "//" is a comment in source.
+                while (Check(TokenType.DM_Slash)) { }
+
                 // Check if they did "/.whatever/" instead of ".whatever/"
                 pathType = Check(TokenType.DM_Period) ? DreamPath.PathType.UpwardSearch : DreamPath.PathType.Absolute;
             } else if (Check(TokenType.DM_Colon)) {
@@ -403,6 +407,8 @@ namespace DMCompiler.Compiler.DM {
                 List<string> pathElements = [pathElement];
                 bool operatorFlag = false;
                 while (pathElement != null && Check(TokenType.DM_Slash)) {
+                    while (Check(TokenType.DM_Slash)) { }
+
                     pathElement = PathElement();
 
                     if (pathElement != null) {
@@ -442,8 +448,6 @@ namespace DMCompiler.Compiler.DM {
                 return new DMASTPath(firstToken.Location, new DreamPath(pathType, pathElements.ToArray()), operatorFlag);
             } else if (hasPathTypeToken) {
                 if (expression) ReuseToken(firstToken);
-
-                return null;
             }
 
             return null;
@@ -2754,6 +2758,13 @@ namespace DMCompiler.Compiler.DM {
                                 "Expected 3 to 5 arguments for rgb()");
 
                         return new DMASTRgb(identifier.Location, callParameters);
+                    }
+                    case "image": {
+                        if (callParameters.Length < 1)
+                            Emit(WarningCode.InvalidArgumentCount, callLoc,
+                                "Expected at least 1 argument for image()");
+
+                        goto default;
                     }
                     case "animate": {
                         if (callParameters.Length is < 1)

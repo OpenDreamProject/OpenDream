@@ -37,7 +37,8 @@ public sealed partial class MenuDescriptor : ElementDescriptor {
 }
 
 public sealed partial class MenuElementDescriptor : ElementDescriptor {
-
+    [DataField("name")]
+    public DMFPropertyString Name { get; set; }
 
     [DataField("command")]
     public DMFPropertyString Command { get; private set; }
@@ -53,6 +54,7 @@ public sealed partial class MenuElementDescriptor : ElementDescriptor {
 
     [DataField("group")]
     public DMFPropertyString Group { get; private set; }
+
     [DataField("index")]
     public DMFPropertyNum Index { get; private set; }
 

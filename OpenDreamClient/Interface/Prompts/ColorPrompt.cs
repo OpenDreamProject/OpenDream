@@ -69,9 +69,8 @@ internal sealed class ColorPrompt : InputWindow {
     private void LineEdit_OnFinishInput(LineEdit.LineEditEventArgs args) {
         var text = args.Text.Trim();
         if (!text.StartsWith('#')) text = '#' + text;
-        var newColor = Color.TryFromHex(text);
-        if (newColor.HasValue) {
-            _colorSelector.Color = newColor.Value;
+        if (Color.TryFromHex(text, out var newColor)) {
+            _colorSelector.Color = newColor;
         }
     }
 

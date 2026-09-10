@@ -41,10 +41,11 @@ internal partial class DMCodeTree {
                           proc.Attributes |= ProcAttributes.DisableWaitfor;
                       if (parent.IsVerb) {
                           proc.IsVerb = true;
+                          proc.VerbSrc = parent.VerbSrc;
+                          proc.VerbRange = parent.VerbRange;
                           proc.VerbName = parent.VerbName;
                           proc.VerbCategory = parent.VerbCategory;
                           proc.VerbDesc = parent.VerbDesc;
-                          proc.VerbSrc = parent.VerbSrc;
                       }
 
                       if (parent.IsFinal)

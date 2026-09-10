@@ -30,6 +30,7 @@ internal sealed class ControlChild(ControlDescriptor controlDescriptor, ControlW
 
         _splitter.Left = newLeftElement;
         _splitter.Right = newRightElement;
+        _splitter.ShowSplitter = ChildDescriptor.ShowSplitter.Value;
         _splitter.Vertical = ChildDescriptor.IsVert.Value;
         _splitter.SplitterPercentage = ChildDescriptor.Splitter.Value / 100f;
         _splitter.DragStyleBoxOverride = new StyleBoxColoredTexture {

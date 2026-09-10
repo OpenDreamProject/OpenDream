@@ -37,8 +37,7 @@ public static class ServerPackaging {
         "Byond.TopicSender",
         "Microsoft.Extensions.Logging.Abstractions", // dep of Byond.TopicSender
         "Microsoft.Extensions.DependencyInjection.Abstractions", // dep of above
-        "DMCompiler",
-        "Tracy"
+        "DMCompiler"
     };
 
     // Extra assemblies to copy on the server, with a startswith
@@ -50,8 +49,7 @@ public static class ServerPackaging {
         "Byond.TopicSender",
         "Microsoft.Extensions.Logging.Abstractions", // dep of Byond.TopicSender
         "Microsoft.Extensions.DependencyInjection.Abstractions", // dep of above
-        "DMCompiler",
-        "Tracy"
+        "DMCompiler"
     };
 
     private static readonly string[] ServerNotExtraAssemblies = {
@@ -61,7 +59,6 @@ public static class ServerPackaging {
     private static readonly string[] ServerNatives = {
         "byondcore", // Windows name for the BYONDAPI trampoline
         "libbyond", // Linux name for the BYONDAPI trampoline
-        "TracyClient"
     };
 
     private static readonly string[] BinSkipFolders = {

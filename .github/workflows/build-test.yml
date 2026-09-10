@@ -33,6 +33,8 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet build --property WarningLevel=${{ matrix.os == 'ubuntu-latest' && '4' || '0' }} --configuration Release --no-restore /m
+    - name: DMDisassembler.Tests
+      run: dotnet test --configuration Release --no-build DMDisassembler.Tests/DMDisassembler.Tests.csproj -v n
     - name: Content.Tests
       shell: pwsh
       run: |

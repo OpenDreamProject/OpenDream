@@ -69,7 +69,7 @@ internal sealed partial class ClientAppearanceSystem : SharedAppearanceSystem {
     [Dependency] private IClyde _clyde = default!;
     [Dependency] private DMISpriteSystem _spriteSystem = default!;
     [Dependency] private IPlayerManager _playerManager = default!;
-    [Dependency] private IMapManager _mapManager = default!;
+    [Dependency] private SharedMapSystem _mapManager = default!;
     [Dependency] private MapSystem _mapSystem = default!;
     [Dependency] private IPrototypeManager _protoManager = default!;
     [Dependency] private IRobustSerializer _serializer = default!;

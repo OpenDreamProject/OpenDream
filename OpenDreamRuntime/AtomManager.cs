@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using OpenDreamRuntime.Map;
@@ -11,7 +11,6 @@ using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Shared.Map;
 using Dependency = Robust.Shared.IoC.DependencyAttribute;
-
 namespace OpenDreamRuntime;
 
 public sealed partial class AtomManager {
@@ -555,7 +554,9 @@ public sealed partial class AtomManager {
         if (atom is DreamObjectMovable movable) {
             targetEntity = movable.Entity;
             targetComponent = movable.SpriteComponent;
-            appearance = MustGetAppearance(atom).ToMutable();
+            appearance = TryGetAppearance(atom, out ImmutableAppearance? movableAppearance)
+                ? movableAppearance.ToMutable()
+                : MutableAppearance.GetCopy(GetAppearanceFromDefinition(atom.ObjectDefinition));
         } else if (atom is DreamObjectImage { IsMutableAppearance: false } image) {
             targetEntity = image.Entity;
             targetComponent = image.SpriteComponent;

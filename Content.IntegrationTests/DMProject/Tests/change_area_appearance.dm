@@ -2,7 +2,7 @@
 	color = rgb(255,0,0)
 
 /datum/unit_test/test_change_area_appearance/RunTest()
-	var/area/subtype/S = new()
+	var/area/subtype/S = areas_by_type[/area/subtype]
 	var/list/block_turfs = block(locate(1,1,1), locate(2,2,2))
 	for(var/turf/T in block_turfs)
 		S.contents += T

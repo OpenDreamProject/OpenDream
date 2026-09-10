@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using OpenDreamRuntime.Procs;
 using System.Globalization;
 using System.Runtime.CompilerServices;
@@ -44,7 +44,7 @@ public class DreamObject {
     protected DreamObjectTree ObjectTree => ObjectDefinition.ObjectTree;
     protected AtomManager AtomManager => ObjectDefinition.AtomManager;
     protected IDreamMapManager DreamMapManager => ObjectDefinition.DreamMapManager;
-    protected IMapManager MapManager => ObjectDefinition.MapManager;
+    protected SharedMapSystem MapManager => ObjectDefinition.MapManager;
     protected DreamResourceManager DreamResourceManager => ObjectDefinition.DreamResourceManager;
     protected WalkManager WalkManager => ObjectDefinition.WalkManager;
     protected IEntityManager EntityManager => ObjectDefinition.EntityManager;
@@ -244,7 +244,7 @@ public class DreamObject {
             case "type":
             case "parent_type":
             case "vars":
-                throw new Exception($"Cannot set var \"{varName}\"");
+                throw new DMException($"Cannot set var \"{varName}\"");
             case "tag":
                 value.TryGetValueAsString(out var newTag);
 
@@ -252,9 +252,9 @@ public class DreamObject {
                 break;
             default:
                 if (ObjectDefinition.ConstVariables is not null && ObjectDefinition.ConstVariables.Contains(varName))
-                    throw new Exception($"Cannot set const var \"{varName}\" on {ObjectDefinition.Type}");
+                    throw new DMException($"Cannot set const var \"{varName}\" on {ObjectDefinition.Type}");
                 if (!ObjectDefinition.Variables.ContainsKey(varName))
-                    throw new Exception($"Cannot set var \"{varName}\" on {ObjectDefinition.Type}");
+                    throw new DMException($"Cannot set var \"{varName}\" on {ObjectDefinition.Type}");
 
                 SetVariableValue(varName, value);
                 break;

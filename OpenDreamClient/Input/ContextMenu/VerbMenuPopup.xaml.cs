@@ -60,18 +60,18 @@ internal sealed partial class VerbMenuPopup : Popup {
                     icon = spriteComponent.Icon;
                     break;
                 case ClientObjectReference.RefType.Turf:
-                    var mapManager = IoCManager.Resolve<IMapManager>();
+                    var entitySystemManager = IoCManager.Resolve<IEntitySystemManager>();
+                    var mapSystem = entitySystemManager.GetEntitySystem<MapSystem>();
+                    var appearanceSystem = entitySystemManager.GetEntitySystem<ClientAppearanceSystem>();
+
                     var mapId = new MapId(_target.TurfZ);
                     var mapPos = new Vector2(_target.TurfX, _target.TurfY);
-                    if (!mapManager.TryFindGridAt(mapId, mapPos, out var gridUid, out var grid)) {
+                    if (!mapSystem.TryFindGridAt(mapId, mapPos, out var gridUid, out var grid)) {
                         Logger.GetSawmill("opendream")
                             .Error($"Failed to get icon for {_target} when trying to debug its icon");
                         return;
                     }
 
-                    var entitySystemManager = IoCManager.Resolve<IEntitySystemManager>();
-                    var mapSystem = entitySystemManager.GetEntitySystem<MapSystem>();
-                    var appearanceSystem = entitySystemManager.GetEntitySystem<ClientAppearanceSystem>();
                     var tileRef = mapSystem.GetTileRef(gridUid, grid, (Vector2i)mapPos);
                     icon = appearanceSystem.GetTurfIcon((uint)tileRef.Tile.TypeId);
                     break;

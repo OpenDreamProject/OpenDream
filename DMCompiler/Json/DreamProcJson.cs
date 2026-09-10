@@ -16,6 +16,7 @@ public sealed class ProcDefinitionJson {
 
     public bool IsVerb { get; init; }
     public VerbSrc? VerbSrc { get; init; }
+    public int? VerbRange { get; init; }
     public string? VerbName { get; init; }
     public string? VerbCategory { get; init; }
     public string? VerbDesc { get; init; }

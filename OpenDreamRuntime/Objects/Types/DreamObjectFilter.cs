@@ -1,6 +1,4 @@
-﻿using OpenDreamShared.Dream;
-using Robust.Shared.Serialization.Manager;
-using Robust.Shared.Serialization.Markdown.Mapping;
+using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -21,25 +19,18 @@ public sealed class DreamObjectFilter(DreamObjectDefinition objectDefinition) : 
     protected override void SetVar(string varName, DreamValue value) {
         if (FilterAttachedTo.TryGetValue(Filter, out var attachedTo)) {
             int index = attachedTo.GetIndexOfFilter(Filter);
-            Type filterType = Filter.GetType();
 
-            // Create a new mapping with the modified value and replace the DreamFilter with it
-            MappingDataNode mapping = (MappingDataNode)SerializationManager.WriteValue(filterType, Filter);
-            mapping.Remove(varName);
-            mapping.Add(varName, new DreamValueDataNode(value));
-            if (SerializationManager.Read(filterType, mapping) is not DreamFilter newFilter)
-                return;
-            if (newFilter.Equals(Filter)) // No change
-                return;
-
-            Filter = newFilter;
-            attachedTo.SetFilter(index, newFilter);
+            var newFilter = DreamFilterHelpers.SetVar(Filter, varName, value);
+            if (newFilter != null) {
+                Filter = newFilter;
+                attachedTo.SetFilter(index, newFilter);
+            }
         }
     }
 
     public static DreamObjectFilter? TryCreateFilter(DreamObjectTree objectTree, IEnumerable<(string Name, DreamValue Value)> properties) {
         Type? filterType = null;
-        MappingDataNode attributes = new();
+        var propertyList = new List<(string Name, DreamValue Value)>();
 
         foreach (var property in properties) {
             if (property.Value.IsNull)
@@ -49,17 +40,13 @@ public sealed class DreamObjectFilter(DreamObjectDefinition objectDefinition) : 
                 filterType = DreamFilter.GetType(filterTypeName);
             }
 
-            attributes.Add(property.Name, new DreamValueDataNode(property.Value));
+            propertyList.Add(property);
         }
 
         if (filterType == null)
             return null;
 
-        var serializationManager = IoCManager.Resolve<ISerializationManager>();
-
-        DreamFilter? filter = serializationManager.Read(filterType, attributes) as DreamFilter;
-        if (filter is null)
-            throw new Exception($"Failed to create filter of type {filterType}");
+        var filter = DreamFilterHelpers.Create(filterType, propertyList);
 
         var filterObject = objectTree.CreateObject<DreamObjectFilter>(objectTree.Filter);
         filterObject.Filter = filter;

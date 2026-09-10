@@ -1,4 +1,4 @@
-﻿using System.Buffers;
+using System.Buffers;
 using System.IO;
 using System.Linq;
 using OpenDreamRuntime.Resources;
@@ -184,7 +184,7 @@ public sealed class DreamIcon(DreamManager dreamManager, DreamResourceManager re
             foreach (var copyStateName in icon.DMI.States.Keys) {
                 InsertState(icon, copyStateName, copyStateName,
                     copyingAllDirs ? null : copyingDirection, copyingAllFrames ? null : copyingFrame,
-                    forceSouth: false);
+                    forceSouth: isConstructor);
             }
         } else {
             InsertState(icon, isConstructor ? string.Empty : copyingState!, copyingState!,
@@ -405,7 +405,7 @@ public sealed class DreamIconOperationBlendImage : DreamIconOperationBlend {
         var resourceManager = IoCManager.Resolve<DreamResourceManager>();
 
         if (!resourceManager.TryLoadIcon(blending, out var blendingIcon)) {
-            throw new Exception($"Value {blending} is not a valid icon to blend");
+            throw new DMException($"Value {blending} is not a valid icon to blend");
         }
 
         _blending = blendingIcon.Texture;
@@ -491,12 +491,15 @@ public sealed class DreamIconOperationDrawBox(Color rgb, Vector2i startPixel, Ve
 
     public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, AtomDirection dir, UIBox2i bounds) {
         // FIXME: This stuff can definitely be calculated once/ahead of time but we can't guarantee this in OnApply
-        var workingBounds = new UIBox2i(
-            Math.Max(_bottomLeft.X, bounds.Left),
-            Math.Max(bounds.Bottom - (_topRight.Y - bounds.Top), bounds.Top),
-            Math.Min(_topRight.X, bounds.Right),
-            Math.Min(bounds.Bottom - (_bottomLeft.Y - bounds.Top), bounds.Bottom)
-        );
+        var left = Math.Max(_bottomLeft.X, bounds.Left);
+        var top = Math.Max(bounds.Bottom - (_topRight.Y - bounds.Top), bounds.Top);
+        var right = Math.Min(_topRight.X, bounds.Right);
+        var bottom = Math.Min(bounds.Bottom - (_bottomLeft.Y - bounds.Top), bounds.Bottom);
+
+        if (left > right || top > bottom)
+            return; // The box is entirely outside this frame's bounds; nothing to draw
+
+        var workingBounds = new UIBox2i(left, top, right, bottom);
 
         var endPosY = Math.Min(bounds.Bottom, workingBounds.Bottom);
         var endPosX = Math.Min(bounds.Right, workingBounds.Right);

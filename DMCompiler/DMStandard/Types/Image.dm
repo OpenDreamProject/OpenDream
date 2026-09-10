@@ -52,7 +52,7 @@
 	var/x
 	var/y
 	var/z
-	var/list/vis_contents = list() as opendream_unimplemented
+	var/list/vis_contents
 
 	var/dir
 	var/icon

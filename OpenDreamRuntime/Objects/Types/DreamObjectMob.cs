@@ -7,6 +7,9 @@ public sealed class DreamObjectMob : DreamObjectMovable {
     public DreamConnection? Connection;
     public string? Key;
 
+    // DM specific behavior, do not garbage collect mobs that have a key.
+    public override bool ShouldGarbageCollect => string.IsNullOrEmpty(Key);
+
     public int SeeInvisible {
         get => _sightComponent.SeeInvisibility;
         private set {

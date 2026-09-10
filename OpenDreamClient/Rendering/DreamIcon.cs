@@ -35,6 +35,7 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
             if (_appearance?.Equals(value) is true)
                 return;
 
+            _lastAppearanceChange = gameTiming.CurTime;
             _appearance = value;
             UpdateIcon();
         }
@@ -49,11 +50,11 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
 
     // TODO: We could cache these per-appearance instead of per-atom
     public IRenderTexture? CachedTexture {
-        get => _cachedTexture;
+        get;
         private set {
-            if (_cachedTexture != null)
-                renderTargetPool.Return(_cachedTexture);
-            _cachedTexture = value;
+            if (field != null)
+                renderTargetPool.Return(field);
+            field = value;
         }
     }
 
@@ -61,12 +62,12 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
     public Texture? LastRenderedTexture;
 
     private int _animationFrame;
+    private TimeSpan _lastAppearanceChange = gameTiming.CurTime;
     private List<AppearanceAnimation>? _appearanceAnimations;
     private int _appearanceAnimationsLoops;
     private Box2? _cachedAABB;
     private bool _textureDirty = true;
     private bool _animationComplete;
-    private IRenderTexture? _cachedTexture;
 
     public DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfaceManager interfaceManager, IGameTiming gameTiming, IClyde clyde, ClientAppearanceSystem appearanceSystem, uint appearanceId,
         AtomDirection? parentDir = null, string? parentIconState = null) : this(renderTargetPool, interfaceManager, gameTiming, clyde, appearanceSystem) {
@@ -228,11 +229,11 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
         if (frames.Length <= 1)
             return 0;
 
-        var oldFrame = _animationFrame;
-        var currentGameTicks = gameTiming.CurTime.Ticks;
-        var sequenceDuration = frames.Aggregate(TimeSpan.Zero, (duration, frame) => duration + frame.Delay);
-        var durationDiff = new TimeSpan(currentGameTicks % sequenceDuration.Ticks);
         var noLoop = !dmiState.Loop;
+        var oldFrame = _animationFrame;
+        var animationTick = gameTiming.CurTime.Ticks - (noLoop ? _lastAppearanceChange.Ticks : 0);
+        var sequenceDuration = frames.Aggregate(TimeSpan.Zero, (duration, frame) => duration + frame.Delay);
+        var durationDiff = new TimeSpan(animationTick % sequenceDuration.Ticks);
 
         _animationFrame = 0;
         while (durationDiff >= frames[_animationFrame].Delay) {
@@ -243,7 +244,9 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
             if (noLoop && _animationFrame == frames.Length - 1) {
                 _animationComplete = true;
                 break;
-            } else if (_animationFrame == frames.Length)
+            }
+
+            if (_animationFrame == frames.Length)
                 _animationFrame = 0;
         }
 

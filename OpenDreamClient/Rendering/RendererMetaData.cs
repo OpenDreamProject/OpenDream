@@ -17,9 +17,12 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public ColorMatrix ColorMatrixToApply;
     public float AlphaToApply;
     public Matrix3x2 TransformToApply;
+    public Vector2 RenderPosOffset;
     public string? RenderSource;
     public string? RenderTarget;
     public List<RendererMetaData>? KeepTogetherGroup;
+    public VisFlags VisFlags;
+    public bool IsVisContent;
     public AppearanceFlags AppearanceFlags;
     public BlendMode BlendMode;
     public MouseOpacity MouseOpacity;
@@ -50,9 +53,12 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         ColorMatrixToApply = ColorMatrix.Identity;
         AlphaToApply = 1.0f;
         TransformToApply = Matrix3x2.Identity;
+        RenderPosOffset = Vector2.Zero;
         RenderSource = "";
         RenderTarget = "";
         KeepTogetherGroup = null; //don't actually need to allocate this 90% of the time
+        VisFlags = VisFlags.None;
+        IsVisContent = false;
         AppearanceFlags = AppearanceFlags.None;
         BlendMode = BlendMode.Default;
         MouseOpacity = MouseOpacity.Transparent;

@@ -39,6 +39,11 @@ internal partial class DMCodeTree {
     }
 
     private class ObjectNode(DMCodeTree codeTree, string name, DreamPath type) : TypeNode(name) {
+        public DreamPath Path => type;
+
+        /// <summary>The location that first caused this type to be added to the tree</summary>
+        public Location Location { get; init; } = Location.Unknown;
+
         private bool _defined;
         private ProcsNode? _procs;
 
@@ -144,8 +149,8 @@ internal partial class DMCodeTree {
         _root = new(this, "/", DreamPath.Root);
     }
 
-    public void AddType(DreamPath type) {
-        GetDMObjectNode(type); // Add it to our tree
+    public void AddType(DreamPath type, Location location) {
+        GetDMObjectNode(type, location); // Add it to our tree
     }
 
     public DreamPath? UpwardSearch(DMObject start, DreamPath search) {
@@ -196,7 +201,7 @@ internal partial class DMCodeTree {
         }
     }
 
-    private ObjectNode GetDMObjectNode(DreamPath path) {
+    private ObjectNode GetDMObjectNode(DreamPath path, Location location = default) {
         var node = _root;
 
         for (int i = 0; i < path.Elements.Length; i++) {
@@ -205,7 +210,7 @@ internal partial class DMCodeTree {
                 var creating = path.FromElements(0, i + 1);
 
                 _compiler.VerbosePrint($"Adding {creating} to the code tree");
-                childNode = new ObjectNode(this, element, creating);
+                childNode = new ObjectNode(this, element, creating) { Location = location };
                 node.Children.Add(childNode);
                 _waitingNodes.Add(childNode);
             }
@@ -217,6 +222,30 @@ internal partial class DMCodeTree {
         }
 
         return node;
+    }
+
+    /// <summary>
+    /// Looks for a type that's already been declared, without adding anything to the tree
+    /// </summary>
+    private bool TryGetTypeNode(DreamPath path, [NotNullWhen(true)] out ObjectNode? type) {
+        return TryGetTypeNode(_root, path, out type) ||
+               (_dmStandardRoot != null && TryGetTypeNode(_dmStandardRoot, path, out type));
+    }
+
+    private static bool TryGetTypeNode(ObjectNode root, DreamPath path, [NotNullWhen(true)] out ObjectNode? type) {
+        var node = root;
+
+        foreach (var element in path.Elements) {
+            if (!node.TryGetChild(element, out var child) || child is not ObjectNode objectNode) {
+                type = null;
+                return false;
+            }
+
+            node = objectNode;
+        }
+
+        type = node;
+        return true;
     }
 
     private IEnumerable<INode> TraverseNodes(TypeNode from) {

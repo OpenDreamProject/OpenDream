@@ -44,27 +44,27 @@ internal class DMCodeTreeBuilder(DMCompiler compiler) {
             case DMASTNullStatement:
                 break;
             case DMASTObjectDefinition objectDefinition:
-                CodeTree.AddType(objectDefinition.Path);
+                CodeTree.AddType(objectDefinition.Path, objectDefinition.Location);
                 if (objectDefinition.InnerBlock != null)
                     ProcessBlockInner(objectDefinition.InnerBlock, objectDefinition.Path);
                 break;
             case DMASTObjectVarDefinition varDefinition:
-                CodeTree.AddType(varDefinition.ObjectPath);
+                CodeTree.AddType(varDefinition.ObjectPath, varDefinition.Location);
                 CodeTree.AddObjectVar(varDefinition.ObjectPath, varDefinition);
                 break;
             case DMASTObjectVarOverride varOverride:
-                CodeTree.AddType(varOverride.ObjectPath);
+                CodeTree.AddType(varOverride.ObjectPath, varOverride.Location);
                 CodeTree.AddObjectVarOverride(varOverride.ObjectPath, varOverride);
                 break;
             case DMASTProcDefinition procDefinition:
                 var procOwner = currentType.Combine(procDefinition.ObjectPath);
 
-                CodeTree.AddType(procOwner);
+                CodeTree.AddType(procOwner, procDefinition.Location);
                 CodeTree.AddProc(procOwner, procDefinition);
                 break;
             case DMASTMultipleObjectVarDefinitions multipleVarDefinitions: {
                 foreach (DMASTObjectVarDefinition varDefinition in multipleVarDefinitions.VarDefinitions) {
-                    CodeTree.AddType(varDefinition.ObjectPath);
+                    CodeTree.AddType(varDefinition.ObjectPath, varDefinition.Location);
                     CodeTree.AddObjectVar(varDefinition.ObjectPath, varDefinition);
                 }
 

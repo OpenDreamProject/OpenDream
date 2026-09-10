@@ -13,12 +13,12 @@ var/global/gc_datum_deleted = 0
 	..()
 
 // Both objects are unreferenced once this returns
-/proc/gc_test_make_and_drop()
+/proc/gc_test_area_make_and_drop()
 	var/area/gc_test/A = new()
 	var/datum/gc_test/D = new()
 
 /datum/unit_test/test_area_not_garbage_collected/RunTest()
-	gc_test_make_and_drop()
+	gc_test_area_make_and_drop()
 
 	// A plain datum dies as soon as nothing references it anymore...
 	ASSERT(global.gc_datum_deleted == 1)

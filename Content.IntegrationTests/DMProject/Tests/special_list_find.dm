@@ -6,7 +6,7 @@
 	return args.Find(b)
 
 /datum/unit_test/special_list_find/RunTest()
-	var/turf/T = locate(1, 1, 1)
+	var/turf/T = locate(2, 2, 1)
 	var/obj/first = new(T)
 	var/obj/second = new(T)
 

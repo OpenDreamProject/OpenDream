@@ -146,7 +146,7 @@ public struct CompilerEmission {
         {WarningCode.ErrorRecoveryActivated, ErrorLevel.Error},
 
         //2000-2999
-        {WarningCode.SoftReservedKeyword, ErrorLevel.Error},
+        {WarningCode.SoftReservedKeyword, ErrorLevel.Warning},
         {WarningCode.ScopeOperandNamedType, ErrorLevel.Warning},
         {WarningCode.DuplicateVariable, ErrorLevel.Warning},
         {WarningCode.DuplicateProcDefinition, ErrorLevel.Error},

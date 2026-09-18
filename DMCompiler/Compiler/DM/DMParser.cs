@@ -1548,6 +1548,8 @@ namespace DMCompiler.Compiler.DM {
                 return new DMASTProcStatementSwitch.SwitchCaseValues(expressions.ToArray(), body);
             } else if (Check(TokenType.DM_Else)) {
                 Whitespace();
+                Check(TokenType.DM_Colon); // Someone wrote "else:" instead of "else"
+                Whitespace();
                 var loc = Current().Location;
                 if (Current().Type == TokenType.DM_If) {
                     //From now on, all if/elseif/else are actually part of this if's chain, not the switch's.

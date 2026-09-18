@@ -1547,6 +1547,7 @@ namespace DMCompiler.Compiler.DM {
 
                 return new DMASTProcStatementSwitch.SwitchCaseValues(expressions.ToArray(), body);
             } else if (Check(TokenType.DM_Else)) {
+                Whitespace();
                 Check(TokenType.DM_Colon); // Someone wrote "else:" instead of "else"
                 Whitespace();
                 var loc = Current().Location;

@@ -1,4 +1,5 @@
-// COMPILE ERROR OD0001
+
+// Ignore dangling derefs
 /proc/RunTest()
 	var/datum/D = new
 	var/foo = D?.

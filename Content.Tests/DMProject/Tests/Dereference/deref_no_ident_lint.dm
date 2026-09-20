@@ -4,4 +4,4 @@
 
 /proc/RunTest()
 	var/datum/D = new
-	var/foo = D?.
+	var/foo = D.

@@ -2452,7 +2452,8 @@ namespace DMCompiler.Compiler.DM {
                                 // Annoyingly, dangling '?.' is an error in BYOND but '.' isn't
                                 if(token.Type == TokenType.DM_QuestionPeriod)
                                     Compiler.Emit(WarningCode.BadToken, token.Location, "Identifier expected");
-                                Compiler.Emit(WarningCode.DanglingSyntax, token.Location, $"Dangling '{token.PrintableText}' operator does nothing and should be removed");
+                                else
+                                    Compiler.Emit(WarningCode.DanglingSyntax, token.Location, $"Dangling '{token.PrintableText}' operator does nothing and should be removed");
                                 return expression;
                             }
 

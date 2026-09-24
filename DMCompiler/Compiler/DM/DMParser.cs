@@ -1548,6 +1548,8 @@ namespace DMCompiler.Compiler.DM {
                 return new DMASTProcStatementSwitch.SwitchCaseValues(expressions.ToArray(), body);
             } else if (Check(TokenType.DM_Else)) {
                 Whitespace();
+                Check(TokenType.DM_Colon); // Someone wrote "else:" instead of "else"
+                Whitespace();
                 var loc = Current().Location;
                 if (Current().Type == TokenType.DM_If) {
                     //From now on, all if/elseif/else are actually part of this if's chain, not the switch's.
@@ -2444,9 +2446,15 @@ namespace DMCompiler.Compiler.DM {
                          {
                             var identifier = Identifier();
 
+                            // This happens with dangling deref tokens, which BYOND seems to ignore
+                            // Ex: "if(L. && L.foo)" seems to be treated as "if(L && L.foo)"
                             if (identifier == null) {
-                                Compiler.Emit(WarningCode.BadToken, token.Location, "Identifier expected");
-                                return new DMASTConstantNull(token.Location);
+                                // Annoyingly, dangling '?.' is an error in BYOND but '.' isn't
+                                if(token.Type == TokenType.DM_QuestionPeriod)
+                                    Compiler.Emit(WarningCode.BadToken, token.Location, "Identifier expected");
+                                else
+                                    Compiler.Emit(WarningCode.DanglingSyntax, token.Location, $"Dangling '{token.PrintableText}' operator does nothing and should be removed");
+                                return expression;
                             }
 
                             operation = new DMASTDereference.FieldOperation {

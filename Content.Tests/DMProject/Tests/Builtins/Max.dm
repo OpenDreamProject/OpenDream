@@ -13,12 +13,11 @@
 	// Various comparisons between null and other values
 	ASSERT(max(null, null, null) == null)
 	ASSERT(max(null, "") == "")
-	ASSERT(max("", null) == "")
-	ASSERT(max("", "str", null) == "str")
-	ASSERT(max("", "str", "", null) == "str")
+	ASSERT(max("", null) == null)
+	ASSERT(max("", "str", null) == null)
+	ASSERT(max("", "str", "", null) == null)
 	ASSERT(max(5, null) == 5)
 	ASSERT(max(-3, null) == null) // null > -3
 
-	// null and 0 are equal here so the last one is returned
-	ASSERT(max(0, null) == null)
+	ASSERT(max(0, null) == 0)
 	ASSERT(max(null, 0) == 0)

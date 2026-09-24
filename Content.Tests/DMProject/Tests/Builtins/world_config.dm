@@ -17,4 +17,4 @@
 
 	world.SetConfig("env", env_var, env_value)
 	world.SetConfig("env", env_var, 17)
-	ASSERT(world.GetConfig("env", env_var) == null)
+	ASSERT(world.GetConfig("env", env_var) == "")

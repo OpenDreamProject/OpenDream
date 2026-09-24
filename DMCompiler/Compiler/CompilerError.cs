@@ -63,6 +63,7 @@ public enum WarningCode {
     InvalidIndexOperation = 2304,
     MalformedSetStatement = 2305,
     DanglingVarType = 2401, // For types inferred by a particular var definition and nowhere else, that ends up not existing (not forced-fatal because BYOND doesn't always error)
+    DanglingSyntax = 2402, // BYOND often ignores e.g. dangling dereference operators like "var/foo = bar."
     MissingInterpolatedExpression = 2500, // A text macro is missing a required interpolated expression
     AmbiguousResourcePath = 2600,
     UnsupportedTypeCheck = 2700,
@@ -162,6 +163,7 @@ public struct CompilerEmission {
         {WarningCode.InvalidIndexOperation, ErrorLevel.Warning},
         {WarningCode.MalformedSetStatement, ErrorLevel.Warning},
         {WarningCode.DanglingVarType, ErrorLevel.Warning},
+        {WarningCode.DanglingSyntax, ErrorLevel.Warning},
         {WarningCode.MissingInterpolatedExpression, ErrorLevel.Warning},
         {WarningCode.AmbiguousResourcePath, ErrorLevel.Warning},
         {WarningCode.SuspiciousSwitchCase, ErrorLevel.Warning},

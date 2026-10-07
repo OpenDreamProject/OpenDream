@@ -351,12 +351,14 @@ public sealed class DMProcState : ProcState {
         {DreamProcOpcode.SwitchOnFloat, DMOpcodeHandlers.SwitchOnFloat},
         {DreamProcOpcode.SwitchOnString, DMOpcodeHandlers.SwitchOnString},
         {DreamProcOpcode.JumpIfReferenceFalse, DMOpcodeHandlers.JumpIfReferenceFalse},
+        {DreamProcOpcode.JumpIfReferenceNotNull, DMOpcodeHandlers.JumpIfReferenceNotNull},
         {DreamProcOpcode.PushNOfStringFloats, DMOpcodeHandlers.PushNOfStringFloat},
         {DreamProcOpcode.CreateListNFloats, DMOpcodeHandlers.CreateListNFloats},
         {DreamProcOpcode.CreateListNStrings, DMOpcodeHandlers.CreateListNStrings},
         {DreamProcOpcode.CreateListNRefs, DMOpcodeHandlers.CreateListNRefs},
         {DreamProcOpcode.CreateListNResources, DMOpcodeHandlers.CreateListNResources},
         {DreamProcOpcode.IsTypeDirect, DMOpcodeHandlers.IsTypeDirect},
+        {DreamProcOpcode.CreateObjectDirect, DMOpcodeHandlers.CreateObjectDirect},
         {DreamProcOpcode.ReturnReferenceValue, DMOpcodeHandlers.ReturnReferenceValue},
         {DreamProcOpcode.ReturnFloat, DMOpcodeHandlers.ReturnFloat}
     };

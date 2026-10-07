@@ -150,6 +150,9 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
             case DreamProcOpcode.Call:
                 return (opcode, ReadReference(), (DMCallArgumentsType)ReadByte(), ReadInt());
 
+            case DreamProcOpcode.CreateObjectDirect:
+                return (opcode, ReadInt(), (DMCallArgumentsType)ReadByte(), ReadInt());
+
             case DreamProcOpcode.CreateList:
             case DreamProcOpcode.CreateAssociativeList:
             case DreamProcOpcode.CreateStrictAssociativeList:
@@ -179,6 +182,7 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
             case DreamProcOpcode.JumpIfTrueReference:
             case DreamProcOpcode.JumpIfFalseReference:
             case DreamProcOpcode.JumpIfReferenceFalse:
+            case DreamProcOpcode.JumpIfReferenceNotNull:
                 return (opcode, ReadReference(), ReadInt());
 
             case DreamProcOpcode.Try:
@@ -311,7 +315,8 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
 
             case (DreamProcOpcode.JumpIfFalseReference
                     or DreamProcOpcode.JumpIfTrueReference
-                    or DreamProcOpcode.JumpIfReferenceFalse, DMReference reference, int jumpPosition):
+                    or DreamProcOpcode.JumpIfReferenceFalse
+                    or DreamProcOpcode.JumpIfReferenceNotNull, DMReference reference, int jumpPosition):
                 text.Append(reference.ToString());
                 text.AppendFormat(" 0x{0:x}", jumpPosition);
                 break;
@@ -347,6 +352,14 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
             case (DreamProcOpcode.PushType
                     or DreamProcOpcode.IsTypeDirect, int type):
                 text.Append(getTypePath(type));
+                break;
+
+            case (DreamProcOpcode.CreateObjectDirect, int type, DMCallArgumentsType argType, int stackSize):
+                text.Append(getTypePath(type));
+                text.Append(' ');
+                text.Append(argType);
+                text.Append(' ');
+                text.Append(stackSize);
                 break;
 
             case (DreamProcOpcode.CreateFilteredListEnumerator, int enumeratorId, int type):
@@ -466,7 +479,8 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
                 return jumpPosition;
             case (DreamProcOpcode.JumpIfFalseReference
                     or DreamProcOpcode.JumpIfTrueReference
-                    or DreamProcOpcode.JumpIfReferenceFalse, DMReference, int jumpPosition):
+                    or DreamProcOpcode.JumpIfReferenceFalse
+                    or DreamProcOpcode.JumpIfReferenceNotNull, DMReference, int jumpPosition):
                 return jumpPosition;
             case (DreamProcOpcode.SwitchOnFloat
                     or DreamProcOpcode.SwitchOnString, float or string, int jumpPosition):

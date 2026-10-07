@@ -214,6 +214,30 @@ internal sealed class JumpIfReferenceFalse : IOptimization {
     }
 }
 
+// PushReferenceValue [ref]
+// IsNull
+// JumpIfFalse [label]
+// -> JumpIfReferenceNotNull [ref] [label]
+// Every default proc argument is initialized this way
+internal sealed class JumpIfReferenceNotNull : IOptimization {
+    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
+
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.PushReferenceValue,
+            DreamProcOpcode.IsNull,
+            DreamProcOpcode.JumpIfFalse
+        ];
+    }
+
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
+        var reference = ((AnnotatedBytecodeInstruction)input[index]).GetArg<AnnotatedBytecodeReference>(0);
+        var label = ((AnnotatedBytecodeInstruction)input[index + 2]).GetArg<AnnotatedBytecodeLabel>(0);
+        IOptimization.ReplaceInstructions(input, index, 3,
+            new AnnotatedBytecodeInstruction(DreamProcOpcode.JumpIfReferenceNotNull, [reference, label]));
+    }
+}
+
 // Return
 // Jump [label]
 // -> Return
@@ -329,6 +353,30 @@ internal sealed class IsTypeDirect : IOptimization {
 
         input.RemoveRange(index, 2);
         input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.IsTypeDirect, [pushVal]));
+    }
+}
+
+// PushNull
+// PushType [type]
+// CreateObject [argType] [stackSize]
+// -> CreateObjectDirect [type] [argType] [stackSize]
+// The PushNull is the empty var overrides slot of new /type(...)
+internal sealed class CreateObjectDirect : IOptimization {
+    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
+
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.PushNull,
+            DreamProcOpcode.PushType,
+            DreamProcOpcode.CreateObject
+        ];
+    }
+
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
+        var type = ((AnnotatedBytecodeInstruction)input[index + 1]).GetArg<AnnotatedBytecodeTypeId>(0);
+        var createObject = (AnnotatedBytecodeInstruction)input[index + 2];
+        IOptimization.ReplaceInstructions(input, index, 3,
+            new AnnotatedBytecodeInstruction(DreamProcOpcode.CreateObjectDirect, [type, createObject.GetArg(0), createObject.GetArg(1)]));
     }
 }
 

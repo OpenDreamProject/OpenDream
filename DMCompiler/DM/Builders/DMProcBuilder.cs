@@ -359,12 +359,16 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                         break;
                     }
                     case DMASTVarDeclExpression vd: {
-                        var initializer = statementFor.Expression1 != null ? _exprBuilder.Create(statementFor.Expression1) : null;
                         var declInfo = new ProcVarDeclInfo(vd.DeclPath.Path);
                         var identifier = new DMASTIdentifier(vd.Location, declInfo.VarName);
                         var outputVar = _exprBuilder.Create(identifier);
 
-                        ProcessStatementForType(vd.Location, initializer, outputVar, declInfo.TypePath, statementFor.Body);
+                        if (declInfo.TypePath == null) { // same as for(var/x [as types] in world)
+                            ProcessStatementForIn(outputVar, new World(vd.Location), statementFor);
+                        } else { // for(var/obj/x) loops through every /obj
+                            ProcessStatementForType(vd.Location, _exprBuilder.Create(vd), outputVar, declInfo.TypePath.Value, statementFor.Body);
+                        }
+
                         break;
                     }
                     case DMASTExpressionIn exprIn: {
@@ -378,14 +382,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                         var outputVar = _exprBuilder.Create(outputExpr);
                         var list = _exprBuilder.Create(exprIn.RHS);
 
-                        if (outputVar is Local outputLocal) {
-                            outputLocal.LocalVar.ExplicitValueType = statementFor.DMTypes;
-                            if(outputLocal.LocalVar is DMProc.LocalConstVariable)
-                                compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, "Cannot change constant value");
-                        } else if (outputVar is Field { IsConst: true })
-                            compiler.Emit(WarningCode.WriteToConstant, outputExpr.Location, "Cannot change constant value");
-
-                        ProcessStatementForList(list, outputVar, null, statementFor.DMTypes, statementFor.Body);
+                        ProcessStatementForIn(outputVar, list, statementFor);
                         break;
                     }
                     default:
@@ -439,6 +436,19 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
             proc.LoopEnd();
         }
         proc.EndScope();
+    }
+
+    /// <summary>for(x [as types] in list)</summary>
+    private void ProcessStatementForIn(DMExpression outputVar, DMExpression list, DMASTProcStatementFor statementFor) {
+        if (outputVar is Local outputLocal) {
+            outputLocal.LocalVar.ExplicitValueType = statementFor.DMTypes;
+            if (outputLocal.LocalVar is DMProc.LocalConstVariable)
+                compiler.Emit(WarningCode.WriteToConstant, outputVar.Location, "Cannot change constant value");
+        } else if (outputVar is Field { IsConst: true }) {
+            compiler.Emit(WarningCode.WriteToConstant, outputVar.Location, "Cannot change constant value");
+        }
+
+        ProcessStatementForList(list, outputVar, null, statementFor.DMTypes, statementFor.Body);
     }
 
     private void ProcessLoopAssignment(LValue lValue, LValue? assocValue = null, DMExpression? list = null) {
@@ -554,19 +564,12 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
         proc.DestroyEnumerator();
     }
 
-    private void ProcessStatementForType(Location location, DMExpression? initializer, DMExpression outputVar, DreamPath? type, DMASTProcBlockInner body) {
-        if (type == null) {
-            // This shouldn't happen, just to be safe
-            compiler.ForcedError(location,
-                "Attempted to create a type enumerator with a null type");
-            return;
-        }
-
-        if (compiler.DMObjectTree.TryGetTypeId(type.Value, out var typeId)) {
+    private void ProcessStatementForType(Location location, DMExpression? initializer, DMExpression outputVar, DreamPath type, DMASTProcBlockInner body) {
+        if (compiler.DMObjectTree.TryGetTypeId(type, out var typeId)) {
             proc.PushType(typeId);
             proc.CreateTypeEnumerator();
         } else {
-            compiler.Emit(WarningCode.ItemDoesntExist, location, $"Type {type.Value} does not exist");
+            compiler.Emit(WarningCode.ItemDoesntExist, location, $"Type {type} does not exist");
         }
 
         proc.StartScope();

@@ -581,9 +581,9 @@ public sealed class DMProcState : ProcState {
 
     public override bool IsCatching() => _catchPosition.Count > 0;
 
-    public override void CatchException(Exception exception) {
+    public override void CatchException(Exception exception, string file, int line) {
         if (!IsCatching())
-            base.CatchException(exception);
+            base.CatchException(exception, file, line);
 
         Jump(_catchPosition.Pop());
         var varIdx = _catchVarIndex.Pop();
@@ -595,8 +595,8 @@ public sealed class DMProcState : ProcState {
                 // Let's consider this an ownership transfer, so no IncRef/DecRef is needed
                 value = throwException.Value;
             } else {
-                value = new DreamValue(exception.Message); // TODO: Probably need to create an /exception
-                value.IncRef();
+                // CreateException's reference is transferred to the local var
+                value = new DreamValue(DreamManager.CreateException(exception, file, line));
             }
 
             _localVariables[varIdx].DecRef();

@@ -44,6 +44,15 @@
     <DMStandard Include="..\DMCompiler\DMStandard\**" />
   </ItemGroup>
 
+  <!-- Every .dm in the output is run as a test, so delete any whose source no longer exists -->
+  <Target Name="DeleteStaleDMProjectFiles" AfterTargets="CopyFilesToOutputDirectory">
+    <ItemGroup>
+      <DMProjectSource Include="$(ProjectDir)\DMProject\**" />
+      <StaleDMProjectFile Include="$(OutDir)\DMProject\**" Exclude="@(DMProjectSource->'$(OutDir)\DMProject\%(RecursiveDir)%(Filename)%(Extension)')" />
+    </ItemGroup>
+    <Delete Files="@(StaleDMProjectFile)" />
+  </Target>
+
   <Target Name="CopyDMStandard" AfterTargets="AfterBuild">
     <Copy SourceFiles="@(DMStandard)" DestinationFiles="@(DMStandard->'$(OutDir)\DMStandard\%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>

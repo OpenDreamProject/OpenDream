@@ -288,6 +288,7 @@ public class DreamList : DreamObject, IDreamList {
             DreamManager.OptionalException<DMException>(DMCompiler.Compiler.WarningCode.ListFindOutOfBoundsException, "list index out of bounds");
             return false;
         }
+
         if (start == 0)
             start = 1;
 

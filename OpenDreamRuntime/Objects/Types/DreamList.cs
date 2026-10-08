@@ -263,8 +263,12 @@ public class DreamList : DreamObject, IDreamList {
 
     /// <summary>
     /// Turns Find()'s Start/End into a [start, end) range of 1-indexed positions.
-    /// End 0 is just past the last element, Start 0 is 1, a negative Start finds nothing.
+    /// End 0 is just past the last element, Start 0 is 1.
+    /// A negative Start finds nothing, or raises a <see cref="DMCompiler.Compiler.WarningCode.ListFindOutOfBoundsException"/> if enabled.
     /// </summary>
+    /// <param name="length">Length of the list being searched</param>
+    /// <param name="start">Find()'s Start argument, normalized in place</param>
+    /// <param name="end">Find()'s End argument, normalized in place</param>
     /// <param name="lenientEnd">Whether an out-of-range End searches to the end instead of erroring</param>
     /// <returns>false if the range is empty</returns>
     protected bool NormalizeFindRange(int length, ref int start, ref int end, bool lenientEnd = false) {
@@ -280,8 +284,10 @@ public class DreamList : DreamObject, IDreamList {
             end = length + 1;
         }
 
-        if (start < 0) // A negative Start doesn't search at all, unlike one past the end
+        if (start < 0) { // A negative Start doesn't search at all, unlike one past the end
+            DreamManager.OptionalException<DMException>(DMCompiler.Compiler.WarningCode.ListFindOutOfBoundsException, "list index out of bounds");
             return false;
+        }
         if (start == 0)
             start = 1;
 

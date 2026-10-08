@@ -88,7 +88,7 @@ public enum WarningCode {
     // 4000 - 4999 are reserved for runtime configuration. (TODO: Runtime doesn't know about configs yet!)
     ListNegativeSizeException = 4000, // When a list's length is decremented below zero, raise an exception.
     InitialVarOnPrimitiveException = 4001, // initial(foo.var) where foo is a variable containing a non-datum value.
-    ListFindOutOfBoundsException = 4002, // list.Find() with an End past the end of the list, otherwise ignored on some special lists.
+    ListFindOutOfBoundsException = 4002, // list.Find() with a negative Start, or an End past the end of the list. Both are otherwise ignored (End only on some special lists).
 }
 
 public enum ErrorLevel {

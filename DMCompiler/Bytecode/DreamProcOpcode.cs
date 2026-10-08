@@ -1,4 +1,4 @@
-﻿namespace DMCompiler.Bytecode;
+namespace DMCompiler.Bytecode;
 
 // ReSharper disable MissingBlankLines
 public enum DreamProcOpcode : byte {
@@ -309,6 +309,8 @@ public enum DreamProcOpcode : byte {
     NPushFloatAssign = 0x9B,
     [OpcodeMetadata(0, OpcodeArgType.ArgType, OpcodeArgType.StackDelta)]
     Animate = 0x9C,
+    [OpcodeMetadata(-1, OpcodeArgType.Label)]
+    JumpIfTrue = 0x9D,
 }
 // ReSharper restore MissingBlankLines
 

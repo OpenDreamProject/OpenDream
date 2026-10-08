@@ -30,8 +30,7 @@ internal sealed class Ternary(Location location, DMExpression a, DMExpression b,
         string cLabel = ctx.Proc.NewLabelName();
         string endLabel = ctx.Proc.NewLabelName();
 
-        a.EmitPushValue(ctx);
-        ctx.Proc.JumpIfFalse(cLabel);
+        a.EmitBranch(ctx, cLabel, jumpWhen: false);
         b.EmitPushValue(ctx);
         ctx.Proc.Jump(endLabel);
         ctx.Proc.AddLabel(cLabel);

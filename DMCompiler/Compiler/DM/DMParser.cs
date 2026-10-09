@@ -209,7 +209,7 @@ namespace DMCompiler.Compiler.DM {
                 return new DMASTNullStatement(loc);
             }
 
-            DMASTPath? path = Path();
+            DMASTPath? path = Path(isVarOrProcDecl: true);
             if (path is null)
                 return null;
             Whitespace();
@@ -380,7 +380,7 @@ namespace DMCompiler.Compiler.DM {
         /// <summary>
         /// Tries to read in a path. Returns null if one cannot be constructed.
         /// </summary>
-        protected DMASTPath? Path(bool expression = false) {
+        protected DMASTPath? Path(bool expression = false, bool isVarOrProcDecl = false) {
             Token firstToken = Current();
             DreamPath.PathType pathType = DreamPath.PathType.Relative;
             bool hasPathTypeToken = true;
@@ -406,7 +406,8 @@ namespace DMCompiler.Compiler.DM {
             if (pathElement != null) {
                 List<string> pathElements = [pathElement];
                 bool operatorFlag = false;
-                while (pathElement != null && Check(TokenType.DM_Slash)) {
+                while (pathElement != null && HandlePathSeparator()) {
+                    // Intentionally not adding support for non-slash chaining in these paths; it's really cursed in BYOND and requires more thought
                     while (Check(TokenType.DM_Slash)) { }
 
                     pathElement = PathElement();
@@ -451,6 +452,17 @@ namespace DMCompiler.Compiler.DM {
             }
 
             return null;
+
+            bool HandlePathSeparator() {
+                if (Check(TokenType.DM_Slash)) return true;
+                if (!isVarOrProcDecl) return false;
+                if (Check(TokenType.DM_Period) || Check(TokenType.DM_Colon)) {
+                    Compiler.Emit(WarningCode.SuspiciousPathOperator, CurrentLoc, "Path operator ('.' or ':') coerced to '/' should be replaced with '/'");
+                    return true;
+                }
+
+                return false;
+            }
         }
 
         /// <summary>
@@ -917,7 +929,12 @@ namespace DMCompiler.Compiler.DM {
 
         private DMASTProcStatementVarDeclaration[]? ProcVarEnd(bool allowMultiple, DMASTPath? path = null) {
             var loc = Current().Location;
-            DMASTPath? varPath = Path();
+
+            /*if (loc.Line > 422) {
+                Console.WriteLine("e");
+            }*/
+
+            DMASTPath? varPath = Path(isVarOrProcDecl:true);
 
             if (allowMultiple) {
                 DMASTProcStatementVarDeclaration[]? block = ProcVarBlock(varPath);

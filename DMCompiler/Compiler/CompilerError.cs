@@ -83,6 +83,7 @@ public enum WarningCode {
     PickWeightedSyntax = 3203,
     AmbiguousInOrder = 3204,
     ExtraToken = 3205,
+    SuspiciousPathOperator = 3206,
     RuntimeSearchOperator = 3300,
 
     // 4000 - 4999 are reserved for runtime configuration. (TODO: Runtime doesn't know about configs yet!)
@@ -191,6 +192,7 @@ public struct CompilerEmission {
         {WarningCode.PickWeightedSyntax, ErrorLevel.Disabled},
         {WarningCode.AmbiguousInOrder, ErrorLevel.Warning},
         {WarningCode.ExtraToken, ErrorLevel.Warning},
+        {WarningCode.SuspiciousPathOperator, ErrorLevel.Warning},
         {WarningCode.RuntimeSearchOperator, ErrorLevel.Disabled},
 
         //4000-4999

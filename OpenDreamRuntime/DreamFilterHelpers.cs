@@ -1,4 +1,5 @@
 using System.Reflection;
+using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Resources;
@@ -60,29 +61,57 @@ public static class DreamFilterHelpers {
     }
 
     /// <summary>
-    /// Returns a copy of the filter with the given var changed, or null if the var is unknown
-    /// or the value didn't change. Copy-on-write, so appearances sharing this filter instance
-    /// are not affected.
+    /// Returns a copy of the filter with the var changed, or the same filter if the value is unchanged.
+    /// The original is never modified, since other appearances may share it.
     /// </summary>
-    public static DreamFilter? SetVar(DreamFilter filter, string varName, DreamValue value) {
-        var fields = GetFields(filter.GetType());
-        if (!fields.TryGetValue(varName, out var fieldInfo))
-            return null;
+    /// <exception cref="DMException">The filter type has no such var, or the var is read-only</exception>
+    public static DreamFilter SetVar(DreamFilter filter, string varName, DreamValue value) {
+        if (varName is "type" or "name")
+            throw new DMException($"Cannot set var \"{varName}\" on filters");
+        if (!GetFields(filter.GetType()).TryGetValue(varName, out var fieldInfo))
+            throw new DMException($"Cannot set undefined var \"{varName}\" on {filter.FilterType} filter");
 
         var converted = Convert(value, fieldInfo.Field.FieldType, varName);
         if (Equals(fieldInfo.Field.GetValue(filter), converted))
-            return null;
+            return filter;
 
-        var newFilter = (DreamFilter)Activator.CreateInstance(filter.GetType())!;
-        foreach (var (name, other) in fields) {
-            if (name == varName)
-                continue;
-
-            other.Field.SetValue(newFilter, other.Field.GetValue(filter));
-        }
-
+        var newFilter = filter with { };
         fieldInfo.Field.SetValue(newFilter, converted);
         return newFilter;
+    }
+
+    /// <summary>
+    /// Reads a filter var. Returns false if the filter type has no such var.
+    /// </summary>
+    public static bool TryGetVar(DreamFilter filter, string varName, DreamObjectTree objectTree, out DreamValue value) {
+        if (!GetFields(filter.GetType()).TryGetValue(varName, out var fieldInfo)) {
+            value = DreamValue.Null;
+            return false;
+        }
+
+        value = fieldInfo.Field.GetValue(filter) switch {
+            float f => new(f),
+            short s => new(s),
+            // Filters store their icon as a resource ID
+            int iconId => iconId != 0 && IoCManager.Resolve<DreamResourceManager>().TryLoadResource(iconId, out var icon)
+                ? new(icon)
+                : DreamValue.Null,
+            string { Length: > 0 } str => new(str),
+            Color color => new(color.A >= 1f ? color.ToHexNoAlpha().ToLower() : color.ToHex().ToLower()),
+            ColorMatrix matrix => new(CreateColorMatrixList(objectTree, matrix)),
+            Matrix3x2 m => new(DreamObjectMatrix.MakeMatrix(objectTree, m.M11, m.M21, m.M31, m.M12, m.M22, m.M32)),
+            _ => DreamValue.Null // Null or empty string
+        };
+
+        return true;
+    }
+
+    private static DreamList CreateColorMatrixList(DreamObjectTree objectTree, ColorMatrix matrix) {
+        var list = objectTree.CreateList(20);
+        foreach (float entry in matrix.GetValues())
+            list.AddValue(new(entry));
+
+        return list;
     }
 
     private static bool SetField(DreamFilter filter, string varName, DreamValue value) {

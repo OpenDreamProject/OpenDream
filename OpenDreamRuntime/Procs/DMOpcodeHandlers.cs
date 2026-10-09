@@ -259,6 +259,17 @@ namespace OpenDreamRuntime.Procs {
                 }
             }
 
+            return CreateObjectOfType(state, objectType, overrides, argumentInfo);
+        }
+
+        public static ProcStatus CreateObjectDirect(DMProcState state) {
+            var objectType = state.Proc.ObjectTree.Types[state.ReadInt()];
+            var argumentInfo = state.ReadProcArguments();
+
+            return CreateObjectOfType(state, objectType, null, argumentInfo);
+        }
+
+        private static ProcStatus CreateObjectOfType(DMProcState state, TreeEntry objectType, Dictionary<string, object?>? overrides, DMProcState.DMStackArgumentInfo argumentInfo) {
             var objectDef = objectType.ObjectDefinition;
             var newProc = objectDef.GetProc("New");
             var newArguments = state.PopProcArguments(newProc, argumentInfo);
@@ -3383,6 +3394,18 @@ namespace OpenDreamRuntime.Procs {
             using var value = state.GetReferenceValue(reference);
 
             if (!value.IsTruthy()) {
+                state.Jump(jumpTo);
+            }
+
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus JumpIfReferenceNotNull(DMProcState state) {
+            var reference = state.ReadReference();
+            var jumpTo = state.ReadInt();
+            using var value = state.GetReferenceValue(reference);
+
+            if (!value.IsNull) {
                 state.Jump(jumpTo);
             }
 

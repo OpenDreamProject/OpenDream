@@ -67,6 +67,10 @@ internal sealed class New(DMCompiler compiler, Location location, DMExpression e
 
     public override void EmitPushValue(ExpressionContext ctx) {
         var argumentInfo = arguments.EmitArguments(ctx, null);
+        if (expr.TryAsConstant(ctx.Compiler, out var constant) && constant is ConstantTypeReference typeReference) {
+            ctx.Proc.CreateObjectDirect(typeReference.Value.Id, argumentInfo.Type, argumentInfo.StackSize);
+            return;
+        }
 
         ctx.Proc.PushNull();
         expr.EmitPushValue(ctx);
@@ -91,11 +95,11 @@ internal sealed class NewPath(DMCompiler compiler, Location location, IConstantP
 
                 (argumentsType, stackSize) = arguments.EmitArguments(ctx, newProc);
                 if (variableOverrides is null || variableOverrides.Count == 0) {
-                    ctx.Proc.PushNull();
-                } else {
-                    ctx.Proc.PushString(JsonSerializer.Serialize(variableOverrides));
+                    ctx.Proc.CreateObjectDirect(typeReference.Value.Id, argumentsType, stackSize);
+                    return;
                 }
 
+                ctx.Proc.PushString(JsonSerializer.Serialize(variableOverrides));
                 ctx.Proc.PushType(typeReference.Value.Id);
                 break;
             case ConstantProcReference procReference: // "new /proc/new_verb(Destination)" is a thing

@@ -214,6 +214,30 @@ internal sealed class JumpIfReferenceFalse : IOptimization {
     }
 }
 
+// PushReferenceValue [ref]
+// IsNull
+// JumpIfFalse [label]
+// -> JumpIfReferenceNotNull [ref] [label]
+// Every default proc argument is initialized this way
+internal sealed class JumpIfReferenceNotNull : IOptimization {
+    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
+
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.PushReferenceValue,
+            DreamProcOpcode.IsNull,
+            DreamProcOpcode.JumpIfFalse
+        ];
+    }
+
+    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
+        var reference = ((AnnotatedBytecodeInstruction)input[index]).GetArg<AnnotatedBytecodeReference>(0);
+        var label = ((AnnotatedBytecodeInstruction)input[index + 2]).GetArg<AnnotatedBytecodeLabel>(0);
+        IOptimization.ReplaceInstructions(input, index, 3,
+            new AnnotatedBytecodeInstruction(DreamProcOpcode.JumpIfReferenceNotNull, [reference, label]));
+    }
+}
+
 // Return
 // Jump [label]
 // -> Return

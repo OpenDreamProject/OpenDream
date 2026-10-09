@@ -3,29 +3,32 @@ using OpenDreamShared.Dream;
 namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectFilter(DreamObjectDefinition objectDefinition) : DreamObject(objectDefinition) {
-    public static readonly Dictionary<DreamFilter, DreamFilterList> FilterAttachedTo = new();
-
     public override bool ShouldCallNew => false;
 
     public DreamFilter Filter;
 
-    protected override void HandleDeletion() {
-        FilterAttachedTo.Remove(Filter);
-        base.HandleDeletion();
+    /// <summary>
+    /// The filter list this filter was read from, or null for a standalone <c>filter()</c>.
+    /// Writing a var updates that list. Adding the filter to another list stores a copy.
+    /// </summary>
+    public DreamFilterList? AttachedTo;
+
+    protected override bool TryGetVar(string varName, out DreamValue value) {
+        if (DreamFilterHelpers.TryGetVar(Filter, varName, ObjectTree, out value))
+            return true;
+        if (varName is "vars" or "parent_type" or "tag")
+            return base.TryGetVar(varName, out value);
+
+        throw new DMException($"Cannot get value of undefined var \"{varName}\" on {Filter.FilterType} filter");
     }
 
-    // TODO: Variable getting
-
     protected override void SetVar(string varName, DreamValue value) {
-        if (FilterAttachedTo.TryGetValue(Filter, out var attachedTo)) {
-            int index = attachedTo.GetIndexOfFilter(Filter);
+        var newFilter = DreamFilterHelpers.SetVar(Filter, varName, value);
+        if (ReferenceEquals(newFilter, Filter))
+            return;
 
-            var newFilter = DreamFilterHelpers.SetVar(Filter, varName, value);
-            if (newFilter != null) {
-                Filter = newFilter;
-                attachedTo.SetFilter(index, newFilter);
-            }
-        }
+        AttachedTo?.ReplaceFilter(Filter, newFilter, varName);
+        Filter = newFilter;
     }
 
     public static DreamObjectFilter? TryCreateFilter(DreamObjectTree objectTree, IEnumerable<(string Name, DreamValue Value)> properties) {

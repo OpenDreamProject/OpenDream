@@ -2,16 +2,17 @@
 var/crash_line
 
 /proc/NestedCrash()
+	var/list/L = null
 	global.crash_line = __LINE__ + 1
-	CRASH("nested")
+	L.Add(1)
 
 /proc/RunTest()
+	var/list/L = null
 	var/expected_line = __LINE__ + 2
 	try
-		CRASH("hi")
+		L.Add(1)
 	catch(var/exception/e)
 		ASSERT(istype(e, /exception))
-		ASSERT(e.name == "hi")
 		ASSERT(e.file == __FILE__)
 		ASSERT(e.line == expected_line)
 
@@ -19,5 +20,5 @@ var/crash_line
 		NestedCrash()
 	catch(var/exception/e2)
 		ASSERT(istype(e2, /exception))
-		ASSERT(e2.name == "nested")
+		ASSERT(e2.file == __FILE__)
 		ASSERT(e2.line == global.crash_line)

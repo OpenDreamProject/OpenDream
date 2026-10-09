@@ -13,11 +13,6 @@ namespace OpenDreamShared.Dream;
 /// </summary>
 [Serializable, NetSerializable, ImplicitDataDefinitionForInheritors]
 public partial record DreamFilter {
-    /// <summary>
-    /// Indicates this filter was used in the last render cycle, for shader caching purposes
-    /// </summary>
-    public bool Used = false;
-
     [ViewVariables(VVAccess.ReadOnly), DataField("type")]
     public string FilterType;
 
@@ -47,9 +42,9 @@ public partial record DreamFilter {
     public static Type? GetType(string filterType) => FilterTypes.GetValueOrDefault(filterType);
 
     /// <summary>
-    /// Calculate the size of the texture necessary to render this filter
+    /// Calculate the size of the canvas this filter needs
     /// </summary>
-    /// <param name="baseSize">The size of the object the filter is being applied to</param>
+    /// <param name="baseSize">The size of the canvas before this filter</param>
     /// <param name="textureSizeCallback">A callback that returns the size of a given render source</param>
     public Vector2i CalculateRequiredRenderSpace(Vector2i baseSize, Func<string, Vector2i> textureSizeCallback) {
         Vector2 requiredSpace = baseSize;
@@ -69,7 +64,7 @@ public partial record DreamFilter {
 
                 break;
             case DreamFilterBlur blur:
-                requiredSpace += new Vector2(blur.Size) * 2;
+                requiredSpace += new Vector2(blur.GetExtent()) * 2;
                 break;
             case DreamFilterDropShadow dropShadow:
                 if (dropShadow.Size - dropShadow.X > 0)

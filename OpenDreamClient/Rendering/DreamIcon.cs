@@ -512,16 +512,8 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
     /// <returns>The final texture</returns>
     [SuppressMessage("ReSharper", "AccessToModifiedClosure")] // RenderInRenderTarget executes immediately, shouldn't be an issue
     private IRenderTexture FullRenderTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData, Texture frame) {
-        Vector2 requiredRenderSpace = frame.Size;
-        foreach (var filter in iconMetaData.MainIcon!.Appearance!.Filters) {
-            var requiredSpace = filter.CalculateRequiredRenderSpace(frame.Size,
-                renderSource => viewOverlay.RenderSourceLookup.GetValueOrDefault(renderSource)?.Size ?? new(0, 0));
-
-            requiredRenderSpace = Vector2.Max(requiredRenderSpace, requiredSpace);
-        }
-
-        var ping = renderTargetPool.Rent((Vector2i)requiredRenderSpace);
-        var pong = renderTargetPool.Rent(ping.Size);
+        var ping = renderTargetPool.Rent(frame.Size);
+        var pong = renderTargetPool.Rent(frame.Size);
 
         handle.RenderInRenderTarget(pong, () => {
             //we can use the color matrix shader here, since we don't need to blend
@@ -534,41 +526,72 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
             colorShader.SetParameter("isPlaneMaster",iconMetaData.IsPlaneMaster);
             handle.UseShader(colorShader);
 
-            handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(pong.Size, (pong.Size/2 - frame.Size/2)));
+            handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(pong.Size, Vector2.Zero));
             handle.DrawTextureRect(frame, new Box2(Vector2.Zero, frame.Size));
         }, Color.Black.WithAlpha(0));
 
+        // Shared by every draw below to avoid a closure per draw
+        IRenderTexture target = ping;
+        ShaderInstance shader = DreamViewOverlay.ColorInstance;
+        Vector2 offset = Vector2.Zero;
+        Action draw = () => {
+            handle.UseShader(shader);
+            handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(target.Size, offset));
+            handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, pong.Size));
+        };
+
+        // Blurs run on premultiplied sRGB in non-sRGB targets, converted once per run of blurs
+        // TODO: Other filters should use this too for parity
+        // TODO: Add an option for linear filtering instead
+        bool srgbEncoded = false;
+
         foreach (DreamFilter filterId in iconMetaData.MainIcon!.Appearance!.Filters) {
-            ShaderInstance s = appearanceSystem.GetFilterShader(filterId, viewOverlay.RenderSourceLookup);
+            // Grow the canvas only when a filter needs it, so earlier filters clamp at the smaller edges
+            var requiredSpace = filterId.CalculateRequiredRenderSpace(pong.Size,
+                renderSource => viewOverlay.RenderSourceLookup.GetValueOrDefault(renderSource)?.Size ?? new(0, 0));
+            var padding = (Vector2i.ComponentMax(requiredSpace - pong.Size, Vector2i.Zero) + 1) / 2;
+            var wantsSrgbEncoded = filterId is DreamFilterBlur;
+            if (padding != Vector2i.Zero || wantsSrgbEncoded != srgbEncoded) {
+                if (wantsSrgbEncoded == srgbEncoded) {
+                    shader = DreamViewOverlay.ColorInstance;
+                } else {
+                    shader = wantsSrgbEncoded ? DreamViewOverlay.FilterToSrgbInstance : DreamViewOverlay.FilterFromSrgbInstance;
+                    shader.SetParameter("isPlaneMaster", iconMetaData.IsPlaneMaster);
+                }
 
-            handle.RenderInRenderTarget(ping, () => {
-                handle.UseShader(s);
-
-                // Technically this should be ping.Size, but they are the same size so avoid the extra closure alloc
-                handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(pong.Size, Vector2.Zero));
-                handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, pong.Size));
-            }, Color.Black.WithAlpha(0));
-
-            // The blur filter runs a more performant two passes
-            if (filterId.FilterType == "blur") {
-                s = appearanceSystem.GetFilterShader(filterId with {FilterType = "blur_vertical"}, viewOverlay.RenderSourceLookup);
-                (ping, pong) = (pong, ping);
-
-                handle.RenderInRenderTarget(ping, () => {
-                    handle.UseShader(s);
-
-                    // Technically this should be ping.Size, but they are the same size so avoid the extra closure alloc
-                    handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(pong.Size, Vector2.Zero));
-                    handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, pong.Size));
-                }, Color.Black.WithAlpha(0));
+                ReplaceCanvas(pong.Size + padding * 2, padding, wantsSrgbEncoded);
             }
 
-            (ping, pong) = (pong, ping);
+            foreach (var pass in appearanceSystem.GetFilterShaders(filterId, viewOverlay.RenderSourceLookup)) {
+                target = ping;
+                shader = pass;
+                offset = Vector2.Zero;
+                handle.RenderInRenderTarget(target, draw, Color.Black.WithAlpha(0));
+                (ping, pong) = (pong, ping);
+            }
+        }
+
+        if (srgbEncoded) {
+            shader = DreamViewOverlay.FilterFromSrgbInstance;
+            shader.SetParameter("isPlaneMaster", iconMetaData.IsPlaneMaster);
+            ReplaceCanvas(pong.Size, Vector2i.Zero, false);
         }
 
         renderTargetPool.Return(ping);
         TextureRenderOffset = -(pong.Texture.Size / 2 - frame.Size / 2);
         return pong;
+
+        void ReplaceCanvas(Vector2i size, Vector2i at, bool inSrgbEncoded) {
+            target = renderTargetPool.Rent(size, inSrgbEncoded);
+            offset = at;
+            handle.RenderInRenderTarget(target, draw, Color.Black.WithAlpha(0));
+
+            renderTargetPool.Return(ping);
+            renderTargetPool.Return(pong);
+            pong = target;
+            ping = renderTargetPool.Rent(size, inSrgbEncoded);
+            srgbEncoded = inSrgbEncoded;
+        }
     }
 
     private void CheckSizeChange() {

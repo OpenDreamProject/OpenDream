@@ -172,7 +172,7 @@ namespace OpenDreamRuntime {
         /// </summary>
         public virtual bool IsCatching() => false;
 
-        public virtual void CatchException(Exception exception) {
+        public virtual void CatchException(Exception exception, string file, int line) {
             throw new InvalidOperationException(
                 $"Called {nameof(CatchException)} on a {nameof(ProcState)} that isn't catching!");
         }
@@ -510,13 +510,7 @@ namespace OpenDreamRuntime {
             var msg = ErrorMessageBuilder.ToString();
 
             // Instantiate an /exception and invoke world.Error()
-            string file = string.Empty;
-            int line = 0;
-            if(_current is DMProcState dmProc) { // TODO: Cope with the other ProcStates
-                var source = dmProc.GetCurrentSource();
-                file = source.Item1;
-                line = source.Item2;
-            }
+            var (file, line) = GetCurrentSource();
 
             bool inWorldError = _current?.Proc?.OwningType == dreamMan.WorldInstance.ObjectDefinition.TreeEntry && _current.Proc.Name == "Error";
             if (!inWorldError && _stack.Count > 0) {
@@ -546,12 +540,21 @@ namespace OpenDreamRuntime {
         private bool TryCatchException(Exception exception) {
             if (!InspectStack().Any(x => x.IsCatching())) return false;
 
+            // The /exception gets the source of the error, so grab it before unwinding to the catch
+            var (file, line) = GetCurrentSource();
             while (!_current.IsCatching()) {
                 PopProcState();
             }
 
-            _current.CatchException(exception);
+            _current.CatchException(exception, file, line);
             return true;
+        }
+
+        private (string File, int Line) GetCurrentSource() {
+            if (_current is DMProcState dmProc) // TODO: Cope with the other ProcStates
+                return dmProc.GetCurrentSource();
+
+            return (string.Empty, 0);
         }
     }
 }

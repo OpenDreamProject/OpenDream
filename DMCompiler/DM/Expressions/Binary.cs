@@ -605,14 +605,16 @@ internal sealed class Or(Location location, DMExpression lhs, DMExpression rhs) 
 // x && y
 internal sealed class And(Location location, DMExpression lhs, DMExpression rhs) : BinaryOp(location, lhs, rhs) {
     public override bool TryAsConstant(DMCompiler compiler, [NotNullWhen(true)] out Constant? constant) {
-        if (LHS.TryAsConstant(compiler, out var lhs) && !lhs.IsTruthy()) {
-            constant = lhs;
-            return true;
-        }
+        if (LHS.TryAsConstant(compiler, out var lhs)) {
+            if (!lhs.IsTruthy()) {
+                constant = lhs;
+                return true;
+            }
 
-        if (RHS.TryAsConstant(compiler, out var rhs)) {
-            constant = rhs;
-            return true;
+            if (RHS.TryAsConstant(compiler, out var rhs)) {
+                constant = rhs;
+                return true;
+            }
         }
 
         constant = null;

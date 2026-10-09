@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using OpenDreamClient.Resources;
 using OpenDreamClient.Resources.ResourceTypes;
 using OpenDreamShared.Dream;

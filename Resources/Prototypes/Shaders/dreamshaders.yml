@@ -141,10 +141,9 @@
 - type: shader
   id: motion_blur
   kind: source
-  path: "/Shaders/empty.swsl"
+  path: "/Shaders/blur.swsl"
   params:
-    x: 0
-    y: 0
+    taps: 0
 
 - type: shader
   id: radial_blur

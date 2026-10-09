@@ -293,6 +293,10 @@ internal sealed partial class ClientAppearanceSystem : SharedAppearanceSystem {
                 foreach (var pass in blur.Passes)
                     passes.Add(CreateBlurPassShader(prototype, pass));
                 return passes.ToArray();
+            case DreamFilterMotionBlur motionBlur:
+                foreach (var pass in motionBlur.Passes)
+                    passes.Add(CreateBlurPassShader(prototype, pass));
+                return passes.ToArray();
         }
 
         var instance = prototype.InstanceUnique();

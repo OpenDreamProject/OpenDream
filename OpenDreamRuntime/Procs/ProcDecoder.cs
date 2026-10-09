@@ -162,6 +162,7 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
             case DreamProcOpcode.SwitchCaseRange:
             case DreamProcOpcode.Jump:
             case DreamProcOpcode.JumpIfFalse:
+            case DreamProcOpcode.JumpIfTrue:
             case DreamProcOpcode.PushType:
             case DreamProcOpcode.PushProc:
             case DreamProcOpcode.MassConcatenation:
@@ -291,6 +292,7 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
                     or DreamProcOpcode.SwitchCaseRange
                     or DreamProcOpcode.Jump
                     or DreamProcOpcode.JumpIfFalse
+                    or DreamProcOpcode.JumpIfTrue
                     or DreamProcOpcode.JumpIfNull
                     or DreamProcOpcode.JumpIfNullNoPop
                     or DreamProcOpcode.TryNoValue, int jumpPosition):
@@ -460,6 +462,7 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
                     or DreamProcOpcode.SwitchCaseRange
                     or DreamProcOpcode.Jump
                     or DreamProcOpcode.JumpIfFalse
+                    or DreamProcOpcode.JumpIfTrue
                     or DreamProcOpcode.JumpIfNull
                     or DreamProcOpcode.JumpIfNullNoPop
                     or DreamProcOpcode.TryNoValue, int jumpPosition):

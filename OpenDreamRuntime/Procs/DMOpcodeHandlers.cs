@@ -1767,6 +1767,17 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
+        public static ProcStatus JumpIfTrue(DMProcState state) {
+            int position = state.ReadInt();
+            using var value = state.Pop();
+
+            if (value.IsTruthy()) {
+                state.Jump(position);
+            }
+
+            return ProcStatus.Continue;
+        }
+
         public static ProcStatus JumpIfNull(DMProcState state) {
             int position = state.ReadInt();
 

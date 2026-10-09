@@ -8,7 +8,7 @@ var/call_number = 0
 	var/datum/inner_object/i = new
 
 	New()
-		AssertCallNumber(4)
+		AssertCallNumber(3)
 		sleep(0)
 		AssertCallNumber(5)
 
@@ -16,7 +16,7 @@ var/call_number = 0
 	New()
 		AssertCallNumber(2)
 		sleep(0)
-		AssertCallNumber(3)
+		AssertCallNumber(4)
 
 /proc/RunTest()
 	AssertCallNumber(1)

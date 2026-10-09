@@ -50,7 +50,12 @@
   </ItemGroup>
   <!-- Need to copy DMStandard and DMProject to output directory during AfterBuild and Publish. -->
   <Target Name="CopyDMProject" AfterTargets="AfterBuild">
-    <Copy SourceFiles="@(DMProject)" DestinationFiles="@(DMProject->'$(OutDir)\DMProject\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <!-- Every .dm in the output gets compiled, so delete any whose source no longer exists -->
+    <ItemGroup>
+      <StaleDMProjectFile Include="$(OutDir)\DMProject\**" Exclude="@(DMProject->'$(OutDir)\DMProject\%(RecursiveDir)%(Filename)%(Extension)')" />
+    </ItemGroup>
+    <Delete Files="@(StaleDMProjectFile)" />
+    <Copy SourceFiles="@(DMProject)" DestinationFiles="@(DMProject->'$(OutDir)\DMProject\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>
   <Target Name="CopyDMProjectOnPublish" AfterTargets="Publish">
     <Copy SourceFiles="@(DMProject)" DestinationFiles="@(DMProject->'$(PublishDir)\DMProject\%(RecursiveDir)%(Filename)%(Extension)')" />

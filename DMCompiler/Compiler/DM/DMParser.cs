@@ -930,10 +930,6 @@ namespace DMCompiler.Compiler.DM {
         private DMASTProcStatementVarDeclaration[]? ProcVarEnd(bool allowMultiple, DMASTPath? path = null) {
             var loc = Current().Location;
 
-            /*if (loc.Line > 422) {
-                Console.WriteLine("e");
-            }*/
-
             DMASTPath? varPath = Path(isVarOrProcDecl:true);
 
             if (allowMultiple) {

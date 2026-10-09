@@ -996,6 +996,14 @@ internal sealed class DMProc {
         WriteStackDelta(argumentStackSize);
     }
 
+    public void CreateObjectDirect(int typeId, DMCallArgumentsType argumentsType, int argumentStackSize) {
+        ResizeStack(-argumentStackSize); // Pops arguments, pushes new object
+        WriteOpcode(DreamProcOpcode.CreateObjectDirect);
+        WriteTypeId(typeId);
+        WriteArgumentType(argumentsType);
+        WriteStackDelta(argumentStackSize);
+    }
+
     public void DeleteObject() {
         WriteOpcode(DreamProcOpcode.DeleteObject);
     }

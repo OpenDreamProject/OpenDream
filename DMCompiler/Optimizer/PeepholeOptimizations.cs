@@ -356,30 +356,6 @@ internal sealed class IsTypeDirect : IOptimization {
     }
 }
 
-// PushNull
-// PushType [type]
-// CreateObject [argType] [stackSize]
-// -> CreateObjectDirect [type] [argType] [stackSize]
-// The PushNull is the empty var overrides slot of new /type(...)
-internal sealed class CreateObjectDirect : IOptimization {
-    public OptPass OptimizationPass => OptPass.PeepholeOptimization;
-
-    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
-        return [
-            DreamProcOpcode.PushNull,
-            DreamProcOpcode.PushType,
-            DreamProcOpcode.CreateObject
-        ];
-    }
-
-    public void Apply(DMCompiler compiler, List<IAnnotatedBytecode> input, int index) {
-        var type = ((AnnotatedBytecodeInstruction)input[index + 1]).GetArg<AnnotatedBytecodeTypeId>(0);
-        var createObject = (AnnotatedBytecodeInstruction)input[index + 2];
-        IOptimization.ReplaceInstructions(input, index, 3,
-            new AnnotatedBytecodeInstruction(DreamProcOpcode.CreateObjectDirect, [type, createObject.GetArg(0), createObject.GetArg(1)]));
-    }
-}
-
 #region Constant Folding
 
 // PushFloat [constant]

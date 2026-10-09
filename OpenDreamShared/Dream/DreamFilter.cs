@@ -114,6 +114,61 @@ public sealed partial record DreamFilterBloom : DreamFilter {
 [Serializable, NetSerializable]
 public sealed partial record DreamFilterBlur : DreamFilter {
     [ViewVariables, DataField("size")] public float Size = 1f;
+
+    /// <summary>The 1D passes of this blur, a horizontal then vertical pass per level</summary>
+    public BlurPasses Passes => new(Size);
+
+    /// <summary>The radius of the blur, in whole pixels</summary>
+    public int GetExtent() {
+        int extent = 0;
+        foreach (var pass in Passes) {
+            if (pass.Direction.Y == 0f)
+                extent += Math.Min(pass.Reach, 100);
+        }
+
+        return extent;
+    }
+}
+
+public struct BlurPasses(float size) {
+    private const float MaxSizeSquared = BlurKernel.MaxSigma * BlurKernel.MaxSigma;
+
+    private float _size = size;
+    private bool _vertical;
+    private bool _done = size == 0f || float.IsNaN(size) || float.IsNegativeInfinity(size);
+
+    public BlurPass Current { get; private set; }
+
+    public readonly BlurPasses GetEnumerator() => this;
+
+    public bool MoveNext() {
+        if (_vertical) {
+            Current = Current with { Direction = Vector2.UnitY };
+            _vertical = false;
+            return true;
+        }
+
+        if (_done)
+            return false;
+
+        double length;
+        if (_size <= BlurKernel.MaxSigma) {
+            // Negative sizes skip planning too, so they're cut off past -6
+            length = _size;
+            _done = true;
+        } else if ((double)_size * _size > MaxSizeSquared * 2) {
+            _size = MathF.Min(_size, 100f);
+            length = _size;
+            _size *= 0.5f;
+        } else {
+            length = Math.Sqrt(_size * _size - MaxSizeSquared);
+            _size = BlurKernel.MaxSigma;
+        }
+
+        Current = new(Vector2.UnitX, length);
+        _vertical = true;
+        return true;
+    }
 }
 
 [Serializable, NetSerializable]

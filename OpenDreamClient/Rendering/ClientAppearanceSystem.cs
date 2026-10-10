@@ -51,10 +51,16 @@ internal sealed partial class ClientAppearanceSystem : SharedAppearanceSystem {
         }
     }
 
+    private sealed class FilterShaders(ShaderInstance[] passes) {
+        public readonly ShaderInstance[] Passes = passes;
+
+        public bool Used = true;
+    }
+
     private Dictionary<uint, ImmutableAppearance> _appearances = new();
     private readonly Dictionary<uint, List<Action<ImmutableAppearance>>> _appearanceLoadCallbacks = new();
     private readonly Dictionary<uint, DreamIcon> _turfIcons = new();
-    private readonly Dictionary<DreamFilter, ShaderInstance> _filterShaders = new();
+    private readonly Dictionary<DreamFilter, FilterShaders> _filterShaders = new();
     private readonly Dictionary<(int X, int Y, int Z), Flick> _turfFlicks = new();
     private readonly Dictionary<EntityUid, Flick> _movableFlicks = new();
     private bool _receivedAllAppearancesMsg;
@@ -228,106 +234,133 @@ internal sealed partial class ClientAppearanceSystem : SharedAppearanceSystem {
     }
 
     public void ResetFilterUsageFlags() {
-        foreach (DreamFilter key in _filterShaders.Keys) {
-            key.Used = false;
+        foreach (var shaders in _filterShaders.Values) {
+            shaders.Used = false;
         }
     }
 
     public void CleanUpUnusedFilters() {
-        foreach (DreamFilter key in _filterShaders.Keys) {
-            if (!key.Used)
-                _filterShaders.Remove(key);
+        foreach (var (filter, shaders) in _filterShaders) {
+            if (shaders.Used)
+                continue;
+
+            _filterShaders.Remove(filter);
+            foreach (var pass in shaders.Passes)
+                pass.Dispose();
         }
     }
 
-    public ShaderInstance GetFilterShader(DreamFilter filter, Dictionary<string, IRenderTexture> renderSourceLookup) {
-        if (!_filterShaders.TryGetValue(filter, out var instance)) {
-            instance = _protoManager.Index<ShaderPrototype>(filter.FilterType).InstanceUnique();
-
-            switch (filter) {
-                case DreamFilterAlpha alpha:
-                    instance.SetParameter("x",alpha.X);
-                    instance.SetParameter("y",alpha.Y);
-                    instance.SetParameter("flags",alpha.Flags);
-                    break;
-                case DreamFilterAngularBlur angularBlur:
-                    break;
-                case DreamFilterBloom bloom:
-                    break;
-                case DreamFilterBlur blur:
-                    instance.SetParameter("size", blur.Size);
-                    break;
-                case DreamFilterColor color: {
-                    //Since SWSL doesn't support 4x5 matrices, we need to get a bit silly.
-                    instance.SetParameter("colorMatrix", color.Color.GetMatrix4());
-                    instance.SetParameter("offsetVector", color.Color.GetOffsetVector());
-                    //TODO: Support the alternative colour mappings.
-                    break;
-                }
-                case DreamFilterDisplace displace:
-                    instance.SetParameter("size", displace.Size);
-                    instance.SetParameter("x", displace.X);
-                    instance.SetParameter("y", displace.Y);
-                    break;
-                case DreamFilterDropShadow dropShadow:
-                    instance.SetParameter("size", dropShadow.Size);
-                    instance.SetParameter("x", dropShadow.X);
-                    instance.SetParameter("y", dropShadow.Y);
-                    instance.SetParameter("shadow_color", dropShadow.Color);
-                    // TODO: offset
-                    break;
-                case DreamFilterLayer layer:
-                    break;
-                case DreamFilterMotionBlur motionBlur:
-                    break;
-                case DreamFilterOutline outline:
-                    instance.SetParameter("size", outline.Size);
-                    instance.SetParameter("color", outline.Color);
-                    instance.SetParameter("flags", outline.Flags);
-                    break;
-                case DreamFilterRadialBlur radialBlur:
-                    break;
-                case DreamFilterRays rays:
-                    break;
-                case DreamFilterRipple ripple:
-                    break;
-                case DreamFilterWave wave:
-                    break;
-                case DreamFilterGreyscale greyscale:
-                    break;
-            }
+    /// <summary>Gets the cached shaders for a filter, one per pass</summary>
+    public ShaderInstance[] GetFilterShaders(DreamFilter filter, Dictionary<string, IRenderTexture> renderSourceLookup) {
+        if (_filterShaders.TryGetValue(filter, out var shaders)) {
+            shaders.Used = true;
+        } else {
+            shaders = new(CreateFilterShaders(filter));
+            _filterShaders.Add(filter, shaders);
         }
 
         // Texture parameters need reset because different render targets can be used each frame
         switch (filter) {
             case DreamFilterAlpha alpha:
-                if (!string.IsNullOrEmpty(alpha.RenderSource) && renderSourceLookup.TryGetValue(alpha.RenderSource, out var renderSourceTexture))
-                    instance.SetParameter("mask_texture", renderSourceTexture.Texture);
-                else if (alpha.Icon != 0) {
-                    _dreamResourceManager.LoadResourceAsync<DMIResource>(alpha.Icon, rsc => {
-                        instance.SetParameter("mask_texture", rsc.Texture);
-                    });
-                } else {
-                    instance.SetParameter("mask_texture", Texture.Transparent);
-                }
-
+                SetFilterTexture(shaders.Passes[0], "mask_texture", alpha.RenderSource, alpha.Icon, renderSourceLookup);
                 break;
             case DreamFilterDisplace displace:
-                if (!string.IsNullOrEmpty(displace.RenderSource) && renderSourceLookup.TryGetValue(displace.RenderSource, out renderSourceTexture)) {
-                    instance.SetParameter("displacement_map", renderSourceTexture.Texture);
-                } else if (displace.Icon != 0) {
-                    _dreamResourceManager.LoadResourceAsync<DMIResource>(displace.Icon, rsc => {
-                        instance.SetParameter("displacement_map", rsc.Texture);
-                    });
-                } else {
-                    instance.SetParameter("displacement_map", Texture.Transparent);
-                }
-
+                SetFilterTexture(shaders.Passes[0], "displacement_map", displace.RenderSource, displace.Icon, renderSourceLookup);
                 break;
         }
 
-        filter.Used = true;
-        _filterShaders[filter] = instance;
+        return shaders.Passes;
+    }
+
+    private void SetFilterTexture(ShaderInstance instance, string parameter, string renderSource, int icon, Dictionary<string, IRenderTexture> renderSourceLookup) {
+        if (!string.IsNullOrEmpty(renderSource) && renderSourceLookup.TryGetValue(renderSource, out var renderSourceTexture)) {
+            instance.SetParameter(parameter, renderSourceTexture.Texture);
+        } else if (icon != 0) {
+            _dreamResourceManager.LoadResourceAsync<DMIResource>(icon, rsc => {
+                instance.SetParameter(parameter, rsc.Texture);
+            });
+        } else {
+            instance.SetParameter(parameter, Texture.Transparent);
+        }
+    }
+
+    private ShaderInstance[] CreateFilterShaders(DreamFilter filter) {
+        var prototype = _protoManager.Index<ShaderPrototype>(filter.FilterType);
+
+        var passes = new List<ShaderInstance>();
+        switch (filter) {
+            case DreamFilterBlur blur:
+                foreach (var pass in blur.Passes)
+                    passes.Add(CreateBlurPassShader(prototype, pass));
+                return passes.ToArray();
+        }
+
+        var instance = prototype.InstanceUnique();
+        switch (filter) {
+            case DreamFilterAlpha alpha:
+                instance.SetParameter("x",alpha.X);
+                instance.SetParameter("y",alpha.Y);
+                instance.SetParameter("flags",alpha.Flags);
+                break;
+            case DreamFilterAngularBlur angularBlur:
+                break;
+            case DreamFilterBloom bloom:
+                break;
+            case DreamFilterColor color: {
+                //Since SWSL doesn't support 4x5 matrices, we need to get a bit silly.
+                instance.SetParameter("colorMatrix", color.Color.GetMatrix4());
+                instance.SetParameter("offsetVector", color.Color.GetOffsetVector());
+                //TODO: Support the alternative colour mappings.
+                break;
+            }
+            case DreamFilterDisplace displace:
+                instance.SetParameter("size", displace.Size);
+                instance.SetParameter("x", displace.X);
+                instance.SetParameter("y", displace.Y);
+                break;
+            case DreamFilterDropShadow dropShadow:
+                instance.SetParameter("size", dropShadow.Size);
+                instance.SetParameter("x", dropShadow.X);
+                instance.SetParameter("y", dropShadow.Y);
+                instance.SetParameter("shadow_color", dropShadow.Color);
+                // TODO: offset
+                break;
+            case DreamFilterLayer layer:
+                break;
+            case DreamFilterOutline outline:
+                instance.SetParameter("size", outline.Size);
+                instance.SetParameter("color", outline.Color);
+                instance.SetParameter("flags", outline.Flags);
+                break;
+            case DreamFilterRadialBlur radialBlur:
+                break;
+            case DreamFilterRays rays:
+                break;
+            case DreamFilterRipple ripple:
+                break;
+            case DreamFilterWave wave:
+                break;
+            case DreamFilterGreyscale greyscale:
+                break;
+        }
+
+        return [instance];
+    }
+
+    private static ShaderInstance CreateBlurPassShader(ShaderPrototype prototype, BlurPass pass) {
+        var kernel = pass.Kernel;
+        var weights = new float[BlurKernel.MaxTaps];
+        var offsets = new Vector2[BlurKernel.MaxTaps];
+        for (int i = 0; i < kernel.Taps; i++) {
+            weights[i] = kernel.GetWeight(i);
+
+            offsets[i] = pass.Direction * (kernel.GetOffset(i) * pass.Spread);
+        }
+
+        var instance = prototype.InstanceUnique();
+        instance.SetParameter("weights", weights);
+        instance.SetParameter("offsets", offsets);
+        instance.SetParameter("taps", kernel.Taps);
         return instance;
     }
 

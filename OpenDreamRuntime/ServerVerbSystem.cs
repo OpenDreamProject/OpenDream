@@ -290,7 +290,9 @@ public sealed partial class ServerVerbSystem : VerbSystem {
                     viewCollection = DreamProcNativeHelpers.HandleRange(connection.Mob, new(verbInfo.Range), !verbAccessibility.IsO());
                 }
 
-                return viewCollection.ContainsValue(new(srcAtom));
+                var inRange = viewCollection.ContainsValue(new(srcAtom));
+                viewCollection.DecRef();
+                return inRange;
             }
             default:
                 throw new NotImplementedException($"{Enum.GetName(verbInfo.Accessibility)} is not implemented on the runtime");

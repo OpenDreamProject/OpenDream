@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory=$true)][string]$Dotnet,
-    [ValidateSet('none','baseline','filtered-dispose','async-clear','stack-clear','scheduler-fault','caller-clear')][string]$NegativeControl = 'none'
+    [ValidateSet('none','baseline','filtered-dispose','async-clear','stack-clear','scheduler-fault','scheduler-lifetime','caller-clear')][string]$NegativeControl = 'none'
 )
 $ErrorActionPreference = 'Stop'
 $repository = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '../..')).Path
@@ -25,6 +25,16 @@ try {
             if ($LASTEXITCODE -ne 0) { throw 'Cannot load scheduler negative control' }
             $text = $original -join "`n"
         }
+        if ($NegativeControl -eq 'scheduler-lifetime' -and $name -eq 'ProcScheduler.cs') {
+            $original = & git -C $repository show ('c5e9a921:' + $relative)
+            if ($LASTEXITCODE -ne 0) { throw 'Cannot load scheduler lifetime negative control' }
+            $text = $original -join "`n"
+        }
+        if ($name -eq 'ProcScheduler.cs' -and $text -notmatch 'public void Unschedule') {
+            # The old scheduler predates lifetime detachment. Keep its behavior
+            # while allowing the current async-state disposal to call this API.
+            $text += "`npublic sealed partial class ProcScheduler { public void Unschedule(AsyncNativeProc.AsyncNativeProcState state) {} }`n"
+        }
         if ($NegativeControl -eq 'filtered-dispose' -and $name -eq 'DreamEnumerators.cs') {
             $start = $text.IndexOf('internal sealed class FilteredDreamValueArrayEnumerator')
             $head = $text.Substring(0, $start)
@@ -46,6 +56,8 @@ try {
             $text.Replace('[Dependency]', '[Robust.Shared.IoC.DependencyAttribute]') | Set-Content -LiteralPath (Join-Path $procDirectory $name)
         }
     }
+    $legacyScheduler = ($NegativeControl -in @('baseline','scheduler-fault')).ToString().ToLowerInvariant()
+    "public static class ProbeControl { public const bool LegacyScheduler = $legacyScheduler; }" | Add-Content -LiteralPath (Join-Path $probeTemp 'StackReturn.cs')
     $threadSource = Get-Content -LiteralPath (Join-Path $repository 'OpenDreamRuntime/DreamThread.cs') -Raw
     $stateStart = $threadSource.IndexOf('public abstract class ProcState')
     $dispose = [regex]::Match($threadSource.Substring($stateStart), 'public virtual void Dispose\(\) \{[^}]+\}')

@@ -1,4 +1,29 @@
 //Setup code - put whatever you need for testing here.
+/proc/spawn_pool_reuse_probe(count, datum/payload)
+	var/datum/captured = payload
+	var/list/completed = list(0)
+	. = payload
+	for(var/i in 1 to count)
+		spawn(-1)
+			if(src != world || usr != payload || captured != payload || . != payload)
+				CRASH("Spawn did not preserve src, usr, arguments, locals or return value")
+			. = captured
+			completed[1]++
+	return completed[1]
+
+/proc/cancellation_depth_probe(payload)
+	var/local_payload = payload
+	. = payload
+	cancellation_depth_probe(local_payload)
+
+/datum/cancellation_operator/proc/operator+(payload)
+	var/local_payload = payload
+	. = payload
+	return src + local_payload
+
+/proc/cancellation_operator_probe(datum/cancellation_operator/operator_owner, payload)
+	return operator_owner + payload
+
 /turf
 /turf/border
 /mob/test

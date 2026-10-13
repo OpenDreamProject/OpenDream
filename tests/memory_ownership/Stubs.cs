@@ -62,14 +62,16 @@ namespace OpenDreamRuntime.Procs {
         public virtual ProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) => throw new NotImplementedException();
     }
     public abstract class ProcState: IDisposable {
+        private static int _idCounter;
+        public int Id = -1;
         public DreamThread Thread = null!;
         public DreamValue Result;
         public DreamObject? Instance, Usr;
         public int ArgumentCount;
         public bool WaitFor;
         public abstract DreamProc? Proc { get; }
-        protected void Initialize(DreamThread thread, bool waitFor) { Thread = thread; WaitFor = waitFor; }
-        public virtual void Dispose() { Result.Dispose(); Result = default; Thread = null!; }
+        protected void Initialize(DreamThread thread, bool waitFor) { Thread = thread; WaitFor = waitFor; Id = _idCounter++; }
+        public virtual void Dispose() { Result.Dispose(); Result = default; Thread = null!; Id = -1; }
         public abstract ProcStatus Resume();
         public virtual void ReturnedInto(DreamValue value) {}
         public virtual void Cancel() {}

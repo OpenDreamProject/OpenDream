@@ -105,6 +105,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             public override void Dispose() {
+                ProcScheduler.Unschedule(this);
                 base.Dispose();
 
                 for (int i = 0; i < ArgumentCount; i++)

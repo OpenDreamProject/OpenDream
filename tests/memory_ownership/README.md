@@ -15,7 +15,7 @@ statement extracted from production `DMProc.cs` against a real .NET `ArrayPool`.
 The probe has no package dependencies or engine-submodule requirement. Its
 CLI home, generated source, intermediate files and binaries are temporary.
 
-Fifteen cases cover disposing before the first enumeration, early break/return
+Eighteen cases cover disposing before the first enumeration, early break/return
 cleanup, exhaustion, assignment exceptions, filtered-out/deleted entries,
 duplicate snapshot values, association ownership, shorter/empty argument reuse,
 and clearing every slot of returned stack arrays. Snapshot increments mirror
@@ -26,6 +26,11 @@ It runs 500 success, fault and cancellation cycles each, checking that sleeping
 entries disappear, completion resumes once, and argument ownership is released.
 Synchronous faults must not enter the sleeping set. The exact base-state Dispose
 body is also compiled to check that pooled states clear their caller links.
+Two scheduler cases complete an old task before disposal or after pooled reuse:
+neither may resume the new lifetime, overwrite its result, or retain the old
+task's returned object. The new task must still resume exactly once.
+Result replacement must release the previous owned result, including when the
+completed task returns another owned reference to the same object.
 Objects retain an independent initial reference, making extra increments and
 unbalanced decrements directly observable.
 
@@ -37,6 +42,7 @@ Negative controls must compile and fail with ownership assertions:
 ./tests/memory_ownership/run.ps1 -Dotnet '<absolute dotnet.exe path>' -NegativeControl async-clear
 ./tests/memory_ownership/run.ps1 -Dotnet '<absolute dotnet.exe path>' -NegativeControl stack-clear
 ./tests/memory_ownership/run.ps1 -Dotnet '<absolute dotnet.exe path>' -NegativeControl scheduler-fault
+./tests/memory_ownership/run.ps1 -Dotnet '<absolute dotnet.exe path>' -NegativeControl scheduler-lifetime
 ./tests/memory_ownership/run.ps1 -Dotnet '<absolute dotnet.exe path>' -NegativeControl caller-clear
 ```
 
@@ -48,12 +54,41 @@ empty-argument reuses, while the corrected source leaves it at 1. Normal filtere
 exhaustion already passes baseline; early exits fail baseline. The scheduler
 negative control uses immutable pre-audit source `d443a95f`; it fails both fault
 and cancellation cleanup. Removing the caller reset fails its disposal check.
+The scheduler lifetime control restores `c5e9a921` and fails both pooled-reuse
+checks and the prior-result ownership check. Historical baseline and scheduler-fault controls omit these three newer
+checks to retain their established failure counts. A generated no-op detachment
+method lets historical schedulers compile against current async disposal.
 
 This verifies production ownership operations with isolated dependencies. It
 is not a complete engine build, DM compiler integration test, gameplay test,
 server heap measurement or proof that these defects caused Civ13's observed heap
 size. No live runtime is attached. Existing nullable-analysis warnings in linked
 async code are reported by the standalone build.
+
+## Real DM spawn and cancellation regressions
+
+`Content.IntegrationTests.GameTests.NoRuntimesTest` also runs real DM procedures
+inside its existing connected engine fixture. Ten batches of 1,000 completed
+`spawn(-1)` calls must reuse procedure states, preserve `src`, `usr`, arguments,
+locals and the inherited return value, and release their payload references.
+The allocation-only negative control grew the pool from 8 to 1,008 after its
+first batch; the corrected implementation stayed at 8 after all 10,000 spawns.
+Those counts establish bounded reuse for this workload, not a live heap size.
+
+Recursive stack-overflow and operator procedures exercise cancellation through
+the production interpreter. Expected overflow messages are intercepted only
+inside this test, with the previous world log and exception state restored.
+References must return to their starting counts, including the rejected frame
+and the discarded reentrant result. Run the complete Content.Tests suite with
+optimizations both enabled and disabled as well, to cover asynchronous callers.
+
+```powershell
+& '<absolute dotnet.exe path>' test Content.IntegrationTests/Content.IntegrationTests.csproj -c Release --filter FullyQualifiedName~NoRuntimesTest
+& '<absolute dotnet.exe path>' test Content.Tests/Content.Tests.csproj -c Release
+$env:NO_OPTS = 'true'
+& '<absolute dotnet.exe path>' test Content.Tests/Content.Tests.csproj -c Release
+Remove-Item Env:NO_OPTS
+```
 
 ## Passive Windows server benchmark
 

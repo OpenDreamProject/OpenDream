@@ -417,7 +417,7 @@ public sealed class DMProcState : ProcState {
     public DMProcState() { }
 
     /// <remarks>This handles spawn() threads</remarks>
-    private DMProcState(DMProcState other, DreamThread thread) {
+    private void InitializeSpawn(DMProcState other, DreamThread thread) {
         base.Initialize(thread, other.WaitFor);
         _proc = other._proc;
         Instance = other.Instance;
@@ -560,7 +560,9 @@ public sealed class DMProcState : ProcState {
     public DreamThread Spawn() {
         var thread = new DreamThread(Proc.ToString());
 
-        var state = new DMProcState(this, thread);
+        if (!Pool.TryPop(out var state))
+            state = new DMProcState();
+        state.InitializeSpawn(this, thread);
         thread.PushProcState(state);
 
         return thread;

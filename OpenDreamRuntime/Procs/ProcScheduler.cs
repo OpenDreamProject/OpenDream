@@ -23,26 +23,36 @@ namespace OpenDreamRuntime.Procs;
 
 public sealed partial class ProcScheduler {
     private readonly HashSet<AsyncNativeProc.AsyncNativeProcState> _sleeping = new();
-    private readonly Queue<AsyncNativeProc.AsyncNativeProcState> _scheduled = new();
+    private readonly Queue<(AsyncNativeProc.AsyncNativeProcState State, int Id)> _scheduled = new();
     private AsyncNativeProc.AsyncNativeProcState? _current;
 
     public Task Schedule(AsyncNativeProc.AsyncNativeProcState state, Func<AsyncNativeProc.AsyncNativeProcState, Task<DreamValue>> taskFunc) {
+        var scheduledId = state.Id;
         async Task Foo() {
             try {
-                state.Result = await taskFunc(state);
+                var result = await taskFunc(state);
+                if (state.Id == scheduledId) {
+                    state.Result.Dispose();
+                    state.Result = result;
+                } else
+                    result.Dispose();
             } finally {
                 // Faults and cancellation must resume the thread too, so that
                 // normal error handling can dispose its states and arguments.
-                if (_sleeping.Remove(state))
-                    _scheduled.Enqueue(state);
+                if (state.Id == scheduledId && _sleeping.Remove(state))
+                    _scheduled.Enqueue((state, scheduledId));
             }
         }
 
         var task = Foo();
-        if (!task.IsCompleted) // No need to schedule the proc if it's already finished
+        if (!task.IsCompleted && state.Id == scheduledId) // No need to schedule the proc if it's already finished
             _sleeping.Add(state);
 
         return task;
+    }
+
+    public void Unschedule(AsyncNativeProc.AsyncNativeProcState state) {
+        _sleeping.Remove(state);
     }
 
     public void Process() {
@@ -55,7 +65,10 @@ public sealed partial class ProcScheduler {
         // When we drain the _deferredTasks lists, it'll indirectly schedule things into _scheduled again.
         // This should all happen synchronously (see above).
         while (_scheduled.Count > 0 || _deferredTasks.Count > 0) {
-            while (_scheduled.TryDequeue(out _current)) {
+            while (_scheduled.TryDequeue(out var scheduled)) {
+                if (scheduled.State.Id != scheduled.Id)
+                    continue;
+                _current = scheduled.State;
                 _current.SafeResume();
             }
 
@@ -73,8 +86,8 @@ public sealed partial class ProcScheduler {
             yield return _current.Thread;
         }
 
-        foreach (var state in _scheduled) {
-            if (state.Thread == null)
+        foreach (var (state, id) in _scheduled) {
+            if (state.Thread == null || state.Id != id)
                 continue;
             yield return state.Thread;
         }

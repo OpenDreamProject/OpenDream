@@ -308,28 +308,14 @@ namespace OpenDreamRuntime {
                     switch (status) {
                         // The entire Thread is stopping
                         case ProcStatus.Cancelled:
-                            #if TOOLS
-                            if (_current.TracyZoneId is not null) {
-                                _current.TracyZoneId.Value.Dispose();
-                                _current.TracyZoneId = null;
-                            }
-                            #endif
-
-                            var current = _current;
-                            _current = null;
-
-                            #if TOOLS
-                            foreach (var s in _stack) {
-                                if (s.TracyZoneId is null)
-                                    continue;
-                                s.TracyZoneId.Value.Dispose();
-                                s.TracyZoneId = null;
-                            }
-                            #endif
-
-                            _stack.Clear();
+                            var cancelledResult = _current.Result;
+                            cancelledResult.IncRef();
+                            // Cancellation owns the same frames as a normal return.
+                            // Keep the result alive while releasing every frame's owners.
+                            while (_current != null)
+                                PopProcState();
                             resultStatus = status;
-                            return current.Result;
+                            return cancelledResult;
 
                         // Our top-most proc just returned a value
                         case ProcStatus.Returned:
@@ -386,6 +372,10 @@ namespace OpenDreamRuntime {
 
         public void PushProcState(ProcState state) {
             if (_stack.Count >= MaxStackDepth) {
+                // Ownership was transferred by the caller even though this frame
+                // cannot be added to the thread.
+                if (state.Thread == this)
+                    state.Dispose();
                 throw new DMError("stack depth limit reached");
             }
 

@@ -36,7 +36,7 @@ foreach (var mode in new[] { "dispose-before-visit", "early-break", "normal-exha
 }
 Check("async/pooled-reuse-shorter-arguments", () => {
     var first = new DreamObject(); var tail = new DreamObject();
-    var state = new AsyncNativeProc.AsyncNativeProcState();
+    var state = new AsyncNativeProc.AsyncNativeProcState { ProcScheduler = new ProcScheduler() };
     state.Initialize(null, _ => Task.FromResult(DreamValue.Null), new DreamThread(), null, null,
         new DreamProcArguments([new(first), new(tail)]));
     Equal(2, first.RefCount, "live first"); Equal(2, tail.RefCount, "live tail");
@@ -56,7 +56,7 @@ Check("async/pooled-reuse-shorter-arguments", () => {
 });
 Check("async/stale-tail-reference-count", () => {
     var first = new DreamObject(); var tail = new DreamObject();
-    var state = new AsyncNativeProc.AsyncNativeProcState();
+    var state = new AsyncNativeProc.AsyncNativeProcState { ProcScheduler = new ProcScheduler() };
     state.Initialize(null, _ => Task.FromResult(DreamValue.Null), new DreamThread(), null, null,
         new DreamProcArguments([new(first), new(tail)]));
     state.Dispose();
@@ -122,6 +122,68 @@ Check("scheduler/synchronous-fault-does-not-register", () => {
     catch (AggregateException) {}
     finally { state.Dispose(); AsyncNativeProc.AsyncNativeProcState.Pool.Pop(); }
     if (scheduler.InspectThreads().Any()) throw new Exception("synchronous fault was registered");
+});
+foreach (var completeBeforeDisposal in ProbeControl.LegacyScheduler ? Array.Empty<bool>() : new[] { false, true }) {
+    Check("scheduler/reused-state-ignores-old-lifetime/" + completeBeforeDisposal, () => {
+        var scheduler = new ProcScheduler();
+        var oldCompletion = new TaskCompletionSource<DreamValue>();
+        var newCompletion = new TaskCompletionSource<DreamValue>();
+        var state = new AsyncNativeProc.AsyncNativeProcState { ProcScheduler = scheduler };
+        var oldThread = new DreamThread();
+        oldThread.OnResume = () => throw new Exception("Disposed lifetime resumed");
+        state.Initialize(null, _ => oldCompletion.Task, oldThread, null, null, new DreamProcArguments());
+        state.Resume();
+        if (completeBeforeDisposal) oldCompletion.SetResult(DreamValue.Null);
+        state.Dispose();
+        AsyncNativeProc.AsyncNativeProcState.Pool.Pop();
+
+        int resumed = 0;
+        var newThread = new DreamThread();
+        newThread.OnResume = () => {
+            resumed++;
+            if (state.Resume() != ProcStatus.Returned) throw new Exception("New task did not complete");
+            state.Dispose();
+            return default;
+        };
+        state.Initialize(null, _ => newCompletion.Task, newThread, null, null, new DreamProcArguments());
+        state.Resume();
+        var abandonedResult = new DreamObject();
+        if (!completeBeforeDisposal) {
+            abandonedResult.IncRef();
+            oldCompletion.SetResult(new DreamValue(abandonedResult));
+        }
+        scheduler.Process();
+        Equal(0, resumed, "old completion must not resume the reused state");
+        Equal(1, abandonedResult.RefCount, "old owned result must be released");
+        newCompletion.SetResult(DreamValue.Null);
+        scheduler.Process();
+        Equal(1, resumed, "new lifetime must remain scheduled");
+        AsyncNativeProc.AsyncNativeProcState.Pool.Pop();
+        if (scheduler.InspectThreads().Any()) throw new Exception("Disposed lifetime retained in scheduler");
+    });
+}
+if (!ProbeControl.LegacyScheduler) Check("scheduler/result-replacement-releases-owned-values", () => {
+    foreach (var sameObject in new[] { false, true }) {
+        var scheduler = new ProcScheduler();
+        var previous = new DreamObject();
+        var replacement = sameObject ? previous : new DreamObject();
+        var completion = new TaskCompletionSource<DreamValue>();
+        var state = new AsyncNativeProc.AsyncNativeProcState { ProcScheduler = scheduler };
+        var thread = new DreamThread();
+        thread.OnResume = () => { state.Resume(); state.Dispose(); return default; };
+        state.Initialize(null, _ => completion.Task, thread, null, null, new DreamProcArguments());
+        previous.IncRef();
+        state.Result = new DreamValue(previous);
+        state.Resume();
+        replacement.IncRef();
+        completion.SetResult(new DreamValue(replacement));
+        Equal(sameObject ? 2 : 1, previous.RefCount, "previous result released before replacement");
+        Equal(2, replacement.RefCount, "completed result owns one reference");
+        scheduler.Process();
+        Equal(1, previous.RefCount, "previous result fully balanced");
+        Equal(1, replacement.RefCount, "replacement result fully balanced");
+        AsyncNativeProc.AsyncNativeProcState.Pool.Pop();
+    }
 });
 Check("state/dispose-clears-caller-chain", () => {
     var argument = new DreamObject();

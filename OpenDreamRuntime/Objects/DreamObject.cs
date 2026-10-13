@@ -583,6 +583,8 @@ public class DreamObject {
         switch (resultStatus) {
             case ProcStatus.Cancelled:
                 // Throw DMError so parent .Resume() call also cancels cleanly.
+                procResult.Dispose();
+                procResult = default;
                 throw new DMError("Re-entrant proc cancelled");
             case ProcStatus.Returned:
                 // Normal behavior, proc finished executing.

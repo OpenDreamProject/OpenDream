@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   pull_request:
     branches: [master]
-    paths: ['OpenDreamRuntime/Resources/**', 'tests/icon_ownership/**', '.github/workflows/icon-ownership.yml']
+    paths: ['OpenDreamRuntime/Resources/**', 'OpenDreamRuntime/Objects/DreamIcon.cs', 'RobustToolbox', 'RobustToolbox/**', 'tests/icon_ownership/**', '.github/workflows/icon-ownership.yml']
 permissions:
   contents: read
 jobs:

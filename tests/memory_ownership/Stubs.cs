@@ -35,7 +35,8 @@ namespace OpenDreamRuntime {
         public bool TryGetValueAsDreamObject(out DreamObject? obj) { obj = Object; return obj != null && !obj.Deleted; }
     }
     public sealed class DreamThread {
-        public DreamValue Resume() => default;
+        public Func<DreamValue>? OnResume;
+        public DreamValue Resume() => OnResume?.Invoke() ?? default;
         public Procs.ProcStatus HandleDefer() => Procs.ProcStatus.Deferred;
         public void PushProcState(Procs.ProcState state) {}
     }
@@ -83,8 +84,9 @@ namespace OpenDreamRuntime.Procs {
         public DreamProcArguments(DreamValue[] values) { Values = values; foreach (var value in values) value.IncRef(); }
         public void Dispose() { foreach (var value in Values) value.Dispose(); }
     }
-    public sealed class ProcScheduler {
-        public Task Schedule(AsyncNativeProc.AsyncNativeProcState state, Func<AsyncNativeProc.AsyncNativeProcState, Task<DreamValue>> taskFunc) => taskFunc(state);
+    public sealed partial class ProcScheduler {
+        private readonly Queue<TaskCompletionSource> _deferredTasks = new();
+        private void UpdateDelays() {}
     }
 }
 

@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory=$true)][string]$Dotnet,
-    [ValidateSet('none','baseline','filtered-dispose','async-clear','stack-clear')][string]$NegativeControl = 'none'
+    [ValidateSet('none','baseline','filtered-dispose','async-clear','stack-clear','scheduler-fault','caller-clear')][string]$NegativeControl = 'none'
 )
 $ErrorActionPreference = 'Stop'
 $repository = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '../..')).Path
@@ -13,13 +13,18 @@ try {
     $sourceRoot = Join-Path $probeTemp 'source'
     $procDirectory = Join-Path $sourceRoot 'OpenDreamRuntime/Procs'
     New-Item -ItemType Directory -Path $procDirectory -Force | Out-Null
-    foreach ($name in @('DreamEnumerators.cs','AsyncNativeProc.cs','DMProc.cs')) {
+    foreach ($name in @('DreamEnumerators.cs','AsyncNativeProc.cs','DMProc.cs','ProcScheduler.cs')) {
         $relative = 'OpenDreamRuntime/Procs/' + $name
         if ($NegativeControl -eq 'baseline') {
             $baseline = & git -C $repository show ('b1a452e7:' + $relative)
             if ($LASTEXITCODE -ne 0) { throw 'Cannot load immutable baseline source' }
             $text = $baseline -join "`n"
         } else { $text = Get-Content -LiteralPath (Join-Path $repository $relative) -Raw }
+        if ($NegativeControl -eq 'scheduler-fault' -and $name -eq 'ProcScheduler.cs') {
+            $original = & git -C $repository show ('d443a95f:' + $relative)
+            if ($LASTEXITCODE -ne 0) { throw 'Cannot load scheduler negative control' }
+            $text = $original -join "`n"
+        }
         if ($NegativeControl -eq 'filtered-dispose' -and $name -eq 'DreamEnumerators.cs') {
             $start = $text.IndexOf('internal sealed class FilteredDreamValueArrayEnumerator')
             $head = $text.Substring(0, $start)
@@ -41,6 +46,13 @@ try {
             $text.Replace('[Dependency]', '[Robust.Shared.IoC.DependencyAttribute]') | Set-Content -LiteralPath (Join-Path $procDirectory $name)
         }
     }
+    $threadSource = Get-Content -LiteralPath (Join-Path $repository 'OpenDreamRuntime/DreamThread.cs') -Raw
+    $stateStart = $threadSource.IndexOf('public abstract class ProcState')
+    $dispose = [regex]::Match($threadSource.Substring($stateStart), 'public virtual void Dispose\(\) \{[^}]+\}')
+    if (!$dispose.Success) { throw 'Production ProcState.Dispose not found' }
+    $disposeBody = $dispose.Value.Replace('public virtual void', 'public void')
+    if ($NegativeControl -in @('caller-clear','baseline')) { $disposeBody = $disposeBody.Replace('Caller = null;', '') }
+    "using OpenDreamRuntime; public class ProductionStateDispose { public object? Thread, Caller; public DreamValue Result; public bool WaitFor; public int Id; $disposeBody }" | Set-Content -LiteralPath (Join-Path $probeTemp 'StateDispose.cs')
     $env:DOTNET_CLI_HOME = Join-Path $probeTemp 'cli'
     $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE = '1'
     $env:DOTNET_NOLOGO = '1'

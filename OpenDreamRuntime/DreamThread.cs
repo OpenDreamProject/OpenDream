@@ -186,6 +186,7 @@ namespace OpenDreamRuntime {
 
         public virtual void Dispose() {
             Thread = null!;
+            Caller = null;
             Result.DecRef();
             Result = DreamValue.Null;
             WaitFor = true;

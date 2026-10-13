@@ -28,11 +28,14 @@ public sealed partial class ProcScheduler {
 
     public Task Schedule(AsyncNativeProc.AsyncNativeProcState state, Func<AsyncNativeProc.AsyncNativeProcState, Task<DreamValue>> taskFunc) {
         async Task Foo() {
-            state.Result = await taskFunc(state);
-            if (!_sleeping.Remove(state))
-                return;
-
-            _scheduled.Enqueue(state);
+            try {
+                state.Result = await taskFunc(state);
+            } finally {
+                // Faults and cancellation must resume the thread too, so that
+                // normal error handling can dispose its states and arguments.
+                if (_sleeping.Remove(state))
+                    _scheduled.Enqueue(state);
+            }
         }
 
         var task = Foo();

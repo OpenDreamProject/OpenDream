@@ -78,6 +78,61 @@ Check("stack/returned-array-clears-popped-and-live-slots", () => {
     if (!ReferenceEquals(stack, reused)) throw new Exception("pool did not reuse array");
     if (reused.Any(value => value.Object != null)) throw new Exception("returned stack retains managed objects");
 });
+foreach (var mode in new[] { "success", "fault", "cancel" }) {
+    Check("scheduler/" + mode + "-repeated-cleanup", () => {
+        var scheduler = new ProcScheduler();
+        var sleepingField = typeof(ProcScheduler).GetField("_sleeping", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var sleeping = (HashSet<AsyncNativeProc.AsyncNativeProcState>)sleepingField.GetValue(scheduler)!;
+        var argument = new DreamObject();
+        int resumed = 0, errors = 0;
+        for (int i = 0; i < 500; i++) {
+            var completion = new TaskCompletionSource<DreamValue>();
+            var state = new AsyncNativeProc.AsyncNativeProcState { ProcScheduler = scheduler };
+            var thread = new DreamThread();
+            thread.OnResume = () => {
+                resumed++;
+                try {
+                    if (state.Resume() != ProcStatus.Returned) throw new Exception("completed task did not return");
+                } catch (AggregateException) when (mode == "fault") { errors++; }
+                finally { state.Dispose(); }
+                return default;
+            };
+            state.Initialize(null, _ => completion.Task, thread, null, null, new DreamProcArguments([new(argument)]));
+            if (state.Resume() != ProcStatus.Deferred) throw new Exception("pending task did not defer");
+            Equal(1, sleeping.Count, "pending scheduler entry");
+            if (mode == "fault") completion.SetException(new InvalidOperationException("intentional fault"));
+            else if (mode == "cancel") completion.SetCanceled();
+            else completion.SetResult(DreamValue.Null);
+            // Completion continuations execute synchronously, matching the production scheduler contract.
+            Equal(0, sleeping.Count, "completed scheduler entry");
+            scheduler.Process();
+            Equal(i + 1, resumed, "resumed completion count");
+            Equal(1, argument.RefCount, "argument released after completion");
+            AsyncNativeProc.AsyncNativeProcState.Pool.Pop();
+        }
+        Equal(mode == "fault" ? 500 : 0, errors, "fault delivery count");
+        if (scheduler.InspectThreads().Any()) throw new Exception("scheduler retains completed threads");
+    });
+}
+Check("scheduler/synchronous-fault-does-not-register", () => {
+    var scheduler = new ProcScheduler();
+    var state = new AsyncNativeProc.AsyncNativeProcState { ProcScheduler = scheduler };
+    state.Initialize(null, _ => Task.FromException<DreamValue>(new InvalidOperationException("sync fault")), new DreamThread(), null, null, new DreamProcArguments());
+    try { state.Resume(); throw new Exception("fault was swallowed"); }
+    catch (AggregateException) {}
+    finally { state.Dispose(); AsyncNativeProc.AsyncNativeProcState.Pool.Pop(); }
+    if (scheduler.InspectThreads().Any()) throw new Exception("synchronous fault was registered");
+});
+Check("state/dispose-clears-caller-chain", () => {
+    var argument = new DreamObject();
+    argument.IncRef();
+    var state = new ProductionStateDispose { Thread = new object(), Caller = new object(), Result = new(argument), Id = 9, WaitFor = false };
+    state.Dispose();
+    if (state.Caller != null || state.Thread != null) throw new Exception("disposed state retains caller or thread");
+    Equal(1, argument.RefCount, "result released");
+    Equal(-1, state.Id, "disposed id");
+    if (!state.WaitFor) throw new Exception("waitfor not reset");
+});
 if (failures.Count > 0) { Console.WriteLine($"FAILED {failures.Count} cases"); return 1; }
 Console.WriteLine("Ownership probe passed. Stubbed dependencies; no game startup or live memory measurement.");
 return 0;

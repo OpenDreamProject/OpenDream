@@ -7,5 +7,7 @@
     <Compile Include="$(SourceDirectory)/OpenDreamRuntime/Procs/DreamEnumerators.cs" Link="DreamEnumerators.cs"/>
     <Compile Include="$(SourceDirectory)/OpenDreamRuntime/Procs/AsyncNativeProc.cs" Link="AsyncNativeProc.cs"/>
     <Compile Include="$(ProbeGeneratedDirectory)/StackReturn.cs"/>
+    <Compile Include="$(SourceDirectory)/OpenDreamRuntime/Procs/ProcScheduler.cs" Link="ProcScheduler.cs"/>
+    <Compile Include="$(ProbeGeneratedDirectory)/StateDispose.cs"/>
   </ItemGroup>
 </Project>

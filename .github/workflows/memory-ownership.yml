@@ -29,7 +29,7 @@ jobs:
         run: |
           $sdk = (Get-Command dotnet).Source
           & ./tests/memory_ownership/run.ps1 -Dotnet $sdk
-          foreach ($entry in @(@('baseline',9), @('filtered-dispose',6), @('async-clear',1), @('stack-clear',1))) {
+          foreach ($entry in @(@('baseline',12), @('filtered-dispose',6), @('async-clear',1), @('stack-clear',1), @('scheduler-fault',2), @('caller-clear',1))) {
             $output = & pwsh -NoProfile -File ./tests/memory_ownership/run.ps1 -Dotnet $sdk -NegativeControl $entry[0] 2>&1
             if ($LASTEXITCODE -eq 0 -or ($output -join "`n") -notmatch "FAILED $($entry[1]) cases") {
               throw "Negative control did not fail its expected ownership assertions: $output"

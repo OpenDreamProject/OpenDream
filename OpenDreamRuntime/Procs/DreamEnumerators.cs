@@ -112,19 +112,25 @@ internal sealed class FilteredDreamValueArrayEnumerator(DreamValue[] values, Dic
             }
 
             DreamValue value = values[_current];
-            if (value.TryGetValueAsDreamObject(out var dreamObject) && (dreamObject?.IsSubtypeOf(filterType) ?? false)) {
-                state.AssignReference(reference, value);
-                if (assocReference != DreamReference.NoRef)
-                    state.AssignReference(assocReference, assocValues?.GetValueOrDefault(value, DreamValue.Null) ?? DreamValue.Null);
+            try {
+                if (value.TryGetValueAsDreamObject(out var dreamObject) && (dreamObject?.IsSubtypeOf(filterType) ?? false)) {
+                    state.AssignReference(reference, value);
+                    if (assocReference != DreamReference.NoRef)
+                        state.AssignReference(assocReference, assocValues?.GetValueOrDefault(value, DreamValue.Null) ?? DreamValue.Null);
+                    return true;
+                }
+            } finally {
                 value.Dispose();
-                return true;
-            } else {
-                value.Dispose();
+                values[_current] = DreamValue.Null;
             }
         } while (true);
     }
 
     public void Dispose() {
+        // Visited entries release their snapshot ownership in Enumerate, including
+        // when assigning a loop variable throws. Early exits must release the rest.
+        for (int i = _current + 1; i < values.Length; i++)
+            values[i].Dispose();
         if (assocValues != null)
             foreach (var assocValue in assocValues.Values)
                 assocValue.Dispose();

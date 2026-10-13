@@ -627,7 +627,7 @@ public sealed class DMProcState : ProcState {
         _callee?.DecRef();
         _callee = null;
 
-        DreamValuePool.Return(_stack);
+        DreamValuePool.Return(_stack, clearArray: true);
         _stackIndex = 0;
         _stack = null!;
 

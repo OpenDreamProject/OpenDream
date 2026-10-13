@@ -54,7 +54,7 @@ namespace OpenDreamRuntime.Procs {
                 base.Initialize(thread, true);
 
                 arguments.Values.CopyTo(_arguments);
-                foreach (var arg in _arguments)
+                foreach (var arg in _arguments.AsSpan(0, arguments.Count))
                     arg.IncRef();
 
                 _proc = proc;
@@ -109,6 +109,7 @@ namespace OpenDreamRuntime.Procs {
 
                 for (int i = 0; i < ArgumentCount; i++)
                     _arguments[i].Dispose();
+                Array.Clear(_arguments, 0, ArgumentCount);
 
                 Instance = null!;
                 Usr = null!;

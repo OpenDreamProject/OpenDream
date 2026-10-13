@@ -297,7 +297,8 @@ public class DreamList : DreamObject, IDreamList {
     public void Swap(int index1, int index2) {
         using var temp = GetValue(new DreamValue(index1));
 
-        SetValue(new DreamValue(index1), GetValue(new DreamValue(index2)));
+        using var other = GetValue(new DreamValue(index2));
+        SetValue(new DreamValue(index1), other);
         SetValue(new DreamValue(index2), temp);
     }
 
@@ -439,8 +440,10 @@ public class DreamList : DreamObject, IDreamList {
                 AddValue(value); // Always add the value
                 if (bList._associativeValues?.TryGetValue(value, out var assocValue) is true) { // Ensure the associated value is correct
                     _associativeValues ??= new();
-                    _associativeValues[value] = assocValue;
                     assocValue.IncRef();
+                    if (_associativeValues.TryGetValue(value, out var oldValue))
+                        oldValue.DecRef();
+                    _associativeValues[value] = assocValue;
                 }
             }
         } else {

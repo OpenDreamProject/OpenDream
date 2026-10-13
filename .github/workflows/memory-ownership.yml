@@ -1,0 +1,39 @@
+name: Memory ownership regressions
+on:
+  pull_request:
+    branches: [master]
+jobs:
+  ownership:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: List ownership and range filtering
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tests/memory_lists/run.py --dotnet "$(command -v dotnet)"
+          python tests/memory_lists/run.py --dotnet "$(command -v dotnet)" --baseline b1a452e7
+          for control in swap append range; do
+            python tests/memory_lists/run.py --dotnet "$(command -v dotnet)" --control "$control"
+          done
+      - name: Enumeration and proc pool ownership
+        shell: pwsh
+        run: |
+          $sdk = (Get-Command dotnet).Source
+          & ./tests/memory_ownership/run.ps1 -Dotnet $sdk
+          foreach ($entry in @(@('baseline',9), @('filtered-dispose',6), @('async-clear',1), @('stack-clear',1))) {
+            $output = & pwsh -NoProfile -File ./tests/memory_ownership/run.ps1 -Dotnet $sdk -NegativeControl $entry[0] 2>&1
+            if ($LASTEXITCODE -eq 0 -or ($output -join "`n") -notmatch "FAILED $($entry[1]) cases") {
+              throw "Negative control did not fail its expected ownership assertions: $output"
+            }
+            Write-Host "PASS rejected $($entry[0]): $($entry[1]) ownership failures"
+          }
+          $global:LASTEXITCODE = 0

@@ -180,9 +180,8 @@ internal static partial class DreamProcNativeHelpers {
 
         void AddToList(DreamValue value) {
             if(value.TryGetValueAsDreamObject<DreamObjectAtom>(out var atomValue)) {
-                using var appearanceValue = atomValue.GetVariable("appearance");
-                using var appearance = appearanceValue.MustGetValueAsAppearance();
-                if(appearance.Invisibility >= 101)
+                // Range filtering only reads invisibility; avoid cloning the entire appearance.
+                if(center.ObjectDefinition.AtomManager.MustGetAppearance(atomValue).Invisibility >= 101)
                     return;
             }
 

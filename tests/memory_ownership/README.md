@@ -43,3 +43,19 @@ is not a complete engine build, DM compiler integration test, gameplay test,
 server heap measurement or proof that these defects caused Civ13's observed heap
 size. No live runtime is attached. Existing nullable-analysis warnings in linked
 async code are reported by the standalone build.
+
+## Passive Windows server benchmark
+
+`benchmark-process.ps1 -TargetProcessId <PID> -CounterTool <dotnet-counters.exe>
+-OutputDirectory <new directory> -Seconds 120` records process memory, CPU time
+and CLR counters. Optional PythonExecutable/ControlScript/ControlProfile arguments
+poll an explicitly selected server's read-only `topic-status`; ServerLog records
+only the new log window. It refuses to overwrite existing counter output and
+checks process start identity. The server must already be owned and authorized.
+The collector performs no restart, season transition or forced GC.
+
+`summarize-process.py <directory> [<directory> ...] --output <summary.json>`
+summarizes the raw CSV files. Topic latency includes process launch overhead;
+game clock advance is not a frame-time measurement. Compare workload/player
+count, process age, initialization and GC generations before attributing any
+change to the patch. A fresh process uses less memory even without a leak fix.

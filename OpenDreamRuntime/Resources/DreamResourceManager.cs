@@ -193,8 +193,11 @@ public sealed partial class DreamResourceManager {
         var resourceId = _resourceCache.Count;
         var md5 = CalculateMd5(data);
         if (_md5ToGeneratedIcon.TryGetValue(md5, out var possibleDuplicate) && possibleDuplicate.ResourceData != null) {
-            if (data.SequenceEqual(possibleDuplicate.ResourceData))
+            if (data.SequenceEqual(possibleDuplicate.ResourceData)) {
+                if (!possibleDuplicate.OwnsTexture(texture))
+                    texture.Dispose();
                 return possibleDuplicate;
+            }
         }
 
         IconResource resource = new IconResource(resourceId, data, texture, dmi);

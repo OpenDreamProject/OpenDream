@@ -12,6 +12,8 @@ public sealed class IconResource : DreamResource {
     private Image<Rgba32>? _texture;
     private DMIParser.ParsedDMIDescription? _dmi;
 
+    internal bool OwnsTexture(Image<Rgba32> texture) => ReferenceEquals(_texture, texture);
+
     public IconResource(int id, string? filePath, string? resourcePath) : base(id, filePath, resourcePath) { }
 
     public IconResource(int id, byte[] data) : base(id, data) { }

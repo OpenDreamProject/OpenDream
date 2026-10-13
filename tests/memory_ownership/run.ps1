@@ -59,7 +59,7 @@ try {
     $env:DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE = 'true'
     $env:DOTNET_GENERATE_ASPNET_CERTIFICATE = 'false'
     $env:DOTNET_ADD_GLOBAL_TOOLS_TO_PATH = 'false'
-    & $Dotnet run --project (Join-Path $PSScriptRoot 'OwnershipProbe.csproj') --configuration Release --property:SourceDirectory=$sourceRoot --property:ProbeGeneratedDirectory=$probeTemp --property:BaseIntermediateOutputPath="$probeTemp/obj/" --property:OutputPath="$probeTemp/bin/" --verbosity quiet
+    & $Dotnet run --project (Join-Path $PSScriptRoot 'OwnershipProbe.csproj') --configuration Release --property:ImportDirectoryPackagesProps=false --property:SourceDirectory=$sourceRoot --property:ProbeGeneratedDirectory=$probeTemp --property:BaseIntermediateOutputPath="$probeTemp/obj/" --property:OutputPath="$probeTemp/bin/" --verbosity quiet
     $result = $LASTEXITCODE
     if ($result -ne 0) { throw "Ownership probe failed ($result), control=$NegativeControl" }
 } finally {

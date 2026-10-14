@@ -26,6 +26,7 @@
     "Content.IntegrationTests/Content.IntegrationTests.csproj": "5ce3c8ccd6926631953f6cae3d6f58c270ef79e2cb96b18388dd6506ca0e0696",
     "global.json": "b48d6da8fa62c0da7cc8a2da4ea036ac55836660a448ba533135abb5b8451b73",
     "tests/native_creation_ownership/run.py": "2ee2954ee65e6e7cc353d83f11c6e796c7d6378c63204cdd2bbfac8bcd2e1727",
-    "tests/native_creation_ownership/control.py": "8554a7d4963eb4f05348cb0bb860713501aa464cfc281ca9a0d44d31a1ab687f"
+    "tests/native_creation_ownership/control.py": "af3aaa1e1a11a054bee5a2f43cdf006232de4e185910d9e27f4c60afd0202cda",
+    "tests/bounded_output_upstream/retention_composition.py": "d96f6dcce5c0a46ec3bfa1c25ecd3d5dad9742a78638b917139438641f292b43"
   }
 }

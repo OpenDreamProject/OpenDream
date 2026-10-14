@@ -18,7 +18,7 @@
   },
   "candidate_sources": {
     "OpenDreamRuntime/Resources/DreamResourceManager.cs": "bc760397e59e700853fb803caba98faa2ad24eb45b5ede089040cf48692e4c3d",
-    "OpenDreamRuntime/Objects/Types/DreamObjectSavefile.cs": "c9b010d8872ff3c8f184faa72347b0741ff5f3a859fb53692f00e539faa52eef",
+    "OpenDreamRuntime/Objects/Types/DreamObjectSavefile.cs": "7710cd031fa288671ad0cccf2c0f74ad00903ec6c7387043a05960cb14fae6db",
     "OpenDreamRuntime/Objects/DreamObject.cs": "1d3006d536a0ae846ed4aaebf42256c45baea7af44de91f3b1b475f23945a5ff",
     "OpenDreamRuntime/Procs/Native/DreamProcNativeRoot.cs": "03ddf663c00fac5de5e455124e67e6ebb3aff34d65d44131f78a5cc81c7eb9ff"
   },

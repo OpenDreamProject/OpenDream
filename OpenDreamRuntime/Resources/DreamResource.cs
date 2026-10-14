@@ -60,6 +60,14 @@ public class DreamResource(int id, string? filePath, string? resourcePath) {
         return resourceString;
     }
 
+    internal void ReleaseFileDataCache() {
+        // In-memory resources own their bytes; only disk-backed data can be reloaded.
+        if (string.IsNullOrEmpty(filePath))
+            return;
+
+        ResourceData = null; // The setter also balances TOOLS memory accounting.
+    }
+
     public void Clear() {
         if (string.IsNullOrEmpty(filePath))
             return;

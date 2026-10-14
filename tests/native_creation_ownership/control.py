@@ -8,6 +8,9 @@ from pathlib import Path
 HERE=Path(__file__).resolve().parent
 ROOT=HERE.parents[1]
 SPEC=json.loads((HERE/'controls.json').read_text())
+import importlib.util
+_comp_spec=importlib.util.spec_from_file_location('retention_composition',ROOT/'tests/bounded_output_upstream/retention_composition.py')
+_composition=importlib.util.module_from_spec(_comp_spec);_comp_spec.loader.exec_module(_composition)
 MANAGER='OpenDreamRuntime/Resources/DreamResourceManager.cs'
 SAVEFILE='OpenDreamRuntime/Objects/Types/DreamObjectSavefile.cs'
 def sha(b):return hashlib.sha256(b).hexdigest()
@@ -17,6 +20,7 @@ def mutate(source,mode):
     result=dict(source)
     if mode=='resource-baseline':
         for path in [MANAGER,SAVEFILE]:result[path]=(HERE/'original'/path).read_bytes()
+        result[SAVEFILE]=_composition.compose_read(result[SAVEFILE])
     if mode=='hash-only':
         needle=b'if (data.AsSpan().SequenceEqual(candidate))'
         assert result[MANAGER].count(needle)==1

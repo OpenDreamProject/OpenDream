@@ -13,6 +13,8 @@ namespace OpenDreamRuntime.Objects.Types;
 [Virtual]
 public class DreamList : DreamObject, IDreamList {
     private static readonly Stack<List<DreamValue>> ListPool = new();
+    // Bound idle backing storage without limiting the size of live DM lists.
+    private const int MaximumPooledCapacity = 65_536;
 
     public override bool ShouldCallNew => false;
 
@@ -104,7 +106,8 @@ public class DreamList : DreamObject, IDreamList {
             foreach (var assocValue in _associativeValues.Values)
                 assocValue.DecRef();
 
-        if (_values.Capacity > DreamManager.ListPoolThreshold && ListPool.Count < DreamManager.ListPoolSize) {
+        if (_values.Capacity > DreamManager.ListPoolThreshold && _values.Capacity <= MaximumPooledCapacity
+            && ListPool.Count < DreamManager.ListPoolSize) {
             _values.Clear();
             ListPool.Push(_values);
         }

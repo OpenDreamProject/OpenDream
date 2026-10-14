@@ -8,12 +8,12 @@
   "schema": 1,
   "baseline_sha256": "b7a72852b8b152693fffae5a7611b5d0379d78607beccd7813d3ebb74731ce9e",
   "sources": {
-    "OpenDreamRuntime/Resources/DreamResource.cs": "493f2dacbfcd833ba687fe47a4a40e1eadbd1cbe02d72be19a191ac068ccd2f5",
-    "OpenDreamRuntime/Objects/Types/DreamObjectSavefile.cs": "c9b010d8872ff3c8f184faa72347b0741ff5f3a859fb53692f00e539faa52eef",
+    "OpenDreamRuntime/Resources/DreamResource.cs": "942082b3cbc2dd6656b4c8a1fbad20b44642fcab8b3ca7c1e6b1eca12c9af224",
+    "OpenDreamRuntime/Objects/Types/DreamObjectSavefile.cs": "7710cd031fa288671ad0cccf2c0f74ad00903ec6c7387043a05960cb14fae6db",
     "OpenDreamShared/Dream/StringFormatDecoder.cs": "2723652b58569d1f261dac0ef561a1c00ce357a53070822a0685bf8cf735304d",
     "Content.IntegrationTests/ResourceOutputAllocationTests.cs": "1717fc6159b37d9916648cd4fd8da6a2afe31c239c73617f09eb83bf271146e7",
     "Content.IntegrationTests/DMProject/Fixtures/resource-output-allocation.dm": "e34e2a015c137d64ea68bfa8c3e506d9f0f938f2f928a588a8d6072154415819",
-    "tests/resource_output_allocation/control.py": "00c0ed43e41eee1466e5ae741d42b4fd965b13793d3589f2cd171abd137337d2",
+    "tests/resource_output_allocation/control.py": "955a21677c1fc1383cc16504888c30d63603e0b897f0fb2b3a8a65e4307b9341",
     "tests/resource_output_allocation/verify.py": "b90efdc514dcecf75780129547a7f59f295ea46efbc93975ff6b0ed51771990c",
     "tests/resource_output_allocation/test_controls.py": "5b5298e642cc08410e6221a2ee9cfa98d874e5ab5a9132564f8107619ca49b9d",
     "tests/bounded_output_upstream/ordinary.py": "14fe7fe668fae44f94fb93c3a010f0643d14d4cd163f808a4b11b415312f9423",
@@ -26,6 +26,7 @@
     "Content.IntegrationTests/Content.IntegrationTests.csproj": "5ce3c8ccd6926631953f6cae3d6f58c270ef79e2cb96b18388dd6506ca0e0696",
     "global.json": "b48d6da8fa62c0da7cc8a2da4ea036ac55836660a448ba533135abb5b8451b73",
     "tests/native_creation_ownership/run.py": "2ee2954ee65e6e7cc353d83f11c6e796c7d6378c63204cdd2bbfac8bcd2e1727",
-    "tests/native_creation_ownership/control.py": "8554a7d4963eb4f05348cb0bb860713501aa464cfc281ca9a0d44d31a1ab687f"
+    "tests/native_creation_ownership/control.py": "af3aaa1e1a11a054bee5a2f43cdf006232de4e185910d9e27f4c60afd0202cda",
+    "tests/bounded_output_upstream/retention_composition.py": "d96f6dcce5c0a46ec3bfa1c25ecd3d5dad9742a78638b917139438641f292b43"
   }
 }

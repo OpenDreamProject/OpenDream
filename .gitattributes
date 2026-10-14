@@ -11,3 +11,13 @@ tests/resource_output_allocation/** text eol=lf
 tests/bounded_output_upstream/** text eol=lf
 .github/workflows/turf-tile-queue.yml text eol=lf
 .github/workflows/resource-output-allocation.yml text eol=lf
+
+OpenDreamRuntime/Objects/Types/DreamList.cs text eol=lf
+Content.IntegrationTests/ListPoolCapacityTests.cs text eol=lf
+Content.IntegrationTests/SavefileRawCacheTests.cs text eol=lf
+Content.IntegrationTests/DMProject/Fixtures/savefile-raw-cache.dm text eol=lf
+tests/list_pool_capacity/** text eol=lf
+tests/savefile_raw_cache/** text eol=lf
+tests/retention_upstream/** text eol=lf
+.github/workflows/list-pool-capacity.yml text eol=lf
+.github/workflows/savefile-raw-cache.yml text eol=lf

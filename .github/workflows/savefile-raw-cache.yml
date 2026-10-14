@@ -1,0 +1,101 @@
+name: Savefile raw read cache lifetime
+on:
+  pull_request:
+    paths:
+      - 'OpenDreamRuntime/Resources/DreamResource.cs'
+      - 'OpenDreamRuntime/Objects/Types/DreamObjectSavefile.cs'
+      - 'Content.IntegrationTests/SavefileRawCacheTests.cs'
+      - 'Content.IntegrationTests/DMProject/Fixtures/savefile-raw-cache.dm'
+      - 'tests/bounded_output_upstream/**'
+      - 'Content.IntegrationTests/ContentIntegrationTest.cs'
+      - 'Content.IntegrationTests/Content.IntegrationTests.csproj'
+      - 'global.json'
+      - 'tests/savefile_raw_cache/**'
+      - '.github/workflows/savefile-raw-cache.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  raw-cache:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [positive, baseline, omit-release, drop-inmemory]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          submodules: recursive
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Pure source and parser controls
+        run: python -m unittest discover -s tests/savefile_raw_cache -p 'test_*.py' -v
+      - name: Authenticate committed source and prepare exact control
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          python tests/savefile_raw_cache/control.py '${{ matrix.mode }}' --head "$EXPECTED_HEAD" --receipt raw-cache-results/source-receipt.json
+          python tests/savefile_raw_cache/capture.py raw-cache-results
+      - name: Build with original output
+        id: build
+        shell: bash
+        run: |
+          dotnet --info > raw-cache-results/sdk-info.log
+          set +e
+          dotnet build Content.IntegrationTests/Content.IntegrationTests.csproj -c Release -m:1 -p:UseSharedCompilation=false --disable-build-servers > raw-cache-results/build.log 2>&1
+          code=$?
+          set -e
+          printf '%s\n' "$code" > raw-cache-results/build-exit-code.txt
+          tail -60 raw-cache-results/build.log
+          test "$code" = 0
+          python tests/savefile_raw_cache/capture.py raw-cache-results --binaries
+      - name: Dedicated compiled fixture in fresh process
+        shell: bash
+        run: |
+          set +e
+          RAW_CACHE_MODE='${{ matrix.mode }}' COMPlus_gcServer=1 dotnet test Content.IntegrationTests/Content.IntegrationTests.csproj -c Release --no-build --filter 'FullyQualifiedName=Content.IntegrationTests.SavefileRawCacheTests.DiskReadLifetimeAndIdentity' --logger 'trx;LogFileName=raw-cache.trx' --results-directory raw-cache-results -v n -- NUnit.ExplicitMode=Relaxed > raw-cache-results/raw-cache.log 2>&1
+          code=$?
+          set -e
+          printf '%s\n' "$code" > raw-cache-results/test-exit-code.txt
+          tail -60 raw-cache-results/raw-cache.log
+      - name: Unchanged NoRuntimes in another fresh process
+        shell: bash
+        run: |
+          set +e
+          RAW_CACHE_MODE='${{ matrix.mode }}' COMPlus_gcServer=1 dotnet test Content.IntegrationTests/Content.IntegrationTests.csproj -c Release --no-build --filter 'FullyQualifiedName=Content.IntegrationTests.GameTests.NoRuntimesTest' --logger 'trx;LogFileName=runtime.trx' --results-directory raw-cache-results -v n > raw-cache-results/runtime.log 2>&1
+          code=$?
+          set -e
+          printf '%s\n' "$code" > raw-cache-results/runtime-exit-code.txt
+          tail -40 raw-cache-results/runtime.log
+      - name: Strict original classification and source preservation
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          python tests/savefile_raw_cache/control.py '${{ matrix.mode }}' --head "$EXPECTED_HEAD" --receipt raw-cache-results/source-receipt.json --verify
+          python tests/savefile_raw_cache/verify.py raw-cache-results/raw-cache.trx '${{ matrix.mode }}' "$(cat raw-cache-results/test-exit-code.txt)" --log raw-cache-results/raw-cache.log
+          python tests/bounded_output_upstream/ordinary.py raw-cache-results/runtime.trx raw-cache-results/runtime.log "$(cat raw-cache-results/runtime-exit-code.txt)"
+      - name: Preserve original raw logs and hash receipt
+        if: always()
+        continue-on-error: false
+        run: |
+          mkdir -p raw-cache-results
+          touch raw-cache-results/sdk-info.log raw-cache-results/build.log raw-cache-results/raw-cache.log raw-cache-results/runtime.log
+          python tests/savefile_raw_cache/archive_logs.py raw-cache-results
+          python tests/savefile_raw_cache/archive_logs.py raw-cache-results --verify
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: raw-cache-${{ matrix.mode }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: raw-cache-results/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14

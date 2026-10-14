@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "base_commit": "f7150679d926d6613da32c08d42a0c4d9b922bfc",
+  "baseline_sha256": "fa059e403fc34a8c224032be205541d28fff2a1e078e3e8538092464bb3877e2",
+  "sources": {
+    "Content.IntegrationTests/Content.IntegrationTests.csproj": "5ce3c8ccd6926631953f6cae3d6f58c270ef79e2cb96b18388dd6506ca0e0696",
+    "Content.IntegrationTests/ContentIntegrationTest.cs": "11440e100252e5f0c634a160c168cd7bb7646948613425746a84f759413e8ddb",
+    "Content.IntegrationTests/GameTests.cs": "78cbdd52c5812939ba3b056993279ee0d7a8e3e04bcc2ee038ba359bb43643f7",
+    "OpenDreamRuntime/Objects/DreamObject.cs": "1d3006d536a0ae846ed4aaebf42256c45baea7af44de91f3b1b475f23945a5ff",
+    "OpenDreamRuntime/Objects/DreamObjectTree.cs": "857c77edd837c0d470c49e49ac79ced31c192c8df09cd1ee2fd21d0dfbc0c550",
+    "OpenDreamRuntime/Objects/DreamRefManager.cs": "b3865a4e99022445794fb19bf0f14d57c17d1c811748c55d8fe19388d2698697",
+    "OpenDreamRuntime/DreamValue.cs": "383070fb0046a3940e0c3638916ac5fbf6e28fbb82201490113e7de9c4acb71a",
+    "OpenDreamRuntime/DreamManager.cs": "a62c679c4c69696e488b87bb16868b0826005393bbefcfec64d1c8a5f0096fa9",
+    "OpenDreamShared/OpenDreamCVars.cs": "10f1e422b7e0cd5c2c418beb37a1474e1c63184c6deaaa611a41c2d440041fcc",
+    "global.json": "b48d6da8fa62c0da7cc8a2da4ea036ac55836660a448ba533135abb5b8451b73",
+    "tests/bounded_output_upstream/ordinary.py": "14fe7fe668fae44f94fb93c3a010f0643d14d4cd163f808a4b11b415312f9423",
+    "tests/native_creation_ownership/run.py": "2ee2954ee65e6e7cc353d83f11c6e796c7d6378c63204cdd2bbfac8bcd2e1727",
+    "tests/native_creation_ownership/control.py": "af3aaa1e1a11a054bee5a2f43cdf006232de4e185910d9e27f4c60afd0202cda",
+    "tests/bounded_output_upstream/retention_composition.py": "d96f6dcce5c0a46ec3bfa1c25ecd3d5dad9742a78638b917139438641f292b43",
+    "OpenDreamRuntime/Objects/Types/DreamList.cs": "2216226d31edc4e9923878087a6c2c06905ad3738bd37df59f8496afb6717922",
+    "Content.IntegrationTests/ListPoolCapacityTests.cs": "dfb8341f3c3ee0f95673870c03743561753351dc5097c3d548222ab36d90d925",
+    "tests/list_pool_capacity/control.py": "77f835a83b18b0c85a6824a4e851c403d16b94df3cf4ee6692096f1bdb1224d6",
+    "tests/list_pool_capacity/README.md": "73e907a72cded708b6d701992dc745b584ea5de7c824cb43b329da3dd1174fd4",
+    "tests/list_pool_capacity/test_controls.py": "8a04340cac85270c1f50b8048219dd31cefe142cb0df9351240dff1c1de19cc0",
+    "tests/list_pool_capacity/verify.py": "9ea440a02cd1ca69d68fbeac1a4764bb6201fbf7890c925dbc18b86671c94af3",
+    ".github/workflows/list-pool-capacity.yml": "d7a49c9e1c9735303cb66732adf5bb30f34497b85426bbd58bdedfec9245cd47",
+    "tests/native_creation_ownership/controls.json": "662d0c6ccc3d096a9c58e8a97eadc5ba1019098271a1cb6989035294c88eb8f9",
+    "tests/turf_tile_queue/archive_logs.py": "900b3bf8e73403b2cee0fd243f68b8cc8a67f649908fdae58c9f0e4fef8956a9"
+  }
+}

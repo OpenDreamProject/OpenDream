@@ -27,6 +27,11 @@ class ControlTests(unittest.TestCase):
             changed=control.mutate(self.source,'omit-'+omitted)
             for key,name in [(omitted,'original'),(kept,'candidate')]:
                 spec=control.SPEC['methods'][key];self.assertIn(spec[name].encode(),changed[spec['path']])
+    def test_historical_resource_control_preserves_read_release(self):
+        changed=control.mutate(self.source,'resource-baseline')[control.SAVEFILE]
+        original=(HERE/'original'/control.SAVEFILE).read_bytes()
+        self.assertIn(control._composition.READ_FINALLY,changed)
+        self.assertEqual(changed.replace(control._composition.READ_FINALLY,control._composition.OLD_READ),original)
     def test_source_drift_rejected(self):
         self.source[control.MANAGER]+=b'\n'
         with self.assertRaises(AssertionError):control.mutate(self.source,'positive')

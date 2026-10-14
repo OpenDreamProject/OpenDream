@@ -1,0 +1,110 @@
+name: List pool capacity
+on:
+  pull_request:
+    paths:
+      - 'OpenDreamRuntime/Objects/Types/DreamList.cs'
+      - 'Content.IntegrationTests/ListPoolCapacityTests.cs'
+      - 'tests/bounded_output_upstream/**'
+      - 'Content.IntegrationTests/ContentIntegrationTest.cs'
+      - 'Content.IntegrationTests/Content.IntegrationTests.csproj'
+      - 'global.json'
+      - 'tests/list_pool_capacity/**'
+      - '.github/workflows/list-pool-capacity.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pool:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-latest, mode: positive}
+          - {os: windows-latest, mode: positive}
+          - {os: ubuntu-latest, mode: baseline}
+          - {os: ubuntu-latest, mode: nonclearing}
+          - {os: ubuntu-latest, mode: no-pooling}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          submodules: recursive
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Authenticate production sources and control
+        shell: bash
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          python -m unittest discover -s tests/list_pool_capacity -v
+          python tests/list_pool_capacity/control.py '${{ matrix.mode }}' --head "$EXPECTED_HEAD" --output pool-results
+      - name: Build and preserve original output
+        shell: bash
+        run: |
+          dotnet --info > pool-results/sdk-info.log
+          set +e
+          dotnet build Content.IntegrationTests/Content.IntegrationTests.csproj -c Release -m:1 -p:UseSharedCompilation=false --disable-build-servers > pool-results/build.log 2>&1
+          code=$?
+          set -e
+          printf '%s\n' "$code" > pool-results/build-exit-code.txt
+          tail -60 pool-results/build.log
+          test "$code" = 0
+          mkdir -p pool-results/binaries
+          cp bin/Content.IntegrationTests/Content.IntegrationTests.{dll,pdb} pool-results/binaries/
+          cp OpenDreamRuntime/bin/Release/net10.0/OpenDreamRuntime.{dll,pdb} pool-results/binaries/
+      - name: Native retention semantics and comparable workloads
+        shell: bash
+        run: |
+          # BYOND API installs an assembly-wide native resolver on first server
+          # startup. Give each isolated world its own process, preserving raw
+          # per-test TRX/logs rather than weakening that production contract.
+          for test in ComparableWorkloads RetiredCapacityAndWeakRelease SemanticsReferencesAndMediumReuse; do
+            set +e
+            COMPlus_gcServer=1 dotnet test Content.IntegrationTests/Content.IntegrationTests.csproj -c Release --no-build --filter "FullyQualifiedName=Content.IntegrationTests.ListPoolCapacityTests.$test" --logger "trx;LogFileName=pool-$test.trx" --results-directory pool-results -v n -- NUnit.ExplicitMode=Relaxed > "pool-results/pool-$test.log" 2>&1
+            code=$?
+            set -e
+            printf '%s\n' "$code" > "pool-results/pool-$test-exit-code.txt"
+            tail -65 "pool-results/pool-$test.log"
+          done
+      - name: Authenticate post-build source and strict expected outcomes
+        shell: bash
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          python tests/list_pool_capacity/control.py '${{ matrix.mode }}' --head "$EXPECTED_HEAD" --output pool-results --verify
+          python tests/list_pool_capacity/verify.py pool-results '${{ matrix.mode }}'
+      - name: Fresh unchanged ordinary runtime
+        shell: bash
+        run: |
+          set +e
+          COMPlus_gcServer=1 dotnet test Content.IntegrationTests/Content.IntegrationTests.csproj -c Release --no-build --filter FullyQualifiedName=Content.IntegrationTests.GameTests.NoRuntimesTest --logger "trx;LogFileName=runtime.trx" --results-directory pool-results -v n > pool-results/runtime.log 2>&1
+          code=$?
+          set -e
+          printf '%s\n' "$code" > pool-results/runtime-exit-code.txt
+          python tests/bounded_output_upstream/ordinary.py pool-results/runtime.trx pool-results/runtime.log "$code"
+      - name: Archive original logs and TRX
+        if: always()
+        run: |
+          python tests/turf_tile_queue/archive_logs.py pool-results
+          python tests/turf_tile_queue/archive_logs.py pool-results --verify
+      - name: Hash original source logs TRX and binaries
+        if: always()
+        shell: bash
+        run: |
+          find pool-results -type f -print0 | sort -z | xargs -0 sha256sum > pool-sha256.txt
+          mv pool-sha256.txt pool-results/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: list-pool-${{ matrix.os }}-${{ matrix.mode }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: pool-results/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14

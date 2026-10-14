@@ -96,7 +96,12 @@ public sealed class DreamObjectSavefile : DreamObject {
 
         if (!SavefileDirectories.TryGetValue(filename, out var directory)) {
             //if the savefile hasn't already been loaded, load it or create it
-            var data = Resource.ReadAsString();
+            string? data;
+            try {
+                data = Resource.ReadAsString();
+            } finally {
+                Resource.ReleaseFileDataCache();
+            }
 
             if (!string.IsNullOrEmpty(data)) {
                 try{

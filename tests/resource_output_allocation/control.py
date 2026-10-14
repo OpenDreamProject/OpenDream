@@ -56,7 +56,11 @@ def prepare(mode, head, output, verify=False):
             original = git('cat-file', 'blob', BASE + ':' + name)
             assert sha(original) == manifest['baseline_sha256'], 'unreviewed original'
             assert original.count(b'File.AppendAllText(ResourcePath, text + "\\r\\n");') == 1
-            wanted = original if mode == 'baseline' else mutate(committed, mode)
+            if mode == 'baseline':
+                spec=importlib.util.spec_from_file_location('retention_composition',ROOT/'tests/bounded_output_upstream/retention_composition.py')
+                composition=importlib.util.module_from_spec(spec);spec.loader.exec_module(composition)
+                wanted=composition.compose_helper(original)
+            else: wanted=mutate(committed,mode)
             records['immutable_original_sha256'] = sha(original)
         actual = (ROOT / name).read_bytes().replace(b'\r\n', b'\n')
         assert actual == (wanted if verify else committed), 'source drift: ' + name

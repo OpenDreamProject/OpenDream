@@ -856,12 +856,15 @@ public sealed class DMProcState : ProcState {
                 break;
             case DMReference.Type.Field: {
                 var owner = peek ? Peek() : Pop();
-                if (!owner.TryGetValueAsDreamObject(out var ownerObj) || ownerObj == null)
-                    ThrowCannotAssignFieldOn(reference, owner);
+                try {
+                    if (!owner.TryGetValueAsDreamObject(out var ownerObj) || ownerObj == null)
+                        ThrowCannotAssignFieldOn(reference, owner);
 
-                ownerObj!.SetVariable(ResolveString(reference.Value), value);
-                if (!peek)
-                    owner.Dispose();
+                    ownerObj!.SetVariable(ResolveString(reference.Value), value);
+                } finally {
+                    if (!peek)
+                        owner.Dispose();
+                }
                 break;
             }
             case DMReference.Type.ListIndex: {
@@ -965,11 +968,12 @@ public sealed class DMProcState : ProcState {
             }
             case DMReference.Type.Field: {
                 var owner = peek ? Peek() : Pop();
-                var fieldValue = DereferenceField(owner, ResolveString(reference.Value));
-
-                if (!peek)
-                    owner.Dispose();
-                return fieldValue;
+                try {
+                    return DereferenceField(owner, ResolveString(reference.Value));
+                } finally {
+                    if (!peek)
+                        owner.Dispose();
+                }
             }
             case DMReference.Type.SrcField: {
                 var fieldName = ResolveString(reference.Value);

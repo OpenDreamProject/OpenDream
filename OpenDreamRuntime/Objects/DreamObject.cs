@@ -324,6 +324,7 @@ public class DreamObject {
     public ProcState InitProc(DreamThread thread, DreamObject? usr, [HandlesResourceDisposal] DreamProcArguments arguments) {
         DebugTools.Assert(!Deleted, "Cannot call InitProc() on a deleted object");
 
+        InitDreamObjectState.ValidateArguments(arguments);
         if (!InitDreamObjectState.Pool.TryPop(out var state)) {
             state = new InitDreamObjectState(ObjectDefinition.DreamManager, ObjectDefinition.ObjectTree);
         }
@@ -486,11 +487,10 @@ public class DreamObject {
     // /=
     [MustDisposeResource]
     public virtual DreamValue OperatorDivideRef(DreamValue b, DMProcState state) {
-        var args = new DreamProcArguments(b);
-        if (TryExecuteOperatorOverload(state, "operator/=", args, out var result))
+        if (TryExecuteOperatorOverload(state, "operator/=", new DreamProcArguments(b), out var result))
             return result;
 
-        if (TryExecuteOperatorOverload(state, "operator/", args, out result))
+        if (TryExecuteOperatorOverload(state, "operator/", new DreamProcArguments(b), out result))
             return result;
 
         throw new InvalidOperationException($"Division cannot be done between {this} and {b}");
@@ -570,6 +570,7 @@ public class DreamObject {
         [HandlesResourceDisposal] DreamProcArguments arguments,
         [MustDisposeResource] out DreamValue procResult) {
         if (!TryGetProc(operatorName, out var proc)) {
+            arguments.Dispose();
             procResult = default;
             return false;
         }

@@ -283,6 +283,8 @@ namespace OpenDreamRuntime.Procs {
                 return ProcStatus.Continue;
             }
 
+            // Reject before acquiring the creator owner. Turf replacement is unchanged.
+            InitDreamObjectState.ValidateArguments(newArguments);
             var newObject = state.Proc.ObjectTree.CreateObject(objectType);
             if (overrides is not null) {
                 foreach (var varOverride in overrides) {

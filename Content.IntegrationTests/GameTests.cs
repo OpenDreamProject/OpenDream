@@ -57,6 +57,13 @@ public sealed partial class GameTests : ContentIntegrationTest {
             var tree = server.ResolveDependency<DreamObjectTree>();
             CompletedSpawnsReuseStates(manager, tree);
             CancelledThreadsReleaseOwnedFrames(manager, tree);
+            var refs = server.ResolveDependency<DreamRefManager>();
+            ObjectInitializationReleasesOwnedValues(manager, tree, refs);
+            MissingOperatorArgumentsReleaseOwners(manager, tree, refs);
+            SupportedOperatorFallbacksReleaseOwners(manager, tree, refs);
+            ExternalCallRejectionsReleaseArguments(manager, tree, refs);
+            NumericListAssignmentsReleaseOwners(manager, tree, refs);
+            FieldReferencesReleaseOwners(tree, refs);
         });
     }
 }

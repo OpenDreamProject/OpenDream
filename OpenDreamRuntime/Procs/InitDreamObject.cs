@@ -6,6 +6,16 @@ namespace OpenDreamRuntime.Procs;
 
 internal sealed class InitDreamObjectState(DreamManager dreamManager, DreamObjectTree objectTree) : ProcState {
     public static readonly Stack<InitDreamObjectState> Pool = new();
+    internal const int PhysicalArgumentCapacity = 256;
+
+    // Successful initialization transfers these owners into the frame's copy.
+    internal static void ValidateArguments([HandlesResourceDisposal] DreamProcArguments arguments) {
+        if (arguments.Count <= PhysicalArgumentCapacity)
+            return;
+
+        arguments.Dispose();
+        throw new ArgumentException("Destination is too short.", "destination");
+    }
 
     private enum Stage {
         // Need to call the object's (init) proc
@@ -32,7 +42,7 @@ internal sealed class InitDreamObjectState(DreamManager dreamManager, DreamObjec
 
     private DreamObject _dreamObject;
     private DreamObject? _usr;
-    private readonly DreamValue[] _arguments = new DreamValue[256];
+    private readonly DreamValue[] _arguments = new DreamValue[PhysicalArgumentCapacity];
     private int _argumentCount;
     private Stage _stage = Stage.Init;
 

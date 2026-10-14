@@ -187,12 +187,15 @@ public class DreamList : DreamObject, IDreamList {
 
     public virtual void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
         if (key.TryGetValueAsInteger(out int keyInteger)) {
-            value.IncRef();
-
             if (allowGrowth && keyInteger == _values.Count + 1) {
+                value.IncRef();
                 _values.Add(value);
             } else {
-                _values[keyInteger - 1].DecRef();
+                // Validate the index before acquiring an incoming owner. Keep acquisition
+                // before release so a sole list-owned value survives self-replacement.
+                var oldValue = _values[keyInteger - 1];
+                value.IncRef();
+                oldValue.DecRef();
                 _values[keyInteger - 1] = value;
             }
         } else {

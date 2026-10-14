@@ -36,6 +36,8 @@ internal static partial class DMOpcodeHandlers {
         string dllName,
         string procName,
         [HandlesResourceDisposal] DreamProcArguments arguments) {
+        using var byondArguments = arguments;
+
         // TODO: Don't allocate string copy
         // TODO: Handle stdcall (do we care?)
         var entryPoint = (delegate* unmanaged[Cdecl]<uint, ByondApi.CByondValue*, ByondApi.CByondValue>)
@@ -51,7 +53,6 @@ internal static partial class DMOpcodeHandlers {
 
         using var result = Api.ValueFromDreamApi(Api.DoCall(entryPoint, args));
         state.Push(result);
-        arguments.Dispose();
         return ProcStatus.Continue;
     }
 
@@ -60,6 +61,8 @@ internal static partial class DMOpcodeHandlers {
         string dllName,
         string procName,
         [HandlesResourceDisposal] DreamProcArguments arguments) {
+        using var stringArguments = arguments;
+
         var entryPoint = DllHelper.ResolveDllTarget(state.Proc.DreamResourceManager, dllName, procName);
 
         Span<nint> argV = stackalloc nint[arguments.Count];
@@ -89,7 +92,6 @@ internal static partial class DMOpcodeHandlers {
             state.Push(new DreamValue(retString));
             return ProcStatus.Continue;
         } finally {
-            arguments.Dispose();
             foreach (var arg in argV) {
                 if (arg != 0)
                     Marshal.ZeroFreeCoTaskMemUTF8(arg);

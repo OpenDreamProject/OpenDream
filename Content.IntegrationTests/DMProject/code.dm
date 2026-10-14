@@ -66,3 +66,96 @@ var/global/list/areas_by_type = list()
 		TEST.RunTest()
 		del(TEST) //and clean up
 	world.log << "IntegrationTests successful, /world/New() exiting..."
+
+/datum/object_initialization_owner_probe
+    New()
+        return
+
+/proc/object_initialization_new_probe(payload, count)
+    var/list/arguments = new/list(count)
+    arguments[1] = payload
+    try
+        var/datum/created = new /datum/object_initialization_owner_probe(arglist(arguments))
+        del(created)
+        return count == 256
+    catch(var/error)
+        if(error != "Destination is too short. (Parameter 'destination')")
+            throw error
+        return count == 257
+
+// Ownership probes: actual assignment opcode dispatch, not helper substitutes.
+/datum/operator_divide_fallback
+    proc/operator/(rhs)
+        return rhs
+
+/datum/operator_multiply_fallback
+    proc/operator*(rhs)
+        return rhs
+
+/datum/operator_defined
+    proc/operator+(rhs)
+        return rhs
+    proc/operator[](index)
+        return index
+    proc/operator[]=(index, value)
+        return value
+
+/datum/operator_divide_exact
+    proc/operator/=(rhs)
+        return 73
+    proc/operator/(rhs)
+        return 19
+
+/datum/operator_multiply_exact
+    proc/operator*=(rhs)
+        return 73
+    proc/operator*(rhs)
+        return 19
+
+/proc/operator_divide_fallback_probe(payload)
+    var/result = new /datum/operator_divide_fallback
+    result /= payload
+    return result
+
+/proc/operator_multiply_fallback_probe(payload)
+    var/result = new /datum/operator_multiply_fallback
+    result *= payload
+    return result
+
+/proc/operator_add_defined_probe(payload)
+    var/result = new /datum/operator_defined
+    return result + payload
+
+/proc/operator_divide_exact_probe(payload)
+    var/result = new /datum/operator_divide_exact
+    result /= payload
+    return result
+
+/proc/operator_multiply_exact_probe(payload)
+    var/result = new /datum/operator_multiply_exact
+    result *= payload
+    return result
+
+/proc/operator_index_defined_probe(payload)
+    var/result = new /datum/operator_defined
+    return result[payload]
+
+/proc/operator_index_assign_defined_probe(payload)
+    var/result = new /datum/operator_defined
+    result[payload] = payload
+    return payload
+
+// Actual compiled call statements reject stdcall before loading a native library.
+/proc/call_ext_string_rejection_probe(payload)
+	try
+		call("ownership_rejection_unused", "symbol@failure")(payload)
+	catch(var/error)
+		return error
+	return "missing resolver rejection"
+
+/proc/call_ext_byond_rejection_probe(payload)
+	try
+		call("ownership_rejection_unused", "byond:symbol@failure")(payload)
+	catch(var/error)
+		return error
+	return "missing resolver rejection"

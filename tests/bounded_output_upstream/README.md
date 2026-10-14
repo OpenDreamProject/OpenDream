@@ -1,0 +1,11 @@
+# Adapted upstream bounded allocations
+
+These changes adapt accepted fork candidates turf queue `2da7c2cb27c6bdb5499550c8444cc0b422204c53` (fork PR40) and resource output `1838dabbcb5c6a79f10aced00576d71fb1d20cf4` (fork PR41) onto upstream PR2728 parent `c3b16108e8c7177a1be5167db8ab61a3398dfd14`. Upstream Robust remains `af2a7d0406b410c4d960f0f4b34513651c6dc742`. Immutable upstream map/resource originals are retained here; fork evidence is unchanged.
+
+The turf queue replaces repeated nonempty writes at each coordinate between empties. Empty transitions and the preceding nonempty entry remain, preserving Robust deparent/unanchor behavior. Successful drains detach high-water containers before callbacks, preserve callback writes for the next drain, guard nested drains, and restore old-before-new order on failure. Intermediate nonempty event histories are intentionally reduced; current consumers use final appearance and every empty transition.
+
+Resource output retains upstream validation, formatting, UTF8 behavior, virtual dispatch, directory creation and success-only cache invalidation. At most 4096 characters still use AppendAllText; larger writes send text and literal CRLF separately through StreamWriter. Upstream has no fork SaveCostProfile API: neither profiling instrumentation nor profile assertions are transplanted.
+
+CI runs dedicated native fixtures with exact upstream source pins, real Robust grids/transforms, strict historical and unsafe-dedup controls, Linux/Windows output positives, historical large-copy, small-path and platform-newline controls, allocation workloads, byte/error/cache checks and native savefile roundtrip. Each matrix mode runs unchanged NoRuntimes in a separate process. Original logs/TRX are archived and hashed with source and DLL/PDB artifacts. Pure Python checks test authentication/mutation/classifiers only.
+
+Native execution of this upstream adaptation is UNRUN until upstream Actions approves and completes the exact-head workflows. Previously accepted fork evidence does not prove the adaptation compiles or runs. Allocation and queue checks do not prove full Gaia RSS, live server memory, or the cause of a 12.5GB observation. No local native build/process, deployment or restart is performed.

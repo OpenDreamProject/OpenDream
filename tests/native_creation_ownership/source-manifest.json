@@ -14,7 +14,7 @@
     "OpenDreamRuntime/Objects/DreamRefManager.cs": "b3865a4e99022445794fb19bf0f14d57c17d1c811748c55d8fe19388d2698697",
     "OpenDreamRuntime/Objects/Types/DreamList.cs": "fa059e403fc34a8c224032be205541d28fff2a1e078e3e8538092464bb3877e2",
     "OpenDreamRuntime/Objects/Types/DreamObjectMatrix.cs": "5b47644362cb29a5b9b1bee99a5ac71b958c99f836e30d72e572011c2bbec00b",
-    "OpenDreamRuntime/Resources/DreamResource.cs": "b7a72852b8b152693fffae5a7611b5d0379d78607beccd7813d3ebb74731ce9e",
+    "OpenDreamRuntime/Resources/DreamResource.cs": "493f2dacbfcd833ba687fe47a4a40e1eadbd1cbe02d72be19a191ac068ccd2f5",
     "OpenDreamShared/OpenDreamCVars.cs": "10f1e422b7e0cd5c2c418beb37a1474e1c63184c6deaaa611a41c2d440041fcc",
     "Content.IntegrationTests/DMProject/Fixtures/native-matrix-constructors.dm": "837a9d7e01d9ff890d6268f8d81ea3af18bf9ad490b4ae0e494795a835b5bffb",
     "Content.IntegrationTests/DMProject/Fixtures/native-matrix-fast.dm": "5256d9c889e1aa6659077186d6b7c24afa52454887d31d22d424a3666ff01599",

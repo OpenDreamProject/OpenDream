@@ -74,13 +74,7 @@ public sealed partial class DreamMapManager : IDreamMapManager {
             if (level.QueuedTileUpdates.Count == 0)
                 continue;
 
-            List<(Vector2i, Tile)> tiles = new(level.QueuedTileUpdates.Count);
-            foreach (var tileUpdate in level.QueuedTileUpdates) {
-                tiles.Add(tileUpdate);
-            }
-
-            _mapSystem.SetTiles(level.Grid, tiles);
-            level.QueuedTileUpdates.Clear();
+            level.FlushTileUpdates(tiles => _mapSystem.SetTiles(level.Grid, tiles));
         }
     }
 
@@ -207,7 +201,7 @@ public sealed partial class DreamMapManager : IDreamMapManager {
         var level = _levels[turf.Z - 1];
         var turfId = appearance.MustGetId();
         var turfPos = new Vector2i(turf.X, turf.Y);
-        level.QueuedTileUpdates.Add( (turfPos, new Tile((int)turfId)) );
+        level.QueueTileUpdate((turfPos, new Tile((int)turfId)));
         turf.Appearance = appearance;
     }
 
@@ -245,7 +239,7 @@ public sealed partial class DreamMapManager : IDreamMapManager {
             var level = _levels[turf.Z - 1];
             var turfId = newAppearance.MustGetId();
             var turfPos = new Vector2i(turf.X, turf.Y);
-            level.QueuedTileUpdates.Add( (turfPos, new Tile((int)turfId)));
+            level.QueueTileUpdate((turfPos, new Tile((int)turfId)));
         }
     }
 
@@ -477,7 +471,50 @@ public interface IDreamMapManager {
         public readonly int Z;
         public readonly Entity<MapGridComponent> Grid;
         public Cell[,] Cells;
-        public readonly List<(Vector2i, Tile)> QueuedTileUpdates = new();
+        public List<(Vector2i, Tile)> QueuedTileUpdates = new();
+        private Dictionary<Vector2i, int> _pendingNonEmptyTiles = new();
+        private bool _flushingTileUpdates;
+
+        // Intermediate nonempty appearance IDs are not observed by the grid's consumers.
+        // Keep empty transitions: Robust unparents/unanchors entities for every empty entry,
+        // even when the same batch later restores the tile.
+        public void QueueTileUpdate((Vector2i Position, Tile Tile) update) {
+            if (update.Tile.IsEmpty) {
+                _pendingNonEmptyTiles.Remove(update.Position);
+            } else if (_pendingNonEmptyTiles.TryGetValue(update.Position, out var index)) {
+                QueuedTileUpdates[index] = update;
+                return;
+            } else {
+                _pendingNonEmptyTiles.Add(update.Position, QueuedTileUpdates.Count);
+            }
+
+            QueuedTileUpdates.Add(update);
+        }
+
+        public void FlushTileUpdates(Action<List<(Vector2i, Tile)>> apply) {
+            if (_flushingTileUpdates || QueuedTileUpdates.Count == 0)
+                return;
+
+            var batch = QueuedTileUpdates;
+            var indexes = _pendingNonEmptyTiles;
+            // Detach before invoking grid callbacks. Reentrant writes belong to the next batch;
+            // successful drains release the high-water backing arrays instead of retaining them.
+            QueuedTileUpdates = new();
+            _pendingNonEmptyTiles = new();
+            _flushingTileUpdates = true;
+            try {
+                apply(batch);
+            } catch {
+                var reentrant = QueuedTileUpdates;
+                QueuedTileUpdates = batch;
+                _pendingNonEmptyTiles = indexes;
+                foreach (var update in reentrant)
+                    QueueTileUpdate(update);
+                throw;
+            } finally {
+                _flushingTileUpdates = false;
+            }
+        }
 
         public Level(int z, Entity<MapGridComponent> grid, DreamObjectDefinition turfType, DreamObjectArea area, Vector2i size) {
             Z = z;

@@ -1,0 +1,110 @@
+name: Resource output allocation
+on:
+  pull_request:
+    paths:
+      - 'tests/bounded_output_upstream/**'
+      - 'tests/native_creation_ownership/run.py'
+      - 'Content.IntegrationTests/ContentIntegrationTest.cs'
+      - 'Content.IntegrationTests/Content.IntegrationTests.csproj'
+      - 'global.json'
+      - 'OpenDreamRuntime/Resources/DreamResource.cs'
+      - 'Content.IntegrationTests/ResourceOutputAllocationTests.cs'
+      - 'Content.IntegrationTests/DMProject/Fixtures/resource-output-allocation.dm'
+      - 'tests/resource_output_allocation/**'
+      - 'tests/turf_tile_queue/control.py'
+      - 'tests/turf_tile_queue/archive_logs.py'
+      - 'tests/turf_tile_queue/source-manifest.json'
+      - '.github/workflows/resource-output-allocation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  output:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-latest, mode: positive}
+          - {os: windows-latest, mode: positive}
+          - {os: ubuntu-latest, mode: baseline}
+          - {os: ubuntu-latest, mode: platform-newline}
+          - {os: ubuntu-latest, mode: no-small-path}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          submodules: recursive
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Authenticate and materialize pinned Robust source line endings
+        run: python tests/bounded_output_upstream/canonicalize_robust.py
+      - name: Authenticate production sources and control
+        shell: bash
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          python -m unittest discover -s tests/resource_output_allocation -v
+          python tests/resource_output_allocation/control.py '${{ matrix.mode }}' --head "$EXPECTED_HEAD" --output output-results
+      - name: Build and preserve original output
+        id: build
+        shell: bash
+        run: |
+          dotnet --info > output-results/sdk-info.log
+          set +e
+          dotnet build Content.IntegrationTests/Content.IntegrationTests.csproj -c Release -m:1 -p:UseSharedCompilation=false --disable-build-servers > output-results/build.log 2>&1
+          code=$?
+          set -e
+          printf '%s\n' "$code" > output-results/build-exit-code.txt
+          tail -60 output-results/build.log
+          test "$code" = 0
+          mkdir -p output-results/binaries
+          cp bin/Content.IntegrationTests/Content.IntegrationTests.{dll,pdb} output-results/binaries/
+          cp OpenDreamRuntime/bin/Release/net10.0/OpenDreamRuntime.{dll,pdb} output-results/binaries/
+      - name: Production contracts and comparable allocation workloads
+        shell: bash
+        run: |
+          set +e
+          COMPlus_gcServer=1 dotnet test Content.IntegrationTests/Content.IntegrationTests.csproj -c Release --no-build --filter 'FullyQualifiedName~Content.IntegrationTests.ResourceOutputAllocationTests' --logger 'trx;LogFileName=output.trx' --results-directory output-results -v n -- NUnit.ExplicitMode=Relaxed > output-results/output.log 2>&1
+          code=$?
+          set -e
+          printf '%s\n' "$code" > output-results/test-exit-code.txt
+          tail -70 output-results/output.log
+      - name: Authenticate post-build source and exact expected outcomes
+        shell: bash
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          python tests/resource_output_allocation/control.py '${{ matrix.mode }}' --head "$EXPECTED_HEAD" --output output-results --verify
+          python tests/resource_output_allocation/verify.py output-results '${{ matrix.mode }}'
+      - name: Unchanged ordinary runtime in a fresh process
+        shell: bash
+        run: |
+          set +e
+          COMPlus_gcServer=1 dotnet test Content.IntegrationTests/Content.IntegrationTests.csproj -c Release --no-build --filter FullyQualifiedName=Content.IntegrationTests.GameTests.NoRuntimesTest --logger "trx;LogFileName=runtime.trx" --results-directory output-results -v n > output-results/runtime.log 2>&1
+          code=$?
+          set -e
+          python tests/bounded_output_upstream/ordinary.py output-results/runtime.trx output-results/runtime.log "$code"
+      - name: Preserve original raw logs and TRX
+        if: always()
+        shell: bash
+        run: python tests/turf_tile_queue/archive_logs.py output-results
+      - name: Hash original source, logs, TRX and binaries
+        if: always()
+        shell: bash
+        run: |
+          find output-results -type f -print0 | sort -z | xargs -0 sha256sum > output-sha256.txt
+          mv output-sha256.txt output-results/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: resource-output-${{ matrix.os }}-${{ matrix.mode }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: output-results/
+          if-no-files-found: error
+          retention-days: 14

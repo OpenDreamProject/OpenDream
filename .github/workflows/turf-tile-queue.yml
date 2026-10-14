@@ -1,0 +1,99 @@
+name: Pending turf tile queue
+on:
+  pull_request:
+    paths:
+      - 'tests/bounded_output_upstream/**'
+      - 'tests/native_creation_ownership/run.py'
+      - 'Content.IntegrationTests/ContentIntegrationTest.cs'
+      - 'Content.IntegrationTests/Content.IntegrationTests.csproj'
+      - 'global.json'
+      - 'OpenDreamRuntime/Map/DreamMapManager.cs'
+      - 'Content.IntegrationTests/TurfTileQueueTests.cs'
+      - 'tests/turf_tile_queue/**'
+      - '.github/workflows/turf-tile-queue.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  turf-tiles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [positive, baseline, unsafe-dedup]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          submodules: recursive
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Authenticate and materialize pinned Robust source line endings
+        run: python tests/bounded_output_upstream/canonicalize_robust.py
+      - name: Pure source and parser controls
+        run: python -m unittest discover -s tests/turf_tile_queue -p 'test_*.py' -v
+      - name: Authenticate committed source and prepare exact control
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          python tests/turf_tile_queue/control.py '${{ matrix.mode }}' --head "$EXPECTED_HEAD" --receipt tile-results/source-receipt.json
+          python tests/turf_tile_queue/capture.py tile-results
+      - name: Build with original output
+        id: build
+        shell: bash
+        run: |
+          dotnet --info > tile-results/sdk-info.log
+          set +e
+          dotnet build Content.IntegrationTests/Content.IntegrationTests.csproj -c Release -m:1 -p:UseSharedCompilation=false --disable-build-servers > tile-results/build.log 2>&1
+          code=$?
+          set -e
+          printf '%s\n' "$code" > tile-results/build-exit-code.txt
+          tail -60 tile-results/build.log
+          test "$code" = 0
+          python tests/turf_tile_queue/capture.py tile-results --binaries
+      - name: Dedicated compiled fixture in fresh process
+        shell: bash
+        run: |
+          set +e
+          COMPlus_gcServer=1 dotnet test Content.IntegrationTests/Content.IntegrationTests.csproj -c Release --no-build --filter 'FullyQualifiedName=Content.IntegrationTests.TurfTileQueueTests.PendingTilesPreserveEmptyTransitions' --logger 'trx;LogFileName=tiles.trx' --results-directory tile-results -v n -- NUnit.ExplicitMode=Relaxed > tile-results/tiles.log 2>&1
+          code=$?
+          set -e
+          printf '%s\n' "$code" > tile-results/test-exit-code.txt
+          tail -60 tile-results/tiles.log
+      - name: Unchanged NoRuntimes in another fresh process
+        shell: bash
+        run: |
+          set +e
+          COMPlus_gcServer=1 dotnet test Content.IntegrationTests/Content.IntegrationTests.csproj -c Release --no-build --filter 'FullyQualifiedName=Content.IntegrationTests.GameTests.NoRuntimesTest' --logger 'trx;LogFileName=runtime.trx' --results-directory tile-results -v n > tile-results/runtime.log 2>&1
+          code=$?
+          set -e
+          printf '%s\n' "$code" > tile-results/runtime-exit-code.txt
+          tail -40 tile-results/runtime.log
+      - name: Strict original classification and source preservation
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          python tests/turf_tile_queue/control.py '${{ matrix.mode }}' --head "$EXPECTED_HEAD" --receipt tile-results/source-receipt.json --verify
+          python tests/turf_tile_queue/verify.py tile-results/tiles.trx '${{ matrix.mode }}' "$(cat tile-results/test-exit-code.txt)" --log tile-results/tiles.log
+          python tests/bounded_output_upstream/ordinary.py tile-results/runtime.trx tile-results/runtime.log "$(cat tile-results/runtime-exit-code.txt)"
+      - name: Preserve original raw logs and hash receipt
+        if: always() && steps.build.outcome == 'success'
+        run: |
+          python tests/turf_tile_queue/archive_logs.py tile-results
+          python tests/turf_tile_queue/archive_logs.py tile-results --verify
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: turf-tiles-${{ matrix.mode }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: tile-results/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14

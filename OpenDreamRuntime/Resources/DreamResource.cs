@@ -83,8 +83,21 @@ public class DreamResource(int id, string? filePath, string? resourcePath) {
         text = StringFormatDecoder.RemoveFormatting(text);
 
         CreateDirectory();
-        File.AppendAllText(ResourcePath, text + "\r\n");
+        AppendTextLine(text);
         _resourceDataBacking = null;
+    }
+
+    private void AppendTextLine(string text) {
+        // Preserve the lean AppendAllText path with a bounded temporary copy.
+        if (text.Length <= 4096) {
+            File.AppendAllText(ResourcePath!, text + "\r\n");
+            return;
+        }
+        // Keep the terminator separate: savefile snapshots can be very large.
+        // Default StreamWriter matches AppendAllText's strict UTF8 without BOM.
+        using var writer = new StreamWriter(ResourcePath!, append: true);
+        writer.Write(text);
+        writer.Write("\r\n");
     }
 
     private void CreateDirectory() {

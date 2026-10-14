@@ -86,8 +86,10 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     }
 
     public void RemoveValue(DreamValue value) {
-        if(_values.Remove(value))
+        if (_values.Remove(value, out var associatedValue)) {
             value.DecRef();
+            associatedValue.DecRef();
+        }
     }
 
     public IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateAssocValues() {

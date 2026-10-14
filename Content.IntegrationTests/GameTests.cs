@@ -62,6 +62,8 @@ public sealed partial class GameTests : ContentIntegrationTest {
             MissingOperatorArgumentsReleaseOwners(manager, tree, refs);
             IndexReferenceReadsReleaseOwners(tree, refs);
             InRangeOperandsReleaseOwners(manager, tree, refs);
+            AssocListRemovalReleasesOwners(manager, tree, refs);
+            AssocConstructionOwnershipFixture.Run(manager, tree, refs);
             SupportedOperatorFallbacksReleaseOwners(manager, tree, refs);
             ExternalCallRejectionsReleaseArguments(manager, tree, refs);
             NumericListAssignmentsReleaseOwners(manager, tree, refs);

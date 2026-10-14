@@ -1,0 +1,104 @@
+{
+  "base_head": "e5132430da15bffdf685ce736a6d02773c679012",
+  "fork_proven_head": "515ad7e3b6a5a53916741521f850e1e6afa0c270",
+  "sources": {
+    ".github/workflows/build-test.yml": "2fc180de88876ffe0553a7abf06521a192306eef8b11804ad2cc3ac034fbdebc",
+    ".github/workflows/memory-ownership.yml": "fa1b3fb8cf6f2e55525b34c78c70c397984fd6d290c4f29b9f87e0bff3fd0bcf",
+    "Content.IntegrationTests/Content.IntegrationTests.csproj": "5ce3c8ccd6926631953f6cae3d6f58c270ef79e2cb96b18388dd6506ca0e0696",
+    "Content.IntegrationTests/ContentIntegrationTest.cs": "11440e100252e5f0c634a160c168cd7bb7646948613425746a84f759413e8ddb",
+    "Content.IntegrationTests/GameTests.cs": "78cbdd52c5812939ba3b056993279ee0d7a8e3e04bcc2ee038ba359bb43643f7",
+    "OpenDreamRuntime/DreamAczProvider.cs": "d301d67604e34fdf8bcd9b6010120d5d6bdeb6bc38dc54ca33beb5f5f2fd86b6",
+    "OpenDreamRuntime/DreamThread.cs": "fb8e5de0fddd4e5553a5b712e37230d044a8dc3d166f0d5c012ab22a7ebb3286",
+    "OpenDreamRuntime/DreamValue.cs": "383070fb0046a3940e0c3638916ac5fbf6e28fbb82201490113e7de9c4acb71a",
+    "OpenDreamRuntime/Objects/DreamObjectTree.cs": "857c77edd837c0d470c49e49ac79ced31c192c8df09cd1ee2fd21d0dfbc0c550",
+    "OpenDreamRuntime/Objects/DreamRefManager.cs": "b3865a4e99022445794fb19bf0f14d57c17d1c811748c55d8fe19388d2698697",
+    "OpenDreamRuntime/Objects/Types/DreamList.cs": "fa059e403fc34a8c224032be205541d28fff2a1e078e3e8538092464bb3877e2",
+    "OpenDreamRuntime/Objects/Types/DreamObjectMatrix.cs": "5b47644362cb29a5b9b1bee99a5ac71b958c99f836e30d72e572011c2bbec00b",
+    "OpenDreamRuntime/Resources/DreamResource.cs": "b7a72852b8b152693fffae5a7611b5d0379d78607beccd7813d3ebb74731ce9e",
+    "OpenDreamShared/OpenDreamCVars.cs": "10f1e422b7e0cd5c2c418beb37a1474e1c63184c6deaaa611a41c2d440041fcc",
+    "Content.IntegrationTests/DMProject/Fixtures/native-matrix-constructors.dm": "837a9d7e01d9ff890d6268f8d81ea3af18bf9ad490b4ae0e494795a835b5bffb",
+    "Content.IntegrationTests/DMProject/Fixtures/native-matrix-fast.dm": "5256d9c889e1aa6659077186d6b7c24afa52454887d31d22d424a3666ff01599",
+    "Content.IntegrationTests/DMProject/Fixtures/savefile-resource-bytes.dm": "89dd6f2eb39370a8348a547d8eef60db0a374bc7da3e294a41e86b7567f24d2d",
+    "Content.IntegrationTests/DMProject/Fixtures/typesof-ownership.dm": "f60b5e6c9606313cbe03240177d2c2453d588d395db3c370b667b3204fbf3b30",
+    "Content.IntegrationTests/NativeMatrixOwnershipTests.cs": "40d6a3090edcadff82c95a3ec1cc7c35198c023a503cdb6a13de44ef7b9d0371",
+    "Content.IntegrationTests/SavefileResourceBytesTests.cs": "92c9e6a74b22cc57c048f25e87028fc884ff5e9ff27a86e8d9e1eeeaba52f5b8",
+    "Content.IntegrationTests/TypesOfOwnershipTests.cs": "083f1c9cadc639b21303db32f67ed4dc46b66fc4e16a255f73d544b20443c63d",
+    "OpenDreamRuntime/Objects/DreamObject.cs": "1d3006d536a0ae846ed4aaebf42256c45baea7af44de91f3b1b475f23945a5ff",
+    "OpenDreamRuntime/Objects/Types/DreamObjectSavefile.cs": "c9b010d8872ff3c8f184faa72347b0741ff5f3a859fb53692f00e539faa52eef",
+    "OpenDreamRuntime/Procs/Native/DreamProcNativeRoot.cs": "03ddf663c00fac5de5e455124e67e6ebb3aff34d65d44131f78a5cc81c7eb9ff",
+    "OpenDreamRuntime/Resources/DreamResourceManager.cs": "bc760397e59e700853fb803caba98faa2ad24eb45b5ede089040cf48692e4c3d",
+    "tests/native_creation_ownership/control.py": "8554a7d4963eb4f05348cb0bb860713501aa464cfc281ca9a0d44d31a1ab687f",
+    "tests/native_creation_ownership/controls.json": "508d9ddb0fd85304addf6738078525f4e4bd2520c48d7ef8d7f8570b8b575e74",
+    "tests/native_creation_ownership/matrix/test_parser.py": "ea232e5b70cb45b77871ae138dd4fae8741081d4dd926a0e58658436e8a3edef",
+    "tests/native_creation_ownership/matrix/verify.py": "c02b3e755cb04ff7e49f3307f32e0a9786b9aa740f627a42d18d27480d373993",
+    "tests/native_creation_ownership/original/OpenDreamRuntime/Objects/DreamObject.cs": "0338a6aaa6a8b1391bb2240117756076c2ee23809308dc078c04659fe72b7ed4",
+    "tests/native_creation_ownership/original/OpenDreamRuntime/Objects/Types/DreamObjectSavefile.cs": "b8ffe00b2acc5c0cdfa68dc2788a9e7b045b6d2c8bc7d62b52a3fb1cc3f79fbc",
+    "tests/native_creation_ownership/original/OpenDreamRuntime/Procs/Native/DreamProcNativeRoot.cs": "4160f3c9f208e9fa906b53e01f8fb9650a6a6bb194da08b1788982e4f6cda369",
+    "tests/native_creation_ownership/original/OpenDreamRuntime/Resources/DreamResourceManager.cs": "88afaba4893e4a64904328483c02b091867087f3ef4e79848d32045e6b204ea4",
+    "tests/native_creation_ownership/README.md": "33906d7c726a174e8349947048fff406b771a5c56c221b4c7004e943478f53f4",
+    "tests/native_creation_ownership/resource/test_parser.py": "dcfc7cc63a376c909669b5a91df0fcc9d9b7aa84177f1f7528f2baa2aac6c224",
+    "tests/native_creation_ownership/resource/verify.py": "869e03484dfda87294a87b2e58247e41c828df672c730e73145b6251fee58ae9",
+    "tests/native_creation_ownership/run.py": "2ee2954ee65e6e7cc353d83f11c6e796c7d6378c63204cdd2bbfac8bcd2e1727",
+    "tests/native_creation_ownership/test_controls.py": "86727952e540dadd0a38692cec464d0cec4c1b9a8a3c72deeacb0a7de0ec6a43",
+    "tests/native_creation_ownership/test_runner.py": "4b72de1595590ac48bb17252410b5f9d0c10a85b562bc9c577fbb53eedbe9e4e",
+    "tests/native_creation_ownership/typesof/expected-rejection-observations.json": "f01193aec88981350e223e44926ead3c00cded2af9684e39076e3d8ade4f2935",
+    "tests/native_creation_ownership/typesof/test_parser.py": "ac65e597fcf1b38f2b6c8bae73ad7bf24a6f6095922fd969bf2f96fb2a65e6f4",
+    "tests/native_creation_ownership/typesof/verify.py": "33aab35e97db50ff661cdea467b38a3e790db834601aa18d82932e3335b45078",
+    ".github/workflows/native-creation-ownership.yml": "526d2fd00f10ed8f97eae79cb81e0b6dd51f47834679a0aeea98e718e45e730a",
+    "Content.IntegrationTests/SetupCompileDM.cs": "b36fbd0d33ae6a14a2d8e9fc65784b1520aaa8fc2747c02e00c58a14468526b9",
+    "DMCompiler/DMCompiler.csproj": "0f323d9bd962d7fea71bdabb3252952a4202d142b587587bc01a7f80703f3bbc",
+    "OpenDreamRuntime/OpenDreamRuntime.csproj": "34b10b16b7fe26762a3592c14e0cfd3ccab29a5df8b8c8302f0ac1e4923ac158",
+    "Directory.Packages.props": "7392daa4c44a429ccd0feb736ac7a5429f104f35993c79adca09429ae8738d56",
+    "global.json": "b48d6da8fa62c0da7cc8a2da4ea036ac55836660a448ba533135abb5b8451b73"
+  },
+  "originals": {
+    "OpenDreamRuntime/Resources/DreamResourceManager.cs": {
+      "head": "e5132430da15bffdf685ce736a6d02773c679012",
+      "git_blob": "a53df75285a3265cb68015f65a96ca94aa2efb2b",
+      "sha256": "88afaba4893e4a64904328483c02b091867087f3ef4e79848d32045e6b204ea4"
+    },
+    "OpenDreamRuntime/Objects/Types/DreamObjectSavefile.cs": {
+      "head": "e5132430da15bffdf685ce736a6d02773c679012",
+      "git_blob": "7cde199077d95d54075e66104ce79dc8f1293240",
+      "sha256": "b8ffe00b2acc5c0cdfa68dc2788a9e7b045b6d2c8bc7d62b52a3fb1cc3f79fbc"
+    },
+    "OpenDreamRuntime/Objects/DreamObject.cs": {
+      "head": "e5132430da15bffdf685ce736a6d02773c679012",
+      "git_blob": "5d8d64922d3195a2ec7b1afa3ed18242786648ed",
+      "sha256": "0338a6aaa6a8b1391bb2240117756076c2ee23809308dc078c04659fe72b7ed4"
+    },
+    "OpenDreamRuntime/Procs/Native/DreamProcNativeRoot.cs": {
+      "head": "e5132430da15bffdf685ce736a6d02773c679012",
+      "git_blob": "419609d9b1553c8067e3a19c18f72cb9a5e768e8",
+      "sha256": "4160f3c9f208e9fa906b53e01f8fb9650a6a6bb194da08b1788982e4f6cda369"
+    }
+  },
+  "pinning": "LF-normalized candidate, API and harness bytes; raw historical blobs separately authenticated; manifest itself bound to checkout HEAD and copied with run receipt",
+  "extra_dependency_blobs": {
+    "Content.IntegrationTests/SetupCompileDM.cs": {
+      "head": "e5132430da15bffdf685ce736a6d02773c679012",
+      "git_blob": "9ee8ca48a811a6a2e0a70e66c7d1a93f3c779fd5",
+      "sha256": "b36fbd0d33ae6a14a2d8e9fc65784b1520aaa8fc2747c02e00c58a14468526b9"
+    },
+    "DMCompiler/DMCompiler.csproj": {
+      "head": "e5132430da15bffdf685ce736a6d02773c679012",
+      "git_blob": "05925a7e6141e732dab337210501ca229cfad6d7",
+      "sha256": "0f323d9bd962d7fea71bdabb3252952a4202d142b587587bc01a7f80703f3bbc"
+    },
+    "OpenDreamRuntime/OpenDreamRuntime.csproj": {
+      "head": "e5132430da15bffdf685ce736a6d02773c679012",
+      "git_blob": "c2f70edbabaa45b756b801dbce9e8d97a5f30532",
+      "sha256": "34b10b16b7fe26762a3592c14e0cfd3ccab29a5df8b8c8302f0ac1e4923ac158"
+    },
+    "Directory.Packages.props": {
+      "head": "e5132430da15bffdf685ce736a6d02773c679012",
+      "git_blob": "e5c7e2057a458d3ab945d3efdc0f17fb02faa323",
+      "sha256": "7392daa4c44a429ccd0feb736ac7a5429f104f35993c79adca09429ae8738d56"
+    },
+    "global.json": {
+      "head": "e5132430da15bffdf685ce736a6d02773c679012",
+      "git_blob": "512142d2bea1add9d1cf54884a7fde22666bad51",
+      "sha256": "b48d6da8fa62c0da7cc8a2da4ea036ac55836660a448ba533135abb5b8451b73"
+    }
+  }
+}

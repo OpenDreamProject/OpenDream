@@ -1,0 +1,46 @@
+name: Native creation and savefile resource ownership
+on:
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-ownership:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [positive, resource-baseline, hash-only, matrix-baseline, omit-creator, omit-arguments, typesof-baseline]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Source and adversarial parser checks
+        run: |
+          python -m unittest discover -s tests/native_creation_ownership -p 'test_*.py' -v
+          for suite in resource matrix typesof; do
+            python -m unittest discover -s "tests/native_creation_ownership/$suite" -p 'test_*.py' -v
+          done
+          python -c "import sys; sys.path.insert(0,'tests/native_creation_ownership'); import run; run.authenticate()"
+      - name: Real compiled DM ownership and fresh ordinary runtime
+        env:
+          OWNERSHIP_PR_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python tests/native_creation_ownership/run.py --dotnet "$(command -v dotnet)" --mode '${{ matrix.mode }}' --output '${{ runner.temp }}/native-ownership-results'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-ownership-${{ matrix.mode }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/native-ownership-results/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 14

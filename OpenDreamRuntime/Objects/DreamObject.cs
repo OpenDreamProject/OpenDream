@@ -309,8 +309,11 @@ public class DreamObject {
     public void InitSpawn([HandlesResourceDisposal] DreamProcArguments creationArguments) {
         if (ObjectDefinition.NoConstructors) {
             // Skip thread spinup.
-            Initialize(creationArguments);
-            creationArguments.Dispose();
+            try {
+                Initialize(creationArguments);
+            } finally {
+                creationArguments.Dispose();
+            }
             return;
         }
 

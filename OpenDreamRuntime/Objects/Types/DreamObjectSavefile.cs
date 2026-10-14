@@ -367,7 +367,7 @@ public sealed class DreamObjectSavefile : DreamObject {
     public DreamValue DeserializeJsonValue(SfDreamJsonValue value) {
         switch (value) {
             case SfDreamFileValue sfDreamFileValue:
-                return new DreamValue(DreamResourceManager.CreateResource(Convert.FromBase64String(sfDreamFileValue.Data)));
+                return new DreamValue(DreamResourceManager.CreateResourceFromSavefile(Convert.FromBase64String(sfDreamFileValue.Data)));
             case SfDreamListValue sfDreamListValue:
                 var l = ObjectTree.CreateList();
                 for (int i=0; i < sfDreamListValue.AssocKeys.Count; i++) {

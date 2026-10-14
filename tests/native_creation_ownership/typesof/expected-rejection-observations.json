@@ -1,0 +1,272 @@
+[
+  {
+    "id": "TYPESOF_REJECT_caught_type_first",
+    "route": "caught",
+    "kind": "type",
+    "position": "first",
+    "iterations": 1000,
+    "owners": [
+      1,
+      1,
+      1
+    ],
+    "baseline_extra_lists": 1000,
+    "candidate_extra_lists": 0,
+    "contents_groups": 0
+  },
+  {
+    "id": "TYPESOF_REJECT_caught_type_middle",
+    "route": "caught",
+    "kind": "type",
+    "position": "middle",
+    "iterations": 1000,
+    "owners": [
+      1,
+      1,
+      1
+    ],
+    "baseline_extra_lists": 1000,
+    "candidate_extra_lists": 0,
+    "contents_groups": 1
+  },
+  {
+    "id": "TYPESOF_REJECT_caught_type_last",
+    "route": "caught",
+    "kind": "type",
+    "position": "last",
+    "iterations": 1000,
+    "owners": [
+      1,
+      1,
+      1
+    ],
+    "baseline_extra_lists": 1000,
+    "candidate_extra_lists": 0,
+    "contents_groups": 3
+  },
+  {
+    "id": "TYPESOF_REJECT_caught_proc_first",
+    "route": "caught",
+    "kind": "proc",
+    "position": "first",
+    "iterations": 1000,
+    "owners": [
+      1,
+      1,
+      1
+    ],
+    "baseline_extra_lists": 1000,
+    "candidate_extra_lists": 0,
+    "contents_groups": 0
+  },
+  {
+    "id": "TYPESOF_REJECT_caught_proc_middle",
+    "route": "caught",
+    "kind": "proc",
+    "position": "middle",
+    "iterations": 1000,
+    "owners": [
+      1,
+      1,
+      1
+    ],
+    "baseline_extra_lists": 1000,
+    "candidate_extra_lists": 0,
+    "contents_groups": 1
+  },
+  {
+    "id": "TYPESOF_REJECT_caught_proc_last",
+    "route": "caught",
+    "kind": "proc",
+    "position": "last",
+    "iterations": 1000,
+    "owners": [
+      1,
+      1,
+      1
+    ],
+    "baseline_extra_lists": 1000,
+    "candidate_extra_lists": 0,
+    "contents_groups": 3
+  },
+  {
+    "id": "TYPESOF_REJECT_caught_verb_first",
+    "route": "caught",
+    "kind": "verb",
+    "position": "first",
+    "iterations": 1000,
+    "owners": [
+      1,
+      1,
+      1
+    ],
+    "baseline_extra_lists": 1000,
+    "candidate_extra_lists": 0,
+    "contents_groups": 0
+  },
+  {
+    "id": "TYPESOF_REJECT_caught_verb_middle",
+    "route": "caught",
+    "kind": "verb",
+    "position": "middle",
+    "iterations": 1000,
+    "owners": [
+      1,
+      1,
+      1
+    ],
+    "baseline_extra_lists": 1000,
+    "candidate_extra_lists": 0,
+    "contents_groups": 1
+  },
+  {
+    "id": "TYPESOF_REJECT_caught_verb_last",
+    "route": "caught",
+    "kind": "verb",
+    "position": "last",
+    "iterations": 1000,
+    "owners": [
+      1,
+      1,
+      1
+    ],
+    "baseline_extra_lists": 1000,
+    "candidate_extra_lists": 0,
+    "contents_groups": 3
+  },
+  {
+    "id": "TYPESOF_REJECT_unwind_type_first",
+    "route": "unwind",
+    "kind": "type",
+    "position": "first",
+    "iterations": 1000,
+    "owners": [
+      1,
+      1,
+      1
+    ],
+    "baseline_extra_lists": 1000,
+    "candidate_extra_lists": 0,
+    "contents_groups": 0
+  },
+  {
+    "id": "TYPESOF_REJECT_unwind_type_middle",
+    "route": "unwind",
+    "kind": "type",
+    "position": "middle",
+    "iterations": 1000,
+    "owners": [
+      1,
+      1,
+      1
+    ],
+    "baseline_extra_lists": 1000,
+    "candidate_extra_lists": 0,
+    "contents_groups": 1
+  },
+  {
+    "id": "TYPESOF_REJECT_unwind_type_last",
+    "route": "unwind",
+    "kind": "type",
+    "position": "last",
+    "iterations": 1000,
+    "owners": [
+      1,
+      1,
+      1
+    ],
+    "baseline_extra_lists": 1000,
+    "candidate_extra_lists": 0,
+    "contents_groups": 3
+  },
+  {
+    "id": "TYPESOF_REJECT_unwind_proc_first",
+    "route": "unwind",
+    "kind": "proc",
+    "position": "first",
+    "iterations": 1000,
+    "owners": [
+      1,
+      1,
+      1
+    ],
+    "baseline_extra_lists": 1000,
+    "candidate_extra_lists": 0,
+    "contents_groups": 0
+  },
+  {
+    "id": "TYPESOF_REJECT_unwind_proc_middle",
+    "route": "unwind",
+    "kind": "proc",
+    "position": "middle",
+    "iterations": 1000,
+    "owners": [
+      1,
+      1,
+      1
+    ],
+    "baseline_extra_lists": 1000,
+    "candidate_extra_lists": 0,
+    "contents_groups": 1
+  },
+  {
+    "id": "TYPESOF_REJECT_unwind_proc_last",
+    "route": "unwind",
+    "kind": "proc",
+    "position": "last",
+    "iterations": 1000,
+    "owners": [
+      1,
+      1,
+      1
+    ],
+    "baseline_extra_lists": 1000,
+    "candidate_extra_lists": 0,
+    "contents_groups": 3
+  },
+  {
+    "id": "TYPESOF_REJECT_unwind_verb_first",
+    "route": "unwind",
+    "kind": "verb",
+    "position": "first",
+    "iterations": 1000,
+    "owners": [
+      1,
+      1,
+      1
+    ],
+    "baseline_extra_lists": 1000,
+    "candidate_extra_lists": 0,
+    "contents_groups": 0
+  },
+  {
+    "id": "TYPESOF_REJECT_unwind_verb_middle",
+    "route": "unwind",
+    "kind": "verb",
+    "position": "middle",
+    "iterations": 1000,
+    "owners": [
+      1,
+      1,
+      1
+    ],
+    "baseline_extra_lists": 1000,
+    "candidate_extra_lists": 0,
+    "contents_groups": 1
+  },
+  {
+    "id": "TYPESOF_REJECT_unwind_verb_last",
+    "route": "unwind",
+    "kind": "verb",
+    "position": "last",
+    "iterations": 1000,
+    "owners": [
+      1,
+      1,
+      1
+    ],
+    "baseline_extra_lists": 1000,
+    "candidate_extra_lists": 0,
+    "contents_groups": 3
+  }
+]

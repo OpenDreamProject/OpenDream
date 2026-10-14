@@ -1430,7 +1430,13 @@ internal static class DreamProcNativeRoot {
             case 0: // Since arguments are empty, this just creates an identity matrix.
                 matrix = bundle.ObjectTree.CreateObject<DreamObjectMatrix>(bundle.ObjectTree.Matrix);
 
-                matrix.InitSpawn(new DreamProcArguments(bundle.Arguments));
+                try {
+                    matrix.InitSpawn(new DreamProcArguments(bundle.Arguments));
+                } catch {
+                    matrix.DecRef();
+                    throw;
+                }
+
                 return new DreamValue(matrix);
             case 1: // Clone the matrix.
                 var firstArg = bundle.GetArgument(0, "a");
@@ -2898,44 +2904,49 @@ internal static class DreamProcNativeRoot {
     public static DreamValue NativeProc_typesof(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
         DreamList list = bundle.ObjectTree.CreateList(bundle.Arguments.Length); // Assume every arg will add at least one type
 
-        foreach (var typeValue in bundle.Arguments) {
-            IEnumerable<int>? addingProcs = null;
+        try {
+            foreach (var typeValue in bundle.Arguments) {
+                IEnumerable<int>? addingProcs = null;
 
-            if (!typeValue.TryGetValueAsType(out var type)) {
-                if (typeValue.TryGetValueAsDreamObject(out var typeObj)) {
-                    if (typeObj is null or DreamList) // typesof() ignores nulls and lists
-                        continue;
+                if (!typeValue.TryGetValueAsType(out var type)) {
+                    if (typeValue.TryGetValueAsDreamObject(out var typeObj)) {
+                        if (typeObj is null or DreamList) // typesof() ignores nulls and lists
+                            continue;
 
-                    type = typeObj.ObjectDefinition.TreeEntry;
-                } else if (typeValue.TryGetValueAsString(out var typeString)) {
-                    if (typeString.EndsWith("/proc")) {
-                        type = bundle.ObjectTree.GetTreeEntry(typeString.Substring(0, typeString.Length - 5));
-                        addingProcs = type.ObjectDefinition.Procs.Values;
-                    } else if (typeString.EndsWith("/verb")) {
-                        type = bundle.ObjectTree.GetTreeEntry(typeString.Substring(0, typeString.Length - 5));
-                        addingProcs = type.ObjectDefinition.Verbs?.Values ?? Enumerable.Empty<int>();
+                        type = typeObj.ObjectDefinition.TreeEntry;
+                    } else if (typeValue.TryGetValueAsString(out var typeString)) {
+                        if (typeString.EndsWith("/proc")) {
+                            type = bundle.ObjectTree.GetTreeEntry(typeString.Substring(0, typeString.Length - 5));
+                            addingProcs = type.ObjectDefinition.Procs.Values;
+                        } else if (typeString.EndsWith("/verb")) {
+                            type = bundle.ObjectTree.GetTreeEntry(typeString.Substring(0, typeString.Length - 5));
+                            addingProcs = type.ObjectDefinition.Verbs?.Values ?? Enumerable.Empty<int>();
+                        } else {
+                            type = bundle.ObjectTree.GetTreeEntry(typeString);
+                        }
                     } else {
-                        type = bundle.ObjectTree.GetTreeEntry(typeString);
+                        continue;
+                    }
+                }
+
+                if (addingProcs != null) {
+                    foreach (var procId in addingProcs) {
+                        list.AddValue(new DreamValue(bundle.ObjectTree.Procs[procId]));
                     }
                 } else {
-                    continue;
+                    var descendants = bundle.ObjectTree.GetAllDescendants(type);
+
+                    foreach (var descendant in descendants) {
+                        list.AddValue(new DreamValue(descendant));
+                    }
                 }
             }
 
-            if (addingProcs != null) {
-                foreach (var procId in addingProcs) {
-                    list.AddValue(new DreamValue(bundle.ObjectTree.Procs[procId]));
-                }
-            } else {
-                var descendants = bundle.ObjectTree.GetAllDescendants(type);
-
-                foreach (var descendant in descendants) {
-                    list.AddValue(new DreamValue(descendant));
-                }
-            }
+            return new DreamValue(list);
+        } catch {
+            list.DecRef();
+            throw;
         }
-
-        return new DreamValue(list);
     }
 
     [DreamProc("uppertext")]

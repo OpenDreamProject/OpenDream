@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -28,6 +28,7 @@ public sealed partial class DreamResourceManager {
     private readonly List<DreamResource> _resourceCache = new();
     private readonly Dictionary<string, int> _resourcePathToId = new();
     private readonly Dictionary<string, IconResource> _md5ToGeneratedIcon = new();
+    private readonly Dictionary<string, List<byte[]>> _savefileResourceData = new();
     private readonly List<string> _queuedResourceLoads = new();
 
     private ISawmill _sawmill = default!;
@@ -42,6 +43,7 @@ public sealed partial class DreamResourceManager {
     public void Initialize(string rootPath, string[] resources, string? interfaceFile) {
         _resourceCache.Clear();
         _resourcePathToId.Clear();
+        _savefileResourceData.Clear();
 
         // An empty resource path is the console
         _resourceCache.Add(new ConsoleOutputResource());
@@ -181,6 +183,29 @@ public sealed partial class DreamResourceManager {
         _resourceCache.Add(resource);
         _aczProvider.AddResource(resourceId, data);
         return resource;
+    }
+
+    /// <summary>
+    /// Share immutable savefile payload bytes without sharing resource identity.
+    /// File-backed resources and generated icons retain their existing paths.
+    /// </summary>
+    internal DreamResource CreateResourceFromSavefile(byte[] data) {
+        var hash = Convert.ToHexString(SHA256.HashData(data));
+        if (_savefileResourceData.TryGetValue(hash, out var candidates)) {
+            foreach (var candidate in candidates) {
+                if (data.AsSpan().SequenceEqual(candidate))
+                    return CreateResource(candidate);
+            }
+        } else {
+            candidates = new List<byte[]>();
+            _savefileResourceData.Add(hash, candidates);
+        }
+
+        // A hash match alone never establishes equality. Distinct payloads keep
+        // distinct bytes even if their digest collides. Savefile decoding owns
+        // this array, and pathless generic resources cannot write to it in DM.
+        candidates.Add(data);
+        return CreateResource(data);
     }
 
     /// <summary>

@@ -987,13 +987,14 @@ public sealed class DMProcState : ProcState {
             case DMReference.Type.ListIndex: {
                 GetIndexReferenceValues(reference, out var index, out var indexing, peek);
 
-                var value = GetIndex(indexing, index, this);
-                if (!peek) {
-                    index.Dispose();
-                    indexing.Dispose();
+                try {
+                    return GetIndex(indexing, index, this);
+                } finally {
+                    if (!peek) {
+                        index.Dispose();
+                        indexing.Dispose();
+                    }
                 }
-
-                return value;
             }
             default:
                 ThrowCannotGetValueOfReferenceType(reference);

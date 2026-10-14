@@ -61,6 +61,7 @@ public sealed partial class GameTests : ContentIntegrationTest {
             ObjectInitializationReleasesOwnedValues(manager, tree, refs);
             MissingOperatorArgumentsReleaseOwners(manager, tree, refs);
             IndexReferenceReadsReleaseOwners(tree, refs);
+            InRangeOperandsReleaseOwners(manager, tree, refs);
             SupportedOperatorFallbacksReleaseOwners(manager, tree, refs);
             ExternalCallRejectionsReleaseArguments(manager, tree, refs);
             NumericListAssignmentsReleaseOwners(manager, tree, refs);

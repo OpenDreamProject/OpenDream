@@ -1585,19 +1585,17 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus IsInRange(DMProcState state) {
-            var end = state.Pop();
-            var start = state.Pop();
-            var var = state.Pop();
+            using var end = state.Pop();
+            using var start = state.Pop();
+            using var value = state.Pop();
 
-            if (var.Type != DreamValue.DreamValueType.Float) var = new DreamValue(0f);
-            if (start.Type != DreamValue.DreamValueType.Float) start = new DreamValue(0f);
-            if (end.Type != DreamValue.DreamValueType.Float) end = new DreamValue(0f);
+            // Retain the popped owners while coercing non-numeric operands to zero.
+            float valueNumber = value.Type == DreamValue.DreamValueType.Float ? value.MustGetValueAsFloat() : 0f;
+            float startNumber = start.Type == DreamValue.DreamValueType.Float ? start.MustGetValueAsFloat() : 0f;
+            float endNumber = end.Type == DreamValue.DreamValueType.Float ? end.MustGetValueAsFloat() : 0f;
 
-            bool inRange = (IsEqual(start, var) || IsLessThan(start, var)) && (IsEqual(var, end) || IsLessThan(var, end));
+            bool inRange = startNumber <= valueNumber && valueNumber <= endNumber;
             state.Push(new DreamValue(inRange ? 1 : 0));
-            end.Dispose();
-            start.Dispose();
-            var.Dispose();
             return ProcStatus.Continue;
         }
 

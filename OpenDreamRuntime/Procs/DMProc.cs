@@ -1300,7 +1300,7 @@ public sealed class DMProcState : ProcState {
                     for (int i = 0; i < listValues.Count; i++) {
                         var value = listValues[i];
 
-                        if (argList.ContainsKey(value)) { //Named argument
+                        if (argList.ElementHasAssociation(value)) { //Named argument
                             if (!value.TryGetValueAsString(out var argumentName))
                                 throw new DMException("List contains a non-string key, and cannot be used as an arglist");
 

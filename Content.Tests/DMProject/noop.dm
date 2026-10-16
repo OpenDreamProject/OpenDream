@@ -1,9 +1,10 @@
-/// A function that does absolutely nothing. Needed for behavior like clearing the variable cache in byond.
-/proc/noop()
-	return
-
+// Effectively removes any values relevant to a test from byond's internal variable cache.
 #ifdef OPENDREAM
 #define BYOND_POP_CACHE
 #else
-#define BYOND_POP_CACHE noop()
+#define BYOND_POP_CACHE \
+	do { \
+		var/foo = 1; \
+		foo += 1; \
+	} while(FALSE);
 #endif

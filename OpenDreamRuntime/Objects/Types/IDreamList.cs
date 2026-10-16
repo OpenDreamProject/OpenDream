@@ -43,20 +43,20 @@ public interface IDreamList {
     public void AddKey(DreamValue newElement);
     public IDreamList CreateCopy(int start = 1, int end = 0);
     /// <summary>
-    /// Returns an element from the keys list by iterating an index range.
+    /// Returns the position of the given Element from within the Keys list.
     /// </summary>
-    /// <param name="key"></param>
+    /// <param name="element"></param>
     /// <param name="start"></param>
     /// <param name="end"></param>
     /// <returns></returns>
-    public int FindKey(DreamValue key, int start = 1, int end = 0);
+    public int FindKeyIndex(DreamValue element, int start = 1, int end = 0);
     public void Insert(int index, DreamValue value);
     /// <summary>
     /// Returns whether or not the given element exists within the Keys list.
     /// </summary>
-    /// <param name="value"></param>
+    /// <param name="element"></param>
     /// <returns></returns>
-    public bool ContainsKey(DreamValue value);
+    public bool ContainsKey(DreamValue element);
     public void Swap(int index1, int index2);
 
     public DreamValue[] CopyToArray() {

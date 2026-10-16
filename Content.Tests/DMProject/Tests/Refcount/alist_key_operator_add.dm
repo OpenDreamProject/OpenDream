@@ -1,4 +1,4 @@
-#include "noop.dm"
+#include "_helpers.dm"
 /proc/RunTest()
 	var/datum/D = new
 	var/alist/mylist = alist()

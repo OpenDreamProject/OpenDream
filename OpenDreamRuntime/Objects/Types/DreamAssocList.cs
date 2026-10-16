@@ -61,8 +61,12 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         return _pairs.ContainsKey(key);
     }
 
-    public override DreamValue OperatorIndex(DreamValue index, DMProcState state)
+    public bool ContainsValue(DreamValue value)
     {
+        return _pairs.ContainsKey(value);
+    }
+
+    public override DreamValue OperatorIndex(DreamValue index, DMProcState state) {
         return GetKey(index);
     }
 
@@ -211,11 +215,6 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     public void Swap(int index1, int index2)
     {
         throw new DMException("swap not allowed for this list");
-    }
-
-    public bool ContainsValue(DreamValue value)
-    {
-        return _pairs.ContainsKey(value);
     }
 
     public override DreamValue OperatorAdd(DreamValue b, DMProcState state)

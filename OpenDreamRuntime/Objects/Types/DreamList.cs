@@ -448,7 +448,7 @@ public class DreamList : DreamObject, IDreamList {
         }
 
         IncRef();
-        return new(this);
+        return new DreamValue(this);
     }
 
     public override DreamValue OperatorRemove(DreamValue b) {
@@ -463,7 +463,7 @@ public class DreamList : DreamObject, IDreamList {
         }
 
         IncRef();
-        return new(this);
+        return new DreamValue(this);
     }
 
     public override DreamValue OperatorCombine(DreamValue b) {
@@ -482,7 +482,7 @@ public class DreamList : DreamObject, IDreamList {
         }
 
         IncRef();
-        return new(this);
+        return new DreamValue(this);
     }
 
     public override DreamValue OperatorMask(DreamValue b) {
@@ -518,7 +518,7 @@ public class DreamList : DreamObject, IDreamList {
         }
 
         IncRef();
-        return new(this);
+         return new DreamValue(this);
     }
 
     public override DreamValue OperatorEquivalent(DreamValue b) {

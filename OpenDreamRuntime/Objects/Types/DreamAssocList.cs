@@ -293,7 +293,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         }
 
         IncRef();
-        return new(this);
+         return new DreamValue(this);
     }
 
     public override DreamValue OperatorRemove(DreamValue b)
@@ -318,7 +318,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         }
 
         IncRef();
-        return new(this);
+        return new DreamValue(this);
     }
 
     public override DreamValue OperatorMask(DreamValue b)
@@ -351,7 +351,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         }
 
         IncRef();
-        return new(this);
+         return new DreamValue(this);
     }
 
     public override DreamValue OperatorEquivalent(DreamValue b)

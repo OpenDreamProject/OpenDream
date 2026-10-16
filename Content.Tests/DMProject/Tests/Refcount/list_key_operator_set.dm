@@ -1,4 +1,4 @@
-#include "noop.dm"
+#include "../noop.dm"
 /proc/RunTest()
 	var/datum/D = new
 	var/list/mylist = new /list(1)

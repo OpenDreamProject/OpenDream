@@ -383,7 +383,7 @@ public static unsafe partial class ByondApi {
                 dstListValue.Cut();
                 for (int i = 0; i < len; i++) {
                     using var srcValue = ValueFromDreamApi(list[i]);
-                    dstListValue.AddValue(srcValue);
+                    dstListValue.AddElement(srcValue);
                 }
             } catch (Exception e) {
                 return SetLastError(e.Message);
@@ -463,7 +463,7 @@ public static unsafe partial class ByondApi {
                 if (!listValue.TryGetValueAsDreamList(out var srcList))
                     return SetLastError("loc argument was not a list");
 
-                var val = srcList.GetValue(idx);
+                var val = srcList.GetKey(idx);
                 *result = ValueToByondApi(val);
                 if (!calledFromMain)
                     AddTemporaryReference(val);
@@ -496,7 +496,7 @@ public static unsafe partial class ByondApi {
                     return SetLastError("loc argument was not a list");
 
                 using var val = ValueFromDreamApi(*cVal);
-                dstList.SetValue(idx, val, true);
+                dstList.SetKeyValuePair(idx, val, true);
             } catch (Exception e) {
                 return SetLastError(e.Message);
             }

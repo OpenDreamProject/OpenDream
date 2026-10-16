@@ -56,7 +56,7 @@ namespace OpenDreamRuntime.Procs {
             var list = state.Proc.ObjectTree.CreateList(size);
 
             foreach (DreamValue value in state.PopCount(size)) {
-                list.AddValue(value);
+                list.AddElement(value);
                 value.Dispose();
             }
 
@@ -92,9 +92,9 @@ namespace OpenDreamRuntime.Procs {
                 using var value = popped[i + 1];
 
                 if (key.IsNull) {
-                    list.AddValue(value);
+                    list.AddElement(value);
                 } else {
-                    list.SetValue(key, value, allowGrowth: true);
+                    list.SetKeyValuePair(key, value, allowGrowth: true);
                 }
             }
 
@@ -112,7 +112,7 @@ namespace OpenDreamRuntime.Procs {
                 using var key = popped[i];
                 using var value = popped[i + 1];
 
-                list.SetValue(key, value, allowGrowth: true);
+                list.SetKeyValuePair(key, value, allowGrowth: true);
             }
 
             state.Push(new DreamValue(list));
@@ -250,7 +250,7 @@ namespace OpenDreamRuntime.Procs {
                             appearance.Verbs.Add(proc.VerbId!.Value);
                         });
                     } else if (destination.TryGetValueAsDreamObject<DreamObjectClient>(out var client)) {
-                        client.ClientVerbs.AddValue(val);
+                        client.ClientVerbs.AddElement(val);
                     }
 
                     return ProcStatus.Continue;
@@ -995,9 +995,9 @@ namespace OpenDreamRuntime.Procs {
                     if (!retained)
                         continue;
 
-                    newList.AddValue(value);
+                    newList.AddElement(value);
                     if (associativeValues.TryGetValue(value, out DreamValue associatedValue))
-                        newList.SetValue(value, associatedValue);
+                        newList.SetKeyValuePair(value, associatedValue);
                 }
 
                 state.Push(new DreamValue(newList));
@@ -2136,12 +2136,12 @@ namespace OpenDreamRuntime.Procs {
 
                     if (value.TryGetValueAsString(out var argumentKey)) {
                         if (argumentKey == "index") {
-                            gradientIndex = argList.GetValue(value);
+                            gradientIndex = argList.GetKey(value);
                             continue;
                         }
 
                         if (argumentKey == "space") {
-                            gradientColorSpace = argList.GetValue(value);
+                            gradientColorSpace = argList.GetKey(value);
                             continue;
                         }
                     }
@@ -3045,9 +3045,9 @@ namespace OpenDreamRuntime.Procs {
                 Dictionary<DreamValue, DreamValue> firstAssociations = list.GetAssociativeValues();
 
                 void AddValue(DreamValue value, Dictionary<DreamValue, DreamValue>? associations) {
-                    newList.AddValue(value);
+                    newList.AddElement(value);
                     if (associations?.TryGetValue(value, out DreamValue associatedValue) is true)
-                        newList.SetValue(value, associatedValue);
+                        newList.SetKeyValuePair(value, associatedValue);
                 }
 
                 if (second.TryGetValueAsDreamList(out var secondList)) {
@@ -3069,7 +3069,7 @@ namespace OpenDreamRuntime.Procs {
                     }
 
                     if (!secondInList) {
-                        newList.AddValue(second);
+                        newList.AddElement(second);
                     }
                 }
 
@@ -3107,13 +3107,13 @@ namespace OpenDreamRuntime.Procs {
                     continue;
                 }
 
-                replacement.AddValue(value);
+                replacement.AddElement(value);
                 if (associations.TryGetValue(value, out DreamValue associatedValue))
-                    replacement.SetValue(value, associatedValue);
+                    replacement.SetKeyValuePair(value, associatedValue);
             }
 
             if (!removed)
-                replacement.AddValue(second);
+                replacement.AddElement(second);
 
             return new DreamValue(replacement);
         }
@@ -3123,9 +3123,9 @@ namespace OpenDreamRuntime.Procs {
             target.Cut();
 
             foreach (DreamValue value in replacement.EnumerateValues()) {
-                target.AddValue(value);
+                target.AddElement(value);
                 if (replacementAssociations.TryGetValue(value, out DreamValue associatedValue))
-                    target.SetValue(value, associatedValue);
+                    target.SetKeyValuePair(value, associatedValue);
             }
         }
 
@@ -3474,7 +3474,7 @@ namespace OpenDreamRuntime.Procs {
             for (int i = 0; i < size; i++) {
                 float flt = state.ReadFloat();
 
-                list.AddValue(new DreamValue(flt));
+                list.AddElement(new DreamValue(flt));
             }
 
             state.Push(new DreamValue(list));
@@ -3489,7 +3489,7 @@ namespace OpenDreamRuntime.Procs {
             for (int i = 0; i < size; i++) {
                 string str = state.ReadString();
 
-                list.AddValue(new DreamValue(str));
+                list.AddElement(new DreamValue(str));
             }
 
             state.Push(new DreamValue(list));
@@ -3505,7 +3505,7 @@ namespace OpenDreamRuntime.Procs {
                 var reference = state.ReadReference();
                 using var value = state.GetReferenceValue(reference);
 
-                list.AddValue(value);
+                list.AddElement(value);
             }
 
             state.Push(new DreamValue(list));
@@ -3519,7 +3519,7 @@ namespace OpenDreamRuntime.Procs {
 
             for (int i = 0; i < size; i++) {
                 string resourcePath = state.ReadString();
-                list.AddValue(new DreamValue(state.Proc.DreamResourceManager.LoadResource(resourcePath)));
+                list.AddElement(new DreamValue(state.Proc.DreamResourceManager.LoadResource(resourcePath)));
             }
 
             state.Push(new DreamValue(list));

@@ -376,9 +376,9 @@ public sealed class DreamObjectSavefile : DreamObject {
                     if (sfDreamListValue.AssocData?[i] != null) { //note that null != DreamValue.Null
                         using var sfAssocValue = DeserializeJsonValue(sfDreamListValue.AssocData[i]!);
 
-                        l.SetValue(sfValue, sfAssocValue);
+                        l.SetKeyValuePair(sfValue, sfAssocValue);
                     } else {
-                        l.AddValue(sfValue);
+                        l.AddElement(sfValue);
                     }
                 }
 
@@ -473,7 +473,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                             if (!dreamList.ContainsKey(keyValue)) {
                                 jsonEncodedList.AssocData!.Add(null); //store an actual null if this key does not have an associated value - this is distinct from storing DreamValue.Null
                             } else {
-                                using var assocValue = dreamList.GetValue(keyValue);
+                                using var assocValue = dreamList.GetKey(keyValue);
 
                                 if (assocValue.TryGetValueAsDreamObject(out _) && !assocValue.IsNull) {
                                     SfDreamJsonValue jsonEncodedObject = SerializeDreamValue(assocValue, thisObjectCount);

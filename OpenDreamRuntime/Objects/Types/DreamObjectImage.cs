@@ -156,7 +156,7 @@ public sealed class DreamObjectImage : DreamObject {
                             return;
 
                         _overlays.Cut();
-                        _overlays.AddValue(new(overlay));
+                        _overlays.AddElement(new(overlay));
                         overlay.Dispose();
                     }
 
@@ -168,10 +168,10 @@ public sealed class DreamObjectImage : DreamObject {
                 if (valueList != null) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
                     foreach (DreamValue overlayValue in valueList.EnumerateValues()) {
-                        _overlays.AddValue(overlayValue);
+                        _overlays.AddElement(overlayValue);
                     }
                 } else if (!value.IsNull) {
-                    _overlays.AddValue(value);
+                    _overlays.AddElement(value);
                 }
 
                 break;
@@ -190,7 +190,7 @@ public sealed class DreamObjectImage : DreamObject {
                             return;
 
                         _underlays.Cut();
-                        _underlays.AddValue(new(underlay));
+                        _underlays.AddElement(new(underlay));
                         underlay.Dispose();
                     }
 
@@ -202,10 +202,10 @@ public sealed class DreamObjectImage : DreamObject {
                 if (valueList != null) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
                     foreach (DreamValue underlayValue in valueList.EnumerateValues()) {
-                        _underlays.AddValue(underlayValue);
+                        _underlays.AddElement(underlayValue);
                     }
                 } else if (!value.IsNull) {
-                    _underlays.AddValue(value);
+                    _underlays.AddElement(value);
                 }
 
                 break;
@@ -218,10 +218,10 @@ public sealed class DreamObjectImage : DreamObject {
                 if (valueList != null) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
                     foreach (DreamValue visContentValue in valueList.EnumerateValues()) {
-                        _visContents.AddValue(visContentValue);
+                        _visContents.AddElement(visContentValue);
                     }
                 } else if (!value.IsNull) {
-                    _visContents.AddValue(value);
+                    _visContents.AddElement(value);
                 }
 
                 break;
@@ -233,14 +233,14 @@ public sealed class DreamObjectImage : DreamObject {
 
                 // filters = list("type"=...) or list(filter(...), filter(...))
                 if (valueList != null) { // filters = list("type"=...)
-                    using var typeArg = valueList.GetValue(new("type"));
+                    using var typeArg = valueList.GetKey(new("type"));
 
                     if (typeArg != DreamValue.Null) { // It's a single filter
                         var filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, valueList);
                         if (filterObject == null) // list() with invalid "type" is ignored
                             break;
 
-                        _filters.AddValue(new(filterObject));
+                        _filters.AddElement(new(filterObject));
                         filterObject.DecRef();
                     } else { // It's a list of filters
                         foreach (var filter in valueList.EnumerateValues()) {
@@ -253,12 +253,12 @@ public sealed class DreamObjectImage : DreamObject {
                                     continue;
                             }
 
-                            _filters.AddValue(new(filterObject));
+                            _filters.AddElement(new(filterObject));
                             filterObject.DecRef();
                         }
                     }
                 } else if (!value.IsNull) {
-                    _filters.AddValue(value);
+                    _filters.AddElement(value);
                 }
 
                 break;

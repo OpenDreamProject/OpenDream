@@ -59,7 +59,7 @@ public sealed class DreamObjectFilter(DreamObjectDefinition objectDefinition) : 
                 if (!key.TryGetValueAsString(out var keyStr))
                     continue;
 
-                using var value = list.GetValue(key);
+                using var value = list.GetKey(key);
                 if (value.IsNull)
                     continue;
 

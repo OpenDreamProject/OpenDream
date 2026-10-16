@@ -389,7 +389,7 @@ public sealed partial class AtomManager {
                 if(!appearance.ColorMatrix.Equals(ColorMatrix.Identity)) {
                     var matrixList = _objectTree.CreateList(20);
                     foreach (float entry in appearance.ColorMatrix.GetValues())
-                        matrixList.AddValue(new DreamValue(entry));
+                        matrixList.AddElement(new DreamValue(entry));
                     return new DreamValue(matrixList);
                 }
 
@@ -466,7 +466,7 @@ public sealed partial class AtomManager {
 
                 if (AppearanceSystem != null) {
                     foreach (var lay in lays) {
-                        list.AddValue(new(lay.ToMutable()));
+                        list.AddElement(new(lay.ToMutable()));
                     }
                 }
 

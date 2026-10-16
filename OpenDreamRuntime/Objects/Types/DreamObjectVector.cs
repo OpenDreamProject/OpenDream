@@ -309,9 +309,9 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
             var length = list.GetLength();
 
             if (length >= 3) {
-                using var x = list.GetValue(new(1));
-                using var y = list.GetValue(new(2));
-                using var z = list.GetValue(new(3));
+                using var x = list.GetKey(new(1));
+                using var y = list.GetKey(new(2));
+                using var z = list.GetKey(new(3));
 
                 vector = tree.CreateObject<DreamObjectVector>(tree.Vector);
                 vector.Initialize(new(x, y, z));
@@ -319,8 +319,8 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
             }
 
             if (length == 2) {
-                using var x = list.GetValue(new(1));
-                using var y = list.GetValue(new(2));
+                using var x = list.GetKey(new(1));
+                using var y = list.GetKey(new(2));
 
                 vector = tree.CreateObject<DreamObjectVector>(tree.Vector);
                 vector.Initialize(new(x, y));

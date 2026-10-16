@@ -107,10 +107,10 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
                 if (value.TryGetValueAsDreamList(out var valueList)) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
                     foreach (DreamValue overlayValue in valueList.EnumerateValues()) {
-                        Overlays.AddValue(overlayValue);
+                        Overlays.AddElement(overlayValue);
                     }
                 } else if (!value.IsNull) {
-                    Overlays.AddValue(value);
+                    Overlays.AddElement(value);
                 }
 
                 break;
@@ -121,10 +121,10 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
                 if (value.TryGetValueAsDreamList(out var valueList)) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
                     foreach (DreamValue underlayValue in valueList.EnumerateValues()) {
-                        Underlays.AddValue(underlayValue);
+                        Underlays.AddElement(underlayValue);
                     }
                 } else if (!value.IsNull) {
-                    Underlays.AddValue(value);
+                    Underlays.AddElement(value);
                 }
 
                 break;
@@ -135,10 +135,10 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
                 if (value.TryGetValueAsDreamList(out var valueList)) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
                     foreach (DreamValue visContentsValue in valueList.EnumerateValues()) {
-                        VisContents.AddValue(visContentsValue);
+                        VisContents.AddElement(visContentsValue);
                     }
                 } else if (!value.IsNull) {
-                    VisContents.AddValue(value);
+                    VisContents.AddElement(value);
                 }
 
                 break;
@@ -148,14 +148,14 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
 
                 // filters = list("type"=...) or list(filter(...), filter(...))
                 if (value.TryGetValueAsDreamList(out var valueList)) {
-                    using var typeArg = valueList.GetValue(new("type"));
+                    using var typeArg = valueList.GetKey(new("type"));
 
                     if (typeArg != DreamValue.Null) { // It's a single filter
                         var filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, valueList);
                         if (filterObject == null) // list() with invalid "type" is ignored
                             break;
 
-                        Filters.AddValue(new(filterObject));
+                        Filters.AddElement(new(filterObject));
                         filterObject.DecRef();
                     } else { // It's a list of filters
                         foreach (var filter in valueList.EnumerateValues()) {
@@ -168,12 +168,12 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
                                     continue;
                             }
 
-                            Filters.AddValue(new(filterObject));
+                            Filters.AddElement(new(filterObject));
                             filterObject.DecRef();
                         }
                     }
                 } else if (!value.IsNull) {
-                    Filters.AddValue(value);
+                    Filters.AddElement(value);
                 }
 
                 break;

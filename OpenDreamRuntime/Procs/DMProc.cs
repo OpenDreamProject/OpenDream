@@ -868,7 +868,7 @@ public sealed class DMProcState : ProcState {
 
                 try {
                     if (indexing.TryGetValueAsIDreamList(out var dreamList)) {
-                        dreamList.SetValue(index, value);
+                        dreamList.SetKeyValuePair(index, value);
                     } else if (indexing.TryGetValueAsDreamObject<DreamObject>(out var dreamObject)) {
                         dreamObject.OperatorIndexAssign(index, this, value);
                     } else {
@@ -1085,7 +1085,7 @@ public sealed class DMProcState : ProcState {
     [MustDisposeResource]
     public DreamValue GetIndex(DreamValue indexing, DreamValue index, DMProcState state) {
         if (indexing.TryGetValueAsDreamList(out var listObj)) {
-            return listObj.GetValue(index);
+            return listObj.GetKey(index);
         }
 
         if (indexing.TryGetValueAsString(out string? strValue)) {
@@ -1308,7 +1308,7 @@ public sealed class DMProcState : ProcState {
                             if (argumentIndex == -1)
                                 throw new DMException($"{proc} has no argument named \"{argumentName}\"");
 
-                            arguments[argumentIndex] = argList.GetValue(value);
+                            arguments[argumentIndex] = argList.GetKey(value);
                         } else { //Ordered argument
                             // image() or new /image() will skip the loc arg if the second arg is a string
                             // Really don't like this but it's BYOND behavior

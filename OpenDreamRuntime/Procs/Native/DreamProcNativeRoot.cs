@@ -241,7 +241,7 @@ internal static class DreamProcNativeRoot {
 
         if (value.TryGetValueAsDreamList(out var list)) {
             DreamList tmp = bundle.ObjectTree.CreateList();
-            foreach (DreamValue val in list.EnumerateValues()) {
+            foreach (DreamValue val in list.EnumerateKeys()) {
                 if (!val.TryGetValueAsFloat(out float floatVal))
                     continue;
 
@@ -1261,7 +1261,7 @@ internal static class DreamProcNativeRoot {
             if (list.IsAssociative) {
                 writer.WriteStartObject();
 
-                foreach (DreamValue listValue in list.EnumerateValues()) {
+                foreach (DreamValue listValue in list.EnumerateKeys()) {
                     var key = listValue.Stringify();
 
                     if (list.ContainsKey(listValue)) {
@@ -1280,7 +1280,7 @@ internal static class DreamProcNativeRoot {
             } else {
                 writer.WriteStartArray();
 
-                foreach (DreamValue listValue in list.EnumerateValues()) {
+                foreach (DreamValue listValue in list.EnumerateKeys()) {
                     JsonEncode(writer, listValue);
                 }
 
@@ -1636,7 +1636,7 @@ internal static class DreamProcNativeRoot {
             if (!arg.TryGetValueAsDreamList(out var list))
                 return arg;
 
-            var values = list.GetValues();
+            var values = list.GetKeys();
             if (values.Count == 0)
                 return DreamValue.Null;
 
@@ -1717,7 +1717,7 @@ internal static class DreamProcNativeRoot {
             if (!arg.TryGetValueAsDreamList(out var list))
                 return arg;
 
-            var values = list.GetValues();
+            var values = list.GetKeys();
             if (values.Count == 0)
                 return DreamValue.Null;
 
@@ -1865,7 +1865,7 @@ internal static class DreamProcNativeRoot {
     private static string List2Params(IDreamList list) {
         StringBuilder paramBuilder = new StringBuilder();
 
-        foreach (DreamValue entry in list.EnumerateValues()) {
+        foreach (DreamValue entry in list.EnumerateKeys()) {
             if (list.ContainsKey(entry)) {
                 using var entryValue = list.GetKey(entry);
 
@@ -2565,7 +2565,7 @@ internal static class DreamProcNativeRoot {
 
     private static void OutputToStatPanel(DreamRefManager refManager, DreamConnection connection, DreamValue name, DreamValue value) {
         if (name.IsNull && value.TryGetValueAsDreamList(out var list)) {
-            foreach (var item in list.EnumerateValues())
+            foreach (var item in list.EnumerateKeys())
                 OutputToStatPanel(refManager, connection, name, item);
         } else {
             string nameStr = name.Stringify();
@@ -3013,7 +3013,7 @@ internal static class DreamProcNativeRoot {
                 return new DreamValue(cutCount);
             }
 
-            var values = list.GetValues();
+            var values = list.GetKeys();
             var assocValues = list.GetAssociativeValues();
 
             // Nuke any keys without values
@@ -3127,7 +3127,7 @@ internal static class DreamProcNativeRoot {
             return new(view);
 
         if (center.TryGetVariable("contents", out var centerContents) && centerContents.TryGetValueAsDreamList(out var centerContentsList)) {
-            foreach (var item in centerContentsList.EnumerateValues()) {
+            foreach (var item in centerContentsList.EnumerateKeys()) {
                 view.AddElement(item);
             }
         }

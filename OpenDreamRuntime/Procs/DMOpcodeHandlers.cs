@@ -971,7 +971,7 @@ namespace OpenDreamRuntime.Procs {
 
                 if (secondList != null) {
                     remainingValues = new Dictionary<DreamValue, int>(secondList.GetLength());
-                    foreach (DreamValue value in secondList.EnumerateValues()) {
+                    foreach (DreamValue value in secondList.EnumerateKeys()) {
                         remainingValues.TryGetValue(value, out int count);
                         remainingValues[value] = count + 1;
                     }
@@ -980,7 +980,7 @@ namespace OpenDreamRuntime.Procs {
                 // BYOND intersection retains min(left count, right count) occurrences in left-list order
                 // associative values come from the retained left pair
 
-                foreach (DreamValue value in list.EnumerateValues()) {
+                foreach (DreamValue value in list.EnumerateKeys()) {
                     bool retained;
                     if (remainingValues != null) {
                         retained = remainingValues.TryGetValue(value, out int count) && count > 0;
@@ -2128,7 +2128,7 @@ namespace OpenDreamRuntime.Procs {
                 if (!argListStack.TryGetValueAsDreamList(out var argList))
                     throw new DMException("Invalid gradient() arguments");
 
-                var argListValues = argList.GetValues();
+                var argListValues = argList.GetKeys();
 
                 gradientValues.EnsureCapacity(argListValues.Count - 1);
                 for (int i = 0; i < argListValues.Count; i++) {
@@ -2415,7 +2415,7 @@ namespace OpenDreamRuntime.Procs {
                     return ProcStatus.Continue;
                 }
 
-                foreach (DreamValue containerItem in containerList.GetValues()) {
+                foreach (DreamValue containerItem in containerList.GetKeys()) {
                     DreamObjectDefinition itemDef;
                     if (containerItem.TryGetValueAsType(out var type)) {
                         itemDef = type.ObjectDefinition;
@@ -2480,7 +2480,7 @@ namespace OpenDreamRuntime.Procs {
 
                 List<DreamValue> values;
                 if (value.TryGetValueAsDreamList(out var list)) {
-                    values = list.GetValues();
+                    values = list.GetKeys();
                 } else {
                     state.Push(value);
                     return ProcStatus.Continue;
@@ -2740,7 +2740,7 @@ namespace OpenDreamRuntime.Procs {
                 }
             } else if (receiver is DreamList list) {
                 // Output to every mob in the left-hand list.
-                foreach (var entry in list.GetValues()) {
+                foreach (var entry in list.GetKeys()) {
                     if (entry.TryGetValueAsDreamObject(out var entryObj)) {
                         if (entryObj is DreamObjectMob entryMob) {
                             entryMob.Connection?.OutputControl(message, control);
@@ -3052,18 +3052,18 @@ namespace OpenDreamRuntime.Procs {
 
                 if (second.TryGetValueAsDreamList(out var secondList)) {
                     Dictionary<DreamValue, DreamValue> secondAssociations = secondList.GetAssociativeValues();
-                    foreach (DreamValue value in list.EnumerateValues()) {
+                    foreach (DreamValue value in list.EnumerateKeys()) {
                         if (!secondList.ContainsValue(value))
                             AddValue(value, firstAssociations);
                     }
 
-                    foreach (DreamValue value in secondList.EnumerateValues()) {
+                    foreach (DreamValue value in secondList.EnumerateKeys()) {
                         if (!list.ContainsValue(value))
                             AddValue(value, secondAssociations);
                     }
                 } else {
                     bool secondInList = list.ContainsValue(second);
-                    foreach (DreamValue value in list.EnumerateValues()) {
+                    foreach (DreamValue value in list.EnumerateKeys()) {
                         if (value != second)
                             AddValue(value, firstAssociations);
                     }
@@ -3101,7 +3101,7 @@ namespace OpenDreamRuntime.Procs {
 
             // compound list XOR toggles one occurrence
             // BYOND removes the first match and leaves later duplicates in place
-            foreach (DreamValue value in first.EnumerateValues()) {
+            foreach (DreamValue value in first.EnumerateKeys()) {
                 if (!removed && value == second) {
                     removed = true;
                     continue;
@@ -3122,7 +3122,7 @@ namespace OpenDreamRuntime.Procs {
             Dictionary<DreamValue, DreamValue> replacementAssociations = replacement.GetAssociativeValues();
             target.Cut();
 
-            foreach (DreamValue value in replacement.EnumerateValues()) {
+            foreach (DreamValue value in replacement.EnumerateKeys()) {
                 target.AddElement(value);
                 if (replacementAssociations.TryGetValue(value, out DreamValue associatedValue))
                     target.SetKeyValuePair(value, associatedValue);
@@ -3154,7 +3154,7 @@ namespace OpenDreamRuntime.Procs {
         private static DreamValue CalculateGradient(List<DreamValue> gradientValues, DreamValue colorSpaceValue, DreamValue indexValue) {
             if (gradientValues.Count == 1) {
                 if (gradientValues[0].TryGetValueAsDreamList(out var gradientList))
-                    gradientValues = gradientList.GetValues();
+                    gradientValues = gradientList.GetKeys();
             }
 
             if (gradientValues.Count == 0)

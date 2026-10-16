@@ -12,7 +12,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             foreach (var argument in bundle.Arguments) {
                 if (argument.TryGetValueAsDreamList(out var argumentList)) {
-                    foreach (DreamValue value in argumentList.EnumerateValues()) {
+                    foreach (DreamValue value in argumentList.EnumerateKeys()) {
                         list.AddElement(value);
                     }
                 } else {
@@ -82,7 +82,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 var item = bundle.Arguments[i];
 
                 if (item.TryGetValueAsDreamList(out var valueList)) {
-                    foreach (DreamValue value in valueList.EnumerateValues()) {
+                    foreach (DreamValue value in valueList.EnumerateKeys()) {
                         list.Insert(index++, value);
                     }
                 } else {
@@ -99,7 +99,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
         public static DreamValue NativeProc_Join(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             IDreamList list = (IDreamList)src!;
-            List<DreamValue> values = list.GetValues();
+            List<DreamValue> values = list.GetKeys();
 
             bundle.GetArgument(0, "Glue").TryGetValueAsString(out var glue);
             if (!bundle.GetArgument(1, "Start").TryGetValueAsInteger(out var start))
@@ -157,7 +157,7 @@ namespace OpenDreamRuntime.Procs.Native {
                         break;
                     }
 
-                    foreach (DreamValue value in argumentList.EnumerateValues()) {
+                    foreach (DreamValue value in argumentList.EnumerateKeys()) {
                         if (list.ContainsKey(value)) {
                             list.RemoveElement(value);
 
@@ -198,7 +198,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 var item = bundle.Arguments[i];
 
                 if (item.TryGetValueAsDreamList(out var valueList)) {
-                    foreach (DreamValue value in valueList.EnumerateValues()) {
+                    foreach (DreamValue value in valueList.EnumerateKeys()) {
                         list.Insert(startIndex++, value);
                     }
                 } else {

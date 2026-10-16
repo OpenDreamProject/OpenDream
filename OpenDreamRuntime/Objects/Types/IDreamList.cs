@@ -9,10 +9,10 @@ public interface IDreamList {
     public void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false);
     [MustDisposeResource] public DreamValue GetKey(DreamValue key);
     public bool ContainsKey(DreamValue key);
-    public IEnumerable<DreamValue> EnumerateValues();
+    public IEnumerable<DreamValue> EnumerateKeys();
     public int GetLength();
     public void Cut(int start = 1, int end = 0);
-    public List<DreamValue> GetValues();
+    public List<DreamValue> GetKeys();
     public Dictionary<DreamValue, DreamValue> GetAssociativeValues();
     public void RemoveElement(DreamValue element);
     public IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateAssocValues();
@@ -24,7 +24,7 @@ public interface IDreamList {
     public void Swap(int index1, int index2);
 
     public DreamValue[] CopyToArray() {
-        return EnumerateValues().ToArray();
+        return EnumerateKeys().ToArray();
     }
 
     public Dictionary<DreamValue, DreamValue> CopyAssocValues() {

@@ -167,7 +167,7 @@ public sealed class DreamObjectImage : DreamObject {
 
                 if (valueList != null) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue overlayValue in valueList.EnumerateValues()) {
+                    foreach (DreamValue overlayValue in valueList.EnumerateKeys()) {
                         _overlays.AddElement(overlayValue);
                     }
                 } else if (!value.IsNull) {
@@ -201,7 +201,7 @@ public sealed class DreamObjectImage : DreamObject {
 
                 if (valueList != null) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue underlayValue in valueList.EnumerateValues()) {
+                    foreach (DreamValue underlayValue in valueList.EnumerateKeys()) {
                         _underlays.AddElement(underlayValue);
                     }
                 } else if (!value.IsNull) {
@@ -217,7 +217,7 @@ public sealed class DreamObjectImage : DreamObject {
 
                 if (valueList != null) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue visContentValue in valueList.EnumerateValues()) {
+                    foreach (DreamValue visContentValue in valueList.EnumerateKeys()) {
                         _visContents.AddElement(visContentValue);
                     }
                 } else if (!value.IsNull) {
@@ -243,7 +243,7 @@ public sealed class DreamObjectImage : DreamObject {
                         _filters.AddElement(new(filterObject));
                         filterObject.DecRef();
                     } else { // It's a list of filters
-                        foreach (var filter in valueList.EnumerateValues()) {
+                        foreach (var filter in valueList.EnumerateKeys()) {
                             if (!filter.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject)) {
                                 if (!filter.TryGetValueAsDreamList(out var filterValues))
                                     continue;

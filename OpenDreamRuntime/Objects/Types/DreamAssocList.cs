@@ -66,7 +66,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         return GetKey(index);
     }
 
-    public IEnumerable<DreamValue> EnumerateValues()
+    public IEnumerable<DreamValue> EnumerateKeys()
     {
         return _pairs.Keys; // The keys, counter-intuitively
     }
@@ -97,7 +97,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         _pairs.Clear();
     }
 
-    public List<DreamValue> GetValues()
+    public List<DreamValue> GetKeys()
     {
         return _pairs.Keys.ToList();
     }
@@ -254,7 +254,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
             }
 
             listCopy = (DreamAssocList)CreateCopy();
-            foreach (DreamValue value in bList.EnumerateValues())
+            foreach (DreamValue value in bList.EnumerateKeys())
             {
                 listCopy.RemoveElement(value);
             }
@@ -311,7 +311,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
             }
             else
             {
-                foreach (var value in bList.EnumerateValues())
+                foreach (var value in bList.EnumerateKeys())
                 {
                     RemoveElement(value);
                 }

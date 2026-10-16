@@ -284,7 +284,7 @@ public sealed partial class AtomManager {
                 appearance.Verbs.Clear();
 
                 if (value.TryGetValueAsDreamList(out var valueList)) {
-                    foreach (DreamValue verbValue in valueList.EnumerateValues()) {
+                    foreach (DreamValue verbValue in valueList.EnumerateKeys()) {
                         if (!verbValue.TryGetValueAsProc(out var verb))
                             continue;
 

@@ -199,7 +199,7 @@ internal static partial class DreamProcNativeHelpers {
             seenAreas.Add(areaCenter);
             foreach(var turf in areaCenter.Turfs) {
                 AddToList(new(turf));
-                foreach(var content in turf.Contents.EnumerateValues()) {
+                foreach(var content in turf.Contents.EnumerateKeys()) {
                     AddToList(content);
                 }
             }
@@ -208,7 +208,7 @@ internal static partial class DreamProcNativeHelpers {
         } else if(center is DreamObjectTurf turfCenter) {
             if(includeCenter) { // if we're orange, we want to skip the else block too
                 AddToList(new(center));
-                foreach(DreamValue content in turfCenter.Contents.EnumerateValues()) {
+                foreach(DreamValue content in turfCenter.Contents.EnumerateKeys()) {
                     AddToList(content);
                 }
             }
@@ -216,7 +216,7 @@ internal static partial class DreamProcNativeHelpers {
             // add our contents first
             if(includeCenter) {
                 if(center.TryGetVariable("contents", out var centerContents) && centerContents.TryGetValueAsDreamList(out var centerContentsList)) {
-                    foreach(DreamValue content in centerContentsList.EnumerateValues()) {
+                    foreach(DreamValue content in centerContentsList.EnumerateKeys()) {
                         AddToList(content);
                     }
                 }
@@ -231,7 +231,7 @@ internal static partial class DreamProcNativeHelpers {
 
                     using var contents = centerLocObject.GetVariable("contents");
                     if (contents.TryGetValueAsDreamList(out var locContentsList)) {
-                        foreach (DreamValue content in locContentsList.EnumerateValues()) {
+                        foreach (DreamValue content in locContentsList.EnumerateKeys()) {
                             if(!includeCenter && content.TryGetValueAsDreamObject(out var dreamObject) && dreamObject == center)
                                 continue;
                             AddToList(content);
@@ -249,7 +249,7 @@ internal static partial class DreamProcNativeHelpers {
         // finally, add the surrounding turfs
         foreach (var turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
             AddToList(new DreamValue(turf));
-            foreach (DreamValue content in turf.Contents.EnumerateValues()) {
+            foreach (DreamValue content in turf.Contents.EnumerateKeys()) {
                 AddToList(content);
             }
         }
@@ -493,7 +493,7 @@ internal static partial class DreamProcNativeHelpers {
     /// <returns>True if the list was successfully parsed, false if not.</returns>
     public static bool TryParseColorMatrix(DreamList list, out ColorMatrix matrix) {
         matrix = ColorMatrix.Identity;
-        var listArray = list.GetValues();
+        var listArray = list.GetKeys();
         try {
             switch (list.GetLength()) {
                 case 0:

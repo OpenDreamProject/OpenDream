@@ -1,3 +1,4 @@
+// IGNORE
 // Effectively removes any values relevant to a test from byond's internal variable cache.
 #ifdef OPENDREAM
 #define BYOND_POP_CACHE

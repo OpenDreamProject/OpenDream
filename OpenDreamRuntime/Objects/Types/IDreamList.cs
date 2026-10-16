@@ -9,7 +9,7 @@ public interface IDreamList {
     /// <summary>
     /// Set a key-value pair within a list.
     /// </summary>
-    /// <param name="key">/param>
+    /// <param name="key"></param>
     /// <param name="value"></param>
     /// <param name="allowGrowth"></param>
     public void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false);

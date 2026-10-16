@@ -44,7 +44,7 @@ internal static class DreamProcNativeWorld {
                 case TopicResponseType.UnknownResponse:
                     var byteList = state.ObjectTree.CreateList();
                     foreach (var @byte in topicResponse.RawData)
-                        byteList.AddElement(new DreamValue(@byte));
+                        byteList.AddKey(new DreamValue(@byte));
                     return new DreamValue(byteList);
 
                 default:
@@ -145,16 +145,16 @@ internal static class DreamProcNativeWorld {
             DreamList dataList = bundle.ObjectTree.CreateList();
 
             if (type == "sendmaps") {
-                dataList.AddElement(new("name"));
-                dataList.AddElement(new("value"));
-                dataList.AddElement(new("calls"));
+                dataList.AddKey(new("name"));
+                dataList.AddKey(new("value"));
+                dataList.AddKey(new("calls"));
             } else { // Anything else is a proc profile
-                dataList.AddElement(new("name"));
-                dataList.AddElement(new("self"));
-                dataList.AddElement(new("total"));
-                dataList.AddElement(new("real"));
-                dataList.AddElement(new("over"));
-                dataList.AddElement(new("calls"));
+                dataList.AddKey(new("name"));
+                dataList.AddKey(new("self"));
+                dataList.AddKey(new("total"));
+                dataList.AddKey(new("real"));
+                dataList.AddKey(new("over"));
+                dataList.AddKey(new("calls"));
             }
 
             return new(dataList);

@@ -34,13 +34,13 @@ public interface IDreamList {
     /// Removes an Element from the Keys list if present.
     /// </summary>
     /// <param name="element"></param>
-    public void RemoveElement(DreamValue element);
+    public void RemoveKey(DreamValue element);
     public IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateAssocValues();
     /// <summary>
     /// Adds an Element to the Keys list if present.
     /// </summary>
     /// <param name="newElement"></param>
-    public void AddElement(DreamValue newElement);
+    public void AddKey(DreamValue newElement);
     public IDreamList CreateCopy(int start = 1, int end = 0);
     /// <summary>
     /// Returns an element from the keys list by iterating an index range.

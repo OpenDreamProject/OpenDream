@@ -106,7 +106,7 @@ internal static class DreamProcNativeRoot {
             for (int y = startY; y <= endY; y++) {
                 for (int x = startX; x <= endX; x++) {
                     if (mapManager.TryGetTurfAt((x, y), z, out var turf)) {
-                        turfs.AddElement(new DreamValue(turf));
+                        turfs.AddKey(new DreamValue(turf));
                     }
                 }
             }
@@ -245,7 +245,7 @@ internal static class DreamProcNativeRoot {
                 if (!val.TryGetValueAsFloat(out float floatVal))
                     continue;
 
-                tmp.AddElement(new DreamValue(Math.Clamp(floatVal, lVal, hVal)));
+                tmp.AddKey(new DreamValue(Math.Clamp(floatVal, lVal, hVal)));
             }
 
             return new DreamValue(tmp);
@@ -887,7 +887,7 @@ internal static class DreamProcNativeRoot {
         var result = bundle.ObjectTree.CreateList();
 
         foreach (var step in steps) {
-            result.AddElement(new((int)step));
+            result.AddKey(new((int)step));
         }
 
         // Null if there are no steps
@@ -1159,7 +1159,7 @@ internal static class DreamProcNativeRoot {
                 foreach (JsonElement childElement in jsonElement.EnumerateArray()) {
                     using var value = CreateValueFromJsonElement(objectTree, childElement);
 
-                    list.AddElement(value);
+                    list.AddKey(value);
                 }
 
                 return new DreamValue(list);
@@ -1846,9 +1846,9 @@ internal static class DreamProcNativeRoot {
             if (!mapManager.TryGetCellAt((eyePos.X + tile.DeltaX, eyePos.Y + tile.DeltaY), eyePos.Z, out var cell))
                 continue;
 
-            view.AddElement(new(cell.Turf));
+            view.AddKey(new(cell.Turf));
             foreach (var movable in cell.Movables) {
-                view.AddElement(new(movable));
+                view.AddKey(new(movable));
             }
         }
 
@@ -1902,7 +1902,7 @@ internal static class DreamProcNativeRoot {
                         var valueList = objectTree.CreateList(count);
 
                         for (int i = 0; i < count; i++)
-                            valueList.AddElement(new(string.Empty));
+                            valueList.AddKey(new(string.Empty));
 
                         list.SetKeyValuePair(new(value), new(valueList));
                         valueList.DecRef();
@@ -2091,21 +2091,21 @@ internal static class DreamProcNativeRoot {
 
         switch(space) {
             case 0: //rgb
-                list.AddElement(new DreamValue(c.RByte));
-                list.AddElement(new DreamValue(c.GByte));
-                list.AddElement(new DreamValue(c.BByte));
+                list.AddKey(new DreamValue(c.RByte));
+                list.AddKey(new DreamValue(c.GByte));
+                list.AddKey(new DreamValue(c.BByte));
                 break;
             case 1: //hsv
                 Vector4 hsvcolor = Color.ToHsv(c);
-                list.AddElement(new DreamValue(hsvcolor.X * 360));
-                list.AddElement(new DreamValue(hsvcolor.Y * 100));
-                list.AddElement(new DreamValue(hsvcolor.Z * 100));
+                list.AddKey(new DreamValue(hsvcolor.X * 360));
+                list.AddKey(new DreamValue(hsvcolor.Y * 100));
+                list.AddKey(new DreamValue(hsvcolor.Z * 100));
                 break;
             case 2: //hsl
                 Vector4 hslcolor = Color.ToHsl(c);
-                list.AddElement(new DreamValue(hslcolor.X * 360));
-                list.AddElement(new DreamValue(hslcolor.Y * 100));
-                list.AddElement(new DreamValue(hslcolor.Z * 100));
+                list.AddKey(new DreamValue(hslcolor.X * 360));
+                list.AddKey(new DreamValue(hslcolor.Y * 100));
+                list.AddKey(new DreamValue(hslcolor.Z * 100));
                 break;
             //case 3: //hcy
                 // TODO Figure out why the chroma for #ca60db is 48 instead of 68
@@ -2121,7 +2121,7 @@ internal static class DreamProcNativeRoot {
         }
 
         if (color.Length is 9 or 5) {
-            list.AddElement(new DreamValue(c.AByte));
+            list.AddKey(new DreamValue(c.AByte));
         }
 
         return new DreamValue(list);
@@ -2924,13 +2924,13 @@ internal static class DreamProcNativeRoot {
 
             if (addingProcs != null) {
                 foreach (var procId in addingProcs) {
-                    list.AddElement(new DreamValue(bundle.ObjectTree.Procs[procId]));
+                    list.AddKey(new DreamValue(bundle.ObjectTree.Procs[procId]));
                 }
             } else {
                 var descendants = bundle.ObjectTree.GetAllDescendants(type);
 
                 foreach (var descendant in descendants) {
-                    list.AddElement(new DreamValue(descendant));
+                    list.AddKey(new DreamValue(descendant));
                 }
             }
         }
@@ -3023,7 +3023,7 @@ internal static class DreamProcNativeRoot {
                     if (!assocValues.ContainsKey(val)) {
                         cutCount += 1;
                         index -= 1;
-                        list.RemoveElement(val);
+                        list.RemoveKey(val);
                     }
                 }
             }
@@ -3035,12 +3035,12 @@ internal static class DreamProcNativeRoot {
                         case true when !under && valFloat >= min:
                         case false when under && valFloat < min:
                         case false when !under && valFloat > min:
-                            list.RemoveElement(key);
+                            list.RemoveKey(key);
                             cutCount += 1;
                             break;
                     }
                 } else {
-                    list.RemoveElement(key); // Keys without numeric values seem to always be removed
+                    list.RemoveKey(key); // Keys without numeric values seem to always be removed
                     cutCount += 1;
                 }
             }
@@ -3128,7 +3128,7 @@ internal static class DreamProcNativeRoot {
 
         if (center.TryGetVariable("contents", out var centerContents) && centerContents.TryGetValueAsDreamList(out var centerContentsList)) {
             foreach (var item in centerContentsList.EnumerateKeys()) {
-                view.AddElement(item);
+                view.AddKey(item);
             }
         }
 
@@ -3147,9 +3147,9 @@ internal static class DreamProcNativeRoot {
             if (!bundle.MapManager.TryGetCellAt((eyePos.X + tile.DeltaX, eyePos.Y + tile.DeltaY), eyePos.Z, out var cell))
                 continue;
 
-            view.AddElement(new(cell.Turf));
+            view.AddKey(new(cell.Turf));
             foreach (var movable in cell.Movables) {
-                view.AddElement(new(movable));
+                view.AddKey(new(movable));
             }
         }
 

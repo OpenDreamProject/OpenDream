@@ -169,10 +169,10 @@ public sealed class DreamObjectClient : DreamObject {
 
                 if (value.TryGetValueAsDreamList(out var valueList)) {
                     foreach (DreamValue screenValue in valueList.EnumerateKeys()) {
-                        Screen.AddElement(screenValue);
+                        Screen.AddKey(screenValue);
                     }
                 } else if (!value.IsNull) {
-                    Screen.AddElement(value);
+                    Screen.AddKey(value);
                 }
 
                 break;
@@ -182,10 +182,10 @@ public sealed class DreamObjectClient : DreamObject {
 
                 if (value.TryGetValueAsDreamList(out var valueList)) {
                     foreach (DreamValue screenValue in valueList.EnumerateKeys()) {
-                        Images.AddElement(screenValue);
+                        Images.AddKey(screenValue);
                     }
                 } else if (!value.IsNull) {
-                    Images.AddElement(value);
+                    Images.AddKey(value);
                 }
 
                 break;
@@ -195,10 +195,10 @@ public sealed class DreamObjectClient : DreamObject {
 
                 if (value.TryGetValueAsDreamList(out var valueList)) {
                     foreach (DreamValue verbValue in valueList.EnumerateKeys()) {
-                        ClientVerbs.AddElement(verbValue);
+                        ClientVerbs.AddKey(verbValue);
                     }
                 } else {
-                    ClientVerbs.AddElement(value);
+                    ClientVerbs.AddKey(value);
                 }
 
                 break;

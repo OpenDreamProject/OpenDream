@@ -97,7 +97,7 @@ public sealed class DreamObjectTurf : DreamObjectAtom {
 
                 if (value.TryGetValueAsDreamList(out var valueList)) {
                     foreach (DreamValue contentValue in valueList.EnumerateKeys()) {
-                        Contents.AddElement(contentValue);
+                        Contents.AddKey(contentValue);
                     }
                 }
 

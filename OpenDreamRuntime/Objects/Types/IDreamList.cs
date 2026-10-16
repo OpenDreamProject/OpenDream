@@ -51,6 +51,11 @@ public interface IDreamList {
     /// <returns></returns>
     public int FindKey(DreamValue key, int start = 1, int end = 0);
     public void Insert(int index, DreamValue value);
+    /// <summary>
+    /// Returns whether or not the given element exists within the Keys list.
+    /// </summary>
+    /// <param name="value"></param>
+    /// <returns></returns>
     public bool ContainsKey(DreamValue value);
     public void Swap(int index1, int index2);
 

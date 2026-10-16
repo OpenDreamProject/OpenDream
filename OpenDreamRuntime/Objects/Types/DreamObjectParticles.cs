@@ -68,9 +68,9 @@ public sealed class DreamObjectParticles : DreamObject {
 
     private bool TryConvertVector(DreamValue value, out Vector3 newVec) {
         if (value.TryGetValueAsIDreamList(out var vectorList) && vectorList.GetLength() >= 3) {
-            using var boundXValue = vectorList.GetKey(new(1));
-            using var boundYValue = vectorList.GetKey(new(2));
-            using var boundZValue = vectorList.GetKey(new(3));
+            using var boundXValue = vectorList.GetElement(new(1));
+            using var boundYValue = vectorList.GetElement(new(2));
+            using var boundZValue = vectorList.GetElement(new(3));
             var boundX = boundXValue.UnsafeGetValueAsFloat();
             var boundY = boundYValue.UnsafeGetValueAsFloat();
             var boundZ = boundZValue.UnsafeGetValueAsFloat();

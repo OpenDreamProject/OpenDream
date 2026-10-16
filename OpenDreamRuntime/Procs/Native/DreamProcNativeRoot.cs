@@ -1264,8 +1264,8 @@ internal static class DreamProcNativeRoot {
                 foreach (DreamValue listValue in list.EnumerateKeys()) {
                     var key = listValue.Stringify();
 
-                    if (list.ContainsKey(listValue)) {
-                        using var subValue = list.GetKey(listValue);
+                    if (list.ElementHasAssociation(listValue)) {
+                        using var subValue = list.GetElement(listValue);
                         if (subValue.TryGetValueAsDreamList(out var subList) && subList is DreamListVars) //BYOND parity, do not print vars["vars"] - note that this is *not* a generic infinite loop protection on purpose
                             continue;
 
@@ -1866,8 +1866,8 @@ internal static class DreamProcNativeRoot {
         StringBuilder paramBuilder = new StringBuilder();
 
         foreach (DreamValue entry in list.EnumerateKeys()) {
-            if (list.ContainsKey(entry)) {
-                using var entryValue = list.GetKey(entry);
+            if (list.ElementHasAssociation(entry)) {
+                using var entryValue = list.GetElement(entry);
 
                 paramBuilder.Append(
                     $"{HttpUtility.UrlEncode(entry.Stringify())}={HttpUtility.UrlEncode(entryValue.Stringify())}");

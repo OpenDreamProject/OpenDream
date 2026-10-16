@@ -253,7 +253,7 @@ public sealed partial class DreamConnection {
 
     public void HandleMsgTopic(MsgTopic pTopic) {
         var hrefList = DreamProcNativeRoot.Params2List(_objectTree, HttpUtility.UrlDecode(pTopic.Query));
-        using var srcRefValue = hrefList.GetKey(new DreamValue("src"));
+        using var srcRefValue = hrefList.GetElement(new DreamValue("src"));
         var src = DreamValue.Null;
 
         if (srcRefValue.TryGetValueAsString(out var srcRef)) {

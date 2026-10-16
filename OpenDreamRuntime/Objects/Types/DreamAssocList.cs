@@ -47,7 +47,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     }
 
     [MustDisposeResource]
-    public DreamValue GetKey(DreamValue key)
+    public DreamValue GetElement(DreamValue key)
     {
         if (!_pairs.TryGetValue(key, out var value))
             return DreamValue.Null;
@@ -56,18 +56,18 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         return value;
     }
 
-    public bool ContainsKey(DreamValue key)
+    public bool ElementHasAssociation(DreamValue key)
     {
         return _pairs.ContainsKey(key);
     }
 
-    public bool ContainsValue(DreamValue value)
+    public bool ContainsKey(DreamValue value)
     {
         return _pairs.ContainsKey(value);
     }
 
     public override DreamValue OperatorIndex(DreamValue index, DMProcState state) {
-        return GetKey(index);
+        return GetElement(index);
     }
 
     public IEnumerable<DreamValue> EnumerateKeys()
@@ -140,7 +140,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
 
     public void AddElement(DreamValue value)
     {
-        if (ContainsKey(value))
+        if (ElementHasAssociation(value))
         {
             return; // calling Add("c") on alist("c" = 5) does not change anything
         }
@@ -169,7 +169,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     public int FindKey(DreamValue value, int start = 1, int end = 0)
     {
         // Unlike list.Find(), alist.Find() doesn't pay attention to start and end, and returns a boolean 0/1 instead of the position of the found object
-        if (ContainsKey(value))
+        if (ElementHasAssociation(value))
         {
             return 1;
         }
@@ -225,7 +225,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         {
             foreach (var pair in bList.EnumerateAssocValues())
             {
-                if (listCopy.ContainsKey(pair.Key))
+                if (listCopy.ElementHasAssociation(pair.Key))
                 {
                     continue;
                 }
@@ -283,7 +283,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         {
             foreach (var pair in bList.EnumerateAssocValues())
             {
-                if (ContainsKey(pair.Key))
+                if (ElementHasAssociation(pair.Key))
                 {
                     continue;
                 }
@@ -333,7 +333,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
             {
                 foreach (var value in CopyToArray())
                 {
-                    if (!bList.ContainsValue(value))
+                    if (!bList.ContainsKey(value))
                     {
                         RemoveElement(value);
                     }
@@ -342,13 +342,13 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         }
         else
         {
-            if (!ContainsKey(b))
+            if (!ElementHasAssociation(b))
             {
                 Cut();
             }
             else
             {
-                using var item = GetKey(b);
+                using var item = GetElement(b);
                 Cut();
                 SetKeyValuePair(b, item);
             }
@@ -377,12 +377,12 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
 
         foreach (var pair in secondList.EnumerateAssocValues())
         {
-            if (!ContainsKey(pair.Key))
+            if (!ElementHasAssociation(pair.Key))
             {
                 return DreamValue.False;
             }
 
-            using var temp = GetKey(pair.Key);
+            using var temp = GetElement(pair.Key);
             if (!temp.Equals(pair.Value))
             {
                 return DreamValue.False;

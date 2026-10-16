@@ -470,10 +470,10 @@ public sealed class DreamObjectSavefile : DreamObject {
                         }
 
                         if (dreamList.IsAssociative) { //if it's an assoc list, check if this value is a key
-                            if (!dreamList.ContainsKey(keyValue)) {
+                            if (!dreamList.ElementHasAssociation(keyValue)) {
                                 jsonEncodedList.AssocData!.Add(null); //store an actual null if this key does not have an associated value - this is distinct from storing DreamValue.Null
                             } else {
-                                using var assocValue = dreamList.GetKey(keyValue);
+                                using var assocValue = dreamList.GetElement(keyValue);
 
                                 if (assocValue.TryGetValueAsDreamObject(out _) && !assocValue.IsNull) {
                                     SfDreamJsonValue jsonEncodedObject = SerializeDreamValue(assocValue, thisObjectCount);

@@ -148,7 +148,7 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
 
                 // filters = list("type"=...) or list(filter(...), filter(...))
                 if (value.TryGetValueAsDreamList(out var valueList)) {
-                    using var typeArg = valueList.GetKey(new("type"));
+                    using var typeArg = valueList.GetElement(new("type"));
 
                     if (typeArg != DreamValue.Null) { // It's a single filter
                         var filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, valueList);

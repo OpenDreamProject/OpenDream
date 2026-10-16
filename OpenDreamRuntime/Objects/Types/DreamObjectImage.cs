@@ -233,7 +233,7 @@ public sealed class DreamObjectImage : DreamObject {
 
                 // filters = list("type"=...) or list(filter(...), filter(...))
                 if (valueList != null) { // filters = list("type"=...)
-                    using var typeArg = valueList.GetKey(new("type"));
+                    using var typeArg = valueList.GetElement(new("type"));
 
                     if (typeArg != DreamValue.Null) { // It's a single filter
                         var filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, valueList);

@@ -1085,7 +1085,7 @@ public sealed class DMProcState : ProcState {
     [MustDisposeResource]
     public DreamValue GetIndex(DreamValue indexing, DreamValue index, DMProcState state) {
         if (indexing.TryGetValueAsDreamList(out var listObj)) {
-            return listObj.GetKey(index);
+            return listObj.GetElement(index);
         }
 
         if (indexing.TryGetValueAsString(out string? strValue)) {

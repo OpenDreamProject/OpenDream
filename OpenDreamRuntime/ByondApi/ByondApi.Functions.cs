@@ -463,7 +463,7 @@ public static unsafe partial class ByondApi {
                 if (!listValue.TryGetValueAsDreamList(out var srcList))
                     return SetLastError("loc argument was not a list");
 
-                var val = srcList.GetKey(idx);
+                var val = srcList.GetElement(idx);
                 *result = ValueToByondApi(val);
                 if (!calledFromMain)
                     AddTemporaryReference(val);

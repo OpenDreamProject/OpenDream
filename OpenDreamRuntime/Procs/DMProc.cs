@@ -1290,7 +1290,7 @@ public sealed class DMProcState : ProcState {
                     if (proc.OwningType == _state.Proc.ObjectTree.MutableAppearance && proc.Name == "New")
                         proc = _state.Proc.DreamManager.ImageConstructor;
 
-                    var listValues = argList.GetValues();
+                    var listValues = argList.GetKeys();
                     var arguments = new DreamValue[Math.Max(listValues.Count, proc.ArgumentNames.Count)];
                     var skippingArg = false;
                     var isImageConstructor = proc == _state.Proc.DreamManager.ImageConstructor ||
@@ -1308,7 +1308,7 @@ public sealed class DMProcState : ProcState {
                             if (argumentIndex == -1)
                                 throw new DMException($"{proc} has no argument named \"{argumentName}\"");
 
-                            arguments[argumentIndex] = argList.GetKey(value);
+                            arguments[argumentIndex] = argList.GetElement(value);
                         } else { //Ordered argument
                             // image() or new /image() will skip the loc arg if the second arg is a string
                             // Really don't like this but it's BYOND behavior

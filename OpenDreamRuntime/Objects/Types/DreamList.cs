@@ -440,6 +440,9 @@ public class DreamList : DreamObject, IDreamList {
                 AddKey(value); // Always add the value
                 if (bList._associativeValues?.TryGetValue(value, out var assocValue) is true) { // Ensure the associated value is correct
                     _associativeValues ??= new();
+                    if (_associativeValues.TryGetValue(value, out var oldValue)) {
+                        oldValue.DecRef();
+                    }
                     _associativeValues[value] = assocValue;
                     assocValue.IncRef();
                 }

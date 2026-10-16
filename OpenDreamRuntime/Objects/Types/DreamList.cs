@@ -205,7 +205,9 @@ public class DreamList : DreamObject, IDreamList {
             value.IncRef();
             if (_associativeValues.TryGetValue(key, out var oldValue))
                 oldValue.DecRef();
+
             _associativeValues[key] = value;
+            value.IncRef();
         }
 
         UpdateTracyContentsMemory();

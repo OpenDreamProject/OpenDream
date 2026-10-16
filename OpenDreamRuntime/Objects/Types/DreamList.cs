@@ -202,7 +202,6 @@ public class DreamList : DreamObject, IDreamList {
             }
 
             _associativeValues ??= new Dictionary<DreamValue, DreamValue>(1);
-            value.IncRef();
             if (_associativeValues.TryGetValue(key, out var oldValue))
                 oldValue.DecRef();
 

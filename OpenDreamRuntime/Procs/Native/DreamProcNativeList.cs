@@ -158,14 +158,14 @@ namespace OpenDreamRuntime.Procs.Native {
                     }
 
                     foreach (DreamValue value in argumentList.EnumerateKeys()) {
-                        if (list.ContainsKey(value)) {
+                        if (list.ContainsValue(value)) {
                             list.RemoveElement(value);
 
                             itemRemoved++;
                         }
                     }
                 } else {
-                    if (list.ContainsKey(argument)) {
+                    if (list.ContainsValue(argument)) {
                         list.RemoveElement(argument);
 
                         itemRemoved++;

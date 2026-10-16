@@ -66,10 +66,6 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         return _pairs.ContainsKey(value);
     }
 
-    public override DreamValue OperatorIndex(DreamValue index, DMProcState state) {
-        return GetElement(index);
-    }
-
     public IEnumerable<DreamValue> EnumerateKeys()
     {
         return _pairs.Keys; // The keys, counter-intuitively
@@ -217,24 +213,24 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         throw new DMException("swap not allowed for this list");
     }
 
-    public override DreamValue OperatorAdd(DreamValue b, DMProcState state)
-    {
+    #region Operators
+
+    public override DreamValue OperatorIndex(DreamValue index, DMProcState state) {
+        return GetElement(index);
+    }
+
+    public override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
         var listCopy = (DreamAssocList)CreateCopy();
 
-        if (b.TryGetValueAsIDreamList(out var bList))
-        {
-            foreach (var pair in bList.EnumerateAssocValues())
-            {
-                if (listCopy.ElementHasAssociation(pair.Key))
-                {
+        if (b.TryGetValueAsIDreamList(out var bList)) {
+            foreach (var pair in bList.EnumerateAssocValues()) {
+                if (listCopy.ElementHasAssociation(pair.Key)) {
                     continue;
                 }
 
                 listCopy.SetKeyValuePair(pair.Key, pair.Value);
             }
-        }
-        else
-        {
+        } else {
             listCopy.AddKey(b);
         }
 
@@ -392,3 +388,4 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         return DreamValue.True;
     }
 }
+#endregion

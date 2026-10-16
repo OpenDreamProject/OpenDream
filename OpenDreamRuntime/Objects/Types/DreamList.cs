@@ -382,10 +382,6 @@ public class DreamList : DreamObject, IDreamList {
         return GetElement(index);
     }
 
-    public override void OperatorIndexAssign(DreamValue index, DMProcState state, DreamValue value) {
-        SetKeyValuePair(index, value);
-    }
-
     public override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
         DreamList listCopy = (DreamList)CreateCopy();
 

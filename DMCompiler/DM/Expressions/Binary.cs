@@ -10,6 +10,21 @@ internal abstract class BinaryOp(Location location, DMExpression lhs, DMExpressi
 
     public override DMComplexValueType ValType => LHS.ValType;
     public override bool PathIsFuzzy => true;
+
+    // Branches on a short-circuiting operator without pushing its result. a || b short-circuits on true, a && b on false.
+    // By De Morgan, the inverse of either needs both operands to agree, so the LHS skips past the RHS instead of jumping to the label.
+    protected static void EmitShortCircuitBranch(ExpressionContext ctx, DMExpression lhs, DMExpression rhs, bool shortCircuitsOn, string label, bool jumpWhen) {
+        if (jumpWhen == shortCircuitsOn) {
+            lhs.EmitBranch(ctx, label, jumpWhen);
+            rhs.EmitBranch(ctx, label, jumpWhen);
+            return;
+        }
+
+        string skipLabel = ctx.Proc.NewLabelName();
+        lhs.EmitBranch(ctx, skipLabel, shortCircuitsOn);
+        rhs.EmitBranch(ctx, label, jumpWhen);
+        ctx.Proc.AddLabel(skipLabel);
+    }
 }
 
 #region Simple
@@ -581,6 +596,10 @@ internal sealed class Or(Location location, DMExpression lhs, DMExpression rhs) 
         RHS.EmitPushValue(ctx);
         ctx.Proc.AddLabel(endLabel);
     }
+
+    public override void EmitBranch(ExpressionContext ctx, string label, bool jumpWhen) {
+        EmitShortCircuitBranch(ctx, LHS, RHS, shortCircuitsOn: true, label, jumpWhen);
+    }
 }
 
 // x && y
@@ -624,6 +643,10 @@ internal sealed class And(Location location, DMExpression lhs, DMExpression rhs)
         ctx.Proc.BooleanAnd(endLabel);
         RHS.EmitPushValue(ctx);
         ctx.Proc.AddLabel(endLabel);
+    }
+
+    public override void EmitBranch(ExpressionContext ctx, string label, bool jumpWhen) {
+        EmitShortCircuitBranch(ctx, LHS, RHS, shortCircuitsOn: false, label, jumpWhen);
     }
 }
 

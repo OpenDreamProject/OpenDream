@@ -219,6 +219,7 @@ public sealed class DMProcState : ProcState {
         {DreamProcOpcode.Call, DMOpcodeHandlers.Call},
         {DreamProcOpcode.MultiplyReference, DMOpcodeHandlers.MultiplyReference},
         {DreamProcOpcode.JumpIfFalse, DMOpcodeHandlers.JumpIfFalse},
+        {DreamProcOpcode.JumpIfTrue, DMOpcodeHandlers.JumpIfTrue},
         {DreamProcOpcode.CreateStrictAssociativeList, DMOpcodeHandlers.CreateStrictAssociativeList},
         {DreamProcOpcode.Jump, DMOpcodeHandlers.Jump},
         {DreamProcOpcode.CompareEquals, DMOpcodeHandlers.CompareEquals},

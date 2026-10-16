@@ -46,6 +46,10 @@ internal sealed class Not(Location location, DMExpression expr) : UnaryOp(locati
         Expr.EmitPushValue(ctx);
         ctx.Proc.Not();
     }
+
+    public override void EmitBranch(ExpressionContext ctx, string label, bool jumpWhen) {
+        Expr.EmitBranch(ctx, label, !jumpWhen); // Jumping when !x is true is jumping when x is false
+    }
 }
 
 // ~x

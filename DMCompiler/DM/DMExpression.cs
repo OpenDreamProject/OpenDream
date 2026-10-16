@@ -30,6 +30,21 @@ internal abstract class DMExpression(Location location) {
     // May throw if this expression is unable to be pushed to the stack
     public abstract void EmitPushValue(ExpressionContext ctx);
 
+    // Emits code that jumps to label when this expression's truthiness equals jumpWhen, and falls through otherwise
+    public virtual void EmitBranch(ExpressionContext ctx, string label, bool jumpWhen) {
+        if (TryAsConstant(ctx.Compiler, out var constant)) {
+            if (constant.IsTruthy() == jumpWhen)
+                ctx.Proc.Jump(label);
+            return;
+        }
+
+        EmitPushValue(ctx);
+        if (jumpWhen)
+            ctx.Proc.JumpIfTrue(label);
+        else
+            ctx.Proc.JumpIfFalse(label);
+    }
+
     public enum ShortCircuitMode {
         // If a dereference is short-circuited due to a null conditional, the short-circuit label should be jumped to with null NOT on top of the stack
         PopNull,

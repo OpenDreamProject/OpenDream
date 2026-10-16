@@ -1,4 +1,4 @@
-﻿namespace DMCompiler.Bytecode;
+namespace DMCompiler.Bytecode;
 
 // ReSharper disable MissingBlankLines
 public enum DreamProcOpcode : byte {
@@ -313,6 +313,8 @@ public enum DreamProcOpcode : byte {
     JumpIfReferenceNotNull = 0x9D,
     [OpcodeMetadata(1, OpcodeArgType.TypeId, OpcodeArgType.ArgType, OpcodeArgType.StackDelta)]
     CreateObjectDirect = 0x9E,
+    [OpcodeMetadata(-1, OpcodeArgType.Label)]
+    JumpIfTrue = 0x9F,
 }
 // ReSharper restore MissingBlankLines
 

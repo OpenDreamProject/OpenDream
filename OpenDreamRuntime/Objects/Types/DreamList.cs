@@ -18,7 +18,7 @@ public class DreamList : DreamObject, IDreamList {
 
     public virtual bool IsAssociative => _associativeValues is { Count: > 0 };
 
-    private readonly List<DreamValue> _values;
+    private readonly List<DreamValue> _elements;
     private Dictionary<DreamValue, DreamValue>? _associativeValues;
 
     #if TOOLS
@@ -27,10 +27,10 @@ public class DreamList : DreamObject, IDreamList {
 
     public DreamList(DreamObjectDefinition listDef, int size) : base(listDef) {
         if (size >= DreamManager.ListPoolThreshold && ListPool.TryPop(out var poppedValues)) {
-            _values = poppedValues;
-            _values.EnsureCapacity(size);
+            _elements = poppedValues;
+            _elements.EnsureCapacity(size);
         } else {
-            _values = new List<DreamValue>(size);
+            _elements = new List<DreamValue>(size);
         }
     }
 
@@ -38,10 +38,10 @@ public class DreamList : DreamObject, IDreamList {
     /// Create a new DreamList using an existing list of values (does not copy them)
     /// </summary>
     public DreamList(DreamObjectDefinition listDef, List<DreamValue> values, Dictionary<DreamValue, DreamValue>? associativeValues) : base(listDef) {
-        _values = values;
+        _elements = values;
         _associativeValues = associativeValues;
 
-        foreach (var value in _values)
+        foreach (var value in _elements)
             value.IncRef();
 
         if (_associativeValues != null) {
@@ -98,15 +98,15 @@ public class DreamList : DreamObject, IDreamList {
 
     // Hold on to large lists for reuse later
     protected override void HandleDeletion() {
-        foreach (var value in _values)
+        foreach (var value in _elements)
             value.DecRef();
         if (_associativeValues != null)
             foreach (var assocValue in _associativeValues.Values)
                 assocValue.DecRef();
 
-        if (_values.Capacity > DreamManager.ListPoolThreshold && ListPool.Count < DreamManager.ListPoolSize) {
-            _values.Clear();
-            ListPool.Push(_values);
+        if (_elements.Capacity > DreamManager.ListPoolThreshold && ListPool.Count < DreamManager.ListPoolSize) {
+            _elements.Clear();
+            ListPool.Push(_elements);
         }
 
         base.HandleDeletion();
@@ -140,15 +140,15 @@ public class DreamList : DreamObject, IDreamList {
     /// </summary>
     [Obsolete("Deprecated. Use EnumerateValues() instead.")]
     public virtual List<DreamValue> GetValues() {
-        return _values;
+        return _elements;
     }
 
     public virtual IEnumerable<DreamValue> EnumerateValues() {
-        return _values;
+        return _elements;
     }
 
     public IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateAssocValues() {
-        foreach (var value in _values) {
+        foreach (var value in _elements) {
             if (_associativeValues?.TryGetValue(value, out var associativeValue) is true) {
                 yield return new(value, associativeValue);
             } else {
@@ -171,7 +171,7 @@ public class DreamList : DreamObject, IDreamList {
     [MustDisposeResource]
     public virtual DreamValue GetKey(DreamValue key) {
         if (key.TryGetValueAsInteger(out int keyInteger)) {
-            var value = _values[keyInteger - 1]; //1-indexed
+            var value = _elements[keyInteger - 1]; //1-indexed
 
             value.IncRef();
             return value;
@@ -189,15 +189,15 @@ public class DreamList : DreamObject, IDreamList {
         if (key.TryGetValueAsInteger(out int keyInteger)) {
             value.IncRef();
 
-            if (allowGrowth && keyInteger == _values.Count + 1) {
-                _values.Add(value);
+            if (allowGrowth && keyInteger == _elements.Count + 1) {
+                _elements.Add(value);
             } else {
-                _values[keyInteger - 1].DecRef();
-                _values[keyInteger - 1] = value;
+                _elements[keyInteger - 1].DecRef();
+                _elements[keyInteger - 1] = value;
             }
         } else {
             if (!ContainsValue(key)) {
-                _values.Add(key);
+                _elements.Add(key);
                 key.IncRef();
             }
 
@@ -214,7 +214,7 @@ public class DreamList : DreamObject, IDreamList {
     }
 
     public virtual void RemoveElement(DreamValue value) {
-        int valueIndex = _values.LastIndexOf(value);
+        int valueIndex = _elements.LastIndexOf(value);
 
         if (valueIndex != -1) {
             if (_associativeValues?.TryGetValue(value, out var associatedValue) is true)  {
@@ -222,7 +222,7 @@ public class DreamList : DreamObject, IDreamList {
                 _associativeValues.Remove(value);
             }
 
-            _values.RemoveAt(valueIndex);
+            _elements.RemoveAt(valueIndex);
             value.DecRef();
         }
 
@@ -230,17 +230,17 @@ public class DreamList : DreamObject, IDreamList {
     }
 
     public virtual void AddElement(DreamValue value) {
-        _values.Add(value);
+        _elements.Add(value);
         value.IncRef();
         UpdateTracyContentsMemory();
     }
 
     //Does not include associations
     public virtual bool ContainsValue(DreamValue value) {
-        var count = _values.Count;
+        var count = _elements.Count;
 
         for (int i = 0; i < count; i++) {
-            if (_values[i].Equals(value))
+            if (_elements[i].Equals(value))
                 return true;
         }
 
@@ -252,10 +252,10 @@ public class DreamList : DreamObject, IDreamList {
     }
 
     public virtual int FindKey(DreamValue value, int start = 1, int end = 0) {
-        if (end == 0 || end > _values.Count) end = _values.Count + 1;
+        if (end == 0 || end > _elements.Count) end = _elements.Count + 1;
 
         for (int i = start; i < end; i++) {
-            if (_values[i - 1].Equals(value)) return i;
+            if (_elements[i - 1].Equals(value)) return i;
         }
 
         return 0;
@@ -267,11 +267,11 @@ public class DreamList : DreamObject, IDreamList {
             0 => 1,
             _ => start
         };
-        if (end == 0 || end > (_values.Count + 1)) end = _values.Count + 1;
+        if (end == 0 || end > (_elements.Count + 1)) end = _elements.Count + 1;
 
         if (_associativeValues != null) {
             for (int i = start; i < end; i++) {
-                var key = _values[i - 1];
+                var key = _elements[i - 1];
 
                 if (_associativeValues.Remove(key, out var assocValue)) {
                     assocValue.DecRef();
@@ -281,17 +281,17 @@ public class DreamList : DreamObject, IDreamList {
 
         if (end > start) {
             for (int i = start; i < end; i++) {
-                _values[i - 1].DecRef();
+                _elements[i - 1].DecRef();
             }
 
-            _values.RemoveRange(start - 1, end - start);
+            _elements.RemoveRange(start - 1, end - start);
         }
 
         UpdateTracyContentsMemory();
     }
 
     public void Insert(int index, DreamValue value) {
-        _values.Insert(index - 1, value);
+        _elements.Insert(index - 1, value);
         value.IncRef();
         UpdateTracyContentsMemory();
     }
@@ -304,10 +304,10 @@ public class DreamList : DreamObject, IDreamList {
     }
 
     public void Resize(int size) {
-        if (size > _values.Count) {
-            _values.EnsureCapacity(size);
+        if (size > _elements.Count) {
+            _elements.EnsureCapacity(size);
 
-            for (int i = _values.Count; i < size; i++) {
+            for (int i = _elements.Count; i < size; i++) {
                 AddElement(DreamValue.Null);
             }
         } else {
@@ -323,11 +323,11 @@ public class DreamList : DreamObject, IDreamList {
     }
 
     public virtual int GetLength() {
-        return _values.Count;
+        return _elements.Count;
     }
 
     public DreamList Union(DreamList other) {
-        DreamList newList = new DreamList(ObjectDefinition, _values.Union(other.GetValues()).ToList(), null);
+        DreamList newList = new DreamList(ObjectDefinition, _elements.Union(other.GetValues()).ToList(), null);
         Dictionary<DreamValue, DreamValue> otherAssociations = other.GetAssociativeValues();
         foreach (DreamValue value in newList.EnumerateValues()) {
             // Existing left pairs win, only values newly contributed by the right list use its association
@@ -369,7 +369,7 @@ public class DreamList : DreamObject, IDreamList {
     [Conditional("TOOLS")]
     private void UpdateTracyContentsMemory() {
         #if TOOLS
-        var valueCount = _values.Count + (_associativeValues?.Count ?? 0);
+        var valueCount = _elements.Count + (_associativeValues?.Count ?? 0);
         var totalSize = Unsafe.SizeOf<DreamList>() + valueCount * Unsafe.SizeOf<DreamValue>();
 
         _tracyContentsMemoryId?.ReleaseMemory();

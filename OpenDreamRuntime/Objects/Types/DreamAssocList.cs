@@ -14,19 +14,19 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
 {
     public bool IsAssociative => true;
 
-    private readonly Dictionary<DreamValue, DreamValue> _values = new(size);
+    private readonly Dictionary<DreamValue, DreamValue> _pairs = new(size);
 
-    public DreamAssocList(DreamObjectDefinition listDef, Dictionary<DreamValue, DreamValue>? values) : this(listDef, values?.Count ?? 0)
+    public DreamAssocList(DreamObjectDefinition listDef, Dictionary<DreamValue, DreamValue>? pairs) : this(listDef, pairs?.Count ?? 0)
     {
-        if (values != null)
+        if (pairs != null)
         {
-            _values = values;
+            _pairs = pairs;
         }
     }
 
     protected override void HandleDeletion()
     {
-        foreach (var pair in _values)
+        foreach (var pair in _pairs)
         {
             pair.Key.DecRef();
             pair.Value.DecRef();
@@ -37,19 +37,19 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
 
     public void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false)
     {
-        if (_values.TryGetValue(key, out var oldValue))
+        if (_pairs.TryGetValue(key, out var oldValue))
             oldValue.DecRef();
         else
             key.IncRef();
 
-        _values[key] = value;
+        _pairs[key] = value;
         value.IncRef();
     }
 
     [MustDisposeResource]
     public DreamValue GetKey(DreamValue key)
     {
-        if (!_values.TryGetValue(key, out var value))
+        if (!_pairs.TryGetValue(key, out var value))
             return DreamValue.Null;
 
         value.IncRef();
@@ -58,7 +58,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
 
     public bool ContainsKey(DreamValue key)
     {
-        return _values.ContainsKey(key);
+        return _pairs.ContainsKey(key);
     }
 
     public override DreamValue OperatorIndex(DreamValue index, DMProcState state)
@@ -68,12 +68,12 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
 
     public IEnumerable<DreamValue> EnumerateValues()
     {
-        return _values.Keys; // The keys, counter-intuitively
+        return _pairs.Keys; // The keys, counter-intuitively
     }
 
     public int GetLength()
     {
-        return _values.Count;
+        return _pairs.Count;
     }
 
     public void Cut(int start = 1, int end = 0)
@@ -88,28 +88,28 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
             throw new DMException($"Cut() was called with non-default end value of {end}.");
         }
 
-        foreach (var pair in _values)
+        foreach (var pair in _pairs)
         {
             pair.Key.DecRef();
             pair.Value.DecRef();
         }
 
-        _values.Clear();
+        _pairs.Clear();
     }
 
     public List<DreamValue> GetValues()
     {
-        return _values.Keys.ToList();
+        return _pairs.Keys.ToList();
     }
 
     public Dictionary<DreamValue, DreamValue> GetAssociativeValues()
     {
-        return _values;
+        return _pairs;
     }
 
     public void RemoveElement(DreamValue value)
     {
-        if (_values.Remove(value, out var associatedValue))
+        if (_pairs.Remove(value, out var associatedValue))
         {
             value.DecRef();
             associatedValue.DecRef();
@@ -118,30 +118,30 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
 
     public IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateAssocValues()
     {
-        return _values;
+        return _pairs;
     }
 
     public DreamValue[] CopyToArray()
     {
-        var array = new DreamValue[_values.Count];
+        var array = new DreamValue[_pairs.Count];
 
-        _values.Keys.CopyTo(array, 0);
+        _pairs.Keys.CopyTo(array, 0);
         return array;
     }
 
     public Dictionary<DreamValue, DreamValue> CopyAssocValues()
     {
-        return new(_values);
+        return new(_pairs);
     }
 
     public void AddElement(DreamValue value)
     {
-        if (ContainsValue(value))
+        if (ContainsKey(value))
         {
             return; // calling Add("c") on alist("c" = 5) does not change anything
         }
 
-        _values[value] = DreamValue.Null;
+        _pairs[value] = DreamValue.Null;
         value.IncRef();
     }
 
@@ -152,8 +152,8 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
             throw new DMException("list index out of bounds");
         }
 
-        var copyValues = new Dictionary<DreamValue, DreamValue>(_values);
-        foreach (var value in _values)
+        var copyValues = new Dictionary<DreamValue, DreamValue>(_pairs);
+        foreach (var value in _pairs)
         {
             value.Key.IncRef();
             value.Value.IncRef();
@@ -165,7 +165,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     public int FindKey(DreamValue value, int start = 1, int end = 0)
     {
         // Unlike list.Find(), alist.Find() doesn't pay attention to start and end, and returns a boolean 0/1 instead of the position of the found object
-        if (ContainsValue(value))
+        if (ContainsKey(value))
         {
             return 1;
         }
@@ -215,7 +215,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
 
     public bool ContainsValue(DreamValue value)
     {
-        return _values.ContainsKey(value);
+        return _pairs.ContainsKey(value);
     }
 
     public override DreamValue OperatorAdd(DreamValue b, DMProcState state)

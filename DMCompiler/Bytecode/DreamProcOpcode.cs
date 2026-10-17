@@ -311,6 +311,10 @@ public enum DreamProcOpcode : byte {
     Animate = 0x9C,
     [OpcodeMetadata(-1, OpcodeArgType.Label)]
     JumpIfTrue = 0x9D,
+    [OpcodeMetadata(0, OpcodeArgType.Reference, OpcodeArgType.Label)]
+    JumpIfReferenceNotNull = 0x9E,
+    [OpcodeMetadata(1, OpcodeArgType.TypeId, OpcodeArgType.ArgType, OpcodeArgType.StackDelta)]
+    CreateObjectDirect = 0x9F,
 }
 // ReSharper restore MissingBlankLines
 

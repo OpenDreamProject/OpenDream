@@ -1101,6 +1101,19 @@ public sealed class DreamVisContentsList : DreamList {
 // atom.filters list
 // Operates on an object's appearance
 public sealed class DreamFilterList(DreamObjectDefinition listDef, DreamObject owner) : DreamList(listDef, 0) {
+    /// <summary>
+    /// One object per filter on this list, reused every time that filter is read so all references see the same values
+    /// </summary>
+    private readonly List<DreamObjectFilter> _filterObjects = [];
+
+    protected override void HandleDeletion() {
+        foreach (var filterObject in _filterObjects)
+            filterObject.DecRef();
+
+        _filterObjects.Clear();
+        base.HandleDeletion();
+    }
+
     public override void Cut(int start = 1, int end = 0) {
         AtomManager.UpdateAppearance(owner, appearance => {
             int filterCount = appearance.Filters.Count + 1;
@@ -1110,15 +1123,7 @@ public sealed class DreamFilterList(DreamObjectDefinition listDef, DreamObject o
         });
     }
 
-    public int GetIndexOfFilter(DreamFilter filter) {
-        ImmutableAppearance appearance = GetAppearance();
-        for (int i = 0; i < appearance.Filters.Length; i++) {
-            if (appearance.Filters[i] == filter)
-                return i;
-        }
-
-        return -1;
-    }
+    public int GetIndexOfFilter(DreamFilter filter) => Array.IndexOf(GetAppearance().Filters, filter);
 
     public int GetIndexOfFilter(string filterName) {
         ImmutableAppearance appearance = GetAppearance();
@@ -1135,17 +1140,62 @@ public sealed class DreamFilterList(DreamObjectDefinition listDef, DreamObject o
             if (index < 1 || index > appearance.Filters.Count)
                 throw new DMException($"Cannot index {index} on filter list");
 
-            DreamFilter oldFilter = appearance.Filters[index - 1];
-
-            DreamObjectFilter.FilterAttachedTo.Remove(oldFilter);
-
             if (filter == null) { // Setting an index to null is the same as removing it ("filters[1] = null")
                 appearance.Filters.RemoveAt(index - 1);
             } else {
                 appearance.Filters[index - 1] = filter;
-                DreamObjectFilter.FilterAttachedTo[filter] = this;
             }
         });
+    }
+
+    /// <summary>
+    /// Replaces every filter equal to <paramref name="oldFilter"/>, when a filter var is written.
+    /// </summary>
+    /// <exception cref="DMException">The filter is no longer on this list, or its owner was deleted</exception>
+    public void ReplaceFilter(DreamFilter oldFilter, DreamFilter newFilter, string varName) {
+        if (owner.Deleted)
+            throw new DMException($"Cannot set var \"{varName}\" on filter of deleted atom");
+        if (GetIndexOfFilter(oldFilter) == -1)
+            throw new DMException($"Cannot set var \"{varName}\" on filter removed from {owner}");
+
+        AtomManager.UpdateAppearance(owner, appearance => {
+            var filters = appearance.Filters;
+            for (int i = 0; i < filters.Count; i++) {
+                if (filters[i] == oldFilter)
+                    filters[i] = newFilter;
+            }
+        });
+
+        foreach (var filterObject in _filterObjects) {
+            if (filterObject.Filter == oldFilter)
+                filterObject.Filter = newFilter;
+        }
+    }
+
+    /// <summary>
+    /// Gets the list's filter object for a filter, creating it if needed.
+    /// Also releases the objects of filters that were removed from the appearance.
+    /// Writing to one of those afterwards is a runtime error.
+    /// </summary>
+    private DreamObjectFilter GetFilterObject(DreamFilter[] filters, DreamFilter filter) {
+        _filterObjects.RemoveAll(filterObject => {
+            if (Array.IndexOf(filters, filterObject.Filter) != -1)
+                return false;
+
+            filterObject.DecRef();
+            return true;
+        });
+
+        foreach (var filterObject in _filterObjects) {
+            if (filterObject.Filter == filter)
+                return filterObject;
+        }
+
+        var newObject = ObjectTree.CreateObject<DreamObjectFilter>(ObjectTree.Filter);
+        newObject.Filter = filter;
+        newObject.AttachedTo = this;
+        _filterObjects.Add(newObject);
+        return newObject;
     }
 
     public override DreamValue GetValue(DreamValue key) {
@@ -1162,8 +1212,8 @@ public sealed class DreamFilterList(DreamObjectDefinition listDef, DreamObject o
         if (filterIndex < 1 || filterIndex > appearance.Filters.Length)
             throw new DMException($"Atom only has {appearance.Filters.Length} filter(s), cannot index {filterIndex}");
 
-        DreamObjectFilter filterObject = ObjectTree.CreateObject<DreamObjectFilter>(ObjectTree.Filter);
-        filterObject.Filter = appearance.Filters[filterIndex - 1];
+        DreamObjectFilter filterObject = GetFilterObject(appearance.Filters, appearance.Filters[filterIndex - 1]);
+        filterObject.IncRef();
         return new DreamValue(filterObject);
     }
 
@@ -1175,11 +1225,7 @@ public sealed class DreamFilterList(DreamObjectDefinition listDef, DreamObject o
         ImmutableAppearance appearance = GetAppearance();
 
         foreach (var filter in appearance.Filters) {
-            DreamObjectFilter filterObject = ObjectTree.CreateObject<DreamObjectFilter>(ObjectTree.Filter);
-            filterObject.Filter = filter;
-
-            yield return new DreamValue(filterObject);
-            filterObject.DecRef();
+            yield return new DreamValue(GetFilterObject(appearance.Filters, filter));
         }
     }
 
@@ -1198,14 +1244,9 @@ public sealed class DreamFilterList(DreamObjectDefinition listDef, DreamObject o
         if (!value.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject))
             throw new DMException($"Cannot add {value} to filter list");
 
-        //This is dynamic to prevent the compiler from optimising the SerializationManager.CreateCopy() call to the DreamFilter type
-        //so we can preserve the subclass information. Setting it to DreamFilter instead will cause filter parameters to stop working.
-        dynamic filter = filterObject.Filter;
-        DreamFilter copy = SerializationManager.CreateCopy(filter, notNullableOverride: true); // Adding a filter creates a copy
-
-        DreamObjectFilter.FilterAttachedTo[copy] = this;
+        // Sharing the filter is safe because writing a var replaces it instead of changing it
         AtomManager.UpdateAppearance(owner, appearance => {
-            appearance.Filters.Add(copy);
+            appearance.Filters.Add(filterObject.Filter);
         });
     }
 
@@ -1221,7 +1262,6 @@ public sealed class DreamFilterList(DreamObjectDefinition listDef, DreamObject o
             return;
 
         AtomManager.UpdateAppearance(owner, appearance => {
-            DreamObjectFilter.FilterAttachedTo.Remove(appearance.Filters[filterIndex]);
             appearance.Filters.RemoveAt(filterIndex);
         });
     }

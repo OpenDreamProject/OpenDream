@@ -7,8 +7,8 @@
 	// Add with no parameters does nothing
 	query.Add()
 	
-	// Execute without a command does nothing
-	query.Execute()
+	// Execute without a command does nothing and returns false.
+	ASSERT(!query.Execute(db))
 	
 	// and shouldn't report an error
 	ASSERT(!query.Error())

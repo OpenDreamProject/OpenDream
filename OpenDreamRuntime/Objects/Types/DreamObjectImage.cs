@@ -156,7 +156,7 @@ public sealed class DreamObjectImage : DreamObject {
                             return;
 
                         _overlays.Cut();
-                        _overlays.AddValue(new(overlay));
+                        _overlays.AddKey(new(overlay));
                         overlay.Dispose();
                     }
 
@@ -167,11 +167,11 @@ public sealed class DreamObjectImage : DreamObject {
 
                 if (valueList != null) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue overlayValue in valueList.EnumerateValues()) {
-                        _overlays.AddValue(overlayValue);
+                    foreach (DreamValue overlayValue in valueList.EnumerateKeys()) {
+                        _overlays.AddKey(overlayValue);
                     }
                 } else if (!value.IsNull) {
-                    _overlays.AddValue(value);
+                    _overlays.AddKey(value);
                 }
 
                 break;
@@ -190,7 +190,7 @@ public sealed class DreamObjectImage : DreamObject {
                             return;
 
                         _underlays.Cut();
-                        _underlays.AddValue(new(underlay));
+                        _underlays.AddKey(new(underlay));
                         underlay.Dispose();
                     }
 
@@ -201,11 +201,11 @@ public sealed class DreamObjectImage : DreamObject {
 
                 if (valueList != null) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue underlayValue in valueList.EnumerateValues()) {
-                        _underlays.AddValue(underlayValue);
+                    foreach (DreamValue underlayValue in valueList.EnumerateKeys()) {
+                        _underlays.AddKey(underlayValue);
                     }
                 } else if (!value.IsNull) {
-                    _underlays.AddValue(value);
+                    _underlays.AddKey(value);
                 }
 
                 break;
@@ -217,11 +217,11 @@ public sealed class DreamObjectImage : DreamObject {
 
                 if (valueList != null) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue visContentValue in valueList.EnumerateValues()) {
-                        _visContents.AddValue(visContentValue);
+                    foreach (DreamValue visContentValue in valueList.EnumerateKeys()) {
+                        _visContents.AddKey(visContentValue);
                     }
                 } else if (!value.IsNull) {
-                    _visContents.AddValue(value);
+                    _visContents.AddKey(value);
                 }
 
                 break;
@@ -233,17 +233,17 @@ public sealed class DreamObjectImage : DreamObject {
 
                 // filters = list("type"=...) or list(filter(...), filter(...))
                 if (valueList != null) { // filters = list("type"=...)
-                    using var typeArg = valueList.GetValue(new("type"));
+                    using var typeArg = valueList.GetElement(new("type"));
 
                     if (typeArg != DreamValue.Null) { // It's a single filter
                         var filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, valueList);
                         if (filterObject == null) // list() with invalid "type" is ignored
                             break;
 
-                        _filters.AddValue(new(filterObject));
+                        _filters.AddKey(new(filterObject));
                         filterObject.DecRef();
                     } else { // It's a list of filters
-                        foreach (var filter in valueList.EnumerateValues()) {
+                        foreach (var filter in valueList.EnumerateKeys()) {
                             if (!filter.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject)) {
                                 if (!filter.TryGetValueAsDreamList(out var filterValues))
                                     continue;
@@ -253,12 +253,12 @@ public sealed class DreamObjectImage : DreamObject {
                                     continue;
                             }
 
-                            _filters.AddValue(new(filterObject));
+                            _filters.AddKey(new(filterObject));
                             filterObject.DecRef();
                         }
                     }
                 } else if (!value.IsNull) {
-                    _filters.AddValue(value);
+                    _filters.AddKey(value);
                 }
 
                 break;

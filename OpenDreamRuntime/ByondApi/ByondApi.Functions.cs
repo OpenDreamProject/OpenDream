@@ -345,7 +345,7 @@ public static unsafe partial class ByondApi {
 
             try {
                 int i = 0;
-                foreach (var value in srcList.EnumerateValues()) {
+                foreach (var value in srcList.EnumerateKeys()) {
                     if (i >= length)
                         throw new Exception($"List {srcList} had more elements than the expected {length}");
 
@@ -383,7 +383,7 @@ public static unsafe partial class ByondApi {
                 dstListValue.Cut();
                 for (int i = 0; i < len; i++) {
                     using var srcValue = ValueFromDreamApi(list[i]);
-                    dstListValue.AddValue(srcValue);
+                    dstListValue.AddKey(srcValue);
                 }
             } catch (Exception e) {
                 return SetLastError(e.Message);
@@ -463,7 +463,7 @@ public static unsafe partial class ByondApi {
                 if (!listValue.TryGetValueAsDreamList(out var srcList))
                     return SetLastError("loc argument was not a list");
 
-                var val = srcList.GetValue(idx);
+                var val = srcList.GetElement(idx);
                 *result = ValueToByondApi(val);
                 if (!calledFromMain)
                     AddTemporaryReference(val);
@@ -496,7 +496,7 @@ public static unsafe partial class ByondApi {
                     return SetLastError("loc argument was not a list");
 
                 using var val = ValueFromDreamApi(*cVal);
-                dstList.SetValue(idx, val, true);
+                dstList.SetKeyValuePair(idx, val, true);
             } catch (Exception e) {
                 return SetLastError(e.Message);
             }
@@ -753,7 +753,7 @@ public static unsafe partial class ByondApi {
                     corner1->x, corner1->y, corner1->z,
                     corner2->x, corner2->y, corner2->z);
 
-                foreach (var turf in turfs.EnumerateValues()) {
+                foreach (var turf in turfs.EnumerateKeys()) {
                     list.Add(ValueToByondApi(turf));
                     if (!calledFromMain)
                         AddTemporaryReference(turf);

@@ -868,7 +868,7 @@ public sealed class DMProcState : ProcState {
 
                 try {
                     if (indexing.TryGetValueAsIDreamList(out var dreamList)) {
-                        dreamList.SetValue(index, value);
+                        dreamList.SetKeyValuePair(index, value);
                     } else if (indexing.TryGetValueAsDreamObject<DreamObject>(out var dreamObject)) {
                         dreamObject.OperatorIndexAssign(index, this, value);
                     } else {
@@ -1085,7 +1085,7 @@ public sealed class DMProcState : ProcState {
     [MustDisposeResource]
     public DreamValue GetIndex(DreamValue indexing, DreamValue index, DMProcState state) {
         if (indexing.TryGetValueAsDreamList(out var listObj)) {
-            return listObj.GetValue(index);
+            return listObj.GetElement(index);
         }
 
         if (indexing.TryGetValueAsString(out string? strValue)) {
@@ -1290,7 +1290,7 @@ public sealed class DMProcState : ProcState {
                     if (proc.OwningType == _state.Proc.ObjectTree.MutableAppearance && proc.Name == "New")
                         proc = _state.Proc.DreamManager.ImageConstructor;
 
-                    var listValues = argList.GetValues();
+                    var listValues = argList.GetKeys();
                     var arguments = new DreamValue[Math.Max(listValues.Count, proc.ArgumentNames.Count)];
                     var skippingArg = false;
                     var isImageConstructor = proc == _state.Proc.DreamManager.ImageConstructor ||
@@ -1300,7 +1300,7 @@ public sealed class DMProcState : ProcState {
                     for (int i = 0; i < listValues.Count; i++) {
                         var value = listValues[i];
 
-                        if (argList.ContainsKey(value)) { //Named argument
+                        if (argList.ElementHasAssociation(value)) { //Named argument
                             if (!value.TryGetValueAsString(out var argumentName))
                                 throw new DMException("List contains a non-string key, and cannot be used as an arglist");
 
@@ -1308,7 +1308,7 @@ public sealed class DMProcState : ProcState {
                             if (argumentIndex == -1)
                                 throw new DMException($"{proc} has no argument named \"{argumentName}\"");
 
-                            arguments[argumentIndex] = argList.GetValue(value);
+                            arguments[argumentIndex] = argList.GetElement(value);
                         } else { //Ordered argument
                             // image() or new /image() will skip the loc arg if the second arg is a string
                             // Really don't like this but it's BYOND behavior

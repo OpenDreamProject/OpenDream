@@ -56,7 +56,7 @@ namespace OpenDreamRuntime.Procs {
             var list = state.Proc.ObjectTree.CreateList(size);
 
             foreach (DreamValue value in state.PopCount(size)) {
-                list.AddValue(value);
+                list.AddKey(value);
                 value.Dispose();
             }
 
@@ -92,9 +92,9 @@ namespace OpenDreamRuntime.Procs {
                 using var value = popped[i + 1];
 
                 if (key.IsNull) {
-                    list.AddValue(value);
+                    list.AddKey(value);
                 } else {
-                    list.SetValue(key, value, allowGrowth: true);
+                    list.SetKeyValuePair(key, value, allowGrowth: true);
                 }
             }
 
@@ -112,7 +112,7 @@ namespace OpenDreamRuntime.Procs {
                 using var key = popped[i];
                 using var value = popped[i + 1];
 
-                list.SetValue(key, value, allowGrowth: true);
+                list.SetKeyValuePair(key, value, allowGrowth: true);
             }
 
             state.Push(new DreamValue(list));
@@ -250,7 +250,7 @@ namespace OpenDreamRuntime.Procs {
                             appearance.Verbs.Add(proc.VerbId!.Value);
                         });
                     } else if (destination.TryGetValueAsDreamObject<DreamObjectClient>(out var client)) {
-                        client.ClientVerbs.AddValue(val);
+                        client.ClientVerbs.AddKey(val);
                     }
 
                     return ProcStatus.Continue;
@@ -752,7 +752,7 @@ namespace OpenDreamRuntime.Procs {
                 }
 
                 if (list != null) {
-                    state.Push(new DreamValue(list.ContainsValue(value) ? 1 : 0));
+                    state.Push(new DreamValue(list.ContainsKey(value) ? 1 : 0));
                 } else {
                     // BYOND ignores all floats, strings, types, etc. here and just returns 0.
                     state.Push(DreamValue.False);
@@ -971,7 +971,7 @@ namespace OpenDreamRuntime.Procs {
 
                 if (secondList != null) {
                     remainingValues = new Dictionary<DreamValue, int>(secondList.GetLength());
-                    foreach (DreamValue value in secondList.EnumerateValues()) {
+                    foreach (DreamValue value in secondList.EnumerateKeys()) {
                         remainingValues.TryGetValue(value, out int count);
                         remainingValues[value] = count + 1;
                     }
@@ -980,7 +980,7 @@ namespace OpenDreamRuntime.Procs {
                 // BYOND intersection retains min(left count, right count) occurrences in left-list order
                 // associative values come from the retained left pair
 
-                foreach (DreamValue value in list.EnumerateValues()) {
+                foreach (DreamValue value in list.EnumerateKeys()) {
                     bool retained;
                     if (remainingValues != null) {
                         retained = remainingValues.TryGetValue(value, out int count) && count > 0;
@@ -995,9 +995,9 @@ namespace OpenDreamRuntime.Procs {
                     if (!retained)
                         continue;
 
-                    newList.AddValue(value);
+                    newList.AddKey(value);
                     if (associativeValues.TryGetValue(value, out DreamValue associatedValue))
-                        newList.SetValue(value, associatedValue);
+                        newList.SetKeyValuePair(value, associatedValue);
                 }
 
                 state.Push(new DreamValue(newList));
@@ -2128,7 +2128,7 @@ namespace OpenDreamRuntime.Procs {
                 if (!argListStack.TryGetValueAsDreamList(out var argList))
                     throw new DMException("Invalid gradient() arguments");
 
-                var argListValues = argList.GetValues();
+                var argListValues = argList.GetKeys();
 
                 gradientValues.EnsureCapacity(argListValues.Count - 1);
                 for (int i = 0; i < argListValues.Count; i++) {
@@ -2136,12 +2136,12 @@ namespace OpenDreamRuntime.Procs {
 
                     if (value.TryGetValueAsString(out var argumentKey)) {
                         if (argumentKey == "index") {
-                            gradientIndex = argList.GetValue(value);
+                            gradientIndex = argList.GetElement(value);
                             continue;
                         }
 
                         if (argumentKey == "space") {
-                            gradientColorSpace = argList.GetValue(value);
+                            gradientColorSpace = argList.GetElement(value);
                             continue;
                         }
                     }
@@ -2404,7 +2404,7 @@ namespace OpenDreamRuntime.Procs {
                 using var refValue = state.Proc.RefManager.LocateRef(refString);
 
                 if(container is not DreamObjectWorld && containerList is not null) { //if it's a valid ref, it's in world, we don't need to check
-                    state.Push(containerList.ContainsValue(refValue) ? refValue : DreamValue.Null);
+                    state.Push(containerList.ContainsKey(refValue) ? refValue : DreamValue.Null);
                 } else {
                     state.Push(refValue);
                 }
@@ -2415,7 +2415,7 @@ namespace OpenDreamRuntime.Procs {
                     return ProcStatus.Continue;
                 }
 
-                foreach (DreamValue containerItem in containerList.GetValues()) {
+                foreach (DreamValue containerItem in containerList.GetKeys()) {
                     DreamObjectDefinition itemDef;
                     if (containerItem.TryGetValueAsType(out var type)) {
                         itemDef = type.ObjectDefinition;
@@ -2440,7 +2440,7 @@ namespace OpenDreamRuntime.Procs {
                     return ProcStatus.Continue;
                 }
 
-                state.Push(containerList.ContainsValue(value) ? value : DreamValue.Null);
+                state.Push(containerList.ContainsKey(value) ? value : DreamValue.Null);
             }
 
             return ProcStatus.Continue;
@@ -2480,7 +2480,7 @@ namespace OpenDreamRuntime.Procs {
 
                 List<DreamValue> values;
                 if (value.TryGetValueAsDreamList(out var list)) {
-                    values = list.GetValues();
+                    values = list.GetKeys();
                 } else {
                     state.Push(value);
                     return ProcStatus.Continue;
@@ -2740,7 +2740,7 @@ namespace OpenDreamRuntime.Procs {
                 }
             } else if (receiver is DreamList list) {
                 // Output to every mob in the left-hand list.
-                foreach (var entry in list.GetValues()) {
+                foreach (var entry in list.GetKeys()) {
                     if (entry.TryGetValueAsDreamObject(out var entryObj)) {
                         if (entryObj is DreamObjectMob entryMob) {
                             entryMob.Connection?.OutputControl(message, control);
@@ -3045,31 +3045,31 @@ namespace OpenDreamRuntime.Procs {
                 Dictionary<DreamValue, DreamValue> firstAssociations = list.GetAssociativeValues();
 
                 void AddValue(DreamValue value, Dictionary<DreamValue, DreamValue>? associations) {
-                    newList.AddValue(value);
+                    newList.AddKey(value);
                     if (associations?.TryGetValue(value, out DreamValue associatedValue) is true)
-                        newList.SetValue(value, associatedValue);
+                        newList.SetKeyValuePair(value, associatedValue);
                 }
 
                 if (second.TryGetValueAsDreamList(out var secondList)) {
                     Dictionary<DreamValue, DreamValue> secondAssociations = secondList.GetAssociativeValues();
-                    foreach (DreamValue value in list.EnumerateValues()) {
-                        if (!secondList.ContainsValue(value))
+                    foreach (DreamValue value in list.EnumerateKeys()) {
+                        if (!secondList.ContainsKey(value))
                             AddValue(value, firstAssociations);
                     }
 
-                    foreach (DreamValue value in secondList.EnumerateValues()) {
-                        if (!list.ContainsValue(value))
+                    foreach (DreamValue value in secondList.EnumerateKeys()) {
+                        if (!list.ContainsKey(value))
                             AddValue(value, secondAssociations);
                     }
                 } else {
-                    bool secondInList = list.ContainsValue(second);
-                    foreach (DreamValue value in list.EnumerateValues()) {
+                    bool secondInList = list.ContainsKey(second);
+                    foreach (DreamValue value in list.EnumerateKeys()) {
                         if (value != second)
                             AddValue(value, firstAssociations);
                     }
 
                     if (!secondInList) {
-                        newList.AddValue(second);
+                        newList.AddKey(second);
                     }
                 }
 
@@ -3101,19 +3101,19 @@ namespace OpenDreamRuntime.Procs {
 
             // compound list XOR toggles one occurrence
             // BYOND removes the first match and leaves later duplicates in place
-            foreach (DreamValue value in first.EnumerateValues()) {
+            foreach (DreamValue value in first.EnumerateKeys()) {
                 if (!removed && value == second) {
                     removed = true;
                     continue;
                 }
 
-                replacement.AddValue(value);
+                replacement.AddKey(value);
                 if (associations.TryGetValue(value, out DreamValue associatedValue))
-                    replacement.SetValue(value, associatedValue);
+                    replacement.SetKeyValuePair(value, associatedValue);
             }
 
             if (!removed)
-                replacement.AddValue(second);
+                replacement.AddKey(second);
 
             return new DreamValue(replacement);
         }
@@ -3122,10 +3122,10 @@ namespace OpenDreamRuntime.Procs {
             Dictionary<DreamValue, DreamValue> replacementAssociations = replacement.GetAssociativeValues();
             target.Cut();
 
-            foreach (DreamValue value in replacement.EnumerateValues()) {
-                target.AddValue(value);
+            foreach (DreamValue value in replacement.EnumerateKeys()) {
+                target.AddKey(value);
                 if (replacementAssociations.TryGetValue(value, out DreamValue associatedValue))
-                    target.SetValue(value, associatedValue);
+                    target.SetKeyValuePair(value, associatedValue);
             }
         }
 
@@ -3154,7 +3154,7 @@ namespace OpenDreamRuntime.Procs {
         private static DreamValue CalculateGradient(List<DreamValue> gradientValues, DreamValue colorSpaceValue, DreamValue indexValue) {
             if (gradientValues.Count == 1) {
                 if (gradientValues[0].TryGetValueAsDreamList(out var gradientList))
-                    gradientValues = gradientList.GetValues();
+                    gradientValues = gradientList.GetKeys();
             }
 
             if (gradientValues.Count == 0)
@@ -3474,7 +3474,7 @@ namespace OpenDreamRuntime.Procs {
             for (int i = 0; i < size; i++) {
                 float flt = state.ReadFloat();
 
-                list.AddValue(new DreamValue(flt));
+                list.AddKey(new DreamValue(flt));
             }
 
             state.Push(new DreamValue(list));
@@ -3489,7 +3489,7 @@ namespace OpenDreamRuntime.Procs {
             for (int i = 0; i < size; i++) {
                 string str = state.ReadString();
 
-                list.AddValue(new DreamValue(str));
+                list.AddKey(new DreamValue(str));
             }
 
             state.Push(new DreamValue(list));
@@ -3505,7 +3505,7 @@ namespace OpenDreamRuntime.Procs {
                 var reference = state.ReadReference();
                 using var value = state.GetReferenceValue(reference);
 
-                list.AddValue(value);
+                list.AddKey(value);
             }
 
             state.Push(new DreamValue(list));
@@ -3519,7 +3519,7 @@ namespace OpenDreamRuntime.Procs {
 
             for (int i = 0; i < size; i++) {
                 string resourcePath = state.ReadString();
-                list.AddValue(new DreamValue(state.Proc.DreamResourceManager.LoadResource(resourcePath)));
+                list.AddKey(new DreamValue(state.Proc.DreamResourceManager.LoadResource(resourcePath)));
             }
 
             state.Push(new DreamValue(list));

@@ -217,6 +217,7 @@ internal static class DreamProcNative {
 
         SetOverridableNativeProc(objectTree, objectTree.World, DreamProcNativeWorld.NativeProc_Error);
         SetOverridableNativeProc(objectTree, objectTree.World, DreamProcNativeWorld.NativeProc_Reboot);
+        SetOverridableNativeProc(objectTree, objectTree.World, DreamProcNativeWorld.NativeProc_Tick);
     }
 
     /// <summary>

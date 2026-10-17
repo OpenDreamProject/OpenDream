@@ -13,11 +13,6 @@ namespace OpenDreamShared.Dream;
 /// </summary>
 [Serializable, NetSerializable, ImplicitDataDefinitionForInheritors]
 public partial record DreamFilter {
-    /// <summary>
-    /// Indicates this filter was used in the last render cycle, for shader caching purposes
-    /// </summary>
-    public bool Used = false;
-
     [ViewVariables(VVAccess.ReadOnly), DataField("type")]
     public string FilterType;
 
@@ -47,9 +42,9 @@ public partial record DreamFilter {
     public static Type? GetType(string filterType) => FilterTypes.GetValueOrDefault(filterType);
 
     /// <summary>
-    /// Calculate the size of the texture necessary to render this filter
+    /// Calculate the size of the canvas this filter needs
     /// </summary>
-    /// <param name="baseSize">The size of the object the filter is being applied to</param>
+    /// <param name="baseSize">The size of the canvas before this filter</param>
     /// <param name="textureSizeCallback">A callback that returns the size of a given render source</param>
     public Vector2i CalculateRequiredRenderSpace(Vector2i baseSize, Func<string, Vector2i> textureSizeCallback) {
         Vector2 requiredSpace = baseSize;
@@ -69,7 +64,7 @@ public partial record DreamFilter {
 
                 break;
             case DreamFilterBlur blur:
-                requiredSpace += new Vector2(blur.Size) * 2;
+                requiredSpace += new Vector2(blur.GetExtent()) * 2;
                 break;
             case DreamFilterDropShadow dropShadow:
                 if (dropShadow.Size - dropShadow.X > 0)
@@ -114,6 +109,61 @@ public sealed partial record DreamFilterBloom : DreamFilter {
 [Serializable, NetSerializable]
 public sealed partial record DreamFilterBlur : DreamFilter {
     [ViewVariables, DataField("size")] public float Size = 1f;
+
+    /// <summary>The 1D passes of this blur, a horizontal then vertical pass per level</summary>
+    public BlurPasses Passes => new(Size);
+
+    /// <summary>The radius of the blur, in whole pixels</summary>
+    public int GetExtent() {
+        int extent = 0;
+        foreach (var pass in Passes) {
+            if (pass.Direction.Y == 0f)
+                extent += Math.Min(pass.Reach, 100);
+        }
+
+        return extent;
+    }
+}
+
+public struct BlurPasses(float size) {
+    private const float MaxSizeSquared = BlurKernel.MaxSigma * BlurKernel.MaxSigma;
+
+    private float _size = size;
+    private bool _vertical;
+    private bool _done = size == 0f || float.IsNaN(size) || float.IsNegativeInfinity(size);
+
+    public BlurPass Current { get; private set; }
+
+    public readonly BlurPasses GetEnumerator() => this;
+
+    public bool MoveNext() {
+        if (_vertical) {
+            Current = Current with { Direction = Vector2.UnitY };
+            _vertical = false;
+            return true;
+        }
+
+        if (_done)
+            return false;
+
+        double length;
+        if (_size <= BlurKernel.MaxSigma) {
+            // Negative sizes skip planning too, so they're cut off past -6
+            length = _size;
+            _done = true;
+        } else if ((double)_size * _size > MaxSizeSquared * 2) {
+            _size = MathF.Min(_size, 100f);
+            length = _size;
+            _size *= 0.5f;
+        } else {
+            length = Math.Sqrt(_size * _size - MaxSizeSquared);
+            _size = BlurKernel.MaxSigma;
+        }
+
+        Current = new(Vector2.UnitX, length);
+        _vertical = true;
+        return true;
+    }
 }
 
 [Serializable, NetSerializable]

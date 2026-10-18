@@ -67,7 +67,7 @@ public interface IDreamList {
     }
 
     /// <summary>
-    /// Returns a new List containing the 1-dimensional elements of the list.
+    /// Returns a new List containing the 1-dimensional elements of the list. Prefer EnumerateKeys() or ToArray() if possible.
     /// </summary>
     /// <returns></returns>
     public List<DreamValue> GetKeys();

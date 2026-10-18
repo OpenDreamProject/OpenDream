@@ -415,7 +415,7 @@ public static unsafe partial class ByondApi {
                 return SetLastError("loc argument was not a list");
             }
 
-            var srcDreamVals = srcList.GetAssociativeValues();
+            var srcDreamVals = srcList.GetPairs();
             int length = srcDreamVals.Count * 2;
             *len = (uint)length;
             if (list == null)

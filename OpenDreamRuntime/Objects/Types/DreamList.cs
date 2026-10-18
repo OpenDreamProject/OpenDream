@@ -148,7 +148,7 @@ public class DreamList : DreamObject, IDreamList {
         return _elements;
     }
 
-    public IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateAssocValues() {
+    public IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumeratePairs() {
         foreach (var value in _elements) {
             if (_associativeValues?.TryGetValue(value, out var associativeValue) is true) {
                 yield return new(value, associativeValue);
@@ -165,7 +165,7 @@ public class DreamList : DreamObject, IDreamList {
         return new(_associativeValues);
     }
 
-    public Dictionary<DreamValue, DreamValue> GetAssociativeValues() {
+    public Dictionary<DreamValue, DreamValue> GetPairs() {
         return _associativeValues ??= new Dictionary<DreamValue, DreamValue>();
     }
 
@@ -331,7 +331,7 @@ public class DreamList : DreamObject, IDreamList {
 
     public DreamList Union(DreamList other) {
         DreamList newList = new DreamList(ObjectDefinition, _elements.Union(other.GetKeys()).ToList(), null);
-        Dictionary<DreamValue, DreamValue> otherAssociations = other.GetAssociativeValues();
+        Dictionary<DreamValue, DreamValue> otherAssociations = other.GetPairs();
         foreach (DreamValue value in newList.EnumerateKeys()) {
             // Existing left pairs win, only values newly contributed by the right list use its association
             if (_associativeValues?.TryGetValue(value, out DreamValue leftAssociatedValue) is true)
@@ -534,8 +534,8 @@ public class DreamList : DreamObject, IDreamList {
         var firstValues = GetKeys();
         var secondValues = secondList.GetKeys();
 
-        var firstListAssoc = GetAssociativeValues();
-        var secondListAssoc = secondList.GetAssociativeValues();
+        var firstListAssoc = GetPairs();
+        var secondListAssoc = secondList.GetPairs();
 
         for (var i = 0; i < firstValues.Count; i++) {
             // Starting with 516, equivalence checks assoc values

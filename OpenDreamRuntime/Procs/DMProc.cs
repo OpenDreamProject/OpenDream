@@ -1210,7 +1210,7 @@ public sealed class DMProcState : ProcState {
                         break;
 
                     int i = 0;
-                    foreach (var pair in argList.EnumerateAssocValues()) {
+                    foreach (var pair in argList.EnumeratePairs()) {
                         values[i++] = (pair.Key, pair.Value);
                     }
 

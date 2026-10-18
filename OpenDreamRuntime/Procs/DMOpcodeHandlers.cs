@@ -964,7 +964,7 @@ namespace OpenDreamRuntime.Procs {
                 state.Push(new DreamValue(first.MustGetValueAsInteger() & second.MustGetValueAsInteger()));
             } else if (first.TryGetValueAsDreamList(out var list)) {
                 DreamList newList = state.Proc.ObjectTree.CreateList();
-                Dictionary<DreamValue, DreamValue> associativeValues = list.GetAssociativeValues();
+                Dictionary<DreamValue, DreamValue> associativeValues = list.GetPairs();
                 second.TryGetValueAsDreamList(out DreamList? secondList);
                 Dictionary<DreamValue, int>? remainingValues = null;
                 bool scalarAvailable = true;
@@ -3038,7 +3038,7 @@ namespace OpenDreamRuntime.Procs {
         private static DreamValue BitXorValues(DreamObjectTree objectTree, DreamValue first, DreamValue second) {
             if (first.TryGetValueAsDreamList(out var list)) {
                 DreamList newList = objectTree.CreateList();
-                Dictionary<DreamValue, DreamValue> firstAssociations = list.GetAssociativeValues();
+                Dictionary<DreamValue, DreamValue> firstAssociations = list.GetPairs();
 
                 void AddValue(DreamValue value, Dictionary<DreamValue, DreamValue>? associations) {
                     newList.AddKey(value);
@@ -3047,7 +3047,7 @@ namespace OpenDreamRuntime.Procs {
                 }
 
                 if (second.TryGetValueAsDreamList(out var secondList)) {
-                    Dictionary<DreamValue, DreamValue> secondAssociations = secondList.GetAssociativeValues();
+                    Dictionary<DreamValue, DreamValue> secondAssociations = secondList.GetPairs();
                     foreach (DreamValue value in list.EnumerateKeys()) {
                         if (!secondList.ContainsKey(value))
                             AddValue(value, firstAssociations);
@@ -3092,7 +3092,7 @@ namespace OpenDreamRuntime.Procs {
                 return BitXorValues(objectTree, new DreamValue(first), second);
 
             DreamList replacement = objectTree.CreateList();
-            Dictionary<DreamValue, DreamValue> associations = first.GetAssociativeValues();
+            Dictionary<DreamValue, DreamValue> associations = first.GetPairs();
             bool removed = false;
 
             // compound list XOR toggles one occurrence
@@ -3115,7 +3115,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         private static void ReplaceListContents(DreamList target, DreamList replacement) {
-            Dictionary<DreamValue, DreamValue> replacementAssociations = replacement.GetAssociativeValues();
+            Dictionary<DreamValue, DreamValue> replacementAssociations = replacement.GetPairs();
             target.Cut();
 
             foreach (DreamValue value in replacement.EnumerateKeys()) {

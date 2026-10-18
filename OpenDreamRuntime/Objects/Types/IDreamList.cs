@@ -29,13 +29,17 @@ public interface IDreamList {
     public int GetLength();
     public void Cut(int start = 1, int end = 0);
     public List<DreamValue> GetKeys();
-    public Dictionary<DreamValue, DreamValue> GetAssociativeValues();
+    /// <summary>
+    /// Returns a dictionary of key-value associations. Does not copy or include any elements without associations.
+    /// </summary>
+    /// <returns></returns>
+    public Dictionary<DreamValue, DreamValue> GetPairs();
     /// <summary>
     /// Removes an Element from the Keys list if present.
     /// </summary>
     /// <param name="element"></param>
     public void RemoveKey(DreamValue element);
-    public IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateAssocValues();
+    public IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumeratePairs();
     /// <summary>
     /// Adds an Element to the Keys list if present.
     /// </summary>
@@ -64,6 +68,6 @@ public interface IDreamList {
     }
 
     public Dictionary<DreamValue, DreamValue> CopyAssocValues() {
-        return new(EnumerateAssocValues());
+        return new(EnumeratePairs());
     }
 }

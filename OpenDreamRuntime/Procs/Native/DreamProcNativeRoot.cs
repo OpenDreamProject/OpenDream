@@ -3014,7 +3014,7 @@ internal static class DreamProcNativeRoot {
             }
 
             var values = list.GetKeys();
-            var assocValues = list.GetAssociativeValues();
+            var assocValues = list.GetPairs();
 
             // Nuke any keys without values
             if (values.Count != assocValues.Count) {
@@ -3061,8 +3061,8 @@ internal static class DreamProcNativeRoot {
         float sum = 0; // Default return is 0 for invalid args
 
         if (argA.TryGetValueAsIDreamList(out var listA) && listA.IsAssociative && argB.TryGetValueAsIDreamList(out var listB) && listB.IsAssociative) {
-            var aValues = listA.GetAssociativeValues();
-            var bValues = listB.GetAssociativeValues();
+            var aValues = listA.GetPairs();
+            var bValues = listB.GetPairs();
 
             // sum += valueA * valueB
             // for each assoc value whose key exists in both lists
@@ -3088,7 +3088,7 @@ internal static class DreamProcNativeRoot {
         float product = 1; // Default return is 1 for invalid args
 
         if (arg.TryGetValueAsIDreamList(out var list) && list.IsAssociative) {
-            var assocValues = list.GetAssociativeValues();
+            var assocValues = list.GetPairs();
             foreach (var (_,value) in assocValues) {
                 if(value.TryGetValueAsFloat(out var valFloat)) product *= valFloat;
             }
@@ -3107,7 +3107,7 @@ internal static class DreamProcNativeRoot {
         float sum = 0; // Default return is 0 for invalid args
 
         if (arg.TryGetValueAsIDreamList(out var list) && list.IsAssociative) {
-            var assocValues = list.GetAssociativeValues();
+            var assocValues = list.GetPairs();
             foreach (var (_,value) in assocValues) {
                 if(value.TryGetValueAsFloat(out var valFloat)) sum += valFloat;
             }

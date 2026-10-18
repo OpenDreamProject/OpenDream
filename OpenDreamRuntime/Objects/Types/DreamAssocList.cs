@@ -102,7 +102,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         return _pairs.Keys.ToList();
     }
 
-    public Dictionary<DreamValue, DreamValue> GetAssociativeValues()
+    public Dictionary<DreamValue, DreamValue> GetPairs()
     {
         return _pairs;
     }
@@ -116,7 +116,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         }
     }
 
-    public IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateAssocValues()
+    public IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumeratePairs()
     {
         return _pairs;
     }
@@ -223,7 +223,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         var listCopy = (DreamAssocList)CreateCopy();
 
         if (b.TryGetValueAsIDreamList(out var bList)) {
-            foreach (var pair in bList.EnumerateAssocValues()) {
+            foreach (var pair in bList.EnumeratePairs()) {
                 if (listCopy.ElementHasAssociation(pair.Key)) {
                     continue;
                 }
@@ -277,7 +277,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     {
         if (b.TryGetValueAsIDreamList(out var bList))
         {
-            foreach (var pair in bList.EnumerateAssocValues())
+            foreach (var pair in bList.EnumeratePairs())
             {
                 if (ElementHasAssociation(pair.Key))
                 {
@@ -371,7 +371,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
             return DreamValue.False;
         }
 
-        foreach (var pair in secondList.EnumerateAssocValues())
+        foreach (var pair in secondList.EnumeratePairs())
         {
             if (!ElementHasAssociation(pair.Key))
             {

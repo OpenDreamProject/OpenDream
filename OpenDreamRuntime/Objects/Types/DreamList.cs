@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using JetBrains.Annotations;
 using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Procs;
@@ -187,12 +188,14 @@ public class DreamList : DreamObject, IDreamList {
 
     public virtual void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
         if (key.TryGetValueAsInteger(out int keyInteger)) {
-            value.IncRef();
-
             if (allowGrowth && keyInteger == _elements.Count + 1) {
+                value.IncRef();
                 _elements.Add(value);
             } else {
-                _elements[keyInteger - 1].DecRef();
+                var oldValue = _elements[keyInteger - 1];
+
+                value.IncRef();
+                oldValue.DecRef();
                 _elements[keyInteger - 1] = value;
             }
         } else {
@@ -296,10 +299,11 @@ public class DreamList : DreamObject, IDreamList {
     }
 
     public void Swap(int index1, int index2) {
-        using var temp = GetElement(new DreamValue(index1));
+        using var first = GetElement(new DreamValue(index1));
+        using var second = GetElement(new DreamValue(index2));
 
-        SetKeyValuePair(new DreamValue(index1), GetElement(new DreamValue(index2)));
-        SetKeyValuePair(new DreamValue(index2), temp);
+        SetKeyValuePair(new DreamValue(index1), second);
+        SetKeyValuePair(new DreamValue(index2), first);
     }
 
     public void Resize(int size) {
@@ -433,14 +437,16 @@ public class DreamList : DreamObject, IDreamList {
             var valueCount = values.Count; // Some lists return a reference to their internal values list which could change with each loop
             for (int i = 0; i < valueCount; i++) {
                 var value = values[i];
+
                 AddKey(value); // Always add the value
+
                 if (bList._associativeValues?.TryGetValue(value, out var assocValue) is true) { // Ensure the associated value is correct
                     _associativeValues ??= new();
-                    if (_associativeValues.TryGetValue(value, out var oldValue)) {
-                        oldValue.DecRef();
-                    }
-                    _associativeValues[value] = assocValue;
+
+                    ref var slot = ref CollectionsMarshal.GetValueRefOrAddDefault(_associativeValues, value, out _);
                     assocValue.IncRef();
+                    slot.DecRef();
+                    slot = assocValue;
                 }
             }
         } else {

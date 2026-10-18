@@ -582,9 +582,9 @@ public sealed class DMProcState : ProcState {
 
     public override bool IsCatching() => _catchPosition.Count > 0;
 
-    public override void CatchException(Exception exception) {
+    public override void CatchException(Exception exception, string file, int line) {
         if (!IsCatching())
-            base.CatchException(exception);
+            base.CatchException(exception, file, line);
 
         Jump(_catchPosition.Pop());
         var varIdx = _catchVarIndex.Pop();
@@ -596,8 +596,8 @@ public sealed class DMProcState : ProcState {
                 // Let's consider this an ownership transfer, so no IncRef/DecRef is needed
                 value = throwException.Value;
             } else {
-                value = new DreamValue(exception.Message); // TODO: Probably need to create an /exception
-                value.IncRef();
+                // CreateException's reference is transferred to the local var
+                value = new DreamValue(DreamManager.CreateException(exception, file, line));
             }
 
             _localVariables[varIdx].DecRef();
@@ -855,12 +855,16 @@ public sealed class DMProcState : ProcState {
                 break;
             case DMReference.Type.Field: {
                 var owner = peek ? Peek() : Pop();
-                if (!owner.TryGetValueAsDreamObject(out var ownerObj) || ownerObj == null)
+                if (owner.TryGetValueAsDreamObject<DreamObject>(out var ownerObj)) {
+                    ownerObj.SetVariable(ResolveString(reference.Value), value);
+                    if (!peek)
+                        owner.Dispose();
+                } else {
+                    if (!peek)
+                        owner.Dispose();
                     ThrowCannotAssignFieldOn(reference, owner);
+                }
 
-                ownerObj!.SetVariable(ResolveString(reference.Value), value);
-                if (!peek)
-                    owner.Dispose();
                 break;
             }
             case DMReference.Type.ListIndex: {
@@ -964,11 +968,13 @@ public sealed class DMProcState : ProcState {
             }
             case DMReference.Type.Field: {
                 var owner = peek ? Peek() : Pop();
-                var fieldValue = DereferenceField(owner, ResolveString(reference.Value));
 
-                if (!peek)
-                    owner.Dispose();
-                return fieldValue;
+                try {
+                    return DereferenceField(owner, ResolveString(reference.Value));
+                } finally {
+                    if (!peek)
+                        owner.Dispose();
+                }
             }
             case DMReference.Type.SrcField: {
                 var fieldName = ResolveString(reference.Value);
@@ -982,13 +988,14 @@ public sealed class DMProcState : ProcState {
             case DMReference.Type.ListIndex: {
                 GetIndexReferenceValues(reference, out var index, out var indexing, peek);
 
-                var value = GetIndex(indexing, index, this);
-                if (!peek) {
-                    index.Dispose();
-                    indexing.Dispose();
+                try {
+                    return GetIndex(indexing, index, this);
+                } finally {
+                    if (!peek) {
+                        index.Dispose();
+                        indexing.Dispose();
+                    }
                 }
-
-                return value;
             }
             default:
                 ThrowCannotGetValueOfReferenceType(reference);

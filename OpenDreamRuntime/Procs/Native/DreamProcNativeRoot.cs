@@ -3022,7 +3022,6 @@ internal static class DreamProcNativeRoot {
                     var val = values[index];
                     if (!assocValues.ContainsKey(val)) {
                         cutCount += 1;
-                        index -= 1;
                         list.RemoveKey(val);
                     }
                 }

@@ -459,10 +459,8 @@ public class DreamList : DreamObject, IDreamList {
 
     public override DreamValue OperatorRemove(DreamValue b) {
         if (b.TryGetValueAsDreamList(out var bList)) {
-            DreamValue[] values = bList.GetKeys().ToArray();
-
-            foreach (DreamValue value in values) {
-                RemoveKey(value);
+            foreach (DreamValue key in bList.EnumerateKeys()) {
+                RemoveKey(key);
             }
         } else {
             RemoveKey(b);

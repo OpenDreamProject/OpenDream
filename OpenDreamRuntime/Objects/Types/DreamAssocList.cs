@@ -129,7 +129,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         return array;
     }
 
-    public Dictionary<DreamValue, DreamValue> CopyAssocValues()
+    public Dictionary<DreamValue, DreamValue> CopyPairs()
     {
         return new(_pairs);
     }

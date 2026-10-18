@@ -158,7 +158,7 @@ public class DreamList : DreamObject, IDreamList {
         }
     }
 
-    public Dictionary<DreamValue, DreamValue> CopyAssocValues() {
+    public Dictionary<DreamValue, DreamValue> CopyPairs() {
         if (_associativeValues is null)
             return new();
 

@@ -54,7 +54,7 @@ public interface IDreamList {
     /// Returns a Dictionary of key-value pairs. Any elements without an association are associated with DreamValue.Null.
     /// </summary>
     /// <returns></returns>
-    public Dictionary<DreamValue, DreamValue> CopyAssocValues() {
+    public Dictionary<DreamValue, DreamValue> CopyPairs() {
         return new(EnumeratePairs());
     }
 

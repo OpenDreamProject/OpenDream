@@ -121,7 +121,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         return _pairs;
     }
 
-    public DreamValue[] CopyToArray()
+    public DreamValue[] ToArray()
     {
         var array = new DreamValue[_pairs.Count];
 
@@ -327,7 +327,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         {
             if (bList != this)
             {
-                foreach (var value in CopyToArray())
+                foreach (var value in ToArray())
                 {
                     if (!bList.ContainsKey(value))
                     {

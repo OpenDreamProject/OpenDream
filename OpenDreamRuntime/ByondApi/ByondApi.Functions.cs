@@ -937,7 +937,7 @@ public static unsafe partial class ByondApi {
                     return SetLastError("cArglist argument was not a list");
 
                 // Copy the arglist's values to a new array to ensure no shenanigans
-                var argValues = arglist.CopyToArray();
+                var argValues = arglist.ToArray();
                 var args = new DreamProcArguments(argValues);
 
                 // TODO: This is code duplicated with DMOpcodeHandlers.CreateObject()

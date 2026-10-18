@@ -343,7 +343,7 @@ public sealed partial class DreamConnection {
     }
 
     public async Task<DreamValue> PromptList(DreamValueType types, IDreamList list, string title, string message, DreamValue defaultValue) {
-        DreamValue[] listValues = list.CopyToArray();
+        DreamValue[] listValues = list.ToArray();
         foreach (var value in listValues)
             value.IncRef();
 

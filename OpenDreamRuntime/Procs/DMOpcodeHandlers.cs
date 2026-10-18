@@ -141,7 +141,7 @@ namespace OpenDreamRuntime.Procs {
                 if (list is WorldContentsList)
                     return new WorldContentsEnumerator(atomManager, filterType);
 
-                var values = list.CopyToArray();
+                var values = list.ToArray();
                 var assocValues = list.IsAssociative ? list.CopyAssocValues() : null;
                 foreach (var copiedValue in values)
                     copiedValue.IncRef();

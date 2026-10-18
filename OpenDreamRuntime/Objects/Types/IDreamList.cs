@@ -25,9 +25,17 @@ public interface IDreamList {
     /// <param name="key"></param>
     /// <returns></returns>
     public bool ElementHasAssociation(DreamValue key);
+    /// <summary>
+    /// Returns an IEnumerable of the 1-dimensional elements of the list.
+    /// </summary>
+    /// <returns></returns>
     public IEnumerable<DreamValue> EnumerateKeys();
     public int GetLength();
     public void Cut(int start = 1, int end = 0);
+    /// <summary>
+    /// Returns a new List containing the 1-dimensional elements of the list.
+    /// </summary>
+    /// <returns></returns>
     public List<DreamValue> GetKeys();
     /// <summary>
     /// Returns a dictionary of key-value associations. Does not copy or include any elements without associations.
@@ -39,6 +47,10 @@ public interface IDreamList {
     /// </summary>
     /// <param name="element"></param>
     public void RemoveKey(DreamValue element);
+    /// <summary>
+    /// Returns an enumerable of key-value associations. Elements without associations are included, associated with DreamValue.Null.
+    /// </summary>
+    /// <returns></returns>
     public IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumeratePairs();
     /// <summary>
     /// Adds an Element to the Keys list if present.

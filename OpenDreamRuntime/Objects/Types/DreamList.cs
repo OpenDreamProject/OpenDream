@@ -137,11 +137,11 @@ public class DreamList : DreamObject, IDreamList {
     }
 
     /// <summary>
-    /// Returns the list of array values. Doesn't include the associative values indexable by some of these.
+    /// Returns a copy of the list of array values. Doesn't include the associative values indexable by some of these.
     /// </summary>
     [Obsolete("Deprecated. Use EnumerateValues() instead.")]
     public virtual List<DreamValue> GetKeys() {
-        return _elements;
+        return [.._elements]; // Returns a copy for parity with DreamAssocList.
     }
 
     public virtual IEnumerable<DreamValue> EnumerateKeys() {

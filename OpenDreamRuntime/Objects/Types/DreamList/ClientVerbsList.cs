@@ -3,12 +3,12 @@ using System.Linq;
 namespace OpenDreamRuntime.Objects.Types;
 
 // Keeps track of a client's verbs
-public sealed class ClientVerbsList : DreamList {
+public sealed class ClientVerbsList : DreamListAbstract {
     public readonly List<DreamProc> Verbs = new();
 
     private readonly DreamObjectClient _client;
 
-    public ClientVerbsList(DreamObjectTree objectTree, DreamObjectClient client) : base(objectTree.List.ObjectDefinition, 0) {
+    public ClientVerbsList(DreamObjectTree objectTree, DreamObjectClient client) : base(objectTree.List.ObjectDefinition) {
         _client = client;
 
         var verbs = _client.ObjectDefinition.Verbs?.Values;

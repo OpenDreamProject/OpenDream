@@ -1,9 +1,7 @@
 using System.Linq;
 using System.Runtime.CompilerServices;
-using OpenDreamRuntime.Map;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
-using Robust.Server.GameStates;
 namespace OpenDreamRuntime.Objects.Types;
 
 // atom.overlays or atom.underlays list

@@ -815,7 +815,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus PushGlobalVars(DMProcState state) {
-            var globalVarsList = new DreamGlobalVars(state.Proc.ObjectTree.List.ObjectDefinition);
+            var globalVarsList = new GlobalVarsList(state.Proc.ObjectTree.List.ObjectDefinition);
 
             state.Push(new DreamValue(globalVarsList));
             globalVarsList.DecRef();

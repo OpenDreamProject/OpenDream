@@ -3,7 +3,7 @@ namespace OpenDreamRuntime.Objects.Types;
 
 
 // global.vars list
-internal sealed class DreamGlobalVars(DreamObjectDefinition listDef) : DreamListAbstract(listDef) {
+internal sealed class GlobalVarsList(DreamObjectDefinition listDef) : DreamListAbstract(listDef) {
     public override bool IsAssociative =>
         true; // We don't use the associative array but, yes, we behave like an associative list
 

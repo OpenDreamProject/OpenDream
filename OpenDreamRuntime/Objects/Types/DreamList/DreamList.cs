@@ -42,7 +42,12 @@ public class DreamList : DreamEagerList {
         base.HandleDeletion();
     }
 
+    [Obsolete("Consider ToDreamList() instead.")]
     public override DreamList ToCopy(int start = 1, int end = 0) {
+        return ToDreamList(start, end);
+    }
+
+    public override DreamList ToDreamList(int start = 1, int end = 0) {
         if (start == 0) ++start; //start being 0 and start being 1 are equivalent
 
         if (end > _elements.Count + 1 || start > _elements.Count + 1) throw new DMException("list index out of bounds");
@@ -218,7 +223,7 @@ public class DreamList : DreamEagerList {
     #region Operators
 
     public override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
-        DreamList listCopy = ToCopy();
+        DreamList listCopy = ToDreamList();
 
         if (b.TryGetValueAsIDreamList(out var bList)) {
             foreach (DreamValue key in bList.EnumerateKeys()) {

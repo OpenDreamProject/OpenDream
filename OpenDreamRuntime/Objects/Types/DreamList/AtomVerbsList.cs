@@ -4,7 +4,7 @@ namespace OpenDreamRuntime.Objects.Types;
 
 // atom's verbs list
 // Keeps track of an appearance's verbs (atom.verbs, mutable_appearance.verbs, etc)
-public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManager, DreamObjectAtom atom) : DreamList(objectTree.List.ObjectDefinition, 0) {
+public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManager, DreamObjectAtom atom) : DreamListAbstract(objectTree.List.ObjectDefinition) {
     public override DreamValue GetElement(DreamValue key) {
         if (VerbSystem == null)
             return DreamValue.Null;

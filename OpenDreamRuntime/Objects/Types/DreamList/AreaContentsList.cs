@@ -3,6 +3,8 @@ namespace OpenDreamRuntime.Objects.Types;
 
 // area.contents list
 public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectArea area) : DreamListAbstract(listDef) {
+    public override bool IsAssociative => false;
+
     public override DreamValue GetElement(DreamValue key) {
         if (!key.TryGetValueAsInteger(out var index))
             throw new DMException($"Invalid index into area contents list: {key}");
@@ -61,10 +63,6 @@ public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectA
         turf.Cell.Area = DreamMapManager.DefaultArea;
     }
 
-    public override void Cut(int start = 1, int end = 0) {
-        // TODO
-    }
-
     public override int GetLength() {
         int length = area.Turfs.Count;
 
@@ -90,5 +88,17 @@ public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectA
             return false;
 
         return cell.Area == area;
+    }
+
+    public override void Swap(int index1, int index2) {
+        throw new NotImplementedException();
+    }
+
+    public override void Cut(int start = 1, int end = 0) {
+        // TODO
+    }
+
+    public override void Insert(int index, DreamValue value) {
+        throw new NotImplementedException();
     }
 }

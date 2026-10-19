@@ -8,7 +8,7 @@ public abstract class DreamListAbstract : DreamObject {
 
 	public override bool ShouldCallNew => false;
 
-	public abstract bool IsAssociative { get; }
+	public virtual bool IsAssociative { get; }
 
 	/// <summary>
 	/// Some list structures, namely eager lists, can directly return their internal lists instead of creating a new list from enumeration.
@@ -130,15 +130,6 @@ public abstract class DreamListAbstract : DreamObject {
 	public abstract int GetLength();
 
 	/// <summary>
-	/// Returns a shallow copy of the list (and associations) from index Start (Inclusive) to End (Exclusive). End 0 will copy everything up to and including the final element.
-	/// </summary>
-	/// <param name="start"></param>
-	/// <param name="end"></param>
-	/// <returns></returns>
-	public abstract DreamListAbstract ToCopy(int start = 1, int end = 0);
-
-
-	/// <summary>
 	/// Returns an Array of the 1-dimensional list elements.
 	/// </summary>
 	/// <returns></returns>
@@ -232,10 +223,35 @@ public abstract class DreamListAbstract : DreamObject {
 	/// </summary>
 	/// <param name="start"></param>
 	/// <param name="end"></param>
-	public abstract void Cut(int start = 1, int end = 0);
-	public abstract void Insert(int index, DreamValue value);
-	public abstract void Swap(int index1, int index2);
+	public virtual void Cut(int start = 1, int end = 0) {
+        throw new NotImplementedException();
+    }
 
+	public virtual void Insert(int index, DreamValue value) {
+        throw new NotImplementedException();
+    }
+
+	public virtual void Swap(int index1, int index2) {
+        throw new NotImplementedException();
+    }
+
+    [Obsolete("Consider ToDreamList() instead.")]
+	/// <summary>
+	/// Returns a shallow copy of the list (and associations) from index Start (Inclusive) to End (Exclusive). End 0 will copy everything up to and including the final element.
+	/// </summary>
+	/// <param name="start"></param>
+	/// <param name="end"></param>
+	/// <returns></returns>
+	public virtual DreamListAbstract ToCopy(int start = 1, int end = 0) {
+        throw new NotImplementedException();
+    }
+
+	/// <summary>
+	/// Returns a shallow copy of the list (and associations) from index Start (Inclusive) to End (Exclusive) as a DreamList. End 0 will copy everything up to and including the final element.
+	/// </summary>
+	/// <param name="start"></param>
+	/// <param name="end"></param>
+	/// <returns></returns>
 	public virtual DreamList ToDreamList(int start = 1, int end = 0) {
 		if (start == 0) ++start; //start being 0 and start being 1 are equivalent
 

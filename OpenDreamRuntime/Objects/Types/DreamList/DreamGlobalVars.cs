@@ -3,12 +3,16 @@ namespace OpenDreamRuntime.Objects.Types;
 
 
 // global.vars list
-internal sealed class DreamGlobalVars(DreamObjectDefinition listDef) : DreamList(listDef, 0) {
+internal sealed class DreamGlobalVars(DreamObjectDefinition listDef) : DreamListAbstract(listDef) {
     public override bool IsAssociative =>
         true; // We don't use the associative array but, yes, we behave like an associative list
 
     public override List<DreamValue> GetKeys() {
         return EnumerateKeys().ToList();
+    }
+
+    public override int GetLength() {
+        return ObjectTree.Root.ObjectDefinition.GlobalVariables.Keys.Count;
     }
 
     public override IEnumerable<DreamValue> EnumerateKeys() {
@@ -61,5 +65,13 @@ internal sealed class DreamGlobalVars(DreamObjectDefinition listDef) : DreamList
 
     public override int FindKeyIndex(DreamValue value, int start = 1, int end = 0) {
         throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
+    }
+
+    public override void AddKey(DreamValue newElement) {
+        throw new DMException("Cannot add to global.vars list.");
+    }
+
+    public override void RemoveKey(DreamValue element) {
+        throw new DMException("Cannot remove from global.vars list.");
     }
 }

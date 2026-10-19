@@ -10,6 +10,8 @@ namespace OpenDreamRuntime.Objects.Types;
 [Virtual]
 public class DreamList : DreamEagerList {
 
+    public override bool IsAssociative => _associativeValues is { Count: > 0 };
+
     private Dictionary<DreamValue, DreamValue>? _associativeValues;
 
     public DreamList(DreamObjectDefinition listDef, int size) : base(listDef, size) {

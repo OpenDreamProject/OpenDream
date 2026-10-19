@@ -133,8 +133,8 @@ public abstract class DreamListAbstract : DreamObject {
 	/// Returns an Array of the 1-dimensional list elements.
 	/// </summary>
 	/// <returns></returns>
-	public DreamValue[] ToArray() {
-		return EnumerateKeys().ToArray();
+	public virtual DreamValue[] ToArray() {
+		return GetKeysFast().ToArray();
 	}
 
 	/// <summary>

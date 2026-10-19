@@ -743,7 +743,7 @@ internal sealed partial class DreamDebugManager : IDreamDebugManager {
         return varDesc;
     }
 
-    private IEnumerable<Variable> ExpandList(RequestVariables req, DreamListAbstract list) {
+    private IEnumerable<Variable> ExpandList(RequestVariables req, DreamList list) {
         if (list.IsAssociative) {
             var assoc = list.GetTightPairs();
             foreach (var (i, key) in list.EnumerateKeys().Select((v, i) => (i + 1, v)).Skip(req.Arguments.Start ?? 0).Take((req.Arguments.Count ?? int.MaxValue) / 2)) {

@@ -2,7 +2,7 @@ using System.Linq;
 namespace OpenDreamRuntime.Objects.Types;
 
 // mob.contents, obj.contents list
-public sealed class MovableContentsList(DreamObjectDefinition listDef, DreamObjectMovable owner, TransformComponent transform) : DreamListAbstract(listDef) {
+public sealed class MovableContentsList(DreamObjectDefinition listDef, DreamObjectMovable owner, TransformComponent transform) : DreamList(listDef) {
     public override DreamValue GetElement(DreamValue key) {
         if (!key.TryGetValueAsInteger(out var index))
             throw new DMException($"Invalid index into movable contents list: {key}");

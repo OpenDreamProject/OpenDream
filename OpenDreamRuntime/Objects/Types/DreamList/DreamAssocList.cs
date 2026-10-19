@@ -11,7 +11,7 @@ namespace OpenDreamRuntime.Objects.Types;
 /// <param name="aListDef"></param>
 /// <param name="size"></param>
 // TODO: An arglist given to New() can be used to initialize an alist with values
-public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : DreamListAbstract(aListDef)
+public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : DreamList(aListDef)
 {
     public override bool IsAssociative => true;
 

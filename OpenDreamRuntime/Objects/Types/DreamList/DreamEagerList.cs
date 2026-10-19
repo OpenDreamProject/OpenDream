@@ -8,7 +8,7 @@ using OpenDreamRuntime.Procs;
 namespace OpenDreamRuntime.Objects.Types;
 
 [Virtual]
-public class DreamEagerList : DreamListAbstract {
+public class DreamEagerList : DreamList {
     #region Variables
     protected static readonly Stack<List<DreamValue>> ListPool = new();
 
@@ -171,7 +171,7 @@ public class DreamEagerList : DreamListAbstract {
         return 0;
     }
 
-    public DreamEagerList Union(DreamListAbstract other) {
+    public DreamEagerList Union(DreamList other) {
         DreamEagerList newList = new DreamEagerList(ObjectDefinition, _elements.Union(other.GetKeys()).ToList());
         if(!(IsAssociative && other.IsAssociative)) {
             return newList;

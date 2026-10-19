@@ -733,7 +733,7 @@ namespace OpenDreamRuntime.Procs {
             using var value = state.Pop();
 
             if (listValue.TryGetValueAsDreamObject(out var listObject) && listObject != null) {
-                DreamListAbstract? list;
+                DreamList? list;
                 switch (listObject) {
                     case DreamObjectAtom or DreamObjectWorld:
                         using (var contents = listObject.GetVariable("contents"))
@@ -743,7 +743,7 @@ namespace OpenDreamRuntime.Procs {
                     case DreamObjectSavefile savefile:
                         list = new SavefileDirList(state.Proc.ObjectTree.List.ObjectDefinition, savefile);
                         break;
-                    case DreamListAbstract dreamList:
+                    case DreamList dreamList:
                         list = dreamList;
                         break;
                     default:
@@ -965,7 +965,7 @@ namespace OpenDreamRuntime.Procs {
             } else if (first.TryGetValueAsDreamList(out var list)) {
                 DantomList newList = state.Proc.ObjectTree.CreateList();
                 Dictionary<DreamValue, DreamValue> associativeValues = list.GetTightPairs();
-                second.TryGetValueAsDreamList(out DreamListAbstract? secondList);
+                second.TryGetValueAsDreamList(out DreamList? secondList);
                 Dictionary<DreamValue, int>? remainingValues = null;
                 bool scalarAvailable = true;
 
@@ -2387,7 +2387,7 @@ namespace OpenDreamRuntime.Procs {
                 return ProcStatus.Continue;
             }
 
-            DreamListAbstract? containerList;
+            DreamList? containerList;
             if (container is DreamObjectAtom) {
                 using var contents = container.GetVariable("contents");
 

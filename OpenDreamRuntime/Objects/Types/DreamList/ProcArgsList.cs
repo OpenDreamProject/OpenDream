@@ -2,7 +2,7 @@ using System.Linq;
 namespace OpenDreamRuntime.Objects.Types;
 
 // proc args list
-internal sealed class ProcArgsList(DreamObjectDefinition listDef, ProcState state) : DreamListAbstract(listDef) {
+internal sealed class ProcArgsList(DreamObjectDefinition listDef, ProcState state) : DreamList(listDef) {
     public override DreamValue GetElement(DreamValue key) {
         if (!key.TryGetValueAsInteger(out var index))
             throw new DMException($"Invalid index into args list: {key}");

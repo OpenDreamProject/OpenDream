@@ -377,7 +377,7 @@ public static unsafe partial class ByondApi {
         return RunOnMainThread<byte>(_ => {
             try {
                 using var dstValue = ValueFromDreamApi(*loc);
-                if (!dstValue.TryGetValueAsDreamList(out DreamListAbstract? dstListValue))
+                if (!dstValue.TryGetValueAsDreamList(out DreamList? dstListValue))
                     return SetLastError("loc argument was not a list");
 
                 dstListValue.Cut();

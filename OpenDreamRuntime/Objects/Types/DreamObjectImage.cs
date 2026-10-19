@@ -9,10 +9,10 @@ public sealed class DreamObjectImage : DreamObject {
     public EntityUid Entity = EntityUid.Invalid;
     public readonly DMISpriteComponent? SpriteComponent;
     private DreamObject? _loc;
-    private DreamListAbstract _overlays;
-    private DreamListAbstract _underlays;
-    private readonly DreamListAbstract _visContents;
-    private readonly DreamListAbstract _filters;
+    private DreamList _overlays;
+    private DreamList _underlays;
+    private readonly DreamList _visContents;
+    private readonly DreamList _filters;
     public readonly bool IsMutableAppearance;
     public MutableAppearance? MutableAppearance;
 

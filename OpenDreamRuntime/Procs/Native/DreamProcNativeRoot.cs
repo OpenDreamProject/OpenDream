@@ -1862,7 +1862,7 @@ internal static class DreamProcNativeRoot {
         return DreamProcNativeHelpers.HandleOviewersOhearers(bundle, usr, false);
     }
 
-    private static string List2Params(DreamListAbstract list) {
+    private static string List2Params(DreamList list) {
         StringBuilder paramBuilder = new StringBuilder();
 
         foreach (DreamValue entry in list.EnumerateKeys()) {

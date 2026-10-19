@@ -4,7 +4,7 @@ using JetBrains.Annotations;
 using Robust.Shared.Utility;
 
 namespace OpenDreamRuntime.Objects.Types;
-public abstract class DreamListAbstract : DreamObject {
+public abstract class DreamList : DreamObject {
 
 	public override bool ShouldCallNew => false;
 
@@ -18,7 +18,7 @@ public abstract class DreamListAbstract : DreamObject {
 		return GetKeys();
 	}
 
-	public DreamListAbstract(DreamObjectDefinition listDef) : base(listDef) {
+	public DreamList(DreamObjectDefinition listDef) : base(listDef) {
 	}
 
 	/// <summary>
@@ -248,7 +248,7 @@ public abstract class DreamListAbstract : DreamObject {
 	/// <param name="start"></param>
 	/// <param name="end"></param>
 	/// <returns></returns>
-	public virtual DreamListAbstract ToCopy(int start = 1, int end = 0) {
+	public virtual DreamList ToCopy(int start = 1, int end = 0) {
         throw new NotImplementedException();
     }
 

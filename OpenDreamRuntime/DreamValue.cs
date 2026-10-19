@@ -311,7 +311,7 @@ public struct DreamValue : IDisposable, IEquatable<DreamValue> {
         return TryGetValueAsDreamObject(out list);
     }
 
-    public readonly bool TryGetValueAsDreamList([NotNullWhen(true)] out DreamListAbstract? list) {
+    public readonly bool TryGetValueAsDreamList([NotNullWhen(true)] out DreamList? list) {
         return TryGetValueAsDreamObject(out list);
     }
     public DantomList MustGetValueAsDreamList() {

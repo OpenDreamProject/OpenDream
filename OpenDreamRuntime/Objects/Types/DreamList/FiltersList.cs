@@ -5,7 +5,7 @@ namespace OpenDreamRuntime.Objects.Types;
 
 // atom.filters list
 // Operates on an object's appearance
-public sealed class DreamFilterList(DreamObjectDefinition listDef, DreamObject owner) : DreamListAbstract(listDef) {
+public sealed class DreamFilterList(DreamObjectDefinition listDef, DreamObject owner) : DreamList(listDef) {
     public override void Cut(int start = 1, int end = 0) {
         AtomManager.UpdateAppearance(owner, appearance => {
             int filterCount = appearance.Filters.Count + 1;

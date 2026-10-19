@@ -2,7 +2,7 @@ using System.Linq;
 namespace OpenDreamRuntime.Objects.Types;
 
 // area.contents list
-public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectArea area) : DreamListAbstract(listDef) {
+public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectArea area) : DreamList(listDef) {
     public override bool IsAssociative => false;
 
     public override DreamValue GetElement(DreamValue key) {

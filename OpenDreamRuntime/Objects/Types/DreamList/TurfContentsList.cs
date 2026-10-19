@@ -3,7 +3,7 @@ using OpenDreamRuntime.Map;
 namespace OpenDreamRuntime.Objects.Types;
 
 // turf.contents list
-public sealed class TurfContentsList(DreamObjectDefinition listDef, DreamObjectTurf turf) : DreamListAbstract(listDef) {
+public sealed class TurfContentsList(DreamObjectDefinition listDef, DreamObjectTurf turf) : DreamList(listDef) {
     private IDreamMapManager.Cell Cell => turf.Cell;
 
     public override DreamValue GetElement(DreamValue key) {

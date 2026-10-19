@@ -6,7 +6,7 @@ namespace OpenDreamRuntime.Objects.Types;
 /// </summary>
 /// <param name="listDef"></param>
 /// <param name="dreamObject"></param>
-internal sealed class DreamListVars(DreamObjectDefinition listDef, DreamObject dreamObject) : DreamListAbstract(listDef) {
+internal sealed class DreamListVars(DreamObjectDefinition listDef, DreamObject dreamObject) : DreamList(listDef) {
     public readonly DreamObject DreamObject = dreamObject;
 
     public override bool IsAssociative => true; // We don't use the associative array but, yes, we behave like an associative list

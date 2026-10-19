@@ -30,7 +30,7 @@ public sealed class ClientVerbsList : DreamList {
         return new DreamValue(Verbs[index - 1]);
     }
 
-    public override List<DreamValue> GetKeys() {
+    public override List<DreamValue> CopyKeys() {
         return EnumerateKeys().ToList();
     }
 

@@ -1636,7 +1636,7 @@ internal static class DreamProcNativeRoot {
             if (!arg.TryGetValueAsDreamList(out var list))
                 return arg;
 
-            var values = list.GetKeys();
+            var values = list.CopyKeys();
             if (values.Count == 0)
                 return DreamValue.Null;
 
@@ -1717,7 +1717,7 @@ internal static class DreamProcNativeRoot {
             if (!arg.TryGetValueAsDreamList(out var list))
                 return arg;
 
-            var values = list.GetKeys();
+            var values = list.CopyKeys();
             if (values.Count == 0)
                 return DreamValue.Null;
 
@@ -3013,7 +3013,7 @@ internal static class DreamProcNativeRoot {
                 return new DreamValue(cutCount);
             }
 
-            var values = list.GetKeys();
+            var values = list.CopyKeys();
             var assocValues = list.GetTightPairs();
 
             // Nuke any keys without values

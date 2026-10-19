@@ -18,7 +18,7 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
         return new DreamValue(VerbSystem.GetVerb(verbs[index - 1]));
     }
 
-    public override List<DreamValue> GetKeys() {
+    public override List<DreamValue> CopyKeys() {
         return EnumerateKeys().ToList();
     }
 

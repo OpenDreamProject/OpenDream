@@ -72,7 +72,7 @@ public sealed class FiltersList(DreamObjectDefinition listDef, DreamObject owner
         return new DreamValue(filterObject);
     }
 
-    public override List<DreamValue> GetKeys() {
+    public override List<DreamValue> CopyKeys() {
         return EnumerateKeys().ToList();
     }
 

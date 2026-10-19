@@ -15,7 +15,7 @@ public abstract class DreamList : DreamObject {
 	/// </summary>
 	/// <returns>Either a direct reference to the internal backing List, or a new List from enumeration depending on the implementation.</returns>
 	public virtual List<DreamValue> GetKeysFast() {
-		return GetKeys();
+		return CopyKeys();
 	}
 
 	public DreamList(DreamObjectDefinition listDef) : base(listDef) {
@@ -143,7 +143,7 @@ public abstract class DreamList : DreamObject {
 	/// Returns a new List containing the 1-dimensional elements of the list. Prefer EnumerateKeys() or ToArray() if possible.
 	/// </summary>
 	/// <returns></returns>
-	public abstract List<DreamValue> GetKeys();
+	public abstract List<DreamValue> CopyKeys();
 
 	/// <summary>
 	/// Returns an IEnumerable of the 1-dimensional elements of the list.

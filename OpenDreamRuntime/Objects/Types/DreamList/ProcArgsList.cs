@@ -14,7 +14,7 @@ internal sealed class ProcArgsList(DreamObjectDefinition listDef, ProcState stat
         return value;
     }
 
-    public override List<DreamValue> GetKeys() {
+    public override List<DreamValue> CopyKeys() {
         return EnumerateKeys().ToList();
     }
 
@@ -67,7 +67,7 @@ public sealed class SavefileDirList(DreamObjectDefinition listDef, DreamObjectSa
         return value.TryGetValueAsString(out var str) && backedSaveFile.CurrentDir.ContainsKey(str);
     }
 
-    public override List<DreamValue> GetKeys() {
+    public override List<DreamValue> CopyKeys() {
         return EnumerateKeys().ToList();
     }
 

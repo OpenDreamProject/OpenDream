@@ -17,7 +17,7 @@ public sealed class TurfContentsList(DreamObjectDefinition listDef, DreamObjectT
         return new DreamValue(value);
     }
 
-    public override List<DreamValue> GetKeys() {
+    public override List<DreamValue> CopyKeys() {
         return EnumerateKeys().ToList();
     }
 

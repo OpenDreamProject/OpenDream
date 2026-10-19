@@ -7,7 +7,7 @@ internal sealed class GlobalVarsList(DreamObjectDefinition listDef) : DreamList(
     public override bool IsAssociative =>
         true; // We don't use the associative array but, yes, we behave like an associative list
 
-    public override List<DreamValue> GetKeys() {
+    public override List<DreamValue> CopyKeys() {
         return EnumerateKeys().ToList();
     }
 

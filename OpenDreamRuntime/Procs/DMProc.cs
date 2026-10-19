@@ -1297,7 +1297,7 @@ public sealed class DMProcState : ProcState {
                     if (proc.OwningType == _state.Proc.ObjectTree.MutableAppearance && proc.Name == "New")
                         proc = _state.Proc.DreamManager.ImageConstructor;
 
-                    var listValues = argList.GetKeys();
+                    var listValues = argList.CopyKeys();
                     var arguments = new DreamValue[Math.Max(listValues.Count, proc.ArgumentNames.Count)];
                     var skippingArg = false;
                     var isImageConstructor = proc == _state.Proc.DreamManager.ImageConstructor ||

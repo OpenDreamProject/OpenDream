@@ -245,7 +245,7 @@ public class DantomList : DreamEagerList {
 
     public override DreamValue OperatorAppend(DreamValue b) {
         if (b.TryGetValueAsDreamList(out var bList)) {
-            var keys = bList.GetKeys();
+            var keys = bList.CopyKeys();
             var valueCount = keys.Count; // Some lists return a reference to their internal values list which could change with each loop
             for (int i = 0; i < valueCount; i++) {
                 var key = keys[i];

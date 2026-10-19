@@ -107,7 +107,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         _pairs.Clear();
     }
 
-    public override List<DreamValue> GetKeys()
+    public override List<DreamValue> CopyKeys()
     {
         return _pairs.Keys.ToList();
     }

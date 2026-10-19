@@ -27,7 +27,7 @@ public sealed class MovableContentsList(DreamObjectDefinition listDef, DreamObje
         throw new DMException($"Out of bounds index on movable contents list after iterating: {key}");
     }
 
-    public override List<DreamValue> GetKeys() {
+    public override List<DreamValue> CopyKeys() {
         return EnumerateKeys().ToList();
     }
 

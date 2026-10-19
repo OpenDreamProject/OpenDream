@@ -99,7 +99,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
         public static DreamValue NativeProc_Join(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamList list = (DreamList)src!;
-            List<DreamValue> values = list.GetKeys();
+            List<DreamValue> values = list.CopyKeys();
 
             bundle.GetArgument(0, "Glue").TryGetValueAsString(out var glue);
             if (!bundle.GetArgument(1, "Start").TryGetValueAsInteger(out var start))

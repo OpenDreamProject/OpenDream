@@ -2124,7 +2124,7 @@ namespace OpenDreamRuntime.Procs {
                 if (!argListStack.TryGetValueAsDreamList(out var argList))
                     throw new DMException("Invalid gradient() arguments");
 
-                var argListValues = argList.GetKeys();
+                var argListValues = argList.CopyKeys();
 
                 gradientValues.EnsureCapacity(argListValues.Count - 1);
                 for (int i = 0; i < argListValues.Count; i++) {
@@ -2411,7 +2411,7 @@ namespace OpenDreamRuntime.Procs {
                     return ProcStatus.Continue;
                 }
 
-                foreach (DreamValue containerItem in containerList.GetKeys()) {
+                foreach (DreamValue containerItem in containerList.CopyKeys()) {
                     DreamObjectDefinition itemDef;
                     if (containerItem.TryGetValueAsType(out var type)) {
                         itemDef = type.ObjectDefinition;
@@ -2476,7 +2476,7 @@ namespace OpenDreamRuntime.Procs {
 
                 List<DreamValue> values;
                 if (value.TryGetValueAsDreamList(out var list)) {
-                    values = list.GetKeys();
+                    values = list.CopyKeys();
                 } else {
                     state.Push(value);
                     return ProcStatus.Continue;
@@ -2736,7 +2736,7 @@ namespace OpenDreamRuntime.Procs {
                 }
             } else if (receiver is DantomList list) {
                 // Output to every mob in the left-hand list.
-                foreach (var entry in list.GetKeys()) {
+                foreach (var entry in list.CopyKeys()) {
                     if (entry.TryGetValueAsDreamObject(out var entryObj)) {
                         if (entryObj is DreamObjectMob entryMob) {
                             entryMob.Connection?.OutputControl(message, control);
@@ -3150,7 +3150,7 @@ namespace OpenDreamRuntime.Procs {
         private static DreamValue CalculateGradient(List<DreamValue> gradientValues, DreamValue colorSpaceValue, DreamValue indexValue) {
             if (gradientValues.Count == 1) {
                 if (gradientValues[0].TryGetValueAsDreamList(out var gradientList))
-                    gradientValues = gradientList.GetKeys();
+                    gradientValues = gradientList.CopyKeys();
             }
 
             if (gradientValues.Count == 0)

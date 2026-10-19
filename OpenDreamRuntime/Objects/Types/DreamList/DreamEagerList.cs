@@ -114,8 +114,8 @@ public class DreamEagerList : DreamList {
     /// Returns a copy of the list of array values. Doesn't include the associative values indexable by some of these.
     /// </summary>
     [Obsolete("Deprecated. Use EnumerateValues() instead.")]
-    public override List<DreamValue> GetKeys() {
-        return [.._elements]; // Returns a copy for parity with DreamAssocList.
+    public override List<DreamValue> CopyKeys() {
+        return [.._elements];
     }
 
     public override List<DreamValue> GetKeysFast() {
@@ -172,7 +172,7 @@ public class DreamEagerList : DreamList {
     }
 
     public DreamEagerList Union(DreamList other) {
-        DreamEagerList newList = new DreamEagerList(ObjectDefinition, _elements.Union(other.GetKeys()).ToList());
+        DreamEagerList newList = new DreamEagerList(ObjectDefinition, _elements.Union(other.CopyKeys()).ToList());
         if(!(IsAssociative && other.IsAssociative)) {
             return newList;
         }
@@ -387,7 +387,7 @@ public class DreamEagerList : DreamList {
 
     public override DreamValue OperatorAppend(DreamValue b) {
         if (b.TryGetValueAsDreamList(out var bList)) {
-            var keys = bList.GetKeys();
+            var keys = bList.CopyKeys();
             var valueCount = keys.Count; // Some lists return a reference to their internal values list which could change with each loop
             for (int i = 0; i < valueCount; i++) {
                 var key = keys[i];
@@ -484,8 +484,8 @@ public class DreamEagerList : DreamList {
         if (GetLength() != secondList.GetLength())
             return DreamValue.False;
 
-        var firstValues = GetKeys();
-        var secondValues = secondList.GetKeys();
+        var firstValues = CopyKeys();
+        var secondValues = secondList.CopyKeys();
 
         var firstListAssoc = GetLoosePairs();
         var secondListAssoc = secondList.GetLoosePairs();

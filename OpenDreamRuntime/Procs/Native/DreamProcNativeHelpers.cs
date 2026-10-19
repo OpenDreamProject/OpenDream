@@ -493,7 +493,7 @@ internal static partial class DreamProcNativeHelpers {
     /// <returns>True if the list was successfully parsed, false if not.</returns>
     public static bool TryParseColorMatrix(DreamList list, out ColorMatrix matrix) {
         matrix = ColorMatrix.Identity;
-        var listArray = list.GetKeys();
+        var listArray = list.CopyKeys();
         try {
             switch (list.GetLength()) {
                 case 0:

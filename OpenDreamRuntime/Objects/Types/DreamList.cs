@@ -169,10 +169,6 @@ public class DreamList : DreamObject, IDreamList {
         return _associativeValues ??= new Dictionary<DreamValue, DreamValue>();
     }
 
-    public DreamValue[] ToArray() {
-        return _elements.ToArray();
-    }
-
     [MustDisposeResource]
     public virtual DreamValue GetElement(DreamValue key) {
         if (key.TryGetValueAsInteger(out int keyInteger)) {
@@ -463,9 +459,12 @@ public class DreamList : DreamObject, IDreamList {
 
     public override DreamValue OperatorRemove(DreamValue b) {
         if (b.TryGetValueAsDreamList(out var bList)) {
-            DreamValue[] values = bList.ToArray();
-            foreach (DreamValue key in values) {
-                RemoveKey(key);
+            if (bList == this) {
+                Cut();
+            } else {
+                foreach (DreamValue key in bList.EnumerateKeys()) {
+                    RemoveKey(key);
+                }
             }
         } else {
             RemoveKey(b);

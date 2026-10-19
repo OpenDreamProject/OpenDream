@@ -109,7 +109,7 @@ public class DantomList : DreamEagerList {
         return DreamValue.Null;
     }
 
-    public override bool TryGetAssocValue(DreamValue key, [MustDisposeResource][NotNullWhen(true)] out DreamValue? value) {
+    public override bool TryGetElementByKey(DreamValue key, [MustDisposeResource][NotNullWhen(true)] out DreamValue? value) {
         if (_associativeValues is null) {
             value = null;
             return false;
@@ -229,7 +229,7 @@ public class DantomList : DreamEagerList {
 
         if (b.TryGetValueAsDreamList(out var bList)) {
             foreach (DreamValue key in bList.EnumerateKeys()) {
-                if (bList.TryGetAssocValue(key, out var _assocValue)) {
+                if (bList.TryGetElementByKey(key, out var _assocValue)) {
                     using var assocValue = _assocValue.Value;
                     listCopy.SetKeyValuePair(key, assocValue);
                 } else {
@@ -252,7 +252,7 @@ public class DantomList : DreamEagerList {
 
                 AddKey(key); // Always add the value
 
-                if (bList.TryGetAssocValue(key, out var _assocValue)) { // Ensure the associated value is correct
+                if (bList.TryGetElementByKey(key, out var _assocValue)) { // Ensure the associated value is correct
                     _associativeValues ??= new();
                     using var assocValue = _assocValue.Value;
 
@@ -276,7 +276,7 @@ public class DantomList : DreamEagerList {
                 if (ContainsKey(key))
                     continue;
 
-                if (bList.TryGetAssocValue(key, out var _assocValue)) {
+                if (bList.TryGetElementByKey(key, out var _assocValue)) {
                     using var assocValue = _assocValue;
                     SetKeyValuePair(key, assocValue.Value);
 

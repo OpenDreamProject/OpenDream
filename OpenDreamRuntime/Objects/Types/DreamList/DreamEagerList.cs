@@ -344,7 +344,7 @@ public class DreamEagerList : DreamList {
 
         if (b.TryGetValueAsDreamList(out var bList)) {
             foreach (DreamValue key in bList.EnumerateKeys()) {
-                if (bList.TryGetAssocValue(key, out var _assocValue)) {
+                if (bList.TryGetElementByKey(key, out var _assocValue)) {
                     using var assocValue = _assocValue.Value;
                     listCopy.SetKeyValuePair(key, assocValue);
                 } else {
@@ -425,7 +425,7 @@ public class DreamEagerList : DreamList {
                 if (ContainsKey(key))
                     continue;
 
-                if (bList.TryGetAssocValue(key, out var _assocValue)) {
+                if (bList.TryGetElementByKey(key, out var _assocValue)) {
                     using var assocValue = _assocValue;
                     SetKeyValuePair(key, assocValue.Value);
 

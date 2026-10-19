@@ -57,7 +57,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         return value;
     }
 
-    public override bool TryGetAssocValue(DreamValue key, [MustDisposeResource][NotNullWhen(true)] out DreamValue? value) {
+    public override bool TryGetElementByKey(DreamValue key, [MustDisposeResource][NotNullWhen(true)] out DreamValue? value) {
         if (!_pairs.TryGetValue(key, out var _value)) {
             value = DreamValue.Null;
             return true;

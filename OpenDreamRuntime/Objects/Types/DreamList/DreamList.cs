@@ -64,6 +64,11 @@ public abstract class DreamList : DreamObject {
     /// <param name="key"></param>
     /// <returns></returns>
 	public virtual bool TryGetElementByKey(DreamValue key, [MustDisposeResource][NotNullWhen(true)] out DreamValue? element) {
+        if(!IsAssociative) {
+            element = null;
+            return false;
+        }
+
 		Dictionary<DreamValue, DreamValue> pairs = GetLoosePairs();
 		if(!pairs.TryGetValue(key, out var _value)) {
 			element = _value;
@@ -72,29 +77,6 @@ public abstract class DreamList : DreamObject {
 
 		element = _value;
 		element.Value.IncRef();
-		return true;
-	}
-
-
-	/// <summary>
-	/// Returns TRUE and the Value associated with Key, if present.
-	/// </summary>
-	/// <param name="key"></param>
-	/// <param name="value"></param>
-	/// <returns></returns>
-	[MustDisposeResource] public virtual bool TryGetAssocValue(DreamValue key, [MustDisposeResource][NotNullWhen(true)] out DreamValue? value) {
-		if (!IsAssociative) {
-			value = null;
-			return false;
-		}
-
-		if (!ElementHasAssociation(key)) {
-			value = null;
-			return false;
-		}
-
-		value = GetElement(key);
-		value.Value.IncRef();
 		return true;
 	}
 
@@ -177,7 +159,7 @@ public abstract class DreamList : DreamObject {
 	/// <returns></returns>
 	public virtual IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateLoosePairs() {
         foreach (var key in EnumerateKeys()) {
-            if (TryGetAssocValue(key, out var associativeValue)) {
+            if (TryGetElementByKey(key, out var associativeValue)) {
                 yield return new(key, associativeValue.Value);
             } else {
                 yield return new(key, DreamValue.Null);

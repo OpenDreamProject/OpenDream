@@ -166,7 +166,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         value.IncRef();
     }
 
-    [Obsolete("Consider ToDreamList")]
+    [Obsolete("Consider ToDantomList")]
     public override DreamAssocList ToCopy(int start = 1, int end = 0)
     {
         if (start != 1 || end != 0)

@@ -149,7 +149,7 @@ public sealed class DreamObjectImage : DreamObject {
                 if (ObjectDefinition.IsSubtypeOf(ObjectTree.MutableAppearance)) {
                     if (valueList != null) {
                         _overlays.DecRef();
-                        _overlays = valueList.ToDreamList();
+                        _overlays = valueList.ToDantomList();
                     } else {
                         var overlay = OverlaysList.CreateOverlayAppearance(AtomManager, value, AtomManager.MustGetAppearance(this).Icon);
                         if (overlay == null)
@@ -183,7 +183,7 @@ public sealed class DreamObjectImage : DreamObject {
                 if (ObjectDefinition.IsSubtypeOf(ObjectTree.MutableAppearance)) {
                     if (valueList != null) {
                         _underlays.DecRef();
-                        _underlays = valueList.ToDreamList();
+                        _underlays = valueList.ToDantomList();
                     } else {
                         var underlay = OverlaysList.CreateOverlayAppearance(AtomManager, value, AtomManager.MustGetAppearance(this).Icon);
                         if (underlay == null)

@@ -32,7 +32,7 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamList list = (DreamList)src!;
 
             if (list is DantomList) {
-                DantomList listCopy = list.ToDreamList(start, end);
+                DantomList listCopy = list.ToDantomList(start, end);
                 return new DreamValue(listCopy);
             } else if (list is DreamAssocList) {
                 DreamAssocList listCopy = (DreamAssocList)list.ToCopy(start, end);

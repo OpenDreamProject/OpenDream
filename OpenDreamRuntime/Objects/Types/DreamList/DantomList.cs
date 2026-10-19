@@ -44,12 +44,12 @@ public class DantomList : DreamEagerList {
         base.HandleDeletion();
     }
 
-    [Obsolete("Consider ToDreamList() instead.")]
+    [Obsolete("Consider ToDantomList() instead.")]
     public override DantomList ToCopy(int start = 1, int end = 0) {
-        return ToDreamList(start, end);
+        return ToDantomList(start, end);
     }
 
-    public override DantomList ToDreamList(int start = 1, int end = 0) {
+    public override DantomList ToDantomList(int start = 1, int end = 0) {
         if (start == 0) ++start; //start being 0 and start being 1 are equivalent
 
         if (end > _elements.Count + 1 || start > _elements.Count + 1) throw new DMException("list index out of bounds");
@@ -225,7 +225,7 @@ public class DantomList : DreamEagerList {
     #region Operators
 
     public override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
-        DantomList listCopy = ToDreamList();
+        DantomList listCopy = ToDantomList();
 
         if (b.TryGetValueAsDreamList(out var bList)) {
             foreach (DreamValue key in bList.EnumerateKeys()) {

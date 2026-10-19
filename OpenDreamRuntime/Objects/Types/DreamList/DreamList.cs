@@ -241,7 +241,7 @@ public abstract class DreamList : DreamObject {
         throw new DMException($"Swap() not implemented for type ({GetType().Name})");
     }
 
-    [Obsolete("Consider ToDreamList() instead.")]
+    [Obsolete("Consider ToDantomList() instead.")]
 	/// <summary>
 	/// Returns a shallow copy of the list (and associations) from index Start (Inclusive) to End (Exclusive). End 0 will copy everything up to and including the final element.
 	/// </summary>
@@ -258,7 +258,7 @@ public abstract class DreamList : DreamObject {
 	/// <param name="start"></param>
 	/// <param name="end"></param>
 	/// <returns></returns>
-	public virtual DantomList ToDreamList(int start = 1, int end = 0) {
+	public virtual DantomList ToDantomList(int start = 1, int end = 0) {
 		if (start == 0) ++start; //start being 0 and start being 1 are equivalent
 
 		var keys = GetKeysFast();

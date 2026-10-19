@@ -104,7 +104,7 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
             case "overlays": {
                 Overlays.Cut();
 
-                if (value.TryGetValueAsIDreamList(out var valueList)) {
+                if (value.TryGetValueAsDreamListAbstract(out var valueList)) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
                     foreach (DreamValue overlayValue in valueList.EnumerateKeys()) {
                         Overlays.AddKey(overlayValue);
@@ -118,7 +118,7 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
             case "underlays": {
                 Underlays.Cut();
 
-                if (value.TryGetValueAsIDreamList(out var valueList)) {
+                if (value.TryGetValueAsDreamListAbstract(out var valueList)) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
                     foreach (DreamValue underlayValue in valueList.EnumerateKeys()) {
                         Underlays.AddKey(underlayValue);
@@ -132,7 +132,7 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
             case "vis_contents": {
                 VisContents.Cut();
 
-                if (value.TryGetValueAsIDreamList(out var valueList)) {
+                if (value.TryGetValueAsDreamListAbstract(out var valueList)) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
                     foreach (DreamValue visContentsValue in valueList.EnumerateKeys()) {
                         VisContents.AddKey(visContentsValue);

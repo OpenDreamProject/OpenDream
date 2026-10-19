@@ -871,7 +871,7 @@ public sealed class DMProcState : ProcState {
                 GetIndexReferenceValues(reference, out var index, out var indexing, peek);
 
                 try {
-                    if (indexing.TryGetValueAsIDreamList(out var dreamList)) {
+                    if (indexing.TryGetValueAsDreamListAbstract(out var dreamList)) {
                         dreamList.SetKeyValuePair(index, value);
                     } else if (indexing.TryGetValueAsDreamObject<DreamObject>(out var dreamObject)) {
                         dreamObject.OperatorIndexAssign(index, this, value);
@@ -1091,7 +1091,7 @@ public sealed class DMProcState : ProcState {
 
     [MustDisposeResource]
     public DreamValue GetIndex(DreamValue indexing, DreamValue index, DMProcState state) {
-        if (indexing.TryGetValueAsIDreamList(out var listObj)) {
+        if (indexing.TryGetValueAsDreamListAbstract(out var listObj)) {
             return listObj.GetElement(index);
         }
 
@@ -1206,11 +1206,11 @@ public sealed class DMProcState : ProcState {
 
             switch (_info.Type) {
                 case DMCallArgumentsType.FromArgumentList:
-                    if (!_values[0].TryGetValueAsIDreamList(out var argList))
+                    if (!_values[0].TryGetValueAsDreamListAbstract(out var argList))
                         break;
 
                     int i = 0;
-                    foreach (var pair in argList.EnumeratePairs()) {
+                    foreach (var pair in argList.EnumerateLoosePairs()) {
                         values[i++] = (pair.Key, pair.Value);
                     }
 
@@ -1290,7 +1290,7 @@ public sealed class DMProcState : ProcState {
                 case DMCallArgumentsType.FromArgumentList: {
                     if (proc == null)
                         throw new DMException("Cannot use an arglist here");
-                    if (!_values[0].TryGetValueAsIDreamList(out var argList))
+                    if (!_values[0].TryGetValueAsDreamListAbstract(out var argList))
                         return new DreamProcArguments(); // Using a non-list gives you no arguments
 
                     // new /mutable_appearance(...) always uses /image/New()'s arguments, despite any overrides
@@ -1348,7 +1348,7 @@ public sealed class DMProcState : ProcState {
                 case DMCallArgumentsType.FromArgumentList:
                     Debug.Assert(_values.Length == 1);
 
-                    if (!_values[0].TryGetValueAsIDreamList(out var argList))
+                    if (!_values[0].TryGetValueAsDreamListAbstract(out var argList))
                         return 0;
 
                     return argList.GetLength();

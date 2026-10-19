@@ -239,7 +239,7 @@ internal static class DreamProcNativeRoot {
             (hVal, lVal) = (lVal, hVal);
         }
 
-        if (value.TryGetValueAsIDreamList(out var list)) {
+        if (value.TryGetValueAsDreamListAbstract(out var list)) {
             DreamList tmp = bundle.ObjectTree.CreateList();
             foreach (DreamValue val in list.EnumerateKeys()) {
                 if (!val.TryGetValueAsFloat(out float floatVal))
@@ -1257,7 +1257,7 @@ internal static class DreamProcNativeRoot {
             writer.WriteStringValue(type.Path);
         else if (value.TryGetValueAsProc(out var proc))
             writer.WriteStringValue(proc.ToString());
-        else if (value.TryGetValueAsIDreamList(out var list)) {
+        else if (value.TryGetValueAsDreamListAbstract(out var list)) {
             if (list.IsAssociative) {
                 writer.WriteStartObject();
 
@@ -1266,7 +1266,7 @@ internal static class DreamProcNativeRoot {
 
                     if (list.ElementHasAssociation(listValue)) {
                         using var subValue = list.GetElement(listValue);
-                        if (subValue.TryGetValueAsIDreamList(out var subList) && subList is DreamListVars) //BYOND parity, do not print vars["vars"] - note that this is *not* a generic infinite loop protection on purpose
+                        if (subValue.TryGetValueAsDreamListAbstract(out var subList) && subList is DreamListVars) //BYOND parity, do not print vars["vars"] - note that this is *not* a generic infinite loop protection on purpose
                             continue;
 
                         writer.WritePropertyName(key);
@@ -1355,7 +1355,7 @@ internal static class DreamProcNativeRoot {
     public static DreamValue _length(DreamValue value, bool countBytes) {
         if (value.TryGetValueAsString(out var str)) {
             return new DreamValue(countBytes ? str.Length : str.EnumerateRunes().Count());
-        } else if (value.TryGetValueAsIDreamList(out var list)) {
+        } else if (value.TryGetValueAsDreamListAbstract(out var list)) {
             return new DreamValue(list.GetLength());
         } else if (value.TryGetValueAsDreamResource(out var resource)) {
             return new DreamValue(resource.ResourceData?.Length ?? 0);
@@ -1397,7 +1397,7 @@ internal static class DreamProcNativeRoot {
     [DreamProc("list2params")]
     [DreamProcParameter("List")]
     public static DreamValue NativeProc_list2params(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-        if (!bundle.GetArgument(0, "List").TryGetValueAsIDreamList(out var list))
+        if (!bundle.GetArgument(0, "List").TryGetValueAsDreamListAbstract(out var list))
             return new DreamValue(string.Empty);
 
         return new DreamValue(List2Params(list));
@@ -1633,7 +1633,7 @@ internal static class DreamProcNativeRoot {
 
         if (bundle.Arguments.Length == 1) {
             DreamValue arg = bundle.GetArgument(0, "A");
-            if (!arg.TryGetValueAsIDreamList(out var list))
+            if (!arg.TryGetValueAsDreamListAbstract(out var list))
                 return arg;
 
             var values = list.GetKeys();
@@ -1714,7 +1714,7 @@ internal static class DreamProcNativeRoot {
 
         if (bundle.Arguments.Length == 1) {
             DreamValue arg = bundle.GetArgument(0, "A");
-            if (!arg.TryGetValueAsIDreamList(out var list))
+            if (!arg.TryGetValueAsDreamListAbstract(out var list))
                 return arg;
 
             var values = list.GetKeys();
@@ -1862,7 +1862,7 @@ internal static class DreamProcNativeRoot {
         return DreamProcNativeHelpers.HandleOviewersOhearers(bundle, usr, false);
     }
 
-    private static string List2Params(IDreamList list) {
+    private static string List2Params(DreamListAbstract list) {
         StringBuilder paramBuilder = new StringBuilder();
 
         foreach (DreamValue entry in list.EnumerateKeys()) {
@@ -2564,7 +2564,7 @@ internal static class DreamProcNativeRoot {
     }
 
     private static void OutputToStatPanel(DreamRefManager refManager, DreamConnection connection, DreamValue name, DreamValue value) {
-        if (name.IsNull && value.TryGetValueAsIDreamList(out var list)) {
+        if (name.IsNull && value.TryGetValueAsDreamListAbstract(out var list)) {
             foreach (var item in list.EnumerateKeys())
                 OutputToStatPanel(refManager, connection, name, item);
         } else {
@@ -3006,7 +3006,7 @@ internal static class DreamProcNativeRoot {
         var cutCount = 0; // number of values cut from the list
         var min = argMin.UnsafeGetValueAsFloat();
 
-        if (argList.TryGetValueAsIDreamList(out var list)) {
+        if (argList.TryGetValueAsDreamListAbstract(out var list)) {
             if (!list.IsAssociative) {
                 cutCount = list.GetLength();
                 list.Cut();
@@ -3014,7 +3014,7 @@ internal static class DreamProcNativeRoot {
             }
 
             var values = list.GetKeys();
-            var assocValues = list.GetPairs();
+            var assocValues = list.GetTightPairs();
 
             // Nuke any keys without values
             if (values.Count != assocValues.Count) {
@@ -3059,9 +3059,9 @@ internal static class DreamProcNativeRoot {
 
         float sum = 0; // Default return is 0 for invalid args
 
-        if (argA.TryGetValueAsIDreamList(out var listA) && listA.IsAssociative && argB.TryGetValueAsIDreamList(out var listB) && listB.IsAssociative) {
-            var aValues = listA.GetPairs();
-            var bValues = listB.GetPairs();
+        if (argA.TryGetValueAsDreamListAbstract(out var listA) && listA.IsAssociative && argB.TryGetValueAsDreamListAbstract(out var listB) && listB.IsAssociative) {
+            var aValues = listA.GetTightPairs();
+            var bValues = listB.GetTightPairs();
 
             // sum += valueA * valueB
             // for each assoc value whose key exists in both lists
@@ -3086,8 +3086,8 @@ internal static class DreamProcNativeRoot {
 
         float product = 1; // Default return is 1 for invalid args
 
-        if (arg.TryGetValueAsIDreamList(out var list) && list.IsAssociative) {
-            var assocValues = list.GetPairs();
+        if (arg.TryGetValueAsDreamListAbstract(out var list) && list.IsAssociative) {
+            var assocValues = list.GetTightPairs();
             foreach (var (_,value) in assocValues) {
                 if(value.TryGetValueAsFloat(out var valFloat)) product *= valFloat;
             }
@@ -3105,8 +3105,8 @@ internal static class DreamProcNativeRoot {
 
         float sum = 0; // Default return is 0 for invalid args
 
-        if (arg.TryGetValueAsIDreamList(out var list) && list.IsAssociative) {
-            var assocValues = list.GetPairs();
+        if (arg.TryGetValueAsDreamListAbstract(out var list) && list.IsAssociative) {
+            var assocValues = list.GetTightPairs();
             foreach (var (_,value) in assocValues) {
                 if(value.TryGetValueAsFloat(out var valFloat)) sum += valFloat;
             }
@@ -3125,7 +3125,7 @@ internal static class DreamProcNativeRoot {
         if (center is null)
             return new(view);
 
-        if (center.TryGetVariable("contents", out var centerContents) && centerContents.TryGetValueAsIDreamList(out var centerContentsList)) {
+        if (center.TryGetVariable("contents", out var centerContents) && centerContents.TryGetValueAsDreamListAbstract(out var centerContentsList)) {
             foreach (var item in centerContentsList.EnumerateKeys()) {
                 view.AddKey(item);
             }
@@ -3345,7 +3345,7 @@ internal static class DreamProcNativeRoot {
         }
 
         if (!winsetParams.TryGetValueAsString(out var winsetParamsStr)) {
-            if (winsetParams.TryGetValueAsIDreamList(out var winsetParamsList)) {
+            if (winsetParams.TryGetValueAsDreamListAbstract(out var winsetParamsList)) {
                 winsetParamsStr = List2Params(winsetParamsList);
             } else {
                 throw new ArgumentException($"Invalid \"params\" argument {winsetParams}");

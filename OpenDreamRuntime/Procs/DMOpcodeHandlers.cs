@@ -121,7 +121,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         private static IDreamValueEnumerator GetContentsEnumerator(AtomManager atomManager, DreamValue value, TreeEntry? filterType) {
-            if (!value.TryGetValueAsIDreamList(out var list)) {
+            if (!value.TryGetValueAsDreamListAbstract(out var list)) {
                 if (value.TryGetValueAsDreamObject(out var dreamObject)) {
                     if (dreamObject == null)
                         return new DreamValueArrayEnumerator([], null);
@@ -733,7 +733,7 @@ namespace OpenDreamRuntime.Procs {
             using var value = state.Pop();
 
             if (listValue.TryGetValueAsDreamObject(out var listObject) && listObject != null) {
-                IDreamList list;
+                DreamListAbstract? list;
                 switch (listObject) {
                     case DreamObjectAtom or DreamObjectWorld:
                         using (var contents = listObject.GetVariable("contents"))
@@ -743,11 +743,11 @@ namespace OpenDreamRuntime.Procs {
                     case DreamObjectSavefile savefile:
                         list = new SavefileDirList(state.Proc.ObjectTree.List.ObjectDefinition, savefile);
                         break;
-                    case IDreamList dreamList:
+                    case DreamListAbstract dreamList:
                         list = dreamList;
                         break;
                     default:
-                        list = (IDreamList?)null;
+                        list = null;
                         break;
                 }
 
@@ -962,10 +962,10 @@ namespace OpenDreamRuntime.Procs {
 
             if (!first.IsDreamObject<DreamList>() && !first.IsNull && !second.IsNull) {
                 state.Push(new DreamValue(first.MustGetValueAsInteger() & second.MustGetValueAsInteger()));
-            } else if (first.TryGetValueAsIDreamList(out var list)) {
+            } else if (first.TryGetValueAsDreamListAbstract(out var list)) {
                 DreamList newList = state.Proc.ObjectTree.CreateList();
-                Dictionary<DreamValue, DreamValue> associativeValues = list.GetPairs();
-                second.TryGetValueAsIDreamList(out IDreamList? secondList);
+                Dictionary<DreamValue, DreamValue> associativeValues = list.GetTightPairs();
+                second.TryGetValueAsDreamListAbstract(out DreamListAbstract? secondList);
                 Dictionary<DreamValue, int>? remainingValues = null;
                 bool scalarAvailable = true;
 
@@ -2121,7 +2121,7 @@ namespace OpenDreamRuntime.Procs {
                 }
             } else if (argumentInfo.Type == DMCallArgumentsType.FromArgumentList) {
                 using var argListStack = state.Pop();
-                if (!argListStack.TryGetValueAsIDreamList(out var argList))
+                if (!argListStack.TryGetValueAsDreamListAbstract(out var argList))
                     throw new DMException("Invalid gradient() arguments");
 
                 var argListValues = argList.GetKeys();
@@ -2305,7 +2305,7 @@ namespace OpenDreamRuntime.Procs {
                                     ColorMatrix cMatrix;
                                     if (animateValue.TryGetValueAsString(out var colorStr) && Color.TryParse(colorStr, out var colorObj)) {
                                         cMatrix = new ColorMatrix(colorObj);
-                                    } else if (!animateValue.TryGetValueAsIDreamList(out var colorList) || !DreamProcNativeHelpers.TryParseColorMatrix(colorList, out cMatrix)) {
+                                    } else if (!animateValue.TryGetValueAsDreamListAbstract(out var colorList) || !DreamProcNativeHelpers.TryParseColorMatrix(colorList, out cMatrix)) {
                                         cMatrix = ColorMatrix.Identity; //fallback to identity if invalid
                                     }
 
@@ -2313,7 +2313,7 @@ namespace OpenDreamRuntime.Procs {
                                     using var objColor = obj.GetVariable("color");
                                     if (objColor.TryGetValueAsString(out var objColorStr) && Color.TryParse(objColorStr, out var objColorObj)) {
                                         objCMatrix = new ColorMatrix(objColorObj);
-                                    } else if (!objColor.TryGetValueAsIDreamList(out var objColorList) || !DreamProcNativeHelpers.TryParseColorMatrix(objColorList, out objCMatrix)) {
+                                    } else if (!objColor.TryGetValueAsDreamListAbstract(out var objColorList) || !DreamProcNativeHelpers.TryParseColorMatrix(objColorList, out objCMatrix)) {
                                         objCMatrix = ColorMatrix.Identity; //fallback to identity if invalid
                                     }
 
@@ -2387,11 +2387,11 @@ namespace OpenDreamRuntime.Procs {
                 return ProcStatus.Continue;
             }
 
-            IDreamList? containerList;
+            DreamListAbstract? containerList;
             if (container is DreamObjectAtom) {
                 using var contents = container.GetVariable("contents");
 
-                contents.TryGetValueAsIDreamList(out containerList);
+                contents.TryGetValueAsDreamListAbstract(out containerList);
             } else {
                 containerList = container as DreamList;
             }
@@ -2475,7 +2475,7 @@ namespace OpenDreamRuntime.Procs {
                 using var value = state.Pop();
 
                 List<DreamValue> values;
-                if (value.TryGetValueAsIDreamList(out var list)) {
+                if (value.TryGetValueAsDreamListAbstract(out var list)) {
                     values = list.GetKeys();
                 } else {
                     state.Push(value);
@@ -2788,7 +2788,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             Task<DreamValue> promptTask;
-            if (list.TryGetValueAsIDreamList(out var valueList)) {
+            if (list.TryGetValueAsDreamListAbstract(out var valueList)) {
                 promptTask = connection.PromptList(types, valueList, title.Stringify(), message.Stringify(), defaultValue);
             } else {
                 promptTask = connection.Prompt(types, title.Stringify(), message.Stringify(), defaultValue.Stringify());
@@ -3036,9 +3036,9 @@ namespace OpenDreamRuntime.Procs {
 
         [MustDisposeResource]
         private static DreamValue BitXorValues(DreamObjectTree objectTree, DreamValue first, DreamValue second) {
-            if (first.TryGetValueAsIDreamList(out var list)) {
+            if (first.TryGetValueAsDreamListAbstract(out var list)) {
                 DreamList newList = objectTree.CreateList();
-                Dictionary<DreamValue, DreamValue> firstAssociations = list.GetPairs();
+                Dictionary<DreamValue, DreamValue> firstAssociations = list.GetTightPairs();
 
                 void AddValue(DreamValue value, Dictionary<DreamValue, DreamValue>? associations) {
                     newList.AddKey(value);
@@ -3046,8 +3046,8 @@ namespace OpenDreamRuntime.Procs {
                         newList.SetKeyValuePair(value, associatedValue);
                 }
 
-                if (second.TryGetValueAsIDreamList(out var secondList)) {
-                    Dictionary<DreamValue, DreamValue> secondAssociations = secondList.GetPairs();
+                if (second.TryGetValueAsDreamListAbstract(out var secondList)) {
+                    Dictionary<DreamValue, DreamValue> secondAssociations = secondList.GetTightPairs();
                     foreach (DreamValue value in list.EnumerateKeys()) {
                         if (!secondList.ContainsKey(value))
                             AddValue(value, firstAssociations);
@@ -3088,11 +3088,11 @@ namespace OpenDreamRuntime.Procs {
 
         [MustDisposeResource]
         private static DreamValue BitXorAssignmentValues(DreamObjectTree objectTree, DreamList first, DreamValue second) {
-            if (second.TryGetValueAsIDreamList(out _))
+            if (second.TryGetValueAsDreamListAbstract(out _))
                 return BitXorValues(objectTree, new DreamValue(first), second);
 
             DreamList replacement = objectTree.CreateList();
-            Dictionary<DreamValue, DreamValue> associations = first.GetPairs();
+            Dictionary<DreamValue, DreamValue> associations = first.GetTightPairs();
             bool removed = false;
 
             // compound list XOR toggles one occurrence
@@ -3149,7 +3149,7 @@ namespace OpenDreamRuntime.Procs {
 
         private static DreamValue CalculateGradient(List<DreamValue> gradientValues, DreamValue colorSpaceValue, DreamValue indexValue) {
             if (gradientValues.Count == 1) {
-                if (gradientValues[0].TryGetValueAsIDreamList(out var gradientList))
+                if (gradientValues[0].TryGetValueAsDreamListAbstract(out var gradientList))
                     gradientValues = gradientList.GetKeys();
             }
 

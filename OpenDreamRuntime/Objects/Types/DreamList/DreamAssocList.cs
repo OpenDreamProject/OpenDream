@@ -234,7 +234,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     public override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
         var listCopy = ToCopy();
 
-        if (b.TryGetValueAsIDreamList(out var bList)) {
+        if (b.TryGetValueAsDreamListAbstract(out var bList)) {
             foreach (var pair in bList.EnumeratePairs()) {
                 if (listCopy.ElementHasAssociation(pair.Key)) {
                     continue;
@@ -287,7 +287,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
 
     public override DreamValue OperatorAppend(DreamValue b)
     {
-        if (b.TryGetValueAsIDreamList(out var bList))
+        if (b.TryGetValueAsDreamListAbstract(out var bList))
         {
             foreach (var pair in bList.EnumeratePairs())
             {

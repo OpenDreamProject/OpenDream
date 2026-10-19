@@ -342,7 +342,7 @@ public class DreamEagerList : DreamListAbstract {
     public override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
         DreamList listCopy = (DreamList)ToCopy();
 
-        if (b.TryGetValueAsIDreamList(out var bList)) {
+        if (b.TryGetValueAsDreamListAbstract(out var bList)) {
             foreach (DreamValue key in bList.EnumerateKeys()) {
                 if (bList.TryGetAssocValue(key, out var _assocValue)) {
                     using var assocValue = _assocValue.Value;
@@ -361,7 +361,7 @@ public class DreamEagerList : DreamListAbstract {
     public override DreamValue OperatorSubtract(DreamValue b, DMProcState state) {
         DreamList listCopy = (DreamList)ToCopy();
 
-        if (b.TryGetValueAsIDreamList(out var bList)) {
+        if (b.TryGetValueAsDreamListAbstract(out var bList)) {
             foreach (DreamValue value in bList.EnumerateKeys()) {
                 listCopy.RemoveKey(value);
             }
@@ -386,7 +386,7 @@ public class DreamEagerList : DreamListAbstract {
     }
 
     public override DreamValue OperatorAppend(DreamValue b) {
-        if (b.TryGetValueAsIDreamList(out var bList)) {
+        if (b.TryGetValueAsDreamListAbstract(out var bList)) {
             var keys = bList.GetKeys();
             var valueCount = keys.Count; // Some lists return a reference to their internal values list which could change with each loop
             for (int i = 0; i < valueCount; i++) {
@@ -403,7 +403,7 @@ public class DreamEagerList : DreamListAbstract {
     }
 
     public override DreamValue OperatorRemove(DreamValue b) {
-        if (b.TryGetValueAsIDreamList(out var bList)) {
+        if (b.TryGetValueAsDreamListAbstract(out var bList)) {
             if (bList == this) {
                 Cut();
             } else {
@@ -420,7 +420,7 @@ public class DreamEagerList : DreamListAbstract {
     }
 
     public override DreamValue OperatorCombine(DreamValue b) {
-        if (b.TryGetValueAsIDreamList(out var bList)) {
+        if (b.TryGetValueAsDreamListAbstract(out var bList)) {
             foreach (DreamValue key in bList.EnumerateKeys()) {
                 if (ContainsKey(key))
                     continue;
@@ -442,7 +442,7 @@ public class DreamEagerList : DreamListAbstract {
     }
 
     public override DreamValue OperatorMask(DreamValue b) {
-        if (b.TryGetValueAsIDreamList(out var bList)) {
+        if (b.TryGetValueAsDreamListAbstract(out var bList)) {
             var remainingValues = new Dictionary<DreamValue, int>(bList.GetLength());
             foreach (DreamValue value in bList.EnumerateKeys()) {
                 remainingValues.TryGetValue(value, out int count);

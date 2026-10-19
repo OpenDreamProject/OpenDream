@@ -225,7 +225,7 @@ public class DreamList : DreamEagerList {
     public override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
         DreamList listCopy = ToDreamList();
 
-        if (b.TryGetValueAsIDreamList(out var bList)) {
+        if (b.TryGetValueAsDreamListAbstract(out var bList)) {
             foreach (DreamValue key in bList.EnumerateKeys()) {
                 if (bList.TryGetAssocValue(key, out var _assocValue)) {
                     using var assocValue = _assocValue.Value;
@@ -242,7 +242,7 @@ public class DreamList : DreamEagerList {
     }
 
     public override DreamValue OperatorAppend(DreamValue b) {
-        if (b.TryGetValueAsIDreamList(out var bList)) {
+        if (b.TryGetValueAsDreamListAbstract(out var bList)) {
             var keys = bList.GetKeys();
             var valueCount = keys.Count; // Some lists return a reference to their internal values list which could change with each loop
             for (int i = 0; i < valueCount; i++) {
@@ -269,7 +269,7 @@ public class DreamList : DreamEagerList {
     }
 
     public override DreamValue OperatorCombine(DreamValue b) {
-        if (b.TryGetValueAsIDreamList(out var bList)) {
+        if (b.TryGetValueAsDreamListAbstract(out var bList)) {
             foreach (DreamValue key in bList.EnumerateKeys()) {
                 if (ContainsKey(key))
                     continue;

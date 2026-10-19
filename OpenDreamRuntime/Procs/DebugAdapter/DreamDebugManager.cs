@@ -730,7 +730,7 @@ internal sealed partial class DreamDebugManager : IDreamDebugManager {
     private Variable DescribeValue(string name, DreamValue value) {
         var varDesc = new Variable { Name = name, Value = value.ToString() };
 
-        if (value.TryGetValueAsIDreamList(out var list)) {
+        if (value.TryGetValueAsDreamListAbstract(out var list)) {
             if (list.GetLength() > 0) {
                 varDesc.VariablesReference = AllocVariableRef(req => ExpandList(req, list));
                 varDesc.IndexedVariables = list.GetLength() * (list.IsAssociative ? 2 : 1);
@@ -743,9 +743,9 @@ internal sealed partial class DreamDebugManager : IDreamDebugManager {
         return varDesc;
     }
 
-    private IEnumerable<Variable> ExpandList(RequestVariables req, IDreamList list) {
+    private IEnumerable<Variable> ExpandList(RequestVariables req, DreamListAbstract list) {
         if (list.IsAssociative) {
-            var assoc = list.GetPairs();
+            var assoc = list.GetTightPairs();
             foreach (var (i, key) in list.EnumerateKeys().Select((v, i) => (i + 1, v)).Skip(req.Arguments.Start ?? 0).Take((req.Arguments.Count ?? int.MaxValue) / 2)) {
                 assoc.TryGetValue(key, out var value);
                 yield return DescribeValue($"keys[{i}]", key);

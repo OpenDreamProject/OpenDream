@@ -215,7 +215,7 @@ internal static partial class DreamProcNativeHelpers {
         } else { // we're getting the range of a container
             // add our contents first
             if(includeCenter) {
-                if(center.TryGetVariable("contents", out var centerContents) && centerContents.TryGetValueAsIDreamList(out var centerContentsList)) {
+                if(center.TryGetVariable("contents", out var centerContents) && centerContents.TryGetValueAsDreamListAbstract(out var centerContentsList)) {
                     foreach(DreamValue content in centerContentsList.EnumerateKeys()) {
                         AddToList(content);
                     }
@@ -230,7 +230,7 @@ internal static partial class DreamProcNativeHelpers {
                     AddToList(centerLoc);
 
                     using var contents = centerLocObject.GetVariable("contents");
-                    if (contents.TryGetValueAsIDreamList(out var locContentsList)) {
+                    if (contents.TryGetValueAsDreamListAbstract(out var locContentsList)) {
                         foreach (DreamValue content in locContentsList.EnumerateKeys()) {
                             if(!includeCenter && content.TryGetValueAsDreamObject(out var dreamObject) && dreamObject == center)
                                 continue;
@@ -491,7 +491,7 @@ internal static partial class DreamProcNativeHelpers {
     /// list(rgb() or null, rgb() or null, rgb() or null, rgb() or null, rgb() or null) <br/>
     /// </remarks>
     /// <returns>True if the list was successfully parsed, false if not.</returns>
-    public static bool TryParseColorMatrix(IDreamList list, out ColorMatrix matrix) {
+    public static bool TryParseColorMatrix(DreamListAbstract list, out ColorMatrix matrix) {
         matrix = ColorMatrix.Identity;
         var listArray = list.GetKeys();
         try {

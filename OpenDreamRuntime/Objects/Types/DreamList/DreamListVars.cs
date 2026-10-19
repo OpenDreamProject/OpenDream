@@ -6,11 +6,10 @@ namespace OpenDreamRuntime.Objects.Types;
 /// </summary>
 /// <param name="listDef"></param>
 /// <param name="dreamObject"></param>
-internal sealed class DreamListVars(DreamObjectDefinition listDef, DreamObject dreamObject) : DreamList(listDef, 0) {
+internal sealed class DreamListVars(DreamObjectDefinition listDef, DreamObject dreamObject) : DreamListAbstract(listDef) {
     public readonly DreamObject DreamObject = dreamObject;
 
-    public override bool IsAssociative =>
-        true; // We don't use the associative array but, yes, we behave like an associative list
+    public override bool IsAssociative => true; // We don't use the associative array but, yes, we behave like an associative list
 
     public override int GetLength() {
         return DreamObject.GetVariableNames().Concat(DreamObject.ObjectDefinition.GlobalVariables.Keys).Count();
@@ -61,6 +60,14 @@ internal sealed class DreamListVars(DreamObjectDefinition listDef, DreamObject d
         } else {
             throw new DMException($"Invalid var index {key}");
         }
+    }
+
+    public override void AddKey(DreamValue newElement) {
+        throw new DMException("Cannot add to Vars list.");
+    }
+
+    public override void RemoveKey(DreamValue element) {
+        throw new DMException("Cannot remove from Vars list.");
     }
 
     public override bool IsSaved(string name) {

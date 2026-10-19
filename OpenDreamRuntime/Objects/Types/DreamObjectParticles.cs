@@ -67,7 +67,7 @@ public sealed class DreamObjectParticles : DreamObject {
     }
 
     private bool TryConvertVector(DreamValue value, out Vector3 newVec) {
-        if (value.TryGetValueAsDreamListAbstract(out var vectorList) && vectorList.GetLength() >= 3) {
+        if (value.TryGetValueAsDreamList(out var vectorList) && vectorList.GetLength() >= 3) {
             using var boundXValue = vectorList.GetElement(new(1));
             using var boundYValue = vectorList.GetElement(new(2));
             using var boundZValue = vectorList.GetElement(new(3));
@@ -120,7 +120,7 @@ public sealed class DreamObjectParticles : DreamObject {
 
                 break;
             case "gradient": //color gradient list
-                if (value.TryGetValueAsDreamListAbstract(out var colorList)) {
+                if (value.TryGetValueAsDreamList(out var colorList)) {
                     Color[] grad = new Color[colorList.GetLength()];
                     int i = 0;
                     foreach (DreamValue colorValue in colorList.EnumerateKeys()) {
@@ -145,7 +145,7 @@ public sealed class DreamObjectParticles : DreamObject {
                 break;
             case "icon": //list or icon
                 _icons.Clear();
-                if (value.TryGetValueAsDreamListAbstract(out var iconList)) {
+                if (value.TryGetValueAsDreamList(out var iconList)) {
                     foreach (DreamValue iconValue in iconList.EnumerateKeys()) {
                         if (!DreamResourceManager.TryLoadIcon(iconValue, out var iconRsc))
                             continue;
@@ -173,7 +173,7 @@ public sealed class DreamObjectParticles : DreamObject {
                 break;
             case "icon_state": //list or string
                 _iconStates.Clear();
-                if (value.TryGetValueAsDreamListAbstract(out var iconStateList)) {
+                if (value.TryGetValueAsDreamList(out var iconStateList)) {
                     foreach (DreamValue iconValue in iconStateList.EnumerateKeys()) {
                         if (!iconValue.TryGetValueAsString(out var iconState))
                             continue;

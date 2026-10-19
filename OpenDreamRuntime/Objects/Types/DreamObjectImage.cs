@@ -140,7 +140,7 @@ public sealed class DreamObjectImage : DreamObject {
                 value.TryGetValueAsDreamObject(out _loc);
                 break;
             case "overlays": {
-                value.TryGetValueAsDreamListAbstract(out var valueList);
+                value.TryGetValueAsDreamList(out var valueList);
 
                 // /mutable_appearance has some special behavior for its overlays and underlays vars
                 // They're normal lists, not the special DreamOverlaysList.
@@ -177,7 +177,7 @@ public sealed class DreamObjectImage : DreamObject {
                 break;
             }
             case "underlays": {
-                value.TryGetValueAsDreamListAbstract(out var valueList);
+                value.TryGetValueAsDreamList(out var valueList);
 
                 // See the comment in the overlays setter for info on this
                 if (ObjectDefinition.IsSubtypeOf(ObjectTree.MutableAppearance)) {
@@ -211,7 +211,7 @@ public sealed class DreamObjectImage : DreamObject {
                 break;
             }
             case "vis_contents": {
-                value.TryGetValueAsDreamListAbstract(out var valueList);
+                value.TryGetValueAsDreamList(out var valueList);
 
                 _visContents.Cut();
 
@@ -227,7 +227,7 @@ public sealed class DreamObjectImage : DreamObject {
                 break;
             }
             case "filters": {
-                value.TryGetValueAsDreamList(out var valueList);
+                value.TryGetValueAsDantomList(out var valueList);
 
                 _filters.Cut();
 
@@ -245,7 +245,7 @@ public sealed class DreamObjectImage : DreamObject {
                     } else { // It's a list of filters
                         foreach (var filter in valueList.EnumerateKeys()) {
                             if (!filter.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject)) {
-                                if (!filter.TryGetValueAsDreamList(out var filterValues))
+                                if (!filter.TryGetValueAsDantomList(out var filterValues))
                                     continue;
 
                                 filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, filterValues);

@@ -730,7 +730,7 @@ internal sealed partial class DreamDebugManager : IDreamDebugManager {
     private Variable DescribeValue(string name, DreamValue value) {
         var varDesc = new Variable { Name = name, Value = value.ToString() };
 
-        if (value.TryGetValueAsDreamListAbstract(out var list)) {
+        if (value.TryGetValueAsDreamList(out var list)) {
             if (list.GetLength() > 0) {
                 varDesc.VariablesReference = AllocVariableRef(req => ExpandList(req, list));
                 varDesc.IndexedVariables = list.GetLength() * (list.IsAssociative ? 2 : 1);

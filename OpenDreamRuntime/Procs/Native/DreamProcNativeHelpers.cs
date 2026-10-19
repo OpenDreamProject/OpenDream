@@ -215,7 +215,7 @@ internal static partial class DreamProcNativeHelpers {
         } else { // we're getting the range of a container
             // add our contents first
             if(includeCenter) {
-                if(center.TryGetVariable("contents", out var centerContents) && centerContents.TryGetValueAsDreamListAbstract(out var centerContentsList)) {
+                if(center.TryGetVariable("contents", out var centerContents) && centerContents.TryGetValueAsDreamList(out var centerContentsList)) {
                     foreach(DreamValue content in centerContentsList.EnumerateKeys()) {
                         AddToList(content);
                     }
@@ -230,7 +230,7 @@ internal static partial class DreamProcNativeHelpers {
                     AddToList(centerLoc);
 
                     using var contents = centerLocObject.GetVariable("contents");
-                    if (contents.TryGetValueAsDreamListAbstract(out var locContentsList)) {
+                    if (contents.TryGetValueAsDreamList(out var locContentsList)) {
                         foreach (DreamValue content in locContentsList.EnumerateKeys()) {
                             if(!includeCenter && content.TryGetValueAsDreamObject(out var dreamObject) && dreamObject == center)
                                 continue;

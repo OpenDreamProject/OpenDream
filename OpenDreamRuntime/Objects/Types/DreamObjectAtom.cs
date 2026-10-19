@@ -104,7 +104,7 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
             case "overlays": {
                 Overlays.Cut();
 
-                if (value.TryGetValueAsDreamListAbstract(out var valueList)) {
+                if (value.TryGetValueAsDreamList(out var valueList)) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
                     foreach (DreamValue overlayValue in valueList.EnumerateKeys()) {
                         Overlays.AddKey(overlayValue);
@@ -118,7 +118,7 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
             case "underlays": {
                 Underlays.Cut();
 
-                if (value.TryGetValueAsDreamListAbstract(out var valueList)) {
+                if (value.TryGetValueAsDreamList(out var valueList)) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
                     foreach (DreamValue underlayValue in valueList.EnumerateKeys()) {
                         Underlays.AddKey(underlayValue);
@@ -132,7 +132,7 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
             case "vis_contents": {
                 VisContents.Cut();
 
-                if (value.TryGetValueAsDreamListAbstract(out var valueList)) {
+                if (value.TryGetValueAsDreamList(out var valueList)) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
                     foreach (DreamValue visContentsValue in valueList.EnumerateKeys()) {
                         VisContents.AddKey(visContentsValue);
@@ -147,7 +147,7 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
                 Filters.Cut();
 
                 // filters = list("type"=...) or list(filter(...), filter(...))
-                if (value.TryGetValueAsDreamList(out var valueList)) {
+                if (value.TryGetValueAsDantomList(out var valueList)) {
                     using var typeArg = valueList.GetElement(new("type"));
 
                     if (typeArg != DreamValue.Null) { // It's a single filter
@@ -160,7 +160,7 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
                     } else { // It's a list of filters
                         foreach (var filter in valueList.EnumerateKeys()) {
                             if (!filter.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject)) {
-                                if (!filter.TryGetValueAsDreamList(out var filterValues))
+                                if (!filter.TryGetValueAsDantomList(out var filterValues))
                                     continue;
 
                                 filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, filterValues);

@@ -234,7 +234,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     public override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
         var listCopy = ToCopy();
 
-        if (b.TryGetValueAsDreamListAbstract(out var bList)) {
+        if (b.TryGetValueAsDreamList(out var bList)) {
             foreach (var pair in bList.EnumerateLoosePairs()) {
                 if (listCopy.ElementHasAssociation(pair.Key)) {
                     continue;
@@ -253,7 +253,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     {
         DreamAssocList listCopy;
 
-        if (b.TryGetValueAsDreamListAbstract(out var bList))
+        if (b.TryGetValueAsDreamList(out var bList))
         {
             if (bList == this)
             {
@@ -287,7 +287,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
 
     public override DreamValue OperatorAppend(DreamValue b)
     {
-        if (b.TryGetValueAsDreamListAbstract(out var bList))
+        if (b.TryGetValueAsDreamList(out var bList))
         {
             foreach (var pair in bList.EnumerateLoosePairs())
             {
@@ -310,7 +310,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
 
     public override DreamValue OperatorRemove(DreamValue b)
     {
-        if (b.TryGetValueAsDreamListAbstract(out var bList))
+        if (b.TryGetValueAsDreamList(out var bList))
         {
             if (bList == this)
             {
@@ -335,7 +335,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
 
     public override DreamValue OperatorMask(DreamValue b)
     {
-        if (b.TryGetValueAsDreamListAbstract(out var bList))
+        if (b.TryGetValueAsDreamList(out var bList))
         {
             if (bList != this)
             {
@@ -368,7 +368,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
 
     public override DreamValue OperatorEquivalent(DreamValue b)
     {
-        if (!b.TryGetValueAsDreamListAbstract(out var secondList))
+        if (!b.TryGetValueAsDreamList(out var secondList))
         {
             return DreamValue.False;
         }

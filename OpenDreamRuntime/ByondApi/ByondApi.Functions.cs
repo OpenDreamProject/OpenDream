@@ -331,7 +331,7 @@ public static unsafe partial class ByondApi {
 
         return RunOnMainThread<byte>(calledFromMain => {
             using var srcValue = ValueFromDreamApi(*loc);
-            if (!srcValue.TryGetValueAsDreamListAbstract(out var srcList)) {
+            if (!srcValue.TryGetValueAsDreamList(out var srcList)) {
                 *len = 0;
                 return SetLastError("loc argument was not a list");
             }
@@ -377,7 +377,7 @@ public static unsafe partial class ByondApi {
         return RunOnMainThread<byte>(_ => {
             try {
                 using var dstValue = ValueFromDreamApi(*loc);
-                if (!dstValue.TryGetValueAsDreamListAbstract(out DreamListAbstract? dstListValue))
+                if (!dstValue.TryGetValueAsDreamList(out DreamListAbstract? dstListValue))
                     return SetLastError("loc argument was not a list");
 
                 dstListValue.Cut();
@@ -410,7 +410,7 @@ public static unsafe partial class ByondApi {
 
         return RunOnMainThread<byte>(calledFromMain => {
             using var srcValue = ValueFromDreamApi(*loc);
-            if (!srcValue.TryGetValueAsDreamListAbstract(out var srcList)) {
+            if (!srcValue.TryGetValueAsDreamList(out var srcList)) {
                 *len = 0;
                 return SetLastError("loc argument was not a list");
             }
@@ -460,7 +460,7 @@ public static unsafe partial class ByondApi {
             try {
                 using var idx = ValueFromDreamApi(*cIdx);
                 using var listValue = ValueFromDreamApi(*loc);
-                if (!listValue.TryGetValueAsDreamListAbstract(out var srcList))
+                if (!listValue.TryGetValueAsDreamList(out var srcList))
                     return SetLastError("loc argument was not a list");
 
                 var val = srcList.GetElement(idx);
@@ -492,7 +492,7 @@ public static unsafe partial class ByondApi {
             try {
                 using var idx = ValueFromDreamApi(*cIdx);
                 using var listValue = ValueFromDreamApi(*loc);
-                if (!listValue.TryGetValueAsDreamListAbstract(out var dstList))
+                if (!listValue.TryGetValueAsDreamList(out var dstList))
                     return SetLastError("loc argument was not a list");
 
                 using var val = ValueFromDreamApi(*cVal);
@@ -933,7 +933,7 @@ public static unsafe partial class ByondApi {
                 var objectDef = treeEntry.ObjectDefinition;
 
                 using var arglistVal = ValueFromDreamApi(*cArglist);
-                if (!arglistVal.TryGetValueAsDreamListAbstract(out var arglist))
+                if (!arglistVal.TryGetValueAsDreamList(out var arglist))
                     return SetLastError("cArglist argument was not a list");
 
                 // Copy the arglist's values to a new array to ensure no shenanigans

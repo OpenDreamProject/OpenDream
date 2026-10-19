@@ -446,7 +446,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                     Data = Convert.ToBase64String(dreamResource.ResourceData)
                 };
             case DreamValue.DreamValueType.DreamObject:
-                if (val.TryGetValueAsDreamListAbstract(out var dreamList)) {
+                if (val.TryGetValueAsDreamList(out var dreamList)) {
                     SfDreamListValue jsonEncodedList = new SfDreamListValue();
                     int thisObjectCount = objectCount;
                     if (dreamList.IsAssociative)

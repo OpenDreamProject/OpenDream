@@ -11,7 +11,7 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamListAbstract list = (DreamListAbstract)src!;
 
             foreach (var argument in bundle.Arguments) {
-                if (argument.TryGetValueAsDreamListAbstract(out var argumentList)) {
+                if (argument.TryGetValueAsDreamList(out var argumentList)) {
                     foreach (DreamValue value in argumentList.EnumerateKeys()) {
                         list.AddKey(value);
                     }
@@ -81,7 +81,7 @@ namespace OpenDreamRuntime.Procs.Native {
             for (var i = 1; i < bundle.Arguments.Length; i++) {
                 var item = bundle.Arguments[i];
 
-                if (item.TryGetValueAsDreamListAbstract(out var valueList)) {
+                if (item.TryGetValueAsDreamList(out var valueList)) {
                     foreach (DreamValue value in valueList.EnumerateKeys()) {
                         list.Insert(index++, value);
                     }
@@ -150,7 +150,7 @@ namespace OpenDreamRuntime.Procs.Native {
         private static int ListRemove(DreamListAbstract list, ReadOnlySpan<DreamValue> args) {
             var itemRemoved = 0;
             foreach (var argument in args) {
-                if (argument.TryGetValueAsDreamListAbstract(out var argumentList)) {
+                if (argument.TryGetValueAsDreamList(out var argumentList)) {
                     if (argumentList ==  list) {
                         itemRemoved += list.GetLength();
                         list.Cut();
@@ -197,7 +197,7 @@ namespace OpenDreamRuntime.Procs.Native {
             for (var i = 2; i < bundle.Arguments.Length; i++) {
                 var item = bundle.Arguments[i];
 
-                if (item.TryGetValueAsDreamListAbstract(out var valueList)) {
+                if (item.TryGetValueAsDreamList(out var valueList)) {
                     foreach (DreamValue value in valueList.EnumerateKeys()) {
                         list.Insert(startIndex++, value);
                     }

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using JetBrains.Annotations;
 using OpenDreamRuntime.Procs;
@@ -56,8 +57,17 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         return value;
     }
 
-    public bool ElementHasAssociation(DreamValue key)
-    {
+    public bool TryGetAssocValue(DreamValue key, [MustDisposeResource][NotNullWhen(true)] out DreamValue? value) {
+        if (!_pairs.TryGetValue(key, out var _value)) {
+            value = DreamValue.Null;
+            return true;
+        }
+        value = _value;
+        value.Value.IncRef();
+        return true;
+    }
+
+    public bool ElementHasAssociation(DreamValue key) {
         return _pairs.ContainsKey(key);
     }
 

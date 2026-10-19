@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -186,6 +187,22 @@ public class DreamList : DreamObject, IDreamList {
         return DreamValue.Null;
     }
 
+    public virtual bool TryGetAssocValue(DreamValue key, [MustDisposeResource][NotNullWhen(true)] out DreamValue? value) {
+        if (_associativeValues is null) {
+            value = null;
+            return false;
+        }
+
+        if (_associativeValues.TryGetValue(key, out var _value)) {
+            value = _value;
+            value.Value.IncRef();
+            return true;
+        }
+
+        value = null;
+        return false;
+    }
+
     public virtual void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
         if (key.TryGetValueAsInteger(out int keyInteger)) {
             if (allowGrowth && keyInteger == _elements.Count + 1) {
@@ -329,7 +346,7 @@ public class DreamList : DreamObject, IDreamList {
         return _elements.Count;
     }
 
-    public DreamList Union(DreamList other) {
+    public DreamList Union(IDreamList other) {
         DreamList newList = new DreamList(ObjectDefinition, _elements.Union(other.GetKeys()).ToList(), null);
         Dictionary<DreamValue, DreamValue> otherAssociations = other.GetPairs();
         foreach (DreamValue value in newList.EnumerateKeys()) {
@@ -389,12 +406,13 @@ public class DreamList : DreamObject, IDreamList {
     public override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
         DreamList listCopy = (DreamList)CreateCopy();
 
-        if (b.TryGetValueAsDreamList(out var bList)) {
-            foreach (DreamValue value in bList.EnumerateKeys()) {
-                if (bList._associativeValues?.TryGetValue(value, out var assocValue) is true) {
-                    listCopy.SetKeyValuePair(value, assocValue);
+        if (b.TryGetValueAsIDreamList(out var bList)) {
+            foreach (DreamValue key in bList.EnumerateKeys()) {
+                if (bList.TryGetAssocValue(key, out var _assocValue)) {
+                    using var assocValue = _assocValue.Value;
+                    listCopy.SetKeyValuePair(key, assocValue);
                 } else {
-                    listCopy.AddKey(value);
+                    listCopy.AddKey(key);
                 }
             }
         } else {
@@ -407,7 +425,7 @@ public class DreamList : DreamObject, IDreamList {
     public override DreamValue OperatorSubtract(DreamValue b, DMProcState state) {
         DreamList listCopy = (DreamList)CreateCopy();
 
-        if (b.TryGetValueAsDreamList(out var bList)) {
+        if (b.TryGetValueAsIDreamList(out var bList)) {
             foreach (DreamValue value in bList.EnumerateKeys()) {
                 listCopy.RemoveKey(value);
             }
@@ -421,7 +439,7 @@ public class DreamList : DreamObject, IDreamList {
     public override DreamValue OperatorOr(DreamValue b, DMProcState state) {
         DreamList list;
 
-        if (b.TryGetValueAsDreamList(out var bList)) {  // List | List
+        if (b.TryGetValueAsIDreamList(out var bList)) {  // List | List
             list = Union(bList);
         } else {                                        // List | x
             list = (DreamList)CreateCopy();
@@ -432,18 +450,19 @@ public class DreamList : DreamObject, IDreamList {
     }
 
     public override DreamValue OperatorAppend(DreamValue b) {
-        if (b.TryGetValueAsDreamList(out var bList)) {
-            var values = bList.GetKeys();
-            var valueCount = values.Count; // Some lists return a reference to their internal values list which could change with each loop
+        if (b.TryGetValueAsIDreamList(out var bList)) {
+            var keys = bList.GetKeys();
+            var valueCount = keys.Count; // Some lists return a reference to their internal values list which could change with each loop
             for (int i = 0; i < valueCount; i++) {
-                var value = values[i];
+                var key = keys[i];
 
-                AddKey(value); // Always add the value
+                AddKey(key); // Always add the value
 
-                if (bList._associativeValues?.TryGetValue(value, out var assocValue) is true) { // Ensure the associated value is correct
+                if (bList.TryGetAssocValue(key, out var _assocValue)) { // Ensure the associated value is correct
                     _associativeValues ??= new();
+                    using var assocValue = _assocValue.Value;
 
-                    ref var slot = ref CollectionsMarshal.GetValueRefOrAddDefault(_associativeValues, value, out _);
+                    ref var slot = ref CollectionsMarshal.GetValueRefOrAddDefault(_associativeValues, key, out _);
                     assocValue.IncRef();
                     slot.DecRef();
                     slot = assocValue;
@@ -475,15 +494,18 @@ public class DreamList : DreamObject, IDreamList {
     }
 
     public override DreamValue OperatorCombine(DreamValue b) {
-        if (b.TryGetValueAsDreamList(out var bList)) {
-            foreach (DreamValue value in bList.EnumerateKeys()) {
-                if (ContainsKey(value))
+        if (b.TryGetValueAsIDreamList(out var bList)) {
+            foreach (DreamValue key in bList.EnumerateKeys()) {
+                if (ContainsKey(key))
                     continue;
 
-                if (bList._associativeValues?.TryGetValue(value, out var associatedValue) is true)
-                    SetKeyValuePair(value, associatedValue);
-                else
-                    AddKey(value);
+                if (bList.TryGetAssocValue(key, out var _assocValue)) {
+                    using var assocValue = _assocValue;
+                    SetKeyValuePair(key, assocValue.Value);
+
+                } else {
+                    AddKey(key);
+                }
             }
         } else if (!ContainsKey(b)) {
             AddKey(b);
@@ -494,7 +516,7 @@ public class DreamList : DreamObject, IDreamList {
     }
 
     public override DreamValue OperatorMask(DreamValue b) {
-        if (b.TryGetValueAsDreamList(out var bList)) {
+        if (b.TryGetValueAsIDreamList(out var bList)) {
             var remainingValues = new Dictionary<DreamValue, int>(bList.GetLength());
             foreach (DreamValue value in bList.EnumerateKeys()) {
                 remainingValues.TryGetValue(value, out int count);
@@ -530,8 +552,9 @@ public class DreamList : DreamObject, IDreamList {
     }
 
     public override DreamValue OperatorEquivalent(DreamValue b) {
-        if (!b.TryGetValueAsDreamList(out var secondList))
+        if (!b.TryGetValueAsIDreamList(out var secondList))
             return DreamValue.False;
+
         if (GetLength() != secondList.GetLength())
             return DreamValue.False;
 

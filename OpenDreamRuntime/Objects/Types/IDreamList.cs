@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using JetBrains.Annotations;
 
@@ -12,6 +13,28 @@ public interface IDreamList {
     /// <param name="key"></param>
     /// <returns></returns>
     [MustDisposeResource] public DreamValue GetElement(DreamValue key);
+
+    /// <summary>
+    /// Returns TRUE and the Value associated with Key, if present.
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="value"></param>
+    /// <returns></returns>
+    [MustDisposeResource] public virtual bool TryGetAssocValue(DreamValue key, [MustDisposeResource][NotNullWhen(true)] out DreamValue? value) {
+        if (!IsAssociative) {
+            value = null;
+            return false;
+        }
+
+        if (!ElementHasAssociation(key)) {
+            value = null;
+            return false;
+        }
+
+        value = GetElement(key);
+        value.Value.IncRef();
+        return true;
+    }
 
     /// <summary>
     /// Returns whether or not the given element exists within the first dimension of the list.

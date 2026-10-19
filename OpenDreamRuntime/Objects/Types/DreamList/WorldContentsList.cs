@@ -3,7 +3,7 @@ namespace OpenDreamRuntime.Objects.Types;
 
 // world.contents list
 // Operates on a list of all atoms
-public sealed class WorldContentsList(DreamObjectDefinition listDef, AtomManager atomManager) : DreamList(listDef, 0) {
+public sealed class WorldContentsList(DreamObjectDefinition listDef, AtomManager atomManager) : DreamListAbstract(listDef) {
     public override DreamValue GetElement(DreamValue key) {
         if (!key.TryGetValueAsInteger(out var index))
             throw new DMException($"Invalid index into world contents list: {key}");
@@ -29,6 +29,10 @@ public sealed class WorldContentsList(DreamObjectDefinition listDef, AtomManager
 
     public override void AddKey(DreamValue value) {
         throw new DMException("Cannot append to world contents list");
+    }
+
+    public override void RemoveKey(DreamValue element) {
+        throw new DMException("Cannot remove from world contents list");
     }
 
     public override void Cut(int start = 1, int end = 0) {

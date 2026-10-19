@@ -103,7 +103,9 @@ public abstract class DreamListAbstract : DreamObject {
 	/// </summary>
 	/// <param name="element"></param>
 	/// <returns></returns>
-	public abstract bool ContainsKey(DreamValue element);
+	public virtual bool ContainsKey(DreamValue element) {
+        return EnumerateKeys().Contains(element);
+    }
 
 	/// <summary>
 	/// Returns the position of the given Element from within the Keys list.

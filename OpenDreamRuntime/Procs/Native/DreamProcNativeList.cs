@@ -150,7 +150,7 @@ namespace OpenDreamRuntime.Procs.Native {
         private static int ListRemove(IDreamList list, ReadOnlySpan<DreamValue> args) {
             var itemRemoved = 0;
             foreach (var argument in args) {
-                if (argument.TryGetValueAsDreamList(out var argumentList)) {
+                if (argument.TryGetValueAsIDreamList(out var argumentList)) {
                     if (argumentList ==  list) {
                         itemRemoved += list.GetLength();
                         list.Cut();

@@ -3,7 +3,7 @@ using OpenDreamRuntime.Map;
 namespace OpenDreamRuntime.Objects.Types;
 
 // turf.contents list
-public sealed class TurfContentsList(DreamObjectDefinition listDef, DreamObjectTurf turf) : DreamList(listDef, 0) {
+public sealed class TurfContentsList(DreamObjectDefinition listDef, DreamObjectTurf turf) : DreamListAbstract(listDef) {
     private IDreamMapManager.Cell Cell => turf.Cell;
 
     public override DreamValue GetElement(DreamValue key) {
@@ -35,6 +35,10 @@ public sealed class TurfContentsList(DreamObjectDefinition listDef, DreamObjectT
             throw new DMException($"Cannot add {value} to turf contents");
 
         movable.SetLoc(Cell.Turf);
+    }
+
+    public override void RemoveKey(DreamValue element) {
+        throw new NotImplementedException();
     }
 
     public override void Cut(int start = 1, int end = 0) {

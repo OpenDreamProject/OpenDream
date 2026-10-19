@@ -142,7 +142,7 @@ namespace OpenDreamRuntime.Procs {
                     return new WorldContentsEnumerator(atomManager, filterType);
 
                 var values = list.ToArray();
-                var assocValues = list.IsAssociative ? list.CopyPairs() : null;
+                var assocValues = list.IsAssociative ? list.GetLoosePairs() : null;
                 foreach (var copiedValue in values)
                     copiedValue.IncRef();
                 if (assocValues != null)
@@ -3115,7 +3115,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         private static void ReplaceListContents(DreamList target, DreamList replacement) {
-            Dictionary<DreamValue, DreamValue> replacementAssociations = replacement.GetPairs();
+            Dictionary<DreamValue, DreamValue> replacementAssociations = replacement.GetTightPairs();
             target.Cut();
 
             foreach (DreamValue value in replacement.EnumerateKeys()) {

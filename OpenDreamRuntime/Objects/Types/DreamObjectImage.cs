@@ -9,10 +9,10 @@ public sealed class DreamObjectImage : DreamObject {
     public EntityUid Entity = EntityUid.Invalid;
     public readonly DMISpriteComponent? SpriteComponent;
     private DreamObject? _loc;
-    private DreamList _overlays;
-    private DreamList _underlays;
-    private readonly DreamList _visContents;
-    private readonly DreamList _filters;
+    private DreamListAbstract _overlays;
+    private DreamListAbstract _underlays;
+    private readonly DreamListAbstract _visContents;
+    private readonly DreamListAbstract _filters;
     public readonly bool IsMutableAppearance;
     public MutableAppearance? MutableAppearance;
 
@@ -149,7 +149,7 @@ public sealed class DreamObjectImage : DreamObject {
                 if (ObjectDefinition.IsSubtypeOf(ObjectTree.MutableAppearance)) {
                     if (valueList != null) {
                         _overlays.DecRef();
-                        _overlays = (DreamList)valueList.CreateCopy();
+                        _overlays = valueList.ToDreamList();
                     } else {
                         var overlay = DreamOverlaysList.CreateOverlayAppearance(AtomManager, value, AtomManager.MustGetAppearance(this).Icon);
                         if (overlay == null)
@@ -183,7 +183,7 @@ public sealed class DreamObjectImage : DreamObject {
                 if (ObjectDefinition.IsSubtypeOf(ObjectTree.MutableAppearance)) {
                     if (valueList != null) {
                         _underlays.DecRef();
-                        _underlays = (DreamList)valueList.CreateCopy();
+                        _underlays = valueList.ToDreamList();
                     } else {
                         var underlay = DreamOverlaysList.CreateOverlayAppearance(AtomManager, value, AtomManager.MustGetAppearance(this).Icon);
                         if (underlay == null)

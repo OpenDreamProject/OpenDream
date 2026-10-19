@@ -235,7 +235,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         var listCopy = ToCopy();
 
         if (b.TryGetValueAsDreamListAbstract(out var bList)) {
-            foreach (var pair in bList.EnumeratePairs()) {
+            foreach (var pair in bList.EnumerateLoosePairs()) {
                 if (listCopy.ElementHasAssociation(pair.Key)) {
                     continue;
                 }
@@ -289,7 +289,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     {
         if (b.TryGetValueAsDreamListAbstract(out var bList))
         {
-            foreach (var pair in bList.EnumeratePairs())
+            foreach (var pair in bList.EnumerateLoosePairs())
             {
                 if (ElementHasAssociation(pair.Key))
                 {

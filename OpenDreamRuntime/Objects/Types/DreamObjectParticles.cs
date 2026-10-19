@@ -120,7 +120,7 @@ public sealed class DreamObjectParticles : DreamObject {
 
                 break;
             case "gradient": //color gradient list
-                if (value.TryGetValueAsDreamList(out var colorList)) {
+                if (value.TryGetValueAsIDreamList(out var colorList)) {
                     Color[] grad = new Color[colorList.GetLength()];
                     int i = 0;
                     foreach (DreamValue colorValue in colorList.EnumerateKeys()) {

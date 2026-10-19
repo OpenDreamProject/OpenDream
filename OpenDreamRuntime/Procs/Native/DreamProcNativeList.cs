@@ -11,7 +11,7 @@ namespace OpenDreamRuntime.Procs.Native {
             IDreamList list = (IDreamList)src!;
 
             foreach (var argument in bundle.Arguments) {
-                if (argument.TryGetValueAsDreamList(out var argumentList)) {
+                if (argument.TryGetValueAsIDreamList(out var argumentList)) {
                     foreach (DreamValue value in argumentList.EnumerateKeys()) {
                         list.AddKey(value);
                     }
@@ -81,7 +81,7 @@ namespace OpenDreamRuntime.Procs.Native {
             for (var i = 1; i < bundle.Arguments.Length; i++) {
                 var item = bundle.Arguments[i];
 
-                if (item.TryGetValueAsDreamList(out var valueList)) {
+                if (item.TryGetValueAsIDreamList(out var valueList)) {
                     foreach (DreamValue value in valueList.EnumerateKeys()) {
                         list.Insert(index++, value);
                     }
@@ -197,7 +197,7 @@ namespace OpenDreamRuntime.Procs.Native {
             for (var i = 2; i < bundle.Arguments.Length; i++) {
                 var item = bundle.Arguments[i];
 
-                if (item.TryGetValueAsDreamList(out var valueList)) {
+                if (item.TryGetValueAsIDreamList(out var valueList)) {
                     foreach (DreamValue value in valueList.EnumerateKeys()) {
                         list.Insert(startIndex++, value);
                     }

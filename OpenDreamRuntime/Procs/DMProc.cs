@@ -1091,7 +1091,7 @@ public sealed class DMProcState : ProcState {
 
     [MustDisposeResource]
     public DreamValue GetIndex(DreamValue indexing, DreamValue index, DMProcState state) {
-        if (indexing.TryGetValueAsDreamList(out var listObj)) {
+        if (indexing.TryGetValueAsIDreamList(out var listObj)) {
             return listObj.GetElement(index);
         }
 
@@ -1206,7 +1206,7 @@ public sealed class DMProcState : ProcState {
 
             switch (_info.Type) {
                 case DMCallArgumentsType.FromArgumentList:
-                    if (!_values[0].TryGetValueAsDreamList(out var argList))
+                    if (!_values[0].TryGetValueAsIDreamList(out var argList))
                         break;
 
                     int i = 0;
@@ -1290,7 +1290,7 @@ public sealed class DMProcState : ProcState {
                 case DMCallArgumentsType.FromArgumentList: {
                     if (proc == null)
                         throw new DMException("Cannot use an arglist here");
-                    if (!_values[0].TryGetValueAsDreamList(out var argList))
+                    if (!_values[0].TryGetValueAsIDreamList(out var argList))
                         return new DreamProcArguments(); // Using a non-list gives you no arguments
 
                     // new /mutable_appearance(...) always uses /image/New()'s arguments, despite any overrides
@@ -1348,7 +1348,7 @@ public sealed class DMProcState : ProcState {
                 case DMCallArgumentsType.FromArgumentList:
                     Debug.Assert(_values.Length == 1);
 
-                    if (!_values[0].TryGetValueAsDreamList(out var argList))
+                    if (!_values[0].TryGetValueAsIDreamList(out var argList))
                         return 0;
 
                     return argList.GetLength();

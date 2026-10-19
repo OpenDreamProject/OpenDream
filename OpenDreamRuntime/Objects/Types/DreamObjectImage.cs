@@ -140,7 +140,7 @@ public sealed class DreamObjectImage : DreamObject {
                 value.TryGetValueAsDreamObject(out _loc);
                 break;
             case "overlays": {
-                value.TryGetValueAsDreamList(out var valueList);
+                value.TryGetValueAsIDreamList(out var valueList);
 
                 // /mutable_appearance has some special behavior for its overlays and underlays vars
                 // They're normal lists, not the special DreamOverlaysList.
@@ -177,7 +177,7 @@ public sealed class DreamObjectImage : DreamObject {
                 break;
             }
             case "underlays": {
-                value.TryGetValueAsDreamList(out var valueList);
+                value.TryGetValueAsIDreamList(out var valueList);
 
                 // See the comment in the overlays setter for info on this
                 if (ObjectDefinition.IsSubtypeOf(ObjectTree.MutableAppearance)) {
@@ -211,7 +211,7 @@ public sealed class DreamObjectImage : DreamObject {
                 break;
             }
             case "vis_contents": {
-                value.TryGetValueAsDreamList(out var valueList);
+                value.TryGetValueAsIDreamList(out var valueList);
 
                 _visContents.Cut();
 

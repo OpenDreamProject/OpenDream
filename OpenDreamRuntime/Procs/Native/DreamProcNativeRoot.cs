@@ -239,7 +239,7 @@ internal static class DreamProcNativeRoot {
             (hVal, lVal) = (lVal, hVal);
         }
 
-        if (value.TryGetValueAsDreamList(out var list)) {
+        if (value.TryGetValueAsIDreamList(out var list)) {
             DreamList tmp = bundle.ObjectTree.CreateList();
             foreach (DreamValue val in list.EnumerateKeys()) {
                 if (!val.TryGetValueAsFloat(out float floatVal))
@@ -1266,7 +1266,7 @@ internal static class DreamProcNativeRoot {
 
                     if (list.ElementHasAssociation(listValue)) {
                         using var subValue = list.GetElement(listValue);
-                        if (subValue.TryGetValueAsDreamList(out var subList) && subList is DreamListVars) //BYOND parity, do not print vars["vars"] - note that this is *not* a generic infinite loop protection on purpose
+                        if (subValue.TryGetValueAsIDreamList(out var subList) && subList is DreamListVars) //BYOND parity, do not print vars["vars"] - note that this is *not* a generic infinite loop protection on purpose
                             continue;
 
                         writer.WritePropertyName(key);
@@ -1633,7 +1633,7 @@ internal static class DreamProcNativeRoot {
 
         if (bundle.Arguments.Length == 1) {
             DreamValue arg = bundle.GetArgument(0, "A");
-            if (!arg.TryGetValueAsDreamList(out var list))
+            if (!arg.TryGetValueAsIDreamList(out var list))
                 return arg;
 
             var values = list.GetKeys();
@@ -1714,7 +1714,7 @@ internal static class DreamProcNativeRoot {
 
         if (bundle.Arguments.Length == 1) {
             DreamValue arg = bundle.GetArgument(0, "A");
-            if (!arg.TryGetValueAsDreamList(out var list))
+            if (!arg.TryGetValueAsIDreamList(out var list))
                 return arg;
 
             var values = list.GetKeys();
@@ -2564,7 +2564,7 @@ internal static class DreamProcNativeRoot {
     }
 
     private static void OutputToStatPanel(DreamRefManager refManager, DreamConnection connection, DreamValue name, DreamValue value) {
-        if (name.IsNull && value.TryGetValueAsDreamList(out var list)) {
+        if (name.IsNull && value.TryGetValueAsIDreamList(out var list)) {
             foreach (var item in list.EnumerateKeys())
                 OutputToStatPanel(refManager, connection, name, item);
         } else {
@@ -3125,7 +3125,7 @@ internal static class DreamProcNativeRoot {
         if (center is null)
             return new(view);
 
-        if (center.TryGetVariable("contents", out var centerContents) && centerContents.TryGetValueAsDreamList(out var centerContentsList)) {
+        if (center.TryGetVariable("contents", out var centerContents) && centerContents.TryGetValueAsIDreamList(out var centerContentsList)) {
             foreach (var item in centerContentsList.EnumerateKeys()) {
                 view.AddKey(item);
             }

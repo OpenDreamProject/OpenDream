@@ -142,7 +142,7 @@ public static class DreamFilterHelpers {
             if (value.TryGetValueAsString(out var maybeColorString)) {
                 if (ColorHelpers.TryParseColor(maybeColorString, out Color basicColor))
                     return new ColorMatrix(basicColor);
-            } else if (value.TryGetValueAsDreamList(out var matrixList)) {
+            } else if (value.TryGetValueAsIDreamList(out var matrixList)) {
                 if (DreamProcNativeHelpers.TryParseColorMatrix(matrixList, out ColorMatrix matrix))
                     return matrix;
             }

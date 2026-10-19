@@ -2,14 +2,14 @@
 
 [Virtual]
 public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObject(objectDefinition) {
-    private DreamOverlaysList Overlays => _overlays ??= new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
-    private DreamOverlaysList Underlays => _underlays ??= new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
+    private OverlaysList Overlays => _overlays ??= new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
+    private OverlaysList Underlays => _underlays ??= new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
     private DreamVisContentsList VisContents => _visContents ??= new(ObjectTree.List.ObjectDefinition, PvsOverrideSystem, this);
     private FiltersList Filters => _filters ??= new(ObjectTree.List.ObjectDefinition, this);
     private DantomList VisLocs => _visLocs ??= ObjectTree.CreateList();
 
-    private DreamOverlaysList? _overlays;
-    private DreamOverlaysList? _underlays;
+    private OverlaysList? _overlays;
+    private OverlaysList? _underlays;
     private DreamVisContentsList? _visContents;
     private FiltersList? _filters;
     private DantomList? _visLocs; // TODO: Implement

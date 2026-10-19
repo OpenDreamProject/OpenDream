@@ -6,7 +6,7 @@ namespace OpenDreamRuntime.Objects.Types;
 
 // atom.overlays or atom.underlays list
 // Operates on an object's appearance
-public sealed class DreamOverlaysList(DreamObjectDefinition listDef, DreamObject owner, ServerAppearanceSystem? appearanceSystem, bool isUnderlays) : DreamList(listDef) {
+public sealed class OverlaysList(DreamObjectDefinition listDef, DreamObject owner, ServerAppearanceSystem? appearanceSystem, bool isUnderlays) : DreamList(listDef) {
     public override List<DreamValue> GetKeys() {
         return EnumerateKeys().ToList();
     }

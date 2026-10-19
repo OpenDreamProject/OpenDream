@@ -36,8 +36,8 @@ public sealed class DreamObjectImage : DreamObject {
             _filters = ObjectTree.CreateList();
             IsMutableAppearance = true;
         } else {
-            _overlays = new DreamOverlaysList(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
-            _underlays = new DreamOverlaysList(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
+            _overlays = new OverlaysList(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
+            _underlays = new OverlaysList(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
             _visContents = new DreamVisContentsList(ObjectTree.List.ObjectDefinition, PvsOverrideSystem, this);
             _filters = new FiltersList(ObjectTree.List.ObjectDefinition, this);
             IsMutableAppearance = false;
@@ -151,7 +151,7 @@ public sealed class DreamObjectImage : DreamObject {
                         _overlays.DecRef();
                         _overlays = valueList.ToDreamList();
                     } else {
-                        var overlay = DreamOverlaysList.CreateOverlayAppearance(AtomManager, value, AtomManager.MustGetAppearance(this).Icon);
+                        var overlay = OverlaysList.CreateOverlayAppearance(AtomManager, value, AtomManager.MustGetAppearance(this).Icon);
                         if (overlay == null)
                             return;
 
@@ -185,7 +185,7 @@ public sealed class DreamObjectImage : DreamObject {
                         _underlays.DecRef();
                         _underlays = valueList.ToDreamList();
                     } else {
-                        var underlay = DreamOverlaysList.CreateOverlayAppearance(AtomManager, value, AtomManager.MustGetAppearance(this).Icon);
+                        var underlay = OverlaysList.CreateOverlayAppearance(AtomManager, value, AtomManager.MustGetAppearance(this).Icon);
                         if (underlay == null)
                             return;
 

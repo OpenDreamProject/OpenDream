@@ -311,6 +311,9 @@ public struct DreamValue : IDisposable, IEquatable<DreamValue> {
         return TryGetValueAsDreamObject(out list);
     }
 
+    public readonly bool TryGetValueAsDreamListAbstract([NotNullWhen(true)] out DreamListAbstract? list) {
+        return TryGetValueAsDreamObject(out list);
+    }
     public DreamList MustGetValueAsDreamList() {
         if (_refValue is not DreamList dl) {
             ThrowInvalidCastList();

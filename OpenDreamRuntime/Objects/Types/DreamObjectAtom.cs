@@ -5,13 +5,13 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
     private DreamOverlaysList Overlays => _overlays ??= new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
     private DreamOverlaysList Underlays => _underlays ??= new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
     private DreamVisContentsList VisContents => _visContents ??= new(ObjectTree.List.ObjectDefinition, PvsOverrideSystem, this);
-    private DreamFilterList Filters => _filters ??= new(ObjectTree.List.ObjectDefinition, this);
+    private FiltersList Filters => _filters ??= new(ObjectTree.List.ObjectDefinition, this);
     private DantomList VisLocs => _visLocs ??= ObjectTree.CreateList();
 
     private DreamOverlaysList? _overlays;
     private DreamOverlaysList? _underlays;
     private DreamVisContentsList? _visContents;
-    private DreamFilterList? _filters;
+    private FiltersList? _filters;
     private DantomList? _visLocs; // TODO: Implement
 
     protected string GetRTEntityDesc() {

@@ -3,7 +3,7 @@ using OpenDreamShared.Dream;
 namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectFilter(DreamObjectDefinition objectDefinition) : DreamObject(objectDefinition) {
-    public static readonly Dictionary<DreamFilter, DreamFilterList> FilterAttachedTo = new();
+    public static readonly Dictionary<DreamFilter, FiltersList> FilterAttachedTo = new();
 
     public override bool ShouldCallNew => false;
 

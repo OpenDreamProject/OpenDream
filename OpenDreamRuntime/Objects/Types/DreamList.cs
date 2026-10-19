@@ -458,7 +458,7 @@ public class DreamList : DreamObject, IDreamList {
     }
 
     public override DreamValue OperatorRemove(DreamValue b) {
-        if (b.TryGetValueAsDreamList(out var bList)) {
+        if (b.TryGetValueAsIDreamList(out var bList)) {
             if (bList == this) {
                 Cut();
             } else {

@@ -176,9 +176,13 @@ public abstract class DreamListAbstract : DreamObject {
 	/// </summary>
 	/// <returns></returns>
 	public virtual IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateLoosePairs() {
-		return EnumerateKeys()
-			.Distinct()
-			.Select(key => KeyValuePair.Create(key, DreamValue.Null));
+        foreach (var key in EnumerateKeys()) {
+            if (TryGetAssocValue(key, out var associativeValue)) {
+                yield return new(key, associativeValue.Value);
+            } else {
+                yield return new(key, DreamValue.Null);
+            }
+        }
 	}
 
 	/// <summary>

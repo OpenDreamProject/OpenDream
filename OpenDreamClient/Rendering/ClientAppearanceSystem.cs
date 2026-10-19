@@ -349,7 +349,7 @@ internal sealed partial class ClientAppearanceSystem : SharedAppearanceSystem {
 
     private static ShaderInstance CreateBlurPassShader(ShaderPrototype prototype, BlurPass pass) {
         var kernel = pass.Kernel;
-        var weights = new float[BlurKernel.MaxTaps];
+        var weights = new float[BlurKernel.MaxTaps]; // Must match the blur.swsl array size
         var offsets = new Vector2[BlurKernel.MaxTaps];
         for (int i = 0; i < kernel.Taps; i++) {
             weights[i] = kernel.GetWeight(i);

@@ -117,7 +117,7 @@ public sealed partial record DreamFilterBlur : DreamFilter {
     public int GetExtent() {
         int extent = 0;
         foreach (var pass in Passes) {
-            if (pass.Direction.Y == 0f)
+            if (pass.Direction.Y == 0f) // Only sum the horizontal passes since we'd be double counting due to the paired vertical pass
                 extent += Math.Min(pass.Reach, 100);
         }
 

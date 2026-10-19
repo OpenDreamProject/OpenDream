@@ -224,15 +224,15 @@ public abstract class DreamListAbstract : DreamObject {
 	/// <param name="start"></param>
 	/// <param name="end"></param>
 	public virtual void Cut(int start = 1, int end = 0) {
-        throw new NotImplementedException();
+        throw new DMException($"Cut() not implemented for type ({GetType().Name})");
     }
 
 	public virtual void Insert(int index, DreamValue value) {
-        throw new NotImplementedException();
+        throw new DMException($"Insert() not implemented for type ({GetType().Name})");
     }
 
 	public virtual void Swap(int index1, int index2) {
-        throw new NotImplementedException();
+        throw new DMException($"Swap() not implemented for type ({GetType().Name})");
     }
 
     [Obsolete("Consider ToDreamList() instead.")]

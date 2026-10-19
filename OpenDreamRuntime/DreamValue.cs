@@ -314,8 +314,8 @@ public struct DreamValue : IDisposable, IEquatable<DreamValue> {
     public readonly bool TryGetValueAsDreamList([NotNullWhen(true)] out DreamList? list) {
         return TryGetValueAsDreamObject(out list);
     }
-    public DantomList MustGetValueAsDreamList() {
-        if (_refValue is not DantomList dl) {
+    public DreamList MustGetValueAsDreamList() {
+        if (_refValue is not DreamList dl) {
             ThrowInvalidCastList();
             return null!;
         }

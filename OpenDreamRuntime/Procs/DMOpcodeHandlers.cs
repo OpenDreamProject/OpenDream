@@ -1164,7 +1164,7 @@ namespace OpenDreamRuntime.Procs {
 
             if (first.TryGetValueAsDantomList(out DantomList? firstList)) {
                 using var replacement = BitXorAssignmentValues(state.Proc.ObjectTree, firstList, second);
-                DantomList replacementList = replacement.MustGetValueAsDreamList();
+                DreamList replacementList = replacement.MustGetValueAsDreamList();
                 ReplaceListContents(firstList, replacementList);
 
                 // BYOND mutates and returns the existing list object
@@ -3114,7 +3114,7 @@ namespace OpenDreamRuntime.Procs {
             return new DreamValue(replacement);
         }
 
-        private static void ReplaceListContents(DantomList target, DantomList replacement) {
+        private static void ReplaceListContents(DreamList target, DreamList replacement) {
             Dictionary<DreamValue, DreamValue> replacementAssociations = replacement.GetTightPairs();
             target.Cut();
 

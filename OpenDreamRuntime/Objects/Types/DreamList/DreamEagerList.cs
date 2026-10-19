@@ -385,40 +385,6 @@ public class DreamEagerList : DreamList {
         return new DreamValue(list);
     }
 
-    public override DreamValue OperatorAppend(DreamValue b) {
-        if (b.TryGetValueAsDreamList(out var bList)) {
-            var keys = bList.CopyKeys();
-            var valueCount = keys.Count; // Some lists return a reference to their internal values list which could change with each loop
-            for (int i = 0; i < valueCount; i++) {
-                var key = keys[i];
-
-                AddKey(key); // Always add the value
-            }
-        } else {
-            AddKey(b);
-        }
-
-        IncRef();
-        return new DreamValue(this);
-    }
-
-    public override DreamValue OperatorRemove(DreamValue b) {
-        if (b.TryGetValueAsDreamList(out var bList)) {
-            if (bList == this) {
-                Cut();
-            } else {
-                foreach (DreamValue key in bList.EnumerateKeys()) {
-                    RemoveKey(key);
-                }
-            }
-        } else {
-            RemoveKey(b);
-        }
-
-        IncRef();
-        return new DreamValue(this);
-    }
-
     public override DreamValue OperatorCombine(DreamValue b) {
         if (b.TryGetValueAsDreamList(out var bList)) {
             foreach (DreamValue key in bList.EnumerateKeys()) {

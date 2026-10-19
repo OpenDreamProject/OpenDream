@@ -218,7 +218,9 @@ public abstract class DreamList : DreamObject {
 	/// <param name="start"></param>
 	/// <param name="end"></param>
 	public virtual void Cut(int start = 1, int end = 0) {
-        throw new DMException($"Cut() not implemented for type ({GetType().Name})");
+        foreach (var key in EnumerateKeys()) {
+            RemoveKey(key);
+        }
     }
 
 	public virtual void Insert(int index, DreamValue value) {
@@ -285,4 +287,39 @@ public abstract class DreamList : DreamObject {
         // We don't replicate that
         return base.TryGetVar(varName, out value);
     }
+    #region Operators
+    public override DreamValue OperatorAppend(DreamValue b) {
+        if (b.TryGetValueAsDreamList(out var bList)) {
+            var keys = bList.CopyKeys();
+            var valueCount = GetLength(); // Some lists return a reference to their internal values list which could change with each loop
+            for (int i = 0; i < valueCount; i++) {
+                var key = keys[i];
+
+                AddKey(key); // Always add the value
+            }
+        } else {
+            AddKey(b);
+        }
+
+        IncRef();
+        return new DreamValue(this);
+    }
+
+    public override DreamValue OperatorRemove(DreamValue b) {
+        if (b.TryGetValueAsDreamList(out var bList)) {
+            if (bList == this) {
+                Cut();
+            } else {
+                foreach (DreamValue key in bList.EnumerateKeys()) {
+                    RemoveKey(key);
+                }
+            }
+        } else {
+            RemoveKey(b);
+        }
+
+        IncRef();
+        return new DreamValue(this);
+    }
+    #endregion
 }

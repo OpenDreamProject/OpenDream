@@ -4,13 +4,13 @@ namespace OpenDreamRuntime.Objects.Types;
 
 // atom or image vis_contents list
 // Operates on an object's appearance
-public sealed class DreamVisContentsList : DreamList {
+public sealed class DreamVisContentsList : DreamListAbstract {
     private readonly PvsOverrideSystem? _pvsOverrideSystem;
 
     private readonly List<DreamObjectAtom> _visContents = new();
     private readonly DreamObject _owner; // atom or image
 
-    public DreamVisContentsList(DreamObjectDefinition listDef, PvsOverrideSystem? pvsOverrideSystem, DreamObject atom) : base(listDef, 0) {
+    public DreamVisContentsList(DreamObjectDefinition listDef, PvsOverrideSystem? pvsOverrideSystem, DreamObject atom) : base(listDef) {
         IoCManager.InjectDependencies(this);
 
         _pvsOverrideSystem = pvsOverrideSystem;

@@ -2,7 +2,7 @@ using System.Linq;
 namespace OpenDreamRuntime.Objects.Types;
 
 // area.contents list
-public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectArea area) : DreamList(listDef, 0) {
+public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectArea area) : DreamListAbstract(listDef) {
     public override DreamValue GetElement(DreamValue key) {
         if (!key.TryGetValueAsInteger(out var index))
             throw new DMException($"Invalid index into area contents list: {key}");

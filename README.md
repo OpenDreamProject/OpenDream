@@ -42,6 +42,8 @@ To do this, simply run `git submodule update --init --recursive` in git bash and
 
 To build, one can use a C# compiler (such as MSBuild) to compile the various projects described in the solution. To use the .NET build system, simply run `dotnet build -c Release` in the OpenDream directory. This will build all of the solutions in release mode and put the resultant binaries in `bin`
 
+If you are using VSCode, you can simply press `CTRL + SHIFT + B` and select `dotnet build`.
+
 ## Automated Testing & Code Coverage
 
 OpenDream makes use of an automated testing framework. You can run all tests for both OpenDream and its engine Robust Toolbox by running `dotnet test` in the OpenDream directory. Note that Robust Toolbox's tests may take quite a while and are typically not pertinent to OpenDream development. For more information about running and creating unit tests, refer to the dedicated wiki page [here](https://github.com/OpenDreamProject/OpenDream/wiki/Automated-Testing-&-Code-Coverage).

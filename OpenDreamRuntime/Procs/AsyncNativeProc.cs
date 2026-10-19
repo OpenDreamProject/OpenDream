@@ -53,15 +53,15 @@ namespace OpenDreamRuntime.Procs {
             public void Initialize(AsyncNativeProc? proc, Func<AsyncNativeProcState, Task<DreamValue>> taskFunc, DreamThread thread, DreamObject? src, DreamObject? usr, [HandlesResourceDisposal] DreamProcArguments arguments) {
                 base.Initialize(thread, true);
 
+                ArgumentCount = arguments.Count;
                 arguments.Values.CopyTo(_arguments);
-                foreach (var arg in _arguments)
-                    arg.IncRef();
+                for (int i = 0; i < ArgumentCount; i++)
+                    _arguments[i].IncRef();
 
                 _proc = proc;
                 _taskFunc = taskFunc;
                 Instance = src;
                 Usr = usr;
-                ArgumentCount = arguments.Count;
                 arguments.Dispose();
             }
 

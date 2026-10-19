@@ -36,6 +36,12 @@ public abstract class DreamList : DreamObject {
 		return DreamValue.Null;
 	}
 
+    /// <summary>
+    /// This takes a zero-index Index and returns the key at that location, if any.
+    /// </summary>
+    /// <param name="index"></param>
+    /// <param name="element"></param>
+    /// <returns></returns>
 	public virtual bool TryGetElementByIndex(int index, [MustDisposeResource][NotNullWhen(true)] out DreamValue? element) {
 		List<DreamValue> keys = GetKeysFast();
 		if(!keys.TryGetValue(index, out var _value)) {

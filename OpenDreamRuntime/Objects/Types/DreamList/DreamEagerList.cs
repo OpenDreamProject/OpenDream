@@ -171,8 +171,8 @@ public class DreamEagerList : DreamList {
         return 0;
     }
 
-    public DreamEagerList Union(DreamList other) {
-        DreamEagerList newList = new DreamEagerList(ObjectDefinition, _elements.Union(other.CopyKeys()).ToList());
+    public DantomList Union(DreamList other) {
+        DantomList newList = new DantomList(ObjectTree.List.ObjectDefinition, _elements.Union(other.CopyKeys()).ToList(), null);
         if(!(IsAssociative && other.IsAssociative)) {
             return newList;
         }

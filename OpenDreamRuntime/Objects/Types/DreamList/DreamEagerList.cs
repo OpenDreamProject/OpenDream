@@ -212,7 +212,7 @@ public class DreamEagerList : DreamList {
             throw new IndexOutOfRangeException();
         }
 
-        DreamValue oldElement = _oldValue.Value;
+        using DreamValue oldElement = _oldValue.Value;
         oldElement.DecRef();
 
         _elements[keyInteger - 1] = element;

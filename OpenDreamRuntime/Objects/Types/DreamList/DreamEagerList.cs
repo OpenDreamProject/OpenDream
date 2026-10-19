@@ -487,8 +487,8 @@ public class DreamEagerList : DreamList {
         var firstValues = CopyKeys();
         var secondValues = secondList.CopyKeys();
 
-        var firstListAssoc = GetLoosePairs();
-        var secondListAssoc = secondList.GetLoosePairs();
+        var firstListAssoc = GetTightPairs();
+        var secondListAssoc = secondList.GetTightPairs();
 
         for (var i = 0; i < firstValues.Count; i++) {
             // Starting with 516, equivalence checks assoc values

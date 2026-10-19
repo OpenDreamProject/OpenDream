@@ -142,7 +142,7 @@ namespace OpenDreamRuntime.Procs {
                     return new WorldContentsEnumerator(atomManager, filterType);
 
                 var values = list.ToArray();
-                var assocValues = list.IsAssociative ? list.GetLoosePairs() : null;
+                var assocValues = list.IsAssociative ? list.GetTightPairs() : null;
                 foreach (var copiedValue in values)
                     copiedValue.IncRef();
                 if (assocValues != null)

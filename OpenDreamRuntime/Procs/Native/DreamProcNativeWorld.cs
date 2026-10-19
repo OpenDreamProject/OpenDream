@@ -142,7 +142,7 @@ internal static class DreamProcNativeWorld {
         if (format == "json") {
             return new("[]");
         } else { // Anything else gives a /list
-            DreamList dataList = bundle.ObjectTree.CreateList();
+            DantomList dataList = bundle.ObjectTree.CreateList();
 
             if (type == "sendmaps") {
                 dataList.AddKey(new("name"));

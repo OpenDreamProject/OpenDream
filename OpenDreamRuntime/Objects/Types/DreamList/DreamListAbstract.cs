@@ -258,7 +258,7 @@ public abstract class DreamListAbstract : DreamObject {
 	/// <param name="start"></param>
 	/// <param name="end"></param>
 	/// <returns></returns>
-	public virtual DreamList ToDreamList(int start = 1, int end = 0) {
+	public virtual DantomList ToDreamList(int start = 1, int end = 0) {
 		if (start == 0) ++start; //start being 0 and start being 1 are equivalent
 
 		var keys = GetKeysFast();
@@ -269,7 +269,7 @@ public abstract class DreamListAbstract : DreamObject {
 			end = keys.Count + 1;
 
 		if (end <= start)
-			return new DreamList(ObjectDefinition, 0);
+			return new DantomList(ObjectDefinition, 0);
 
 		List<DreamValue> copyValues = keys.GetRange(start - 1, end - start);
 		Dictionary<DreamValue, DreamValue> associativeValues = GetTightPairs();
@@ -284,7 +284,7 @@ public abstract class DreamListAbstract : DreamObject {
 			}
 		}
 
-		return new DreamList(ObjectDefinition, copyValues, associativeValues);
+		return new DantomList(ObjectDefinition, copyValues, associativeValues);
 	}
 
     protected override bool TryGetVar(string varName, out DreamValue value) {

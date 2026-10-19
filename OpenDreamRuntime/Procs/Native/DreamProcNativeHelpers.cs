@@ -174,9 +174,9 @@ internal static partial class DreamProcNativeHelpers {
         return tiles;
     }
 
-    public static DreamList HandleRange(DreamObjectAtom center, ViewRange range, bool includeCenter) {
+    public static DantomList HandleRange(DreamObjectAtom center, ViewRange range, bool includeCenter) {
         HashSet<DreamObjectArea> seenAreas = [];
-        DreamList rangeList = center.ObjectDefinition.ObjectTree.CreateList(range.Height * range.Width);
+        DantomList rangeList = center.ObjectDefinition.ObjectTree.CreateList(range.Height * range.Width);
 
         void AddToList(DreamValue value) {
             if(value.TryGetValueAsDreamObject<DreamObjectAtom>(out var atomValue)) {
@@ -280,7 +280,7 @@ internal static partial class DreamProcNativeHelpers {
 
         center ??= usr as DreamObjectAtom;
 
-        DreamList view = bundle.ObjectTree.CreateList();
+        DantomList view = bundle.ObjectTree.CreateList();
         if (center == null)
             return new(view);
 
@@ -335,7 +335,7 @@ internal static partial class DreamProcNativeHelpers {
 
         center ??= usr as DreamObjectAtom;
 
-        DreamList view = bundle.ObjectTree.CreateList();
+        DantomList view = bundle.ObjectTree.CreateList();
         if (center == null)
             return new(view);
 

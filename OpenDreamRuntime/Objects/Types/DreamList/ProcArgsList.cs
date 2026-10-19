@@ -54,7 +54,7 @@ internal sealed class ProcArgsList(DreamObjectDefinition listDef, ProcState stat
 }
 
 // Savefile Dir List - always synced with Savefiles currentDir. Only stores keys.
-public sealed class SavefileDirList(DreamObjectDefinition listDef, DreamObjectSavefile backedSaveFile) : DreamList(listDef, 0) {
+public sealed class SavefileDirList(DreamObjectDefinition listDef, DreamObjectSavefile backedSaveFile) : DantomList(listDef, 0) {
     public override DreamValue GetElement(DreamValue key) {
         if (!key.TryGetValueAsInteger(out var index))
             throw new DMException($"Invalid index on savefile dir list: {key}");

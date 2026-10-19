@@ -233,7 +233,7 @@ public sealed partial class DreamConnection {
             return;
         }
 
-        DreamList allSounds = _objectTree.CreateList(message.Sounds.Count);
+        DantomList allSounds = _objectTree.CreateList(message.Sounds.Count);
         foreach (var soundData in message.Sounds) {
             var sound = _objectTree.CreateObject(_objectTree.Sound);
             sound.SetVariableValue("channel", new DreamValue(soundData.Channel));

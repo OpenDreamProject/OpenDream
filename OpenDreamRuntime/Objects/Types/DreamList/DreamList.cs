@@ -8,19 +8,19 @@ using OpenDreamRuntime.Procs;
 namespace OpenDreamRuntime.Objects.Types;
 
 [Virtual]
-public class DreamList : DreamEagerList {
+public class DantomList : DreamEagerList {
 
     public override bool IsAssociative => _associativeValues is { Count: > 0 };
 
     private Dictionary<DreamValue, DreamValue>? _associativeValues;
 
-    public DreamList(DreamObjectDefinition listDef, int size) : base(listDef, size) {
+    public DantomList(DreamObjectDefinition listDef, int size) : base(listDef, size) {
     }
 
     /// <summary>
     /// Create a new DreamList using an existing list of values (does not copy them)
     /// </summary>
-    public DreamList(DreamObjectDefinition listDef, List<DreamValue> values, Dictionary<DreamValue, DreamValue>? associativeValues) : base(listDef, values) {
+    public DantomList(DreamObjectDefinition listDef, List<DreamValue> values, Dictionary<DreamValue, DreamValue>? associativeValues) : base(listDef, values) {
         _associativeValues = associativeValues;
 
         if (_associativeValues != null) {
@@ -45,17 +45,17 @@ public class DreamList : DreamEagerList {
     }
 
     [Obsolete("Consider ToDreamList() instead.")]
-    public override DreamList ToCopy(int start = 1, int end = 0) {
+    public override DantomList ToCopy(int start = 1, int end = 0) {
         return ToDreamList(start, end);
     }
 
-    public override DreamList ToDreamList(int start = 1, int end = 0) {
+    public override DantomList ToDreamList(int start = 1, int end = 0) {
         if (start == 0) ++start; //start being 0 and start being 1 are equivalent
 
         if (end > _elements.Count + 1 || start > _elements.Count + 1) throw new DMException("list index out of bounds");
         if (end == 0) end = _elements.Count + 1;
         if (end <= start)
-            return new DreamList(ObjectDefinition, 0);
+            return new DantomList(ObjectDefinition, 0);
 
         List<DreamValue> copyValues = _elements.GetRange(start - 1, end - start);
 
@@ -68,7 +68,7 @@ public class DreamList : DreamEagerList {
             }
         }
 
-        return new DreamList(ObjectDefinition, copyValues, associativeValues);
+        return new DantomList(ObjectDefinition, copyValues, associativeValues);
     }
 
     public override IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateLoosePairs() {
@@ -214,7 +214,7 @@ public class DreamList : DreamEagerList {
     protected override void UpdateTracyContentsMemory() {
         #if TOOLS
         var valueCount = _elements.Count + (_associativeValues?.Count ?? 0);
-        var totalSize = Unsafe.SizeOf<DreamList>() + valueCount * Unsafe.SizeOf<DreamValue>();
+        var totalSize = Unsafe.SizeOf<DantomList>() + valueCount * Unsafe.SizeOf<DreamValue>();
 
         _tracyContentsMemoryId?.ReleaseMemory();
         _tracyContentsMemoryId = Profiler.BeginMemoryZone((ulong)totalSize, "/list contents");
@@ -225,7 +225,7 @@ public class DreamList : DreamEagerList {
     #region Operators
 
     public override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
-        DreamList listCopy = ToDreamList();
+        DantomList listCopy = ToDreamList();
 
         if (b.TryGetValueAsDreamListAbstract(out var bList)) {
             foreach (DreamValue key in bList.EnumerateKeys()) {

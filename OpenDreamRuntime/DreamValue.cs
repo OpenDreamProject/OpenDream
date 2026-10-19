@@ -307,15 +307,15 @@ public struct DreamValue : IDisposable, IEquatable<DreamValue> {
         return false;
     }
 
-    public readonly bool TryGetValueAsDreamList([NotNullWhen(true)] out DreamList? list) {
+    public readonly bool TryGetValueAsDreamList([NotNullWhen(true)] out DantomList? list) {
         return TryGetValueAsDreamObject(out list);
     }
 
     public readonly bool TryGetValueAsDreamListAbstract([NotNullWhen(true)] out DreamListAbstract? list) {
         return TryGetValueAsDreamObject(out list);
     }
-    public DreamList MustGetValueAsDreamList() {
-        if (_refValue is not DreamList dl) {
+    public DantomList MustGetValueAsDreamList() {
+        if (_refValue is not DantomList dl) {
             ThrowInvalidCastList();
             return null!;
         }

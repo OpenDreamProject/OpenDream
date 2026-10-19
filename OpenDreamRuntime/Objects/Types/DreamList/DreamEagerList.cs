@@ -325,7 +325,7 @@ public class DreamEagerList : DreamListAbstract {
     protected virtual void UpdateTracyContentsMemory() {
         #if TOOLS
         var valueCount = _elements.Count;
-        var totalSize = Unsafe.SizeOf<DreamList>() + valueCount * Unsafe.SizeOf<DreamValue>();
+        var totalSize = Unsafe.SizeOf<DantomList>() + valueCount * Unsafe.SizeOf<DreamValue>();
 
         _tracyContentsMemoryId?.ReleaseMemory();
         _tracyContentsMemoryId = Profiler.BeginMemoryZone((ulong)totalSize, "/list contents");
@@ -340,7 +340,7 @@ public class DreamEagerList : DreamListAbstract {
     }
 
     public override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
-        DreamList listCopy = (DreamList)ToCopy();
+        DantomList listCopy = (DantomList)ToCopy();
 
         if (b.TryGetValueAsDreamListAbstract(out var bList)) {
             foreach (DreamValue key in bList.EnumerateKeys()) {
@@ -359,7 +359,7 @@ public class DreamEagerList : DreamListAbstract {
     }
 
     public override DreamValue OperatorSubtract(DreamValue b, DMProcState state) {
-        DreamList listCopy = (DreamList)ToCopy();
+        DantomList listCopy = (DantomList)ToCopy();
 
         if (b.TryGetValueAsDreamListAbstract(out var bList)) {
             foreach (DreamValue value in bList.EnumerateKeys()) {

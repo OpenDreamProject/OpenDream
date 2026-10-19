@@ -31,8 +31,8 @@ namespace OpenDreamRuntime.Procs.Native {
             int end = bundle.GetArgument(1, "End").MustGetValueAsInteger(); //1-indexed
             DreamListAbstract list = (DreamListAbstract)src!;
 
-            if (list is DreamList) {
-                DreamList listCopy = list.ToDreamList(start, end);
+            if (list is DantomList) {
+                DantomList listCopy = list.ToDreamList(start, end);
                 return new DreamValue(listCopy);
             } else if (list is DreamAssocList) {
                 DreamAssocList listCopy = (DreamAssocList)list.ToCopy(start, end);
@@ -73,7 +73,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Item1")]
         public static DreamValue NativeProc_Insert(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             int index = bundle.GetArgument(0, "Index").MustGetValueAsInteger(); //1-indexed
-            DreamList list = (DreamList)src!;
+            DantomList list = (DantomList)src!;
 
             if (index <= 0) index = list.GetLength() + 1;
             if (bundle.Arguments.Length < 2) throw new DMException("No value given to insert");

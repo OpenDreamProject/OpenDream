@@ -215,10 +215,6 @@ internal static class DreamProcNativeWorld {
         dreamManager.HotReloadResource(fileName);
         return DreamValue.Null;
     }
-    [DreamProc("Tick")]
-    public static DreamValue NativeProc_Tick(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-        return DreamValue.Null;
-    }
 
     /// <summary>
     /// Determines the specified configuration space and configuration set in a config_set argument

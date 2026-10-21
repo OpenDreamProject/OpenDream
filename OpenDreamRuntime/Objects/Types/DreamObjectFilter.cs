@@ -3,7 +3,7 @@ using OpenDreamShared.Dream;
 namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectFilter(DreamObjectDefinition objectDefinition) : DreamObject(objectDefinition) {
-    public static readonly Dictionary<DreamFilter, DreamFilterList> FilterAttachedTo = new();
+    public static readonly Dictionary<DreamFilter, FiltersList> FilterAttachedTo = new();
 
     public override bool ShouldCallNew => false;
 
@@ -53,13 +53,13 @@ public sealed class DreamObjectFilter(DreamObjectDefinition objectDefinition) : 
         return filterObject;
     }
 
-    public static DreamObjectFilter? TryCreateFilter(DreamObjectTree objectTree, DreamList list) {
-        static IEnumerable<(string, DreamValue)> EnumerateProperties(DreamList list) {
-            foreach (var key in list.EnumerateValues()) {
+    public static DreamObjectFilter? TryCreateFilter(DreamObjectTree objectTree, DantomList list) {
+        static IEnumerable<(string, DreamValue)> EnumerateProperties(DantomList list) {
+            foreach (var key in list.EnumerateKeys()) {
                 if (!key.TryGetValueAsString(out var keyStr))
                     continue;
 
-                using var value = list.GetValue(key);
+                using var value = list.GetElement(key);
                 if (value.IsNull)
                     continue;
 

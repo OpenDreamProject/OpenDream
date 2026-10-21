@@ -144,13 +144,19 @@ public struct DreamValue : IDisposable, IEquatable<DreamValue> {
         DecRef();
     }
 
-    public void IncRef() {
+    /// <summary>
+    /// Increments the reference count of the DreamObject. DreamValue.Null is a no-op.
+    /// </summary>
+    public void IncRef()
+    {
         if (Type != DreamValueType.DreamObject || _refValue == null)
             return;
 
         Unsafe.As<DreamObject>(_refValue).IncRef();
     }
-
+    /// <summary>
+    /// Decrements the reference count of the DreamObject. DreamValue.Null is a no-op.
+    /// </summary>
     public void DecRef() {
         if (Type != DreamValueType.DreamObject || _refValue == null)
             return;
@@ -301,10 +307,13 @@ public struct DreamValue : IDisposable, IEquatable<DreamValue> {
         return false;
     }
 
-    public readonly bool TryGetValueAsDreamList([NotNullWhen(true)] out DreamList? list) {
+    public readonly bool TryGetValueAsDantomList([NotNullWhen(true)] out DantomList? list) {
         return TryGetValueAsDreamObject(out list);
     }
 
+    public readonly bool TryGetValueAsDreamList([NotNullWhen(true)] out DreamList? list) {
+        return TryGetValueAsDreamObject(out list);
+    }
     public DreamList MustGetValueAsDreamList() {
         if (_refValue is not DreamList dl) {
             ThrowInvalidCastList();
@@ -312,25 +321,6 @@ public struct DreamValue : IDisposable, IEquatable<DreamValue> {
         }
 
         return dl;
-    }
-
-    // TODO: Replace GetValueAsDreamList with GetValueAsIDreamList if possible. IDreamList isn't complete enough yet.
-    public readonly bool TryGetValueAsIDreamList([NotNullWhen(true)] out IDreamList? list) {
-        if (_refValue is IDreamList idl) {
-            list = idl;
-            return true;
-        }
-
-        list = null;
-        return false;
-    }
-
-    public IDreamList MustGetValueAsIDreamList() {
-        if (_refValue is IDreamList idl)
-            return idl;
-
-        ThrowInvalidCastList();
-        return null!;
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]

@@ -63,7 +63,7 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
                 return;
             }
         } else if (arg1.TryGetValueAsDreamList(out var vectorList)) { // list(X, Y) or list(X, Y, Z)
-            var components = vectorList.GetValues();
+            var components = vectorList.CopyKeys();
 
             if (components.Count is 2 or 3 && components.All(v => v.Type == DreamValue.DreamValueType.Float)) {
                 X = components[0].UnsafeGetValueAsFloat();
@@ -309,9 +309,9 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
             var length = list.GetLength();
 
             if (length >= 3) {
-                using var x = list.GetValue(new(1));
-                using var y = list.GetValue(new(2));
-                using var z = list.GetValue(new(3));
+                using var x = list.GetElement(new(1));
+                using var y = list.GetElement(new(2));
+                using var z = list.GetElement(new(3));
 
                 vector = tree.CreateObject<DreamObjectVector>(tree.Vector);
                 vector.Initialize(new(x, y, z));
@@ -319,8 +319,8 @@ public sealed class DreamObjectVector(DreamObjectDefinition definition) : DreamO
             }
 
             if (length == 2) {
-                using var x = list.GetValue(new(1));
-                using var y = list.GetValue(new(2));
+                using var x = list.GetElement(new(1));
+                using var y = list.GetElement(new(2));
 
                 vector = tree.CreateObject<DreamObjectVector>(tree.Vector);
                 vector.Initialize(new(x, y));

@@ -233,7 +233,7 @@ public sealed partial class DreamConnection {
             return;
         }
 
-        DreamList allSounds = _objectTree.CreateList(message.Sounds.Count);
+        DantomList allSounds = _objectTree.CreateList(message.Sounds.Count);
         foreach (var soundData in message.Sounds) {
             var sound = _objectTree.CreateObject(_objectTree.Sound);
             sound.SetVariableValue("channel", new DreamValue(soundData.Channel));
@@ -243,7 +243,7 @@ public sealed partial class DreamConnection {
             sound.SetVariableValue("repeat", new DreamValue(soundData.Repeat));
             sound.SetVariableValue("file", string.IsNullOrEmpty(soundData.File) ? DreamValue.Null : new DreamValue(soundData.File));
 
-            allSounds.AddValue(new DreamValue(sound));
+            allSounds.AddKey(new DreamValue(sound));
             sound.DecRef();
         }
 
@@ -253,7 +253,7 @@ public sealed partial class DreamConnection {
 
     public void HandleMsgTopic(MsgTopic pTopic) {
         var hrefList = DreamProcNativeRoot.Params2List(_objectTree, HttpUtility.UrlDecode(pTopic.Query));
-        using var srcRefValue = hrefList.GetValue(new DreamValue("src"));
+        using var srcRefValue = hrefList.GetElement(new DreamValue("src"));
         var src = DreamValue.Null;
 
         if (srcRefValue.TryGetValueAsString(out var srcRef)) {
@@ -342,8 +342,8 @@ public sealed partial class DreamConnection {
         return task;
     }
 
-    public async Task<DreamValue> PromptList(DreamValueType types, IDreamList list, string title, string message, DreamValue defaultValue) {
-        DreamValue[] listValues = list.CopyToArray();
+    public async Task<DreamValue> PromptList(DreamValueType types, DreamList list, string title, string message, DreamValue defaultValue) {
+        DreamValue[] listValues = list.ToArray();
         foreach (var value in listValues)
             value.IncRef();
 

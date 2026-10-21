@@ -86,10 +86,10 @@ public sealed class DreamObjectRegex(DreamObjectDefinition objectDefinition) : D
             SetVariable("index", new DreamValue(match.Index + 1));
             SetVariable("match", new DreamValue(match.Value));
             if (match.Groups.Count > 0) {
-                DreamList groupList = ObjectTree.CreateList(match.Groups.Count);
+                DantomList groupList = ObjectTree.CreateList(match.Groups.Count);
 
                 for (int i = 1; i < match.Groups.Count; i++) {
-                    groupList.AddValue(new DreamValue(match.Groups[i].Value));
+                    groupList.AddKey(new DreamValue(match.Groups[i].Value));
                 }
 
                 SetVariable("group", new DreamValue(groupList));

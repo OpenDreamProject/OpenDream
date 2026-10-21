@@ -2,17 +2,17 @@
 
 [Virtual]
 public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObject(objectDefinition) {
-    private DreamOverlaysList Overlays => _overlays ??= new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
-    private DreamOverlaysList Underlays => _underlays ??= new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
-    private DreamVisContentsList VisContents => _visContents ??= new(ObjectTree.List.ObjectDefinition, PvsOverrideSystem, this);
-    private DreamFilterList Filters => _filters ??= new(ObjectTree.List.ObjectDefinition, this);
-    private DreamList VisLocs => _visLocs ??= ObjectTree.CreateList();
+    private OverlaysList Overlays => _overlays ??= new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
+    private OverlaysList Underlays => _underlays ??= new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
+    private VisContentsList VisContents => _visContents ??= new(ObjectTree.List.ObjectDefinition, PvsOverrideSystem, this);
+    private FiltersList Filters => _filters ??= new(ObjectTree.List.ObjectDefinition, this);
+    private DantomList VisLocs => _visLocs ??= ObjectTree.CreateList();
 
-    private DreamOverlaysList? _overlays;
-    private DreamOverlaysList? _underlays;
-    private DreamVisContentsList? _visContents;
-    private DreamFilterList? _filters;
-    private DreamList? _visLocs; // TODO: Implement
+    private OverlaysList? _overlays;
+    private OverlaysList? _underlays;
+    private VisContentsList? _visContents;
+    private FiltersList? _filters;
+    private DantomList? _visLocs; // TODO: Implement
 
     protected string GetRTEntityDesc() {
         if (AtomManager.TryGetAppearance(this, out var appearance) && appearance.Desc != null)
@@ -106,11 +106,11 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
 
                 if (value.TryGetValueAsDreamList(out var valueList)) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue overlayValue in valueList.EnumerateValues()) {
-                        Overlays.AddValue(overlayValue);
+                    foreach (DreamValue overlayValue in valueList.EnumerateKeys()) {
+                        Overlays.AddKey(overlayValue);
                     }
                 } else if (!value.IsNull) {
-                    Overlays.AddValue(value);
+                    Overlays.AddKey(value);
                 }
 
                 break;
@@ -120,11 +120,11 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
 
                 if (value.TryGetValueAsDreamList(out var valueList)) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue underlayValue in valueList.EnumerateValues()) {
-                        Underlays.AddValue(underlayValue);
+                    foreach (DreamValue underlayValue in valueList.EnumerateKeys()) {
+                        Underlays.AddKey(underlayValue);
                     }
                 } else if (!value.IsNull) {
-                    Underlays.AddValue(value);
+                    Underlays.AddKey(value);
                 }
 
                 break;
@@ -134,11 +134,11 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
 
                 if (value.TryGetValueAsDreamList(out var valueList)) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue visContentsValue in valueList.EnumerateValues()) {
-                        VisContents.AddValue(visContentsValue);
+                    foreach (DreamValue visContentsValue in valueList.EnumerateKeys()) {
+                        VisContents.AddKey(visContentsValue);
                     }
                 } else if (!value.IsNull) {
-                    VisContents.AddValue(value);
+                    VisContents.AddKey(value);
                 }
 
                 break;
@@ -147,20 +147,20 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
                 Filters.Cut();
 
                 // filters = list("type"=...) or list(filter(...), filter(...))
-                if (value.TryGetValueAsDreamList(out var valueList)) {
-                    using var typeArg = valueList.GetValue(new("type"));
+                if (value.TryGetValueAsDantomList(out var valueList)) {
+                    using var typeArg = valueList.GetElement(new("type"));
 
                     if (typeArg != DreamValue.Null) { // It's a single filter
                         var filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, valueList);
                         if (filterObject == null) // list() with invalid "type" is ignored
                             break;
 
-                        Filters.AddValue(new(filterObject));
+                        Filters.AddKey(new(filterObject));
                         filterObject.DecRef();
                     } else { // It's a list of filters
-                        foreach (var filter in valueList.EnumerateValues()) {
+                        foreach (var filter in valueList.EnumerateKeys()) {
                             if (!filter.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject)) {
-                                if (!filter.TryGetValueAsDreamList(out var filterValues))
+                                if (!filter.TryGetValueAsDantomList(out var filterValues))
                                     continue;
 
                                 filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, filterValues);
@@ -168,12 +168,12 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
                                     continue;
                             }
 
-                            Filters.AddValue(new(filterObject));
+                            Filters.AddKey(new(filterObject));
                             filterObject.DecRef();
                         }
                     }
                 } else if (!value.IsNull) {
-                    Filters.AddValue(value);
+                    Filters.AddKey(value);
                 }
 
                 break;

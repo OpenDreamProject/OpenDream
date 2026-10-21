@@ -204,15 +204,15 @@ public sealed partial class DreamObjectTree {
     }
 
     // TODO: Maybe in the future, DreamList could be made not a DreamObject so this doesn't have to be done through the object tree?
-    public DreamList CreateList(int size = 0) {
-        return new DreamList(List.ObjectDefinition, size);
+    public DantomList CreateList(int size = 0) {
+        return new DantomList(List.ObjectDefinition, size);
     }
 
-    public DreamList CreateList(string[] elements) {
-        DreamList list = CreateList(elements.Length);
+    public DantomList CreateList(string[] elements) {
+        DantomList list = CreateList(elements.Length);
 
         foreach (string value in elements) {
-            list.AddValue(new DreamValue(value));
+            list.AddKey(new DreamValue(value));
         }
 
         return list;
@@ -257,7 +257,7 @@ public sealed partial class DreamObjectTree {
                     case JsonVariableType.Proc:
                         return new DreamValue(Procs[jsonElement.GetProperty("value").GetInt32()]);
                     case JsonVariableType.List: {
-                        DreamList list = CreateList();
+                        DantomList list = CreateList();
 
                         if (jsonElement.TryGetProperty("values", out JsonElement values)) {
                             foreach (JsonElement listValue in values.EnumerateArray()) {
@@ -270,11 +270,11 @@ public sealed partial class DreamObjectTree {
                                     using var listKey = GetDreamValueFromJsonElement(jsonKey);
                                     using var dreamValue = GetDreamValueFromJsonElement(jsonValue);
 
-                                    list.SetValue(listKey, dreamValue, allowGrowth: true);
+                                    list.SetKeyValuePair(listKey, dreamValue, allowGrowth: true);
                                 } else {
                                     using var dreamValue = GetDreamValueFromJsonElement(listValue);
 
-                                    list.AddValue(dreamValue);
+                                    list.AddKey(dreamValue);
                                 }
                             }
                         }
@@ -295,7 +295,7 @@ public sealed partial class DreamObjectTree {
                                 using var listKey = GetDreamValueFromJsonElement(jsonKey);
                                 using var dreamValue = GetDreamValueFromJsonElement(jsonValue);
 
-                                aList.SetValue(listKey, dreamValue);
+                                aList.SetKeyValuePair(listKey, dreamValue);
                             }
                         }
 

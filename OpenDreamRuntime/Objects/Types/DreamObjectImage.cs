@@ -36,10 +36,10 @@ public sealed class DreamObjectImage : DreamObject {
             _filters = ObjectTree.CreateList();
             IsMutableAppearance = true;
         } else {
-            _overlays = new DreamOverlaysList(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
-            _underlays = new DreamOverlaysList(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
-            _visContents = new DreamVisContentsList(ObjectTree.List.ObjectDefinition, PvsOverrideSystem, this);
-            _filters = new DreamFilterList(ObjectTree.List.ObjectDefinition, this);
+            _overlays = new OverlaysList(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
+            _underlays = new OverlaysList(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
+            _visContents = new VisContentsList(ObjectTree.List.ObjectDefinition, PvsOverrideSystem, this);
+            _filters = new FiltersList(ObjectTree.List.ObjectDefinition, this);
             IsMutableAppearance = false;
             Entity = EntityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace)); //spawning an entity in nullspace means it never actually gets sent to any clients until it's placed on the map, or it gets a PVS override
             SpriteComponent = EntityManager.AddComponent<DMISpriteComponent>(Entity);
@@ -149,14 +149,14 @@ public sealed class DreamObjectImage : DreamObject {
                 if (ObjectDefinition.IsSubtypeOf(ObjectTree.MutableAppearance)) {
                     if (valueList != null) {
                         _overlays.DecRef();
-                        _overlays = (DreamList)valueList.CreateCopy();
+                        _overlays = valueList.ToDantomList();
                     } else {
-                        var overlay = DreamOverlaysList.CreateOverlayAppearance(AtomManager, value, AtomManager.MustGetAppearance(this).Icon);
+                        var overlay = OverlaysList.CreateOverlayAppearance(AtomManager, value, AtomManager.MustGetAppearance(this).Icon);
                         if (overlay == null)
                             return;
 
                         _overlays.Cut();
-                        _overlays.AddValue(new(overlay));
+                        _overlays.AddKey(new(overlay));
                         overlay.Dispose();
                     }
 
@@ -167,11 +167,11 @@ public sealed class DreamObjectImage : DreamObject {
 
                 if (valueList != null) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue overlayValue in valueList.EnumerateValues()) {
-                        _overlays.AddValue(overlayValue);
+                    foreach (DreamValue overlayValue in valueList.EnumerateKeys()) {
+                        _overlays.AddKey(overlayValue);
                     }
                 } else if (!value.IsNull) {
-                    _overlays.AddValue(value);
+                    _overlays.AddKey(value);
                 }
 
                 break;
@@ -183,14 +183,14 @@ public sealed class DreamObjectImage : DreamObject {
                 if (ObjectDefinition.IsSubtypeOf(ObjectTree.MutableAppearance)) {
                     if (valueList != null) {
                         _underlays.DecRef();
-                        _underlays = (DreamList)valueList.CreateCopy();
+                        _underlays = valueList.ToDantomList();
                     } else {
-                        var underlay = DreamOverlaysList.CreateOverlayAppearance(AtomManager, value, AtomManager.MustGetAppearance(this).Icon);
+                        var underlay = OverlaysList.CreateOverlayAppearance(AtomManager, value, AtomManager.MustGetAppearance(this).Icon);
                         if (underlay == null)
                             return;
 
                         _underlays.Cut();
-                        _underlays.AddValue(new(underlay));
+                        _underlays.AddKey(new(underlay));
                         underlay.Dispose();
                     }
 
@@ -201,11 +201,11 @@ public sealed class DreamObjectImage : DreamObject {
 
                 if (valueList != null) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue underlayValue in valueList.EnumerateValues()) {
-                        _underlays.AddValue(underlayValue);
+                    foreach (DreamValue underlayValue in valueList.EnumerateKeys()) {
+                        _underlays.AddKey(underlayValue);
                     }
                 } else if (!value.IsNull) {
-                    _underlays.AddValue(value);
+                    _underlays.AddKey(value);
                 }
 
                 break;
@@ -217,35 +217,35 @@ public sealed class DreamObjectImage : DreamObject {
 
                 if (valueList != null) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue visContentValue in valueList.EnumerateValues()) {
-                        _visContents.AddValue(visContentValue);
+                    foreach (DreamValue visContentValue in valueList.EnumerateKeys()) {
+                        _visContents.AddKey(visContentValue);
                     }
                 } else if (!value.IsNull) {
-                    _visContents.AddValue(value);
+                    _visContents.AddKey(value);
                 }
 
                 break;
             }
             case "filters": {
-                value.TryGetValueAsDreamList(out var valueList);
+                value.TryGetValueAsDantomList(out var valueList);
 
                 _filters.Cut();
 
                 // filters = list("type"=...) or list(filter(...), filter(...))
                 if (valueList != null) { // filters = list("type"=...)
-                    using var typeArg = valueList.GetValue(new("type"));
+                    using var typeArg = valueList.GetElement(new("type"));
 
                     if (typeArg != DreamValue.Null) { // It's a single filter
                         var filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, valueList);
                         if (filterObject == null) // list() with invalid "type" is ignored
                             break;
 
-                        _filters.AddValue(new(filterObject));
+                        _filters.AddKey(new(filterObject));
                         filterObject.DecRef();
                     } else { // It's a list of filters
-                        foreach (var filter in valueList.EnumerateValues()) {
+                        foreach (var filter in valueList.EnumerateKeys()) {
                             if (!filter.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject)) {
-                                if (!filter.TryGetValueAsDreamList(out var filterValues))
+                                if (!filter.TryGetValueAsDantomList(out var filterValues))
                                     continue;
 
                                 filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, filterValues);
@@ -253,12 +253,12 @@ public sealed class DreamObjectImage : DreamObject {
                                     continue;
                             }
 
-                            _filters.AddValue(new(filterObject));
+                            _filters.AddKey(new(filterObject));
                             filterObject.DecRef();
                         }
                     }
                 } else if (!value.IsNull) {
-                    _filters.AddValue(value);
+                    _filters.AddKey(value);
                 }
 
                 break;

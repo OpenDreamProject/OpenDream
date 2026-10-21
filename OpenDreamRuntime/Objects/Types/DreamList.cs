@@ -253,10 +253,67 @@ public class DreamList : DreamObject, IDreamList {
     }
 
     public virtual int FindValue(DreamValue value, int start = 1, int end = 0) {
-        if (end == 0 || end > _values.Count) end = _values.Count + 1;
+        if (!NormalizeFindRange(_values.Count, ref start, ref end))
+            return 0;
 
         for (int i = start; i < end; i++) {
             if (_values[i - 1].Equals(value)) return i;
+        }
+
+        return 0;
+    }
+
+    /// <summary>
+    /// Turns Find()'s Start/End into a [start, end) range of 1-indexed positions.
+    /// End 0 is just past the last element, Start 0 is 1.
+    /// A negative Start finds nothing, or raises a <see cref="DMCompiler.Compiler.WarningCode.ListFindOutOfBoundsException"/> if enabled.
+    /// </summary>
+    /// <param name="length">Length of the list being searched</param>
+    /// <param name="start">Find()'s Start argument, normalized in place</param>
+    /// <param name="end">Find()'s End argument, normalized in place</param>
+    /// <param name="lenientEnd">Whether an out-of-range End searches to the end instead of erroring</param>
+    /// <returns>false if the range is empty</returns>
+    protected bool NormalizeFindRange(int length, ref int start, ref int end, bool lenientEnd = false) {
+        if (end <= 0 || end > length + 1) {
+            if (end != 0) {
+                if (!lenientEnd)
+                    throw new DMException("list index out of bounds");
+
+                // BYOND ignores this, but it's still a bug worth catching
+                DreamManager.OptionalException<DMException>(DMCompiler.Compiler.WarningCode.ListFindOutOfBoundsException, "list index out of bounds");
+            }
+
+            end = length + 1;
+        }
+
+        if (start < 0) { // A negative Start doesn't search at all, unlike one past the end
+            DreamManager.OptionalException<DMException>(DMCompiler.Compiler.WarningCode.ListFindOutOfBoundsException, "list index out of bounds");
+            return false;
+        }
+
+        if (start == 0)
+            start = 1;
+
+        return start < end;
+    }
+
+    /// <returns>The 1-indexed position of the value, or 0 if it isn't in the [start, end) range</returns>
+    protected static int FindValueInSpan<T>(ReadOnlySpan<T> values, T value, int start, int end) where T : IEquatable<T> {
+        var index = values.Slice(start - 1, end - start).IndexOf(value);
+
+        return index < 0 ? 0 : index + start;
+    }
+
+    protected int FindValueByEnumeration(DreamValue value, int start, int end, bool lenientEnd = false) {
+        if (!NormalizeFindRange(GetLength(), ref start, ref end, lenientEnd))
+            return 0;
+
+        var index = 0;
+        foreach (var listValue in EnumerateValues()) {
+            index++;
+            if (index < start) continue;
+            if (index >= end) break;
+            if (listValue.Equals(value)) return index;
         }
 
         return 0;
@@ -641,7 +698,7 @@ internal sealed class DreamListVars(DreamObjectDefinition listDef, DreamObject d
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        return GetValues().IndexOf(value)+1; // IndexOf is 0 indexed, returns -1 on fail, DM is 1 indexed and returns 0 on fail, so +1
+        return FindValueByEnumeration(value, start, end);
     }
 }
 
@@ -674,6 +731,10 @@ internal sealed class DreamGlobalVars(DreamObjectDefinition listDef) : DreamList
         return ContainsKey(value);
     }
 
+    public override int GetLength() {
+        return ObjectTree.Root.ObjectDefinition.GlobalVariables.Count;
+    }
+
     public override DreamValue GetValue(DreamValue key) {
         if (!key.TryGetValueAsString(out var varName)) {
             throw new DMException($"Invalid var index {key}");
@@ -703,7 +764,7 @@ internal sealed class DreamGlobalVars(DreamObjectDefinition listDef) : DreamList
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
+        return FindValueByEnumeration(value, start, end);
     }
 }
 
@@ -792,7 +853,12 @@ public sealed class ClientVerbsList : DreamList {
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
+        if (!NormalizeFindRange(Verbs.Count, ref start, ref end))
+            return 0;
+        if (!value.TryGetValueAsProc(out var verb))
+            return 0;
+
+        return Verbs.IndexOf(verb, start - 1, end - start) + 1; // IndexOf() is 0-indexed, -1 on failure
     }
 }
 
@@ -892,7 +958,13 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
+        var verbs = GetVerbs();
+        if (!NormalizeFindRange(verbs.Length, ref start, ref end))
+            return 0;
+        if (!value.TryGetValueAsProc(out var verb) || verb.VerbId == null)
+            return 0;
+
+        return FindValueInSpan(verbs.AsSpan(), verb.VerbId.Value, start, end);
     }
 }
 
@@ -976,7 +1048,25 @@ public sealed class DreamOverlaysList(DreamObjectDefinition listDef, DreamObject
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
+        var overlays = GetOverlaysArray(AtomManager.MustGetAppearance(owner));
+        if (!NormalizeFindRange(overlays.Length, ref start, ref end))
+            return 0;
+
+        // Only appearances match, not the /image or icon_state an overlay was made from
+        if (!value.TryGetValueAsAppearance(out var searchAppearance))
+            return 0;
+
+        var immutableSearchAppearance = new ImmutableAppearance(searchAppearance, appearanceSystem);
+        for (int i = start; i < end; i++) {
+            if (overlays[i - 1].Equals(immutableSearchAppearance))
+                return i;
+        }
+
+        return 0;
+    }
+
+    public override bool ContainsValue(DreamValue value) {
+        return FindValue(value) != 0;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1096,7 +1186,12 @@ public sealed class DreamVisContentsList : DreamList {
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
+        if (!NormalizeFindRange(_visContents.Count, ref start, ref end))
+            return 0;
+        if (!value.TryGetValueAsDreamObject<DreamObjectAtom>(out var atom))
+            return 0;
+
+        return _visContents.IndexOf(atom, start - 1, end - start) + 1;
     }
 
     public override bool ContainsValue(DreamValue value) {
@@ -1239,8 +1334,15 @@ public sealed class DreamFilterList(DreamObjectDefinition listDef, DreamObject o
         return GetAppearance().Filters.Length;
     }
 
+    // TODO: Consider searching filters anyway, despite BYOND not supporting it
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
+        throw new DMException("operation not supported by this list");
+    }
+
+    public override bool ContainsValue(DreamValue value) {
+        // BYOND's filters list matches nothing
+        // TODO: Consider implementing this
+        return false;
     }
 
     private ImmutableAppearance GetAppearance() {
@@ -1324,7 +1426,10 @@ public sealed class ClientScreenList(DreamObjectTree objectTree, ServerScreenOve
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
+        if (!NormalizeFindRange(_screenObjects.Count, ref start, ref end))
+            return 0;
+
+        return FindValueInSpan(CollectionsMarshal.AsSpan(_screenObjects), value, start, end);
     }
 }
 
@@ -1387,7 +1492,10 @@ public sealed class ClientImagesList(DreamObjectTree objectTree, ServerClientIma
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
+        if (!NormalizeFindRange(_imageObjects.Count, ref start, ref end))
+            return 0;
+
+        return FindValueInSpan(CollectionsMarshal.AsSpan(_imageObjects), value, start, end);
     }
 
     public override bool ContainsValue(DreamValue value) => _imageObjects.Contains(value);
@@ -1432,7 +1540,7 @@ public sealed class WorldContentsList(DreamObjectDefinition listDef, AtomManager
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
+        return FindValueByEnumeration(value, start, end);
     }
 
     public override bool ContainsValue(DreamValue value) {
@@ -1491,7 +1599,12 @@ public sealed class TurfContentsList(DreamObjectDefinition listDef, DreamObjectT
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
+        if (!NormalizeFindRange(Cell.Movables.Count, ref start, ref end, lenientEnd: true))
+            return 0;
+        if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
+            return 0;
+
+        return Cell.Movables.IndexOf(movable, start - 1, end - start) + 1;
     }
 
     public override bool ContainsValue(DreamValue value) {
@@ -1576,7 +1689,7 @@ public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectA
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
+        return FindValueByEnumeration(value, start, end, lenientEnd: true);
     }
 
     public override bool ContainsValue(DreamValue value) {
@@ -1636,22 +1749,7 @@ public sealed class MovableContentsList(DreamObjectDefinition listDef, DreamObje
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        if (end == 0 || end > transform.ChildCount) end = transform.ChildCount;
-
-        using var childEnumerator = transform.ChildEnumerator;
-
-        int i = 0;
-        while (childEnumerator.MoveNext(out EntityUid child)) {
-            if (!AtomManager.TryGetMovableFromEntity(child, out var childObject))
-                continue;
-            i++;
-            if (i >= start && new DreamValue(childObject).Equals(value))
-                return i;
-            if (i > end)
-                return 0;
-        }
-
-        return 0;
+        return FindValueByEnumeration(value, start, end, lenientEnd: true);
     }
 
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
@@ -1738,7 +1836,15 @@ internal sealed class ProcArgsList(DreamObjectDefinition listDef, ProcState stat
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
+        if (!NormalizeFindRange(state.ArgumentCount, ref start, ref end))
+            return 0;
+
+        var args = state.GetArguments();
+        for (int i = start; i < end; i++) {
+            if (args[i - 1].Equals(value)) return i;
+        }
+
+        return 0;
     }
 }
 
@@ -1797,6 +1903,6 @@ public sealed class SavefileDirList(DreamObjectDefinition listDef, DreamObjectSa
     }
 
     public override int FindValue(DreamValue value, int start = 1, int end = 0) {
-        throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
+        return FindValueByEnumeration(value, start, end, lenientEnd: true);
     }
 }

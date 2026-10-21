@@ -81,7 +81,7 @@ public sealed class DreamObjectCallee(DreamObjectDefinition objectDefinition) : 
         throw new DMException($"Cannot set var {varName} on /callee");
     }
 
-    public override string GetDisplayName(StringFormatEncoder.FormatSuffix? suffix = null, DMProcState? state = null) {
+    public override string GetDisplayName(StringFormatEncoder.FormatSuffix? suffix = null, ProcState? state = null) {
         if (Expired)
             return string.Empty;
 

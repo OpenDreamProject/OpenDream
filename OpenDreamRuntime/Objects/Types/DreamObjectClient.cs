@@ -230,7 +230,7 @@ public sealed class DreamObjectClient : DreamObject {
         Connection.OutputDreamValue(b);
     }
 
-    public override string GetDisplayName(StringFormatEncoder.FormatSuffix? suffix = null, DMProcState? state = null) {
+    public override string GetDisplayName(StringFormatEncoder.FormatSuffix? suffix = null, ProcState? state = null) {
         // It's correct that this ignores operator"".
         return Connection.Key;
     }

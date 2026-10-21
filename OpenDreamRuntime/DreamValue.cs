@@ -417,7 +417,7 @@ public struct DreamValue : IDisposable, IEquatable<DreamValue> {
         }
     }
 
-    public string GetArticle(StringFormatEncoder.FormatSuffix article, DMProcState? state = null) {
+    public string GetArticle(StringFormatEncoder.FormatSuffix article, ProcState? state = null) {
         switch (Type) {
             case DreamValueType.String:
                 return DreamObject.GetArticle(article, MustGetValueAsString(), null);
@@ -430,7 +430,7 @@ public struct DreamValue : IDisposable, IEquatable<DreamValue> {
         }
     }
 
-    public string Stringify(DMProcState? state = null) {
+    public string Stringify(ProcState? state = null) {
         switch (Type) {
             case DreamValueType.String:
                 return MustGetValueAsString();

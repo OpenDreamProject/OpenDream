@@ -404,14 +404,14 @@ public class DreamObject {
         };
     }
 
-    public string GetArticle(StringFormatEncoder.FormatSuffix article, DMProcState? state = null) {
+    public string GetArticle(StringFormatEncoder.FormatSuffix article, ProcState? state = null) {
         return GetArticle(article, GetRawName(state), GetGender());
     }
 
     /// <summary>
     /// Get the display name of this object, WITH ALL FORMATTING EVALUATED OR REMOVED!
     /// </summary>
-    public virtual string GetDisplayName(StringFormatEncoder.FormatSuffix? article = null, DMProcState? state = null) {
+    public virtual string GetDisplayName(StringFormatEncoder.FormatSuffix? article = null, ProcState? state = null) {
         var name = GetRawName(state);
         var articleStr = article is StringFormatEncoder.FormatSuffix article2 ? GetArticle(article2, name, GetGender()) : "";
         return $"{articleStr}{StringFormatDecoder.RemoveFormatting(name)}";
@@ -420,7 +420,7 @@ public class DreamObject {
     /// <summary>
     /// Returns the name of this object with no formatting evaluated.
     /// </summary>
-    private string GetRawName(DMProcState? state = null) {
+    private string GetRawName(ProcState? state = null) {
         if (state is DMProcState parent && TryExecuteOperatorOverload(parent, "operator\"\"", new(), out var result)) {
             using (result) {
                 if (result.TryGetValueAsString(out var name2)) {
@@ -588,7 +588,7 @@ public class DreamObject {
     #endregion Operators
 
     private bool TryExecuteOperatorOverload(
-        DMProcState parentState,
+        ProcState parentState,
         string operatorName,
         [HandlesResourceDisposal] DreamProcArguments arguments,
         [MustDisposeResource] out DreamValue procResult) {

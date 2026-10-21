@@ -455,7 +455,7 @@ namespace OpenDreamRuntime.Procs {
                     //Interp values
                     case FormatSuffix.StringifyWithArticle:{
                         // TODO: use postPrefix for \th interpolation
-                        formattedString.Append(interps[nextInterpIndex].Stringify());
+                        formattedString.Append(interps[nextInterpIndex].Stringify(state));
                         prevInterpIndex = nextInterpIndex;
                         nextInterpIndex++;
                         continue;
@@ -470,7 +470,7 @@ namespace OpenDreamRuntime.Procs {
                     }
                     case FormatSuffix.StringifyNoArticle: {
                         if (interps[nextInterpIndex].TryGetValueAsDreamObject<DreamObject>(out var dreamObject)) {
-                            formattedString.Append(dreamObject.GetDisplayName());
+                            formattedString.Append(dreamObject.GetDisplayName(state: state));
                         } else if (interps[nextInterpIndex].TryGetValueAsString(out var interpStr)) {
                             formattedString.Append(StringFormatDecoder.RemoveFormatting(interpStr));
                         }
@@ -505,7 +505,7 @@ namespace OpenDreamRuntime.Procs {
                     case FormatSuffix.LowerDefiniteArticle:
                     case FormatSuffix.UpperIndefiniteArticle:
                     case FormatSuffix.LowerIndefiniteArticle:
-                        formattedString.Append(interps[nextInterpIndex].GetArticle(formatType.Value));
+                        formattedString.Append(interps[nextInterpIndex].GetArticle(formatType.Value, state));
                         break;
                     //Suffix macros
                     case FormatSuffix.UpperSubjectPronoun:

@@ -18,6 +18,7 @@ using Robust.Shared.Serialization.TypeSerializers.Interfaces;
 using OpenDreamRuntime.Procs.Native;
 using Robust.Shared.Utility;
 using DMCompiler.Bytecode;
+using OpenDreamRuntime.Procs;
 
 namespace OpenDreamRuntime;
 
@@ -416,20 +417,20 @@ public struct DreamValue : IDisposable, IEquatable<DreamValue> {
         }
     }
 
-    public string GetArticle(StringFormatEncoder.FormatSuffix article) {
+    public string GetArticle(StringFormatEncoder.FormatSuffix article, DMProcState? state = null) {
         switch (Type) {
             case DreamValueType.String:
                 return DreamObject.GetArticle(article, MustGetValueAsString(), null);
             case DreamValueType.DreamObject: {
                 TryGetValueAsDreamObject(out var dreamObject);
-                return dreamObject?.GetArticle(article) ?? string.Empty;
+                return dreamObject?.GetArticle(article, state) ?? string.Empty;
             }
             default:
                 return "";
         }
     }
 
-    public string Stringify() {
+    public string Stringify(DMProcState? state = null) {
         switch (Type) {
             case DreamValueType.String:
                 return MustGetValueAsString();
@@ -466,7 +467,7 @@ public struct DreamValue : IDisposable, IEquatable<DreamValue> {
             case DreamValueType.DreamObject: {
                 TryGetValueAsDreamObject(out var dreamObject);
 
-                return dreamObject?.GetDisplayName(StringFormatEncoder.FormatSuffix.StringifyWithArticle) ?? string.Empty;
+                return dreamObject?.GetDisplayName(StringFormatEncoder.FormatSuffix.StringifyWithArticle, state) ?? string.Empty;
             }
             case DreamValueType.Appearance:
                 return string.Empty;

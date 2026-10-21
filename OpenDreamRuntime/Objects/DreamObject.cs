@@ -404,15 +404,15 @@ public class DreamObject {
         };
     }
 
-    public string GetArticle(StringFormatEncoder.FormatSuffix article) {
-        return GetArticle(article, GetRawName(), GetGender());
+    public string GetArticle(StringFormatEncoder.FormatSuffix article, DMProcState? state = null) {
+        return GetArticle(article, GetRawName(state), GetGender());
     }
 
     /// <summary>
     /// Get the display name of this object, WITH ALL FORMATTING EVALUATED OR REMOVED!
     /// </summary>
-    public virtual string GetDisplayName(StringFormatEncoder.FormatSuffix? article = null) {
-        var name = GetRawName();
+    public virtual string GetDisplayName(StringFormatEncoder.FormatSuffix? article = null, DMProcState? state = null) {
+        var name = GetRawName(state);
         var articleStr = article is StringFormatEncoder.FormatSuffix article2 ? GetArticle(article2, name, GetGender()) : "";
         return $"{articleStr}{StringFormatDecoder.RemoveFormatting(name)}";
     }
@@ -420,7 +420,15 @@ public class DreamObject {
     /// <summary>
     /// Returns the name of this object with no formatting evaluated.
     /// </summary>
-    private string GetRawName() {
+    private string GetRawName(DMProcState? state = null) {
+        if (state is DMProcState parent && TryExecuteOperatorOverload(parent, "operator\"\"", new(), out var result)) {
+            using (result) {
+                if (result.TryGetValueAsString(out var name2)) {
+                    return name2;
+                }
+            }
+        }
+
         string name = ObjectDefinition.Type;
 
         if (this is DreamObjectAtom) {

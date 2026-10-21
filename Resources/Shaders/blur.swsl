@@ -1,0 +1,21 @@
+// One 1D Gaussian pass of a blur filter
+
+light_mode unshaded;
+blend_mode none;
+
+uniform highp float[10] weights;
+uniform highp vec2[10] offsets; // In texels
+uniform highp int taps;
+
+void fragment() {
+    highp vec4 sum = texture2D(TEXTURE, UV) * weights[0];
+    for (int i = 1; i < 10; i++) {
+        if (i >= taps)
+            break;
+
+        highp vec2 offset = offsets[i] * TEXTURE_PIXEL_SIZE;
+        sum += (texture2D(TEXTURE, UV - offset) + texture2D(TEXTURE, UV + offset)) * weights[i];
+    }
+
+    COLOR = sum;
+}

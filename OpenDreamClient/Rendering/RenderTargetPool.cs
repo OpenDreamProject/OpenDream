@@ -1,24 +1,27 @@
 using Robust.Client.Graphics;
+using Robust.Shared.Graphics;
 using Robust.Shared.Utility;
 
 namespace OpenDreamClient.Rendering;
 
 public sealed class RenderTargetPool(IClyde clyde) {
-    private readonly Dictionary<Vector2i, List<IRenderTexture>> _renderTargets = new();
+    private static readonly TextureSampleParameters SrgbEncodedSampling = new() { Filter = true };
+
+    private readonly Dictionary<(Vector2i Size, bool SrgbEncoded), List<IRenderTexture>> _renderTargets = new();
+    private readonly HashSet<IRenderTexture> _srgbEncodedTargets = new();
     private readonly Stack<IRenderTexture> _renderTargetsToReturn = new();
 
-    public IRenderTexture Rent(Vector2i size) {
-        IRenderTexture result;
+    /// <param name="srgbEncoded">Rent a non-sRGB target with linear filtering instead of an sRGB one</param>
+    public IRenderTexture Rent(Vector2i size, bool srgbEncoded = false) {
+        if (_renderTargets.TryGetValue((size, srgbEncoded), out var list) && list.Count > 0)
+            return list.Pop();
 
-        if (!_renderTargets.TryGetValue(size, out var listResult)) {
-            result = clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8Srgb));
-        } else {
-            result = listResult.Count > 0
-                ? listResult.Pop()
-                : clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8Srgb));
-        }
+        if (!srgbEncoded)
+            return clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8Srgb));
 
-        return result;
+        var target = clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8), SrgbEncodedSampling);
+        _srgbEncodedTargets.Add(target);
+        return target;
     }
 
     public void ReturnAtEndOfFrame(IRenderTexture rental) {
@@ -26,9 +29,10 @@ public sealed class RenderTargetPool(IClyde clyde) {
     }
 
     public void Return(IRenderTexture rental) {
-        if (!_renderTargets.TryGetValue(rental.Size, out var storeList)) {
+        var key = (rental.Size, _srgbEncodedTargets.Contains(rental));
+        if (!_renderTargets.TryGetValue(key, out var storeList)) {
             storeList = new List<IRenderTexture>(4);
-            _renderTargets.Add(rental.Size, storeList);
+            _renderTargets.Add(key, storeList);
         }
 
         storeList.Add(rental);

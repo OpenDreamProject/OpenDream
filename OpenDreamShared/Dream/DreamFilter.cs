@@ -41,6 +41,9 @@ public partial record DreamFilter {
 
     public static Type? GetType(string filterType) => FilterTypes.GetValueOrDefault(filterType);
 
+    /// <summary>Whether this filter runs on premultiplied sRGB like BYOND, instead of linear color</summary>
+    public virtual bool RendersInSrgb => false;
+
     /// <summary>
     /// Calculate the size of the canvas this filter needs
     /// </summary>
@@ -112,6 +115,8 @@ public sealed partial record DreamFilterBlur : DreamFilter {
 
     /// <summary>The 1D passes of this blur, a horizontal then vertical pass per level</summary>
     public BlurPasses Passes => new(Size);
+
+    public override bool RendersInSrgb => true;
 
     /// <summary>The radius of the blur, in whole pixels</summary>
     public int GetExtent() {

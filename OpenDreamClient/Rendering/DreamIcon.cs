@@ -550,16 +550,15 @@ internal sealed class DreamIcon(RenderTargetPool renderTargetPool, IDreamInterfa
             var requiredSpace = filterId.CalculateRequiredRenderSpace(pong.Size,
                 renderSource => viewOverlay.RenderSourceLookup.GetValueOrDefault(renderSource)?.Size ?? new(0, 0));
             var padding = (Vector2i.ComponentMax(requiredSpace - pong.Size, Vector2i.Zero) + 1) / 2;
-            var wantsSrgbEncoded = filterId is DreamFilterBlur;
-            if (padding != Vector2i.Zero || wantsSrgbEncoded != srgbEncoded) {
-                if (wantsSrgbEncoded == srgbEncoded) {
+            if (padding != Vector2i.Zero || filterId.RendersInSrgb != srgbEncoded) {
+                if (filterId.RendersInSrgb == srgbEncoded) {
                     shader = DreamViewOverlay.ColorInstance;
                 } else {
-                    shader = wantsSrgbEncoded ? DreamViewOverlay.FilterToSrgbInstance : DreamViewOverlay.FilterFromSrgbInstance;
+                    shader = filterId.RendersInSrgb ? DreamViewOverlay.FilterToSrgbInstance : DreamViewOverlay.FilterFromSrgbInstance;
                     shader.SetParameter("isPlaneMaster", iconMetaData.IsPlaneMaster);
                 }
 
-                ReplaceCanvas(pong.Size + padding * 2, padding, wantsSrgbEncoded);
+                ReplaceCanvas(pong.Size + padding * 2, padding, filterId.RendersInSrgb);
             }
 
             foreach (var pass in appearanceSystem.GetFilterShaders(filterId, viewOverlay.RenderSourceLookup)) {

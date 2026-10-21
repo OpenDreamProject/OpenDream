@@ -419,7 +419,7 @@ public class DreamObject {
     /// </summary>
     private string GetRawName(ProcState? state = null) {
         // Try operator"".
-        if (state is DMProcState parent && TryExecuteOperatorOverload(parent, "operator\"\"", new(), out var result)) {
+        if (state is { } parent && TryExecuteOperatorOverload(parent, "operator\"\"", new(), out var result)) {
             using var _ = result;
             if (result.TryGetValueAsString(out var name2)) {
                 return name2;

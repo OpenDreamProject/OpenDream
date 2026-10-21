@@ -144,13 +144,19 @@ public struct DreamValue : IDisposable, IEquatable<DreamValue> {
         DecRef();
     }
 
-    public void IncRef() {
+    /// <summary>
+    /// Increments the reference count of the DreamObject. DreamValue.Null is a no-op.
+    /// </summary>
+    public void IncRef()
+    {
         if (Type != DreamValueType.DreamObject || _refValue == null)
             return;
 
         Unsafe.As<DreamObject>(_refValue).IncRef();
     }
-
+    /// <summary>
+    /// Decrements the reference count of the DreamObject. DreamValue.Null is a no-op.
+    /// </summary>
     public void DecRef() {
         if (Type != DreamValueType.DreamObject || _refValue == null)
             return;

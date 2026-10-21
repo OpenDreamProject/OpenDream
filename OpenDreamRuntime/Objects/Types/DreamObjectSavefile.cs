@@ -376,9 +376,9 @@ public sealed class DreamObjectSavefile : DreamObject {
                     if (sfDreamListValue.AssocData?[i] != null) { //note that null != DreamValue.Null
                         using var sfAssocValue = DeserializeJsonValue(sfDreamListValue.AssocData[i]!);
 
-                        l.SetValue(sfValue, sfAssocValue);
+                        l.SetKeyValuePair(sfValue, sfAssocValue);
                     } else {
-                        l.AddValue(sfValue);
+                        l.AddKey(sfValue);
                     }
                 }
 
@@ -452,7 +452,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                     if (dreamList.IsAssociative)
                         jsonEncodedList.AssocData = new List<SfDreamJsonValue?>(dreamList.GetLength()); //only init the list if it's needed
 
-                    foreach (var keyValue in dreamList.EnumerateValues()) { //get all normal values and keys
+                    foreach (var keyValue in dreamList.EnumerateKeys()) { //get all normal values and keys
                         if (keyValue.TryGetValueAsDreamObject(out _) && !keyValue.IsNull) {
                             SfDreamJsonValue jsonEncodedObject = SerializeDreamValue(keyValue, thisObjectCount);
                             //merge the object subdirectories into the list parent directory
@@ -470,10 +470,10 @@ public sealed class DreamObjectSavefile : DreamObject {
                         }
 
                         if (dreamList.IsAssociative) { //if it's an assoc list, check if this value is a key
-                            if (!dreamList.ContainsKey(keyValue)) {
+                            if (!dreamList.ElementHasAssociation(keyValue)) {
                                 jsonEncodedList.AssocData!.Add(null); //store an actual null if this key does not have an associated value - this is distinct from storing DreamValue.Null
                             } else {
-                                using var assocValue = dreamList.GetValue(keyValue);
+                                using var assocValue = dreamList.GetElement(keyValue);
 
                                 if (assocValue.TryGetValueAsDreamObject(out _) && !assocValue.IsNull) {
                                     SfDreamJsonValue jsonEncodedObject = SerializeDreamValue(assocValue, thisObjectCount);

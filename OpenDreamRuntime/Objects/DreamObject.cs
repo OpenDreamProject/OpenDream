@@ -442,12 +442,12 @@ public class DreamObject {
     }
 
     public string? GetGender() {
-        // Only atoms have a gender.
-        if (this is DreamObjectAtom && TryGetVariable("gender", out DreamValue genderVar)) {
+        if (TryGetVariable("gender", out DreamValue genderVar)) {
             genderVar.TryGetValueAsString(out var gender);
             genderVar.Dispose();
             return gender;
         }
+
         return null;
     }
 

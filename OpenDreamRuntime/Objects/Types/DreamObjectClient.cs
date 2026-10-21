@@ -1,7 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
 using DMCompiler.Bytecode;
-using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;

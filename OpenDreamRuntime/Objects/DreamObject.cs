@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using OpenDreamRuntime.Procs;
-using System.Globalization;
 using System.Runtime.CompilerServices;
 using DMCompiler.Bytecode;
 using JetBrains.Annotations;
@@ -11,10 +10,8 @@ using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Server.GameObjects;
 using Robust.Server.GameStates;
-using Robust.Shared.Map;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Utility;
-using Robust.Shared.Enums;
 
 namespace OpenDreamRuntime.Objects;
 
@@ -413,7 +410,7 @@ public class DreamObject {
     /// </summary>
     public virtual string GetDisplayName(StringFormatEncoder.FormatSuffix? article = null, ProcState? state = null) {
         var name = GetRawName(state);
-        var articleStr = article is StringFormatEncoder.FormatSuffix article2 ? GetArticle(article2, name, GetGender()) : "";
+        var articleStr = article is { } article2 ? GetArticle(article2, name, GetGender()) : "";
         return $"{articleStr}{StringFormatDecoder.RemoveFormatting(name)}";
     }
 

@@ -370,7 +370,7 @@ namespace OpenDreamRuntime.Procs {
                 return;
             if (!interps[prevInterpIndex].TryGetValueAsDreamObject<DreamObject>(out var dreamObject))
                 return;
-            if (dreamObject.GetGender() is not string genderStr)
+            if (dreamObject.GetGender() is not { } genderStr)
                 return;
 
             switch(genderStr) {

@@ -558,28 +558,28 @@ namespace OpenDreamRuntime.Procs {
                     }
                     //Suffix macros
                     case FormatSuffix.UpperSubjectPronoun:
-                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "He", "She", "They", "Tt" });
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, ["He", "She", "They", "It"]);
                         break;
                     case FormatSuffix.LowerSubjectPronoun:
-                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "he", "she", "they", "it" });
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, ["he", "she", "they", "it"]);
                         break;
                     case FormatSuffix.UpperPossessiveAdjective:
-                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "His", "Her", "Their", "Its" });
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, ["His", "Her", "Their", "Its"]);
                         break;
                     case FormatSuffix.LowerPossessiveAdjective:
-                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "his", "her", "their", "its" });
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, ["his", "her", "their", "its"]);
                         break;
                     case FormatSuffix.ObjectPronoun:
-                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "him", "her", "them", "it" });
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, ["him", "her", "them", "it"]);
                         break;
                     case FormatSuffix.ReflexivePronoun:
-                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "himself", "herself", "themself", "itself" });
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, ["himself", "herself", "themself", "itself"]);
                         break;
                     case FormatSuffix.UpperPossessivePronoun:
-                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "His", "Hers", "Theirs", "Its" });
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, ["His", "Hers", "Theirs", "Its"]);
                         break;
                     case FormatSuffix.LowerPossessivePronoun:
-                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "his", "hers", "theirs", "its" });
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, ["his", "hers", "theirs", "its"]);
                         break;
                     case FormatSuffix.PluralSuffix:
                         if (interps[prevInterpIndex].TryGetValueAsFloat(out var pluralNumber) && pluralNumber.Equals(1f))

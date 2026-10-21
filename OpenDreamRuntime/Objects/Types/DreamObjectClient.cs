@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using DMCompiler.Bytecode;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
@@ -226,5 +227,10 @@ public sealed class DreamObjectClient : DreamObject {
 
     public override void OperatorOutput(DreamValue b) {
         Connection.OutputDreamValue(b);
+    }
+
+    public override string GetDisplayName(StringFormatEncoder.FormatSuffix? suffix = null) {
+        // It's correct that this ignores operator"".
+        return Connection.Key;
     }
 }

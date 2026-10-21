@@ -101,8 +101,8 @@ public class DreamObject {
         RefId = DreamRefManager.GetRef(this);
 
 #if TOOLS
-         //if it's not null, subclasses have done their own allocation
-        TracyMemoryId ??= Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamObject>() + ObjectDefinition.Variables.Count * Unsafe.SizeOf<DreamValue>() ), "/datum");
+        //if it's not null, subclasses have done their own allocation
+        TracyMemoryId ??= Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamObject>() + ObjectDefinition.Variables.Count * Unsafe.SizeOf<DreamValue>()), "/datum");
 #endif
     }
 
@@ -162,7 +162,7 @@ public class DreamObject {
         Deleting = true;
         if (TryGetProc("Del", out var delProc)) {
             // Don't bother running Del() if there's no code in it
-            var datumBaseProc = delProc is DMProc {Bytecode.Length: 0};
+            var datumBaseProc = delProc is DMProc { Bytecode.Length: 0 };
             if (!datumBaseProc) {
                 DreamThread.Run(delProc, this, null).Dispose();
             }
@@ -172,7 +172,7 @@ public class DreamObject {
     }
 
     public bool IsSubtypeOf(TreeEntry ancestor) {
-        if(Deleted) //null deref protection, deleted objects don't have ObjectDefinition anymore
+        if (Deleted) //null deref protection, deleted objects don't have ObjectDefinition anymore
             return false;
         return ObjectDefinition.IsSubtypeOf(ancestor);
     }
@@ -358,8 +358,7 @@ public class DreamObject {
             }
         }
 
-        if (char.IsWhiteSpace(
-                str[0])) // NOTE: This might result in slightly different behaviour (since C# may be more unicode-friendly about what "whitespace" means)
+        if (char.IsWhiteSpace(str[0])) // NOTE: This might result in slightly different behaviour (since C# may be more unicode-friendly about what "whitespace" means)
             return true;
         return char.IsUpper(str[0]);
     }
@@ -384,26 +383,15 @@ public class DreamObject {
     /// Get the display name of this object, WITH ALL FORMATTING EVALUATED OR REMOVED!
     /// </summary>
     public virtual string GetDisplayName(StringFormatEncoder.FormatSuffix? suffix = null) {
-        // /client is a little special and will return its key var
-        // TODO: Maybe this should be an override to GetDisplayName()?
-        if (this is DreamObjectClient client)
-            return client.Connection.Key;
-
         var name = GetRawName();
         bool isProper = StringIsProper(name);
         name = StringFormatDecoder.RemoveFormatting(name); // TODO: Care about other formatting macros for obj names beyond \proper & \improper
-        if(!isProper) {
-            return name;
-        }
-
-        switch(suffix) {
-            case StringFormatEncoder.FormatSuffix.UpperDefiniteArticle:
-                return isProper ? name : $"The {name}";
-            case StringFormatEncoder.FormatSuffix.LowerDefiniteArticle:
-                return isProper ? name : $"the {name}";
-            default:
-                return name;
-        }
+        return (isProper, suffix) switch {
+            (true, _) => name,
+            (false, StringFormatEncoder.FormatSuffix.UpperDefiniteArticle) => $"The {name}",
+            (false, StringFormatEncoder.FormatSuffix.LowerDefiniteArticle) => $"the {name}",
+            _ => name,
+        };
     }
 
     /// <summary>

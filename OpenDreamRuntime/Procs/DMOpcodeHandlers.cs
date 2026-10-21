@@ -473,6 +473,8 @@ namespace OpenDreamRuntime.Procs {
                             formattedString.Append(dreamObject.GetDisplayName(state: state));
                         } else if (interps[nextInterpIndex].TryGetValueAsString(out var interpStr)) {
                             formattedString.Append(StringFormatDecoder.RemoveFormatting(interpStr));
+                        } else if (interps[nextInterpIndex].TryGetValueAsType(out var type)) {
+                            formattedString.Append(type.Path);
                         }
 
                         // NOTE probably should put this above the TryGetAsDreamObject function and continue if formatting has occured

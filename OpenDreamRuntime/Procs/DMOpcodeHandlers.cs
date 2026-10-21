@@ -370,9 +370,7 @@ namespace OpenDreamRuntime.Procs {
                 return;
             if (!interps[prevInterpIndex].TryGetValueAsDreamObject<DreamObject>(out var dreamObject))
                 return;
-            if (!dreamObject.TryGetVariable("gender", out var objectGender)) // NOTE: in DM, this has to be a native property.
-                return;
-            if (!objectGender.TryGetValueAsString(out var genderStr))
+            if (dreamObject.GetGender() is not { } genderStr)
                 return;
 
             switch(genderStr) {
@@ -457,7 +455,7 @@ namespace OpenDreamRuntime.Procs {
                     //Interp values
                     case FormatSuffix.StringifyWithArticle:{
                         // TODO: use postPrefix for \th interpolation
-                        formattedString.Append(interps[nextInterpIndex].Stringify());
+                        formattedString.Append(interps[nextInterpIndex].Stringify(state));
                         prevInterpIndex = nextInterpIndex;
                         nextInterpIndex++;
                         continue;
@@ -472,9 +470,11 @@ namespace OpenDreamRuntime.Procs {
                     }
                     case FormatSuffix.StringifyNoArticle: {
                         if (interps[nextInterpIndex].TryGetValueAsDreamObject<DreamObject>(out var dreamObject)) {
-                            formattedString.Append(dreamObject.GetNameUnformatted());
+                            formattedString.Append(dreamObject.GetDisplayName(state: state));
                         } else if (interps[nextInterpIndex].TryGetValueAsString(out var interpStr)) {
                             formattedString.Append(StringFormatDecoder.RemoveFormatting(interpStr));
+                        } else if (interps[nextInterpIndex].TryGetValueAsType(out var type)) {
+                            formattedString.Append(type.Path);
                         }
 
                         // NOTE probably should put this above the TryGetAsDreamObject function and continue if formatting has occured
@@ -504,82 +504,35 @@ namespace OpenDreamRuntime.Procs {
                     //Macro values//
                     //Prefix macros
                     case FormatSuffix.UpperDefiniteArticle:
-                    case FormatSuffix.LowerDefiniteArticle: {
-                        if (interps[nextInterpIndex].TryGetValueAsDreamObject<DreamObject>(out var dreamObject)) {
-                            if (dreamObject.TryGetVariable("name", out var objectName)) {
-                                string nameStr = objectName.Stringify();
-                                if (!DreamObject.StringIsProper(nameStr)) {
-                                    formattedString.Append(formatType == FormatSuffix.UpperDefiniteArticle ? "The " : "the ");
-                                }
-
-                                objectName.Dispose();
-                            }
-                        }
-
-                        continue;
-                    }
+                    case FormatSuffix.LowerDefiniteArticle:
                     case FormatSuffix.UpperIndefiniteArticle:
-                    case FormatSuffix.LowerIndefiniteArticle: {
-                        var interpValue = interps[nextInterpIndex];
-                        string displayName;
-                        bool isPlural = false;
-
-                        if (interpValue.TryGetValueAsDreamObject<DreamObject>(out var dreamObject)) {
-                            displayName = dreamObject.GetRawName();
-
-                            // Aayy babe whats ya pronouns
-                            if (dreamObject.TryGetVariable("gender", out var gender) &&
-                                gender.TryGetValueAsString(out var genderStr)) {
-                                // NOTE: In Byond, this part does not work if var/gender is not a native property of this object.
-                                isPlural = (genderStr == "plural");
-                            }
-
-                            gender.Dispose();
-                        } else if (interpValue.TryGetValueAsString(out var interpStr)) {
-                            displayName = interpStr;
-                        } else {
-                            break;
-                        }
-
-                        if (DreamObject.StringIsProper(displayName))
-                            break; // Proper nouns don't need articles, I guess.
-
-                        // saves some wordiness with the ternaries below
-                        bool wasCapital = formatType == FormatSuffix.UpperIndefiniteArticle;
-
-                        if (isPlural)
-                            formattedString.Append(wasCapital ? "Some " : "some ");
-                        else if (DreamObject.StringStartsWithVowel(displayName))
-                            formattedString.Append(wasCapital ? "An " : "an ");
-                        else
-                            formattedString.Append(wasCapital ? "A " : "a ");
-
+                    case FormatSuffix.LowerIndefiniteArticle:
+                        formattedString.Append(interps[nextInterpIndex].GetArticle(formatType.Value, state));
                         break;
-                    }
                     //Suffix macros
                     case FormatSuffix.UpperSubjectPronoun:
-                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "He", "She", "They", "Tt" });
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, ["He", "She", "They", "It"]);
                         break;
                     case FormatSuffix.LowerSubjectPronoun:
-                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "he", "she", "they", "it" });
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, ["he", "she", "they", "it"]);
                         break;
                     case FormatSuffix.UpperPossessiveAdjective:
-                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "His", "Her", "Their", "Its" });
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, ["His", "Her", "Their", "Its"]);
                         break;
                     case FormatSuffix.LowerPossessiveAdjective:
-                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "his", "her", "their", "its" });
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, ["his", "her", "their", "its"]);
                         break;
                     case FormatSuffix.ObjectPronoun:
-                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "him", "her", "them", "it" });
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, ["him", "her", "them", "it"]);
                         break;
                     case FormatSuffix.ReflexivePronoun:
-                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "himself", "herself", "themself", "itself" });
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, ["himself", "herself", "themself", "itself"]);
                         break;
                     case FormatSuffix.UpperPossessivePronoun:
-                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "His", "Hers", "Theirs", "Its" });
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, ["His", "Hers", "Theirs", "Its"]);
                         break;
                     case FormatSuffix.LowerPossessivePronoun:
-                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "his", "hers", "theirs", "its" });
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, ["his", "hers", "theirs", "its"]);
                         break;
                     case FormatSuffix.PluralSuffix:
                         if (interps[prevInterpIndex].TryGetValueAsFloat(out var pluralNumber) && pluralNumber.Equals(1f))

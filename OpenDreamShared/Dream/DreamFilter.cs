@@ -218,6 +218,8 @@ public sealed partial record DreamFilterMotionBlur : DreamFilter {
     /// <summary>The 1D passes of this blur</summary>
     public MotionBlurPasses Passes => new(X, Y);
 
+    public override bool RendersInSrgb => true;
+
     /// <summary>The radius of the blur, in whole pixels, capped so huge blurs don't need huge textures</summary>
     public float GetExtent() {
         const float maxExtent = 512f;
@@ -233,12 +235,12 @@ public sealed partial record DreamFilterMotionBlur : DreamFilter {
 public struct MotionBlurPasses(float x, float y) {
     private const double MaxLengthSquared = BlurKernel.MaxSigma * BlurKernel.MaxSigma;
 
-    private enum Stage { Start, Next, SecondLowQuality, MaxSigma, Remainder, Done }
+    private enum Stage { Split, SecondLowQuality, MaxSigma, Remainder, Done }
 
     // The float/double mix decides which side of sigma 6 a pass falls on
     private float _x = x, _y = y;
     private double _lengthSquared = (double)x * x + (double)y * y;
-    private Stage _stage = Stage.Start;
+    private Stage _stage = IsEmpty(x, y) ? Stage.Done : Stage.Split;
 
     public BlurPass Current { get; private set; }
 
@@ -246,14 +248,7 @@ public struct MotionBlurPasses(float x, float y) {
 
     public bool MoveNext() {
         switch (_stage) {
-            case Stage.Start:
-                if (_lengthSquared < 1e-6 || !double.IsFinite(_lengthSquared)) {
-                    _stage = Stage.Done;
-                    return false;
-                }
-
-                goto case Stage.Next;
-            case Stage.Next:
+            case Stage.Split:
                 if (_lengthSquared <= MaxLengthSquared) {
                     Current = Pass(_x, _y, _lengthSquared);
                     _stage = Stage.Done;
@@ -268,7 +263,7 @@ public struct MotionBlurPasses(float x, float y) {
                 _lengthSquared *= 0.25;
                 _x *= 0.5f;
                 _y *= 0.5f;
-                _stage = Stage.Next;
+                _stage = Stage.Split;
                 return true;
             case Stage.MaxSigma: {
                 float toMaxSigma = BlurKernel.MaxSigma / (float)Math.Sqrt(_lengthSquared);
@@ -289,6 +284,11 @@ public struct MotionBlurPasses(float x, float y) {
             default:
                 return false;
         }
+    }
+
+    private static bool IsEmpty(float x, float y) {
+        double lengthSquared = (double)x * x + (double)y * y;
+        return lengthSquared < 1e-6 || !double.IsFinite(lengthSquared);
     }
 
     private static BlurPass Pass(float x, float y) => Pass(x, y, (double)x * x + (double)y * y);

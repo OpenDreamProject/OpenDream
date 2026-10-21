@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using JetBrains.Annotations;
 using OpenDreamRuntime.Procs;
+
 namespace OpenDreamRuntime.Objects.Types;
 
 [Virtual]
@@ -22,6 +23,7 @@ public class DreamEagerList : DreamList {
     #endif
 
     #endregion
+
     #region Constructors/Initializers/Destructors
 
     public DreamEagerList(DreamObjectDefinition listDef, int size) : base(listDef) {
@@ -47,8 +49,6 @@ public class DreamEagerList : DreamList {
         UpdateTracyContentsMemory();
         #endif
     }
-
-
 
     public override void Initialize(DreamProcArguments args) {
         base.Initialize(args);
@@ -104,6 +104,7 @@ public class DreamEagerList : DreamList {
     }
 
     #endregion
+
     #region Pure Methods
 
     public override IEnumerable<DreamValue> EnumerateKeys() {
@@ -147,6 +148,7 @@ public class DreamEagerList : DreamList {
             value.IncRef();
             return value;
         }
+
         return DreamValue.Null;
     }
 
@@ -176,12 +178,13 @@ public class DreamEagerList : DreamList {
         if(!(IsAssociative && other.IsAssociative)) {
             return newList;
         }
+
         Dictionary<DreamValue, DreamValue> ourAssociations = GetTightPairs();
         Dictionary<DreamValue, DreamValue> otherAssociations = other.GetTightPairs();
 
         foreach (DreamValue value in newList.EnumerateKeys()) {
             // Existing left pairs win, only values newly contributed by the right list use its association
-            if (ourAssociations.TryGetValue(value, out DreamValue leftAssociatedValue) is true)
+            if (ourAssociations.TryGetValue(value, out DreamValue leftAssociatedValue))
                 newList.SetKeyValuePair(value, leftAssociatedValue);
             else if (otherAssociations.TryGetValue(value, out DreamValue rightAssociatedValue))
                 newList.SetKeyValuePair(value, rightAssociatedValue);
@@ -196,7 +199,9 @@ public class DreamEagerList : DreamList {
     }
 
     #endregion
+
     #region Impure Methods
+
     public override void SetElementByIndex(DreamValue index, DreamValue element, bool allowGrowth = false) {
         if (!index.TryGetValueAsInteger(out int keyInteger)) {
             throw new InvalidOperationException("Attempted set element by index with a non-integer value.");
@@ -236,6 +241,7 @@ public class DreamEagerList : DreamList {
                 _elements.Add(key);
                 key.IncRef();
             }
+
             value.IncRef();
         }
 
@@ -345,7 +351,7 @@ public class DreamEagerList : DreamList {
         if (b.TryGetValueAsDreamList(out var bList)) {
             foreach (DreamValue key in bList.EnumerateKeys()) {
                 if (bList.TryGetElementByKey(key, out var _assocValue)) {
-                    using var assocValue = _assocValue.Value;
+                    using var assocValue = _assocValue;
                     listCopy.SetKeyValuePair(key, assocValue);
                 } else {
                     listCopy.AddKey(key);
@@ -393,8 +399,7 @@ public class DreamEagerList : DreamList {
 
                 if (bList.TryGetElementByKey(key, out var _assocValue)) {
                     using var assocValue = _assocValue;
-                    SetKeyValuePair(key, assocValue.Value);
-
+                    SetKeyValuePair(key, assocValue);
                 } else {
                     AddKey(key);
                 }

@@ -109,19 +109,19 @@ public class DantomList : DreamEagerList {
         return DreamValue.Null;
     }
 
-    public override bool TryGetElementByKey(DreamValue key, [MustDisposeResource][NotNullWhen(true)] out DreamValue? value) {
+    public override bool TryGetElementByKey(DreamValue key, [MustDisposeResource][MaybeNullWhen(false)] out DreamValue value) {
         if (_associativeValues is null) {
-            value = null;
+            value = default;
             return false;
         }
 
         if (_associativeValues.TryGetValue(key, out var _value)) {
             value = _value;
-            value.Value.IncRef();
+            value.IncRef();
             return true;
         }
 
-        value = null;
+        value = default;
         return false;
     }
 
@@ -230,7 +230,7 @@ public class DantomList : DreamEagerList {
         if (b.TryGetValueAsDreamList(out var bList)) {
             foreach (DreamValue key in bList.EnumerateKeys()) {
                 if (bList.TryGetElementByKey(key, out var _assocValue)) {
-                    using var assocValue = _assocValue.Value;
+                    using var assocValue = _assocValue;
                     listCopy.SetKeyValuePair(key, assocValue);
                 } else {
                     listCopy.AddKey(key);
@@ -254,7 +254,7 @@ public class DantomList : DreamEagerList {
 
                 if (bList.TryGetElementByKey(key, out var _assocValue)) { // Ensure the associated value is correct
                     _associativeValues ??= new();
-                    using var assocValue = _assocValue.Value;
+                    using var assocValue = _assocValue;
 
                     ref var slot = ref CollectionsMarshal.GetValueRefOrAddDefault(_associativeValues, key, out _);
                     assocValue.IncRef();
@@ -278,7 +278,7 @@ public class DantomList : DreamEagerList {
 
                 if (bList.TryGetElementByKey(key, out var _assocValue)) {
                     using var assocValue = _assocValue;
-                    SetKeyValuePair(key, assocValue.Value);
+                    SetKeyValuePair(key, assocValue);
 
                 } else {
                     AddKey(key);

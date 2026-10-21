@@ -4,6 +4,7 @@ using JetBrains.Annotations;
 using Robust.Shared.Utility;
 
 namespace OpenDreamRuntime.Objects.Types;
+
 public abstract class DreamList : DreamObject {
 
 	public override bool ShouldCallNew => false;
@@ -69,9 +70,9 @@ public abstract class DreamList : DreamObject {
     /// </summary>
     /// <param name="key"></param>
     /// <returns></returns>
-	public virtual bool TryGetElementByKey(DreamValue key, [MustDisposeResource][NotNullWhen(true)] out DreamValue? element) {
+	public virtual bool TryGetElementByKey(DreamValue key, [MustDisposeResource][MaybeNullWhen(false)] out DreamValue element) {
         if(!IsAssociative) {
-            element = null;
+            element = default;
             return false;
         }
 
@@ -82,7 +83,7 @@ public abstract class DreamList : DreamObject {
 		}
 
 		element = _value;
-		element.Value.IncRef();
+		element.IncRef();
 		return true;
 	}
 
@@ -166,7 +167,7 @@ public abstract class DreamList : DreamObject {
 	public virtual IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateLoosePairs() {
         foreach (var key in EnumerateKeys()) {
             if (TryGetElementByKey(key, out var associativeValue)) {
-                yield return new(key, associativeValue.Value);
+                yield return new(key, associativeValue);
             } else {
                 yield return new(key, DreamValue.Null);
             }

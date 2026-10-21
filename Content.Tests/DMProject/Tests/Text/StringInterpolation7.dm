@@ -16,19 +16,19 @@
 	ASSERT("\a [new /datum/thing]" == "a thing")
 	ASSERT("\a [new /datum/Thing]" == "Thing")
 	ASSERT("\a [new /datum/proper_thing]" == "thing")
-	ASSERT("\a [new /datum/plural_things]" == "some things")
-	
+	ASSERT("\a [new /datum/plural_things]" == "a things")
+
 	// Uppercase \A on datums
 	ASSERT("\A [new /datum/thing]" == "A thing")
 	ASSERT("\A [new /datum/Thing]" == "Thing")
 	ASSERT("\A [new /datum/proper_thing]" == "thing")
-	ASSERT("\A [new /datum/plural_things]" == "Some things")
-	
+	ASSERT("\A [new /datum/plural_things]" == "A things")
+
 	// Lowercase \a on strings
 	ASSERT("\a ["thing"]" == "a thing")
 	ASSERT("\a ["Thing"]" == "Thing")
 	ASSERT("\a ["\proper thing"]" == "thing")
-	
+
 	// Uppercase \A on strings
 	ASSERT("\A ["thing"]" == "A thing")
 	ASSERT("\A ["Thing"]" == "Thing")

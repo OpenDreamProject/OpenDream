@@ -421,28 +421,24 @@ public class DreamObject {
     /// Returns the name of this object with no formatting evaluated.
     /// </summary>
     private string GetRawName(ProcState? state = null) {
+        // Try operator"".
         if (state is DMProcState parent && TryExecuteOperatorOverload(parent, "operator\"\"", new(), out var result)) {
-            using (result) {
-                if (result.TryGetValueAsString(out var name2)) {
-                    return name2;
-                }
+            using var _ = result;
+            if (result.TryGetValueAsString(out var name2)) {
+                return name2;
             }
         }
 
-        string name = ObjectDefinition.Type;
-
-        if (this is DreamObjectAtom) {
-            if (AtomManager.TryGetAppearance(this, out var appearance)) {
-                name = appearance.Name;
-            }
-        } else if (TryGetVariable("name", out DreamValue nameVar)) {
+        // Try `name` var, which internally dispatches to AtomManager if appropriate.
+        if (TryGetVariable("name", out DreamValue nameVar)) {
+            using var _ = nameVar;
             if (nameVar.TryGetValueAsString(out var nameVarStr)) {
-                name = nameVarStr;
+                return nameVarStr;
             }
-            nameVar.Dispose();
         }
 
-        return name;
+        // Return typepath.
+        return ObjectDefinition.Type;
     }
 
     public string? GetGender() {

@@ -72,9 +72,7 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
                 return true;
 
             default:
-                if (AtomManager.IsValidAppearanceVar(varName)) {
-                    var appearance = AtomManager.MustGetAppearance(this);
-
+                if (AtomManager.IsValidAppearanceVar(varName) && AtomManager.TryGetAppearance(this, out var appearance)) {
                     value = AtomManager.GetAppearanceVar(appearance, varName);
                     return true;
                 }

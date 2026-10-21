@@ -14,6 +14,7 @@ using Robust.Server.GameStates;
 using Robust.Shared.Map;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Utility;
+using Robust.Shared.Enums;
 
 namespace OpenDreamRuntime.Objects;
 
@@ -366,58 +367,84 @@ public class DreamObject {
     public static bool StringStartsWithVowel(string str) {
         if (str.Length == 0)
             return false;
-        char start = char.ToLower(str[0], CultureInfo.InvariantCulture);
-        switch (start) {
-            case 'a':
-            case 'e':
-            case 'i':
-            case 'o':
-            case 'u':
-                return true;
-            default:
-                return false;
-        }
+        return str[0] switch {
+            'a' or 'A' or 'e' or 'E' or 'i' or 'I' or 'o' or 'O' or 'u' or 'U' => true,
+            _ => false,
+        };
+    }
+
+    /// <summary>
+    /// Get the article.
+    /// </summary>
+    /// <param name="article">The article to apply.</param>
+    /// <param name="name">The raw name (optionally with propriety code) to apply the article to.</param>
+    /// <param name="gender">The gender of the atom, or null if not an atom.</param>
+    /// <returns></returns>
+    public static string GetArticle(StringFormatEncoder.FormatSuffix article, string name, string? gender) {
+        bool isProper = StringIsProper(name);
+        name = StringFormatDecoder.RemoveFormatting(name);
+        return (isProper, article, gender) switch {
+            // If proper: always nothing.
+            (true, _, _) => "",
+            // Default: genderless datums are nothing, atoms are \the.
+            // Lowercase chosen because `json_encode` acts this way.
+            (false, StringFormatEncoder.FormatSuffix.StringifyWithArticle, null) => "",
+            (false, StringFormatEncoder.FormatSuffix.StringifyWithArticle, _) => "the ",
+            // \The
+            (false, StringFormatEncoder.FormatSuffix.UpperDefiniteArticle, _) => "The ",
+            // \the
+            (false, StringFormatEncoder.FormatSuffix.LowerDefiniteArticle, _) => "the ",
+            // \A, \An
+            (false, StringFormatEncoder.FormatSuffix.UpperIndefiniteArticle, "plural") => "Some ",
+            (false, StringFormatEncoder.FormatSuffix.UpperIndefiniteArticle, _) => StringStartsWithVowel(name) ? "An " : "A ",
+            // \a, \an
+            (false, StringFormatEncoder.FormatSuffix.LowerIndefiniteArticle, "plural") => "some ",
+            (false, StringFormatEncoder.FormatSuffix.LowerIndefiniteArticle, _) => StringStartsWithVowel(name) ? "an " : "a ",
+            _ => "",
+        };
+    }
+
+    public string GetArticle(StringFormatEncoder.FormatSuffix article) {
+        return GetArticle(article, GetRawName(), GetGender());
     }
 
     /// <summary>
     /// Get the display name of this object, WITH ALL FORMATTING EVALUATED OR REMOVED!
     /// </summary>
-    public virtual string GetDisplayName(StringFormatEncoder.FormatSuffix? suffix = null) {
+    public virtual string GetDisplayName(StringFormatEncoder.FormatSuffix? article = null) {
         var name = GetRawName();
-        bool isProper = StringIsProper(name);
-        name = StringFormatDecoder.RemoveFormatting(name); // TODO: Care about other formatting macros for obj names beyond \proper & \improper
-        return (isProper, suffix) switch {
-            (true, _) => name,
-            (false, StringFormatEncoder.FormatSuffix.UpperDefiniteArticle) => $"The {name}",
-            (false, StringFormatEncoder.FormatSuffix.LowerDefiniteArticle) => $"the {name}",
-            _ => name,
-        };
+        var articleStr = article is StringFormatEncoder.FormatSuffix article2 ? GetArticle(article2, name, GetGender()) : "";
+        return $"{articleStr}{StringFormatDecoder.RemoveFormatting(name)}";
     }
 
     /// <summary>
-    /// Similar to <see cref="GetDisplayName"/> except it just returns the name as plaintext, with formatting removed. No article or anything.
+    /// Returns the name of this object with no formatting evaluated.
     /// </summary>
-    public string GetNameUnformatted() {
-        return StringFormatDecoder.RemoveFormatting(GetRawName());
-    }
-
-    /// <summary>
-    /// Returns the name of this object with no formatting evaluated
-    /// </summary>
-    public string GetRawName() {
+    private string GetRawName() {
         string name = ObjectDefinition.Type;
 
         if (this is DreamObjectAtom) {
-            if (AtomManager.TryGetAppearance(this, out var appearance))
+            if (AtomManager.TryGetAppearance(this, out var appearance)) {
                 name = appearance.Name;
+            }
         } else if (TryGetVariable("name", out DreamValue nameVar)) {
-            if (nameVar.TryGetValueAsString(out var nameVarStr))
+            if (nameVar.TryGetValueAsString(out var nameVarStr)) {
                 name = nameVarStr;
-
+            }
             nameVar.Dispose();
         }
 
         return name;
+    }
+
+    public string? GetGender() {
+        // Only atoms have a gender.
+        if (this is DreamObjectAtom && TryGetVariable("gender", out DreamValue genderVar)) {
+            genderVar.TryGetValueAsString(out var gender);
+            genderVar.Dispose();
+            return gender;
+        }
+        return null;
     }
 
     #endregion Name Helpers
@@ -590,7 +617,7 @@ public class DreamObject {
             return "<deleted>";
         }
 
-        string name = GetNameUnformatted();
+        string name = StringFormatDecoder.RemoveFormatting(GetRawName());
         if (!string.IsNullOrEmpty(name)) {
             return $"{ObjectDefinition.Type}{{name=\"{name}\"}}";
         }

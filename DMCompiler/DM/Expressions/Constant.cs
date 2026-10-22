@@ -94,10 +94,6 @@ internal sealed class String(Location location, string value) : Constant(locatio
 // Note: built .json file depends on resource files, so they should be moving with it
 // TODO: cache resources to a single .rsc file, as BYOND does
 internal sealed class Resource : Constant {
-    private static readonly EnumerationOptions SearchOptions = new() {
-        MatchCasing = MatchCasing.CaseInsensitive
-    };
-
     private readonly string _filePath;
     private bool _isAmbiguous;
 
@@ -106,7 +102,7 @@ internal sealed class Resource : Constant {
         // Also remove "." and ".." from the directory path
         filePath = System.IO.Path.GetRelativePath(".", filePath.Replace('\\', '/'));
 
-        var outputDir = System.IO.Path.GetDirectoryName(compiler.Settings.Files?[0]) ?? "/";
+        var outputDir = System.IO.Path.GetDirectoryName(compiler.Settings.Files[0]) ?? "/";
         if (string.IsNullOrEmpty(outputDir))
             outputDir = "./";
 
@@ -117,11 +113,11 @@ internal sealed class Resource : Constant {
 
         // Search every defined FILE_DIR
         foreach (string resourceDir in compiler.ResourceDirectories) {
-            var directory = FindDirectory(resourceDir == string.Empty ? "./" : resourceDir, fileDir);
+            var directory = FindDirectory(compiler, resourceDir == string.Empty ? "./" : resourceDir, fileDir);
 
             if (directory != null) {
                 // Perform a case-insensitive search for the file
-                finalFilePath = FindFile(directory, fileName);
+                finalFilePath = FindFile(compiler, directory, fileName);
 
                 if (finalFilePath != null)
                     break;
@@ -131,10 +127,10 @@ internal sealed class Resource : Constant {
         // Search relative to the source file if it wasn't in one of the FILE_DIRs
         if (finalFilePath == null) {
             var sourceDir = System.IO.Path.Combine(outputDir, System.IO.Path.GetDirectoryName(Location.SourceFile) ?? string.Empty);
-            var directory = FindDirectory(sourceDir, fileDir);
+            var directory = FindDirectory(compiler, sourceDir, fileDir);
 
             if (directory != null)
-                finalFilePath = FindFile(directory, fileName);
+                finalFilePath = FindFile(compiler, directory, fileName);
         }
 
         if (finalFilePath != null) {
@@ -163,7 +159,7 @@ internal sealed class Resource : Constant {
     public override bool IsTruthy() => true;
 
     public override bool TryAsJsonRepresentation(DMCompiler compiler, out object? json) {
-        json = new Dictionary<string, object>() {
+        json = new Dictionary<string, object> {
             { "type", JsonVariableType.Resource },
             { "resourcePath", _filePath }
         };
@@ -175,14 +171,15 @@ internal sealed class Resource : Constant {
     /// Performs a recursive case-insensitive for a directory.<br/>
     /// Marks the resource as ambiguous if multiple are found.
     /// </summary>
+    /// <param name="compiler"></param>
     /// <param name="directory">Directory to search in (case-sensitive)</param>
     /// <param name="searching">Directory to search for (case-insensitive)</param>
     /// <returns>The found directory, null if none</returns>
-    private string? FindDirectory(string directory, string searching) {
+    private string? FindDirectory(DMCompiler compiler, string directory, string searching) {
         var searchingDirectories = searching.Split('/', StringSplitOptions.RemoveEmptyEntries);
 
         foreach (var searchingDirectory in searchingDirectories) {
-            string[] directories = Directory.GetDirectories(directory, searchingDirectory, SearchOptions);
+            string[] directories = compiler.SearchDirectories(directory, searchingDirectory);
 
             if (directories.Length == 0)
                 return null;
@@ -199,11 +196,12 @@ internal sealed class Resource : Constant {
     /// Performs a case-insensitive search for a file inside a directory.<br/>
     /// Marks the resource as ambiguous if multiple are found.
     /// </summary>
+    /// <param name="compiler"></param>
     /// <param name="directory">Directory to search in (case-sensitive)</param>
     /// <param name="searching">File to search for (case-insensitive)</param>
     /// <returns>The found file, null if none</returns>
-    private string? FindFile(string directory, string searching) {
-        var files = Directory.GetFiles(directory, searching, SearchOptions);
+    private string? FindFile(DMCompiler compiler, string directory, string searching) {
+        var files = compiler.SearchFiles(directory, searching);
 
         // GetFiles() can't find "..ogg" on Linux for some reason, so try a direct check for the file
         if (files.Length == 0) {

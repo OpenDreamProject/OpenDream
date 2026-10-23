@@ -219,7 +219,7 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
 
             string htmlFileName;
             if (options?.TryGetValue("file", out var fileName) ?? false) {
-                htmlFileName = fileName;
+                htmlFileName = Path.GetFileNameWithoutExtension(fileName);
             } else {
                 // TODO: Possible collisions
                 htmlFileName = $"browse_{pBrowse.Window}_{_random.Next()}";

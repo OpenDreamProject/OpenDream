@@ -1,6 +1,3 @@
-using System.Threading.Tasks;
-using System.Web;
-using DMCompiler.Bytecode;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.Native;
@@ -11,6 +8,8 @@ using OpenDreamShared.Network.Messages;
 using Robust.Shared.Enums;
 using Robust.Shared.Player;
 using SpaceWizards.Sodium;
+using System.Threading.Tasks;
+using System.Web;
 
 namespace OpenDreamRuntime;
 
@@ -34,7 +33,8 @@ public sealed partial class DreamConnection {
     [ViewVariables] public DreamObjectClient? Client { get; private set; }
     [ViewVariables] public string Key { get; }
 
-    [ViewVariables] public DreamObjectMob? Mob {
+    [ViewVariables]
+    public DreamObjectMob? Mob {
         get => _mob;
         set {
             if (_mob == value)
@@ -54,7 +54,8 @@ public sealed partial class DreamConnection {
         }
     }
 
-    [ViewVariables] public DreamObjectMovable? Eye {
+    [ViewVariables]
+    public DreamObjectMovable? Eye {
         get;
         set {
             value?.IncRef();
@@ -466,7 +467,7 @@ public sealed partial class DreamConnection {
     }
 
     public void HandleBrowseResourceRequest(string filename) {
-        if(_permittedBrowseRscFiles.TryGetValue(filename, out var dreamResource)) {
+        if (_permittedBrowseRscFiles.TryGetValue(filename, out var dreamResource)) {
             var msg = new MsgBrowseResourceResponse() {
                 Filename = filename,
                 Data = dreamResource.ResourceData!, //honestly if this is null, something mega fucked up has happened and we should error hard
@@ -478,9 +479,12 @@ public sealed partial class DreamConnection {
         }
     }
 
-    public void Browse(string? body, string? options) {
+    public void Browse(byte[]? body, string? options) {
+        bool display = true;
         string? window = null;
-        Vector2i size = (480, 480);
+        string? fileName = null;
+
+        List<string> unhandledOptions = new List<string>();
 
         if (options != null) {
             foreach (string option in options.Split(',', ';', '&')) {
@@ -491,21 +495,30 @@ public sealed partial class DreamConnection {
                     string key = optionSeparated[0];
                     string value = optionSeparated[1];
 
-                    if (key == "window") {
-                        window = value;
-                    } else if (key == "size") {
-                        string[] sizeSeparated = value.Split("x", 2);
-
-                        size = (int.Parse(sizeSeparated[0]), int.Parse(sizeSeparated[1]));
+                    switch(key) {
+                        case "window":
+                            window = value;
+                            break;
+                        case "display":
+                            display = value != "0";
+                            break;
+                        case "file":
+                            fileName = value;
+                            break;
+                        default:
+                            unhandledOptions.Add(value);
+                            break;
                     }
                 }
             }
         }
 
         var msg = new MsgBrowse() {
-            Size = size,
             Window = window,
-            HtmlSource = body
+            Display = display,
+            FileName = fileName,
+            Options = string.Join(';', unhandledOptions),
+            Data = body,
         };
 
         Session?.Channel.SendMessage(msg);

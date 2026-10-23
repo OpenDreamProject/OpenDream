@@ -2667,11 +2667,13 @@ namespace OpenDreamRuntime.Procs {
                 throw new DMException($"Invalid browse() recipient: expected mob, client, or world, got {receiver}");
             }
 
-            string? browseValue;
+            byte[]? browseValue;
             if (bodyStack.TryGetValueAsDreamResource(out var resource)) {
-                browseValue = resource.ReadAsString();
-            } else if (bodyStack.TryGetValueAsString(out browseValue) || bodyStack.IsNull) {
-                // Got it.
+                browseValue = resource.ResourceData!; // I feel like something really weird has to happen for this to not be true
+            } else if (bodyStack.TryGetValueAsString(out var stringValue)) {
+                browseValue = Encoding.UTF8.GetBytes(stringValue);
+            } else if (bodyStack.IsNull) {
+                browseValue = null;
             } else {
                 throw new DMException($"Invalid browse() body: expected resource or string, got {bodyStack}");
             }

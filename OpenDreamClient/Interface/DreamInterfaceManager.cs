@@ -208,11 +208,12 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
             Dictionary<string, string>? options = null;
 
             if (pBrowse.Options is not null) {
-                DMFParser? parser = ParseDmfParams(pBrowse.Options, out var checkParserErrors);
-                if (parser is not null) {
-                    Dictionary<string, string> attributes = parser.AttributesValues();
-                    if (!checkParserErrors()) {
-                        options = attributes;
+                var optionsString = pBrowse.Options.Replace(';', '&').Replace(',', '&');
+                var query = HttpUtility.ParseQueryString(optionsString);
+                if (query.HasKeys()) {
+                    options = [];
+                    foreach(var key in query.AllKeys) {
+                        options[key!] = query[key] ?? "";
                     }
                 }
             }

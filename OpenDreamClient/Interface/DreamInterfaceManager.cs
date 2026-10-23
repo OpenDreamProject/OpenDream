@@ -195,93 +195,103 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
     private void RxBrowse(MsgBrowse pBrowse) {
         var referencedElement = (pBrowse.Window != null) ? FindElementWithId(pBrowse.Window) : DefaultWindow;
 
-        if (pBrowse.HtmlSource == null && referencedElement != null) {
-            // Closing the referenced window or browser
+        if (pBrowse.Data == null) {
+            if (referencedElement != null) {
+                // Closing the referenced window or browser
 
-            if (referencedElement is ControlWindow window) {
-                window.CloseChildWindow();
-            } else if (referencedElement is ControlBrowser browser) {
-                // TODO: What does "closing" the browser mean? Redirect to a blank page or remove the control entirely?
-                browser.SetFileSource(null);
-            }
-        } else if (pBrowse.HtmlSource != null) {
-            Dictionary<string, string>? options = null;
-
-            if (pBrowse.Options is not null) {
-                var optionsString = pBrowse.Options.Replace(';', '&').Replace(',', '&');
-                var query = HttpUtility.ParseQueryString(optionsString);
-                if (query.HasKeys()) {
-                    options = [];
-                    foreach(var key in query.AllKeys) {
-                        options[key!] = query[key] ?? "";
-                    }
-                }
-            }
-
-            string htmlFileName;
-            if (options?.TryGetValue("file", out var fileName) ?? false) {
-                htmlFileName = Path.GetFileNameWithoutExtension(fileName);
-            } else {
-                // TODO: Possible collisions
-                htmlFileName = $"browse_{pBrowse.Window}_{_random.Next()}";
-            }
-            ControlBrowser? outputBrowser = referencedElement as ControlBrowser;
-
-            if (outputBrowser == null) {
                 if (referencedElement is ControlWindow window) {
-                    outputBrowser = null;
-
-                    // Find a browser within this window
-                    foreach (var childControl in window.ChildControls) {
-                        if (childControl is not ControlBrowser browser)
-                            continue;
-
-                        outputBrowser = browser;
-                        break;
-                    }
-                } else if (pBrowse.Window != null) {
-                    WindowDescriptor? descriptor = null;
-                    (int x, int y) size = (480, 480);
-
-                    // Handle using options to set the initial properties of the window
-                    if (options != null) {
-                        var mappingElement = new MappingDataNode {
-                            { "id", pBrowse.Window }
-                        };
-
-                        foreach (var attribute in options) {
-                            mappingElement.Add(attribute.Key, attribute.Value);
-                        }
-
-                        descriptor = (WindowDescriptor?)_serializationManager.Read(typeof(WindowDescriptor), mappingElement);
-
-                        if (descriptor?.Size.X == 0 || descriptor?.Size.Y == 0) {
-                            descriptor.Size.X = size.x;
-                            descriptor.Size.Y = size.y;
-                        } else if (descriptor != null) {
-                            size.x = descriptor.Size.X;
-                            size.y = descriptor.Size.Y;
-                        }
-                    }
-
-                    // Creating a new popup
-                    var popup = new BrowsePopup(pBrowse.Window, size, _clyde.MainWindow, descriptor);
-                    popup.Closed += () => { Windows.Remove(pBrowse.Window); };
-
-                    outputBrowser = popup.Browser;
-                    Windows.Add(pBrowse.Window, popup.WindowElement);
-                    popup.Open();
+                    window.CloseChildWindow();
+                } else if (referencedElement is ControlBrowser browser) {
+                    // TODO: What does "closing" the browser mean? Redirect to a blank page or remove the control entirely?
+                    browser.SetFileSource(null);
                 }
             }
 
-            if (outputBrowser == null) {
-                _sawmill.Error($"Failed to find a browser element in window \"{pBrowse.Window}\" to browse()");
-                return;
-            }
-
-            var cacheFile = _dreamResource.CreateCacheFile(htmlFileName + ".html", pBrowse.HtmlSource);
-            outputBrowser.SetFileSource(cacheFile);
+            return;
         }
+
+        string cachedFileName;
+        if (pBrowse.FileName is not null) {
+            cachedFileName = pBrowse.FileName;
+        } else {
+            // TODO: Possible collisions
+            cachedFileName = $"browse_{pBrowse.Window}_{_random.Next()}.html";
+        }
+
+        if(!pBrowse.Display) {
+            _dreamResource.CreateCacheFile(cachedFileName, pBrowse.Data);
+            return;
+        }
+
+        // Get ready to output the data into a browser
+        Dictionary<string, string>? options = null;
+        if (pBrowse.Options is not null) {
+            var optionsString = pBrowse.Options.Replace(';', '&').Replace(',', '&');
+            var query = HttpUtility.ParseQueryString(optionsString);
+            if (query.HasKeys()) {
+                options = [];
+                foreach (var key in query.AllKeys) {
+                    options[key!] = query[key] ?? "";
+                }
+            }
+        }
+
+        ControlBrowser? outputBrowser = referencedElement as ControlBrowser;
+        if (outputBrowser == null) {
+            if (referencedElement is ControlWindow window) {
+                outputBrowser = null;
+
+                // Find a browser within this window
+                foreach (var childControl in window.ChildControls) {
+                    if (childControl is not ControlBrowser browser)
+                        continue;
+
+                    outputBrowser = browser;
+                    break;
+                }
+            } else if (pBrowse.Window != null) {
+                WindowDescriptor? descriptor = null;
+                (int x, int y) size = (480, 480);
+
+                // Handle using options to set the initial properties of the window
+                if (options != null) {
+
+                    var mappingElement = new MappingDataNode {
+                        { "id", pBrowse.Window }
+                    };
+
+                    foreach (var attribute in options) {
+                        mappingElement.Add(attribute.Key, attribute.Value);
+                    }
+
+                    descriptor = (WindowDescriptor?)_serializationManager.Read(typeof(WindowDescriptor), mappingElement);
+
+                    if (descriptor?.Size.X == 0 || descriptor?.Size.Y == 0) {
+                        descriptor.Size.X = size.x;
+                        descriptor.Size.Y = size.y;
+                    } else if (descriptor != null) {
+                        size.x = descriptor.Size.X;
+                        size.y = descriptor.Size.Y;
+                    }
+                }
+
+                // Creating a new popup
+                var popup = new BrowsePopup(pBrowse.Window, size, _clyde.MainWindow, descriptor);
+                popup.Closed += () => { Windows.Remove(pBrowse.Window); };
+
+                outputBrowser = popup.Browser;
+                Windows.Add(pBrowse.Window, popup.WindowElement);
+                popup.Open();
+            }
+        }
+
+        if (outputBrowser == null) {
+            _sawmill.Error($"Failed to find a browser element in window \"{pBrowse.Window}\" to browse()");
+            return;
+        }
+
+        var cacheFile = _dreamResource.CreateCacheFile(cachedFileName, pBrowse.Data);
+        outputBrowser.SetFileSource(cacheFile);
     }
 
     private void RxWinSet(MsgWinSet message) {

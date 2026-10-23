@@ -479,8 +479,10 @@ public sealed partial class DreamConnection {
         }
     }
 
-    public void Browse(string? body, string? options) {
+    public void Browse(byte[]? body, string? options) {
+        bool display = true;
         string? window = null;
+        string? fileName = null;
 
         List<string> unhandledOptions = new List<string>();
 
@@ -493,10 +495,19 @@ public sealed partial class DreamConnection {
                     string key = optionSeparated[0];
                     string value = optionSeparated[1];
 
-                    if (key == "window") {
-                        window = value;
-                    } else {
-                        unhandledOptions.Add(optionTrimmed);
+                    switch(key) {
+                        case "window":
+                            window = value;
+                            break;
+                        case "display":
+                            display = value != "0";
+                            break;
+                        case "file":
+                            fileName = value;
+                            break;
+                        default:
+                            unhandledOptions.Add(value);
+                            break;
                     }
                 }
             }
@@ -504,8 +515,10 @@ public sealed partial class DreamConnection {
 
         var msg = new MsgBrowse() {
             Window = window,
-            HtmlSource = body,
-            Options = string.Join(';', unhandledOptions)
+            Display = display,
+            FileName = fileName,
+            Options = string.Join(';', unhandledOptions),
+            Data = body,
         };
 
         Session?.Channel.SendMessage(msg);

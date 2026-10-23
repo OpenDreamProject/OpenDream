@@ -210,13 +210,8 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
             return;
         }
 
-        string cachedFileName;
-        if (pBrowse.FileName is not null) {
-            cachedFileName = pBrowse.FileName;
-        } else {
-            // TODO: Possible collisions
-            cachedFileName = $"browse_{pBrowse.Window}_{_random.Next()}.html";
-        }
+        // TODO: Not impossible for the generated filename to have collisions...
+        string cachedFileName = pBrowse.FileName ?? $"browse_{pBrowse.Window}_{_random.Next()}.html";
 
         if(!pBrowse.Display) {
             _dreamResource.CreateCacheFile(cachedFileName, pBrowse.Data);
@@ -255,7 +250,6 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
 
                 // Handle using options to set the initial properties of the window
                 if (options != null) {
-
                     var mappingElement = new MappingDataNode {
                         { "id", pBrowse.Window }
                     };
@@ -571,7 +565,7 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
                                 var result = HandleEmbeddedWinget(null, currentArg.ToString(), out var hadWinget);
 
                                 // 64x64 or 64,64 gets split into two "64 64" args
-                                if (hadWinget && result.Split(['x', ',']) is { Length: 2 } wingetSplit &&
+                                if (hadWinget && result.Split('x', ',') is { Length: 2 } wingetSplit &&
                                     float.TryParse(wingetSplit[0], out _) && float.TryParse(wingetSplit[1], out _)) {
                                     args.Add(wingetSplit[0]);
                                     args.Add(wingetSplit[1]);
@@ -590,7 +584,7 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
                             var result = HandleEmbeddedWinget(null, currentArg.ToString(), out var hadWinget);
 
                             // 64x64 or 64,64 gets split into two "64 64" args
-                            if (hadWinget && result.Split(['x', ',']) is { Length: 2 } wingetSplit &&
+                            if (hadWinget && result.Split('x', ',') is { Length: 2 } wingetSplit &&
                                 float.TryParse(wingetSplit[0], out _) && float.TryParse(wingetSplit[1], out _)) {
                                 args.Add(wingetSplit[0]);
                                 args.Add(wingetSplit[1]);
@@ -609,7 +603,7 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
                         var result = HandleEmbeddedWinget(null, arg, out var hadWinget);
 
                         // 64x64 or 64,64 gets split into two "64 64" args
-                        if (hadWinget && result.Split(['x', ',']) is { Length: 2 } wingetSplit &&
+                        if (hadWinget && result.Split('x', ',') is { Length: 2 } wingetSplit &&
                             float.TryParse(wingetSplit[0], out _) && float.TryParse(wingetSplit[1], out _)) {
                             args.Add(wingetSplit[0]);
                             args.Add(wingetSplit[1]);

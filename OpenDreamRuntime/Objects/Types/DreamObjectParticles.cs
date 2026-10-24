@@ -123,7 +123,7 @@ public sealed class DreamObjectParticles : DreamObject {
                 if (value.TryGetValueAsDreamList(out var colorList)) {
                     Color[] grad = new Color[colorList.GetLength()];
                     int i = 0;
-                    foreach (DreamValue colorValue in colorList.EnumerateKeys()) {
+                    foreach (DreamValue colorValue in colorList.Enumerate()) {
                         if (!colorValue.TryGetValueAsString(out var colorStr))
                             continue;
                         if (!ColorHelpers.TryParseColor(colorStr, out var c, defaultAlpha: string.Empty))
@@ -146,7 +146,7 @@ public sealed class DreamObjectParticles : DreamObject {
             case "icon": //list or icon
                 _icons.Clear();
                 if (value.TryGetValueAsIDreamList(out var iconList)) {
-                    foreach (DreamValue iconValue in iconList.EnumerateKeys()) {
+                    foreach (DreamValue iconValue in iconList.Enumerate()) {
                         if (!DreamResourceManager.TryLoadIcon(iconValue, out var iconRsc))
                             continue;
 
@@ -174,7 +174,7 @@ public sealed class DreamObjectParticles : DreamObject {
             case "icon_state": //list or string
                 _iconStates.Clear();
                 if (value.TryGetValueAsIDreamList(out var iconStateList)) {
-                    foreach (DreamValue iconValue in iconStateList.EnumerateKeys()) {
+                    foreach (DreamValue iconValue in iconStateList.Enumerate()) {
                         if (!iconValue.TryGetValueAsString(out var iconState))
                             continue;
 

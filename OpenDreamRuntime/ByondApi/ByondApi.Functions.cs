@@ -345,7 +345,7 @@ public static unsafe partial class ByondApi {
 
             try {
                 int i = 0;
-                foreach (var value in srcList.EnumerateKeys()) {
+                foreach (var value in srcList.Enumerate()) {
                     if (i >= length)
                         throw new Exception($"List {srcList} had more elements than the expected {length}");
 
@@ -753,7 +753,7 @@ public static unsafe partial class ByondApi {
                     corner1->x, corner1->y, corner1->z,
                     corner2->x, corner2->y, corner2->z);
 
-                foreach (var turf in turfs.EnumerateKeys()) {
+                foreach (var turf in turfs.Enumerate()) {
                     list.Add(ValueToByondApi(turf));
                     if (!calledFromMain)
                         AddTemporaryReference(turf);

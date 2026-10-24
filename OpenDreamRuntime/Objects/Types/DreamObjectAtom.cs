@@ -106,7 +106,7 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
 
                 if (value.TryGetValueAsDreamList(out var valueList)) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue overlayValue in valueList.EnumerateKeys()) {
+                    foreach (DreamValue overlayValue in valueList.Enumerate()) {
                         Overlays.AddKey(overlayValue);
                     }
                 } else if (!value.IsNull) {
@@ -120,7 +120,7 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
 
                 if (value.TryGetValueAsDreamList(out var valueList)) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue underlayValue in valueList.EnumerateKeys()) {
+                    foreach (DreamValue underlayValue in valueList.Enumerate()) {
                         Underlays.AddKey(underlayValue);
                     }
                 } else if (!value.IsNull) {
@@ -134,7 +134,7 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
 
                 if (value.TryGetValueAsDreamList(out var valueList)) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue visContentsValue in valueList.EnumerateKeys()) {
+                    foreach (DreamValue visContentsValue in valueList.Enumerate()) {
                         VisContents.AddKey(visContentsValue);
                     }
                 } else if (!value.IsNull) {
@@ -158,7 +158,7 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
                         Filters.AddKey(new(filterObject));
                         filterObject.DecRef();
                     } else { // It's a list of filters
-                        foreach (var filter in valueList.EnumerateKeys()) {
+                        foreach (var filter in valueList.Enumerate()) {
                             if (!filter.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject)) {
                                 if (!filter.TryGetValueAsDreamList(out var filterValues))
                                     continue;

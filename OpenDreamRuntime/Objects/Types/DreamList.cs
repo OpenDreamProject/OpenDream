@@ -144,7 +144,7 @@ public class DreamList : DreamObject, IDreamList {
         return [.._elements]; // Returns a copy for parity with DreamAssocList.
     }
 
-    public virtual IEnumerable<DreamValue> EnumerateKeys() {
+    public virtual IEnumerable<DreamValue> Enumerate() {
         return _elements;
     }
 
@@ -332,7 +332,7 @@ public class DreamList : DreamObject, IDreamList {
     public DreamList Union(DreamList other) {
         DreamList newList = new DreamList(ObjectDefinition, _elements.Union(other.GetKeys()).ToList(), null);
         Dictionary<DreamValue, DreamValue> otherAssociations = other.GetPairs();
-        foreach (DreamValue value in newList.EnumerateKeys()) {
+        foreach (DreamValue value in newList.Enumerate()) {
             // Existing left pairs win, only values newly contributed by the right list use its association
             if (_associativeValues?.TryGetValue(value, out DreamValue leftAssociatedValue) is true)
                 newList.SetKeyValuePair(value, leftAssociatedValue);
@@ -390,7 +390,7 @@ public class DreamList : DreamObject, IDreamList {
         DreamList listCopy = (DreamList)CreateCopy();
 
         if (b.TryGetValueAsDreamList(out var bList)) {
-            foreach (DreamValue value in bList.EnumerateKeys()) {
+            foreach (DreamValue value in bList.Enumerate()) {
                 if (bList._associativeValues?.TryGetValue(value, out var assocValue) is true) {
                     listCopy.SetKeyValuePair(value, assocValue);
                 } else {
@@ -408,7 +408,7 @@ public class DreamList : DreamObject, IDreamList {
         DreamList listCopy = (DreamList)CreateCopy();
 
         if (b.TryGetValueAsDreamList(out var bList)) {
-            foreach (DreamValue value in bList.EnumerateKeys()) {
+            foreach (DreamValue value in bList.Enumerate()) {
                 listCopy.RemoveKey(value);
             }
         } else {
@@ -462,7 +462,7 @@ public class DreamList : DreamObject, IDreamList {
             if (bList == this) {
                 Cut();
             } else {
-                foreach (DreamValue key in bList.EnumerateKeys()) {
+                foreach (DreamValue key in bList.Enumerate()) {
                     RemoveKey(key);
                 }
             }
@@ -476,7 +476,7 @@ public class DreamList : DreamObject, IDreamList {
 
     public override DreamValue OperatorCombine(DreamValue b) {
         if (b.TryGetValueAsDreamList(out var bList)) {
-            foreach (DreamValue value in bList.EnumerateKeys()) {
+            foreach (DreamValue value in bList.Enumerate()) {
                 if (ContainsKey(value))
                     continue;
 
@@ -496,7 +496,7 @@ public class DreamList : DreamObject, IDreamList {
     public override DreamValue OperatorMask(DreamValue b) {
         if (b.TryGetValueAsDreamList(out var bList)) {
             var remainingValues = new Dictionary<DreamValue, int>(bList.GetLength());
-            foreach (DreamValue value in bList.EnumerateKeys()) {
+            foreach (DreamValue value in bList.Enumerate()) {
                 remainingValues.TryGetValue(value, out int count);
                 remainingValues[value] = count + 1;
             }
@@ -560,7 +560,7 @@ public class DreamList : DreamObject, IDreamList {
     public override void OperatorOutput(DreamValue b) {
         HashSet<DreamConnection> passedConnections = new(); // BYOND only outputs to a client once per list
 
-        foreach(var value in EnumerateKeys()) {
+        foreach(var value in Enumerate()) {
             DreamConnection? connection = null;
             if(value.TryGetValueAsDreamObject<DreamObjectClient>(out var dreamClient))
                 connection = dreamClient.Connection;
@@ -589,10 +589,10 @@ internal sealed class DreamListVars(DreamObjectDefinition listDef, DreamObject d
     }
 
     public override List<DreamValue> GetKeys() {
-        return EnumerateKeys().ToList();
+        return Enumerate().ToList();
     }
 
-    public override IEnumerable<DreamValue> EnumerateKeys() {
+    public override IEnumerable<DreamValue> Enumerate() {
         return DreamObject.GetVariableNames().Concat(DreamObject.ObjectDefinition.GlobalVariables.Keys).Select(name => new DreamValue(name));
     }
 
@@ -650,10 +650,10 @@ internal sealed class DreamGlobalVars(DreamObjectDefinition listDef) : DreamList
         true; // We don't use the associative array but, yes, we behave like an associative list
 
     public override List<DreamValue> GetKeys() {
-        return EnumerateKeys().ToList();
+        return Enumerate().ToList();
     }
 
-    public override IEnumerable<DreamValue> EnumerateKeys() {
+    public override IEnumerable<DreamValue> Enumerate() {
         var root = ObjectTree.Root.ObjectDefinition;
 
         foreach (var key in root.GlobalVariables.Keys) {
@@ -736,10 +736,10 @@ public sealed class ClientVerbsList : DreamList {
     }
 
     public override List<DreamValue> GetKeys() {
-        return EnumerateKeys().ToList();
+        return Enumerate().ToList();
     }
 
-    public override IEnumerable<DreamValue> EnumerateKeys() {
+    public override IEnumerable<DreamValue> Enumerate() {
         foreach (DreamProc verb in Verbs)
             yield return new(verb);
     }
@@ -812,10 +812,10 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
     }
 
     public override List<DreamValue> GetKeys() {
-        return EnumerateKeys().ToList();
+        return Enumerate().ToList();
     }
 
-    public override IEnumerable<DreamValue> EnumerateKeys() {
+    public override IEnumerable<DreamValue> Enumerate() {
         var appearance = atomManager.MustGetAppearance(atom);
         if (VerbSystem == null)
             yield break;
@@ -899,10 +899,10 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
 // Operates on an object's appearance
 public sealed class DreamOverlaysList(DreamObjectDefinition listDef, DreamObject owner, ServerAppearanceSystem? appearanceSystem, bool isUnderlays) : DreamList(listDef, 0) {
     public override List<DreamValue> GetKeys() {
-        return EnumerateKeys().ToList();
+        return Enumerate().ToList();
     }
 
-    public override IEnumerable<DreamValue> EnumerateKeys() {
+    public override IEnumerable<DreamValue> Enumerate() {
         var appearance = AtomManager.MustGetAppearance(owner);
         if (appearanceSystem == null)
             yield break;
@@ -1019,10 +1019,10 @@ public sealed class DreamVisContentsList : DreamList {
     }
 
     public override List<DreamValue> GetKeys() {
-        return EnumerateKeys().ToList();
+        return Enumerate().ToList();
     }
 
-    public override IEnumerable<DreamValue> EnumerateKeys() {
+    public override IEnumerable<DreamValue> Enumerate() {
         foreach (var visContent in _visContents)
             yield return new(visContent);
     }
@@ -1176,10 +1176,10 @@ public sealed class DreamFilterList(DreamObjectDefinition listDef, DreamObject o
     }
 
     public override List<DreamValue> GetKeys() {
-        return EnumerateKeys().ToList();
+        return Enumerate().ToList();
     }
 
-    public override IEnumerable<DreamValue> EnumerateKeys() {
+    public override IEnumerable<DreamValue> Enumerate() {
         ImmutableAppearance appearance = GetAppearance();
 
         foreach (var filter in appearance.Filters) {
@@ -1278,7 +1278,7 @@ public sealed class ClientScreenList(DreamObjectTree objectTree, ServerScreenOve
         return _screenObjects;
     }
 
-    public override IEnumerable<DreamValue> EnumerateKeys() {
+    public override IEnumerable<DreamValue> Enumerate() {
         return _screenObjects;
     }
 
@@ -1344,7 +1344,7 @@ public sealed class ClientImagesList(DreamObjectTree objectTree, ServerClientIma
         return _imageObjects;
     }
 
-    public override IEnumerable<DreamValue> EnumerateKeys() {
+    public override IEnumerable<DreamValue> Enumerate() {
         return _imageObjects;
     }
 
@@ -1407,10 +1407,10 @@ public sealed class WorldContentsList(DreamObjectDefinition listDef, AtomManager
     }
 
     public override List<DreamValue> GetKeys() {
-        return EnumerateKeys().ToList();
+        return Enumerate().ToList();
     }
 
-    public override IEnumerable<DreamValue> EnumerateKeys() {
+    public override IEnumerable<DreamValue> Enumerate() {
         return AtomManager.EnumerateAtoms().Select(atom => new DreamValue(atom));
     }
 
@@ -1457,10 +1457,10 @@ public sealed class TurfContentsList(DreamObjectDefinition listDef, DreamObjectT
     }
 
     public override List<DreamValue> GetKeys() {
-        return EnumerateKeys().ToList();
+        return Enumerate().ToList();
     }
 
-    public override IEnumerable<DreamValue> EnumerateKeys() {
+    public override IEnumerable<DreamValue> Enumerate() {
         foreach (var movable in Cell.Movables)
             yield return new(movable);
     }
@@ -1531,14 +1531,14 @@ public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectA
     }
 
     public override List<DreamValue> GetKeys() {
-        return EnumerateKeys().ToList();
+        return Enumerate().ToList();
     }
 
-    public override IEnumerable<DreamValue> EnumerateKeys() {
+    public override IEnumerable<DreamValue> Enumerate() {
         foreach (var turf in area.Turfs) {
             yield return new(turf);
 
-            foreach (var content in turf.Contents.EnumerateKeys())
+            foreach (var content in turf.Contents.Enumerate())
                 yield return content;
         }
     }
@@ -1620,10 +1620,10 @@ public sealed class MovableContentsList(DreamObjectDefinition listDef, DreamObje
     }
 
     public override List<DreamValue> GetKeys() {
-        return EnumerateKeys().ToList();
+        return Enumerate().ToList();
     }
 
-    public override IEnumerable<DreamValue> EnumerateKeys() {
+    public override IEnumerable<DreamValue> Enumerate() {
         using var childEnumerator = transform.ChildEnumerator;
 
         while (childEnumerator.MoveNext(out EntityUid child)) {
@@ -1703,10 +1703,10 @@ internal sealed class ProcArgsList(DreamObjectDefinition listDef, ProcState stat
     }
 
     public override List<DreamValue> GetKeys() {
-        return EnumerateKeys().ToList();
+        return Enumerate().ToList();
     }
 
-    public override IEnumerable<DreamValue> EnumerateKeys() {
+    public override IEnumerable<DreamValue> Enumerate() {
         for (int i = 0; i < state.ArgumentCount; i++)
             yield return state.GetArguments()[i];
     }
@@ -1756,10 +1756,10 @@ public sealed class SavefileDirList(DreamObjectDefinition listDef, DreamObjectSa
     }
 
     public override List<DreamValue> GetKeys() {
-        return EnumerateKeys().ToList();
+        return Enumerate().ToList();
     }
 
-    public override IEnumerable<DreamValue> EnumerateKeys() {
+    public override IEnumerable<DreamValue> Enumerate() {
         foreach (string value in backedSaveFile.CurrentDir.Keys.OrderBy(x => x))
             yield return new DreamValue(value);
     }

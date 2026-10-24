@@ -746,13 +746,13 @@ internal sealed partial class DreamDebugManager : IDreamDebugManager {
     private IEnumerable<Variable> ExpandList(RequestVariables req, DreamList list) {
         if (list.IsAssociative) {
             var assoc = list.GetPairs();
-            foreach (var (i, key) in list.EnumerateKeys().Select((v, i) => (i + 1, v)).Skip(req.Arguments.Start ?? 0).Take((req.Arguments.Count ?? int.MaxValue) / 2)) {
+            foreach (var (i, key) in list.Enumerate().Select((v, i) => (i + 1, v)).Skip(req.Arguments.Start ?? 0).Take((req.Arguments.Count ?? int.MaxValue) / 2)) {
                 assoc.TryGetValue(key, out var value);
                 yield return DescribeValue($"keys[{i}]", key);
                 yield return DescribeValue($"vals[{i}]", value);
             }
         } else {
-            foreach (var (i, value) in list.EnumerateKeys().Select((v, i) => (i + 1, v)).Skip(req.Arguments.Start ?? 0).Take(req.Arguments.Count ?? int.MaxValue)) {
+            foreach (var (i, value) in list.Enumerate().Select((v, i) => (i + 1, v)).Skip(req.Arguments.Start ?? 0).Take(req.Arguments.Count ?? int.MaxValue)) {
                 yield return DescribeValue($"[{i}]", value);
             }
         }

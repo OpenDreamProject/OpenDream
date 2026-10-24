@@ -971,7 +971,7 @@ namespace OpenDreamRuntime.Procs {
 
                 if (secondList != null) {
                     remainingValues = new Dictionary<DreamValue, int>(secondList.GetLength());
-                    foreach (DreamValue value in secondList.EnumerateKeys()) {
+                    foreach (DreamValue value in secondList.Enumerate()) {
                         remainingValues.TryGetValue(value, out int count);
                         remainingValues[value] = count + 1;
                     }
@@ -980,7 +980,7 @@ namespace OpenDreamRuntime.Procs {
                 // BYOND intersection retains min(left count, right count) occurrences in left-list order
                 // associative values come from the retained left pair
 
-                foreach (DreamValue value in list.EnumerateKeys()) {
+                foreach (DreamValue value in list.Enumerate()) {
                     bool retained;
                     if (remainingValues != null) {
                         retained = remainingValues.TryGetValue(value, out int count) && count > 0;
@@ -3048,18 +3048,18 @@ namespace OpenDreamRuntime.Procs {
 
                 if (second.TryGetValueAsDreamList(out var secondList)) {
                     Dictionary<DreamValue, DreamValue> secondAssociations = secondList.GetPairs();
-                    foreach (DreamValue value in list.EnumerateKeys()) {
+                    foreach (DreamValue value in list.Enumerate()) {
                         if (!secondList.ContainsKey(value))
                             AddValue(value, firstAssociations);
                     }
 
-                    foreach (DreamValue value in secondList.EnumerateKeys()) {
+                    foreach (DreamValue value in secondList.Enumerate()) {
                         if (!list.ContainsKey(value))
                             AddValue(value, secondAssociations);
                     }
                 } else {
                     bool secondInList = list.ContainsKey(second);
-                    foreach (DreamValue value in list.EnumerateKeys()) {
+                    foreach (DreamValue value in list.Enumerate()) {
                         if (value != second)
                             AddValue(value, firstAssociations);
                     }
@@ -3097,7 +3097,7 @@ namespace OpenDreamRuntime.Procs {
 
             // compound list XOR toggles one occurrence
             // BYOND removes the first match and leaves later duplicates in place
-            foreach (DreamValue value in first.EnumerateKeys()) {
+            foreach (DreamValue value in first.Enumerate()) {
                 if (!removed && value == second) {
                     removed = true;
                     continue;
@@ -3118,7 +3118,7 @@ namespace OpenDreamRuntime.Procs {
             Dictionary<DreamValue, DreamValue> replacementAssociations = replacement.GetPairs();
             target.Cut();
 
-            foreach (DreamValue value in replacement.EnumerateKeys()) {
+            foreach (DreamValue value in replacement.Enumerate()) {
                 target.AddKey(value);
                 if (replacementAssociations.TryGetValue(value, out DreamValue associatedValue))
                     target.SetKeyValuePair(value, associatedValue);

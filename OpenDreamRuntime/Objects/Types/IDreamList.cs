@@ -63,7 +63,7 @@ public interface IDreamList {
     /// </summary>
     /// <returns></returns>
     public DreamValue[] ToArray() {
-        return EnumerateKeys().ToArray();
+        return Enumerate().ToArray();
     }
 
     /// <summary>
@@ -76,7 +76,7 @@ public interface IDreamList {
     /// Returns an IEnumerable of the 1-dimensional elements of the list.
     /// </summary>
     /// <returns></returns>
-    public IEnumerable<DreamValue> EnumerateKeys();
+    public IEnumerable<DreamValue> Enumerate();
 
     /// <summary>
     /// Returns a dictionary of key-value associations. Does not copy or include any elements without associations.

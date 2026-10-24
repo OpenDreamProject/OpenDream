@@ -376,7 +376,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                     if (sfDreamListValue.AssocData?[i] != null) { //note that null != DreamValue.Null
                         using var sfAssocValue = DeserializeJsonValue(sfDreamListValue.AssocData[i]!);
 
-                        l.SetKeyValuePair(sfValue, sfAssocValue);
+                        l.Set(sfValue, sfAssocValue);
                     } else {
                         l.Add(sfValue);
                     }

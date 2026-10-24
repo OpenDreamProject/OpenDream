@@ -60,12 +60,12 @@ internal static class DreamProcNativeWorld {
         var list = state.ObjectTree.CreateList();
         foreach (var header in response.Headers) {
             // TODO: How to handle headers with multiple values?
-            list.SetKeyValuePair(new DreamValue(header.Key), new DreamValue(header.Value.First()));
+            list.Set(new DreamValue(header.Key), new DreamValue(header.Value.First()));
         }
 
         var content = state.ResourceManager.CreateResource(contentBytes);
-        list.SetKeyValuePair(new DreamValue("STATUS"), new DreamValue(((int) response.StatusCode).ToString()));
-        list.SetKeyValuePair(new DreamValue("CONTENT"), new DreamValue(content));
+        list.Set(new DreamValue("STATUS"), new DreamValue(((int) response.StatusCode).ToString()));
+        list.Set(new DreamValue("CONTENT"), new DreamValue(content));
 
         return new DreamValue(list);
     }

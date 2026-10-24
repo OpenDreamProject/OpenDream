@@ -496,7 +496,7 @@ public static unsafe partial class ByondApi {
                     return SetLastError("loc argument was not a list");
 
                 using var val = ValueFromDreamApi(*cVal);
-                dstList.SetKeyValuePair(idx, val, true);
+                dstList.Set(idx, val, true);
             } catch (Exception e) {
                 return SetLastError(e.Message);
             }

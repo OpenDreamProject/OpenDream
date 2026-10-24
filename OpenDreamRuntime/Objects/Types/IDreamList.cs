@@ -96,7 +96,7 @@ public interface IDreamList {
     /// <param name="key"></param>
     /// <param name="value"></param>
     /// <param name="allowGrowth"></param>
-    public void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false);
+    public void Set(DreamValue key, DreamValue value, bool allowGrowth = false);
 
     /// <summary>
     /// Adds an Element to the Keys list if present.

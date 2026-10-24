@@ -186,7 +186,7 @@ public class DreamList : DreamObject, IDreamList {
         return DreamValue.Null;
     }
 
-    public virtual void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public virtual void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         if (key.TryGetValueAsInteger(out int keyInteger)) {
             if (allowGrowth && keyInteger == _elements.Count + 1) {
                 value.IncRef();
@@ -302,8 +302,8 @@ public class DreamList : DreamObject, IDreamList {
         using var first = GetElement(new DreamValue(index1));
         using var second = GetElement(new DreamValue(index2));
 
-        SetKeyValuePair(new DreamValue(index1), second);
-        SetKeyValuePair(new DreamValue(index2), first);
+        Set(new DreamValue(index1), second);
+        Set(new DreamValue(index2), first);
     }
 
     public void Resize(int size) {
@@ -335,9 +335,9 @@ public class DreamList : DreamObject, IDreamList {
         foreach (DreamValue value in newList.Enumerate()) {
             // Existing left pairs win, only values newly contributed by the right list use its association
             if (_associativeValues?.TryGetValue(value, out DreamValue leftAssociatedValue) is true)
-                newList.SetKeyValuePair(value, leftAssociatedValue);
+                newList.Set(value, leftAssociatedValue);
             else if (otherAssociations.TryGetValue(value, out DreamValue rightAssociatedValue))
-                newList.SetKeyValuePair(value, rightAssociatedValue);
+                newList.Set(value, rightAssociatedValue);
         }
 
         return newList;
@@ -392,7 +392,7 @@ public class DreamList : DreamObject, IDreamList {
         if (b.TryGetValueAsDreamList(out var bList)) {
             foreach (DreamValue value in bList.Enumerate()) {
                 if (bList._associativeValues?.TryGetValue(value, out var assocValue) is true) {
-                    listCopy.SetKeyValuePair(value, assocValue);
+                    listCopy.Set(value, assocValue);
                 } else {
                     listCopy.Add(value);
                 }
@@ -481,7 +481,7 @@ public class DreamList : DreamObject, IDreamList {
                     continue;
 
                 if (bList._associativeValues?.TryGetValue(value, out var associatedValue) is true)
-                    SetKeyValuePair(value, associatedValue);
+                    Set(value, associatedValue);
                 else
                     Add(value);
             }
@@ -622,7 +622,7 @@ internal sealed class DreamListVars(DreamObjectDefinition listDef, DreamObject d
         }
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         if (key.TryGetValueAsString(out var varName)) {
             if (!DreamObject.HasVariable(varName)) {
                 throw new DMException(
@@ -688,7 +688,7 @@ internal sealed class DreamGlobalVars(DreamObjectDefinition listDef) : DreamList
         return value;
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         if (key.TryGetValueAsString(out var varName)) {
             var root = ObjectTree.Root.ObjectDefinition;
             if (!root.GlobalVariables.TryGetValue(varName, out var globalId)) {
@@ -751,7 +751,7 @@ public sealed class ClientVerbsList : DreamList {
         return Verbs.Contains(verb);
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         throw new DMException("Cannot set the values of a verbs list");
     }
 
@@ -836,7 +836,7 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
         return GetVerbs().Contains(verb.VerbId.Value);
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         throw new DMException("Cannot set the values of a verbs list");
     }
 
@@ -937,7 +937,7 @@ public sealed class DreamOverlaysList(DreamObjectDefinition listDef, DreamObject
         return new DreamValue(overlayAppearance);
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         throw new DMException($"Cannot write to an index of an {(isUnderlays ? "underlays" : "overlays")} list");
     }
 
@@ -1048,7 +1048,7 @@ public sealed class DreamVisContentsList : DreamList {
         return new DreamValue(value);
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         throw new DMException("Cannot write to an index of a vis_contents list");
     }
 
@@ -1191,7 +1191,7 @@ public sealed class DreamFilterList(DreamObjectDefinition listDef, DreamObject o
         }
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         if (!value.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject) && !value.IsNull)
             throw new DMException($"Cannot set value of filter list to {value}");
         if (!key.TryGetValueAsInteger(out var filterIndex) || filterIndex < 1)
@@ -1282,7 +1282,7 @@ public sealed class ClientScreenList(DreamObjectTree objectTree, ServerScreenOve
         return _screenObjects;
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         throw new DMException("Cannot write to an index of a screen list");
     }
 
@@ -1348,7 +1348,7 @@ public sealed class ClientImagesList(DreamObjectTree objectTree, ServerClientIma
         return _imageObjects;
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         throw new DMException("Cannot write to an index of a client images list");
     }
 
@@ -1414,7 +1414,7 @@ public sealed class WorldContentsList(DreamObjectDefinition listDef, AtomManager
         return AtomManager.EnumerateAtoms().Select(atom => new DreamValue(atom));
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         throw new DMException("Cannot set the value of world contents list");
     }
 
@@ -1465,7 +1465,7 @@ public sealed class TurfContentsList(DreamObjectDefinition listDef, DreamObjectT
             yield return new(movable);
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         throw new DMException("Cannot set an index of turf contents list");
     }
 
@@ -1543,7 +1543,7 @@ public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectA
         }
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         throw new DMException("Cannot set an index of area contents list");
     }
 
@@ -1653,7 +1653,7 @@ public sealed class MovableContentsList(DreamObjectDefinition listDef, DreamObje
         return 0;
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         throw new DMException("Cannot set an index of movable contents list");
     }
 
@@ -1711,7 +1711,7 @@ internal sealed class ProcArgsList(DreamObjectDefinition listDef, ProcState stat
             yield return state.GetArguments()[i];
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         if (!key.TryGetValueAsInteger(out var index))
             throw new DMException($"Invalid index into args list: {key}");
         if (index < 1 || index > state.ArgumentCount)
@@ -1764,7 +1764,7 @@ public sealed class SavefileDirList(DreamObjectDefinition listDef, DreamObjectSa
             yield return new DreamValue(value);
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         if (!key.TryGetValueAsInteger(out var index))
             throw new DMException($"Invalid index on savefile dir list: {key}");
         if (!value.TryGetValueAsString(out var valueStr))

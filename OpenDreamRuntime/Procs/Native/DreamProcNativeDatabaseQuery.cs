@@ -132,7 +132,7 @@ internal static class DreamProcNativeDatabaseQuery {
 
         var list = bundle.ObjectTree.CreateList();
         foreach (var entry in data) {
-            list.SetKeyValuePair(new DreamValue(entry.Key), entry.Value);
+            list.Set(new DreamValue(entry.Key), entry.Value);
         }
 
         return new DreamValue(list);

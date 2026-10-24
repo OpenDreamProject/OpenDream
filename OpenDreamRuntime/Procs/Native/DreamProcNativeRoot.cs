@@ -1192,20 +1192,20 @@ internal static class DreamProcNativeRoot {
                 // It was not a single-property? Or the property was not special?
                 // FANTASTIC. STOP PRETENDING BEING A PARSER AND INSERT THEM IN A LIST
                 using var v1 = CreateValueFromJsonElement(objectTree, first.Value);
-                list.SetKeyValuePair(new DreamValue(first.Name), v1);
+                list.Set(new DreamValue(first.Name), v1);
 
                 if(!hasSecond)
                     return new DreamValue(list);
 
                 var second = enumerator.Current;
                 using var v2 = CreateValueFromJsonElement(objectTree, second.Value);
-                list.SetKeyValuePair(new DreamValue(second.Name), v2);
+                list.Set(new DreamValue(second.Name), v2);
 
                 // Enumerate the damn rest of the godawful fucking shitty JSON
                 foreach (JsonProperty childProperty in jsonElement.EnumerateObject()) {
                     using var value = CreateValueFromJsonElement(objectTree, childProperty.Value);
 
-                    list.SetKeyValuePair(new DreamValue(childProperty.Name), value);
+                    list.Set(new DreamValue(childProperty.Name), value);
                 }
 
                 return new DreamValue(list);
@@ -1904,17 +1904,17 @@ internal static class DreamProcNativeRoot {
                         for (int i = 0; i < count; i++)
                             valueList.Add(new(string.Empty));
 
-                        list.SetKeyValuePair(new(value), new(valueList));
+                        list.Set(new(value), new(valueList));
                         valueList.DecRef();
                     } else {
-                        list.SetKeyValuePair(new(value), new(string.Empty));
+                        list.Set(new(value), new(string.Empty));
                     }
                 }
             } else {
                 if (queryValues.Length > 1)
-                    list.SetKeyValuePair(new DreamValue(queryKey), new DreamValue(objectTree.CreateList(queryValues)));
+                    list.Set(new DreamValue(queryKey), new DreamValue(objectTree.CreateList(queryValues)));
                 else
-                    list.SetKeyValuePair(new DreamValue(queryKey), new DreamValue(queryValues[0]));
+                    list.Set(new DreamValue(queryKey), new DreamValue(queryValues[0]));
             }
         }
 

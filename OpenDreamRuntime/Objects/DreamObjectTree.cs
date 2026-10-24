@@ -270,7 +270,7 @@ public sealed partial class DreamObjectTree {
                                     using var listKey = GetDreamValueFromJsonElement(jsonKey);
                                     using var dreamValue = GetDreamValueFromJsonElement(jsonValue);
 
-                                    list.SetKeyValuePair(listKey, dreamValue, allowGrowth: true);
+                                    list.Set(listKey, dreamValue, allowGrowth: true);
                                 } else {
                                     using var dreamValue = GetDreamValueFromJsonElement(listValue);
 
@@ -295,7 +295,7 @@ public sealed partial class DreamObjectTree {
                                 using var listKey = GetDreamValueFromJsonElement(jsonKey);
                                 using var dreamValue = GetDreamValueFromJsonElement(jsonValue);
 
-                                aList.SetKeyValuePair(listKey, dreamValue);
+                                aList.Set(listKey, dreamValue);
                             }
                         }
 

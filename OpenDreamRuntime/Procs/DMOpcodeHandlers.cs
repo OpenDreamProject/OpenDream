@@ -94,7 +94,7 @@ namespace OpenDreamRuntime.Procs {
                 if (key.IsNull) {
                     list.Add(value);
                 } else {
-                    list.SetKeyValuePair(key, value, allowGrowth: true);
+                    list.Set(key, value, allowGrowth: true);
                 }
             }
 
@@ -112,7 +112,7 @@ namespace OpenDreamRuntime.Procs {
                 using var key = popped[i];
                 using var value = popped[i + 1];
 
-                list.SetKeyValuePair(key, value, allowGrowth: true);
+                list.Set(key, value, allowGrowth: true);
             }
 
             state.Push(new DreamValue(list));
@@ -997,7 +997,7 @@ namespace OpenDreamRuntime.Procs {
 
                     newList.Add(value);
                     if (associativeValues.TryGetValue(value, out DreamValue associatedValue))
-                        newList.SetKeyValuePair(value, associatedValue);
+                        newList.Set(value, associatedValue);
                 }
 
                 state.Push(new DreamValue(newList));
@@ -3043,7 +3043,7 @@ namespace OpenDreamRuntime.Procs {
                 void AddValue(DreamValue value, Dictionary<DreamValue, DreamValue>? associations) {
                     newList.Add(value);
                     if (associations?.TryGetValue(value, out DreamValue associatedValue) is true)
-                        newList.SetKeyValuePair(value, associatedValue);
+                        newList.Set(value, associatedValue);
                 }
 
                 if (second.TryGetValueAsDreamList(out var secondList)) {
@@ -3105,7 +3105,7 @@ namespace OpenDreamRuntime.Procs {
 
                 replacement.Add(value);
                 if (associations.TryGetValue(value, out DreamValue associatedValue))
-                    replacement.SetKeyValuePair(value, associatedValue);
+                    replacement.Set(value, associatedValue);
             }
 
             if (!removed)
@@ -3121,7 +3121,7 @@ namespace OpenDreamRuntime.Procs {
             foreach (DreamValue value in replacement.Enumerate()) {
                 target.Add(value);
                 if (replacementAssociations.TryGetValue(value, out DreamValue associatedValue))
-                    target.SetKeyValuePair(value, associatedValue);
+                    target.Set(value, associatedValue);
             }
         }
 

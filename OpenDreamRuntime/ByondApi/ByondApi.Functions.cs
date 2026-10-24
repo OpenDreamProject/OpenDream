@@ -383,7 +383,7 @@ public static unsafe partial class ByondApi {
                 dstListValue.Cut();
                 for (int i = 0; i < len; i++) {
                     using var srcValue = ValueFromDreamApi(list[i]);
-                    dstListValue.AddKey(srcValue);
+                    dstListValue.Add(srcValue);
                 }
             } catch (Exception e) {
                 return SetLastError(e.Message);

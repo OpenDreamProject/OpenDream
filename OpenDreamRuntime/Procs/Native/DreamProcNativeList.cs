@@ -13,10 +13,10 @@ namespace OpenDreamRuntime.Procs.Native {
             foreach (var argument in bundle.Arguments) {
                 if (argument.TryGetValueAsDreamList(out var argumentList)) {
                     foreach (DreamValue value in argumentList.Enumerate()) {
-                        list.AddKey(value);
+                        list.Add(value);
                     }
                 } else {
-                    list.AddKey(argument);
+                    list.Add(argument);
                 }
             }
 
@@ -159,14 +159,14 @@ namespace OpenDreamRuntime.Procs.Native {
 
                     foreach (DreamValue value in argumentList.Enumerate()) {
                         if (list.ContainsKey(value)) {
-                            list.RemoveKey(value);
+                            list.Remove(value);
 
                             itemRemoved++;
                         }
                     }
                 } else {
                     if (list.ContainsKey(argument)) {
-                        list.RemoveKey(argument);
+                        list.Remove(argument);
 
                         itemRemoved++;
                     }

@@ -102,13 +102,13 @@ public interface IDreamList {
     /// Adds an Element to the Keys list if present.
     /// </summary>
     /// <param name="newElement"></param>
-    public void AddKey(DreamValue newElement);
+    public void Add(DreamValue newElement);
 
     /// <summary>
     /// Removes an Element from the Keys list if present.
     /// </summary>
     /// <param name="element"></param>
-    public void RemoveKey(DreamValue element);
+    public void Remove(DreamValue element);
 
     /// <summary>
     /// Removes all elements from index Start (Inclusive) to End (Exclusive). End 0 will cut everything up to and including the final element.

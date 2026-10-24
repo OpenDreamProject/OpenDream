@@ -378,7 +378,7 @@ public sealed class DreamObjectSavefile : DreamObject {
 
                         l.SetKeyValuePair(sfValue, sfAssocValue);
                     } else {
-                        l.AddKey(sfValue);
+                        l.Add(sfValue);
                     }
                 }
 

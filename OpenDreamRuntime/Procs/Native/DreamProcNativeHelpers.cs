@@ -186,16 +186,16 @@ internal static partial class DreamProcNativeHelpers {
                     return;
             }
 
-            rangeList.AddKey(value);
+            rangeList.Add(value);
             if(value.TryGetValueAsDreamObject<DreamObjectTurf>(out var turfValue) && !seenAreas.Contains(turfValue.Cell.Area)) {
                 var area = turfValue.Cell.Area;
-                rangeList.AddKey(new(area));
+                rangeList.Add(new(area));
                 seenAreas.Add(area);
             }
         }
 
         if(center is DreamObjectArea areaCenter) { // yeah you can do this
-            rangeList.AddKey(new(areaCenter)); // dodges the invisibility check
+            rangeList.Add(new(areaCenter)); // dodges the invisibility check
             seenAreas.Add(areaCenter);
             foreach(var turf in areaCenter.Turfs) {
                 AddToList(new(turf));
@@ -302,7 +302,7 @@ internal static partial class DreamProcNativeHelpers {
                         continue;
 
                     if (centerPos.X == eyePos.X + tile.DeltaX && eyePos.Y + tile.DeltaY == centerPos.Y) {
-                        view.AddKey(new DreamValue(mob));
+                        view.Add(new DreamValue(mob));
                         break;
                     }
                 }
@@ -363,7 +363,7 @@ internal static partial class DreamProcNativeHelpers {
                             continue;
 
                         if (centerPos.X == eyePos.X + tile.DeltaX && eyePos.Y + tile.DeltaY == centerPos.Y) {
-                            view.AddKey(new DreamValue(mob));
+                            view.Add(new DreamValue(mob));
                             break;
                         }
                     }

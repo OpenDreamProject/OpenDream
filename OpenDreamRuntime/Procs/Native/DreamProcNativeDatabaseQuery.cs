@@ -52,7 +52,7 @@ internal static class DreamProcNativeDatabaseQuery {
         var list = bundle.ObjectTree.CreateList();
 
         foreach (var value in query.GetAllColumns()) {
-            list.AddKey(value);
+            list.Add(value);
         }
 
         return new DreamValue(list);

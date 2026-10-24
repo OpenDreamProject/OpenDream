@@ -83,11 +83,11 @@ public class DreamList : DreamObject, IDreamList {
                         if (argIndex < dimensions - 1) {
                             DreamList newList = ObjectTree.CreateList();
 
-                            list.AddKey(new DreamValue(newList));
+                            list.Add(new DreamValue(newList));
                             newLists[i * size + j] = newList;
                             newList.DecRef();
                         } else {
-                            list.AddKey(DreamValue.Null);
+                            list.Add(DreamValue.Null);
                         }
                     }
                 }
@@ -215,7 +215,7 @@ public class DreamList : DreamObject, IDreamList {
         UpdateTracyContentsMemory();
     }
 
-    public virtual void RemoveKey(DreamValue value) {
+    public virtual void Remove(DreamValue value) {
         int valueIndex = _elements.LastIndexOf(value);
 
         if (valueIndex != -1) {
@@ -231,7 +231,7 @@ public class DreamList : DreamObject, IDreamList {
         UpdateTracyContentsMemory();
     }
 
-    public virtual void AddKey(DreamValue value) {
+    public virtual void Add(DreamValue value) {
         _elements.Add(value);
         value.IncRef();
         UpdateTracyContentsMemory();
@@ -311,7 +311,7 @@ public class DreamList : DreamObject, IDreamList {
             _elements.EnsureCapacity(size);
 
             for (int i = _elements.Count; i < size; i++) {
-                AddKey(DreamValue.Null);
+                Add(DreamValue.Null);
             }
         } else {
             if (size < 0) {
@@ -394,11 +394,11 @@ public class DreamList : DreamObject, IDreamList {
                 if (bList._associativeValues?.TryGetValue(value, out var assocValue) is true) {
                     listCopy.SetKeyValuePair(value, assocValue);
                 } else {
-                    listCopy.AddKey(value);
+                    listCopy.Add(value);
                 }
             }
         } else {
-            listCopy.AddKey(b);
+            listCopy.Add(b);
         }
 
         return new DreamValue(listCopy);
@@ -409,10 +409,10 @@ public class DreamList : DreamObject, IDreamList {
 
         if (b.TryGetValueAsDreamList(out var bList)) {
             foreach (DreamValue value in bList.Enumerate()) {
-                listCopy.RemoveKey(value);
+                listCopy.Remove(value);
             }
         } else {
-            listCopy.RemoveKey(b);
+            listCopy.Remove(b);
         }
 
         return new DreamValue(listCopy);
@@ -425,7 +425,7 @@ public class DreamList : DreamObject, IDreamList {
             list = Union(bList);
         } else {                                        // List | x
             list = (DreamList)CreateCopy();
-            list.AddKey(b);
+            list.Add(b);
         }
 
         return new DreamValue(list);
@@ -438,7 +438,7 @@ public class DreamList : DreamObject, IDreamList {
             for (int i = 0; i < valueCount; i++) {
                 var value = values[i];
 
-                AddKey(value); // Always add the value
+                Add(value); // Always add the value
 
                 if (bList._associativeValues?.TryGetValue(value, out var assocValue) is true) { // Ensure the associated value is correct
                     _associativeValues ??= new();
@@ -450,7 +450,7 @@ public class DreamList : DreamObject, IDreamList {
                 }
             }
         } else {
-            AddKey(b);
+            Add(b);
         }
 
         IncRef();
@@ -463,11 +463,11 @@ public class DreamList : DreamObject, IDreamList {
                 Cut();
             } else {
                 foreach (DreamValue key in bList.Enumerate()) {
-                    RemoveKey(key);
+                    Remove(key);
                 }
             }
         } else {
-            RemoveKey(b);
+            Remove(b);
         }
 
         IncRef();
@@ -483,10 +483,10 @@ public class DreamList : DreamObject, IDreamList {
                 if (bList._associativeValues?.TryGetValue(value, out var associatedValue) is true)
                     SetKeyValuePair(value, associatedValue);
                 else
-                    AddKey(value);
+                    Add(value);
             }
         } else if (!ContainsKey(b)) {
-            AddKey(b);
+            Add(b);
         }
 
         IncRef();
@@ -755,7 +755,7 @@ public sealed class ClientVerbsList : DreamList {
         throw new DMException("Cannot set the values of a verbs list");
     }
 
-    public override void AddKey(DreamValue value) {
+    public override void Add(DreamValue value) {
         if (!value.TryGetValueAsProc(out var verb))
             throw new DMException($"Cannot add {value} to verbs list");
         if (Verbs.Contains(verb))
@@ -766,7 +766,7 @@ public sealed class ClientVerbsList : DreamList {
         VerbSystem?.UpdateClientVerbs(_client);
     }
 
-    public override void RemoveKey(DreamValue value) {
+    public override void Remove(DreamValue value) {
         if (!value.TryGetValueAsProc(out var verb))
             return;
 
@@ -840,7 +840,7 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
         throw new DMException("Cannot set the values of a verbs list");
     }
 
-    public override void AddKey(DreamValue value) {
+    public override void Add(DreamValue value) {
         if (!value.TryGetValueAsProc(out var verb))
             throw new DMException($"Cannot add {value} to verbs list");
 
@@ -854,7 +854,7 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
         });
     }
 
-    public override void RemoveKey(DreamValue value) {
+    public override void Remove(DreamValue value) {
         if (!value.TryGetValueAsProc(out var verb))
             return;
         if (verb.VerbId == null) {
@@ -941,7 +941,7 @@ public sealed class DreamOverlaysList(DreamObjectDefinition listDef, DreamObject
         throw new DMException($"Cannot write to an index of an {(isUnderlays ? "underlays" : "overlays")} list");
     }
 
-    public override void AddKey(DreamValue value) {
+    public override void Add(DreamValue value) {
         if (appearanceSystem == null)
             return;
 
@@ -956,7 +956,7 @@ public sealed class DreamOverlaysList(DreamObjectDefinition listDef, DreamObject
         });
     }
 
-    public override void RemoveKey(DreamValue value) {
+    public override void Remove(DreamValue value) {
         if (appearanceSystem == null)
             return;
 
@@ -1052,7 +1052,7 @@ public sealed class DreamVisContentsList : DreamList {
         throw new DMException("Cannot write to an index of a vis_contents list");
     }
 
-    public override void AddKey(DreamValue value) {
+    public override void Add(DreamValue value) {
         EntityUid entity;
         if (value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable)) {
             if (_visContents.Contains(movable))
@@ -1080,7 +1080,7 @@ public sealed class DreamVisContentsList : DreamList {
         });
     }
 
-    public override void RemoveKey(DreamValue value) {
+    public override void Remove(DreamValue value) {
         if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
             return;
 
@@ -1200,7 +1200,7 @@ public sealed class DreamFilterList(DreamObjectDefinition listDef, DreamObject o
         SetFilter(filterIndex, filterObject?.Filter);
     }
 
-    public override void AddKey(DreamValue value) {
+    public override void Add(DreamValue value) {
         if (value.IsNull) // "filters += null" is just ignored
             return;
         if (!value.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject))
@@ -1217,7 +1217,7 @@ public sealed class DreamFilterList(DreamObjectDefinition listDef, DreamObject o
         });
     }
 
-    public override void RemoveKey(DreamValue value) {
+    public override void Remove(DreamValue value) {
         int filterIndex = -1;
         if (value.TryGetValueAsString(out var filterName)) { // You can also do atom.filters -= "name"
             filterIndex = GetIndexOfFilter(filterName);
@@ -1286,7 +1286,7 @@ public sealed class ClientScreenList(DreamObjectTree objectTree, ServerScreenOve
         throw new DMException("Cannot write to an index of a screen list");
     }
 
-    public override void AddKey(DreamValue value) {
+    public override void Add(DreamValue value) {
         if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
             return;
 
@@ -1295,7 +1295,7 @@ public sealed class ClientScreenList(DreamObjectTree objectTree, ServerScreenOve
         value.IncRef();
     }
 
-    public override void RemoveKey(DreamValue value) {
+    public override void Remove(DreamValue value) {
         if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
             return;
 
@@ -1352,7 +1352,7 @@ public sealed class ClientImagesList(DreamObjectTree objectTree, ServerClientIma
         throw new DMException("Cannot write to an index of a client images list");
     }
 
-    public override void AddKey(DreamValue value) {
+    public override void Add(DreamValue value) {
         if (!value.TryGetValueAsDreamObject<DreamObjectImage>(out var image))
             return;
 
@@ -1360,7 +1360,7 @@ public sealed class ClientImagesList(DreamObjectTree objectTree, ServerClientIma
         _imageObjects.Add(value);
     }
 
-    public override void RemoveKey(DreamValue value) {
+    public override void Remove(DreamValue value) {
         if (!value.TryGetValueAsDreamObject<DreamObjectImage>(out var image))
             return;
 
@@ -1418,7 +1418,7 @@ public sealed class WorldContentsList(DreamObjectDefinition listDef, AtomManager
         throw new DMException("Cannot set the value of world contents list");
     }
 
-    public override void AddKey(DreamValue value) {
+    public override void Add(DreamValue value) {
         throw new DMException("Cannot append to world contents list");
     }
 
@@ -1469,7 +1469,7 @@ public sealed class TurfContentsList(DreamObjectDefinition listDef, DreamObjectT
         throw new DMException("Cannot set an index of turf contents list");
     }
 
-    public override void AddKey(DreamValue value) {
+    public override void Add(DreamValue value) {
         if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
             throw new DMException($"Cannot add {value} to turf contents");
 
@@ -1547,14 +1547,14 @@ public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectA
         throw new DMException("Cannot set an index of area contents list");
     }
 
-    public override void AddKey(DreamValue value) {
+    public override void Add(DreamValue value) {
         if (!value.TryGetValueAsDreamObject<DreamObjectTurf>(out var turf))
             throw new DMException($"Cannot add {value} to area contents");
 
         turf.Cell.Area = area;
     }
 
-    public override void RemoveKey(DreamValue value) {
+    public override void Remove(DreamValue value) {
         if (!value.TryGetValueAsDreamObject<DreamObjectTurf>(out var turf))
             throw new DMException($"Cannot remove {value} from area contents");
 
@@ -1657,14 +1657,14 @@ public sealed class MovableContentsList(DreamObjectDefinition listDef, DreamObje
         throw new DMException("Cannot set an index of movable contents list");
     }
 
-    public override void AddKey(DreamValue value) {
+    public override void Add(DreamValue value) {
         if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var dreamObject))
             throw new DMException($"Cannot add {value} to movable contents");
 
         dreamObject.SetLoc(owner);
     }
 
-    public override void RemoveKey(DreamValue value) {
+    public override void Remove(DreamValue value) {
         if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
             throw new DMException($"Cannot remove {value} from movable contents");
         if (movable.Loc != owner)
@@ -1720,11 +1720,11 @@ internal sealed class ProcArgsList(DreamObjectDefinition listDef, ProcState stat
         state.SetArgument(index - 1, value);
     }
 
-    public override void AddKey(DreamValue value) {
+    public override void Add(DreamValue value) {
         throw new DMException("Cannot add new values to args list");
     }
 
-    public override void RemoveKey(DreamValue value) {
+    public override void Remove(DreamValue value) {
         throw new DMException("Cannot remove values to args list");
     }
 
@@ -1775,13 +1775,13 @@ public sealed class SavefileDirList(DreamObjectDefinition listDef, DreamObjectSa
         backedSaveFile.RenameSavefileValue(backedSaveFile.CurrentDir.Keys.ElementAt(index - 1), valueStr);
     }
 
-    public override void AddKey(DreamValue value) {
+    public override void Add(DreamValue value) {
         if (!value.TryGetValueAsString(out var valueStr))
             throw new DMException($"Invalid value on savefile dir name: {value}");
         backedSaveFile.AddSavefileDir(valueStr);
     }
 
-    public override void RemoveKey(DreamValue value) {
+    public override void Remove(DreamValue value) {
         if (!value.TryGetValueAsString(out var valueStr))
             throw new DMException($"Invalid value on savefile dir name: {value}");
         backedSaveFile.RemoveSavefileValue(valueStr);

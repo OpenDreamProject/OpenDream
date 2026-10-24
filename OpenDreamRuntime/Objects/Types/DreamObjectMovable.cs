@@ -110,7 +110,7 @@ public class DreamObjectMovable : DreamObjectAtom {
             case "locs":
                 // TODO: Unimplemented; just returns a list containing src.loc
                 DreamList locs = ObjectTree.CreateList();
-                locs.AddKey(new(Loc));
+                locs.Add(new(Loc));
 
                 value = new DreamValue(locs);
                 return true;

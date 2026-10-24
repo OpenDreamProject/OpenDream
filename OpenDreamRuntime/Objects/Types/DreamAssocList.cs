@@ -162,7 +162,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         return new DreamAssocList(ObjectDefinition, copyValues);
     }
 
-    public int FindKeyIndex(DreamValue value, int start = 1, int end = 0)
+    public int FindIndex(DreamValue value, int start = 1, int end = 0)
     {
         // Unlike list.Find(), alist.Find() doesn't pay attention to start and end, and returns a boolean 0/1 instead of the position of the found object
         if (ElementHasAssociation(value))

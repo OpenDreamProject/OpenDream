@@ -65,7 +65,7 @@ namespace OpenDreamRuntime.Procs.Native {
             bundle.GetArgument(2, "End").TryGetValueAsInteger(out var end); //1-indexed, 0 if non-number
             IDreamList list = (IDreamList)src!;
 
-            return new(list.FindKeyIndex(element, start, end));
+            return new(list.FindIndex(element, start, end));
         }
 
         [DreamProc("Insert")]

@@ -27,7 +27,7 @@ public interface IDreamList {
     /// <param name="start"></param>
     /// <param name="end"></param>
     /// <returns></returns>
-    public int FindKeyIndex(DreamValue element, int start = 1, int end = 0);
+    public int FindIndex(DreamValue element, int start = 1, int end = 0);
 
     /// <summary>
     /// Returns if an element within the Keys list has an associated Value.

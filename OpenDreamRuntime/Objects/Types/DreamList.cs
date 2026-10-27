@@ -526,7 +526,7 @@ public class DreamList : DreamObject, IDreamList {
         }
 
         IncRef();
-         return new DreamValue(this);
+        return new DreamValue(this);
     }
 
     public override DreamValue OperatorEquivalent(DreamValue b) {

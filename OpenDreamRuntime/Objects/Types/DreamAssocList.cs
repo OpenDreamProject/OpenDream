@@ -305,5 +305,6 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
 
         return DreamValue.True;
     }
+
+    #endregion Operators
 }
-#endregion

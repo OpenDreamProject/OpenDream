@@ -136,8 +136,12 @@ internal sealed class DMObject(DMCompiler compiler, int id, DreamPath path, DMOb
     }
 
     public bool IsRuntimeInitialized(string varName) {
-        return InitializationProcAssignments.Any(v => v.Name == varName)
-               || (Parent?.IsRuntimeInitialized(varName) ?? false);
+        foreach (var assignment in InitializationProcAssignments) {
+            if (assignment.Name == varName)
+                return true;
+        }
+
+        return Parent?.IsRuntimeInitialized(varName) ?? false;
     }
 
     /// <summary>

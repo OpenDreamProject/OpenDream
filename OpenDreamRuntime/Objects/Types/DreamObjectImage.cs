@@ -156,7 +156,7 @@ public sealed class DreamObjectImage : DreamObject {
                             return;
 
                         _overlays.Cut();
-                        _overlays.AddKey(new(overlay));
+                        _overlays.Add(new(overlay));
                         overlay.Dispose();
                     }
 
@@ -167,11 +167,11 @@ public sealed class DreamObjectImage : DreamObject {
 
                 if (valueList != null) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue overlayValue in valueList.EnumerateKeys()) {
-                        _overlays.AddKey(overlayValue);
+                    foreach (DreamValue overlayValue in valueList.Enumerate()) {
+                        _overlays.Add(overlayValue);
                     }
                 } else if (!value.IsNull) {
-                    _overlays.AddKey(value);
+                    _overlays.Add(value);
                 }
 
                 break;
@@ -190,7 +190,7 @@ public sealed class DreamObjectImage : DreamObject {
                             return;
 
                         _underlays.Cut();
-                        _underlays.AddKey(new(underlay));
+                        _underlays.Add(new(underlay));
                         underlay.Dispose();
                     }
 
@@ -201,11 +201,11 @@ public sealed class DreamObjectImage : DreamObject {
 
                 if (valueList != null) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue underlayValue in valueList.EnumerateKeys()) {
-                        _underlays.AddKey(underlayValue);
+                    foreach (DreamValue underlayValue in valueList.Enumerate()) {
+                        _underlays.Add(underlayValue);
                     }
                 } else if (!value.IsNull) {
-                    _underlays.AddKey(value);
+                    _underlays.Add(value);
                 }
 
                 break;
@@ -217,11 +217,11 @@ public sealed class DreamObjectImage : DreamObject {
 
                 if (valueList != null) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
-                    foreach (DreamValue visContentValue in valueList.EnumerateKeys()) {
-                        _visContents.AddKey(visContentValue);
+                    foreach (DreamValue visContentValue in valueList.Enumerate()) {
+                        _visContents.Add(visContentValue);
                     }
                 } else if (!value.IsNull) {
-                    _visContents.AddKey(value);
+                    _visContents.Add(value);
                 }
 
                 break;
@@ -240,10 +240,10 @@ public sealed class DreamObjectImage : DreamObject {
                         if (filterObject == null) // list() with invalid "type" is ignored
                             break;
 
-                        _filters.AddKey(new(filterObject));
+                        _filters.Add(new(filterObject));
                         filterObject.DecRef();
                     } else { // It's a list of filters
-                        foreach (var filter in valueList.EnumerateKeys()) {
+                        foreach (var filter in valueList.Enumerate()) {
                             if (!filter.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject)) {
                                 if (!filter.TryGetValueAsDantomList(out var filterValues))
                                     continue;
@@ -253,12 +253,12 @@ public sealed class DreamObjectImage : DreamObject {
                                     continue;
                             }
 
-                            _filters.AddKey(new(filterObject));
+                            _filters.Add(new(filterObject));
                             filterObject.DecRef();
                         }
                     }
                 } else if (!value.IsNull) {
-                    _filters.AddKey(value);
+                    _filters.Add(value);
                 }
 
                 break;

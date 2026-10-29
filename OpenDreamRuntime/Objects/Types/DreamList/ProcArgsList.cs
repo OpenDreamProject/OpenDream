@@ -16,15 +16,15 @@ internal sealed class ProcArgsList(DreamObjectDefinition listDef, ProcState stat
     }
 
     public override List<DreamValue> CopyKeys() {
-        return EnumerateKeys().ToList();
+        return Enumerate().ToList();
     }
 
-    public override IEnumerable<DreamValue> EnumerateKeys() {
+    public override IEnumerable<DreamValue> Enumerate() {
         for (int i = 0; i < state.ArgumentCount; i++)
             yield return state.GetArguments()[i];
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         if (!key.TryGetValueAsInteger(out var index))
             throw new DMException($"Invalid index into args list: {key}");
         if (index < 1 || index > state.ArgumentCount)
@@ -33,11 +33,11 @@ internal sealed class ProcArgsList(DreamObjectDefinition listDef, ProcState stat
         state.SetArgument(index - 1, value);
     }
 
-    public override void AddKey(DreamValue value) {
+    public override void Add(DreamValue value) {
         throw new DMException("Cannot add new values to args list");
     }
 
-    public override void RemoveKey(DreamValue value) {
+    public override void Remove(DreamValue value) {
         throw new DMException("Cannot remove values to args list");
     }
 
@@ -49,7 +49,7 @@ internal sealed class ProcArgsList(DreamObjectDefinition listDef, ProcState stat
         return state.ArgumentCount;
     }
 
-    public override int FindKeyIndex(DreamValue value, int start = 1, int end = 0) {
+    public override int FindIndex(DreamValue value, int start = 1, int end = 0) {
         throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }
@@ -69,15 +69,15 @@ public sealed class SavefileDirList(DreamObjectDefinition listDef, DreamObjectSa
     }
 
     public override List<DreamValue> CopyKeys() {
-        return EnumerateKeys().ToList();
+        return Enumerate().ToList();
     }
 
-    public override IEnumerable<DreamValue> EnumerateKeys() {
+    public override IEnumerable<DreamValue> Enumerate() {
         foreach (string value in backedSaveFile.CurrentDir.Keys.OrderBy(x => x))
             yield return new DreamValue(value);
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         if (!key.TryGetValueAsInteger(out var index))
             throw new DMException($"Invalid index on savefile dir list: {key}");
         if (!value.TryGetValueAsString(out var valueStr))
@@ -88,13 +88,13 @@ public sealed class SavefileDirList(DreamObjectDefinition listDef, DreamObjectSa
         backedSaveFile.RenameSavefileValue(backedSaveFile.CurrentDir.Keys.ElementAt(index - 1), valueStr);
     }
 
-    public override void AddKey(DreamValue value) {
+    public override void Add(DreamValue value) {
         if (!value.TryGetValueAsString(out var valueStr))
             throw new DMException($"Invalid value on savefile dir name: {value}");
         backedSaveFile.AddSavefileDir(valueStr);
     }
 
-    public override void RemoveKey(DreamValue value) {
+    public override void Remove(DreamValue value) {
         if (!value.TryGetValueAsString(out var valueStr))
             throw new DMException($"Invalid value on savefile dir name: {value}");
         backedSaveFile.RemoveSavefileValue(valueStr);
@@ -108,7 +108,7 @@ public sealed class SavefileDirList(DreamObjectDefinition listDef, DreamObjectSa
         return backedSaveFile.CurrentDir.Count;
     }
 
-    public override int FindKeyIndex(DreamValue value, int start = 1, int end = 0) {
+    public override int FindIndex(DreamValue value, int start = 1, int end = 0) {
         throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }

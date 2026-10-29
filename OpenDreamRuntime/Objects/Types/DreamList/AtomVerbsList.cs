@@ -19,10 +19,10 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
     }
 
     public override List<DreamValue> CopyKeys() {
-        return EnumerateKeys().ToList();
+        return Enumerate().ToList();
     }
 
-    public override IEnumerable<DreamValue> EnumerateKeys() {
+    public override IEnumerable<DreamValue> Enumerate() {
         var appearance = atomManager.MustGetAppearance(atom);
         if (VerbSystem == null)
             yield break;
@@ -43,11 +43,11 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
         return GetVerbs().Contains(verb.VerbId.Value);
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         throw new DMException("Cannot set the values of a verbs list");
     }
 
-    public override void AddKey(DreamValue value) {
+    public override void Add(DreamValue value) {
         if (!value.TryGetValueAsProc(out var verb))
             throw new DMException($"Cannot add {value} to verbs list");
 
@@ -61,7 +61,7 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
         });
     }
 
-    public override void RemoveKey(DreamValue value) {
+    public override void Remove(DreamValue value) {
         if (!value.TryGetValueAsProc(out var verb))
             return;
         if (verb.VerbId == null) {
@@ -97,7 +97,7 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
         return appearance.Verbs;
     }
 
-    public override int FindKeyIndex(DreamValue value, int start = 1, int end = 0) {
+    public override int FindIndex(DreamValue value, int start = 1, int end = 0) {
         throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 }

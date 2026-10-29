@@ -36,7 +36,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         base.HandleDeletion();
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false)
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false)
     {
         if (_pairs.TryGetValue(key, out var oldValue))
             oldValue.DecRef();
@@ -76,7 +76,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         return _pairs.ContainsKey(value);
     }
 
-    public override IEnumerable<DreamValue> EnumerateKeys()
+    public override IEnumerable<DreamValue> Enumerate()
     {
         return _pairs.Keys;
     }
@@ -132,7 +132,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         return _pairs;
     }
 
-    public override void RemoveKey(DreamValue value)
+    public override void Remove(DreamValue value)
     {
         if (_pairs.Remove(value, out var associatedValue))
         {
@@ -155,7 +155,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         return new(_pairs);
     }
 
-    public override void AddKey(DreamValue value)
+    public override void Add(DreamValue value)
     {
         if (ElementHasAssociation(value))
         {
@@ -184,7 +184,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         return new DreamAssocList(ObjectDefinition, copyValues);
     }
 
-    public override int FindKeyIndex(DreamValue value, int start = 1, int end = 0)
+    public override int FindIndex(DreamValue value, int start = 1, int end = 0)
     {
         // Unlike list.Find(), alist.Find() doesn't pay attention to start and end, and returns a boolean 0/1 instead of the position of the found object
         if (ElementHasAssociation(value))
@@ -240,10 +240,10 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
                     continue;
                 }
 
-                listCopy.SetKeyValuePair(pair.Key, pair.Value);
+                listCopy.Set(pair.Key, pair.Value);
             }
         } else {
-            listCopy.AddKey(b);
+            listCopy.Add(b);
         }
 
         return new DreamValue(listCopy);
@@ -261,15 +261,15 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
             }
 
             listCopy = ToCopy();
-            foreach (DreamValue value in bList.EnumerateKeys())
+            foreach (DreamValue value in bList.Enumerate())
             {
-                listCopy.RemoveKey(value);
+                listCopy.Remove(value);
             }
         }
         else
         {
             listCopy = ToCopy();
-            listCopy.RemoveKey(b);
+            listCopy.Remove(b);
         }
 
         return new DreamValue(listCopy);
@@ -296,12 +296,12 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
                     continue;
                 }
 
-                SetKeyValuePair(pair.Key, pair.Value);
+                Set(pair.Key, pair.Value);
             }
         }
         else
         {
-            AddKey(b);
+            Add(b);
         }
 
         IncRef();
@@ -318,15 +318,15 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
             }
             else
             {
-                foreach (var value in bList.EnumerateKeys())
+                foreach (var value in bList.Enumerate())
                 {
-                    RemoveKey(value);
+                    Remove(value);
                 }
             }
         }
         else
         {
-            RemoveKey(b);
+            Remove(b);
         }
 
         IncRef();
@@ -343,7 +343,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
                 {
                     if (!bList.ContainsKey(value))
                     {
-                        RemoveKey(value);
+                        Remove(value);
                     }
                 }
             }
@@ -358,7 +358,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
             {
                 using var item = GetElement(b);
                 Cut();
-                SetKeyValuePair(b, item);
+                Set(b, item);
             }
         }
 

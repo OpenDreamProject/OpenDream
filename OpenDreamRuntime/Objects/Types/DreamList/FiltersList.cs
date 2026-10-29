@@ -73,10 +73,10 @@ public sealed class FiltersList(DreamObjectDefinition listDef, DreamObject owner
     }
 
     public override List<DreamValue> CopyKeys() {
-        return EnumerateKeys().ToList();
+        return Enumerate().ToList();
     }
 
-    public override IEnumerable<DreamValue> EnumerateKeys() {
+    public override IEnumerable<DreamValue> Enumerate() {
         ImmutableAppearance appearance = GetAppearance();
 
         foreach (var filter in appearance.Filters) {
@@ -88,7 +88,7 @@ public sealed class FiltersList(DreamObjectDefinition listDef, DreamObject owner
         }
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         if (!value.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject) && !value.IsNull)
             throw new DMException($"Cannot set value of filter list to {value}");
         if (!key.TryGetValueAsInteger(out var filterIndex) || filterIndex < 1)
@@ -97,7 +97,7 @@ public sealed class FiltersList(DreamObjectDefinition listDef, DreamObject owner
         SetFilter(filterIndex, filterObject?.Filter);
     }
 
-    public override void AddKey(DreamValue value) {
+    public override void Add(DreamValue value) {
         if (value.IsNull) // "filters += null" is just ignored
             return;
         if (!value.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject))
@@ -114,7 +114,7 @@ public sealed class FiltersList(DreamObjectDefinition listDef, DreamObject owner
         });
     }
 
-    public override void RemoveKey(DreamValue value) {
+    public override void Remove(DreamValue value) {
         int filterIndex = -1;
         if (value.TryGetValueAsString(out var filterName)) { // You can also do atom.filters -= "name"
             filterIndex = GetIndexOfFilter(filterName);
@@ -132,14 +132,14 @@ public sealed class FiltersList(DreamObjectDefinition listDef, DreamObject owner
     }
 
     public override bool ContainsKey(DreamValue element) {
-        return EnumerateKeys().Contains(element);
+        return Enumerate().Contains(element);
     }
 
     public override int GetLength() {
         return GetAppearance().Filters.Length;
     }
 
-    public override int FindKeyIndex(DreamValue value, int start = 1, int end = 0) {
+    public override int FindIndex(DreamValue value, int start = 1, int end = 0) {
         throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 

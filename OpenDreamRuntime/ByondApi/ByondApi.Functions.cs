@@ -345,7 +345,7 @@ public static unsafe partial class ByondApi {
 
             try {
                 int i = 0;
-                foreach (var value in srcList.EnumerateKeys()) {
+                foreach (var value in srcList.Enumerate()) {
                     if (i >= length)
                         throw new Exception($"List {srcList} had more elements than the expected {length}");
 
@@ -383,7 +383,7 @@ public static unsafe partial class ByondApi {
                 dstListValue.Cut();
                 for (int i = 0; i < len; i++) {
                     using var srcValue = ValueFromDreamApi(list[i]);
-                    dstListValue.AddKey(srcValue);
+                    dstListValue.Add(srcValue);
                 }
             } catch (Exception e) {
                 return SetLastError(e.Message);
@@ -496,7 +496,7 @@ public static unsafe partial class ByondApi {
                     return SetLastError("loc argument was not a list");
 
                 using var val = ValueFromDreamApi(*cVal);
-                dstList.SetKeyValuePair(idx, val, true);
+                dstList.Set(idx, val, true);
             } catch (Exception e) {
                 return SetLastError(e.Message);
             }
@@ -753,7 +753,7 @@ public static unsafe partial class ByondApi {
                     corner1->x, corner1->y, corner1->z,
                     corner2->x, corner2->y, corner2->z);
 
-                foreach (var turf in turfs.EnumerateKeys()) {
+                foreach (var turf in turfs.Enumerate()) {
                     list.Add(ValueToByondApi(turf));
                     if (!calledFromMain)
                         AddTemporaryReference(turf);

@@ -125,7 +125,7 @@ public class DantomList : DreamEagerList {
         return false;
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         if (key.TryGetValueAsInteger(out int keyInteger)) {
             if (allowGrowth && keyInteger == _elements.Count + 1) {
                 value.IncRef();
@@ -154,7 +154,7 @@ public class DantomList : DreamEagerList {
         UpdateTracyContentsMemory();
     }
 
-    public override void RemoveKey(DreamValue value) {
+    public override void Remove(DreamValue value) {
         int valueIndex = _elements.LastIndexOf(value);
 
         if (valueIndex != -1) {
@@ -207,8 +207,8 @@ public class DantomList : DreamEagerList {
         using var first = GetElement(new DreamValue(index1));
         using var second = GetElement(new DreamValue(index2));
 
-        SetKeyValuePair(new DreamValue(index1), second);
-        SetKeyValuePair(new DreamValue(index2), first);
+        Set(new DreamValue(index1), second);
+        Set(new DreamValue(index2), first);
     }
 
     protected override void UpdateTracyContentsMemory() {
@@ -228,16 +228,16 @@ public class DantomList : DreamEagerList {
         DantomList listCopy = ToDantomList();
 
         if (b.TryGetValueAsDreamList(out var bList)) {
-            foreach (DreamValue key in bList.EnumerateKeys()) {
+            foreach (DreamValue key in bList.Enumerate()) {
                 if (bList.TryGetElementByKey(key, out var _assocValue)) {
                     using var assocValue = _assocValue;
-                    listCopy.SetKeyValuePair(key, assocValue);
+                    listCopy.Set(key, assocValue);
                 } else {
-                    listCopy.AddKey(key);
+                    listCopy.Add(key);
                 }
             }
         } else {
-            listCopy.AddKey(b);
+            listCopy.Add(b);
         }
 
         return new DreamValue(listCopy);
@@ -250,7 +250,7 @@ public class DantomList : DreamEagerList {
             for (int i = 0; i < valueCount; i++) {
                 var key = keys[i];
 
-                AddKey(key); // Always add the value
+                Add(key); // Always add the value
 
                 if (bList.TryGetElementByKey(key, out var _assocValue)) { // Ensure the associated value is correct
                     _associativeValues ??= new();
@@ -263,7 +263,7 @@ public class DantomList : DreamEagerList {
                 }
             }
         } else {
-            AddKey(b);
+            Add(b);
         }
 
         IncRef();
@@ -272,20 +272,20 @@ public class DantomList : DreamEagerList {
 
     public override DreamValue OperatorCombine(DreamValue b) {
         if (b.TryGetValueAsDreamList(out var bList)) {
-            foreach (DreamValue key in bList.EnumerateKeys()) {
+            foreach (DreamValue key in bList.Enumerate()) {
                 if (ContainsKey(key))
                     continue;
 
                 if (bList.TryGetElementByKey(key, out var _assocValue)) {
                     using var assocValue = _assocValue;
-                    SetKeyValuePair(key, assocValue);
+                    Set(key, assocValue);
 
                 } else {
-                    AddKey(key);
+                    Add(key);
                 }
             }
         } else if (!ContainsKey(b)) {
-            AddKey(b);
+            Add(b);
         }
 
         IncRef();

@@ -16,22 +16,22 @@ public sealed class WorldContentsList(DreamObjectDefinition listDef, AtomManager
     }
 
     public override List<DreamValue> CopyKeys() {
-        return EnumerateKeys().ToList();
+        return Enumerate().ToList();
     }
 
-    public override IEnumerable<DreamValue> EnumerateKeys() {
+    public override IEnumerable<DreamValue> Enumerate() {
         return AtomManager.EnumerateAtoms().Select(atom => new DreamValue(atom));
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         throw new DMException("Cannot set the value of world contents list");
     }
 
-    public override void AddKey(DreamValue value) {
+    public override void Add(DreamValue value) {
         throw new DMException("Cannot append to world contents list");
     }
 
-    public override void RemoveKey(DreamValue element) {
+    public override void Remove(DreamValue element) {
         throw new DMException("Cannot remove from world contents list");
     }
 
@@ -43,7 +43,7 @@ public sealed class WorldContentsList(DreamObjectDefinition listDef, AtomManager
         return atomManager.AtomCount;
     }
 
-    public override int FindKeyIndex(DreamValue value, int start = 1, int end = 0) {
+    public override int FindIndex(DreamValue value, int start = 1, int end = 0) {
         throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 

@@ -13,11 +13,11 @@ public sealed class ClientImagesList(DreamObjectTree objectTree, ServerClientIma
         return value;
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         throw new DMException("Cannot write to an index of a client images list");
     }
 
-    public override void AddKey(DreamValue value) {
+    public override void Add(DreamValue value) {
         if (!value.TryGetValueAsDreamObject<DreamObjectImage>(out var image))
             return;
 
@@ -25,7 +25,7 @@ public sealed class ClientImagesList(DreamObjectTree objectTree, ServerClientIma
         _elements.Add(value);
     }
 
-    public override void RemoveKey(DreamValue value) {
+    public override void Remove(DreamValue value) {
         if (!value.TryGetValueAsDreamObject<DreamObjectImage>(out var image))
             return;
 

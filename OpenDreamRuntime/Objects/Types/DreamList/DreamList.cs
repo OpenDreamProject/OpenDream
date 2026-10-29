@@ -93,7 +93,7 @@ public abstract class DreamList : DreamObject {
 	/// <param name="element"></param>
 	/// <returns></returns>
 	public virtual bool ContainsKey(DreamValue element) {
-        return EnumerateKeys().Contains(element);
+        return Enumerate().Contains(element);
     }
 
 	/// <summary>
@@ -103,7 +103,7 @@ public abstract class DreamList : DreamObject {
 	/// <param name="start"></param>
 	/// <param name="end"></param>
 	/// <returns></returns>
-	public abstract int FindKeyIndex(DreamValue element, int start = 1, int end = 0);
+	public abstract int FindIndex(DreamValue element, int start = 1, int end = 0);
 
 	/// <summary>
 	/// Returns if an element within the Keys list has an associated Value.
@@ -138,7 +138,7 @@ public abstract class DreamList : DreamObject {
 	/// Returns an IEnumerable of the 1-dimensional elements of the list.
 	/// </summary>
 	/// <returns></returns>
-	public abstract IEnumerable<DreamValue> EnumerateKeys();
+	public abstract IEnumerable<DreamValue> Enumerate();
 
 	/// <summary>
 	/// Returns a dictionary of key-value associations. Does not copy or include any elements without associations.
@@ -165,7 +165,7 @@ public abstract class DreamList : DreamObject {
 	/// </summary>
 	/// <returns></returns>
 	public virtual IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateLoosePairs() {
-        foreach (var key in EnumerateKeys()) {
+        foreach (var key in Enumerate()) {
             if (TryGetElementByKey(key, out var associativeValue)) {
                 yield return new(key, associativeValue);
             } else {
@@ -188,7 +188,7 @@ public abstract class DreamList : DreamObject {
 	/// <param name="key"></param>
 	/// <param name="value"></param>
 	/// <param name="allowGrowth"></param>
-	public abstract void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false);
+	public abstract void Set(DreamValue key, DreamValue value, bool allowGrowth = false);
 
 	/// <summary>
 	/// Set an element by numeric index. Unimplemented on most types of lists.
@@ -205,13 +205,13 @@ public abstract class DreamList : DreamObject {
 	/// Adds an Element to the Keys list if present.
 	/// </summary>
 	/// <param name="newElement"></param>
-	public abstract void AddKey(DreamValue newElement);
+	public abstract void Add(DreamValue newElement);
 
 	/// <summary>
 	/// Removes an Element from the Keys list if present.
 	/// </summary>
 	/// <param name="element"></param>
-	public abstract void RemoveKey(DreamValue element);
+	public abstract void Remove(DreamValue element);
 
 	/// <summary>
 	/// Removes all elements from index Start (Inclusive) to End (Exclusive). End 0 will cut everything up to and including the final element.
@@ -219,8 +219,8 @@ public abstract class DreamList : DreamObject {
 	/// <param name="start"></param>
 	/// <param name="end"></param>
 	public virtual void Cut(int start = 1, int end = 0) {
-        foreach (var key in EnumerateKeys()) {
-            RemoveKey(key);
+        foreach (var key in Enumerate()) {
+            Remove(key);
         }
     }
 
@@ -296,10 +296,10 @@ public abstract class DreamList : DreamObject {
             for (int i = 0; i < valueCount; i++) {
                 var key = keys[i];
 
-                AddKey(key); // Always add the value
+                Add(key); // Always add the value
             }
         } else {
-            AddKey(b);
+            Add(b);
         }
 
         IncRef();
@@ -311,12 +311,12 @@ public abstract class DreamList : DreamObject {
             if (bList == this) {
                 Cut();
             } else {
-                foreach (DreamValue key in bList.EnumerateKeys()) {
-                    RemoveKey(key);
+                foreach (DreamValue key in bList.Enumerate()) {
+                    Remove(key);
                 }
             }
         } else {
-            RemoveKey(b);
+            Remove(b);
         }
 
         IncRef();

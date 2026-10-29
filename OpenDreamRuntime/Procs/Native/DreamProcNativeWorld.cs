@@ -44,7 +44,7 @@ internal static class DreamProcNativeWorld {
                 case TopicResponseType.UnknownResponse:
                     var byteList = state.ObjectTree.CreateList();
                     foreach (var @byte in topicResponse.RawData)
-                        byteList.AddKey(new DreamValue(@byte));
+                        byteList.Add(new DreamValue(@byte));
                     return new DreamValue(byteList);
 
                 default:
@@ -60,12 +60,12 @@ internal static class DreamProcNativeWorld {
         var list = state.ObjectTree.CreateList();
         foreach (var header in response.Headers) {
             // TODO: How to handle headers with multiple values?
-            list.SetKeyValuePair(new DreamValue(header.Key), new DreamValue(header.Value.First()));
+            list.Set(new DreamValue(header.Key), new DreamValue(header.Value.First()));
         }
 
         var content = state.ResourceManager.CreateResource(contentBytes);
-        list.SetKeyValuePair(new DreamValue("STATUS"), new DreamValue(((int) response.StatusCode).ToString()));
-        list.SetKeyValuePair(new DreamValue("CONTENT"), new DreamValue(content));
+        list.Set(new DreamValue("STATUS"), new DreamValue(((int) response.StatusCode).ToString()));
+        list.Set(new DreamValue("CONTENT"), new DreamValue(content));
 
         return new DreamValue(list);
     }
@@ -145,16 +145,16 @@ internal static class DreamProcNativeWorld {
             DantomList dataList = bundle.ObjectTree.CreateList();
 
             if (type == "sendmaps") {
-                dataList.AddKey(new("name"));
-                dataList.AddKey(new("value"));
-                dataList.AddKey(new("calls"));
+                dataList.Add(new("name"));
+                dataList.Add(new("value"));
+                dataList.Add(new("calls"));
             } else { // Anything else is a proc profile
-                dataList.AddKey(new("name"));
-                dataList.AddKey(new("self"));
-                dataList.AddKey(new("total"));
-                dataList.AddKey(new("real"));
-                dataList.AddKey(new("over"));
-                dataList.AddKey(new("calls"));
+                dataList.Add(new("name"));
+                dataList.Add(new("self"));
+                dataList.Add(new("total"));
+                dataList.Add(new("real"));
+                dataList.Add(new("over"));
+                dataList.Add(new("calls"));
             }
 
             return new(dataList);

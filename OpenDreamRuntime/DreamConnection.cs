@@ -243,7 +243,7 @@ public sealed partial class DreamConnection {
             sound.SetVariableValue("repeat", new DreamValue(soundData.Repeat));
             sound.SetVariableValue("file", string.IsNullOrEmpty(soundData.File) ? DreamValue.Null : new DreamValue(soundData.File));
 
-            allSounds.AddKey(new DreamValue(sound));
+            allSounds.Add(new DreamValue(sound));
             sound.DecRef();
         }
 

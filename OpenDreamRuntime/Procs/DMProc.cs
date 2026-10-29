@@ -874,7 +874,7 @@ public sealed class DMProcState : ProcState {
 
                 try {
                     if (indexing.TryGetValueAsDreamList(out var dreamList)) {
-                        dreamList.SetKeyValuePair(index, value);
+                        dreamList.Set(index, value);
                     } else if (indexing.TryGetValueAsDreamObject<DreamObject>(out var dreamObject)) {
                         dreamObject.OperatorIndexAssign(index, this, value);
                     } else {

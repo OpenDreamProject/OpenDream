@@ -18,11 +18,11 @@ public sealed class ClientScreenList(DreamObjectTree objectTree, ServerScreenOve
         return value;
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         throw new DMException("Cannot write to an index of a screen list");
     }
 
-    public override void AddKey(DreamValue value) {
+    public override void Add(DreamValue value) {
         if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
             return;
 
@@ -31,7 +31,7 @@ public sealed class ClientScreenList(DreamObjectTree objectTree, ServerScreenOve
         value.IncRef();
     }
 
-    public override void RemoveKey(DreamValue value) {
+    public override void Remove(DreamValue value) {
         if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
             return;
 

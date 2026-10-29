@@ -18,10 +18,10 @@ public sealed class VisContentsList : DreamList {
     }
 
     public override List<DreamValue> CopyKeys() {
-        return EnumerateKeys().ToList();
+        return Enumerate().ToList();
     }
 
-    public override IEnumerable<DreamValue> EnumerateKeys() {
+    public override IEnumerable<DreamValue> Enumerate() {
         foreach (var visContent in _visContents)
             yield return new(visContent);
     }
@@ -47,11 +47,11 @@ public sealed class VisContentsList : DreamList {
         return new DreamValue(value);
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         throw new DMException("Cannot write to an index of a vis_contents list");
     }
 
-    public override void AddKey(DreamValue value) {
+    public override void Add(DreamValue value) {
         EntityUid entity;
         if (value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable)) {
             if (_visContents.Contains(movable))
@@ -79,7 +79,7 @@ public sealed class VisContentsList : DreamList {
         });
     }
 
-    public override void RemoveKey(DreamValue value) {
+    public override void Remove(DreamValue value) {
         if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
             return;
 
@@ -93,7 +93,7 @@ public sealed class VisContentsList : DreamList {
         return _visContents.Count;
     }
 
-    public override int FindKeyIndex(DreamValue value, int start = 1, int end = 0) {
+    public override int FindIndex(DreamValue value, int start = 1, int end = 0) {
         throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 

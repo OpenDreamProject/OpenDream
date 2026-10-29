@@ -89,7 +89,7 @@ public sealed class DreamObjectRegex(DreamObjectDefinition objectDefinition) : D
                 DantomList groupList = ObjectTree.CreateList(match.Groups.Count);
 
                 for (int i = 1; i < match.Groups.Count; i++) {
-                    groupList.AddKey(new DreamValue(match.Groups[i].Value));
+                    groupList.Add(new DreamValue(match.Groups[i].Value));
                 }
 
                 SetVariable("group", new DreamValue(groupList));

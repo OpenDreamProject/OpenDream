@@ -18,26 +18,26 @@ public sealed class TurfContentsList(DreamObjectDefinition listDef, DreamObjectT
     }
 
     public override List<DreamValue> CopyKeys() {
-        return EnumerateKeys().ToList();
+        return Enumerate().ToList();
     }
 
-    public override IEnumerable<DreamValue> EnumerateKeys() {
+    public override IEnumerable<DreamValue> Enumerate() {
         foreach (var movable in Cell.Movables)
             yield return new(movable);
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         throw new DMException("Cannot set an index of turf contents list");
     }
 
-    public override void AddKey(DreamValue value) {
+    public override void Add(DreamValue value) {
         if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
             throw new DMException($"Cannot add {value} to turf contents");
 
         movable.SetLoc(Cell.Turf);
     }
 
-    public override void RemoveKey(DreamValue element) {
+    public override void Remove(DreamValue element) {
         throw new NotImplementedException();
     }
 
@@ -54,7 +54,7 @@ public sealed class TurfContentsList(DreamObjectDefinition listDef, DreamObjectT
         return Cell.Movables.Count;
     }
 
-    public override int FindKeyIndex(DreamValue value, int start = 1, int end = 0) {
+    public override int FindIndex(DreamValue value, int start = 1, int end = 0) {
         throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 

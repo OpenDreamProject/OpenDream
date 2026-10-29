@@ -8,10 +8,10 @@ namespace OpenDreamRuntime.Objects.Types;
 // Operates on an object's appearance
 public sealed class OverlaysList(DreamObjectDefinition listDef, DreamObject owner, ServerAppearanceSystem? appearanceSystem, bool isUnderlays) : DreamList(listDef) {
     public override List<DreamValue> CopyKeys() {
-        return EnumerateKeys().ToList();
+        return Enumerate().ToList();
     }
 
-    public override IEnumerable<DreamValue> EnumerateKeys() {
+    public override IEnumerable<DreamValue> Enumerate() {
         var appearance = AtomManager.MustGetAppearance(owner);
         if (appearanceSystem == null)
             yield break;
@@ -46,11 +46,11 @@ public sealed class OverlaysList(DreamObjectDefinition listDef, DreamObject owne
         return new DreamValue(overlayAppearance);
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         throw new DMException($"Cannot write to an index of an {(isUnderlays ? "underlays" : "overlays")} list");
     }
 
-    public override void AddKey(DreamValue value) {
+    public override void Add(DreamValue value) {
         if (appearanceSystem == null)
             return;
 
@@ -65,7 +65,7 @@ public sealed class OverlaysList(DreamObjectDefinition listDef, DreamObject owne
         });
     }
 
-    public override void RemoveKey(DreamValue value) {
+    public override void Remove(DreamValue value) {
         if (appearanceSystem == null)
             return;
 
@@ -83,7 +83,7 @@ public sealed class OverlaysList(DreamObjectDefinition listDef, DreamObject owne
         return GetOverlaysArray(AtomManager.MustGetAppearance(owner)).Length;
     }
 
-    public override int FindKeyIndex(DreamValue value, int start = 1, int end = 0) {
+    public override int FindIndex(DreamValue value, int start = 1, int end = 0) {
         throw new NotImplementedException($".Find() is not yet implemented on {GetType()}");
     }
 

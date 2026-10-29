@@ -55,7 +55,7 @@ public sealed class DreamObjectFilter(DreamObjectDefinition objectDefinition) : 
 
     public static DreamObjectFilter? TryCreateFilter(DreamObjectTree objectTree, DantomList list) {
         static IEnumerable<(string, DreamValue)> EnumerateProperties(DantomList list) {
-            foreach (var key in list.EnumerateKeys()) {
+            foreach (var key in list.Enumerate()) {
                 if (!key.TryGetValueAsString(out var keyStr))
                     continue;
 

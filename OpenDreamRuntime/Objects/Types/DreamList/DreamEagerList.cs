@@ -76,11 +76,11 @@ public class DreamEagerList : DreamList {
                         if (argIndex < dimensions - 1) {
                             DreamEagerList newList = ObjectTree.CreateList();
 
-                            list.AddKey(new DreamValue(newList));
+                            list.Add(new DreamValue(newList));
                             newLists[i * size + j] = newList;
                             newList.DecRef();
                         } else {
-                            list.AddKey(DreamValue.Null);
+                            list.Add(DreamValue.Null);
                         }
                     }
                 }
@@ -107,7 +107,7 @@ public class DreamEagerList : DreamList {
 
     #region Pure Methods
 
-    public override IEnumerable<DreamValue> EnumerateKeys() {
+    public override IEnumerable<DreamValue> Enumerate() {
         return _elements;
     }
 
@@ -163,7 +163,7 @@ public class DreamEagerList : DreamList {
         return false;
     }
 
-    public override int FindKeyIndex(DreamValue value, int start = 1, int end = 0) {
+    public override int FindIndex(DreamValue value, int start = 1, int end = 0) {
         if (end == 0 || end > _elements.Count) end = _elements.Count + 1;
 
         for (int i = start; i < end; i++) {
@@ -182,12 +182,12 @@ public class DreamEagerList : DreamList {
         Dictionary<DreamValue, DreamValue> ourAssociations = GetTightPairs();
         Dictionary<DreamValue, DreamValue> otherAssociations = other.GetTightPairs();
 
-        foreach (DreamValue value in newList.EnumerateKeys()) {
+        foreach (DreamValue value in newList.Enumerate()) {
             // Existing left pairs win, only values newly contributed by the right list use its association
             if (ourAssociations.TryGetValue(value, out DreamValue leftAssociatedValue))
-                newList.SetKeyValuePair(value, leftAssociatedValue);
+                newList.Set(value, leftAssociatedValue);
             else if (otherAssociations.TryGetValue(value, out DreamValue rightAssociatedValue))
-                newList.SetKeyValuePair(value, rightAssociatedValue);
+                newList.Set(value, rightAssociatedValue);
         }
 
         return newList;
@@ -209,7 +209,7 @@ public class DreamEagerList : DreamList {
 
         if (allowGrowth && keyInteger == GetLength() + 1) {
             element.IncRef();
-            AddKey(element);
+            Add(element);
             return;
         }
 
@@ -224,7 +224,7 @@ public class DreamEagerList : DreamList {
         element.IncRef();
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         if (key.TryGetValueAsInteger(out int keyInteger)) {
             if (allowGrowth && keyInteger == _elements.Count + 1) {
                 value.IncRef();
@@ -248,7 +248,7 @@ public class DreamEagerList : DreamList {
         UpdateTracyContentsMemory();
     }
 
-    public override void RemoveKey(DreamValue key) {
+    public override void Remove(DreamValue key) {
         int valueIndex = _elements.LastIndexOf(key);
 
         if (valueIndex != -1) {
@@ -259,7 +259,7 @@ public class DreamEagerList : DreamList {
         UpdateTracyContentsMemory();
     }
 
-    public override void AddKey(DreamValue value) {
+    public override void Add(DreamValue value) {
         _elements.Add(value);
         value.IncRef();
         UpdateTracyContentsMemory();
@@ -294,8 +294,8 @@ public class DreamEagerList : DreamList {
         using var first = GetElement(new DreamValue(index1));
         using var second = GetElement(new DreamValue(index2));
 
-        SetKeyValuePair(new DreamValue(index1), second);
-        SetKeyValuePair(new DreamValue(index2), first);
+        Set(new DreamValue(index1), second);
+        Set(new DreamValue(index2), first);
     }
 
     public void Resize(int size) {
@@ -303,7 +303,7 @@ public class DreamEagerList : DreamList {
             _elements.EnsureCapacity(size);
 
             for (int i = _elements.Count; i < size; i++) {
-                AddKey(DreamValue.Null);
+                Add(DreamValue.Null);
             }
         } else {
             if (size < 0) {
@@ -349,16 +349,16 @@ public class DreamEagerList : DreamList {
         DantomList listCopy = (DantomList)ToCopy();
 
         if (b.TryGetValueAsDreamList(out var bList)) {
-            foreach (DreamValue key in bList.EnumerateKeys()) {
+            foreach (DreamValue key in bList.Enumerate()) {
                 if (bList.TryGetElementByKey(key, out var _assocValue)) {
                     using var assocValue = _assocValue;
-                    listCopy.SetKeyValuePair(key, assocValue);
+                    listCopy.Set(key, assocValue);
                 } else {
-                    listCopy.AddKey(key);
+                    listCopy.Add(key);
                 }
             }
         } else {
-            listCopy.AddKey(b);
+            listCopy.Add(b);
         }
 
         return new DreamValue(listCopy);
@@ -368,11 +368,11 @@ public class DreamEagerList : DreamList {
         DantomList listCopy = (DantomList)ToCopy();
 
         if (b.TryGetValueAsDreamList(out var bList)) {
-            foreach (DreamValue value in bList.EnumerateKeys()) {
-                listCopy.RemoveKey(value);
+            foreach (DreamValue value in bList.Enumerate()) {
+                listCopy.Remove(value);
             }
         } else {
-            listCopy.RemoveKey(b);
+            listCopy.Remove(b);
         }
 
         return new DreamValue(listCopy);
@@ -385,7 +385,7 @@ public class DreamEagerList : DreamList {
             list = Union(bList);
         } else {                                        // List | x
             list = ToCopy();
-            list.AddKey(b);
+            list.Add(b);
         }
 
         return new DreamValue(list);
@@ -393,19 +393,19 @@ public class DreamEagerList : DreamList {
 
     public override DreamValue OperatorCombine(DreamValue b) {
         if (b.TryGetValueAsDreamList(out var bList)) {
-            foreach (DreamValue key in bList.EnumerateKeys()) {
+            foreach (DreamValue key in bList.Enumerate()) {
                 if (ContainsKey(key))
                     continue;
 
                 if (bList.TryGetElementByKey(key, out var _assocValue)) {
                     using var assocValue = _assocValue;
-                    SetKeyValuePair(key, assocValue);
+                    Set(key, assocValue);
                 } else {
-                    AddKey(key);
+                    Add(key);
                 }
             }
         } else if (!ContainsKey(b)) {
-            AddKey(b);
+            Add(b);
         }
 
         IncRef();
@@ -415,7 +415,7 @@ public class DreamEagerList : DreamList {
     public override DreamValue OperatorMask(DreamValue b) {
         if (b.TryGetValueAsDreamList(out var bList)) {
             var remainingValues = new Dictionary<DreamValue, int>(bList.GetLength());
-            foreach (DreamValue value in bList.EnumerateKeys()) {
+            foreach (DreamValue value in bList.Enumerate()) {
                 remainingValues.TryGetValue(value, out int count);
                 remainingValues[value] = count + 1;
             }
@@ -480,7 +480,7 @@ public class DreamEagerList : DreamList {
     public override void OperatorOutput(DreamValue b) {
         HashSet<DreamConnection> passedConnections = new(); // BYOND only outputs to a client once per list
 
-        foreach(var value in EnumerateKeys()) {
+        foreach(var value in Enumerate()) {
             DreamConnection? connection = null;
             if(value.TryGetValueAsDreamObject<DreamObjectClient>(out var dreamClient))
                 connection = dreamClient.Connection;

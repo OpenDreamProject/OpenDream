@@ -16,10 +16,10 @@ internal sealed class DreamListVars(DreamObjectDefinition listDef, DreamObject d
     }
 
     public override List<DreamValue> CopyKeys() {
-        return EnumerateKeys().ToList();
+        return Enumerate().ToList();
     }
 
-    public override IEnumerable<DreamValue> EnumerateKeys() {
+    public override IEnumerable<DreamValue> Enumerate() {
         return DreamObject.GetVariableNames().Concat(DreamObject.ObjectDefinition.GlobalVariables.Keys).Select(name => new DreamValue(name));
     }
 
@@ -49,7 +49,7 @@ internal sealed class DreamListVars(DreamObjectDefinition listDef, DreamObject d
         }
     }
 
-    public override void SetKeyValuePair(DreamValue key, DreamValue value, bool allowGrowth = false) {
+    public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         if (key.TryGetValueAsString(out var varName)) {
             if (!DreamObject.HasVariable(varName)) {
                 throw new DMException(
@@ -62,11 +62,11 @@ internal sealed class DreamListVars(DreamObjectDefinition listDef, DreamObject d
         }
     }
 
-    public override void AddKey(DreamValue newElement) {
+    public override void Add(DreamValue newElement) {
         throw new DMException("Cannot add to Vars list.");
     }
 
-    public override void RemoveKey(DreamValue element) {
+    public override void Remove(DreamValue element) {
         throw new DMException("Cannot remove from Vars list.");
     }
 
@@ -74,7 +74,7 @@ internal sealed class DreamListVars(DreamObjectDefinition listDef, DreamObject d
         return DreamObject.IsSaved(name);
     }
 
-    public override int FindKeyIndex(DreamValue value, int start = 1, int end = 0) {
+    public override int FindIndex(DreamValue value, int start = 1, int end = 0) {
         return CopyKeys().IndexOf(value)+1; // IndexOf is 0 indexed, returns -1 on fail, DM is 1 indexed and returns 0 on fail, so +1
     }
 }

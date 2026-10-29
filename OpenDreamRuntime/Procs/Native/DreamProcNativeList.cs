@@ -12,11 +12,11 @@ namespace OpenDreamRuntime.Procs.Native {
 
             foreach (var argument in bundle.Arguments) {
                 if (argument.TryGetValueAsDreamList(out var argumentList)) {
-                    foreach (DreamValue value in argumentList.EnumerateKeys()) {
-                        list.AddKey(value);
+                    foreach (DreamValue value in argumentList.Enumerate()) {
+                        list.Add(value);
                     }
                 } else {
-                    list.AddKey(argument);
+                    list.Add(argument);
                 }
             }
 
@@ -65,7 +65,7 @@ namespace OpenDreamRuntime.Procs.Native {
             bundle.GetArgument(2, "End").TryGetValueAsInteger(out var end); //1-indexed, 0 if non-number
             DreamList list = (DreamList)src!;
 
-            return new(list.FindKeyIndex(element, start, end));
+            return new(list.FindIndex(element, start, end));
         }
 
         [DreamProc("Insert")]
@@ -82,7 +82,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 var item = bundle.Arguments[i];
 
                 if (item.TryGetValueAsDreamList(out var valueList)) {
-                    foreach (DreamValue value in valueList.EnumerateKeys()) {
+                    foreach (DreamValue value in valueList.Enumerate()) {
                         list.Insert(index++, value);
                     }
                 } else {
@@ -157,16 +157,16 @@ namespace OpenDreamRuntime.Procs.Native {
                         break;
                     }
 
-                    foreach (DreamValue value in argumentList.EnumerateKeys()) {
+                    foreach (DreamValue value in argumentList.Enumerate()) {
                         if (list.ContainsKey(value)) {
-                            list.RemoveKey(value);
+                            list.Remove(value);
 
                             itemRemoved++;
                         }
                     }
                 } else {
                     if (list.ContainsKey(argument)) {
-                        list.RemoveKey(argument);
+                        list.Remove(argument);
 
                         itemRemoved++;
                     }
@@ -198,7 +198,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 var item = bundle.Arguments[i];
 
                 if (item.TryGetValueAsDreamList(out var valueList)) {
-                    foreach (DreamValue value in valueList.EnumerateKeys()) {
+                    foreach (DreamValue value in valueList.Enumerate()) {
                         list.Insert(startIndex++, value);
                     }
                 } else {

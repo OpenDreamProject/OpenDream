@@ -20,6 +20,10 @@ using System.Diagnostics.CodeAnalysis;
 namespace DMCompiler;
 
 public class DMCompiler {
+    private static readonly EnumerationOptions DirectorySearchOptions = new() {
+        MatchCasing = MatchCasing.CaseInsensitive
+    };
+
     public readonly HashSet<WarningCode> UniqueEmissions = new();
     public readonly List<string> CompilerMessages = new();
     public DMCompilerSettings Settings;
@@ -36,6 +40,18 @@ public class DMCompiler {
     private DateTime _compileStartTime;
     private int _errorCount;
     private int _warningCount;
+
+    /// <summary>
+    /// A cache for case-insensitive directory searches.
+    /// Makes the assumption that directories aren't changing mid-compile.
+    /// </summary>
+    private readonly Dictionary<(string Directory, string Search), string[]> _searchedDirectories = new();
+
+    /// <summary>
+    /// A cache for case-insensitive file searches within directories.
+    /// Makes the assumption that files aren't changing mid-compile.
+    /// </summary>
+    private readonly Dictionary<(string Directory, string Search), string[]> _searchedDirectoryFiles = new();
 
     public DMCompiler() {
         DMCodeTree = new(this);
@@ -54,6 +70,8 @@ public class DMCompiler {
         UniqueEmissions.Clear();
         Settings = settings;
         _resourceDirectories.Clear();
+        _searchedDirectories.Clear();
+        _searchedDirectoryFiles.Clear();
         _errorCount = 0;
         _warningCount = 0;
         _compileStartTime = DateTime.Now;
@@ -113,6 +131,38 @@ public class DMCompiler {
         }
 
         _resourceDirectories.Add(dir);
+    }
+
+    /// <summary>
+    /// Perform a case-insensitive search for a directory within a directory.
+    /// Needed for case-sensitive filesystems which are common on Linux.
+    /// </summary>
+    /// <remarks>Results are cached for repeated searches.</remarks>
+    /// <param name="directory">The directory to search within</param>
+    /// <param name="searching">The name of the directory to find</param>
+    internal string[] SearchDirectories(string directory, string searching) {
+        if (!_searchedDirectories.TryGetValue((directory, searching), out var result)) {
+            result = Directory.GetDirectories(directory, searching, DirectorySearchOptions);
+            _searchedDirectories.Add((directory, searching), result);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Perform a case-insensitive search for a file within a directory.
+    /// Needed for case-sensitive filesystems which are common on Linux.
+    /// </summary>
+    /// <remarks>Results are cached for repeated searches.</remarks>
+    /// <param name="directory">The directory to search within</param>
+    /// <param name="searching">The name of the file to find</param>
+    internal string[] SearchFiles(string directory, string searching) {
+        if (!_searchedDirectoryFiles.TryGetValue((directory, searching), out var result)) {
+            result = Directory.GetFiles(directory, searching, DirectorySearchOptions);
+            _searchedDirectoryFiles.Add((directory, searching), result);
+        }
+
+        return result;
     }
 
     private DMPreprocessor? Preprocess(DMCompiler compiler, List<string> files, Dictionary<string, string>? macroDefines) {

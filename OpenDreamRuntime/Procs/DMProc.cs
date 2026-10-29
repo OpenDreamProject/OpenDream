@@ -352,12 +352,14 @@ public sealed class DMProcState : ProcState {
         {DreamProcOpcode.SwitchOnFloat, DMOpcodeHandlers.SwitchOnFloat},
         {DreamProcOpcode.SwitchOnString, DMOpcodeHandlers.SwitchOnString},
         {DreamProcOpcode.JumpIfReferenceFalse, DMOpcodeHandlers.JumpIfReferenceFalse},
+        {DreamProcOpcode.JumpIfReferenceNotNull, DMOpcodeHandlers.JumpIfReferenceNotNull},
         {DreamProcOpcode.PushNOfStringFloats, DMOpcodeHandlers.PushNOfStringFloat},
         {DreamProcOpcode.CreateListNFloats, DMOpcodeHandlers.CreateListNFloats},
         {DreamProcOpcode.CreateListNStrings, DMOpcodeHandlers.CreateListNStrings},
         {DreamProcOpcode.CreateListNRefs, DMOpcodeHandlers.CreateListNRefs},
         {DreamProcOpcode.CreateListNResources, DMOpcodeHandlers.CreateListNResources},
         {DreamProcOpcode.IsTypeDirect, DMOpcodeHandlers.IsTypeDirect},
+        {DreamProcOpcode.CreateObjectDirect, DMOpcodeHandlers.CreateObjectDirect},
         {DreamProcOpcode.ReturnReferenceValue, DMOpcodeHandlers.ReturnReferenceValue},
         {DreamProcOpcode.ReturnFloat, DMOpcodeHandlers.ReturnFloat}
     };
@@ -855,12 +857,16 @@ public sealed class DMProcState : ProcState {
                 break;
             case DMReference.Type.Field: {
                 var owner = peek ? Peek() : Pop();
-                if (!owner.TryGetValueAsDreamObject(out var ownerObj) || ownerObj == null)
+                if (owner.TryGetValueAsDreamObject<DreamObject>(out var ownerObj)) {
+                    ownerObj.SetVariable(ResolveString(reference.Value), value);
+                    if (!peek)
+                        owner.Dispose();
+                } else {
+                    if (!peek)
+                        owner.Dispose();
                     ThrowCannotAssignFieldOn(reference, owner);
+                }
 
-                ownerObj!.SetVariable(ResolveString(reference.Value), value);
-                if (!peek)
-                    owner.Dispose();
                 break;
             }
             case DMReference.Type.ListIndex: {
@@ -868,7 +874,7 @@ public sealed class DMProcState : ProcState {
 
                 try {
                     if (indexing.TryGetValueAsIDreamList(out var dreamList)) {
-                        dreamList.SetValue(index, value);
+                        dreamList.Set(index, value);
                     } else if (indexing.TryGetValueAsDreamObject<DreamObject>(out var dreamObject)) {
                         dreamObject.OperatorIndexAssign(index, this, value);
                     } else {
@@ -964,11 +970,13 @@ public sealed class DMProcState : ProcState {
             }
             case DMReference.Type.Field: {
                 var owner = peek ? Peek() : Pop();
-                var fieldValue = DereferenceField(owner, ResolveString(reference.Value));
 
-                if (!peek)
-                    owner.Dispose();
-                return fieldValue;
+                try {
+                    return DereferenceField(owner, ResolveString(reference.Value));
+                } finally {
+                    if (!peek)
+                        owner.Dispose();
+                }
             }
             case DMReference.Type.SrcField: {
                 var fieldName = ResolveString(reference.Value);
@@ -982,13 +990,14 @@ public sealed class DMProcState : ProcState {
             case DMReference.Type.ListIndex: {
                 GetIndexReferenceValues(reference, out var index, out var indexing, peek);
 
-                var value = GetIndex(indexing, index, this);
-                if (!peek) {
-                    index.Dispose();
-                    indexing.Dispose();
+                try {
+                    return GetIndex(indexing, index, this);
+                } finally {
+                    if (!peek) {
+                        index.Dispose();
+                        indexing.Dispose();
+                    }
                 }
-
-                return value;
             }
             default:
                 ThrowCannotGetValueOfReferenceType(reference);
@@ -1085,7 +1094,7 @@ public sealed class DMProcState : ProcState {
     [MustDisposeResource]
     public DreamValue GetIndex(DreamValue indexing, DreamValue index, DMProcState state) {
         if (indexing.TryGetValueAsDreamList(out var listObj)) {
-            return listObj.GetValue(index);
+            return listObj.GetElement(index);
         }
 
         if (indexing.TryGetValueAsString(out string? strValue)) {
@@ -1203,7 +1212,7 @@ public sealed class DMProcState : ProcState {
                         break;
 
                     int i = 0;
-                    foreach (var pair in argList.EnumerateAssocValues()) {
+                    foreach (var pair in argList.EnumeratePairs()) {
                         values[i++] = (pair.Key, pair.Value);
                     }
 
@@ -1290,7 +1299,7 @@ public sealed class DMProcState : ProcState {
                     if (proc.OwningType == _state.Proc.ObjectTree.MutableAppearance && proc.Name == "New")
                         proc = _state.Proc.DreamManager.ImageConstructor;
 
-                    var listValues = argList.GetValues();
+                    var listValues = argList.GetKeys();
                     var arguments = new DreamValue[Math.Max(listValues.Count, proc.ArgumentNames.Count)];
                     var skippingArg = false;
                     var isImageConstructor = proc == _state.Proc.DreamManager.ImageConstructor ||
@@ -1300,7 +1309,7 @@ public sealed class DMProcState : ProcState {
                     for (int i = 0; i < listValues.Count; i++) {
                         var value = listValues[i];
 
-                        if (argList.ContainsKey(value)) { //Named argument
+                        if (argList.ElementHasAssociation(value)) { //Named argument
                             if (!value.TryGetValueAsString(out var argumentName))
                                 throw new DMException("List contains a non-string key, and cannot be used as an arglist");
 
@@ -1308,7 +1317,7 @@ public sealed class DMProcState : ProcState {
                             if (argumentIndex == -1)
                                 throw new DMException($"{proc} has no argument named \"{argumentName}\"");
 
-                            arguments[argumentIndex] = argList.GetValue(value);
+                            arguments[argumentIndex] = argList.GetElement(value);
                         } else { //Ordered argument
                             // image() or new /image() will skip the loc arg if the second arg is a string
                             // Really don't like this but it's BYOND behavior

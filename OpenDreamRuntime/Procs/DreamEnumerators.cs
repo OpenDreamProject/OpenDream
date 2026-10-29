@@ -125,6 +125,9 @@ internal sealed class FilteredDreamValueArrayEnumerator(DreamValue[] values, Dic
     }
 
     public void Dispose() {
+        for (int i = _current + 1; i < values.Length; i++)
+            values[i].Dispose();
+
         if (assocValues != null)
             foreach (var assocValue in assocValues.Values)
                 assocValue.Dispose();

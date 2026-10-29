@@ -290,7 +290,7 @@ public sealed partial class ServerVerbSystem : VerbSystem {
                     viewCollection = DreamProcNativeHelpers.HandleRange(connection.Mob, new(verbInfo.Range), !verbAccessibility.IsO());
                 }
 
-                var inRange = viewCollection.ContainsValue(new(srcAtom));
+                var inRange = viewCollection.ContainsKey(new(srcAtom));
                 viewCollection.DecRef();
                 return inRange;
             }

@@ -36,23 +36,26 @@ internal static partial class DMOpcodeHandlers {
         string dllName,
         string procName,
         [HandlesResourceDisposal] DreamProcArguments arguments) {
-        // TODO: Don't allocate string copy
-        // TODO: Handle stdcall (do we care?)
-        var entryPoint = (delegate* unmanaged[Cdecl]<uint, ByondApi.CByondValue*, ByondApi.CByondValue>)
-            DllHelper.ResolveDllTarget(state.Proc.DreamResourceManager, dllName, procName["byond:".Length..]);
+        try {
+            // TODO: Don't allocate string copy
+            // TODO: Handle stdcall (do we care?)
+            var entryPoint = (delegate* unmanaged[Cdecl]<uint, ByondApi.CByondValue*, ByondApi.CByondValue>)
+                DllHelper.ResolveDllTarget(state.Proc.DreamResourceManager, dllName, procName["byond:".Length..]);
 
-        Span<ByondApi.CByondValue> args = stackalloc ByondApi.CByondValue[arguments.Count];
-        args.Clear();
+            Span<ByondApi.CByondValue> args = stackalloc ByondApi.CByondValue[arguments.Count];
+            args.Clear();
 
-        for (var i = 0; i < args.Length; i++) {
-            var arg = arguments.GetArgument(i);
-            args[i] = Api.ValueToByondApi(arg);
+            for (var i = 0; i < args.Length; i++) {
+                var arg = arguments.GetArgument(i);
+                args[i] = Api.ValueToByondApi(arg);
+            }
+
+            using var result = Api.ValueFromDreamApi(Api.DoCall(entryPoint, args));
+            state.Push(result);
+            return ProcStatus.Continue;
+        } finally {
+            arguments.Dispose();
         }
-
-        using var result = Api.ValueFromDreamApi(Api.DoCall(entryPoint, args));
-        state.Push(result);
-        arguments.Dispose();
-        return ProcStatus.Continue;
     }
 
     private static unsafe ProcStatus CallExtString(
@@ -60,11 +63,11 @@ internal static partial class DMOpcodeHandlers {
         string dllName,
         string procName,
         [HandlesResourceDisposal] DreamProcArguments arguments) {
-        var entryPoint = DllHelper.ResolveDllTarget(state.Proc.DreamResourceManager, dllName, procName);
-
         Span<nint> argV = stackalloc nint[arguments.Count];
-        argV.Fill(0);
+        argV.Clear();
         try {
+            var entryPoint = DllHelper.ResolveDllTarget(state.Proc.DreamResourceManager, dllName, procName);
+
             for (var i = 0; i < argV.Length; i++) {
                 var arg = arguments.GetArgument(i).Stringify();
 

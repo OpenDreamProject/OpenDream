@@ -16,13 +16,14 @@ internal sealed class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
     public DreamProcOpcode Opcode;
     public int StackSizeDelta;
 
-    private readonly List<IAnnotatedBytecode> _args = new();
+    private readonly List<IAnnotatedBytecode> _args;
     private Location? _location;
 
     public AnnotatedBytecodeInstruction(DreamProcOpcode opcode, int stackSizeDelta, Location location) {
         Opcode = opcode;
         StackSizeDelta = stackSizeDelta;
         Location = location;
+        _args = new(OpcodeMetadataCache.GetMetadata(opcode).RequiredArgs.Length);
     }
 
     // Given an existing instruction, create a new instruction with the same opcode and stack delta, but with new args

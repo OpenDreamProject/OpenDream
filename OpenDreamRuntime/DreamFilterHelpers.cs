@@ -109,7 +109,7 @@ public static class DreamFilterHelpers {
     private static DreamList CreateColorMatrixList(DreamObjectTree objectTree, ColorMatrix matrix) {
         var list = objectTree.CreateList(20);
         foreach (float entry in matrix.GetValues())
-            list.AddValue(new(entry));
+            list.Add(new(entry));
 
         return list;
     }

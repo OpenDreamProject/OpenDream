@@ -44,7 +44,7 @@ internal static class DreamProcNativeWorld {
                 case TopicResponseType.UnknownResponse:
                     var byteList = state.ObjectTree.CreateList();
                     foreach (var @byte in topicResponse.RawData)
-                        byteList.AddValue(new DreamValue(@byte));
+                        byteList.Add(new DreamValue(@byte));
                     return new DreamValue(byteList);
 
                 default:
@@ -60,12 +60,12 @@ internal static class DreamProcNativeWorld {
         var list = state.ObjectTree.CreateList();
         foreach (var header in response.Headers) {
             // TODO: How to handle headers with multiple values?
-            list.SetValue(new DreamValue(header.Key), new DreamValue(header.Value.First()));
+            list.Set(new DreamValue(header.Key), new DreamValue(header.Value.First()));
         }
 
         var content = state.ResourceManager.CreateResource(contentBytes);
-        list.SetValue(new DreamValue("STATUS"), new DreamValue(((int) response.StatusCode).ToString()));
-        list.SetValue(new DreamValue("CONTENT"), new DreamValue(content));
+        list.Set(new DreamValue("STATUS"), new DreamValue(((int) response.StatusCode).ToString()));
+        list.Set(new DreamValue("CONTENT"), new DreamValue(content));
 
         return new DreamValue(list);
     }
@@ -145,16 +145,16 @@ internal static class DreamProcNativeWorld {
             DreamList dataList = bundle.ObjectTree.CreateList();
 
             if (type == "sendmaps") {
-                dataList.AddValue(new("name"));
-                dataList.AddValue(new("value"));
-                dataList.AddValue(new("calls"));
+                dataList.Add(new("name"));
+                dataList.Add(new("value"));
+                dataList.Add(new("calls"));
             } else { // Anything else is a proc profile
-                dataList.AddValue(new("name"));
-                dataList.AddValue(new("self"));
-                dataList.AddValue(new("total"));
-                dataList.AddValue(new("real"));
-                dataList.AddValue(new("over"));
-                dataList.AddValue(new("calls"));
+                dataList.Add(new("name"));
+                dataList.Add(new("self"));
+                dataList.Add(new("total"));
+                dataList.Add(new("real"));
+                dataList.Add(new("over"));
+                dataList.Add(new("calls"));
             }
 
             return new(dataList);
@@ -209,7 +209,7 @@ internal static class DreamProcNativeWorld {
     [DreamProc("ODHotReloadResource")]
     [DreamProcParameter("file_name", Type = DreamValue.DreamValueTypeFlag.String)]
     public static DreamValue NativeProc_ODHotReloadResource(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-        if(!bundle.GetArgument(0, "file_name").TryGetValueAsString(out var fileName))
+        if (!bundle.GetArgument(0, "file_name").TryGetValueAsString(out var fileName))
             throw new ArgumentException("file_name must be a string");
         var dreamManager = IoCManager.Resolve<DreamManager>();
         dreamManager.HotReloadResource(fileName);

@@ -212,7 +212,7 @@ public sealed partial class DreamObjectTree {
         DreamList list = CreateList(elements.Length);
 
         foreach (string value in elements) {
-            list.AddValue(new DreamValue(value));
+            list.Add(new DreamValue(value));
         }
 
         return list;
@@ -270,11 +270,11 @@ public sealed partial class DreamObjectTree {
                                     using var listKey = GetDreamValueFromJsonElement(jsonKey);
                                     using var dreamValue = GetDreamValueFromJsonElement(jsonValue);
 
-                                    list.SetValue(listKey, dreamValue, allowGrowth: true);
+                                    list.Set(listKey, dreamValue, allowGrowth: true);
                                 } else {
                                     using var dreamValue = GetDreamValueFromJsonElement(listValue);
 
-                                    list.AddValue(dreamValue);
+                                    list.Add(dreamValue);
                                 }
                             }
                         }
@@ -295,7 +295,7 @@ public sealed partial class DreamObjectTree {
                                 using var listKey = GetDreamValueFromJsonElement(jsonKey);
                                 using var dreamValue = GetDreamValueFromJsonElement(jsonValue);
 
-                                aList.SetValue(listKey, dreamValue);
+                                aList.Set(listKey, dreamValue);
                             }
                         }
 

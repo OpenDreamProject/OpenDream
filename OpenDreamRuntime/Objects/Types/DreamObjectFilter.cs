@@ -55,11 +55,11 @@ public sealed class DreamObjectFilter(DreamObjectDefinition objectDefinition) : 
 
     public static DreamObjectFilter? TryCreateFilter(DreamObjectTree objectTree, DreamList list) {
         static IEnumerable<(string, DreamValue)> EnumerateProperties(DreamList list) {
-            foreach (var key in list.EnumerateValues()) {
+            foreach (var key in list.Enumerate()) {
                 if (!key.TryGetValueAsString(out var keyStr))
                     continue;
 
-                using var value = list.GetValue(key);
+                using var value = list.GetElement(key);
                 if (value.IsNull)
                     continue;
 

@@ -87,7 +87,6 @@
 	proc/Topic(T,Addr,Master,Keys)
 
 	proc/Tick()
-		set opendream_unimplemented = TRUE
 		
 	proc/SetScores()
 		set opendream_unsupported = "OpenDream does not support hub scores"

@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using OpenDreamRuntime.Procs;
-using System.Globalization;
 using System.Runtime.CompilerServices;
 using DMCompiler.Bytecode;
 using JetBrains.Annotations;
@@ -11,7 +10,6 @@ using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Server.GameObjects;
 using Robust.Server.GameStates;
-using Robust.Shared.Map;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Utility;
 
@@ -101,8 +99,8 @@ public class DreamObject {
         RefId = DreamRefManager.GetRef(this);
 
 #if TOOLS
-         //if it's not null, subclasses have done their own allocation
-        TracyMemoryId ??= Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamObject>() + ObjectDefinition.Variables.Count * Unsafe.SizeOf<DreamValue>() ), "/datum");
+        //if it's not null, subclasses have done their own allocation
+        TracyMemoryId ??= Profiler.BeginMemoryZone((ulong)(Unsafe.SizeOf<DreamObject>() + ObjectDefinition.Variables.Count * Unsafe.SizeOf<DreamValue>()), "/datum");
 #endif
     }
 
@@ -162,7 +160,7 @@ public class DreamObject {
         Deleting = true;
         if (TryGetProc("Del", out var delProc)) {
             // Don't bother running Del() if there's no code in it
-            var datumBaseProc = delProc is DMProc {Bytecode.Length: 0};
+            var datumBaseProc = delProc is DMProc { Bytecode.Length: 0 };
             if (!datumBaseProc) {
                 DreamThread.Run(delProc, this, null).Dispose();
             }
@@ -172,7 +170,7 @@ public class DreamObject {
     }
 
     public bool IsSubtypeOf(TreeEntry ancestor) {
-        if(Deleted) //null deref protection, deleted objects don't have ObjectDefinition anymore
+        if (Deleted) //null deref protection, deleted objects don't have ObjectDefinition anymore
             return false;
         return ObjectDefinition.IsSubtypeOf(ancestor);
     }
@@ -358,8 +356,7 @@ public class DreamObject {
             }
         }
 
-        if (char.IsWhiteSpace(
-                str[0])) // NOTE: This might result in slightly different behaviour (since C# may be more unicode-friendly about what "whitespace" means)
+        if (char.IsWhiteSpace(str[0])) // NOTE: This might result in slightly different behaviour (since C# may be more unicode-friendly about what "whitespace" means)
             return true;
         return char.IsUpper(str[0]);
     }
@@ -367,69 +364,88 @@ public class DreamObject {
     public static bool StringStartsWithVowel(string str) {
         if (str.Length == 0)
             return false;
-        char start = char.ToLower(str[0], CultureInfo.InvariantCulture);
-        switch (start) {
-            case 'a':
-            case 'e':
-            case 'i':
-            case 'o':
-            case 'u':
-                return true;
-            default:
-                return false;
-        }
+        return str[0] switch {
+            'a' or 'A' or 'e' or 'E' or 'i' or 'I' or 'o' or 'O' or 'u' or 'U' => true,
+            _ => false,
+        };
+    }
+
+    /// <summary>
+    /// Get the article.
+    /// </summary>
+    /// <param name="article">The article to apply.</param>
+    /// <param name="name">The raw name (optionally with propriety code) to apply the article to.</param>
+    /// <param name="gender">The gender of the atom, or null if not an atom.</param>
+    /// <returns></returns>
+    public static string GetArticle(StringFormatEncoder.FormatSuffix article, string name, string? gender) {
+        bool isProper = StringIsProper(name);
+        name = StringFormatDecoder.RemoveFormatting(name);
+        return (isProper, article, gender) switch {
+            // If proper: always nothing.
+            (true, _, _) => "",
+            // Default: genderless datums are nothing, atoms are \the.
+            // Lowercase chosen because `json_encode` acts this way.
+            (false, StringFormatEncoder.FormatSuffix.StringifyWithArticle, null) => "",
+            (false, StringFormatEncoder.FormatSuffix.StringifyWithArticle, _) => "the ",
+            // \The
+            (false, StringFormatEncoder.FormatSuffix.UpperDefiniteArticle, _) => "The ",
+            // \the
+            (false, StringFormatEncoder.FormatSuffix.LowerDefiniteArticle, _) => "the ",
+            // \A, \An
+            (false, StringFormatEncoder.FormatSuffix.UpperIndefiniteArticle, "plural") => "Some ",
+            (false, StringFormatEncoder.FormatSuffix.UpperIndefiniteArticle, _) => StringStartsWithVowel(name) ? "An " : "A ",
+            // \a, \an
+            (false, StringFormatEncoder.FormatSuffix.LowerIndefiniteArticle, "plural") => "some ",
+            (false, StringFormatEncoder.FormatSuffix.LowerIndefiniteArticle, _) => StringStartsWithVowel(name) ? "an " : "a ",
+            _ => "",
+        };
+    }
+
+    public string GetArticle(StringFormatEncoder.FormatSuffix article, ProcState? state = null) {
+        return GetArticle(article, GetRawName(state), GetGender());
     }
 
     /// <summary>
     /// Get the display name of this object, WITH ALL FORMATTING EVALUATED OR REMOVED!
     /// </summary>
-    public virtual string GetDisplayName(StringFormatEncoder.FormatSuffix? suffix = null) {
-        // /client is a little special and will return its key var
-        // TODO: Maybe this should be an override to GetDisplayName()?
-        if (this is DreamObjectClient client)
-            return client.Connection.Key;
-
-        var name = GetRawName();
-        bool isProper = StringIsProper(name);
-        name = StringFormatDecoder.RemoveFormatting(name); // TODO: Care about other formatting macros for obj names beyond \proper & \improper
-        if(!isProper) {
-            return name;
-        }
-
-        switch(suffix) {
-            case StringFormatEncoder.FormatSuffix.UpperDefiniteArticle:
-                return isProper ? name : $"The {name}";
-            case StringFormatEncoder.FormatSuffix.LowerDefiniteArticle:
-                return isProper ? name : $"the {name}";
-            default:
-                return name;
-        }
+    public virtual string GetDisplayName(StringFormatEncoder.FormatSuffix? article = null, ProcState? state = null) {
+        var name = GetRawName(state);
+        var articleStr = article is { } article2 ? GetArticle(article2, name, GetGender()) : "";
+        return $"{articleStr}{StringFormatDecoder.RemoveFormatting(name)}";
     }
 
     /// <summary>
-    /// Similar to <see cref="GetDisplayName"/> except it just returns the name as plaintext, with formatting removed. No article or anything.
+    /// Returns the name of this object with no formatting evaluated.
     /// </summary>
-    public string GetNameUnformatted() {
-        return StringFormatDecoder.RemoveFormatting(GetRawName());
-    }
-
-    /// <summary>
-    /// Returns the name of this object with no formatting evaluated
-    /// </summary>
-    public string GetRawName() {
-        string name = ObjectDefinition.Type;
-
-        if (this is DreamObjectAtom) {
-            if (AtomManager.TryGetAppearance(this, out var appearance))
-                name = appearance.Name;
-        } else if (TryGetVariable("name", out DreamValue nameVar)) {
-            if (nameVar.TryGetValueAsString(out var nameVarStr))
-                name = nameVarStr;
-
-            nameVar.Dispose();
+    private string GetRawName(ProcState? state = null) {
+        // Try operator"".
+        if (state is { } parent && TryExecuteOperatorOverload(parent, "operator\"\"", new(), out var result)) {
+            using var _ = result;
+            if (result.TryGetValueAsString(out var name2)) {
+                return name2;
+            }
         }
 
-        return name;
+        // Try `name` var, which internally dispatches to AtomManager if appropriate.
+        if (TryGetVariable("name", out DreamValue nameVar)) {
+            using var _ = nameVar;
+            if (nameVar.TryGetValueAsString(out var nameVarStr)) {
+                return nameVarStr;
+            }
+        }
+
+        // Return typepath.
+        return ObjectDefinition.Type;
+    }
+
+    public string? GetGender() {
+        if (TryGetVariable("gender", out DreamValue genderVar)) {
+            genderVar.TryGetValueAsString(out var gender);
+            genderVar.Dispose();
+            return gender;
+        }
+
+        return null;
     }
 
     #endregion Name Helpers
@@ -565,11 +581,12 @@ public class DreamObject {
     #endregion Operators
 
     private bool TryExecuteOperatorOverload(
-        DMProcState parentState,
+        ProcState parentState,
         string operatorName,
         [HandlesResourceDisposal] DreamProcArguments arguments,
         [MustDisposeResource] out DreamValue procResult) {
         if (!TryGetProc(operatorName, out var proc)) {
+            arguments.Dispose();
             procResult = default;
             return false;
         }
@@ -583,6 +600,8 @@ public class DreamObject {
         switch (resultStatus) {
             case ProcStatus.Cancelled:
                 // Throw DMError so parent .Resume() call also cancels cleanly.
+                procResult.Dispose();
+                procResult = default;
                 throw new DMError("Re-entrant proc cancelled");
             case ProcStatus.Returned:
                 // Normal behavior, proc finished executing.
@@ -599,7 +618,7 @@ public class DreamObject {
             return "<deleted>";
         }
 
-        string name = GetNameUnformatted();
+        string name = StringFormatDecoder.RemoveFormatting(GetRawName());
         if (!string.IsNullOrEmpty(name)) {
             return $"{ObjectDefinition.Type}{{name=\"{name}\"}}";
         }

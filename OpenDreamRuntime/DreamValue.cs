@@ -10,13 +10,8 @@ using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
-using Robust.Shared.Serialization;
-using Robust.Shared.Serialization.Manager;
-using Robust.Shared.Serialization.Markdown;
-using Robust.Shared.Serialization.Markdown.Validation;
-using Robust.Shared.Serialization.TypeSerializers.Interfaces;
-using OpenDreamRuntime.Procs.Native;
 using Robust.Shared.Utility;
+using DMCompiler.Bytecode;
 
 namespace OpenDreamRuntime;
 
@@ -144,6 +139,9 @@ public struct DreamValue : IDisposable, IEquatable<DreamValue> {
         DecRef();
     }
 
+    /// <summary>
+    /// Increments the reference count of the DreamObject. DreamValue.Null is a no-op.
+    /// </summary>
     public void IncRef() {
         if (Type != DreamValueType.DreamObject || _refValue == null)
             return;
@@ -151,6 +149,9 @@ public struct DreamValue : IDisposable, IEquatable<DreamValue> {
         Unsafe.As<DreamObject>(_refValue).IncRef();
     }
 
+    /// <summary>
+    /// Decrements the reference count of the DreamObject. DreamValue.Null is a no-op.
+    /// </summary>
     public void DecRef() {
         if (Type != DreamValueType.DreamObject || _refValue == null)
             return;
@@ -415,7 +416,20 @@ public struct DreamValue : IDisposable, IEquatable<DreamValue> {
         }
     }
 
-    public string Stringify() {
+    public string GetArticle(StringFormatEncoder.FormatSuffix article, ProcState? state = null) {
+        switch (Type) {
+            case DreamValueType.String:
+                return DreamObject.GetArticle(article, MustGetValueAsString(), null);
+            case DreamValueType.DreamObject: {
+                TryGetValueAsDreamObject(out var dreamObject);
+                return dreamObject?.GetArticle(article, state) ?? string.Empty;
+            }
+            default:
+                return "";
+        }
+    }
+
+    public string Stringify(ProcState? state = null) {
         switch (Type) {
             case DreamValueType.String:
                 return MustGetValueAsString();
@@ -452,7 +466,7 @@ public struct DreamValue : IDisposable, IEquatable<DreamValue> {
             case DreamValueType.DreamObject: {
                 TryGetValueAsDreamObject(out var dreamObject);
 
-                return dreamObject?.GetDisplayName() ?? string.Empty;
+                return dreamObject?.GetDisplayName(StringFormatEncoder.FormatSuffix.StringifyWithArticle, state) ?? string.Empty;
             }
             case DreamValueType.Appearance:
                 return string.Empty;

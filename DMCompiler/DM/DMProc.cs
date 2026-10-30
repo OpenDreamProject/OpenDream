@@ -820,14 +820,6 @@ internal sealed class DMProc {
         }
     }
 
-    public void BreakIfFalse(Location location) {
-        if (_loopStack?.TryPeek(out var peek) ?? false) {
-            JumpIfFalse($"{peek}_end");
-        } else {
-            _compiler.Emit(WarningCode.BadFlowStatement, location, "Cannot break; not in a loop");
-        }
-    }
-
     public void Continue(Location location, DMASTIdentifier? label = null) {
         // TODO: Clean up this godawful label handling
         if (label is not null) {
@@ -903,6 +895,11 @@ internal sealed class DMProc {
 
     public void JumpIfFalse(string label) {
         WriteOpcode(DreamProcOpcode.JumpIfFalse);
+        WriteLabel(label);
+    }
+
+    public void JumpIfTrue(string label) {
+        WriteOpcode(DreamProcOpcode.JumpIfTrue);
         WriteLabel(label);
     }
 
@@ -992,6 +989,14 @@ internal sealed class DMProc {
     public void CreateObject(DMCallArgumentsType argumentsType, int argumentStackSize) {
         ResizeStack(-argumentStackSize); // Pops type and arguments, pushes new object
         WriteOpcode(DreamProcOpcode.CreateObject);
+        WriteArgumentType(argumentsType);
+        WriteStackDelta(argumentStackSize);
+    }
+
+    public void CreateObjectDirect(int typeId, DMCallArgumentsType argumentsType, int argumentStackSize) {
+        ResizeStack(-argumentStackSize); // Pops arguments, pushes new object
+        WriteOpcode(DreamProcOpcode.CreateObjectDirect);
+        WriteTypeId(typeId);
         WriteArgumentType(argumentsType);
         WriteStackDelta(argumentStackSize);
     }

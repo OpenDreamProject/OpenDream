@@ -223,12 +223,12 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
     }
 
     private void ProcessStatementIf(DMASTProcStatementIf statement) {
-        _exprBuilder.Emit(statement.Condition);
+        var condition = _exprBuilder.Create(statement.Condition);
 
         if (statement.ElseBody == null) {
             string endLabel = proc.NewLabelName();
 
-            proc.JumpIfFalse(endLabel);
+            condition.EmitBranch(ExprContext, endLabel, jumpWhen: false);
             proc.StartScope();
             ProcessBlockInner(statement.Body);
             proc.EndScope();
@@ -237,7 +237,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
             string elseLabel = proc.NewLabelName();
             string endLabel = proc.NewLabelName();
 
-            proc.JumpIfFalse(elseLabel);
+            condition.EmitBranch(ExprContext, elseLabel, jumpWhen: false);
 
             proc.StartScope();
             ProcessBlockInner(statement.Body);
@@ -421,10 +421,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
             string loopLabel = proc.NewLabelName();
             proc.LoopStart(loopLabel);
             {
-                if (comparator != null) {
-                    comparator.EmitPushValue(ExprContext);
-                    proc.BreakIfFalse(comparator.Location);
-                }
+                comparator?.EmitBranch(ExprContext, loopLabel + "_end", jumpWhen: false);
 
                 ProcessBlockInner(body);
 
@@ -537,8 +534,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
                     CheckType(DMValueType.Mob, DreamPath.Mob, ref doOr);
                     proc.AddLabel(afterTypeCheckExpr);
                     if (doOr) {
-                        proc.Not();
-                        proc.JumpIfFalse(afterTypeCheckIf);
+                        proc.JumpIfTrue(afterTypeCheckIf);
                         proc.Continue(lValue.Location);
                     }
 
@@ -655,8 +651,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
         proc.LoopStart(loopLabel);
         {
             proc.MarkLoopContinue(loopLabel);
-            _exprBuilder.Emit(statementWhile.Conditional);
-            proc.BreakIfFalse(statementWhile.Conditional.Location);
+            _exprBuilder.Create(statementWhile.Conditional).EmitBranch(ExprContext, loopLabel + "_end", jumpWhen: false);
 
             proc.StartScope();
             {
@@ -677,8 +672,7 @@ internal sealed class DMProcBuilder(DMCompiler compiler, DMObject dmObject, DMPr
             ProcessBlockInner(statementDoWhile.Body);
 
             proc.MarkLoopContinue(loopLabel);
-            _exprBuilder.Emit(statementDoWhile.Conditional);
-            proc.JumpIfFalse(loopEndLabel);
+            _exprBuilder.Create(statementDoWhile.Conditional).EmitBranch(ExprContext, loopEndLabel, jumpWhen: false);
             proc.LoopJumpToStart(loopLabel);
 
             proc.AddLabel(loopEndLabel);

@@ -20,6 +20,9 @@ using System.Diagnostics.CodeAnalysis;
 namespace OpenDreamRuntime;
 
 public sealed partial class DreamManager {
+    /// <summary>
+    /// The DM world object.
+    /// </summary>
     public DreamObjectWorld WorldInstance { get; set; }
     public Exception? LastDMException { get; set; }
 
@@ -110,6 +113,10 @@ public sealed partial class DreamManager {
 
             using (Profiler.BeginZone("DM Execution", color: (uint)Color.LightPink.ToArgb()))
                 _procScheduler.Process();
+
+            using (Profiler.BeginZone("World/Tick()", color: (uint)Color.IndianRed.ToArgb())) {
+                WorldInstance.SpawnProc("Tick").Dispose();
+            }
 
             using (Profiler.BeginZone("Map Update", color: (uint)Color.LightPink.ToArgb())) {
                 UpdateStat();
@@ -232,14 +239,8 @@ public sealed partial class DreamManager {
         OnException?.Invoke(this, e);
 
         // Invoke world.Error()
-        var obj = _objectTree.CreateObject<DreamObjectException>(_objectTree.Exception);
-        if (e is DMThrowException throwException)
-            obj.Name = throwException.Value;
-        else
-            obj.Name = new DreamValue(e.Message);
+        var obj = CreateException(e, file, line);
         obj.Desc = new DreamValue(msg);
-        obj.Line = new DreamValue(line);
-        obj.File = new DreamValue(file);
         if (!inWorldError) // if an error occurs in /world/Error(), don't call it again
             WorldInstance.SpawnProc("Error", usr: null, new DreamValue(obj)).Dispose();
         else {
@@ -248,6 +249,18 @@ public sealed partial class DreamManager {
         }
 
         obj.DecRef();
+    }
+
+    // Creates the /exception for a runtime error, without calling New()
+    public DreamObjectException CreateException(Exception e, string file, int line) {
+        var obj = _objectTree.CreateObject<DreamObjectException>(_objectTree.Exception);
+        if (e is DMThrowException throwException)
+            obj.Name = throwException.Value;
+        else
+            obj.Name = new DreamValue(e.Message);
+        obj.Line = new DreamValue(line);
+        obj.File = new DreamValue(file);
+        return obj;
     }
 
     public void OptionalException<T>(WarningCode code, string exceptionText) where T : Exception {

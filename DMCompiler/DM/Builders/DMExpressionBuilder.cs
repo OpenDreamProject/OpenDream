@@ -600,12 +600,14 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
             }
         }
 
-        var field = ctx.Type.GetVariable(name);
+        // A proc's static vars shadow the type's vars
+        var procGlobalId = ctx.Proc?.GetGlobalVariableId(name);
+        var field = procGlobalId == null ? ctx.Type.GetVariable(name) : null;
         if (field != null && (scopeMode == Normal || field.IsConst)) {
             return new Field(identifier.Location, field, field.ValType);
         }
 
-        var globalId = ctx.Proc?.GetGlobalVariableId(name) ?? ctx.Type.GetGlobalVariableId(name);
+        var globalId = procGlobalId ?? ctx.Type.GetGlobalVariableId(name);
 
         if (globalId != null) {
             if (field is not null)

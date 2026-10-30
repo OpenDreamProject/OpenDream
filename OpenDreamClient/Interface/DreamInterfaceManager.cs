@@ -218,19 +218,7 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
             return;
         }
 
-        // Get ready to output the data into a browser
-        Dictionary<string, string>? options = null;
-        if (pBrowse.Options is not null) {
-            var optionsString = pBrowse.Options.Replace(';', '&').Replace(',', '&');
-            var query = HttpUtility.ParseQueryString(optionsString);
-            if (query.HasKeys()) {
-                options = [];
-                foreach (var key in query.AllKeys) {
-                    options[key!] = query[key] ?? "";
-                }
-            }
-        }
-
+        Dictionary<string, string>? options = pBrowse.Options;
         ControlBrowser? outputBrowser = referencedElement as ControlBrowser;
         if (outputBrowser == null) {
             if (referencedElement is ControlWindow window) {

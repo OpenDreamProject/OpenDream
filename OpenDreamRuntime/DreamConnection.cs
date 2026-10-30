@@ -484,7 +484,7 @@ public sealed partial class DreamConnection {
         string? window = null;
         string? fileName = null;
 
-        List<string> unhandledOptions = new List<string>();
+        Dictionary<string, string> unhandledOptions = [];
 
         if (options != null) {
             foreach (string option in options.Split(',', ';', '&')) {
@@ -506,7 +506,7 @@ public sealed partial class DreamConnection {
                             fileName = value;
                             break;
                         default:
-                            unhandledOptions.Add(value);
+                            unhandledOptions.Add(key, value);
                             break;
                     }
                 }
@@ -517,7 +517,7 @@ public sealed partial class DreamConnection {
             Window = window,
             Display = display,
             FileName = fileName,
-            Options = string.Join(';', unhandledOptions),
+            Options = unhandledOptions,
             Data = body,
         };
 

@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using DMCompiler.Bytecode;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
@@ -168,11 +169,11 @@ public sealed class DreamObjectClient : DreamObject {
                 Screen.Cut();
 
                 if (value.TryGetValueAsDreamList(out var valueList)) {
-                    foreach (DreamValue screenValue in valueList.EnumerateValues()) {
-                        Screen.AddValue(screenValue);
+                    foreach (DreamValue screenValue in valueList.Enumerate()) {
+                        Screen.Add(screenValue);
                     }
                 } else if (!value.IsNull) {
-                    Screen.AddValue(value);
+                    Screen.Add(value);
                 }
 
                 break;
@@ -181,11 +182,11 @@ public sealed class DreamObjectClient : DreamObject {
                 Images.Cut();
 
                 if (value.TryGetValueAsDreamList(out var valueList)) {
-                    foreach (DreamValue screenValue in valueList.EnumerateValues()) {
-                        Images.AddValue(screenValue);
+                    foreach (DreamValue screenValue in valueList.Enumerate()) {
+                        Images.Add(screenValue);
                     }
                 } else if (!value.IsNull) {
-                    Images.AddValue(value);
+                    Images.Add(value);
                 }
 
                 break;
@@ -194,11 +195,11 @@ public sealed class DreamObjectClient : DreamObject {
                 ClientVerbs.Cut();
 
                 if (value.TryGetValueAsDreamList(out var valueList)) {
-                    foreach (DreamValue verbValue in valueList.EnumerateValues()) {
-                        ClientVerbs.AddValue(verbValue);
+                    foreach (DreamValue verbValue in valueList.Enumerate()) {
+                        ClientVerbs.Add(verbValue);
                     }
                 } else {
-                    ClientVerbs.AddValue(value);
+                    ClientVerbs.Add(value);
                 }
 
                 break;
@@ -226,5 +227,10 @@ public sealed class DreamObjectClient : DreamObject {
 
     public override void OperatorOutput(DreamValue b) {
         Connection.OutputDreamValue(b);
+    }
+
+    public override string GetDisplayName(StringFormatEncoder.FormatSuffix? suffix = null, ProcState? state = null) {
+        // It's correct that this ignores operator"".
+        return Connection.Key;
     }
 }

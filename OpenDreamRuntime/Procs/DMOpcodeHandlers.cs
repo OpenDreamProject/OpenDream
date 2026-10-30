@@ -56,7 +56,7 @@ namespace OpenDreamRuntime.Procs {
             var list = state.Proc.ObjectTree.CreateList(size);
 
             foreach (DreamValue value in state.PopCount(size)) {
-                list.AddValue(value);
+                list.Add(value);
                 value.Dispose();
             }
 
@@ -92,9 +92,9 @@ namespace OpenDreamRuntime.Procs {
                 using var value = popped[i + 1];
 
                 if (key.IsNull) {
-                    list.AddValue(value);
+                    list.Add(value);
                 } else {
-                    list.SetValue(key, value, allowGrowth: true);
+                    list.Set(key, value, allowGrowth: true);
                 }
             }
 
@@ -112,7 +112,7 @@ namespace OpenDreamRuntime.Procs {
                 using var key = popped[i];
                 using var value = popped[i + 1];
 
-                list.SetValue(key, value, allowGrowth: true);
+                list.Set(key, value, allowGrowth: true);
             }
 
             state.Push(new DreamValue(list));
@@ -141,8 +141,8 @@ namespace OpenDreamRuntime.Procs {
                 if (list is WorldContentsList)
                     return new WorldContentsEnumerator(atomManager, filterType);
 
-                var values = list.CopyToArray();
-                var assocValues = list.IsAssociative ? list.CopyAssocValues() : null;
+                var values = list.ToArray();
+                var assocValues = list.IsAssociative ? list.CopyPairs() : null;
                 foreach (var copiedValue in values)
                     copiedValue.IncRef();
                 if (assocValues != null)
@@ -250,7 +250,7 @@ namespace OpenDreamRuntime.Procs {
                             appearance.Verbs.Add(proc.VerbId!.Value);
                         });
                     } else if (destination.TryGetValueAsDreamObject<DreamObjectClient>(out var client)) {
-                        client.ClientVerbs.AddValue(val);
+                        client.ClientVerbs.Add(val);
                     }
 
                     return ProcStatus.Continue;
@@ -381,9 +381,7 @@ namespace OpenDreamRuntime.Procs {
                 return;
             if (!interps[prevInterpIndex].TryGetValueAsDreamObject<DreamObject>(out var dreamObject))
                 return;
-            if (!dreamObject.TryGetVariable("gender", out var objectGender)) // NOTE: in DM, this has to be a native property.
-                return;
-            if (!objectGender.TryGetValueAsString(out var genderStr))
+            if (dreamObject.GetGender() is not { } genderStr)
                 return;
 
             switch(genderStr) {
@@ -468,7 +466,7 @@ namespace OpenDreamRuntime.Procs {
                     //Interp values
                     case FormatSuffix.StringifyWithArticle:{
                         // TODO: use postPrefix for \th interpolation
-                        formattedString.Append(interps[nextInterpIndex].Stringify());
+                        formattedString.Append(interps[nextInterpIndex].Stringify(state));
                         prevInterpIndex = nextInterpIndex;
                         nextInterpIndex++;
                         continue;
@@ -483,9 +481,11 @@ namespace OpenDreamRuntime.Procs {
                     }
                     case FormatSuffix.StringifyNoArticle: {
                         if (interps[nextInterpIndex].TryGetValueAsDreamObject<DreamObject>(out var dreamObject)) {
-                            formattedString.Append(dreamObject.GetNameUnformatted());
+                            formattedString.Append(dreamObject.GetDisplayName(state: state));
                         } else if (interps[nextInterpIndex].TryGetValueAsString(out var interpStr)) {
                             formattedString.Append(StringFormatDecoder.RemoveFormatting(interpStr));
+                        } else if (interps[nextInterpIndex].TryGetValueAsType(out var type)) {
+                            formattedString.Append(type.Path);
                         }
 
                         // NOTE probably should put this above the TryGetAsDreamObject function and continue if formatting has occured
@@ -515,82 +515,35 @@ namespace OpenDreamRuntime.Procs {
                     //Macro values//
                     //Prefix macros
                     case FormatSuffix.UpperDefiniteArticle:
-                    case FormatSuffix.LowerDefiniteArticle: {
-                        if (interps[nextInterpIndex].TryGetValueAsDreamObject<DreamObject>(out var dreamObject)) {
-                            if (dreamObject.TryGetVariable("name", out var objectName)) {
-                                string nameStr = objectName.Stringify();
-                                if (!DreamObject.StringIsProper(nameStr)) {
-                                    formattedString.Append(formatType == FormatSuffix.UpperDefiniteArticle ? "The " : "the ");
-                                }
-
-                                objectName.Dispose();
-                            }
-                        }
-
-                        continue;
-                    }
+                    case FormatSuffix.LowerDefiniteArticle:
                     case FormatSuffix.UpperIndefiniteArticle:
-                    case FormatSuffix.LowerIndefiniteArticle: {
-                        var interpValue = interps[nextInterpIndex];
-                        string displayName;
-                        bool isPlural = false;
-
-                        if (interpValue.TryGetValueAsDreamObject<DreamObject>(out var dreamObject)) {
-                            displayName = dreamObject.GetRawName();
-
-                            // Aayy babe whats ya pronouns
-                            if (dreamObject.TryGetVariable("gender", out var gender) &&
-                                gender.TryGetValueAsString(out var genderStr)) {
-                                // NOTE: In Byond, this part does not work if var/gender is not a native property of this object.
-                                isPlural = (genderStr == "plural");
-                            }
-
-                            gender.Dispose();
-                        } else if (interpValue.TryGetValueAsString(out var interpStr)) {
-                            displayName = interpStr;
-                        } else {
-                            break;
-                        }
-
-                        if (DreamObject.StringIsProper(displayName))
-                            break; // Proper nouns don't need articles, I guess.
-
-                        // saves some wordiness with the ternaries below
-                        bool wasCapital = formatType == FormatSuffix.UpperIndefiniteArticle;
-
-                        if (isPlural)
-                            formattedString.Append(wasCapital ? "Some " : "some ");
-                        else if (DreamObject.StringStartsWithVowel(displayName))
-                            formattedString.Append(wasCapital ? "An " : "an ");
-                        else
-                            formattedString.Append(wasCapital ? "A " : "a ");
-
+                    case FormatSuffix.LowerIndefiniteArticle:
+                        formattedString.Append(interps[nextInterpIndex].GetArticle(formatType.Value, state));
                         break;
-                    }
                     //Suffix macros
                     case FormatSuffix.UpperSubjectPronoun:
-                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "He", "She", "They", "Tt" });
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, ["He", "She", "They", "It"]);
                         break;
                     case FormatSuffix.LowerSubjectPronoun:
-                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "he", "she", "they", "it" });
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, ["he", "she", "they", "it"]);
                         break;
                     case FormatSuffix.UpperPossessiveAdjective:
-                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "His", "Her", "Their", "Its" });
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, ["His", "Her", "Their", "Its"]);
                         break;
                     case FormatSuffix.LowerPossessiveAdjective:
-                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "his", "her", "their", "its" });
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, ["his", "her", "their", "its"]);
                         break;
                     case FormatSuffix.ObjectPronoun:
-                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "him", "her", "them", "it" });
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, ["him", "her", "them", "it"]);
                         break;
                     case FormatSuffix.ReflexivePronoun:
-                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "himself", "herself", "themself", "itself" });
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, ["himself", "herself", "themself", "itself"]);
                         break;
                     case FormatSuffix.UpperPossessivePronoun:
-                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "His", "Hers", "Theirs", "Its" });
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, ["His", "Hers", "Theirs", "Its"]);
                         break;
                     case FormatSuffix.LowerPossessivePronoun:
-                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, new[] { "his", "hers", "theirs", "its" });
+                        HandleSuffixPronoun(ref formattedString, interps, prevInterpIndex, ["his", "hers", "theirs", "its"]);
                         break;
                     case FormatSuffix.PluralSuffix:
                         if (interps[prevInterpIndex].TryGetValueAsFloat(out var pluralNumber) && pluralNumber.Equals(1f))
@@ -763,7 +716,7 @@ namespace OpenDreamRuntime.Procs {
                 }
 
                 if (list != null) {
-                    state.Push(new DreamValue(list.ContainsValue(value) ? 1 : 0));
+                    state.Push(new DreamValue(list.ContainsKey(value) ? 1 : 0));
                 } else {
                     // BYOND ignores all floats, strings, types, etc. here and just returns 0.
                     state.Push(DreamValue.False);
@@ -975,14 +928,14 @@ namespace OpenDreamRuntime.Procs {
                 state.Push(new DreamValue(first.MustGetValueAsInteger() & second.MustGetValueAsInteger()));
             } else if (first.TryGetValueAsDreamList(out var list)) {
                 DreamList newList = state.Proc.ObjectTree.CreateList();
-                Dictionary<DreamValue, DreamValue> associativeValues = list.GetAssociativeValues();
+                Dictionary<DreamValue, DreamValue> associativeValues = list.GetPairs();
                 second.TryGetValueAsDreamList(out DreamList? secondList);
                 Dictionary<DreamValue, int>? remainingValues = null;
                 bool scalarAvailable = true;
 
                 if (secondList != null) {
                     remainingValues = new Dictionary<DreamValue, int>(secondList.GetLength());
-                    foreach (DreamValue value in secondList.EnumerateValues()) {
+                    foreach (DreamValue value in secondList.Enumerate()) {
                         remainingValues.TryGetValue(value, out int count);
                         remainingValues[value] = count + 1;
                     }
@@ -991,7 +944,7 @@ namespace OpenDreamRuntime.Procs {
                 // BYOND intersection retains min(left count, right count) occurrences in left-list order
                 // associative values come from the retained left pair
 
-                foreach (DreamValue value in list.EnumerateValues()) {
+                foreach (DreamValue value in list.Enumerate()) {
                     bool retained;
                     if (remainingValues != null) {
                         retained = remainingValues.TryGetValue(value, out int count) && count > 0;
@@ -1006,9 +959,9 @@ namespace OpenDreamRuntime.Procs {
                     if (!retained)
                         continue;
 
-                    newList.AddValue(value);
+                    newList.Add(value);
                     if (associativeValues.TryGetValue(value, out DreamValue associatedValue))
-                        newList.SetValue(value, associatedValue);
+                        newList.Set(value, associatedValue);
                 }
 
                 state.Push(new DreamValue(newList));
@@ -2135,7 +2088,7 @@ namespace OpenDreamRuntime.Procs {
                 if (!argListStack.TryGetValueAsDreamList(out var argList))
                     throw new DMException("Invalid gradient() arguments");
 
-                var argListValues = argList.GetValues();
+                var argListValues = argList.GetKeys();
 
                 gradientValues.EnsureCapacity(argListValues.Count - 1);
                 for (int i = 0; i < argListValues.Count; i++) {
@@ -2143,12 +2096,12 @@ namespace OpenDreamRuntime.Procs {
 
                     if (value.TryGetValueAsString(out var argumentKey)) {
                         if (argumentKey == "index") {
-                            gradientIndex = argList.GetValue(value);
+                            gradientIndex = argList.GetElement(value);
                             continue;
                         }
 
                         if (argumentKey == "space") {
-                            gradientColorSpace = argList.GetValue(value);
+                            gradientColorSpace = argList.GetElement(value);
                             continue;
                         }
                     }
@@ -2411,7 +2364,7 @@ namespace OpenDreamRuntime.Procs {
                 using var refValue = state.Proc.RefManager.LocateRef(refString);
 
                 if(container is not DreamObjectWorld && containerList is not null) { //if it's a valid ref, it's in world, we don't need to check
-                    state.Push(containerList.ContainsValue(refValue) ? refValue : DreamValue.Null);
+                    state.Push(containerList.ContainsKey(refValue) ? refValue : DreamValue.Null);
                 } else {
                     state.Push(refValue);
                 }
@@ -2422,7 +2375,7 @@ namespace OpenDreamRuntime.Procs {
                     return ProcStatus.Continue;
                 }
 
-                foreach (DreamValue containerItem in containerList.GetValues()) {
+                foreach (DreamValue containerItem in containerList.GetKeys()) {
                     DreamObjectDefinition itemDef;
                     if (containerItem.TryGetValueAsType(out var type)) {
                         itemDef = type.ObjectDefinition;
@@ -2447,7 +2400,7 @@ namespace OpenDreamRuntime.Procs {
                     return ProcStatus.Continue;
                 }
 
-                state.Push(containerList.ContainsValue(value) ? value : DreamValue.Null);
+                state.Push(containerList.ContainsKey(value) ? value : DreamValue.Null);
             }
 
             return ProcStatus.Continue;
@@ -2487,7 +2440,7 @@ namespace OpenDreamRuntime.Procs {
 
                 List<DreamValue> values;
                 if (value.TryGetValueAsDreamList(out var list)) {
-                    values = list.GetValues();
+                    values = list.GetKeys();
                 } else {
                     state.Push(value);
                     return ProcStatus.Continue;
@@ -2747,7 +2700,7 @@ namespace OpenDreamRuntime.Procs {
                 }
             } else if (receiver is DreamList list) {
                 // Output to every mob in the left-hand list.
-                foreach (var entry in list.GetValues()) {
+                foreach (var entry in list.GetKeys()) {
                     if (entry.TryGetValueAsDreamObject(out var entryObj)) {
                         if (entryObj is DreamObjectMob entryMob) {
                             entryMob.Connection?.OutputControl(message, control);
@@ -3049,34 +3002,34 @@ namespace OpenDreamRuntime.Procs {
         private static DreamValue BitXorValues(DreamObjectTree objectTree, DreamValue first, DreamValue second) {
             if (first.TryGetValueAsDreamList(out var list)) {
                 DreamList newList = objectTree.CreateList();
-                Dictionary<DreamValue, DreamValue> firstAssociations = list.GetAssociativeValues();
+                Dictionary<DreamValue, DreamValue> firstAssociations = list.GetPairs();
 
                 void AddValue(DreamValue value, Dictionary<DreamValue, DreamValue>? associations) {
-                    newList.AddValue(value);
+                    newList.Add(value);
                     if (associations?.TryGetValue(value, out DreamValue associatedValue) is true)
-                        newList.SetValue(value, associatedValue);
+                        newList.Set(value, associatedValue);
                 }
 
                 if (second.TryGetValueAsDreamList(out var secondList)) {
-                    Dictionary<DreamValue, DreamValue> secondAssociations = secondList.GetAssociativeValues();
-                    foreach (DreamValue value in list.EnumerateValues()) {
-                        if (!secondList.ContainsValue(value))
+                    Dictionary<DreamValue, DreamValue> secondAssociations = secondList.GetPairs();
+                    foreach (DreamValue value in list.Enumerate()) {
+                        if (!secondList.ContainsKey(value))
                             AddValue(value, firstAssociations);
                     }
 
-                    foreach (DreamValue value in secondList.EnumerateValues()) {
-                        if (!list.ContainsValue(value))
+                    foreach (DreamValue value in secondList.Enumerate()) {
+                        if (!list.ContainsKey(value))
                             AddValue(value, secondAssociations);
                     }
                 } else {
-                    bool secondInList = list.ContainsValue(second);
-                    foreach (DreamValue value in list.EnumerateValues()) {
+                    bool secondInList = list.ContainsKey(second);
+                    foreach (DreamValue value in list.Enumerate()) {
                         if (value != second)
                             AddValue(value, firstAssociations);
                     }
 
                     if (!secondInList) {
-                        newList.AddValue(second);
+                        newList.Add(second);
                     }
                 }
 
@@ -3103,36 +3056,36 @@ namespace OpenDreamRuntime.Procs {
                 return BitXorValues(objectTree, new DreamValue(first), second);
 
             DreamList replacement = objectTree.CreateList();
-            Dictionary<DreamValue, DreamValue> associations = first.GetAssociativeValues();
+            Dictionary<DreamValue, DreamValue> associations = first.GetPairs();
             bool removed = false;
 
             // compound list XOR toggles one occurrence
             // BYOND removes the first match and leaves later duplicates in place
-            foreach (DreamValue value in first.EnumerateValues()) {
+            foreach (DreamValue value in first.Enumerate()) {
                 if (!removed && value == second) {
                     removed = true;
                     continue;
                 }
 
-                replacement.AddValue(value);
+                replacement.Add(value);
                 if (associations.TryGetValue(value, out DreamValue associatedValue))
-                    replacement.SetValue(value, associatedValue);
+                    replacement.Set(value, associatedValue);
             }
 
             if (!removed)
-                replacement.AddValue(second);
+                replacement.Add(second);
 
             return new DreamValue(replacement);
         }
 
         private static void ReplaceListContents(DreamList target, DreamList replacement) {
-            Dictionary<DreamValue, DreamValue> replacementAssociations = replacement.GetAssociativeValues();
+            Dictionary<DreamValue, DreamValue> replacementAssociations = replacement.GetPairs();
             target.Cut();
 
-            foreach (DreamValue value in replacement.EnumerateValues()) {
-                target.AddValue(value);
+            foreach (DreamValue value in replacement.Enumerate()) {
+                target.Add(value);
                 if (replacementAssociations.TryGetValue(value, out DreamValue associatedValue))
-                    target.SetValue(value, associatedValue);
+                    target.Set(value, associatedValue);
             }
         }
 
@@ -3161,7 +3114,7 @@ namespace OpenDreamRuntime.Procs {
         private static DreamValue CalculateGradient(List<DreamValue> gradientValues, DreamValue colorSpaceValue, DreamValue indexValue) {
             if (gradientValues.Count == 1) {
                 if (gradientValues[0].TryGetValueAsDreamList(out var gradientList))
-                    gradientValues = gradientList.GetValues();
+                    gradientValues = gradientList.GetKeys();
             }
 
             if (gradientValues.Count == 0)
@@ -3493,7 +3446,7 @@ namespace OpenDreamRuntime.Procs {
             for (int i = 0; i < size; i++) {
                 float flt = state.ReadFloat();
 
-                list.AddValue(new DreamValue(flt));
+                list.Add(new DreamValue(flt));
             }
 
             state.Push(new DreamValue(list));
@@ -3508,7 +3461,7 @@ namespace OpenDreamRuntime.Procs {
             for (int i = 0; i < size; i++) {
                 string str = state.ReadString();
 
-                list.AddValue(new DreamValue(str));
+                list.Add(new DreamValue(str));
             }
 
             state.Push(new DreamValue(list));
@@ -3524,7 +3477,7 @@ namespace OpenDreamRuntime.Procs {
                 var reference = state.ReadReference();
                 using var value = state.GetReferenceValue(reference);
 
-                list.AddValue(value);
+                list.Add(value);
             }
 
             state.Push(new DreamValue(list));
@@ -3538,7 +3491,7 @@ namespace OpenDreamRuntime.Procs {
 
             for (int i = 0; i < size; i++) {
                 string resourcePath = state.ReadString();
-                list.AddValue(new DreamValue(state.Proc.DreamResourceManager.LoadResource(resourcePath)));
+                list.Add(new DreamValue(state.Proc.DreamResourceManager.LoadResource(resourcePath)));
             }
 
             state.Push(new DreamValue(list));

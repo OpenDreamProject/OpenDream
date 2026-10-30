@@ -268,7 +268,7 @@ internal class DMExpressionBuilder(ExpressionContext ctx, DMExpressionBuilder.Sc
             case DMASTTernary ternary:
                 var a = BuildExpression(ternary.A, inferredPath);
                 var b = BuildExpression(ternary.B, inferredPath);
-                var c = BuildExpression(ternary.C ?? new DMASTConstantNull(ternary.Location), inferredPath);
+                var c = BuildExpression(ternary.C, inferredPath);
 
                 if (b.ValType.TypePath != null && c.ValType.TypePath != null && b.ValType.TypePath != c.ValType.TypePath) {
                     Compiler.Emit(WarningCode.LostTypeInfo, ternary.Location,

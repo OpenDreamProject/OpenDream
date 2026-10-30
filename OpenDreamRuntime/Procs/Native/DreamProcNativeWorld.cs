@@ -209,7 +209,7 @@ internal static class DreamProcNativeWorld {
     [DreamProc("ODHotReloadResource")]
     [DreamProcParameter("file_name", Type = DreamValue.DreamValueTypeFlag.String)]
     public static DreamValue NativeProc_ODHotReloadResource(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-        if(!bundle.GetArgument(0, "file_name").TryGetValueAsString(out var fileName))
+        if (!bundle.GetArgument(0, "file_name").TryGetValueAsString(out var fileName))
             throw new ArgumentException("file_name must be a string");
         var dreamManager = IoCManager.Resolve<DreamManager>();
         dreamManager.HotReloadResource(fileName);

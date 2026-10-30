@@ -20,6 +20,9 @@ using System.Diagnostics.CodeAnalysis;
 namespace OpenDreamRuntime;
 
 public sealed partial class DreamManager {
+    /// <summary>
+    /// The DM world object.
+    /// </summary>
     public DreamObjectWorld WorldInstance { get; set; }
     public Exception? LastDMException { get; set; }
 
@@ -110,6 +113,10 @@ public sealed partial class DreamManager {
 
             using (Profiler.BeginZone("DM Execution", color: (uint)Color.LightPink.ToArgb()))
                 _procScheduler.Process();
+
+            using (Profiler.BeginZone("World/Tick()", color: (uint)Color.IndianRed.ToArgb())) {
+                WorldInstance.SpawnProc("Tick").Dispose();
+            }
 
             using (Profiler.BeginZone("Map Update", color: (uint)Color.LightPink.ToArgb())) {
                 UpdateStat();

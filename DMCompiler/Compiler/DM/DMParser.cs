@@ -152,6 +152,7 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_Bar,
             TokenType.DM_DoubleSquareBracket,
             TokenType.DM_DoubleSquareBracketEquals,
+            TokenType.DM_ConstantString,
         ];
 
         public DMASTFile File() {

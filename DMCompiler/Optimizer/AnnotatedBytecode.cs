@@ -19,11 +19,11 @@ internal sealed class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
     private readonly List<IAnnotatedBytecode> _args;
     private Location? _location;
 
-    public AnnotatedBytecodeInstruction(DreamProcOpcode opcode, int stackSizeDelta, Location location) {
+    public AnnotatedBytecodeInstruction(DreamProcOpcode opcode, OpcodeMetadata metadata, Location location) {
         Opcode = opcode;
-        StackSizeDelta = stackSizeDelta;
+        StackSizeDelta = metadata.StackDelta;
         Location = location;
-        _args = new(OpcodeMetadataCache.GetMetadata(opcode).RequiredArgs.Length);
+        _args = new(metadata.RequiredArgs.Length);
     }
 
     // Given an existing instruction, create a new instruction with the same opcode and stack delta, but with new args

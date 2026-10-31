@@ -16,6 +16,7 @@ using DMCompiler.DM.Builders;
 using DMCompiler.Json;
 using DMCompiler.Optimizer;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace DMCompiler;
 
@@ -33,11 +34,11 @@ public class DMCompiler {
     internal readonly DMObjectTree DMObjectTree;
     internal readonly DMProc GlobalInitProc;
     internal readonly BytecodeOptimizer BytecodeOptimizer;
+    internal DateTime CompileStartTime;
 
     private readonly Dictionary<WarningCode, ErrorLevel> _errorConfig;
     private readonly HashSet<string> _resourceDirectories = new();
     private string? _codeDirectory;
-    private DateTime _compileStartTime;
     private int _errorCount;
     private int _warningCount;
 
@@ -64,17 +65,11 @@ public class DMCompiler {
     public bool Compile(DMCompilerSettings settings) => Compile(settings, out _);
 
     public bool Compile(DMCompilerSettings settings, [NotNullWhen(true)] out DreamCompiledJson? compiledDream) {
-        if (_compileStartTime != default)
+        if (CompileStartTime != default)
             throw new Exception("Create a new DMCompiler to compile again");
 
-        UniqueEmissions.Clear();
         Settings = settings;
-        _resourceDirectories.Clear();
-        _searchedDirectories.Clear();
-        _searchedDirectoryFiles.Clear();
-        _errorCount = 0;
-        _warningCount = 0;
-        _compileStartTime = DateTime.Now;
+        CompileStartTime = DateTime.Now;
 
         //TODO: Only use InvariantCulture where necessary instead of it being the default
         CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
@@ -114,7 +109,7 @@ public class DMCompiler {
             Console.WriteLine($"Compilation failed with {_errorCount} errors and {_warningCount} warnings");
         }
 
-        TimeSpan duration = DateTime.Now - _compileStartTime;
+        TimeSpan duration = DateTime.Now - CompileStartTime;
         Console.WriteLine($"Total time: {duration:mm\\:ss}");
 
         return successfulCompile;
@@ -231,10 +226,10 @@ public class DMCompiler {
         DMLexer dmLexer = new DMLexer("<unknown>", preprocessedTokens);
         DMParser dmParser = new DMParser(this, dmLexer);
 
-        VerbosePrint("Parsing");
+        VerbosePrint($"Parsing");
         DMASTFile astFile = dmParser.File();
 
-        VerbosePrint("Building code tree");
+        VerbosePrint($"Building code tree");
         DMCodeTreeBuilder dmCodeTreeBuilder = new(this);
         dmCodeTreeBuilder.BuildCodeTree(astFile);
 
@@ -265,13 +260,16 @@ public class DMCompiler {
                 break;
         }
 
-        if (Settings.StoreMessages)
+        if (Settings.StoreMessages) {
             if (CompilerMessages.Count < 1000)
                 CompilerMessages.Add(emission.ToString());
             else {
                 Settings.StoreMessages = false;
-                CompilerMessages.Add(new CompilerEmission(ErrorLevel.Warning, null, "No longer storing error messages due to excessive error counts.").ToString());
+                CompilerMessages.Add(new CompilerEmission(ErrorLevel.Warning, null,
+                    "No longer storing error messages due to excessive error counts.").ToString());
             }
+        }
+
         UniqueEmissions.Add(emission.Code);
         emission.WriteConsole();
         return level == ErrorLevel.Error;
@@ -315,11 +313,11 @@ public class DMCompiler {
         Emit(WarningCode.UnsupportedAccess, loc, message);
     }
 
-    public void VerbosePrint(string message) {
+    /// Print a message only if <see cref="DMCompilerSettings.Verbose"/> is true
+    public void VerbosePrint([InterpolatedStringHandlerArgument("")] ref VerbosePrintStringHandler message) {
         if (!Settings.Verbose) return;
 
-        TimeSpan duration = DateTime.Now - _compileStartTime;
-        Console.WriteLine($"{duration:mm\\:ss\\.fffffff}: {message}");
+        Console.WriteLine(message.GetFormattedText());
     }
 
     private List<DreamMapJson> ConvertMaps(DMCompiler compiler, List<string> mapPaths) {
@@ -432,6 +430,40 @@ public class DMCompiler {
 
     public void SetPragma(WarningCode code, ErrorLevel level) {
         _errorConfig[code] = level;
+    }
+}
+
+/// A custom interpolated string handler that helps prevent allocations in <see cref="DMCompiler.VerbosePrint"/> calls.
+/// Formatted strings won't be constructed at all when <see cref="DMCompilerSettings.Verbose"/> is false.
+[InterpolatedStringHandler]
+public ref struct VerbosePrintStringHandler {
+    private DefaultInterpolatedStringHandler _handler;
+    private readonly bool _enabled;
+
+    public VerbosePrintStringHandler(int literalLength, int formattedCount, DMCompiler compiler) {
+        _enabled = compiler.Settings.Verbose;
+        if (!_enabled)
+            return;
+
+        _handler = new DefaultInterpolatedStringHandler(literalLength, formattedCount);
+
+        var duration = DateTime.Now - compiler.CompileStartTime;
+        AppendLiteral(duration.ToString(@"mm\:ss\.fffffff"));
+        AppendLiteral(": ");
+    }
+
+    public void AppendLiteral(string value) {
+        if (_enabled)
+            _handler.AppendLiteral(value);
+    }
+
+    public void AppendFormatted<T>(T value) {
+        if (_enabled)
+            _handler.AppendFormatted(value);
+    }
+
+    public string GetFormattedText() {
+        return _enabled ? _handler.ToStringAndClear() : string.Empty;
     }
 }
 

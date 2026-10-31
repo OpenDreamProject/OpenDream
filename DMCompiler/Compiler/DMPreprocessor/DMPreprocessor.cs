@@ -23,6 +23,7 @@ public sealed class DMPreprocessor(DMCompiler compiler, bool enableDirectives) :
     private bool _canUseDirective = true;
     private readonly HashSet<string> _includedFiles = new(5120); // Capacity Note: TG peaks at 4860 at time of writing
     private readonly Stack<Token> _unprocessedTokens = new(8192); // Capacity Note: TG peaks at 6802 at time of writing
+    private readonly List<Token> _expandedMacro = new(); // Reused List for assembling an expanded macro
 
     private readonly Dictionary<string, DMMacro> _defines = new(12288) { // Capacity Note: TG peaks at 9827 at time of writing. Current value is arbitrarily 4096 * 3.
         { "__LINE__", new DMMacroLine() },
@@ -483,10 +484,10 @@ public sealed class DMPreprocessor(DMCompiler compiler, bool enableDirectives) :
             return false;
         }
 
-        List<Token>? expandedTokens = macro.Expand(compiler, token, parameters);
-        if (expandedTokens != null) {
-            for (int i = expandedTokens.Count - 1; i >= 0; i--) {
-                Token expandedToken = expandedTokens[i];
+        macro.Expand(compiler, token, parameters, _expandedMacro);
+        if (_expandedMacro.Count > 0) {
+            for (int i = _expandedMacro.Count - 1; i >= 0; i--) {
+                Token expandedToken = _expandedMacro[i];
                 expandedToken.Location = token.Location;
 
                 // These tokens are pushed so that nested macros get processed
@@ -494,6 +495,7 @@ public sealed class DMPreprocessor(DMCompiler compiler, bool enableDirectives) :
             }
         }
 
+        _expandedMacro.Clear();
         return true;
     }
 

@@ -873,7 +873,7 @@ public sealed class DMProcState : ProcState {
                 GetIndexReferenceValues(reference, out var index, out var indexing, peek);
 
                 try {
-                    if (indexing.TryGetValueAsIDreamList(out var dreamList)) {
+                    if (indexing.TryGetValueAsDreamList(out var dreamList)) {
                         dreamList.Set(index, value);
                     } else if (indexing.TryGetValueAsDreamObject<DreamObject>(out var dreamObject)) {
                         dreamObject.OperatorIndexAssign(index, this, value);
@@ -1212,7 +1212,7 @@ public sealed class DMProcState : ProcState {
                         break;
 
                     int i = 0;
-                    foreach (var pair in argList.EnumeratePairs()) {
+                    foreach (var pair in argList.EnumerateLoosePairs()) {
                         values[i++] = (pair.Key, pair.Value);
                     }
 
@@ -1299,7 +1299,7 @@ public sealed class DMProcState : ProcState {
                     if (proc.OwningType == _state.Proc.ObjectTree.MutableAppearance && proc.Name == "New")
                         proc = _state.Proc.DreamManager.ImageConstructor;
 
-                    var listValues = argList.GetKeys();
+                    var listValues = argList.CopyKeys();
                     var arguments = new DreamValue[Math.Max(listValues.Count, proc.ArgumentNames.Count)];
                     var skippingArg = false;
                     var isImageConstructor = proc == _state.Proc.DreamManager.ImageConstructor ||

@@ -13,8 +13,13 @@ internal static class DreamProcNativeDatabaseQuery {
 
         query.ClearCommand();
 
-        if (!bundle.GetArgument(0, "text").TryGetValueAsString(out var command)) {
+        var commandArgument = bundle.GetArgument(0, "text");
+        if (commandArgument.IsNull) {
             return DreamValue.Null;
+        }
+
+        if (!commandArgument.TryGetValueAsString(out var command)) {
+            throw new DMCrashRuntime("Invalid database query text");
         }
 
         query.SetupCommand(command, bundle.Arguments[1..]);
@@ -46,7 +51,7 @@ internal static class DreamProcNativeDatabaseQuery {
         var query = (DreamObjectDatabaseQuery)src!;
 
         if (bundle.GetArgument(0, "column").TryGetValueAsInteger(out var column)) {
-            return query.GetColumn(column);
+            return query.GetColumnName(column);
         }
 
         var list = bundle.ObjectTree.CreateList();
@@ -76,16 +81,26 @@ internal static class DreamProcNativeDatabaseQuery {
     }
 
     [DreamProc("Execute")]
-    [DreamProcParameter("database", Type = DreamValueTypeFlag.DreamObject)]
+    [DreamProcParameter("database", Type = DreamValueTypeFlag.String | DreamValueTypeFlag.DreamObject)]
     public static DreamValue NativeProc_Execute(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
         var query = (DreamObjectDatabaseQuery)src!;
 
-        if (!bundle.GetArgument(0, "database").TryGetValueAsDreamObject(out DreamObjectDatabase? database))
-            return DreamValue.Null;
+        var databaseArg = bundle.GetArgument(0, "database");
+        if (!databaseArg.TryGetValueAsDreamObject(out DreamObjectDatabase? database)) {
+            // Execute(filename) executes against a database opened from the given file path.
+            if (!databaseArg.TryGetValueAsString(out var filename))
+                throw new DMCrashRuntime("Bad database");
 
-        query.ExecuteCommand(database);
+            database = (DreamObjectDatabase)bundle.ObjectTree.CreateObject(bundle.ObjectTree.Database);
+            database.InitSpawn(new DreamProcArguments(new DreamValue(filename)));
+            query.SetTemporaryDatabase(database);
+        }
 
-        return DreamValue.Null;
+        // BYOND treats Execute() on a query without a command as a no-op failure.
+        if (!query.HasCommand)
+            return new DreamValue(0);
+
+        return new DreamValue(query.ExecuteCommand(database) ? 1 : 0);
     }
 
     [DreamProc("RowsAffected")]
@@ -99,9 +114,8 @@ internal static class DreamProcNativeDatabaseQuery {
     public static DreamValue NativeProc_NextRow(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
         var query = (DreamObjectDatabaseQuery)src!;
 
-        query.NextRow();
-
-        return DreamValue.Null;
+        // DM semantics: returns true while a row was read, false when exhausted.
+        return new DreamValue(query.NextRow() ? 1 : 0);
     }
 
     [DreamProc("GetColumn")]
@@ -113,7 +127,7 @@ internal static class DreamProcNativeDatabaseQuery {
             return DreamValue.Null;
         }
 
-        if (!query.TryGetColumn(column, out var value)) {
+        if (!query.TryGetColumnValue(column, out var value)) {
             return DreamValue.Null;
         }
 

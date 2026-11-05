@@ -17,18 +17,18 @@ internal sealed class BrowsePopup {
     public BrowsePopup(
         string name,
         Vector2i size,
-        IClydeWindow ownerWindow) {
-        WindowDescriptor popupWindowDescriptor = new WindowDescriptor(name,
-            new() {
-                new ControlDescriptorBrowser {
-                    Id = new DMFPropertyString("browser"),
-                    Size = new DMFPropertySize(size),
-                    Anchor1 = new DMFPropertyPos(0, 0),
-                    Anchor2 = new DMFPropertyPos(100, 100)
-                }
-            }) {
-                Size = new DMFPropertySize(size)
-            };
+        IClydeWindow ownerWindow,
+        WindowDescriptor? descriptor = null) {
+        WindowDescriptor popupWindowDescriptor = descriptor ?? new WindowDescriptor(name) {
+            Size = new DMFPropertySize(size)
+        };
+
+        popupWindowDescriptor.ControlDescriptors.Add(new ControlDescriptorBrowser {
+            Id = new DMFPropertyString("browser"),
+            Size = new DMFPropertySize(size),
+            Anchor1 = new DMFPropertyPos(0, 0),
+            Anchor2 = new DMFPropertyPos(100, 100),
+        });
 
         WindowElement = new ControlWindow(popupWindowDescriptor);
         WindowElement.CreateChildControls();

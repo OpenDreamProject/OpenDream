@@ -204,7 +204,7 @@ public sealed class DreamObjectMatrix(DreamObjectDefinition objectDefinition) : 
     }
 
     public override DreamValue OperatorNot(DMProcState state) {
-        throw new InvalidOperationException("/matrix does not support the '~' operator yet");
+        throw new NotImplementedException("/matrix does not support the '~' operator yet");
     }
 
     #endregion Operators

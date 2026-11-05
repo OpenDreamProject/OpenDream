@@ -218,7 +218,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         return OperatorAdd(b, state);
     }
 
-    public override DreamValue OperatorCombine(DreamValue b) {
+    public override DreamValue OperatorCombine(DreamValue b, DMProcState state) {
         return OperatorAppend(b);
     }
 
@@ -256,7 +256,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         return new DreamValue(this);
     }
 
-    public override DreamValue OperatorMask(DreamValue b) {
+    public override DreamValue OperatorMask(DreamValue b, DMProcState state) {
         if (b.TryGetValueAsIDreamList(out var bList)) {
             if (bList != this) {
                 foreach (var value in ToArray()) {

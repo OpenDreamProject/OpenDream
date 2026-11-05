@@ -924,50 +924,14 @@ namespace OpenDreamRuntime.Procs {
             using var second = state.Pop();
             using var first = state.Pop();
 
-            if (!first.IsDreamObject<DreamList>() && !first.IsNull && !second.IsNull) {
-                state.Push(new DreamValue(first.MustGetValueAsInteger() & second.MustGetValueAsInteger()));
-            } else if (first.TryGetValueAsDreamList(out var list)) {
-                DreamList newList = state.Proc.ObjectTree.CreateList();
-                Dictionary<DreamValue, DreamValue> associativeValues = list.GetPairs();
-                second.TryGetValueAsDreamList(out DreamList? secondList);
-                Dictionary<DreamValue, int>? remainingValues = null;
-                bool scalarAvailable = true;
-
-                if (secondList != null) {
-                    remainingValues = new Dictionary<DreamValue, int>(secondList.GetLength());
-                    foreach (DreamValue value in secondList.Enumerate()) {
-                        remainingValues.TryGetValue(value, out int count);
-                        remainingValues[value] = count + 1;
-                    }
-                }
-
-                // BYOND intersection retains min(left count, right count) occurrences in left-list order
-                // associative values come from the retained left pair
-
-                foreach (DreamValue value in list.Enumerate()) {
-                    bool retained;
-                    if (remainingValues != null) {
-                        retained = remainingValues.TryGetValue(value, out int count) && count > 0;
-                        if (retained)
-                            remainingValues[value] = count - 1;
-                    } else {
-                        retained = scalarAvailable && value == second;
-                        if (retained)
-                            scalarAvailable = false;
-                    }
-
-                    if (!retained)
-                        continue;
-
-                    newList.Add(value);
-                    if (associativeValues.TryGetValue(value, out DreamValue associatedValue))
-                        newList.Set(value, associatedValue);
-                }
-
-                state.Push(new DreamValue(newList));
-                newList.DecRef();
+            if(first.Type == DreamValue.DreamValueType.Float && (second.Type == DreamValue.DreamValueType.Float || second.IsNull)) {
+                state.Push(new((int)first.UnsafeGetValueAsFloat() & (int)second.UnsafeGetValueAsFloat()));
+            } else if(first.IsNull) { // null just ignores the right hand
+                state.Push(new(0));
+            } else if (first.TryGetValueAsDreamObject(out var dreamObject)) {
+                state.Push(dreamObject!.OperatorAnd(second, state));
             } else {
-                state.Push(new DreamValue(0));
+                throw new DMException($"invalid operation {first} & {second}");
             }
 
             return ProcStatus.Continue;
@@ -978,11 +942,9 @@ namespace OpenDreamRuntime.Procs {
 
             if (input.TryGetValueAsInteger(out var value)) {
                 state.Push(new DreamValue((~value) & 0xFFFFFF));
+            } else if (input.TryGetValueAsDreamObject(out var obj) && obj != null) {
+                state.Push(obj.OperatorNot(state));
             } else {
-                if (input.TryGetValueAsDreamObject<DreamObjectMatrix>(out _)) { // TODO ~ on /matrix
-                    throw new NotImplementedException("/matrix does not support the '~' operator yet");
-                }
-
                 state.Push(new DreamValue(16777215)); // 2^24 - 1
             }
 
@@ -1185,7 +1147,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue result;
             if (first.TryGetValueAsDreamObject(out var firstObj)) {
                 if (firstObj != null) {
-                    using var opResult = firstObj.OperatorCombine(second);
+                    using var opResult = firstObj.OperatorCombine(second, state);
 
                     state.PopReference(reference);
                     state.Push(opResult);
@@ -1273,7 +1235,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue result;
             switch (first.Type) {
                 case DreamValue.DreamValueType.DreamObject when !first.IsNull: {
-                    using var opResult = first.MustGetValueAsDreamObject()!.OperatorMask(second);
+                    using var opResult = first.MustGetValueAsDreamObject()!.OperatorMask(second, state);
 
                     state.PopReference(reference);
                     state.Push(opResult);

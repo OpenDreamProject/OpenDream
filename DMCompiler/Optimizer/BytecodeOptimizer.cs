@@ -29,38 +29,27 @@ public class BytecodeOptimizer(DMCompiler compiler) {
     }
 
     private void RemoveUnreferencedLabels(List<IAnnotatedBytecode> input) {
-        Dictionary<string, int>? labelReferences = null;
-        for (int i = 0; i < input.Count; i++) {
-            switch (input[i]) {
-                case AnnotatedBytecodeLabel label:
-                    labelReferences ??= new Dictionary<string, int>();
-                    labelReferences.TryAdd(label.LabelName, 0);
-                    break;
-                case AnnotatedBytecodeInstruction instruction: {
-                    if (TryGetLabelName(instruction, out string? labelName)) {
-                        labelReferences ??= new Dictionary<string, int>();
-                        if (!labelReferences.TryAdd(labelName, 1)) {
-                            labelReferences[labelName] += 1;
-                        }
-                    }
+        HashSet<string>? referencedLabels = null;
+        foreach (var bytecode in input) {
+            if (bytecode is not AnnotatedBytecodeInstruction instruction)
+                continue;
+            if (!TryGetLabelName(instruction, out string? labelName))
+                continue;
 
-                    break;
-                }
-            }
+            referencedLabels ??= new HashSet<string>();
+            referencedLabels.Add(labelName);
         }
 
-        if (labelReferences == null) return;
-        var labelCount = labelReferences.Count;
+        if (referencedLabels == null)
+            return;
 
         for (int i = 0; i < input.Count; i++) {
-            if (input[i] is AnnotatedBytecodeLabel label) {
-                if (labelReferences[label.LabelName] == 0) {
-                    input.RemoveAt(i);
-                    i -= 1;
-                }
+            if (input[i] is not AnnotatedBytecodeLabel label)
+                continue;
 
-                labelCount -= 1;
-                if (labelCount <= 0) break;
+            if (!referencedLabels.Contains(label.LabelName)) {
+                input.RemoveAt(i);
+                i -= 1;
             }
         }
     }

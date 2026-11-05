@@ -1929,6 +1929,7 @@ namespace DMCompiler.Compiler.DM {
                 Whitespace();
 
                 DMASTExpression? c = ExpressionTernary(isTernaryB);
+                RequireExpression(ref c);
 
                 return new DMASTTernary(a.Location, a, b, c);
             }

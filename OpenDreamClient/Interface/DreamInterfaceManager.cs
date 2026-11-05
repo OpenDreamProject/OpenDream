@@ -673,7 +673,10 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
     }
 
     private DMFParser? ParseDmfParams(string dmfParams, out Func<bool> checkErrors) {
+        // The server runs these through list2params first, which url-encodes values
+        winsetParams = HttpUtility.UrlDecode(winsetParams);
         checkErrors = null!;
+
         DMFParser parser;
         try {
             var lexer = new DMFLexer(dmfParams);

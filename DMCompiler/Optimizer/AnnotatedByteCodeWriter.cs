@@ -49,7 +49,7 @@ internal class AnnotatedByteCodeWriter(DMCompiler compiler) {
 
         // Goal here is to maintain correspondence between the raw bytecode and the annotated bytecode such that
         // the annotated bytecode can be used to generate the raw bytecode again.
-        _annotatedBytecode.Add(new AnnotatedBytecodeInstruction(opcode, metadata.StackDelta, location));
+        _annotatedBytecode.Add(new AnnotatedBytecodeInstruction(opcode, metadata, location));
 
         ResizeStack(metadata.StackDelta);
     }

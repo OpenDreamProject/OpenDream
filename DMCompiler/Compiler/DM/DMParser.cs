@@ -187,6 +187,9 @@ namespace DMCompiler.Compiler.DM {
                 CurrentPath = oldPath;
 
                 if (statement != null) {
+                    // Anyone using DMASTInvalidStatement should already be doing their own error emission and cleanup
+                    if (statement is DMASTInvalidStatement) continue;
+
                     if (!PeekDelimiter() && Current().Type is not (TokenType.DM_Dedent or TokenType.DM_RightCurlyBracket or TokenType.EndOfFile)) {
                         Emit(WarningCode.BadToken, "Expected end of object statement");
                     }
@@ -208,6 +211,21 @@ namespace DMCompiler.Compiler.DM {
             if (Current().Type == TokenType.DM_Semicolon) { // A lone semicolon creates a "null statement" (like C)
                 // Note that we do not consume the semicolon here
                 return new DMASTNullStatement(loc);
+            }
+
+            // An object definition with ..() in it for some reason,
+            // or ..() over-dedented til it doesn't get parsed in the proc body it was intended for
+            if (Check(TokenType.DM_SuperProc)) {
+                // This is already a rare edge case of no-op DM,
+                // I'm hoping we can get away with not putting too much effort into parsing in-between the parentheses
+                Check(TokenType.DM_LeftParenthesis);
+                DefinitionParameters(out _);
+                Check(TokenType.DM_RightParenthesis);
+                Whitespace();
+
+                Compiler.Emit(WarningCode.PointlessParentCall, loc,
+                    "Calling parent via ..() outside of a proc definition does nothing");
+                return new DMASTInvalidStatement(loc);
             }
 
             DMASTPath? path = Path(isVarOrProcDecl: true);

@@ -1,0 +1,15 @@
+// Converts a filter texture to premultiplied sRGB, the color space BYOND filters work in
+
+light_mode unshaded;
+blend_mode none;
+uniform bool isPlaneMaster;
+
+void fragment() {
+    highp vec4 color = zTexture(UV);
+    if (isPlaneMaster)
+        color.rgb = color.a > 0.0 ? color.rgb / color.a : vec3(0.0);
+
+    color = zToSrgb(color);
+    color.rgb *= color.a;
+    COLOR = color;
+}

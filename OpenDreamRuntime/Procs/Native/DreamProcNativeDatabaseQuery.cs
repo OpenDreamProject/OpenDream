@@ -81,7 +81,11 @@ internal static class DreamProcNativeDatabaseQuery {
         var query = (DreamObjectDatabaseQuery)src!;
 
         if (!bundle.GetArgument(0, "database").TryGetValueAsDreamObject(out DreamObjectDatabase? database))
-            return DreamValue.Null;
+            if (query.DreamObjectDatabase != null) {
+                database = query.DreamObjectDatabase;
+            } else {
+                throw new DMCrashRuntime("Bad Database: no database provided");
+            }
 
         query.ExecuteCommand(database);
 

@@ -22,16 +22,9 @@
 - type: shader
   id: blur
   kind: source
-  path: "/Shaders/blur_horizontal.swsl"
+  path: "/Shaders/blur.swsl"
   params:
-    size: 1
-
-- type: shader
-  id: blur_vertical
-  kind: source
-  path: "/Shaders/blur_vertical.swsl"
-  params:
-    size: 1
+    taps: 0
 
 - type: shader
   id: blockcolor
@@ -70,6 +63,16 @@
   params:
     colorMatrix: 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1
     offsetVector: 0,0,0,0
+
+- type: shader
+  id: filter_to_srgb
+  kind: source
+  path: "/Shaders/filter_to_srgb.swsl"
+
+- type: shader
+  id: filter_from_srgb
+  kind: source
+  path: "/Shaders/filter_from_srgb.swsl"
 
 #unimplemented shaders point to empty.swsl and do nothing
 

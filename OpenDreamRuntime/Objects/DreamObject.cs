@@ -461,6 +461,12 @@ public class DreamObject {
         throw new InvalidOperationException($"Addition cannot be done between {this} and {b}");
     }
 
+    // +=
+    [MustDisposeResource]
+    public virtual DreamValue OperatorAppend(DreamValue b) {
+        throw new InvalidOperationException($"Cannot append {b} to {this}");
+    }
+
     // -
     [MustDisposeResource]
     public virtual DreamValue OperatorSubtract(DreamValue b, DMProcState state) {
@@ -468,6 +474,12 @@ public class DreamObject {
             return result;
 
         throw new InvalidOperationException($"Subtraction cannot be done between {this} and {b}");
+    }
+
+    // -=
+    [MustDisposeResource]
+    public virtual DreamValue OperatorRemove(DreamValue b) {
+        throw new InvalidOperationException($"Cannot remove {b} from {this}");
     }
 
     // *
@@ -482,12 +494,11 @@ public class DreamObject {
     // *=
     [MustDisposeResource]
     public virtual DreamValue OperatorMultiplyRef(DreamValue b, DMProcState state) {
-        if (TryExecuteOperatorOverload(state, "operator*=", new(b), out var result))
-            return result;
-        if (TryExecuteOperatorOverload(state, "operator*", new(b), out result))
+        var args = new DreamProcArguments(b);
+        if (TryExecuteOperatorOverload(state, "operator*=", args, out var result))
             return result;
 
-        throw new InvalidOperationException($"Multiplication cannot be done between {this} and {b}");
+        return OperatorMultiply(b, state);
     }
 
     // /
@@ -506,43 +517,52 @@ public class DreamObject {
         if (TryExecuteOperatorOverload(state, "operator/=", args, out var result))
             return result;
 
-        if (TryExecuteOperatorOverload(state, "operator/", args, out result))
-            return result;
-
-        throw new InvalidOperationException($"Division cannot be done between {this} and {b}");
+        return OperatorDivide(b, state);
     }
 
     // |
     [MustDisposeResource]
     public virtual DreamValue OperatorOr(DreamValue b, DMProcState state) {
-        if (TryExecuteOperatorOverload(state, "operator|", new DreamProcArguments(b), out var result))
+        if (TryExecuteOperatorOverload(state, "operator|", new(b), out var result))
             return result;
 
         throw new InvalidOperationException($"Cannot or {this} and {b}");
     }
 
-    // +=
-    [MustDisposeResource]
-    public virtual DreamValue OperatorAppend(DreamValue b) {
-        throw new InvalidOperationException($"Cannot append {b} to {this}");
-    }
-
-    // -=
-    [MustDisposeResource]
-    public virtual DreamValue OperatorRemove(DreamValue b) {
-        throw new InvalidOperationException($"Cannot remove {b} from {this}");
-    }
-
     // |=
     [MustDisposeResource]
-    public virtual DreamValue OperatorCombine(DreamValue b) {
-        throw new InvalidOperationException($"Cannot combine {this} and {b}");
+    public virtual DreamValue OperatorCombine(DreamValue b, DMProcState state) {
+        if (TryExecuteOperatorOverload(state, "operator|=", new(b), out var result))
+            return result;
+
+        return OperatorOr(b, state);
+    }
+
+    // &
+    [MustDisposeResource]
+    public virtual DreamValue OperatorAnd(DreamValue b, DMProcState state) {
+        if (TryExecuteOperatorOverload(state, "operator&", new(b), out var result))
+            return result;
+
+        throw new InvalidOperationException($"Cannot and {this} and {b}");
     }
 
     // &=
     [MustDisposeResource]
-    public virtual DreamValue OperatorMask(DreamValue b) {
-        throw new InvalidOperationException($"Cannot mask {this} and {b}");
+    public virtual DreamValue OperatorMask(DreamValue b, DMProcState state) {
+        if (TryExecuteOperatorOverload(state, "operator&=", new(b), out var result))
+            return result;
+
+        return OperatorAnd(b, state);
+    }
+
+    // ~
+    [MustDisposeResource]
+    public virtual DreamValue OperatorNot(DMProcState state) {
+        if (TryExecuteOperatorOverload(state, "operator~", new(), out var result))
+            return result;
+
+        return new(16777215);
     }
 
     // ~=

@@ -162,10 +162,6 @@ public sealed class DreamObjectMatrix(DreamObjectDefinition objectDefinition) : 
         return base.OperatorDivide(b, state);
     }
 
-    public override DreamValue OperatorDivideRef(DreamValue b, DMProcState state) {
-        return OperatorDivide(b, state);
-    }
-
     public override DreamValue OperatorEquivalent(DreamValue b) {
         if (!b.TryGetValueAsDreamObject<DreamObjectMatrix>(out var right))
             return DreamValue.False;
@@ -206,6 +202,11 @@ public sealed class DreamObjectMatrix(DreamObjectDefinition objectDefinition) : 
 
         return base.OperatorRemove(b);
     }
+
+    public override DreamValue OperatorNot(DMProcState state) {
+        throw new InvalidOperationException("/matrix does not support the '~' operator yet");
+    }
+
     #endregion Operators
 
     #region Helpers

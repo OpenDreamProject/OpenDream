@@ -86,11 +86,11 @@
 	NEVER_OP(<<); COMPLEX_OP(<<=)
 		EXPECT_ARGS(1)
 		caught_result = "[id]<<=[args[1]]"
-		LOG_OP(caught_result)
+		LOG_OP(SENTINEL_VALUE)
 	NEVER_OP(>>); COMPLEX_OP(>>=)
 		EXPECT_ARGS(1)
 		caught_result = "[id]>>=[args[1]]"
-		LOG_OP(caught_result)
+		LOG_OP(SENTINEL_VALUE)
 	SIMPLE_OP(:=)
 
 /special

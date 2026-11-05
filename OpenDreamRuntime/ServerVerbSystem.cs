@@ -283,7 +283,7 @@ public sealed partial class ServerVerbSystem : VerbSystem {
                 if (verbInfo.Range < 0)
                     return false;
 
-                DreamList viewCollection;
+                DantomList viewCollection;
                 if(verbAccessibility.IsRange()) {
                     viewCollection = DreamProcNativeHelpers.HandleRange(connection.Mob, new(verbInfo.Range), !verbAccessibility.IsO());
                 } else { // TODO implement view

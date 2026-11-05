@@ -8,7 +8,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("Add")]
         [DreamProcParameter("Item1")]
         public static DreamValue NativeProc_Add(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            IDreamList list = (IDreamList)src!;
+            DreamList list = (DreamList)src!;
 
             foreach (var argument in bundle.Arguments) {
                 if (argument.TryGetValueAsDreamList(out var argumentList)) {
@@ -29,16 +29,16 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_Copy(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             int start = bundle.GetArgument(0, "Start").MustGetValueAsInteger(); //1-indexed
             int end = bundle.GetArgument(1, "End").MustGetValueAsInteger(); //1-indexed
-            IDreamList list = (IDreamList)src!;
+            DreamList list = (DreamList)src!;
 
-            if (list is DreamList) {
-                DreamList listCopy = (DreamList)list.CreateCopy(start, end);
+            if (list is DantomList) {
+                DantomList listCopy = list.ToDantomList(start, end);
                 return new DreamValue(listCopy);
             } else if (list is DreamAssocList) {
-                DreamAssocList listCopy = (DreamAssocList)list.CreateCopy(start, end);
+                DreamAssocList listCopy = (DreamAssocList)list.ToCopy(start, end);
                 return new DreamValue(listCopy);
             } else {
-                throw new Exception("Unhandled IDreamList child in NativeProc_Copy.");
+                throw new Exception("Unhandled DreamListAbstract child in NativeProc_Copy.");
             }
         }
 
@@ -48,7 +48,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_Cut(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             int start = bundle.GetArgument(0, "Start").MustGetValueAsInteger(); //1-indexed
             int end = bundle.GetArgument(1, "End").MustGetValueAsInteger(); //1-indexed
-            IDreamList list = (IDreamList)src!;
+            DreamList list = (DreamList)src!;
 
             list.Cut(start, end);
             return DreamValue.Null;
@@ -63,7 +63,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!bundle.GetArgument(1, "Start").TryGetValueAsInteger(out var start)) //1-indexed
                 start = 1; // 1 if non-number
             bundle.GetArgument(2, "End").TryGetValueAsInteger(out var end); //1-indexed, 0 if non-number
-            IDreamList list = (IDreamList)src!;
+            DreamList list = (DreamList)src!;
 
             return new(list.FindIndex(element, start, end));
         }
@@ -73,7 +73,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Item1")]
         public static DreamValue NativeProc_Insert(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             int index = bundle.GetArgument(0, "Index").MustGetValueAsInteger(); //1-indexed
-            DreamList list = (DreamList)src!;
+            DantomList list = (DantomList)src!;
 
             if (index <= 0) index = list.GetLength() + 1;
             if (bundle.Arguments.Length < 2) throw new DMException("No value given to insert");
@@ -98,8 +98,8 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
         [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
         public static DreamValue NativeProc_Join(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            IDreamList list = (IDreamList)src!;
-            List<DreamValue> values = list.GetKeys();
+            DreamList list = (DreamList)src!;
+            List<DreamValue> values = list.CopyKeys();
 
             bundle.GetArgument(0, "Glue").TryGetValueAsString(out var glue);
             if (!bundle.GetArgument(1, "Start").TryGetValueAsInteger(out var start))
@@ -129,14 +129,14 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("Remove")]
         [DreamProcParameter("Item1")]
         public static DreamValue NativeProc_Remove(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            IDreamList list = (IDreamList)src!;
+            DreamList list = (DreamList)src!;
             return new DreamValue(ListRemove(list, bundle.Arguments) > 0 ? 1 : 0);
         }
 
         [DreamProc("RemoveAll")]
         [DreamProcParameter("Item1")]
         public static DreamValue NativeProc_RemoveAll(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            IDreamList list = (IDreamList)src!;
+            DreamList list = (DreamList)src!;
             var totalRemoved = 0;
             int removed;
             do {
@@ -147,10 +147,10 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(totalRemoved);
         }
 
-        private static int ListRemove(IDreamList list, ReadOnlySpan<DreamValue> args) {
+        private static int ListRemove(DreamList list, ReadOnlySpan<DreamValue> args) {
             var itemRemoved = 0;
             foreach (var argument in args) {
-                if (argument.TryGetValueAsIDreamList(out var argumentList)) {
+                if (argument.TryGetValueAsDreamList(out var argumentList)) {
                     if (argumentList ==  list) {
                         itemRemoved += list.GetLength();
                         list.Cut();
@@ -183,7 +183,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_Splice(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             int startIndex = bundle.GetArgument(0, "Start").MustGetValueAsInteger(); //1-indexed
             int end = bundle.GetArgument(1, "End").MustGetValueAsInteger(); //1-indexed
-            IDreamList list = (IDreamList)src!;
+            DreamList list = (DreamList)src!;
             if (list is DreamAssocList) {
                 throw new DMException("special list may not be spliced");
             }
@@ -213,7 +213,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Index1", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("Index2", Type = DreamValueTypeFlag.Float)]
         public static DreamValue NativeProc_Swap(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            IDreamList list = (IDreamList)src!;
+            DreamList list = (DreamList)src!;
             int index1 = bundle.GetArgument(0, "Index1").MustGetValueAsInteger();
             int index2 = bundle.GetArgument(1, "Index2").MustGetValueAsInteger();
 

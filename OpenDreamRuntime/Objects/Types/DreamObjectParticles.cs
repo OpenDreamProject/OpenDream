@@ -67,7 +67,7 @@ public sealed class DreamObjectParticles : DreamObject {
     }
 
     private bool TryConvertVector(DreamValue value, out Vector3 newVec) {
-        if (value.TryGetValueAsIDreamList(out var vectorList) && vectorList.GetLength() >= 3) {
+        if (value.TryGetValueAsDreamList(out var vectorList) && vectorList.GetLength() >= 3) {
             using var boundXValue = vectorList.GetElement(new(1));
             using var boundYValue = vectorList.GetElement(new(2));
             using var boundZValue = vectorList.GetElement(new(3));
@@ -145,7 +145,7 @@ public sealed class DreamObjectParticles : DreamObject {
                 break;
             case "icon": //list or icon
                 _icons.Clear();
-                if (value.TryGetValueAsIDreamList(out var iconList)) {
+                if (value.TryGetValueAsDreamList(out var iconList)) {
                     foreach (DreamValue iconValue in iconList.Enumerate()) {
                         if (!DreamResourceManager.TryLoadIcon(iconValue, out var iconRsc))
                             continue;
@@ -173,7 +173,7 @@ public sealed class DreamObjectParticles : DreamObject {
                 break;
             case "icon_state": //list or string
                 _iconStates.Clear();
-                if (value.TryGetValueAsIDreamList(out var iconStateList)) {
+                if (value.TryGetValueAsDreamList(out var iconStateList)) {
                     foreach (DreamValue iconValue in iconStateList.Enumerate()) {
                         if (!iconValue.TryGetValueAsString(out var iconState))
                             continue;

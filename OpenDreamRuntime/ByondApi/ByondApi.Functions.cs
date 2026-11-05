@@ -415,7 +415,7 @@ public static unsafe partial class ByondApi {
                 return SetLastError("loc argument was not a list");
             }
 
-            var srcDreamVals = srcList.GetPairs();
+            var srcDreamVals = srcList.GetTightPairs();
             int length = srcDreamVals.Count * 2;
             *len = (uint)length;
             if (list == null)
@@ -933,7 +933,7 @@ public static unsafe partial class ByondApi {
                 var objectDef = treeEntry.ObjectDefinition;
 
                 using var arglistVal = ValueFromDreamApi(*cArglist);
-                if (!arglistVal.TryGetValueAsIDreamList(out var arglist))
+                if (!arglistVal.TryGetValueAsDreamList(out var arglist))
                     return SetLastError("cArglist argument was not a list");
 
                 // Copy the arglist's values to a new array to ensure no shenanigans

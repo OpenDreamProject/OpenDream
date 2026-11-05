@@ -167,8 +167,8 @@ public sealed partial class DreamRefManager {
                 DreamObjectSavefile savefile => CreateRef(RefType.DreamObjectSavefile, savefile),
                 ProcArgsList argsList => CreateRef(RefType.DreamObjectListArgs, argsList),
                 DreamAssocList assocList => CreateRef(RefType.DreamObjectAssocList, assocList),
-                DreamList list when list.GetType() == typeof(DreamList) => CreateRef(RefType.DreamObjectList, list),
-                DreamList list => CreateRef(RefType.DreamObjectSpecialList, list),
+                DantomList list when list.GetType() == typeof(DantomList) => CreateRef(RefType.DreamObjectList, list),
+                DantomList list => CreateRef(RefType.DreamObjectSpecialList, list),
                 _ => CreateRef(RefType.DreamObjectDatum, dreamObject)
             };
         }

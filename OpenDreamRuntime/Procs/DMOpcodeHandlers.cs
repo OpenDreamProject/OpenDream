@@ -924,9 +924,9 @@ namespace OpenDreamRuntime.Procs {
             using var second = state.Pop();
             using var first = state.Pop();
 
-            if(first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
+            if(first.Type == DreamValue.DreamValueType.Float && (second.Type == DreamValue.DreamValueType.Float || second.IsNull)) {
                 state.Push(new((int)first.UnsafeGetValueAsFloat() & (int)second.UnsafeGetValueAsFloat()));
-            } else if(first.IsNull) { // null ignores the right hand
+            } else if(first.IsNull) { // null just ignores the right hand
                 state.Push(new(0));
             } else if (first.TryGetValueAsDreamObject(out var dreamObject)) {
                 state.Push(dreamObject!.OperatorAnd(second, state));

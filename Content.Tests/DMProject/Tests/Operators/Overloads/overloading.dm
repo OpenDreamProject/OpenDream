@@ -1,5 +1,4 @@
-/proc/__operator_test_error(reason) {throw EXCEPTION(reason)}
-#define SAFE_CRASH(reason) __operator_test_error(reason)
+/proc/SAFE_CRASH(reason) {throw EXCEPTION(reason)}
 
 #define EXPECT_ARGS(num...) if(!(args.len in list(num))) {SAFE_CRASH("[type]'s [callee.name] received [args.len] args when expecting [list(num).Join(" or ")]")}
 #define LOG_OP(str) return (str)

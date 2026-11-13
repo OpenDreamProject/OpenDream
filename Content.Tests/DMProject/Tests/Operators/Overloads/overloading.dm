@@ -263,6 +263,6 @@
 		operator = _op_cache
 
 		/* Misc */
-		// VALIDATE_OP(operator, turn(operator, 90), "turn(A,B)") // BYOND bug
+		// VALIDATE_OP(operator, turn(operator, 90), "turn(A,B)") 
 		VALIDATE_OP(operator, "[operator]", @"[A]")
 	while(FALSE)

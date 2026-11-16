@@ -5,9 +5,14 @@ using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.Native;
+using Robust.Shared.GameObjects;
 #nullable enable
 internal sealed class NativeDebugProcs {
-    internal static ServerVerbSystem VerbSystem = null!;
+    private static ServerVerbSystem VerbSystem = null!;
+
+    internal static void SetupDependencies(IEntitySystemManager systemManager) {
+        VerbSystem = systemManager.GetEntitySystem<ServerVerbSystem>();
+    }
 
     internal static void SetupDebugNatives(DreamObjectTree objectTree) {
         TreeEntry debugType = objectTree.GetTreeEntry("/debug_hooks");

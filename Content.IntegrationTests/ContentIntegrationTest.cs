@@ -83,11 +83,8 @@ public abstract partial class ContentIntegrationTest : RobustIntegrationTest {
                 },
 
                 ServerBeforeStartWorld = () => {
-                    IEntitySystemManager systemManager = IoCManager.Resolve<IEntitySystemManager>();
-                    systemManager.TryGetEntitySystem(out NativeDebugProcs.VerbSystem);
-
-                    DreamObjectTree objectTree = IoCManager.Resolve<DreamObjectTree>();
-                    NativeDebugProcs.SetupDebugNatives(objectTree);
+                    NativeDebugProcs.SetupDependencies(IoCManager.Resolve<IEntitySystemManager>());
+                    NativeDebugProcs.SetupDebugNatives(IoCManager.Resolve<DreamObjectTree>());
                 }
             });
 

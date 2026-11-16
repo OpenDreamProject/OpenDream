@@ -32,7 +32,7 @@ internal sealed class NativeDebugProcs {
 
         DreamObject? target = bundle.GetArgument(1, "target").MustGetValueAsDreamObject();
         if(target is null) {
-            throw new ArgumentException("client can't be null");
+            throw new ArgumentException("target can't be null");
         }
 
         DreamConnection connection = client.Connection;
@@ -61,7 +61,7 @@ internal sealed class NativeDebugProcs {
 
         DreamObject? target = bundle.GetArgument(1, "target").MustGetValueAsDreamObject();
         if(target is null) {
-            throw new ArgumentException("client can't be null");
+            throw new ArgumentException("target can't be null");
         }
 
         DreamConnection connection = client.Connection;

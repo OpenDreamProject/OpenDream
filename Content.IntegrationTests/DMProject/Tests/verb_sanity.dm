@@ -117,3 +117,7 @@
 	assert_verbs(client, mob, expected_mob_verbs)
 	assert_verbs(client, contained, expected_contained_verbs)
 	client.mob = client_mob
+
+#undef VERB_IN
+#undef VERB_EQUALS
+#undef VERB_SUITE

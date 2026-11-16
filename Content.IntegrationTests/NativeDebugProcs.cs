@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using OpenDreamRuntime;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;

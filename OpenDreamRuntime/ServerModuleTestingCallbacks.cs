@@ -1,5 +1,4 @@
 #nullable enable
-using OpenDreamRuntime.Objects;
 using OpenDreamShared;
 
 namespace OpenDreamRuntime

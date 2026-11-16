@@ -1,4 +1,5 @@
 #nullable enable
+using OpenDreamRuntime.Objects;
 using OpenDreamShared;
 
 namespace OpenDreamRuntime
@@ -6,5 +7,6 @@ namespace OpenDreamRuntime
     public sealed class ServerModuleTestingCallbacks : SharedModuleTestingCallbacks
     {
         public Action? ServerBeforeIoC { get; set; }
+        public Action? ServerBeforeStartWorld { get; set; }
     }
 }

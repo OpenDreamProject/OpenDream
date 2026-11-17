@@ -329,7 +329,8 @@ public abstract class DreamList : DreamObject {
                 newList.Set(value, associatedValue);
         }
 
-        return new(newList);
+        newList.IncRef();
+        return new DreamValue(newList);
     }
 
     public override DreamValue OperatorAppend(DreamValue b) {

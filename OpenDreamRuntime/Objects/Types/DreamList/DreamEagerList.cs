@@ -346,7 +346,7 @@ public class DreamEagerList : DreamList {
     }
 
     public override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
-        DantomList listCopy = (DantomList)ToCopy();
+        DantomList listCopy = ToDantomList();
 
         if (b.TryGetValueAsDreamList(out var bList)) {
             foreach (DreamValue key in bList.Enumerate()) {
@@ -365,7 +365,7 @@ public class DreamEagerList : DreamList {
     }
 
     public override DreamValue OperatorSubtract(DreamValue b, DMProcState state) {
-        DantomList listCopy = (DantomList)ToCopy();
+        DantomList listCopy = ToDantomList();
 
         if (b.TryGetValueAsDreamList(out var bList)) {
             foreach (DreamValue value in bList.Enumerate()) {
@@ -379,12 +379,12 @@ public class DreamEagerList : DreamList {
     }
 
     public override DreamValue OperatorOr(DreamValue b, DMProcState state) {
-        DreamEagerList list;
+        DantomList list;
 
         if (b.TryGetValueAsDreamList(out var bList)) {  // List | List
             list = Union(bList);
         } else {                                        // List | x
-            list = ToCopy();
+            list = ToDantomList();
             list.Add(b);
         }
 
@@ -445,7 +445,7 @@ public class DreamEagerList : DreamList {
         }
 
         IncRef();
-         return new DreamValue(this);
+        return new DreamValue(this);
     }
 
     public override DreamValue OperatorEquivalent(DreamValue b) {

@@ -166,7 +166,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         value.IncRef();
     }
 
-    [Obsolete("Consider ToDantomList")]
+    [Obsolete("Consider ToDreamAssocList")]
     public override DreamAssocList ToCopy(int start = 1, int end = 0)
     {
         if (start != 1 || end != 0)
@@ -182,6 +182,16 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         }
 
         return new DreamAssocList(ObjectDefinition, copyValues);
+    }
+
+    public DreamAssocList ToDreamAssocList() {
+        var newList = new DreamAssocList(ObjectDefinition, _pairs.Count);
+        foreach(var pair in _pairs) {
+            pair.Key.IncRef();
+            pair.Value.IncRef();
+            newList.Set(pair.Key, pair.Value);
+        }
+        return newList;
     }
 
     public override int FindIndex(DreamValue value, int start = 1, int end = 0)
@@ -232,7 +242,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     }
 
     public override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
-        var listCopy = ToCopy();
+        var listCopy = ToDreamAssocList();
 
         if (b.TryGetValueAsDreamList(out var bList)) {
             foreach (var pair in bList.EnumerateLoosePairs()) {
@@ -260,7 +270,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
                 return new DreamValue(ObjectTree.CreateAssocList());
             }
 
-            listCopy = ToCopy();
+            listCopy = ToDreamAssocList();
             foreach (DreamValue value in bList.Enumerate())
             {
                 listCopy.Remove(value);
@@ -268,7 +278,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         }
         else
         {
-            listCopy = ToCopy();
+            listCopy = ToDreamAssocList();
             listCopy.Remove(b);
         }
 
@@ -304,7 +314,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         }
 
         IncRef();
-         return new DreamValue(this);
+        return new DreamValue(this);
     }
 
     public override DreamValue OperatorRemove(DreamValue b)
@@ -362,7 +372,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         }
 
         IncRef();
-         return new DreamValue(this);
+        return new DreamValue(this);
     }
 
     public override DreamValue OperatorEquivalent(DreamValue b)

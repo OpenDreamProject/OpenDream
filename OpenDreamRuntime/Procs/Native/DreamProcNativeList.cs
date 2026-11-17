@@ -32,6 +32,10 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamList list = (DreamList)src!;
 
             if (list is DreamAssocList) {
+                // This is dumb.
+                if(start != 1 || end != 0) {
+                    throw new DMException("Bad alist copy.");
+                }
                 DreamAssocList listCopy = ((DreamAssocList)list).ToDreamAssocList();
                 return new DreamValue(listCopy);
             } else {

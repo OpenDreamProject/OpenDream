@@ -637,6 +637,9 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
     }
 
     public void WinSet(string? controlId, string winsetParams) {
+        // The server runs these through list2params first, which url-encodes values
+        winsetParams = HttpUtility.UrlDecode(winsetParams);
+
         DMFParser parser;
         try{
             var lexer = new DMFLexer(winsetParams);

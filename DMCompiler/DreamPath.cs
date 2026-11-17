@@ -43,9 +43,7 @@ public struct DreamPath {
     }
 
     [JsonIgnore]
-    public string? LastElement {
-        get => Elements.Length > 0 ? Elements.Last() : null;
-    }
+    public string? LastElement => Elements.Length > 0 ? Elements.Last() : null;
 
     [JsonIgnore]
     public string[] Elements {
@@ -115,10 +113,10 @@ public struct DreamPath {
     public void SetFromString(string rawPath) {
         char pathTypeChar = rawPath[0];
         string[] tempElements = rawPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
-       // operator/ and operator/= need special handling
+
+        // operator/ and operator/= need special handling
         if(rawPath.EndsWith("operator/"))
             tempElements[^1] = "operator/";
-        // operator/ and operator/= need special handling
         if(rawPath.EndsWith("operator/=")) {
             tempElements[^2] = "operator/=";
             tempElements = tempElements[..^1]; //clip the last element (=)
@@ -178,16 +176,8 @@ public struct DreamPath {
 
     public DreamPath FromElements(int elementStart, int elementEnd = -1) {
         string[] elements = GetElements(elementStart, elementEnd);
-        string rawPath = String.Empty;
 
-        if (elements.Length >= 1) {
-            rawPath = elements.Aggregate((string first, string second) => {
-                return first + "/" + second;
-            });
-        }
-
-        rawPath = "/" + rawPath;
-        return new DreamPath(rawPath);
+        return new DreamPath(PathType.Absolute, elements);
     }
 
     public DreamPath RemoveElement(int elementIndex) {
@@ -195,7 +185,7 @@ public struct DreamPath {
 
         List<string> elements = new List<string>();
         elements.AddRange(GetElements(0, elementIndex));
-        elements.AddRange(GetElements(Math.Min(elementIndex + 1, Elements.Length), -1));
+        elements.AddRange(GetElements(Math.Min(elementIndex + 1, Elements.Length)));
         return new DreamPath(Type, elements.ToArray());
     }
 
@@ -226,8 +216,8 @@ public struct DreamPath {
 
     public override int GetHashCode() {
         int hashCode = 0;
-        for (int i = 0; i < Elements.Length; i++) {
-            hashCode += Elements[i].GetHashCode();
+        foreach (var element in Elements) {
+            hashCode += element.GetHashCode();
         }
 
         return hashCode;

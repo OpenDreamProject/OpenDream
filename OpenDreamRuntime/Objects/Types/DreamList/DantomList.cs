@@ -270,7 +270,7 @@ public class DantomList : DreamEagerList {
         return new DreamValue(this);
     }
 
-    public override DreamValue OperatorCombine(DreamValue b) {
+    public override DreamValue OperatorCombine(DreamValue b, DMProcState state) {
         if (b.TryGetValueAsDreamList(out var bList)) {
             foreach (DreamValue key in bList.Enumerate()) {
                 if (ContainsKey(key))

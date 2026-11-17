@@ -391,7 +391,7 @@ public class DreamEagerList : DreamList {
         return new DreamValue(list);
     }
 
-    public override DreamValue OperatorCombine(DreamValue b) {
+    public override DreamValue OperatorCombine(DreamValue b, DMProcState state) {
         if (b.TryGetValueAsDreamList(out var bList)) {
             foreach (DreamValue key in bList.Enumerate()) {
                 if (ContainsKey(key))
@@ -412,7 +412,7 @@ public class DreamEagerList : DreamList {
         return new DreamValue(this);
     }
 
-    public override DreamValue OperatorMask(DreamValue b) {
+    public override DreamValue OperatorMask(DreamValue b, DMProcState state) {
         if (b.TryGetValueAsDreamList(out var bList)) {
             var remainingValues = new Dictionary<DreamValue, int>(bList.GetLength());
             foreach (DreamValue value in bList.Enumerate()) {

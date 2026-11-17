@@ -44,27 +44,28 @@ internal class DMMacro {
     }
 
     /// <summary>
-    /// Takes given parameters and creates a list of tokens representing the expanded macro
+    /// Takes given parameters and adds to a list of tokens representing the expanded macro
     /// </summary>
     /// <param name="compiler">The DMCompiler compiling this program</param>
     /// <param name="replacing">The identifier being replaced with this macro</param>
     /// <param name="parameters">Parameters for macro expansion. Null if none given.</param>
-    /// <returns>A list of tokens replacing the identifier</returns>
+    /// <param name="output">The list to fill with the expanded tokens</param>
     /// <exception cref="ArgumentException">Thrown if no parameters were given but are required</exception>
     // TODO: Convert this to an IEnumerator<Token>? Could cut down on allocations.
-    public virtual List<Token>? Expand(DMCompiler compiler, Token replacing, List<List<Token>>? parameters) {
+    public virtual void Expand(DMCompiler compiler, Token replacing, List<List<Token>>? parameters, List<Token> output) {
         if (_tokens == null)
-            return null;
+            return;
 
         // If this macro has no parameters then we can just return our list of tokens
-        if (!HasParameters())
-            return _tokens;
+        if (!HasParameters()) {
+            output.AddRange(_tokens);
+            return;
+        }
 
         // If we have parameters but weren't given any, throw an exception
         if (parameters == null)
             throw new ArgumentException("This macro requires parameters");
 
-        List<Token> expandedTokens = new(_tokens.Count);
         foreach (Token token in _tokens) {
             string parameterName =
                 token.Type is TokenType.DM_Preproc_TokenConcat or TokenType.DM_Preproc_ParameterStringify
@@ -88,93 +89,90 @@ internal class DMMacro {
                     tokenTextBuilder.Append('#');
 
                     string tokenText = tokenTextBuilder.ToString();
-                    expandedTokens.Add(new Token(TokenType.DM_Preproc_ConstantString, tokenText,
+                    output.Add(new Token(TokenType.DM_Preproc_ConstantString, tokenText,
                         Location.Unknown, tokenText.Substring(2, tokenText.Length - 3)));
                 } else {
                     foreach (var parameterToken in parameter) {
                         switch (parameterToken.Type) {
                             case TokenType.DM_Preproc_Identifier:
                             case TokenType.DM_Preproc_Number:
-                                if (expandedTokens.Count == 0)
+                                if (output.Count == 0)
                                     goto default;
 
                                 // If the last token was an identifier, we need to combine the two
-                                var lastToken = expandedTokens[^1];
+                                var lastToken = output[^1];
                                 if (lastToken.Type != TokenType.DM_Preproc_Identifier)
                                     goto default;
 
                                 // A new identifier made up of the last one and this identifier/number
-                                expandedTokens[^1] = new Token(TokenType.DM_Preproc_Identifier,
+                                output[^1] = new Token(TokenType.DM_Preproc_Identifier,
                                     lastToken.Text + parameterToken.Text, lastToken.Location, null);
                                 break;
                             default:
-                                expandedTokens.Add(parameterToken);
+                                output.Add(parameterToken);
                                 break;
                         }
                     }
                 }
             } else if (_overflowParameter != null && parameterName == _overflowParameter) {
                 for (int i = _overflowParameterIndex; i < parameters.Count; i++) {
-                    expandedTokens.AddRange(parameters[i]);
+                    output.AddRange(parameters[i]);
 
                     if(i < parameters.Count-1)
-                        expandedTokens.Add(new Token(TokenType.DM_Preproc_Punctuator_Comma, ",", Location.Unknown, null));
+                        output.Add(new Token(TokenType.DM_Preproc_Punctuator_Comma, ",", Location.Unknown, null));
                 }
             } else {
                 if (token.Type == TokenType.DM_Preproc_ParameterStringify) {
-                    expandedTokens.Add(new Token(TokenType.DM_Preproc_ConstantString, $"@#{parameterName}#",
+                    output.Add(new Token(TokenType.DM_Preproc_ConstantString, $"@#{parameterName}#",
                         Location.Unknown, parameterName));
                 } else if (token.Type == TokenType.DM_Preproc_TokenConcat) {
-                    expandedTokens.Add(new Token(TokenType.DM_Preproc_Identifier, parameterName,
-                        Location.Unknown, null));
+                    output.Add(new Token(TokenType.DM_Preproc_Identifier, parameterName, Location.Unknown, null));
                 } else {
-                    expandedTokens.Add(token);
+                    output.Add(token);
                 }
             }
         }
-
-        return expandedTokens;
     }
 }
 
 // __LINE__
 internal sealed class DMMacroLine() : DMMacro(null, null) {
-    public override List<Token> Expand(DMCompiler compiler, Token replacing, List<List<Token>>? parameters) {
+    public override void Expand(DMCompiler compiler, Token replacing, List<List<Token>>? parameters, List<Token> output) {
         var line = replacing.Location.Line;
         if (line == null)
             throw new ArgumentException($"Token {replacing} does not have a line number", nameof(replacing));
 
-        return [
+        output.Add(
             new Token(TokenType.DM_Preproc_Number, line.Value.ToString(), replacing.Location, null)
-        ];
+        );
     }
 }
 
 // __FILE__
 internal sealed class DMMacroFile() : DMMacro(null, null) {
-    public override List<Token> Expand(DMCompiler compiler, Token replacing, List<List<Token>>? parameters) {
+    public override void Expand(DMCompiler compiler, Token replacing, List<List<Token>>? parameters, List<Token> output) {
         string path = replacing.Location.SourceFile.Replace(@"\", @"\\"); //Escape any backwards slashes
 
-        return [
+        output.Add(
             new Token(TokenType.DM_Preproc_ConstantString, $"\"{path}\"", replacing.Location, path)
-        ];
+        );
     }
 }
 
 // DM_VERSION
 internal sealed class DMMacroVersion() : DMMacro(null, null) {
-    public override List<Token> Expand(DMCompiler compiler, Token replacing, List<List<Token>>? parameters) {
-        return [
+    public override void Expand(DMCompiler compiler, Token replacing, List<List<Token>>? parameters, List<Token> output) {
+        output.Add(
             new Token(TokenType.DM_Preproc_Number, compiler.Settings.DMVersion.ToString(), replacing.Location, null)
-        ];
+        );
     }
 }
 
 // DM_BUILD
 internal sealed class DMMacroBuild() : DMMacro(null, null) {
-    public override List<Token> Expand(DMCompiler compiler, Token replacing, List<List<Token>>? parameters) {
-        return [
+    public override void Expand(DMCompiler compiler, Token replacing, List<List<Token>>? parameters, List<Token> output) {
+        output.Add(
             new Token(TokenType.DM_Preproc_Number, compiler.Settings.DMBuild.ToString(), replacing.Location, null)
-        ];
+        );
     }
 }

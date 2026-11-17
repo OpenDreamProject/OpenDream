@@ -143,15 +143,19 @@ namespace DMCompiler.Compiler.DM {
 
         // TEMPORARY - REMOVE WHEN IT MATCHES THE ABOVE
         private static readonly TokenType[] ImplementedOperatorOverloadTypes = [
+            TokenType.DM_And,
+            TokenType.DM_AndEquals,
+            TokenType.DM_Bar,
+            TokenType.DM_BarEquals,
             TokenType.DM_Plus,
             TokenType.DM_Minus,
             TokenType.DM_Star,
             TokenType.DM_StarEquals,
             TokenType.DM_Slash,
             TokenType.DM_SlashEquals,
-            TokenType.DM_Bar,
             TokenType.DM_DoubleSquareBracket,
             TokenType.DM_DoubleSquareBracketEquals,
+            TokenType.DM_Tilde,
             TokenType.DM_ConstantString,
         ];
 

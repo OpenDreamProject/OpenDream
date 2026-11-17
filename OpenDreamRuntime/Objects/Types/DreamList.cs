@@ -474,7 +474,48 @@ public class DreamList : DreamObject, IDreamList {
         return new DreamValue(this);
     }
 
-    public override DreamValue OperatorCombine(DreamValue b) {
+    public override DreamValue OperatorAnd(DreamValue b, DMProcState state) {
+        DreamList newList = state.Proc.ObjectTree.CreateList();
+        Dictionary<DreamValue, DreamValue> associativeValues = GetPairs();
+        b.TryGetValueAsDreamList(out DreamList? bList);
+        Dictionary<DreamValue, int>? remainingValues = null;
+        bool scalarAvailable = true;
+
+        if (bList != null) {
+            remainingValues = new Dictionary<DreamValue, int>(bList.GetLength());
+            foreach (DreamValue value in bList.Enumerate()) {
+                remainingValues.TryGetValue(value, out int count);
+                remainingValues[value] = count + 1;
+            }
+        }
+
+        // BYOND intersection retains min(left count, right count) occurrences in left-list order
+        // associative values come from the retained left pair
+
+        foreach (DreamValue value in Enumerate()) {
+            bool retained;
+            if (remainingValues != null) {
+                retained = remainingValues.TryGetValue(value, out int count) && count > 0;
+                if (retained)
+                    remainingValues[value] = count - 1;
+            } else {
+                retained = scalarAvailable && value == b;
+                if (retained)
+                    scalarAvailable = false;
+            }
+
+            if (!retained)
+                continue;
+
+            newList.Add(value);
+            if (associativeValues.TryGetValue(value, out DreamValue associatedValue))
+                newList.Set(value, associatedValue);
+        }
+
+        return new(newList);
+    }
+
+    public override DreamValue OperatorCombine(DreamValue b, DMProcState state) {
         if (b.TryGetValueAsDreamList(out var bList)) {
             foreach (DreamValue value in bList.Enumerate()) {
                 if (ContainsKey(value))
@@ -493,7 +534,7 @@ public class DreamList : DreamObject, IDreamList {
         return new DreamValue(this);
     }
 
-    public override DreamValue OperatorMask(DreamValue b) {
+    public override DreamValue OperatorMask(DreamValue b, DMProcState state) {
         if (b.TryGetValueAsDreamList(out var bList)) {
             var remainingValues = new Dictionary<DreamValue, int>(bList.GetLength());
             foreach (DreamValue value in bList.Enumerate()) {

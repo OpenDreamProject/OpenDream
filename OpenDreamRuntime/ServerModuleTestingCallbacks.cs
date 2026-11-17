@@ -6,5 +6,6 @@ namespace OpenDreamRuntime
     public sealed class ServerModuleTestingCallbacks : SharedModuleTestingCallbacks
     {
         public Action? ServerBeforeIoC { get; set; }
+        public Action? ServerBeforeStartWorld { get; set; }
     }
 }

@@ -12,10 +12,14 @@ using Robust.Shared.IoC;
 using Robust.Shared.Log;
 using Robust.Shared.Network;
 using Robust.UnitTesting;
+using OpenDreamRuntime.Objects;
+using Robust.Shared.GameObjects;
 
 namespace Content.IntegrationTests;
 [Parallelizable(ParallelScope.All)]
-public abstract class ContentIntegrationTest : RobustIntegrationTest {
+public abstract partial class ContentIntegrationTest : RobustIntegrationTest {
+    [Dependency] ServerVerbSystem _verbSystem = default;
+
     protected sealed override ClientIntegrationInstance StartClient(ClientIntegrationOptions options = null) {
         options ??= new ClientContentIntegrationOption();
 
@@ -76,10 +80,16 @@ public abstract class ContentIntegrationTest : RobustIntegrationTest {
                     if (options is ServerContentIntegrationOption contentOptions) {
                         contentOptions.ContentBeforeIoC?.Invoke();
                     }
+                },
+
+                ServerBeforeStartWorld = () => {
+                    NativeDebugProcs.SetupDependencies(IoCManager.Resolve<IEntitySystemManager>());
+                    NativeDebugProcs.SetupDebugNatives(IoCManager.Resolve<DreamObjectTree>());
                 }
             });
 
             IoCManager.Resolve<ILogManager>().GetSawmill("loc").Level = LogLevel.Error;
+
         };
 
         return base.StartServer(options);

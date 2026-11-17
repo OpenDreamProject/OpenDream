@@ -233,17 +233,6 @@ public abstract class DreamList : DreamObject {
         throw new DMException($"Swap() not implemented for type ({GetType().Name})");
     }
 
-    [Obsolete("Consider ToDantomList() instead.")]
-	/// <summary>
-	/// Returns a shallow copy of the list (and associations) from index Start (Inclusive) to End (Exclusive). End 0 will copy everything up to and including the final element.
-	/// </summary>
-	/// <param name="start"></param>
-	/// <param name="end"></param>
-	/// <returns></returns>
-	public virtual DreamList ToCopy(int start = 1, int end = 0) {
-        throw new NotImplementedException();
-    }
-
 	/// <summary>
 	/// Returns a shallow copy of the list (and associations) from index Start (Inclusive) to End (Exclusive) as a DreamList. End 0 will copy everything up to and including the final element.
 	/// </summary>

@@ -44,11 +44,6 @@ public class DantomList : DreamEagerList {
         base.HandleDeletion();
     }
 
-    [Obsolete("Consider ToDantomList() instead.")]
-    public override DantomList ToCopy(int start = 1, int end = 0) {
-        return ToDantomList(start, end);
-    }
-
     public override DantomList ToDantomList(int start = 1, int end = 0) {
         if (start == 0) ++start; //start being 0 and start being 1 are equivalent
 

@@ -31,14 +31,12 @@ namespace OpenDreamRuntime.Procs.Native {
             int end = bundle.GetArgument(1, "End").MustGetValueAsInteger(); //1-indexed
             DreamList list = (DreamList)src!;
 
-            if (list is DantomList) {
-                DantomList listCopy = list.ToDantomList(start, end);
-                return new DreamValue(listCopy);
-            } else if (list is DreamAssocList) {
-                DreamAssocList listCopy = (DreamAssocList)list.ToCopy(start, end);
+            if (list is DreamAssocList) {
+                DreamAssocList listCopy = ((DreamAssocList)list).ToDreamAssocList();
                 return new DreamValue(listCopy);
             } else {
-                throw new Exception("Unhandled DreamListAbstract child in NativeProc_Copy.");
+                DantomList listCopy = list.ToDantomList(start, end);
+                return new DreamValue(listCopy);
             }
         }
 

@@ -127,19 +127,6 @@ public class DreamEagerList : DreamList {
         return _elements.Count;
     }
 
-    public override DreamEagerList ToCopy(int start = 1, int end = 0) {
-        if (start == 0) ++start; //start being 0 and start being 1 are equivalent
-
-        if (end > _elements.Count + 1 || start > _elements.Count + 1) throw new DMException("list index out of bounds");
-        if (end == 0) end = _elements.Count + 1;
-        if (end <= start)
-            return new DreamEagerList(ObjectDefinition, 0);
-
-        List<DreamValue> copyValues = _elements.GetRange(start - 1, end - start);
-
-        return new DreamEagerList(ObjectDefinition, copyValues);
-    }
-
     [MustDisposeResource]
     public override DreamValue GetElement(DreamValue key) {
         if (key.TryGetValueAsInteger(out int keyInteger)) {

@@ -166,24 +166,6 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         value.IncRef();
     }
 
-    [Obsolete("Consider ToDreamAssocList")]
-    public override DreamAssocList ToCopy(int start = 1, int end = 0)
-    {
-        if (start != 1 || end != 0)
-        {
-            throw new DMException("list index out of bounds");
-        }
-
-        var copyValues = new Dictionary<DreamValue, DreamValue>(_pairs);
-        foreach (var value in _pairs)
-        {
-            value.Key.IncRef();
-            value.Value.IncRef();
-        }
-
-        return new DreamAssocList(ObjectDefinition, copyValues);
-    }
-
     public DreamAssocList ToDreamAssocList() {
         var newList = new DreamAssocList(ObjectDefinition, _pairs.Count);
         foreach(var pair in _pairs) {

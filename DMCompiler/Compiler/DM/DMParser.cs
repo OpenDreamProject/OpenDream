@@ -571,8 +571,13 @@ namespace DMCompiler.Compiler.DM {
                 Newline();
                 bool isIndented = Check(TokenType.DM_Indent);
                 List<DMASTStatement>? blockInner = BlockInner();
-                if (isIndented) Check(TokenType.DM_Dedent);
-                Newline();
+
+                // The number of indents/dedents don't have to agree in a braced block
+                if (isIndented) {
+                    while(Check(TokenType.DM_Dedent))
+                        Newline();
+                }
+
                 Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
 
                 return new DMASTBlockInner(loc, blockInner?.ToArray() ?? []);
@@ -664,7 +669,7 @@ namespace DMCompiler.Compiler.DM {
                     if (blockInner.setStatements is not null)
                         setStatements.AddRange(blockInner.setStatements);
 
-                    if (!Check(TokenType.DM_Dedent)) {
+                    if (!Check(TokenType.DM_Dedent) && Current().Type != TokenType.DM_RightCurlyBracket) {
                         Emit(WarningCode.BadToken, "Expected end of proc statement");
                         LocateNextStatement();
                         Delimiter();
@@ -917,7 +922,8 @@ namespace DMCompiler.Compiler.DM {
                     varDeclarations.AddRange(varDecl);
                 }
 
-                if (isIndented) Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
+                if (isIndented)
+                    Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
                 if (isIndented) {
                     Newline();
                     Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");

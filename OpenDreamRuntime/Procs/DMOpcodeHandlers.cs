@@ -928,8 +928,8 @@ namespace OpenDreamRuntime.Procs {
                 state.Push(new((int)first.UnsafeGetValueAsFloat() & (int)second.UnsafeGetValueAsFloat()));
             } else if(first.IsNull) { // null just ignores the right hand
                 state.Push(new(0));
-            } else if (first.TryGetValueAsDreamObject(out var dreamObject)) {
-                state.Push(dreamObject!.OperatorAnd(second, state));
+            } else if (first.TryGetValueAsDreamObject<DreamObject>(out var dreamObject)) {
+                state.Push(dreamObject.OperatorAnd(second, state));
             } else {
                 throw new DMException($"invalid operation {first} & {second}");
             }

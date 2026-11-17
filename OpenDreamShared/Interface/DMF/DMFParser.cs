@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using OpenDreamShared.Interface.Descriptors;
+using Robust.Shared.Log;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
 using Token = OpenDreamShared.Interface.DMF.DMFLexer.Token;
@@ -10,7 +10,9 @@ using TokenType = OpenDreamShared.Interface.DMF.DMFLexer.TokenType;
 namespace OpenDreamShared.Interface.DMF;
 
 public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializationManager) {
-    public List<string> Errors = new();
+    private static readonly ISawmill Sawmill = Logger.GetSawmill("opendream.dmf");
+
+    public readonly List<string> Errors = new();
 
     private readonly TokenType[] _attributeTokenTypes = {
         TokenType.Attribute,
@@ -25,14 +27,17 @@ public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializatio
     /// <summary>
     /// Parse the command used in a global winset()
     /// </summary>
-    public List<DMFWinSet> GlobalWinSet() {
-        List<DMFWinSet> winSets = new();
+    public static DMFWinSet? GlobalWinSet(string query, ISerializationManager serializer) {
+        var lexer = new DMFLexer(query);
+        var parser = new DMFParser(lexer, serializer);
 
-        while (TryGetAttribute(out var winset)) {
-            winSets.Add(winset);
+        parser.TryGetAttribute(out var winset);
+
+        foreach (string error in parser.Errors) {
+            Sawmill.Error(error);
         }
 
-        return winSets;
+        return winset;
     }
 
     public InterfaceDescriptor Interface() {

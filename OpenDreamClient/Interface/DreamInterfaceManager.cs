@@ -637,58 +637,39 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
     }
 
     public void WinSet(string? controlId, string winsetParams) {
-        // The server runs these through list2params first, which url-encodes values
-        winsetParams = HttpUtility.UrlDecode(winsetParams);
-
-        DMFParser parser;
-        try{
-            var lexer = new DMFLexer(winsetParams);
-            parser = new DMFParser(lexer, _serializationManager);
-        } catch (Exception e) {
-            _sawmill.Error($"Error parsing winset: {e}");
-            return;
-        }
-
-        bool CheckParserErrors() {
-            if (parser.Errors.Count <= 0)
-                return false;
-
-            foreach (string error in parser.Errors) {
-                _sawmill.Error(error);
-            }
-
-            return true;
-        }
+        // The server runs these through list2params first
+        var winsets = ParamsHelpers.EnumerateParams2List(winsetParams);
 
         if (string.IsNullOrEmpty(controlId)) {
-            List<DMFWinSet> winSets = parser.GlobalWinSet();
-
-            if (CheckParserErrors())
-                return;
+            var winsetsDict = winsets.ToDictionary();
 
             // id=abc overrides the elements of other winsets without an element
-            string? elementOverride = winSets.FirstOrDefault(winSet => winSet.Element == null && winSet.Attribute == "id")?.Value;
+            string? elementOverride = winsetsDict.GetValueOrDefault("id") as string;
 
-            foreach (DMFWinSet winSet in winSets) {
-                if (winSet.Attribute == "id") // This is used to set the target, not an actual winset
+            foreach (var winset in winsetsDict) {
+                if (winset is { Key: "command", Value: string command }) {
+                    RunCommand(HandleEmbeddedWinget(controlId, command, out _));
+                    continue;
+                } else if (winset.Key == "id") { // This is used to set the target, not an actual winset
+                    continue;
+                }
+
+                var parsed = DMFParser.GlobalWinSet($"{winset.Key}={winset.Value}", _serializationManager);
+                if (parsed is null)
                     continue;
 
-                string? elementId = winSet.Element ?? elementOverride;
+                string? elementId = parsed.Element ?? elementOverride;
 
                 if (elementId == null) {
-                    if (winSet.Attribute == "command") {
-                        RunCommand(HandleEmbeddedWinget(controlId, winSet.Value, out _));
-                    } else {
-                        _sawmill.Error($"Invalid global winset \"{winsetParams}\"");
-                    }
+                    _sawmill.Error($"Invalid global winset \"{winset.Key}={winset.Value}\"");
                 } else {
-                    if(winSet.TrueStatements is not null) {
+                    if(parsed.TrueStatements is not null) {
                         InterfaceElement? conditionalElement = FindElementWithId(elementId);
                         if(conditionalElement is null)
                             _sawmill.Error($"Invalid element on ternary condition \"{elementId}\"");
                         else
-                            if(conditionalElement.TryGetProperty(winSet.Attribute, out var conditionalCheckValue) && conditionalCheckValue.Equals(winSet.Value)) {
-                                foreach(DMFWinSet statement in winSet.TrueStatements) {
+                            if(conditionalElement.TryGetProperty(parsed.Attribute, out var conditionalCheckValue) && conditionalCheckValue.Equals(parsed.Value)) {
+                                foreach(DMFWinSet statement in parsed.TrueStatements) {
                                     string statementElementId = statement.Element ?? elementId;
                                     InterfaceElement? statementElement = FindElementWithId(statementElementId);
                                     if(statementElement is not null) {
@@ -697,8 +678,8 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
                                         _sawmill.Error($"Invalid element on ternary \"{statementElementId}\"");
                                     }
                                 }
-                            } else if (winSet.FalseStatements is not null){
-                                foreach(DMFWinSet statement in winSet.FalseStatements) {
+                            } else if (parsed.FalseStatements is not null){
+                                foreach(DMFWinSet statement in parsed.FalseStatements) {
                                     string statementElementId = statement.Element ?? elementId;
                                     InterfaceElement? statementElement = FindElementWithId(statementElementId);
                                     if(statementElement is not null) {
@@ -712,7 +693,7 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
                         InterfaceElement? element = FindElementWithId(elementId);
 
                         if (element != null) {
-                            element.SetProperty(winSet.Attribute, HandleEmbeddedWinget(elementId, winSet.Value, out _), manualWinset: true);
+                            element.SetProperty(parsed.Attribute, HandleEmbeddedWinget(elementId, parsed.Value, out _), manualWinset: true);
                         } else {
                             _sawmill.Error($"Invalid element \"{elementId}\"");
                         }
@@ -721,10 +702,9 @@ internal sealed partial class DreamInterfaceManager : IDreamInterfaceManager {
             }
         } else {
             InterfaceElement? element = FindElementWithId(controlId);
-            var attributes = parser.AttributesValues();
-
-            if (CheckParserErrors())
-                return;
+            var attributes = winsets
+                .Select(pair => (pair.Key, pair.Value as string ?? string.Empty))
+                .ToDictionary();
 
             if (element == null && attributes.TryGetValue("parent", out var parentId)) {
                 var parent = FindElementWithId(parentId);

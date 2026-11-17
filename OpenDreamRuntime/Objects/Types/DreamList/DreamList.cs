@@ -13,10 +13,10 @@ public abstract class DreamList : DreamObject {
 	public virtual bool IsAssociative { get; }
 
 	/// <summary>
-	/// Some list structures, namely eager lists, can directly return their internal lists instead of creating a new list from enumeration.
+	/// Returns the flat contents of a list as an entire collection instead of enumeration. Some DreamList types can return direct references instead of a new collection.
 	/// </summary>
 	/// <returns>Either a direct reference to the internal backing List, or a new List from enumeration depending on the implementation.</returns>
-	public virtual List<DreamValue> GetKeysFast() {
+	public virtual List<DreamValue> GetKeysCollection() {
 		return CopyKeys();
 	}
 
@@ -30,7 +30,7 @@ public abstract class DreamList : DreamObject {
 	/// <returns></returns>
 	[MustDisposeResource] public virtual DreamValue GetElement(DreamValue key) {
 		if (key.TryGetValueAsInteger(out int keyInteger)) {
-			var value = GetKeysFast()[keyInteger]; //1-indexed
+			var value = Enumerate().ElementAt(keyInteger); //1-indexed
 
 			value.IncRef();
 			return value;
@@ -45,23 +45,17 @@ public abstract class DreamList : DreamObject {
     /// <param name="element"></param>
     /// <returns></returns>
 	public virtual bool TryGetElementByIndex(int index, [MustDisposeResource][NotNullWhen(true)] out DreamValue? element) {
-		List<DreamValue> keys = GetKeysFast();
-		if(!keys.TryGetValue(index, out var _value)) {
-			element = _value;
-			return false;
-		}
+        element = Enumerate().ElementAtOrDefault(index);
+		if(element is null) {
+            return false;
+        }
 
-		element = _value;
 		element.Value.IncRef();
 		return true;
 	}
 
 	[MustDisposeResource] public virtual DreamValue MustGetElementByIndex(int index) {
-		List<DreamValue> keys = GetKeysFast();
-		if(!keys.TryGetValue(index, out var element)) {
-			throw new Exception($"Could not get index of {index}");
-		}
-
+		var element = Enumerate().ElementAt(index);
 		element.IncRef();
 		return element;
 	}
@@ -126,7 +120,7 @@ public abstract class DreamList : DreamObject {
 	/// </summary>
 	/// <returns></returns>
 	public virtual DreamValue[] ToArray() {
-		return GetKeysFast().ToArray();
+		return Enumerate().ToArray();
 	}
 
 	/// <summary>
@@ -240,9 +234,10 @@ public abstract class DreamList : DreamObject {
 	/// <param name="end"></param>
 	/// <returns></returns>
 	public virtual DantomList ToDantomList(int start = 1, int end = 0) {
-		if (start == 0) ++start; //start being 0 and start being 1 are equivalent
+		if (start == 0)
+            ++start; //start being 0 and start being 1 are equivalent
 
-		var keys = GetKeysFast();
+		var keys = GetKeysCollection();
 		if (end > keys.Count + 1 || start > keys.Count + 1)
 			throw new DMException("list index out of bounds");
 

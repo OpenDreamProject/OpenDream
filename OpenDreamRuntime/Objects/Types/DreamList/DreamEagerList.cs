@@ -119,7 +119,7 @@ public class DreamEagerList : DreamList {
         return [.._elements];
     }
 
-    public override List<DreamValue> GetKeysFast() {
+    public override List<DreamValue> GetKeysCollection() {
         return _elements;
     }
 
@@ -183,6 +183,10 @@ public class DreamEagerList : DreamList {
     public override string ToString() {
         string assoc = IsAssociative ? ", assoc" : "";
         return $"/list{{len={GetLength()}{assoc}}}";
+    }
+
+    public override DreamValue[] ToArray() {
+        return _elements.ToArray();
     }
 
     #endregion

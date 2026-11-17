@@ -282,14 +282,14 @@ public sealed partial class ClientVerbSystem : VerbSystem {
         for (int i = 0; i < e.Verbs.Count; i++) {
             var verb = e.Verbs[i];
 
-            _verbs.Add(i, verb);
+            _verbs[i] = verb;
         }
 
         _interfaceManager.DefaultInfo?.RefreshVerbs(this);
     }
 
     private void OnRegisterVerbEvent(RegisterVerbEvent e) {
-        _verbs.Add(e.VerbId, e.VerbInfo);
+        _verbs[e.VerbId] = e.VerbInfo;
     }
 
     private void OnUpdateClientVerbsEvent(UpdateClientVerbsEvent e) {

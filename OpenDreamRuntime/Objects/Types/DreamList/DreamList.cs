@@ -215,7 +215,7 @@ public abstract class DreamList : DreamObject {
 	/// <param name="start"></param>
 	/// <param name="end"></param>
 	public virtual void Cut(int start = 1, int end = 0) {
-        foreach (var key in Enumerate()) {
+        foreach (var key in Enumerate().ToArray()) {
             Remove(key);
         }
     }
@@ -249,7 +249,7 @@ public abstract class DreamList : DreamObject {
 			return new DantomList(ObjectDefinition, 0);
 
 		List<DreamValue> copyValues = keys.GetRange(start - 1, end - start);
-		Dictionary<DreamValue, DreamValue> associativeValues = GetTightPairs();
+		Dictionary<DreamValue, DreamValue> associativeValues = GetTightPairs().ToDictionary();
 
 		Dictionary<DreamValue, DreamValue>? newAssociativeValues;
 

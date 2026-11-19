@@ -1,0 +1,354 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using JetBrains.Annotations;
+using Robust.Shared.Utility;
+using OpenDreamRuntime.Procs;
+
+namespace OpenDreamRuntime.Objects.Types;
+
+public abstract class DreamList : DreamObject {
+
+	public override bool ShouldCallNew => false;
+
+	public virtual bool IsAssociative { get; }
+
+	/// <summary>
+	/// Returns the flat contents of a list as an entire collection instead of enumeration. Some DreamList types can return direct references instead of a new collection.
+	/// </summary>
+	/// <returns>Either a direct reference to the internal backing List, or a new List from enumeration depending on the implementation.</returns>
+	public virtual List<DreamValue> GetKeysCollection() {
+		return CopyKeys();
+	}
+
+	public DreamList(DreamObjectDefinition listDef) : base(listDef) {
+	}
+
+	/// <summary>
+	/// Returns an Element at a given Index (numeric) or Key (non-numeric)
+	/// </summary>
+	/// <param name="key"></param>
+	/// <returns></returns>
+	[MustDisposeResource] public virtual DreamValue GetElement(DreamValue key) {
+		if (key.TryGetValueAsInteger(out int keyInteger)) {
+			var value = Enumerate().ElementAt(keyInteger); //1-indexed
+
+			value.IncRef();
+			return value;
+		}
+		return DreamValue.Null;
+	}
+
+    /// <summary>
+    /// This takes a zero-index Index and returns the key at that location, if any.
+    /// </summary>
+    /// <param name="index"></param>
+    /// <param name="element"></param>
+    /// <returns></returns>
+	public virtual bool TryGetElementByIndex(int index, [MustDisposeResource][NotNullWhen(true)] out DreamValue? element) {
+        element = Enumerate().ElementAtOrDefault(index);
+		if(element is null) {
+            return false;
+        }
+
+		element.Value.IncRef();
+		return true;
+	}
+
+	[MustDisposeResource] public virtual DreamValue MustGetElementByIndex(int index) {
+		var element = Enumerate().ElementAt(index);
+		element.IncRef();
+		return element;
+	}
+
+    /// <summary>
+    /// Returns an associated Value using the given Key, if present. IncRefs the returned element.
+    /// </summary>
+    /// <param name="key"></param>
+    /// <returns></returns>
+	public virtual bool TryGetElementByKey(DreamValue key, [MustDisposeResource][MaybeNullWhen(false)] out DreamValue element) {
+        if(!IsAssociative) {
+            element = default;
+            return false;
+        }
+
+		Dictionary<DreamValue, DreamValue> pairs = GetLoosePairs();
+		if(!pairs.TryGetValue(key, out var _value)) {
+			element = _value;
+			return false;
+		}
+
+		element = _value;
+		element.IncRef();
+		return true;
+	}
+
+	/// <summary>
+	/// Returns whether or not the given element exists within the first dimension of the list.
+	/// </summary>
+	/// <param name="element"></param>
+	/// <returns></returns>
+	public virtual bool ContainsKey(DreamValue element) {
+        return Enumerate().Contains(element);
+    }
+
+	/// <summary>
+	/// Returns the position of the given Element from within the Keys list.
+	/// </summary>
+	/// <param name="element"></param>
+	/// <param name="start"></param>
+	/// <param name="end"></param>
+	/// <returns></returns>
+	public abstract int FindIndex(DreamValue element, int start = 1, int end = 0);
+
+	/// <summary>
+	/// Returns if an element within the Keys list has an associated Value.
+	/// </summary>
+	/// <param name="key"></param>
+	/// <returns></returns>
+	public virtual bool ElementHasAssociation(DreamValue key) {
+		return false;
+	}
+
+	/// <summary>
+	/// Returns the number of elements in the 1-dimensional portion of the list.
+	/// </summary>
+	/// <returns></returns>
+	public abstract int GetLength();
+
+	/// <summary>
+	/// Returns an Array of the 1-dimensional list elements.
+	/// </summary>
+	/// <returns></returns>
+	public virtual DreamValue[] ToArray() {
+		return Enumerate().ToArray();
+	}
+
+	/// <summary>
+	/// Returns a new List containing the 1-dimensional elements of the list. Prefer EnumerateKeys() or ToArray() if possible.
+	/// </summary>
+	/// <returns></returns>
+	public abstract List<DreamValue> CopyKeys();
+
+	/// <summary>
+	/// Returns an IEnumerable of the 1-dimensional elements of the list.
+	/// </summary>
+	/// <returns></returns>
+	public abstract IEnumerable<DreamValue> Enumerate();
+
+	/// <summary>
+	/// Returns a dictionary of key-value associations. Does not copy or include any elements without associations.
+	/// </summary>
+	/// <returns></returns>
+	public virtual Dictionary<DreamValue, DreamValue> GetTightPairs() {
+		if(!IsAssociative) {
+			return new Dictionary<DreamValue, DreamValue>();
+		}
+
+		return EnumerateTightPairs().ToDictionary();
+	}
+
+	/// <summary>
+	/// Returns a Dictionary of key-value pairs. Any elements without an association are associated with DreamValue.Null.
+	/// </summary>
+	/// <returns></returns>
+	public virtual Dictionary<DreamValue, DreamValue> GetLoosePairs() {
+		return new(EnumerateLoosePairs());
+	}
+
+	/// <summary>
+	/// Returns an enumerable of key-value associations. Elements without associations are included, associated with DreamValue.Null.
+	/// </summary>
+	/// <returns></returns>
+	public virtual IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateLoosePairs() {
+        foreach (var key in Enumerate()) {
+            if (TryGetElementByKey(key, out var associativeValue)) {
+                associativeValue.DecRef();
+                yield return new(key, associativeValue);
+            } else {
+                yield return new(key, DreamValue.Null);
+            }
+        }
+	}
+
+	/// <summary>
+	/// Returns an enumerable of key-value associations. Elements without associations are excluded.
+	/// </summary>
+	/// <returns></returns>
+	public virtual IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateTightPairs() {
+        return Enumerable.Empty<KeyValuePair<DreamValue, DreamValue>>();
+	}
+
+	/// <summary>
+	/// Set a key-value pair within a list.
+	/// </summary>
+	/// <param name="key"></param>
+	/// <param name="value"></param>
+	/// <param name="allowGrowth"></param>
+	public abstract void Set(DreamValue key, DreamValue value, bool allowGrowth = false);
+
+	/// <summary>
+	/// Set an element by numeric index. Unimplemented on most types of lists.
+	/// </summary>
+	/// <param name="index"></param>
+	/// <param name="element"></param>
+	/// <param name="allowGrowth"></param>
+	/// <exception cref="Exception"></exception>
+	public virtual void SetElementByIndex(DreamValue index, DreamValue element, bool allowGrowth = false) {
+		throw new Exception($"Unable to index list of type {ObjectDefinition.Type}");
+	}
+
+	/// <summary>
+	/// Adds an Element to the Keys list if present.
+	/// </summary>
+	/// <param name="newElement"></param>
+	public abstract void Add(DreamValue newElement);
+
+	/// <summary>
+	/// Removes an Element from the Keys list if present.
+	/// </summary>
+	/// <param name="element"></param>
+	public abstract void Remove(DreamValue element);
+
+	/// <summary>
+	/// Removes all elements from index Start (Inclusive) to End (Exclusive). End 0 will cut everything up to and including the final element.
+	/// </summary>
+	/// <param name="start"></param>
+	/// <param name="end"></param>
+	public virtual void Cut(int start = 1, int end = 0) {
+        foreach (var key in Enumerate().ToArray()) {
+            Remove(key);
+        }
+    }
+
+	public virtual void Insert(int index, DreamValue value) {
+        throw new DMException($"Insert() not implemented for type ({GetType().Name})");
+    }
+
+	public virtual void Swap(int index1, int index2) {
+        throw new DMException($"Swap() not implemented for type ({GetType().Name})");
+    }
+
+	/// <summary>
+	/// Returns a shallow copy of the list (and associations) from index Start (Inclusive) to End (Exclusive) as a DreamList. End 0 will copy everything up to and including the final element.
+	/// </summary>
+	/// <param name="start"></param>
+	/// <param name="end"></param>
+	/// <returns></returns>
+	public virtual DantomList ToDantomList(int start = 1, int end = 0) {
+		if (start == 0)
+            ++start; //start being 0 and start being 1 are equivalent
+
+		var keys = GetKeysCollection();
+		if (end > keys.Count + 1 || start > keys.Count + 1)
+			throw new DMException("list index out of bounds");
+
+		if (end == 0)
+			end = keys.Count + 1;
+
+		if (end <= start)
+			return new DantomList(ObjectDefinition, 0);
+
+		List<DreamValue> copyValues = keys.GetRange(start - 1, end - start);
+		Dictionary<DreamValue, DreamValue> associativeValues = GetTightPairs().ToDictionary();
+
+		Dictionary<DreamValue, DreamValue>? newAssociativeValues;
+
+		if (IsAssociative) {
+			newAssociativeValues = new(end - start);
+			foreach (var key in copyValues) {
+				if (associativeValues.TryGetValue(key, out var value))
+					newAssociativeValues[key] = value;
+			}
+		}
+
+		return new DantomList(ObjectDefinition, copyValues, associativeValues);
+	}
+
+    protected override bool TryGetVar(string varName, out DreamValue value) {
+        if (varName == "len") {
+            value = new(GetLength());
+            return true;
+        }
+
+        // Note that invalid vars on /list will give null and not error in BYOND
+        // We don't replicate that
+        return base.TryGetVar(varName, out value);
+    }
+    #region Operators
+
+    public override DreamValue OperatorAnd(DreamValue b, DMProcState state) {
+        DreamList newList = state.Proc.ObjectTree.CreateList();
+        Dictionary<DreamValue, DreamValue> associativeValues = GetTightPairs();
+        b.TryGetValueAsDreamList(out DreamList? bList);
+        Dictionary<DreamValue, int>? remainingValues = null;
+        bool scalarAvailable = true;
+
+        if (bList != null) {
+            remainingValues = new Dictionary<DreamValue, int>(bList.GetLength());
+            foreach (DreamValue value in bList.Enumerate()) {
+                remainingValues.TryGetValue(value, out int count);
+                remainingValues[value] = count + 1;
+            }
+        }
+
+        // BYOND intersection retains min(left count, right count) occurrences in left-list order
+        // associative values come from the retained left pair
+
+        foreach (DreamValue value in Enumerate()) {
+            bool retained;
+            if (remainingValues != null) {
+                retained = remainingValues.TryGetValue(value, out int count) && count > 0;
+                if (retained)
+                    remainingValues[value] = count - 1;
+            } else {
+                retained = scalarAvailable && value == b;
+                if (retained)
+                    scalarAvailable = false;
+            }
+
+            if (!retained)
+                continue;
+
+            newList.Add(value);
+            if (associativeValues.TryGetValue(value, out DreamValue associatedValue))
+                newList.Set(value, associatedValue);
+        }
+
+        return new DreamValue(newList);
+    }
+
+    public override DreamValue OperatorAppend(DreamValue b) {
+        if (b.TryGetValueAsDreamList(out var bList)) {
+            var keys = bList.CopyKeys();
+            var valueCount = GetLength(); // Some lists return a reference to their internal values list which could change with each loop
+            for (int i = 0; i < valueCount; i++) {
+                var key = keys[i];
+
+                Add(key); // Always add the value
+            }
+        } else {
+            Add(b);
+        }
+
+        IncRef();
+        return new DreamValue(this);
+    }
+
+    public override DreamValue OperatorRemove(DreamValue b) {
+        if (b.TryGetValueAsDreamList(out var bList)) {
+            if (bList == this) {
+                Cut();
+            } else {
+                foreach (DreamValue key in bList.Enumerate()) {
+                    Remove(key);
+                }
+            }
+        } else {
+            Remove(b);
+        }
+
+        IncRef();
+        return new DreamValue(this);
+    }
+    #endregion
+}

@@ -2,17 +2,17 @@
 
 [Virtual]
 public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObject(objectDefinition) {
-    private DreamOverlaysList Overlays => _overlays ??= new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
-    private DreamOverlaysList Underlays => _underlays ??= new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
-    private DreamVisContentsList VisContents => _visContents ??= new(ObjectTree.List.ObjectDefinition, PvsOverrideSystem, this);
-    private DreamFilterList Filters => _filters ??= new(ObjectTree.List.ObjectDefinition, this);
-    private DreamList VisLocs => _visLocs ??= ObjectTree.CreateList();
+    private OverlaysList Overlays => _overlays ??= new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
+    private OverlaysList Underlays => _underlays ??= new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
+    private VisContentsList VisContents => _visContents ??= new(ObjectTree.List.ObjectDefinition, PvsOverrideSystem, this);
+    private FiltersList Filters => _filters ??= new(ObjectTree.List.ObjectDefinition, this);
+    private DantomList VisLocs => _visLocs ??= ObjectTree.CreateList();
 
-    private DreamOverlaysList? _overlays;
-    private DreamOverlaysList? _underlays;
-    private DreamVisContentsList? _visContents;
-    private DreamFilterList? _filters;
-    private DreamList? _visLocs; // TODO: Implement
+    private OverlaysList? _overlays;
+    private OverlaysList? _underlays;
+    private VisContentsList? _visContents;
+    private FiltersList? _filters;
+    private DantomList? _visLocs; // TODO: Implement
 
     protected string GetRTEntityDesc() {
         if (AtomManager.TryGetAppearance(this, out var appearance) && appearance.Desc != null)
@@ -145,7 +145,7 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
                 Filters.Cut();
 
                 // filters = list("type"=...) or list(filter(...), filter(...))
-                if (value.TryGetValueAsDreamList(out var valueList)) {
+                if (value.TryGetValueAsDantomList(out var valueList)) {
                     using var typeArg = valueList.GetElement(new("type"));
 
                     if (typeArg != DreamValue.Null) { // It's a single filter
@@ -158,7 +158,7 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
                     } else { // It's a list of filters
                         foreach (var filter in valueList.Enumerate()) {
                             if (!filter.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject)) {
-                                if (!filter.TryGetValueAsDreamList(out var filterValues))
+                                if (!filter.TryGetValueAsDantomList(out var filterValues))
                                     continue;
 
                                 filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, filterValues);

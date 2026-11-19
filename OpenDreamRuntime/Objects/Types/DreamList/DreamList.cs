@@ -61,7 +61,7 @@ public abstract class DreamList : DreamObject {
 	}
 
     /// <summary>
-    /// Returns an associated Value using the given Key, if present.
+    /// Returns an associated Value using the given Key, if present. IncRefs the returned element.
     /// </summary>
     /// <param name="key"></param>
     /// <returns></returns>
@@ -162,6 +162,7 @@ public abstract class DreamList : DreamObject {
 	public virtual IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateLoosePairs() {
         foreach (var key in Enumerate()) {
             if (TryGetElementByKey(key, out var associativeValue)) {
+                associativeValue.DecRef();
                 yield return new(key, associativeValue);
             } else {
                 yield return new(key, DreamValue.Null);

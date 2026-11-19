@@ -313,7 +313,6 @@ public abstract class DreamList : DreamObject {
                 newList.Set(value, associatedValue);
         }
 
-        newList.IncRef();
         return new DreamValue(newList);
     }
 

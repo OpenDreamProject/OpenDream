@@ -207,6 +207,12 @@ public class DreamObject {
         return ObjectDefinition.Variables.Keys;
     }
 
+    /// <summary>
+    /// Returns a boolean value. The DreamValue outvar is IncRef'd.
+    /// </summary>
+    /// <param name="varName"></param>
+    /// <param name="value"></param>
+    /// <returns></returns>
     protected virtual bool TryGetVar(string varName, [MustDisposeResource] out DreamValue value) {
         switch (varName) {
             case "type":

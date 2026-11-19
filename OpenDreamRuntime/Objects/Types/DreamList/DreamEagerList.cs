@@ -199,7 +199,6 @@ public class DreamEagerList : DreamList {
         }
 
         if (allowGrowth && keyInteger == GetLength() + 1) {
-            element.IncRef();
             Add(element);
             return;
         }
@@ -232,8 +231,6 @@ public class DreamEagerList : DreamList {
                 _elements.Add(key);
                 key.IncRef();
             }
-
-            value.IncRef();
         }
 
         UpdateTracyContentsMemory();

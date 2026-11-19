@@ -169,8 +169,6 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
     public DreamAssocList ToDreamAssocList() {
         var newList = new DreamAssocList(ObjectDefinition, _pairs.Count);
         foreach(var pair in _pairs) {
-            pair.Key.IncRef();
-            pair.Value.IncRef();
             newList.Set(pair.Key, pair.Value);
         }
         return newList;

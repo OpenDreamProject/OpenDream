@@ -7,6 +7,7 @@ namespace OpenDreamRuntime.Objects.Types;
 public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinition) : DreamObject(objectDefinition) {
     private SqliteCommand? _command;
     private SqliteDataReader? _reader;
+    private DreamObjectDatabase? _temporaryDatabase;
 
     private string? _errorMessage;
     private int? _errorCode;
@@ -14,8 +15,13 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
     public override void Initialize(DreamProcArguments args) {
         base.Initialize(args);
 
-        if (!args.GetArgument(0).TryGetValueAsString(out var command)) {
+        var commandArgument = args.GetArgument(0);
+        if (commandArgument.IsNull) {
             return;
+        }
+
+        if (!commandArgument.TryGetValueAsString(out var command)) {
+            throw new DMCrashRuntime("Invalid database query text");
         }
 
         SetupCommand(command, args.Values[1..]);
@@ -24,7 +30,24 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
     protected override void HandleDeletion() {
         ClearCommand();
         CloseReader();
+        CloseTemporaryDatabase();
         base.HandleDeletion();
+    }
+
+    /// <summary>
+    /// Associates a database with this query that was opened from a filename
+    /// (BYOND's <c>query.Execute(filename)</c> overload). The query owns it for
+    /// the duration of reading rows, and closes it when done.
+    /// </summary>
+    public void SetTemporaryDatabase(DreamObjectDatabase database) {
+        CloseTemporaryDatabase();
+        _temporaryDatabase = database;
+    }
+
+    private void CloseTemporaryDatabase() {
+        _temporaryDatabase?.Close();
+        _temporaryDatabase?.DecRef();
+        _temporaryDatabase = null;
     }
 
     /// <summary>
@@ -39,31 +62,24 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
         for (var i = 0; i < values.Length; i++) {
             var arg = values[i];
 
-            var type = arg.Type;
-            switch (type) {
-                case DreamValue.DreamValueType.String:
-                    if (arg.TryGetValueAsString(out var stringValue)) {
-                        _command.Parameters.AddWithValue($"@{i}", stringValue);
-                    }
-
-                    break;
-                case DreamValue.DreamValueType.Float:
-                    if (arg.TryGetValueAsFloat(out var floatValue)) {
-                        _command.Parameters.AddWithValue($"@{i}", floatValue);
-                    }
-
-                    break;
-
-                case DreamValue.DreamValueType.DreamResource:
-                case DreamValue.DreamValueType.DreamObject:
-                case DreamValue.DreamValueType.DreamType:
-                case DreamValue.DreamValueType.DreamProc:
-                case DreamValue.DreamValueType.Appearance:
-                default:
-                    // TODO: support saving BLOBS for icons, if we really want to
-                    break;
+            if (arg.IsNull) {
+                _command.Parameters.AddWithValue($"@{i}", DBNull.Value);
+            } else if (arg.TryGetValueAsDreamResource(out var resource)) {
+                AddBlobParameter(i, resource.ResourceData);
+            } else if (arg.TryGetValueAsDreamObject<DreamObjectIcon>(out var icon)) {
+                AddBlobParameter(i, icon.Icon.GenerateDMI().ResourceData);
+            } else if (arg.TryGetValueAsString(out var stringValue)) {
+                _command.Parameters.AddWithValue($"@{i}", stringValue);
+            } else if (arg.TryGetValueAsFloat(out var floatValue)) {
+                _command.Parameters.AddWithValue($"@{i}", floatValue);
+            } else {
+                throw new DMCrashRuntime("Invalid database query parameter");
             }
         }
+    }
+
+    private void AddBlobParameter(int index, byte[]? data) {
+        _command!.Parameters.Add($"@{index}", SqliteType.Blob).Value = data is null ? DBNull.Value : data;
     }
 
     /// <summary>
@@ -84,25 +100,20 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
     }
 
     /// <summary>
-    /// Gets the name of a single column in the current query
+    /// Gets the name of a selected column for <c>/database/query.Columns(index)</c>.
     /// </summary>
-    /// <param name="id">The column ordinal value.</param>
-    /// <returns>A <see cref="DreamValue"/> of the name of the column.</returns>
-    public DreamValue GetColumn(int id) {
-        if (_reader is null) {
-            return DreamValue.Null;
+    /// <param name="column">The one-based column index.</param>
+    /// <returns>The column name, or an empty string for an invalid index.</returns>
+    public DreamValue GetColumnName(int column) {
+        if (_reader is null || column <= 0 || column > _reader.FieldCount) {
+            // BYOND returns an empty string for an invalid Columns() index.
+            return new DreamValue(string.Empty);
         }
 
-        try {
-            var name = _reader.GetName(id);
-            return new DreamValue(name);
-        } catch (IndexOutOfRangeException exception) {
-            _errorCode = 1;
-            _errorMessage = exception.Message;
-        }
-
-        return DreamValue.Null;
+        return new DreamValue(_reader.GetName(column - 1));
     }
+
+    public bool HasCommand => _command != null;
 
     public void ClearCommand() {
         _command?.Dispose();
@@ -126,44 +137,49 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
     /// Executes the currently held query against the SQLite database
     /// </summary>
     /// <param name="database">The <see cref="DreamObjectDatabase"/> that this query is being run against.</param>
-    public void ExecuteCommand(DreamObjectDatabase database) {
-        if (!database.TryGetConnection(out var connection)) {
-            throw new DMCrashRuntime("Bad database");
+    public bool ExecuteCommand(DreamObjectDatabase database) {
+        if (_command == null) {
+            return false;
         }
 
-        if (_command == null) {
-            return;
+        CloseReader();
+
+        if (!database.TryGetConnection(out var connection)) {
+            throw new DMCrashRuntime("Bad database");
         }
 
         _command.Connection = connection;
 
         try {
             _reader = _command.ExecuteReader();
+            return true;
         } catch (SqliteException exception) {
             _errorCode = exception.SqliteErrorCode;
             _errorMessage = exception.Message;
             database.SetError(exception.SqliteErrorCode, exception.Message);
+            return false;
         }
     }
 
-    public void NextRow() {
-        _reader?.Read();
+    public bool NextRow() {
+        return _reader?.Read() ?? false;
     }
 
     /// <summary>
-    /// Attempts to fetch the value of a specific column.
+    /// Attempts to fetch the current row's value for <c>/database/query.GetColumn(index)</c>.
     /// </summary>
-    /// <param name="column">The ordinal column number</param>
-    /// <param name="value">The out variable to be populated with the <see cref="DreamValue"/>of the result.</param>
-    /// <returns></returns>
-    public bool TryGetColumn(int column, out DreamValue value) {
-        if (_reader is null) {
+    /// <param name="column">The one-based column index.</param>
+    /// <param name="value">The current row's column value.</param>
+    /// <returns>True when the value was read; otherwise false.</returns>
+    public bool TryGetColumnValue(int column, out DreamValue value) {
+        if (_reader is null || column <= 0 || column > _reader.FieldCount) {
+            // BYOND returns null for an invalid GetColumn() index.
             value = DreamValue.Null;
             return false;
         }
 
         try {
-            value = GetDreamValueFromDbObject(_reader.GetValue(column));
+            value = GetDreamValueFromDbObject(_reader.GetValue(column - 1));
             return true;
         } catch (Exception exception) {
             _errorCode = 1;
@@ -213,6 +229,9 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
             long longValue => new DreamValue(longValue),
             int intValue => new DreamValue(intValue),
             string stringValue => new DreamValue(stringValue),
+            // BYOND's database API returns null, rather than exposing SQLite BLOB data.
+            byte[] => DreamValue.Null,
+            DBNull => DreamValue.Null,
             _ => throw new ArgumentOutOfRangeException(nameof(value)),
         };
     }

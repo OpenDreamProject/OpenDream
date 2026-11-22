@@ -1,0 +1,16 @@
+// Undoes filter_to_srgb.swsl
+
+light_mode unshaded;
+blend_mode none;
+
+uniform bool isPlaneMaster;
+
+void fragment() {
+    highp vec4 color = texture2D(TEXTURE, UV);
+    color.rgb = color.a > 0.0 ? color.rgb / color.a : vec3(0.0);
+    color = zFromSrgb(color);
+    if (isPlaneMaster)
+        color.rgb *= color.a;
+
+    COLOR = color;
+}

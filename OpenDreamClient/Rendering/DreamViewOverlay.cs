@@ -23,6 +23,8 @@ namespace OpenDreamClient.Rendering;
 /// </summary>
 internal sealed partial class DreamViewOverlay : Overlay {
     public static ShaderInstance ColorInstance = default!;
+    public static ShaderInstance FilterToSrgbInstance = default!;
+    public static ShaderInstance FilterFromSrgbInstance = default!;
 
     public override OverlaySpace Space => OverlaySpace.WorldSpaceBelowWorld;
 
@@ -88,7 +90,9 @@ internal sealed partial class DreamViewOverlay : Overlay {
             BlendAdd = "blend_add",
             BlendSubtract = "blend_subtract",
             BlendMultiply = "blend_multiply",
-            BlendInsetOverlay = "blend_inset_overlay";
+            BlendInsetOverlay = "blend_inset_overlay",
+            FilterToSrgb = "filter_to_srgb",
+            FilterFromSrgb = "filter_from_srgb";
     }
 
     public DreamViewOverlay(RenderTargetPool renderTargetPool) {
@@ -109,6 +113,8 @@ internal sealed partial class DreamViewOverlay : Overlay {
         _sawmill.Debug("Loading shaders...");
         BlockColorInstance = _protoManager.Index<ShaderPrototype>(OdShaderId.BlockColor).InstanceUnique();
         ColorInstance = _protoManager.Index<ShaderPrototype>(OdShaderId.Color).InstanceUnique();
+        FilterToSrgbInstance = _protoManager.Index<ShaderPrototype>(OdShaderId.FilterToSrgb).InstanceUnique();
+        FilterFromSrgbInstance = _protoManager.Index<ShaderPrototype>(OdShaderId.FilterFromSrgb).InstanceUnique();
         _blendModeInstances = new(6) {
             {BlendMode.Default, _protoManager.Index<ShaderPrototype>(OdShaderId.BlendOverlay).InstanceUnique()}, //BLEND_DEFAULT (Same as BLEND_OVERLAY when there's no parent)
             {BlendMode.Overlay, _protoManager.Index<ShaderPrototype>(OdShaderId.BlendOverlay).InstanceUnique()}, //BLEND_OVERLAY

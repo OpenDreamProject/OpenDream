@@ -2,8 +2,8 @@
 
 namespace OpenDreamRuntime.Procs.Native;
 
-internal static class DreamProcNative {
-    public static void SetupNativeProcs(DreamObjectTree objectTree) {
+public static class DreamProcNative {
+    internal static void SetupNativeProcs(DreamObjectTree objectTree) {
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_alert);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_ascii2text);
         objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_block);
@@ -218,6 +218,9 @@ internal static class DreamProcNative {
         SetOverridableNativeProc(objectTree, objectTree.World, DreamProcNativeWorld.NativeProc_Error);
         SetOverridableNativeProc(objectTree, objectTree.World, DreamProcNativeWorld.NativeProc_Reboot);
     }
+
+    public static void BindGlobalNativeProc(DreamObjectTree objectTree, NativeProc.HandlerFn func) => objectTree.SetGlobalNativeProc(func);
+    public static void BindNativeProc(DreamObjectTree objectTree, TreeEntry type, NativeProc.HandlerFn func) => objectTree.SetNativeProc(type, func);
 
     /// <summary>
     /// Sets a native proc that can be overriden by DM code

@@ -228,7 +228,7 @@ public sealed partial class ServerVerbSystem : VerbSystem {
     /// <param name="src">The target of the verb</param>
     /// <param name="verb">The verb trying to be executed</param>
     /// <returns>True if the user is allowed to execute the verb in this way</returns>
-    private bool CanExecute(DreamConnection connection, DreamObject src, DreamProc verb) {
+    public bool CanExecute(DreamConnection connection, DreamObject src, DreamProc verb) {
         if (verb.VerbId == null) // Not even a verb
             return false;
 

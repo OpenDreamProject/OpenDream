@@ -6,7 +6,7 @@ public class BytecodeOptimizer(DMCompiler compiler) {
     private readonly PeepholeOptimizer _peepholeOptimizer = new(compiler);
 
     internal void Optimize(List<IAnnotatedBytecode> input) {
-        if(compiler.Settings.NoOpts) // Optimizations are disabled
+        if (compiler.Settings.NoOpts) // Optimizations are disabled
             return;
 
         if (input.Count == 0)
@@ -36,18 +36,15 @@ public class BytecodeOptimizer(DMCompiler compiler) {
             if (!TryGetLabelName(instruction, out string? labelName))
                 continue;
 
-            referencedLabels ??= new HashSet<string>();
+            referencedLabels ??= [];
             referencedLabels.Add(labelName);
         }
-
-        if (referencedLabels == null)
-            return;
 
         for (int i = 0; i < input.Count; i++) {
             if (input[i] is not AnnotatedBytecodeLabel label)
                 continue;
 
-            if (!referencedLabels.Contains(label.LabelName)) {
+            if (referencedLabels is null || !referencedLabels.Contains(label.LabelName)) {
                 input.RemoveAt(i);
                 i -= 1;
             }

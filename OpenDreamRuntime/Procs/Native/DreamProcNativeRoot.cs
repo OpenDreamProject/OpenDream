@@ -1884,37 +1884,23 @@ internal static class DreamProcNativeRoot {
     }
 
     public static DreamList Params2List(DreamObjectTree objectTree, string queryString) {
-        queryString = queryString.Replace(";", "&");
-        NameValueCollection query = HttpUtility.ParseQueryString(queryString);
-        DreamList list = objectTree.CreateList();
+        var list = objectTree.CreateList();
 
-        foreach (string? queryKey in query.AllKeys) {
-            string[]? queryValues = query.GetValues(queryKey);
+        foreach (var (key, value) in ParamsHelpers.EnumerateParams2List(queryString)) {
+            switch (value) {
+                case IEnumerable<string> valueEnumerable:
+                    var nestedList = objectTree.CreateList();
 
-            if (queryValues == null)
-                continue;
+                    foreach (var nestedListValue in valueEnumerable)
+                        nestedList.Add(new(nestedListValue));
 
-            if (queryKey == null) { // queryValues contains every value without a key
-                foreach (string value in queryValues.Distinct()) {
-                    int count = queryValues.Count(item => item == value);
-
-                    if (count > 1) { // "a;a;a" creates list(a=list("","",""))
-                        var valueList = objectTree.CreateList(count);
-
-                        for (int i = 0; i < count; i++)
-                            valueList.Add(new(string.Empty));
-
-                        list.Set(new(value), new(valueList));
-                        valueList.DecRef();
-                    } else {
-                        list.Set(new(value), new(string.Empty));
-                    }
-                }
-            } else {
-                if (queryValues.Length > 1)
-                    list.Set(new DreamValue(queryKey), new DreamValue(objectTree.CreateList(queryValues)));
-                else
-                    list.Set(new DreamValue(queryKey), new DreamValue(queryValues[0]));
+                    list.Set(new(key), new(nestedList));
+                    break;
+                case string valueString:
+                    list.Set(new(key), new(valueString));
+                    break;
+                default:
+                    throw new Exception($"Invalid Params2List value {value}");
             }
         }
 

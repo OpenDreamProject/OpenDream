@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using JetBrains.Annotations;
 using OpenDreamRuntime.Procs;
@@ -57,12 +56,13 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         return value;
     }
 
-    public override bool TryGetElementByKey(DreamValue key, [MustDisposeResource][MaybeNullWhen(false)] out DreamValue value) {
-        if (!_pairs.TryGetValue(key, out var _value)) {
+    public override bool TryGetElementByKey(DreamValue key, [MustDisposeResource] out DreamValue value) {
+        if (!_pairs.TryGetValue(key, out var associatedValue)) {
             value = DreamValue.Null;
             return true;
         }
-        value = _value;
+
+        value = associatedValue;
         value.IncRef();
         return true;
     }
@@ -107,6 +107,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         _pairs.Clear();
     }
 
+    [Obsolete("Deprecated. Use Enumerate() or ToArray() instead.")]
     public override List<DreamValue> CopyKeys()
     {
         return _pairs.Keys.ToList();
@@ -141,7 +142,6 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         }
     }
 
-
     public override DreamValue[] ToArray()
     {
         var array = new DreamValue[_pairs.Count];
@@ -171,6 +171,7 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         foreach(var pair in _pairs) {
             newList.Set(pair.Key, pair.Value);
         }
+
         return newList;
     }
 
@@ -389,4 +390,5 @@ public sealed class DreamAssocList(DreamObjectDefinition aListDef, int size) : D
         return DreamValue.True;
     }
 }
+
 #endregion

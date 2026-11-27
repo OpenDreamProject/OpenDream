@@ -1,16 +1,14 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using JetBrains.Annotations;
-using Robust.Shared.Utility;
 using OpenDreamRuntime.Procs;
 
 namespace OpenDreamRuntime.Objects.Types;
 
-public abstract class DreamList : DreamObject {
-
+public abstract class DreamList(DreamObjectDefinition listDef) : DreamObject(listDef) {
 	public override bool ShouldCallNew => false;
 
-	public virtual bool IsAssociative { get; }
+	public virtual bool IsAssociative => false;
 
 	/// <summary>
 	/// Returns the flat contents of a list as an entire collection instead of enumeration. Some DreamList types can return direct references instead of a new collection.
@@ -18,9 +16,6 @@ public abstract class DreamList : DreamObject {
 	/// <returns>Either a direct reference to the internal backing List, or a new List from enumeration depending on the implementation.</returns>
 	public virtual List<DreamValue> GetKeysCollection() {
 		return CopyKeys();
-	}
-
-	public DreamList(DreamObjectDefinition listDef) : base(listDef) {
 	}
 
 	/// <summary>
@@ -35,6 +30,7 @@ public abstract class DreamList : DreamObject {
 			value.IncRef();
 			return value;
 		}
+
 		return DreamValue.Null;
 	}
 
@@ -64,20 +60,21 @@ public abstract class DreamList : DreamObject {
     /// Returns an associated Value using the given Key, if present. IncRefs the returned element.
     /// </summary>
     /// <param name="key"></param>
+    /// <param name="element"></param>
     /// <returns></returns>
-	public virtual bool TryGetElementByKey(DreamValue key, [MustDisposeResource][MaybeNullWhen(false)] out DreamValue element) {
+	public virtual bool TryGetElementByKey(DreamValue key, [MustDisposeResource] out DreamValue element) {
         if(!IsAssociative) {
             element = default;
             return false;
         }
 
 		Dictionary<DreamValue, DreamValue> pairs = GetLoosePairs();
-		if(!pairs.TryGetValue(key, out var _value)) {
-			element = _value;
+		if(!pairs.TryGetValue(key, out var value)) {
+			element = value;
 			return false;
 		}
 
-		element = _value;
+		element = value;
 		element.IncRef();
 		return true;
 	}
@@ -127,6 +124,7 @@ public abstract class DreamList : DreamObject {
 	/// Returns a new List containing the 1-dimensional elements of the list. Prefer EnumerateKeys() or ToArray() if possible.
 	/// </summary>
 	/// <returns></returns>
+	[Obsolete("Deprecated. Use Enumerate() or ToArray() instead.")]
 	public abstract List<DreamValue> CopyKeys();
 
 	/// <summary>
@@ -162,7 +160,7 @@ public abstract class DreamList : DreamObject {
 	public virtual IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateLoosePairs() {
         foreach (var key in Enumerate()) {
             if (TryGetElementByKey(key, out var associativeValue)) {
-                associativeValue.DecRef();
+                associativeValue.Dispose();
                 yield return new(key, associativeValue);
             } else {
                 yield return new(key, DreamValue.Null);
@@ -251,8 +249,7 @@ public abstract class DreamList : DreamObject {
 		List<DreamValue> copyValues = keys.GetRange(start - 1, end - start);
 		Dictionary<DreamValue, DreamValue> associativeValues = GetTightPairs().ToDictionary();
 
-		Dictionary<DreamValue, DreamValue>? newAssociativeValues;
-
+		Dictionary<DreamValue, DreamValue>? newAssociativeValues = null;
 		if (IsAssociative) {
 			newAssociativeValues = new(end - start);
 			foreach (var key in copyValues) {
@@ -261,7 +258,7 @@ public abstract class DreamList : DreamObject {
 			}
 		}
 
-		return new DantomList(ObjectDefinition, copyValues, associativeValues);
+		return new DantomList(ObjectDefinition, copyValues, newAssociativeValues);
 	}
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
@@ -274,6 +271,7 @@ public abstract class DreamList : DreamObject {
         // We don't replicate that
         return base.TryGetVar(varName, out value);
     }
+
     #region Operators
 
     public override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
@@ -281,9 +279,10 @@ public abstract class DreamList : DreamObject {
 
         if (b.TryGetValueAsDreamList(out var bList)) {
             foreach (DreamValue key in bList.Enumerate()) {
-                if (bList.IsAssociative && bList.TryGetElementByKey(key, out var _assocValue)) {
-                    using var assocValue = _assocValue;
-                    listCopy.Set(key, assocValue);
+                if (bList.IsAssociative && bList.TryGetElementByKey(key, out var assocValue)) {
+                    using (assocValue) {
+                        listCopy.Set(key, assocValue);
+                    }
                 } else {
                     listCopy.Add(key);
                 }
@@ -369,5 +368,6 @@ public abstract class DreamList : DreamObject {
         IncRef();
         return new DreamValue(this);
     }
+
     #endregion
 }

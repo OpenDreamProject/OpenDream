@@ -1,19 +1,20 @@
 using OpenDreamRuntime.Rendering;
+
 namespace OpenDreamRuntime.Objects.Types;
+
 // client.screen list
 public sealed class ClientScreenList(DreamObjectTree objectTree, ServerScreenOverlaySystem? screenOverlaySystem, DreamConnection connection)
     : DreamEagerList(objectTree.List.ObjectDefinition, 0) {
-
     protected override void HandleDeletion() {
         Cut();
         base.HandleDeletion();
     }
 
     public override DreamValue GetElement(DreamValue key) {
-        if (!key.TryGetValueAsInteger(out var screenIndex) || screenIndex < 1 || screenIndex > _elements.Count)
+        if (!key.TryGetValueAsInteger(out var screenIndex) || screenIndex < 1 || screenIndex > Elements.Count)
             throw new DMException($"Invalid index into screen list: {key}");
 
-        var value = _elements[screenIndex - 1];
+        var value = Elements[screenIndex - 1];
         value.IncRef();
         return value;
     }
@@ -27,7 +28,7 @@ public sealed class ClientScreenList(DreamObjectTree objectTree, ServerScreenOve
             return;
 
         screenOverlaySystem?.AddScreenObject(connection, movable);
-        _elements.Add(value);
+        Elements.Add(value);
         value.IncRef();
     }
 
@@ -36,21 +37,21 @@ public sealed class ClientScreenList(DreamObjectTree objectTree, ServerScreenOve
             return;
 
         screenOverlaySystem?.RemoveScreenObject(connection, movable);
-        if (_elements.Remove(value))
+        if (Elements.Remove(value))
             value.DecRef();
     }
 
     public override void Cut(int start = 1, int end = 0) {
-        if (end == 0 || end > _elements.Count + 1) end = _elements.Count + 1;
+        if (end == 0 || end > Elements.Count + 1) end = Elements.Count + 1;
 
         for (int i = start - 1; i < end - 1; i++) {
-            using var value = _elements[i];
+            using var value = Elements[i];
             if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
                 continue;
 
             screenOverlaySystem?.RemoveScreenObject(connection, movable);
         }
 
-        _elements.RemoveRange(start - 1, end - start);
+        Elements.RemoveRange(start - 1, end - start);
     }
 }

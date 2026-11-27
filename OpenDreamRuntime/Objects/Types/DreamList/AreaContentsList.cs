@@ -1,4 +1,5 @@
 using System.Linq;
+
 namespace OpenDreamRuntime.Objects.Types;
 
 // area.contents list
@@ -32,6 +33,7 @@ public sealed class AreaContentsList(DreamObjectDefinition listDef, DreamObjectA
         throw new DMException($"Out of bounds index on turf contents list: {key}");
     }
 
+    [Obsolete("Deprecated. Use Enumerate() or ToArray() instead.")]
     public override List<DreamValue> CopyKeys() {
         return Enumerate().ToList();
     }

@@ -1,12 +1,13 @@
 using System.Linq;
-namespace OpenDreamRuntime.Objects.Types;
 
+namespace OpenDreamRuntime.Objects.Types;
 
 // global.vars list
 internal sealed class GlobalVarsList(DreamObjectDefinition listDef) : DreamList(listDef) {
     public override bool IsAssociative =>
         true; // We don't use the associative array but, yes, we behave like an associative list
 
+    [Obsolete("Deprecated. Use Enumerate() or ToArray() instead.")]
     public override List<DreamValue> CopyKeys() {
         return Enumerate().ToList();
     }

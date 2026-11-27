@@ -1,4 +1,5 @@
 using System.Linq;
+
 namespace OpenDreamRuntime.Objects.Types;
 
 // world.contents list
@@ -15,6 +16,7 @@ public sealed class WorldContentsList(DreamObjectDefinition listDef, AtomManager
         return new DreamValue(element);
     }
 
+    [Obsolete("Deprecated. Use Enumerate() or ToArray() instead.")]
     public override List<DreamValue> CopyKeys() {
         return Enumerate().ToList();
     }

@@ -2,11 +2,13 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
+
 namespace OpenDreamRuntime.Objects.Types;
 
 // atom.overlays or atom.underlays list
 // Operates on an object's appearance
 public sealed class OverlaysList(DreamObjectDefinition listDef, DreamObject owner, ServerAppearanceSystem? appearanceSystem, bool isUnderlays) : DreamList(listDef) {
+    [Obsolete("Deprecated. Use Enumerate() or ToArray() instead.")]
     public override List<DreamValue> CopyKeys() {
         return Enumerate().ToList();
     }

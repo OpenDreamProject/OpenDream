@@ -15,6 +15,7 @@ internal sealed class ProcArgsList(DreamObjectDefinition listDef, ProcState stat
         return value;
     }
 
+    [Obsolete("Deprecated. Use Enumerate() or ToArray() instead.")]
     public override List<DreamValue> CopyKeys() {
         return Enumerate().ToList();
     }
@@ -68,12 +69,13 @@ public sealed class SavefileDirList(DreamObjectDefinition listDef, DreamObjectSa
         return value.TryGetValueAsString(out var str) && backedSaveFile.CurrentDir.ContainsKey(str);
     }
 
+    [Obsolete("Deprecated. Use Enumerate() or ToArray() instead.")]
     public override List<DreamValue> CopyKeys() {
         return Enumerate().ToList();
     }
 
     public override IEnumerable<DreamValue> Enumerate() {
-        foreach (string value in backedSaveFile.CurrentDir.Keys.OrderBy(x => x))
+        foreach (string value in backedSaveFile.CurrentDir.Keys.OrderBy(x => x, StringComparer.CurrentCulture))
             yield return new DreamValue(value);
     }
 

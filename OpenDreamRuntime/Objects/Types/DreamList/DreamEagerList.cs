@@ -1,8 +1,6 @@
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using JetBrains.Annotations;
 using OpenDreamRuntime.Procs;
 
@@ -11,15 +9,15 @@ namespace OpenDreamRuntime.Objects.Types;
 [Virtual]
 public class DreamEagerList : DreamList {
     #region Variables
+
     protected static readonly Stack<List<DreamValue>> ListPool = new();
 
     public override bool IsAssociative => false;
 
-    protected readonly List<DreamValue> _elements;
-
+    protected readonly List<DreamValue> Elements;
 
     #if TOOLS
-    protected ProfilerMemory? _tracyContentsMemoryId;
+    private ProfilerMemory? _tracyContentsMemoryId;
     #endif
 
     #endregion
@@ -28,10 +26,10 @@ public class DreamEagerList : DreamList {
 
     public DreamEagerList(DreamObjectDefinition listDef, int size) : base(listDef) {
         if (size >= DreamManager.ListPoolThreshold && ListPool.TryPop(out var poppedValues)) {
-            _elements = poppedValues;
-            _elements.EnsureCapacity(size);
+            Elements = poppedValues;
+            Elements.EnsureCapacity(size);
         } else {
-            _elements = new List<DreamValue>(size);
+            Elements = new List<DreamValue>(size);
         }
     }
 
@@ -39,9 +37,9 @@ public class DreamEagerList : DreamList {
     /// Create a new DreamList using an existing list of values (does not copy them)
     /// </summary>
     public DreamEagerList(DreamObjectDefinition listDef, List<DreamValue> values) : base(listDef) {
-        _elements = values;
+        Elements = values;
 
-        foreach (var value in _elements)
+        foreach (var value in Elements)
             value.IncRef();
 
         #if TOOLS
@@ -92,12 +90,12 @@ public class DreamEagerList : DreamList {
 
     // Hold on to large lists for reuse later
     protected override void HandleDeletion() {
-        foreach (var value in _elements)
+        foreach (var value in Elements)
             value.DecRef();
 
-        if (_elements.Capacity > DreamManager.ListPoolThreshold && ListPool.Count < DreamManager.ListPoolSize) {
-            _elements.Clear();
-            ListPool.Push(_elements);
+        if (Elements.Capacity > DreamManager.ListPoolThreshold && ListPool.Count < DreamManager.ListPoolSize) {
+            Elements.Clear();
+            ListPool.Push(Elements);
         }
 
         base.HandleDeletion();
@@ -108,29 +106,29 @@ public class DreamEagerList : DreamList {
     #region Pure Methods
 
     public override IEnumerable<DreamValue> Enumerate() {
-        return _elements;
+        return Elements;
     }
 
     /// <summary>
     /// Returns a copy of the list of array values. Doesn't include the associative values indexable by some of these.
     /// </summary>
-    [Obsolete("Deprecated. Use EnumerateValues() instead.")]
+    [Obsolete("Deprecated. Use Enumerate() or ToArray() instead.")]
     public override List<DreamValue> CopyKeys() {
-        return [.._elements];
+        return [..Elements];
     }
 
     public override List<DreamValue> GetKeysCollection() {
-        return _elements;
+        return Elements;
     }
 
     public override int GetLength() {
-        return _elements.Count;
+        return Elements.Count;
     }
 
     [MustDisposeResource]
     public override DreamValue GetElement(DreamValue key) {
         if (key.TryGetValueAsInteger(out int keyInteger)) {
-            var value = _elements[keyInteger - 1]; //1-indexed
+            var value = Elements[keyInteger - 1]; //1-indexed
 
             value.IncRef();
             return value;
@@ -140,10 +138,10 @@ public class DreamEagerList : DreamList {
     }
 
     public override bool ContainsKey(DreamValue value) {
-        var count = _elements.Count;
+        var count = Elements.Count;
 
         for (int i = 0; i < count; i++) {
-            if (_elements[i].Equals(value))
+            if (Elements[i].Equals(value))
                 return true;
         }
 
@@ -151,17 +149,17 @@ public class DreamEagerList : DreamList {
     }
 
     public override int FindIndex(DreamValue value, int start = 1, int end = 0) {
-        if (end == 0 || end > _elements.Count) end = _elements.Count + 1;
+        if (end == 0 || end > Elements.Count) end = Elements.Count + 1;
 
         for (int i = start; i < end; i++) {
-            if (_elements[i - 1].Equals(value)) return i;
+            if (Elements[i - 1].Equals(value)) return i;
         }
 
         return 0;
     }
 
     public DantomList Union(DreamList other) {
-        DantomList newList = new DantomList(ObjectTree.List.ObjectDefinition, _elements.Union(other.CopyKeys()).ToList(), null);
+        DantomList newList = new DantomList(ObjectTree.List.ObjectDefinition, Elements.Union(other.CopyKeys()).ToList(), null);
         if(!(IsAssociative && other.IsAssociative)) {
             return newList;
         }
@@ -186,7 +184,7 @@ public class DreamEagerList : DreamList {
     }
 
     public override DreamValue[] ToArray() {
-        return _elements.ToArray();
+        return Elements.ToArray();
     }
 
     #endregion
@@ -203,32 +201,31 @@ public class DreamEagerList : DreamList {
             return;
         }
 
-        if(!TryGetElementByIndex(keyInteger - 1, out var _oldValue)) {
+        if (keyInteger < 1 || keyInteger > Elements.Count) {
             throw new IndexOutOfRangeException();
         }
 
-        using DreamValue oldElement = _oldValue.Value;
-        oldElement.DecRef();
-
-        _elements[keyInteger - 1] = element;
+        DreamValue oldElement = Elements[keyInteger - 1];
+        Elements[keyInteger - 1] = element;
         element.IncRef();
+        oldElement.DecRef();
     }
 
     public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         if (key.TryGetValueAsInteger(out int keyInteger)) {
-            if (allowGrowth && keyInteger == _elements.Count + 1) {
+            if (allowGrowth && keyInteger == Elements.Count + 1) {
                 value.IncRef();
-                _elements.Add(value);
+                Elements.Add(value);
             } else {
-                var oldValue = _elements[keyInteger - 1];
+                var oldValue = Elements[keyInteger - 1];
 
                 value.IncRef();
                 oldValue.DecRef();
-                _elements[keyInteger - 1] = value;
+                Elements[keyInteger - 1] = value;
             }
         } else {
             if (!ContainsKey(key)) {
-                _elements.Add(key);
+                Elements.Add(key);
                 key.IncRef();
             }
         }
@@ -237,10 +234,10 @@ public class DreamEagerList : DreamList {
     }
 
     public override void Remove(DreamValue key) {
-        int valueIndex = _elements.LastIndexOf(key);
+        int valueIndex = Elements.LastIndexOf(key);
 
         if (valueIndex != -1) {
-            _elements.RemoveAt(valueIndex);
+            Elements.RemoveAt(valueIndex);
             key.DecRef();
         }
 
@@ -248,7 +245,7 @@ public class DreamEagerList : DreamList {
     }
 
     public override void Add(DreamValue value) {
-        _elements.Add(value);
+        Elements.Add(value);
         value.IncRef();
         UpdateTracyContentsMemory();
     }
@@ -259,21 +256,21 @@ public class DreamEagerList : DreamList {
             0 => 1,
             _ => start
         };
-        if (end == 0 || end > (_elements.Count + 1)) end = _elements.Count + 1;
+        if (end == 0 || end > (Elements.Count + 1)) end = Elements.Count + 1;
 
         if (end > start) {
             for (int i = start; i < end; i++) {
-                _elements[i - 1].DecRef();
+                Elements[i - 1].DecRef();
             }
 
-            _elements.RemoveRange(start - 1, end - start);
+            Elements.RemoveRange(start - 1, end - start);
         }
 
         UpdateTracyContentsMemory();
     }
 
     public override void Insert(int index, DreamValue value) {
-        _elements.Insert(index - 1, value);
+        Elements.Insert(index - 1, value);
         value.IncRef();
         UpdateTracyContentsMemory();
     }
@@ -287,10 +284,10 @@ public class DreamEagerList : DreamList {
     }
 
     public void Resize(int size) {
-        if (size > _elements.Count) {
-            _elements.EnsureCapacity(size);
+        if (size > Elements.Count) {
+            Elements.EnsureCapacity(size);
 
-            for (int i = _elements.Count; i < size; i++) {
+            for (int i = Elements.Count; i < size; i++) {
                 Add(DreamValue.Null);
             }
         } else {
@@ -315,10 +312,17 @@ public class DreamEagerList : DreamList {
         }
     }
 
+    #if TOOLS
+    /// <summary>
+    /// The number of DreamValues this list stores, for memory profiling.
+    /// </summary>
+    protected virtual int TracyContentsCount => Elements.Count;
+    #endif
+
     [Conditional("TOOLS")]
-    protected virtual void UpdateTracyContentsMemory() {
+    protected void UpdateTracyContentsMemory() {
         #if TOOLS
-        var valueCount = _elements.Count;
+        var valueCount = TracyContentsCount;
         var totalSize = Unsafe.SizeOf<DantomList>() + valueCount * Unsafe.SizeOf<DreamValue>();
 
         _tracyContentsMemoryId?.ReleaseMemory();
@@ -327,6 +331,7 @@ public class DreamEagerList : DreamList {
     }
 
     #endregion
+
     #region Operators
 
     public override DreamValue OperatorIndex(DreamValue index, DMProcState state) {
@@ -366,9 +371,10 @@ public class DreamEagerList : DreamList {
                 if (ContainsKey(key))
                     continue;
 
-                if (bList.TryGetElementByKey(key, out var _assocValue)) {
-                    using var assocValue = _assocValue;
-                    Set(key, assocValue);
+                if (bList.TryGetElementByKey(key, out var assocValue)) {
+                    using (assocValue) {
+                        Set(key, assocValue);
+                    }
                 } else {
                     Add(key);
                 }

@@ -1,5 +1,6 @@
 using System.Linq;
 using Robust.Server.GameStates;
+
 namespace OpenDreamRuntime.Objects.Types;
 
 // atom or image vis_contents list
@@ -17,6 +18,7 @@ public sealed class VisContentsList : DreamList {
         _owner = atom;
     }
 
+    [Obsolete("Deprecated. Use Enumerate() or ToArray() instead.")]
     public override List<DreamValue> CopyKeys() {
         return Enumerate().ToList();
     }

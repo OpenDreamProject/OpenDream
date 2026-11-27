@@ -1,6 +1,6 @@
 using System.Linq;
-namespace OpenDreamRuntime.Objects.Types;
 
+namespace OpenDreamRuntime.Objects.Types;
 
 // atom's verbs list
 // Keeps track of an appearance's verbs (atom.verbs, mutable_appearance.verbs, etc)
@@ -18,6 +18,7 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
         return new DreamValue(VerbSystem.GetVerb(verbs[index - 1]));
     }
 
+    [Obsolete("Deprecated. Use Enumerate() or ToArray() instead.")]
     public override List<DreamValue> CopyKeys() {
         return Enumerate().ToList();
     }

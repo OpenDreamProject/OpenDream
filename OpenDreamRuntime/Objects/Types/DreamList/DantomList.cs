@@ -1,15 +1,11 @@
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using JetBrains.Annotations;
 using OpenDreamRuntime.Procs;
+
 namespace OpenDreamRuntime.Objects.Types;
 
 [Virtual]
 public class DantomList : DreamEagerList {
-
     public override bool IsAssociative => _associativeValues is { Count: > 0 };
 
     private Dictionary<DreamValue, DreamValue>? _associativeValues;
@@ -29,14 +25,10 @@ public class DantomList : DreamEagerList {
             }
         }
 
-        #if TOOLS
-        TracyMemoryId = Profiler.BeginMemoryZone(1, "/list instance");
         UpdateTracyContentsMemory();
-        #endif
     }
 
     protected override void HandleDeletion() {
-
         if (_associativeValues != null)
             foreach (var assocValue in _associativeValues.Values)
                 assocValue.DecRef();
@@ -47,12 +39,12 @@ public class DantomList : DreamEagerList {
     public override DantomList ToDantomList(int start = 1, int end = 0) {
         if (start == 0) ++start; //start being 0 and start being 1 are equivalent
 
-        if (end > _elements.Count + 1 || start > _elements.Count + 1) throw new DMException("list index out of bounds");
-        if (end == 0) end = _elements.Count + 1;
+        if (end > Elements.Count + 1 || start > Elements.Count + 1) throw new DMException("list index out of bounds");
+        if (end == 0) end = Elements.Count + 1;
         if (end <= start)
             return new DantomList(ObjectDefinition, 0);
 
-        List<DreamValue> copyValues = _elements.GetRange(start - 1, end - start);
+        List<DreamValue> copyValues = Elements.GetRange(start - 1, end - start);
 
         Dictionary<DreamValue, DreamValue>? associativeValues = null;
         if (_associativeValues != null) {
@@ -67,7 +59,7 @@ public class DantomList : DreamEagerList {
     }
 
     public override IEnumerable<KeyValuePair<DreamValue, DreamValue>> EnumerateLoosePairs() {
-        foreach (var value in _elements) {
+        foreach (var value in Elements) {
             if (_associativeValues?.TryGetValue(value, out var associativeValue) is true) {
                 yield return new(value, associativeValue);
             } else {
@@ -90,7 +82,7 @@ public class DantomList : DreamEagerList {
     [MustDisposeResource]
     public override DreamValue GetElement(DreamValue key) {
         if (key.TryGetValueAsInteger(out int keyInteger)) {
-            var value = _elements[keyInteger - 1]; //1-indexed
+            var value = Elements[keyInteger - 1]; //1-indexed
 
             value.IncRef();
             return value;
@@ -104,14 +96,14 @@ public class DantomList : DreamEagerList {
         return DreamValue.Null;
     }
 
-    public override bool TryGetElementByKey(DreamValue key, [MustDisposeResource][MaybeNullWhen(false)] out DreamValue value) {
+    public override bool TryGetElementByKey(DreamValue key, [MustDisposeResource] out DreamValue value) {
         if (_associativeValues is null) {
             value = default;
             return false;
         }
 
-        if (_associativeValues.TryGetValue(key, out var _value)) {
-            value = _value;
+        if (_associativeValues.TryGetValue(key, out var associatedValue)) {
+            value = associatedValue;
             value.IncRef();
             return true;
         }
@@ -122,19 +114,19 @@ public class DantomList : DreamEagerList {
 
     public override void Set(DreamValue key, DreamValue value, bool allowGrowth = false) {
         if (key.TryGetValueAsInteger(out int keyInteger)) {
-            if (allowGrowth && keyInteger == _elements.Count + 1) {
+            if (allowGrowth && keyInteger == Elements.Count + 1) {
                 value.IncRef();
-                _elements.Add(value);
+                Elements.Add(value);
             } else {
-                var oldValue = _elements[keyInteger - 1];
+                var oldValue = Elements[keyInteger - 1];
 
                 value.IncRef();
                 oldValue.DecRef();
-                _elements[keyInteger - 1] = value;
+                Elements[keyInteger - 1] = value;
             }
         } else {
             if (!ContainsKey(key)) {
-                _elements.Add(key);
+                Elements.Add(key);
                 key.IncRef();
             }
 
@@ -150,7 +142,7 @@ public class DantomList : DreamEagerList {
     }
 
     public override void Remove(DreamValue value) {
-        int valueIndex = _elements.LastIndexOf(value);
+        int valueIndex = Elements.LastIndexOf(value);
 
         if (valueIndex != -1) {
             if (_associativeValues?.TryGetValue(value, out var associatedValue) is true)  {
@@ -158,7 +150,7 @@ public class DantomList : DreamEagerList {
                 _associativeValues.Remove(value);
             }
 
-            _elements.RemoveAt(valueIndex);
+            Elements.RemoveAt(valueIndex);
             value.DecRef();
         }
 
@@ -175,11 +167,11 @@ public class DantomList : DreamEagerList {
             0 => 1,
             _ => start
         };
-        if (end == 0 || end > (_elements.Count + 1)) end = _elements.Count + 1;
+        if (end == 0 || end > (Elements.Count + 1)) end = Elements.Count + 1;
 
         if (_associativeValues != null) {
             for (int i = start; i < end; i++) {
-                var key = _elements[i - 1];
+                var key = Elements[i - 1];
 
                 if (_associativeValues.Remove(key, out var assocValue)) {
                     assocValue.DecRef();
@@ -189,10 +181,10 @@ public class DantomList : DreamEagerList {
 
         if (end > start) {
             for (int i = start; i < end; i++) {
-                _elements[i - 1].DecRef();
+                Elements[i - 1].DecRef();
             }
 
-            _elements.RemoveRange(start - 1, end - start);
+            Elements.RemoveRange(start - 1, end - start);
         }
 
         UpdateTracyContentsMemory();
@@ -206,16 +198,9 @@ public class DantomList : DreamEagerList {
         Set(new DreamValue(index2), first);
     }
 
-    protected override void UpdateTracyContentsMemory() {
-        #if TOOLS
-        var valueCount = _elements.Count + (_associativeValues?.Count ?? 0);
-        var totalSize = Unsafe.SizeOf<DantomList>() + valueCount * Unsafe.SizeOf<DreamValue>();
-
-        _tracyContentsMemoryId?.ReleaseMemory();
-        _tracyContentsMemoryId = Profiler.BeginMemoryZone((ulong)totalSize, "/list contents");
-        #endif
-    }
-
+    #if TOOLS
+    protected override int TracyContentsCount => Elements.Count + (_associativeValues?.Count ?? 0);
+    #endif
 
     #region Operators
 
@@ -224,9 +209,10 @@ public class DantomList : DreamEagerList {
 
         if (b.TryGetValueAsDreamList(out var bList)) {
             foreach (DreamValue key in bList.Enumerate()) {
-                if (bList.TryGetElementByKey(key, out var _assocValue)) {
-                    using var assocValue = _assocValue;
-                    listCopy.Set(key, assocValue);
+                if (bList.TryGetElementByKey(key, out var assocValue)) {
+                    using (assocValue) {
+                        listCopy.Set(key, assocValue);
+                    }
                 } else {
                     listCopy.Add(key);
                 }
@@ -247,14 +233,15 @@ public class DantomList : DreamEagerList {
 
                 Add(key); // Always add the value
 
-                if (bList.TryGetElementByKey(key, out var _assocValue)) { // Ensure the associated value is correct
-                    _associativeValues ??= new();
-                    using var assocValue = _assocValue;
+                if (bList.TryGetElementByKey(key, out var assocValue)) { // Ensure the associated value is correct
+                    using (assocValue) {
+                        _associativeValues ??= new();
 
-                    ref var slot = ref CollectionsMarshal.GetValueRefOrAddDefault(_associativeValues, key, out _);
-                    assocValue.IncRef();
-                    slot.DecRef();
-                    slot = assocValue;
+                        ref var slot = ref CollectionsMarshal.GetValueRefOrAddDefault(_associativeValues, key, out _);
+                        assocValue.IncRef();
+                        slot.DecRef();
+                        slot = assocValue;
+                    }
                 }
             }
         } else {
@@ -271,10 +258,10 @@ public class DantomList : DreamEagerList {
                 if (ContainsKey(key))
                     continue;
 
-                if (bList.TryGetElementByKey(key, out var _assocValue)) {
-                    using var assocValue = _assocValue;
-                    Set(key, assocValue);
-
+                if (bList.TryGetElementByKey(key, out var assocValue)) {
+                    using (assocValue) {
+                        Set(key, assocValue);
+                    }
                 } else {
                     Add(key);
                 }
@@ -286,5 +273,6 @@ public class DantomList : DreamEagerList {
         IncRef();
         return new DreamValue(this);
     }
+
     #endregion Operators
 }

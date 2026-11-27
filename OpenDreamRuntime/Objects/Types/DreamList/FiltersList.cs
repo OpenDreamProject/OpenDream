@@ -1,7 +1,7 @@
 using System.Linq;
 using OpenDreamShared.Dream;
-namespace OpenDreamRuntime.Objects.Types;
 
+namespace OpenDreamRuntime.Objects.Types;
 
 // atom.filters list
 // Operates on an object's appearance
@@ -122,6 +122,7 @@ public sealed class FiltersList(DreamObjectDefinition listDef, DreamObject owner
         return new DreamValue(filterObject);
     }
 
+    [Obsolete("Deprecated. Use Enumerate() or ToArray() instead.")]
     public override List<DreamValue> CopyKeys() {
         return Enumerate().ToList();
     }

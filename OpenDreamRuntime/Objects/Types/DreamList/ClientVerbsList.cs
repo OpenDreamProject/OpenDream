@@ -1,7 +1,8 @@
-// client.verbs list
 using System.Linq;
+
 namespace OpenDreamRuntime.Objects.Types;
 
+// client.verbs list
 // Keeps track of a client's verbs
 public sealed class ClientVerbsList : DreamList {
     public readonly List<DreamProc> Verbs = new();
@@ -30,6 +31,7 @@ public sealed class ClientVerbsList : DreamList {
         return new DreamValue(Verbs[index - 1]);
     }
 
+    [Obsolete("Deprecated. Use Enumerate() or ToArray() instead.")]
     public override List<DreamValue> CopyKeys() {
         return Enumerate().ToList();
     }

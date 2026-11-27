@@ -1,5 +1,6 @@
 using System.Linq;
 using OpenDreamRuntime.Map;
+
 namespace OpenDreamRuntime.Objects.Types;
 
 // turf.contents list
@@ -17,6 +18,7 @@ public sealed class TurfContentsList(DreamObjectDefinition listDef, DreamObjectT
         return new DreamValue(value);
     }
 
+    [Obsolete("Deprecated. Use Enumerate() or ToArray() instead.")]
     public override List<DreamValue> CopyKeys() {
         return Enumerate().ToList();
     }

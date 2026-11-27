@@ -1,4 +1,5 @@
 using System.Linq;
+
 namespace OpenDreamRuntime.Objects.Types;
 
 // mob.contents, obj.contents list
@@ -27,6 +28,7 @@ public sealed class MovableContentsList(DreamObjectDefinition listDef, DreamObje
         throw new DMException($"Out of bounds index on movable contents list after iterating: {key}");
     }
 
+    [Obsolete("Deprecated. Use Enumerate() or ToArray() instead.")]
     public override List<DreamValue> CopyKeys() {
         return Enumerate().ToList();
     }

@@ -1,4 +1,5 @@
 using System.Linq;
+
 namespace OpenDreamRuntime.Objects.Types;
 
 /// <summary>
@@ -15,6 +16,7 @@ internal sealed class DreamListVars(DreamObjectDefinition listDef, DreamObject d
         return DreamObject.GetVariableNames().Concat(DreamObject.ObjectDefinition.GlobalVariables.Keys).Count();
     }
 
+    [Obsolete("Deprecated. Use Enumerate() or ToArray() instead.")]
     public override List<DreamValue> CopyKeys() {
         return Enumerate().ToList();
     }

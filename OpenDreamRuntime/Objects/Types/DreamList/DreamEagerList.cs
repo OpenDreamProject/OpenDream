@@ -333,25 +333,6 @@ public class DreamEagerList : DreamList {
         return GetElement(index);
     }
 
-    public override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
-        DantomList listCopy = ToDantomList();
-
-        if (b.TryGetValueAsDreamList(out var bList)) {
-            foreach (DreamValue key in bList.Enumerate()) {
-                if (bList.TryGetElementByKey(key, out var _assocValue)) {
-                    using var assocValue = _assocValue;
-                    listCopy.Set(key, assocValue);
-                } else {
-                    listCopy.Add(key);
-                }
-            }
-        } else {
-            listCopy.Add(b);
-        }
-
-        return new DreamValue(listCopy);
-    }
-
     public override DreamValue OperatorSubtract(DreamValue b, DMProcState state) {
         DantomList listCopy = ToDantomList();
 

@@ -276,6 +276,25 @@ public abstract class DreamList : DreamObject {
     }
     #region Operators
 
+    public override DreamValue OperatorAdd(DreamValue b, DMProcState state) {
+        DantomList listCopy = ToDantomList();
+
+        if (b.TryGetValueAsDreamList(out var bList)) {
+            foreach (DreamValue key in bList.Enumerate()) {
+                if (bList.IsAssociative && bList.TryGetElementByKey(key, out var _assocValue)) {
+                    using var assocValue = _assocValue;
+                    listCopy.Set(key, assocValue);
+                } else {
+                    listCopy.Add(key);
+                }
+            }
+        } else {
+            listCopy.Add(b);
+        }
+
+        return new DreamValue(listCopy);
+    }
+
     public override DreamValue OperatorAnd(DreamValue b, DMProcState state) {
         DreamList newList = state.Proc.ObjectTree.CreateList();
         Dictionary<DreamValue, DreamValue> associativeValues = GetTightPairs();

@@ -233,7 +233,7 @@ public sealed partial class DreamConnection {
             return;
         }
 
-        DreamList allSounds = _objectTree.CreateList(message.Sounds.Count);
+        DantomList allSounds = _objectTree.CreateList(message.Sounds.Count);
         foreach (var soundData in message.Sounds) {
             var sound = _objectTree.CreateObject(_objectTree.Sound);
             sound.SetVariableValue("channel", new DreamValue(soundData.Channel));
@@ -342,7 +342,7 @@ public sealed partial class DreamConnection {
         return task;
     }
 
-    public async Task<DreamValue> PromptList(DreamValueType types, IDreamList list, string title, string message, DreamValue defaultValue) {
+    public async Task<DreamValue> PromptList(DreamValueType types, DreamList list, string title, string message, DreamValue defaultValue) {
         DreamValue[] listValues = list.ToArray();
         foreach (var value in listValues)
             value.IncRef();

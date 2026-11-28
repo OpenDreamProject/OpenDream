@@ -2,17 +2,29 @@
 
 [Virtual]
 public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObject(objectDefinition) {
-    private DreamOverlaysList Overlays => _overlays ??= new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
-    private DreamOverlaysList Underlays => _underlays ??= new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
-    private DreamVisContentsList VisContents => _visContents ??= new(ObjectTree.List.ObjectDefinition, PvsOverrideSystem, this);
-    private DreamFilterList Filters => _filters ??= new(ObjectTree.List.ObjectDefinition, this);
-    private DreamList VisLocs => _visLocs ??= ObjectTree.CreateList();
+    private DatumListView Overlays => DatumListView.GetOrCreate(ref _overlaysView,
+        _overlays ??= new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false), this);
+    private DatumListView Underlays => DatumListView.GetOrCreate(ref _underlaysView,
+        _underlays ??= new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true), this);
+    private DatumListView VisContents => DatumListView.GetOrCreate(ref _visContentsView,
+        _visContents ??= new(ObjectTree.List.ObjectDefinition, PvsOverrideSystem, this), this);
+    private DatumListView Filters => DatumListView.GetOrCreate(ref _filtersView,
+        _filters ??= new(ObjectTree.List.ObjectDefinition, this), this);
+    private DatumListView VisLocs => DatumListView.GetOrCreate(ref _visLocsView,
+        _visLocs ??= ObjectTree.CreateList(), this);
 
-    private DreamOverlaysList? _overlays;
-    private DreamOverlaysList? _underlays;
-    private DreamVisContentsList? _visContents;
-    private DreamFilterList? _filters;
-    private DreamList? _visLocs; // TODO: Implement
+    private OverlaysList? _overlays;
+    private OverlaysList? _underlays;
+    private VisContentsList? _visContents;
+    private FiltersList? _filters;
+    private DantomList? _visLocs; // TODO: Implement
+
+    // Script-facing views of the lists above. They can't be del()'d, and are only deleted along with this atom.
+    private DatumListView? _overlaysView;
+    private DatumListView? _underlaysView;
+    private DatumListView? _visContentsView;
+    private DatumListView? _filtersView;
+    private DatumListView? _visLocsView;
 
     protected string GetRTEntityDesc() {
         if (AtomManager.TryGetAppearance(this, out var appearance) && appearance.Desc != null)
@@ -22,6 +34,13 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
     }
 
     protected override void HandleDeletion() {
+        // Views first, so nothing can reach the internal lists after they're released
+        _overlaysView?.Delete();
+        _underlaysView?.Delete();
+        _visContentsView?.Delete();
+        _filtersView?.Delete();
+        _visLocsView?.Delete();
+
         _overlays?.DecRef();
         _underlays?.DecRef();
         _visContents?.DecRef();
@@ -145,7 +164,7 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
                 Filters.Cut();
 
                 // filters = list("type"=...) or list(filter(...), filter(...))
-                if (value.TryGetValueAsDreamList(out var valueList)) {
+                if (value.TryGetValueAsDantomList(out var valueList)) {
                     using var typeArg = valueList.GetElement(new("type"));
 
                     if (typeArg != DreamValue.Null) { // It's a single filter
@@ -158,7 +177,7 @@ public class DreamObjectAtom(DreamObjectDefinition objectDefinition) : DreamObje
                     } else { // It's a list of filters
                         foreach (var filter in valueList.Enumerate()) {
                             if (!filter.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject)) {
-                                if (!filter.TryGetValueAsDreamList(out var filterValues))
+                                if (!filter.TryGetValueAsDantomList(out var filterValues))
                                     continue;
 
                                 filterObject = DreamObjectFilter.TryCreateFilter(ObjectTree, filterValues);

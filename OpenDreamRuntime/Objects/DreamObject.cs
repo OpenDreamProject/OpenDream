@@ -22,6 +22,12 @@ public class DreamObject {
     [Access(typeof(DreamObject))]
     public bool Deleting, Deleted;
 
+    /// <summary>
+    ///     Set by objects whose refcount changes should also be forwarded elsewhere (see <see cref="OnIncRef"/>).
+    ///     Keeps <see cref="IncRef"/>/<see cref="DecRef"/> non-virtual, so ordinary objects only pay for this check.
+    /// </summary>
+    protected bool ForwardsRefs;
+
     public readonly uint RefId;
 
     [Access(typeof(DreamObject))]
@@ -35,6 +41,12 @@ public class DreamObject {
     ///     an explicit del() still deletes them.
     /// </summary>
     public virtual bool ShouldGarbageCollect => true;
+
+    /// <summary>
+    ///     Whether DM code may del() this object.
+    ///     Objects that only exist as part of another (e.g. atom.overlays) can't be; they're deleted along with their owner.
+    /// </summary>
+    public virtual bool IsDeletable => true;
 
     // Shortcuts to IoC dependencies & entity systems
     protected DreamManager DreamManager => ObjectDefinition.DreamManager;
@@ -139,6 +151,8 @@ public class DreamObject {
             return;
 
         RefCount++;
+        if (ForwardsRefs)
+            OnIncRef();
     }
 
     public void DecRef() {
@@ -146,9 +160,21 @@ public class DreamObject {
             return;
 
         RefCount--;
+        if (ForwardsRefs)
+            OnDecRef();
         if (RefCount == 0 && ShouldGarbageCollect)
             Delete();
     }
+
+    /// <summary>
+    ///     Called after every <see cref="IncRef"/> when <see cref="ForwardsRefs"/> is set.
+    /// </summary>
+    protected virtual void OnIncRef() { }
+
+    /// <summary>
+    ///     Called after every <see cref="DecRef"/> when <see cref="ForwardsRefs"/> is set, before any garbage collection.
+    /// </summary>
+    protected virtual void OnDecRef() { }
 
     /// <summary>
     ///     Del() the object, cleaning up its variables and refs to allow the .NET GC to collect it.
@@ -207,6 +233,12 @@ public class DreamObject {
         return ObjectDefinition.Variables.Keys;
     }
 
+    /// <summary>
+    /// Returns a boolean value. The DreamValue outvar is IncRef'd.
+    /// </summary>
+    /// <param name="varName"></param>
+    /// <param name="value"></param>
+    /// <returns></returns>
     protected virtual bool TryGetVar(string varName, [MustDisposeResource] out DreamValue value) {
         switch (varName) {
             case "type":

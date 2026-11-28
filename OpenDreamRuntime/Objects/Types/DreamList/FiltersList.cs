@@ -28,9 +28,9 @@ public sealed class FiltersList(DreamObjectDefinition listDef, DreamObject owner
         });
     }
 
-    public int GetIndexOfFilter(DreamFilter filter) => Array.IndexOf(GetAppearance().Filters, filter);
+    private int GetIndexOfFilter(DreamFilter filter) => Array.IndexOf(GetAppearance().Filters, filter);
 
-    public int GetIndexOfFilter(string filterName) {
+    private int GetIndexOfFilter(string filterName) {
         ImmutableAppearance appearance = GetAppearance();
         for (int i = 0; i < appearance.Filters.Length; i++) {
             if (appearance.Filters[i].FilterName == filterName)
@@ -40,7 +40,7 @@ public sealed class FiltersList(DreamObjectDefinition listDef, DreamObject owner
         return -1;
     }
 
-    public void SetFilter(int index, DreamFilter? filter) {
+    private void SetFilter(int index, DreamFilter? filter) {
         AtomManager.UpdateAppearance(owner, appearance => {
             if (index < 1 || index > appearance.Filters.Count)
                 throw new DMException($"Cannot index {index} on filter list");
@@ -51,30 +51,6 @@ public sealed class FiltersList(DreamObjectDefinition listDef, DreamObject owner
                 appearance.Filters[index - 1] = filter;
             }
         });
-    }
-
-    /// <summary>
-    /// Replaces every filter equal to <paramref name="oldFilter"/>, when a filter var is written.
-    /// </summary>
-    /// <exception cref="DMException">The filter is no longer on this list, or its owner was deleted</exception>
-    public void ReplaceFilter(DreamFilter oldFilter, DreamFilter newFilter, string varName) {
-        if (owner.Deleted)
-            throw new DMException($"Cannot set var \"{varName}\" on filter of deleted atom");
-        if (GetIndexOfFilter(oldFilter) == -1)
-            throw new DMException($"Cannot set var \"{varName}\" on filter removed from {owner}");
-
-        AtomManager.UpdateAppearance(owner, appearance => {
-            var filters = appearance.Filters;
-            for (int i = 0; i < filters.Count; i++) {
-                if (filters[i] == oldFilter)
-                    filters[i] = newFilter;
-            }
-        });
-
-        foreach (var filterObject in _filterObjects) {
-            if (filterObject.Filter == oldFilter)
-                filterObject.Filter = newFilter;
-        }
     }
 
     /// <summary>
@@ -101,6 +77,30 @@ public sealed class FiltersList(DreamObjectDefinition listDef, DreamObject owner
         newObject.AttachedTo = this;
         _filterObjects.Add(newObject);
         return newObject;
+    }
+
+    /// <summary>
+    /// Replaces every filter equal to <paramref name="oldFilter"/>, when a filter var is written.
+    /// </summary>
+    /// <exception cref="DMException">The filter is no longer on this list, or its owner was deleted</exception>
+    public void ReplaceFilter(DreamFilter oldFilter, DreamFilter newFilter, string varName) {
+        if (owner.Deleted)
+            throw new DMException($"Cannot set var \"{varName}\" on filter of deleted atom");
+        if (GetIndexOfFilter(oldFilter) == -1)
+            throw new DMException($"Cannot set var \"{varName}\" on filter removed from {owner}");
+
+        AtomManager.UpdateAppearance(owner, appearance => {
+            var filters = appearance.Filters;
+            for (int i = 0; i < filters.Count; i++) {
+                if (filters[i] == oldFilter)
+                    filters[i] = newFilter;
+            }
+        });
+
+        foreach (var filterObject in _filterObjects) {
+            if (filterObject.Filter == oldFilter)
+                filterObject.Filter = newFilter;
+        }
     }
 
     public override DreamValue GetElement(DreamValue key) {

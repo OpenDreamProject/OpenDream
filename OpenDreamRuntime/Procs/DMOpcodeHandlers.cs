@@ -2631,6 +2631,9 @@ namespace OpenDreamRuntime.Procs {
             using var dreamObjectStack = state.Pop();
 
             if (dreamObjectStack.TryGetValueAsDreamObject<DreamObject>(out var dreamObject)) {
+                if (!dreamObject.IsDeletable)
+                    throw new DMException($"Cannot delete {dreamObject}");
+
                 dreamObject.Delete();
 
                 if (dreamObject == state.Instance) // We just deleted our src, end the proc TODO: Is the entire thread cancelled?
